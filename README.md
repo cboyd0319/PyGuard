@@ -95,7 +95,17 @@ Top Issues:
 
 ## ✨ **Features**
 
-### **🚀 NEW in v0.3.0**
+### **🚀 NEW in v0.4.0 (In Development)**
+- ✅ **Taint Tracking**: Advanced data flow analysis from sources to sinks
+- ✅ **ReDoS Detection**: Regular Expression Denial of Service vulnerabilities
+- ✅ **Race Condition Detection**: Time-of-check to time-of-use (TOCTOU) issues
+- ✅ **Integer Security**: Overflow and underflow vulnerability detection
+- ✅ **Supply Chain Security**: SBOM generation, dependency vulnerability scanning
+- ✅ **Knowledge Integration**: OWASP Top 10 2021, CWE Top 25 2023 databases
+- ✅ **115 Tests**: Comprehensive test suite (up from 72)
+- ✅ **66% Coverage**: Improved from 57%
+
+### **🚀 v0.3.0 Features**
 - ✅ **Enhanced Security Detection**: 10+ new vulnerability types
 - ✅ **Timing Attack Detection**: Identify non-constant-time comparisons
 - ✅ **XXE Injection Detection**: XML External Entity vulnerabilities
@@ -103,7 +113,7 @@ Top Issues:
 - ✅ **LDAP & NoSQL Injection**: Extended injection detection
 - ✅ **Long Method Detection**: SWEBOK-aligned complexity checks
 - ✅ **Improved Code Quality**: Magic numbers, broad exceptions, type checks
-- ✅ **87% Test Coverage**: Comprehensive test suite (72 tests)
+- ✅ **87% Test Coverage**: Comprehensive test suite in core modules
 
 ### **🚀 v0.2.0 Features**
 - ✅ **AST-Based Analysis**: 10-100x faster with zero false positives
@@ -115,6 +125,12 @@ Top Issues:
 - ✅ **Enterprise Ready**: Structured logging, metrics, correlation IDs
 
 ### **🔒 Security Analysis & Auto-Fix** (OWASP ASVS Aligned)
+
+**Advanced Security (NEW!):**
+- ✅ **Taint Tracking** (ASVS-5.1.1, CWE-20): Data flow from untrusted sources
+- ✅ **ReDoS Detection** (ASVS-5.1.5, CWE-1333): Catastrophic regex backtracking
+- ✅ **Race Conditions** (ASVS-1.4.2, CWE-367): Time-of-check to time-of-use
+- ✅ **Integer Security** (ASVS-5.1.4, CWE-190/191): Overflow/underflow detection
 
 **Core Vulnerabilities:**
 - ✅ **Code Injection** (ASVS-5.2.1, CWE-95): `eval()`, `exec()`, `compile()`
@@ -140,6 +156,12 @@ Top Issues:
 - ✅ **Path Traversal** (ASVS-12.3.1, CWE-22): Unsafe path operations
 - ✅ **Insecure Temp Files** (ASVS-12.3.2, CWE-377): tempfile.mktemp() usage
 - ✅ **Format String** (ASVS-5.2.8, CWE-134): Dynamic format string vulnerabilities
+
+**Supply Chain Security (NEW!):**
+- ✅ **Dependency Scanning**: Automatic vulnerability detection in dependencies
+- ✅ **SBOM Generation**: CycloneDX-compliant Software Bill of Materials
+- ✅ **License Detection**: Track open source licensing obligations
+- ✅ **Risk Assessment**: Automated risk scoring for all dependencies
 
 ### **✨ Best Practices Enforcement** (SWEBOK Aligned)
 
@@ -302,32 +324,37 @@ result = formatter.format_file(
 
 ## 🆚 **Comparison with Other Tools**
 
-| Feature | PyGuard v0.2 | Ruff | Black | Bandit | Pylint |
-|---------|--------------|------|-------|--------|--------|
-| **Auto-Fix** | ✅ | ✅ | ✅ | ❌ | ⚠️ Limited |
-| **Security Analysis** | ✅ 10+ checks | ⚠️ Limited | ❌ | ✅ Basic | ⚠️ Basic |
-| **OWASP/CWE Alignment** | ✅ ASVS 5.0 | ❌ | ❌ | ⚠️ Partial | ❌ |
-| **AST Analysis** | ✅ Full | ✅ | ✅ | ⚠️ Partial | ✅ |
-| **Formatting** | ✅ | ❌ | ✅ | ❌ | ❌ |
-| **Best Practices** | ✅ 8+ checks | ✅ | ❌ | ❌ | ✅ |
+| Feature | PyGuard v0.4 | Ruff | Bandit | Semgrep | SonarQube |
+|---------|--------------|------|--------|---------|-----------|
+| **Auto-Fix** | ✅ | ✅ | ❌ | ⚠️ Limited | ⚠️ Limited |
+| **Security Analysis** | ✅ 25+ checks | ⚠️ Limited | ✅ 10 checks | ✅ 15 checks | ✅ 18 checks |
+| **Taint Tracking** | ✅ Full | ❌ | ❌ | ⚠️ Limited | ✅ Full |
+| **ReDoS Detection** | ✅ | ❌ | ❌ | ❌ | ⚠️ Partial |
+| **Supply Chain** | ✅ SBOM | ❌ | ❌ | ❌ | ✅ Paid |
+| **OWASP/CWE Alignment** | ✅ ASVS 5.0 | ❌ | ⚠️ Partial | ⚠️ Partial | ✅ Full |
+| **Knowledge Base** | ✅ Integrated | ❌ | ❌ | ❌ | ✅ Paid |
+| **AST Analysis** | ✅ Full | ✅ | ⚠️ Partial | ✅ | ✅ |
+| **Formatting** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Best Practices** | ✅ 12+ checks | ✅ 8 checks | ❌ | ❌ | ✅ 15+ checks |
 | **Complexity Analysis** | ✅ Cyclomatic | ❌ | ❌ | ❌ | ✅ |
-| **Parallel Processing** | ✅ Multi-core | ✅ | ❌ | ❌ | ❌ |
-| **Caching System** | ✅ Smart | ⚠️ Basic | ❌ | ❌ | ❌ |
-| **Backup System** | ✅ Automatic | ❌ | ❌ | ❌ | ❌ |
-| **HTML Reports** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **JSON Reports** | ✅ | ✅ | ❌ | ✅ | ✅ |
-| **Unified Tool** | ✅ | ⚠️ Partial | ❌ | ❌ | ❌ |
-| **Python API** | ✅ Full | ⚠️ Limited | ✅ | ✅ | ✅ |
-| **Speed** | ⚡ Fast | **⚡⚡ Fastest** | ⚡ Fast | ⚡ Fast | 🐌 Slow |
-| **Configuration** | ✅ TOML | ✅ TOML | ✅ TOML | ✅ YAML | ✅ INI |
+| **Parallel Processing** | ✅ Multi-core | ✅ | ❌ | ✅ | ✅ |
+| **Caching System** | ✅ Smart | ⚠️ Basic | ❌ | ⚠️ Basic | ✅ |
+| **HTML Reports** | ✅ | ❌ | ❌ | ✅ | ✅ |
+| **JSON Reports** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Python API** | ✅ Full | ⚠️ Limited | ✅ | ⚠️ Limited | ✅ |
+| **Open Source** | ✅ MIT | ✅ MIT | ✅ Apache | ✅ LGPL | ❌ Commercial |
+| **Cost** | **FREE** | **FREE** | **FREE** | Free/Paid | **$$$** |
 
-**Why PyGuard v0.2?**
-- **World-Class Security**: OWASP ASVS v5.0 & CWE Top 25 aligned
-- **All-in-One**: Security + Quality + Formatting + Reporting
-- **Intelligent AST Analysis**: Context-aware with zero false positives
+**Why PyGuard v0.4?**
+- **World-Class Security**: OWASP ASVS v5.0, CWE Top 25, NIST SSDF aligned
+- **Advanced Detection**: Taint tracking, ReDoS, race conditions, integer security
+- **Supply Chain Security**: SBOM generation, dependency vulnerability scanning
+- **Knowledge Integration**: OWASP Top 10 2021, CWE Top 25 2023 databases
+- **All-in-One**: Security + Supply Chain + Quality + Formatting
+- **Intelligent Analysis**: Context-aware AST analysis with minimal false positives
 - **Performance**: Parallel processing + smart caching
 - **Production-Ready**: Enterprise logging, metrics, and observability
-- **Standards-Based**: SWEBOK, OWASP, CWE, PEP 8 compliance
+- **Standards-Based**: SWEBOK, OWASP, CWE, NIST, SLSA compliance
 
 ---
 
@@ -463,13 +490,23 @@ pylint pyguard/
 
 ## 📚 **Documentation**
 
+### Core Documentation
 - [User Guide](docs/user-guide.md)
 - [API Reference](docs/api-reference.md)
 - [Configuration Guide](docs/configuration.md)
-- [Security Rules](docs/security-rules.md)
-- [Best Practices Checks](docs/best-practices.md)
-- [Contributing Guide](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
+
+### Security Features
+- [Security Rules](docs/security-rules.md)
+- [Advanced Security Analysis](docs/ADVANCED-SECURITY.md) 🆕
+- [Supply Chain Security](docs/SUPPLY-CHAIN-SECURITY.md) 🆕
+- [Best Practices Checks](docs/best-practices.md)
+
+### Architecture & Development
+- [Architecture](docs/ARCHITECTURE.md)
+- [UGE Implementation](docs/UGE-IMPLEMENTATION.md)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Competitive Analysis](docs/COMPETITIVE-ANALYSIS.md)
 
 ---
 
