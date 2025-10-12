@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -15,14 +16,23 @@ import difflib
 
 
 class PyGuardLogger:
-    """Structured JSON logger for PyGuard operations."""
+    """
+    Structured JSON logger for PyGuard operations.
+    
+    Features:
+    - Correlation IDs for tracing operations across files
+    - Structured JSON output for log aggregation
+    - Performance metrics tracking
+    - Severity-based filtering
+    """
 
-    def __init__(self, log_file: Optional[str] = None):
+    def __init__(self, log_file: Optional[str] = None, correlation_id: Optional[str] = None):
         """
         Initialize the logger.
 
         Args:
             log_file: Path to log file. If None, uses logs/pyguard.jsonl
+            correlation_id: Optional correlation ID for this logger instance
         """
         if log_file is None:
             log_dir = Path("logs")
@@ -31,6 +41,18 @@ class PyGuardLogger:
 
         self.log_file = Path(log_file)
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Generate or use provided correlation ID
+        self.correlation_id = correlation_id or str(uuid.uuid4())
+        
+        # Track metrics
+        self.metrics = {
+            "start_time": datetime.now(),
+            "files_processed": 0,
+            "issues_found": 0,
+            "fixes_applied": 0,
+            "errors": 0,
+        }
 
         # Setup Python logging
         logging.basicConfig(
@@ -46,9 +68,10 @@ class PyGuardLogger:
         category: str = "General",
         details: Optional[Dict[str, Any]] = None,
         file_path: Optional[str] = None,
+        correlation_id: Optional[str] = None,
     ) -> None:
         """
-        Log a structured message.
+        Log a structured message with correlation tracking.
 
         Args:
             level: Log level (INFO, WARNING, ERROR, SUCCESS)
@@ -56,9 +79,11 @@ class PyGuardLogger:
             category: Category of the log entry
             details: Additional structured data
             file_path: Associated file path
+            correlation_id: Optional correlation ID (uses instance ID if not provided)
         """
         log_entry = {
             "timestamp": datetime.now().isoformat(),
+            "correlation_id": correlation_id or self.correlation_id,
             "level": level,
             "category": category,
             "message": message,
@@ -67,12 +92,20 @@ class PyGuardLogger:
         }
 
         # Write to JSONL file
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry) + "\n")
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry) + "\n")
+        except Exception as e:
+            # Fallback to console if file write fails
+            self.logger.error(f"Failed to write to log file: {e}")
 
         # Also log to Python logger
         log_method = getattr(self.logger, level.lower(), self.logger.info)
         log_method(f"[{category}] {message}")
+        
+        # Update metrics
+        if level == "ERROR":
+            self.metrics["errors"] += 1
 
     def info(self, message: str, **kwargs) -> None:
         """Log info level message."""
@@ -89,6 +122,45 @@ class PyGuardLogger:
     def success(self, message: str, **kwargs) -> None:
         """Log success level message."""
         self.log("SUCCESS", message, **kwargs)
+    
+    def track_file_processed(self) -> None:
+        """Track that a file was processed."""
+        self.metrics["files_processed"] += 1
+    
+    def track_issues_found(self, count: int) -> None:
+        """Track number of issues found."""
+        self.metrics["issues_found"] += count
+    
+    def track_fixes_applied(self, count: int) -> None:
+        """Track number of fixes applied."""
+        self.metrics["fixes_applied"] += count
+    
+    def get_metrics(self) -> Dict[str, Any]:
+        """
+        Get current metrics.
+        
+        Returns:
+            Dictionary with metrics including elapsed time
+        """
+        elapsed = (datetime.now() - self.metrics["start_time"]).total_seconds()
+        return {
+            "start_time": self.metrics["start_time"].isoformat(),
+            "files_processed": self.metrics["files_processed"],
+            "issues_found": self.metrics["issues_found"],
+            "fixes_applied": self.metrics["fixes_applied"],
+            "errors": self.metrics["errors"],
+            "elapsed_seconds": elapsed,
+            "files_per_second": self.metrics["files_processed"] / elapsed if elapsed > 0 else 0,
+        }
+    
+    def log_metrics(self) -> None:
+        """Log current metrics as a structured log entry."""
+        metrics = self.get_metrics()
+        self.info(
+            "PyGuard execution metrics",
+            category="Metrics",
+            details=metrics
+        )
 
 
 class BackupManager:

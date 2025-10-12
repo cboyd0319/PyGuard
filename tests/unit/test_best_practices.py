@@ -14,8 +14,8 @@ class TestBestPracticesFixer:
     def test_fix_mutable_defaults(self):
         """Test fixing mutable default arguments."""
         code = "def foo(x=[]):\n    pass"
-        result = self.fixer._fix_mutable_defaults(code)
-        assert "x=None" in result or "x=[]" in result
+        result = self.fixer._fix_mutable_default_arguments(code)
+        assert "ANTI-PATTERN" in result or "MUTABLE DEFAULT" in result
 
     def test_fix_bare_except(self):
         """Test fixing bare except clauses."""
@@ -26,13 +26,13 @@ class TestBestPracticesFixer:
     def test_fix_none_comparison(self):
         """Test fixing None comparison."""
         code = "if x == None:"
-        result = self.fixer._fix_none_comparison(code)
+        result = self.fixer._fix_comparison_to_none(code)
         assert "is None" in result
 
     def test_fix_type_check(self):
         """Test fixing type() checks."""
         code = "if type(x) == str:"
-        result = self.fixer._fix_type_check(code)
+        result = self.fixer._fix_type_comparison(code)
         assert "isinstance" in result
 
 

@@ -12,6 +12,7 @@ from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.best_practices import BestPracticesFixer
 from pyguard.lib.formatting import FormattingFixer
+from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue, CodeQualityIssue
 
 __all__ = [
     "PyGuardLogger",
@@ -20,4 +21,7 @@ __all__ = [
     "SecurityFixer",
     "BestPracticesFixer",
     "FormattingFixer",
+    "ASTAnalyzer",
+    "SecurityIssue",
+    "CodeQualityIssue",
 ]

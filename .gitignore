@@ -69,6 +69,7 @@ dmypy.json
 # PyGuard specific
 logs/
 backups/
+.pyguard_backups/
 *.backup
 pyguard.jsonl
 .pyguard/
