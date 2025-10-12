@@ -45,36 +45,23 @@ jobs:
       run: |
         twine upload dist/*
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: dist/*
-        generate_release_notes: true
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Extract version from tag
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-    - name: Update release notes
-      uses: actions/github-script@v7
+    - name: Extract changelog
+      id: changelog
+      run: |
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        # Extract the relevant section from CHANGELOG.md
+        awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md || echo "See CHANGELOG.md for details" > release_notes.md
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
-        script: |
-          const version = '${{ steps.get_version.outputs.VERSION }}';
-          const changelog = require('fs').readFileSync('CHANGELOG.md', 'utf8');
-          
-          // Extract section for this version from CHANGELOG
-          const versionRegex = new RegExp(`## \\[${version}\\]([\\s\\S]*?)(?=## \\[|$)`, 'i');
-          const match = changelog.match(versionRegex);
-          const releaseNotes = match ? match[1].trim() : 'See CHANGELOG.md for details';
-          
-          // Update release with changelog notes
-          await github.rest.repos.updateRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            release_id: context.payload.release.id,
-            body: releaseNotes
-          });
+        files: dist/*
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

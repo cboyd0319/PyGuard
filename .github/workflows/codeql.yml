@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday
+    - cron: '0 0 * * 1'  # Weekly on Monday at 00:00 UTC
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   analyze:
@@ -25,9 +26,9 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: python
-
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+        queries: security-and-quality
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:python"

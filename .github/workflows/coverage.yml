@@ -36,17 +36,19 @@ jobs:
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload HTML coverage report
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: htmlcov/
+      if: always()
 
-    - name: Comment coverage on PR
-      if: github.event_name == 'pull_request'
-      uses: py-cov-action/python-coverage-comment-action@v3
-      with:
-        GITHUB_TOKEN: ${{ github.token }}
-        MINIMUM_GREEN: 80
-        MINIMUM_ORANGE: 60
+    - name: Coverage summary
+      run: |
+        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        pytest --cov=pyguard --cov-report=term | tail -20 >> $GITHUB_STEP_SUMMARY || true
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
