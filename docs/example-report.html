@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyGuard Analysis Report - October 12, 2025 at 08:09 PM</title>
+    <title>PyGuard Analysis Report - October 12, 2025 at 08:12 PM</title>
     <style>
         /* === Modern Design System === */
         :root {
@@ -359,7 +359,7 @@
         <header>
             <h1>🛡️ PyGuard Analysis Report</h1>
             <p class="subtitle">The World's Best Python Security & Quality Tool</p>
-            <p class="timestamp">Generated on October 12, 2025 at 08:09 PM</p>
+            <p class="timestamp">Generated on October 12, 2025 at 08:12 PM</p>
         </header>
 
         <div class="status-banner critical">
@@ -369,12 +369,12 @@
         <div class="metrics-grid">
             <div class="metric-card">
                 <h3>Total Files</h3>
-                <div class="value">1</div>
+                <div class="value">150</div>
                 <div class="label">Analyzed</div>
             </div>
             <div class="metric-card danger">
                 <h3>Issues Found</h3>
-                <div class="value">4</div>
+                <div class="value">7</div>
                 <div class="label">Total Issues</div>
             </div>
             <div class="metric-card danger">
@@ -384,7 +384,7 @@
             </div>
             <div class="metric-card warning">
                 <h3>Medium Issues</h3>
-                <div class="value">0</div>
+                <div class="value">2</div>
                 <div class="label">Medium Severity</div>
             </div>
             <div class="metric-card success">
@@ -394,7 +394,7 @@
             </div>
             <div class="metric-card info">
                 <h3>Analysis Time</h3>
-                <div class="value">0.00s</div>
+                <div class="value">2.45s</div>
                 <div class="label">Total Duration</div>
             </div>
         </div>
@@ -416,34 +416,58 @@
                         
                 <tr class="severity-high">
                     <td><span class="severity-badge severity-high">🔴 HIGH</span></td>
-                    <td>Unknown</td>
-                    <td class="file-cell">sample.py</td>
-                    <td class="text-center">0</td>
-                    <td></td>
+                    <td>Code Injection</td>
+                    <td class="file-cell">auth.py</td>
+                    <td class="text-center">42</td>
+                    <td>Use of eval() with user input - code injection risk</td>
                 </tr>
             
                 <tr class="severity-high">
                     <td><span class="severity-badge severity-high">🔴 HIGH</span></td>
-                    <td>Unknown</td>
-                    <td class="file-cell">sample.py</td>
-                    <td class="text-center">0</td>
-                    <td></td>
+                    <td>Hardcoded Secrets</td>
+                    <td class="file-cell">settings.py</td>
+                    <td class="text-center">15</td>
+                    <td>Hardcoded API key detected</td>
                 </tr>
             
                 <tr class="severity-high">
                     <td><span class="severity-badge severity-high">🔴 HIGH</span></td>
-                    <td>Unknown</td>
-                    <td class="file-cell">sample.py</td>
-                    <td class="text-center">0</td>
-                    <td></td>
+                    <td>SQL Injection</td>
+                    <td class="file-cell">queries.py</td>
+                    <td class="text-center">127</td>
+                    <td>SQL query constructed with string concatenation</td>
                 </tr>
             
                 <tr class="severity-high">
                     <td><span class="severity-badge severity-high">🔴 HIGH</span></td>
-                    <td>Unknown</td>
-                    <td class="file-cell">sample.py</td>
-                    <td class="text-center">0</td>
-                    <td></td>
+                    <td>Command Injection</td>
+                    <td class="file-cell">system.py</td>
+                    <td class="text-center">88</td>
+                    <td>os.system() called with unsanitized input</td>
+                </tr>
+            
+                <tr class="severity-medium">
+                    <td><span class="severity-badge severity-medium">🟡 MEDIUM</span></td>
+                    <td>Weak Cryptography</td>
+                    <td class="file-cell">crypto.py</td>
+                    <td class="text-center">34</td>
+                    <td>Use of MD5 hash function</td>
+                </tr>
+            
+                <tr class="severity-medium">
+                    <td><span class="severity-badge severity-medium">🟡 MEDIUM</span></td>
+                    <td>Insecure Random</td>
+                    <td class="file-cell">tokens.py</td>
+                    <td class="text-center">12</td>
+                    <td>Use of random.random() for security token</td>
+                </tr>
+            
+                <tr class="severity-low">
+                    <td><span class="severity-badge severity-low">🟢 LOW</span></td>
+                    <td>Missing Docstring</td>
+                    <td class="file-cell">utils.py</td>
+                    <td class="text-center">56</td>
+                    <td>Function lacks documentation</td>
                 </tr>
             
                     </tbody>
