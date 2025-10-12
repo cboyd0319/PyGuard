@@ -97,3 +97,9 @@ site/
 .tmp/
 temp/
 tmp/
+
+# PyGuard generated reports (keep example only)
+pyguard-report.html
+pyguard-report.json
+test_demo/
+

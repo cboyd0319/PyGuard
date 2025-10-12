@@ -17,6 +17,7 @@ from pyguard.lib.formatting import FormattingFixer
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
 from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 
 __all__ = [
     "PyGuardLogger",
@@ -36,4 +37,6 @@ __all__ = [
     "JSONReporter",
     "HTMLReporter",
     "AnalysisMetrics",
+    "EnhancedConsole",
+    "ModernHTMLReporter",
 ]

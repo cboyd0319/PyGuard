@@ -39,6 +39,7 @@ dependencies = [
     "safety>=2.3.0",
     "radon>=6.0.1",
     "vulture>=2.9.1",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
