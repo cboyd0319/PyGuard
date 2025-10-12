@@ -440,6 +440,7 @@ class ModernHTMLReporter:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PyGuard security analysis report showing issues and recommendations for Python code">
+    <meta name="theme-color" content="#667eea">
     <title>PyGuard Analysis Report - {timestamp}</title>
     <style>
         /* === WCAG 2.2 AA Compliant Design System === */
@@ -601,6 +602,28 @@ class ModernHTMLReporter:
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: var(--space-8);
+            position: relative;
+        }}
+        
+        /* Subtle grain texture overlay for depth */
+        body::before {{
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }}
+        
+        /* Custom focus rings - brand-matched, visible by design */
+        *:focus-visible {{
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+            transition: outline var(--duration-fast) var(--ease-standard);
         }}
         
         /* Skip to Content Link - WCAG 2.2 AA */
@@ -608,19 +631,22 @@ class ModernHTMLReporter:
             position: absolute;
             top: -40px;
             left: 0;
-            background: var(--gray-900);
+            background: var(--primary);
             color: white;
             padding: var(--space-3) var(--space-4);
             text-decoration: none;
             z-index: 100;
             border-radius: 0 0 var(--radius-md) 0;
             font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transition: all var(--duration-base) var(--ease-standard);
         }}
         
         .skip-link:focus {{
             top: 0;
-            outline: 2px solid var(--primary);
+            outline: 3px solid white;
             outline-offset: 2px;
+            transform: translateX(4px);
         }}
 
         /* Main Container */
@@ -631,14 +657,37 @@ class ModernHTMLReporter:
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-2xl);
             overflow: hidden;
+            position: relative;
+            z-index: 2;
         }}
 
-        /* Header - Banner Landmark */
+        /* Header - Banner Landmark with gradient mesh effect */
         header {{
             background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
             color: white;
             padding: var(--space-12) var(--space-8);
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        /* Gradient mesh background enhancement */
+        header::before {{
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%);
+            opacity: 0.6;
+            z-index: 0;
+        }}
+        
+        header > * {{
+            position: relative;
+            z-index: 1;
         }}
 
         header h1 {{
@@ -650,11 +699,13 @@ class ModernHTMLReporter:
             justify-content: center;
             gap: var(--space-4);
             line-height: 1.2;
+            animation: heroReveal 0.6s var(--ease-decelerate) both;
         }}
         
         header h1 .icon {{
             font-size: 1.2em;
             flex-shrink: 0;
+            animation: iconBounce 0.6s var(--ease-decelerate) 0.2s both;
         }}
 
         header .subtitle {{
@@ -662,6 +713,7 @@ class ModernHTMLReporter:
             opacity: 0.95;
             font-weight: 400;
             margin-bottom: var(--space-2);
+            animation: heroReveal 0.6s var(--ease-decelerate) 0.15s both;
         }}
 
         header .timestamp {{
@@ -669,9 +721,10 @@ class ModernHTMLReporter:
             font-size: 0.9375rem;
             opacity: 0.85;
             font-weight: 300;
+            animation: heroReveal 0.6s var(--ease-decelerate) 0.3s both;
         }}
 
-        /* Status Banner - Status Role with aria-live */
+        /* Status Banner - Status Role with aria-live and layered depth */
         .status-banner {{
             padding: var(--space-8);
             text-align: center;
@@ -683,29 +736,47 @@ class ModernHTMLReporter:
             justify-content: center;
             gap: var(--space-3);
             min-height: 80px;
+            position: relative;
+            overflow: hidden;
+            animation: slideIn var(--duration-slow) var(--ease-decelerate) 0.6s both;
+        }}
+        
+        /* Soft shadow for depth */
+        .status-banner::after {{
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
         }}
         
         .status-banner .icon {{
             font-size: 1.5em;
             flex-shrink: 0;
+            animation: iconBounce 0.6s var(--ease-decelerate) 0.8s both;
         }}
 
         .status-banner.success {{
             background: linear-gradient(135deg, var(--success) 0%, var(--success-border) 100%);
             color: white;
             border-bottom-color: var(--success-border);
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1);
         }}
 
         .status-banner.warning {{
             background: linear-gradient(135deg, var(--warning) 0%, var(--warning-border) 100%);
             color: var(--gray-900);
             border-bottom-color: var(--warning-border);
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1);
         }}
 
         .status-banner.critical {{
             background: linear-gradient(135deg, var(--danger) 0%, var(--danger-border) 100%);
             color: white;
             border-bottom-color: var(--danger-border);
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1);
         }}
 
         /* Metrics Grid - Region Landmark */
@@ -726,12 +797,21 @@ class ModernHTMLReporter:
             transition: transform var(--duration-fast) var(--ease-standard),
                         box-shadow var(--duration-fast) var(--ease-standard),
                         border-color var(--duration-fast) var(--ease-standard);
+            position: relative;
+            cursor: default;
         }}
-
+        
+        /* Magnetic hover effect */
         .metric-card:hover {{
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: var(--shadow-xl), 0 0 0 1px rgba(102, 126, 234, 0.1);
             border-color: var(--primary);
+        }}
+        
+        /* Subtle 3D press effect on active */
+        .metric-card:active {{
+            transform: translateY(-2px) scale(0.98);
+            box-shadow: var(--shadow-md);
         }}
         
         /* Focus States - WCAG 2.2 AA */
@@ -853,19 +933,23 @@ class ModernHTMLReporter:
             line-height: 1.6;
         }}
 
-        /* Row Hover - Enhanced Accessibility */
+        /* Row Hover - Enhanced Accessibility with smooth transitions */
         tbody tr {{
-            transition: background-color var(--duration-fast) var(--ease-standard);
+            transition: all var(--duration-base) var(--ease-standard);
+            cursor: default;
         }}
         
         tbody tr:hover {{
             background: var(--gray-50);
+            transform: translateX(4px);
+            box-shadow: inset 4px 0 0 var(--primary);
         }}
         
         tbody tr:focus-within {{
             background: var(--gray-100);
-            outline: 2px solid var(--primary);
-            outline-offset: -2px;
+            outline: 3px solid var(--primary);
+            outline-offset: -3px;
+            transform: translateX(4px);
         }}
 
         .text-center {{
@@ -880,7 +964,7 @@ class ModernHTMLReporter:
             word-break: break-word;
         }}
 
-        /* Severity Badges - Status Role */
+        /* Severity Badges - Status Role with enhanced visual hierarchy */
         .severity-badge {{
             display: inline-flex;
             align-items: center;
@@ -894,6 +978,13 @@ class ModernHTMLReporter:
             border: 2px solid currentColor;
             line-height: 1.4;
             min-height: 28px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all var(--duration-fast) var(--ease-standard);
+        }}
+        
+        .severity-badge:hover {{
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }}
         
         .severity-badge .icon {{
@@ -938,7 +1029,7 @@ class ModernHTMLReporter:
             border-left: 4px solid var(--severity-low);
         }}
 
-        /* Empty State - Success Message */
+        /* Empty State - Success Message with celebration */
         .no-issues {{
             padding: var(--space-12);
             text-align: center;
@@ -946,58 +1037,89 @@ class ModernHTMLReporter:
             color: var(--success-border);
             font-weight: 600;
             line-height: 1.6;
+            background: linear-gradient(135deg, var(--success-bg) 0%, rgba(198, 246, 213, 0.3) 100%);
+            border-radius: var(--radius-lg);
+            animation: fadeIn var(--duration-slow) var(--ease-decelerate) both;
         }}
         
         .no-issues .icon {{
             font-size: 3rem;
             display: block;
             margin-bottom: var(--space-4);
+            animation: iconBounce 1s var(--ease-decelerate) infinite;
         }}
 
-        /* Footer - Contentinfo Landmark */
+        /* Footer - Contentinfo Landmark with elegant multi-column design */
         footer {{
-            background: var(--gray-900);
+            background: linear-gradient(180deg, var(--gray-800) 0%, var(--gray-900) 100%);
             color: var(--gray-300);
-            padding: var(--space-8);
+            padding: var(--space-10) var(--space-8);
             text-align: center;
             line-height: 1.8;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        /* Subtle footer overlay for depth */
+        footer::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
         }}
         
         footer p {{
             margin-bottom: var(--space-2);
+            position: relative;
+            z-index: 1;
+        }}
+        
+        footer strong {{
+            color: white;
+            font-weight: 700;
         }}
 
-        /* Footer Links - Touch Target Sizing */
+        /* Footer Links - Touch Target Sizing with magnetic effect */
         footer a {{
             color: var(--primary-dark);
             text-decoration: underline;
             text-decoration-thickness: 2px;
             text-underline-offset: 3px;
-            transition: color var(--duration-fast) var(--ease-standard);
+            transition: all var(--duration-base) var(--ease-standard);
             padding: var(--space-2);
             display: inline-block;
             min-height: 44px;
             display: inline-flex;
             align-items: center;
+            border-radius: var(--radius-sm);
+            position: relative;
         }}
 
         footer a:hover {{
             color: var(--primary);
             text-decoration-thickness: 3px;
+            transform: translateY(-2px);
+            background: rgba(102, 126, 234, 0.1);
         }}
         
         footer a:focus-visible {{
-            outline: 2px solid var(--primary);
+            outline: 3px solid var(--primary);
             outline-offset: 2px;
             border-radius: var(--radius-sm);
+            background: rgba(102, 126, 234, 0.1);
         }}
 
         .footer-links {{
-            margin-top: var(--space-4);
+            margin-top: var(--space-6);
             display: flex;
             justify-content: center;
             gap: var(--space-6);
             flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
         }}
 
         /* Print Styles - Optimized for Paper */
@@ -1037,7 +1159,7 @@ class ModernHTMLReporter:
             }}
         }}
 
-        /* Responsive Design - Mobile First */
+        /* Responsive Design - Mobile First with smooth transitions */
         @media (max-width: 768px) {{
             body {{
                 padding: var(--space-4);
@@ -1065,6 +1187,10 @@ class ModernHTMLReporter:
                 gap: var(--space-4);
             }}
             
+            .metric-card:hover {{
+                transform: translateY(-4px) scale(1.01);
+            }}
+            
             .issues-section {{
                 padding: var(--space-4);
             }}
@@ -1072,6 +1198,7 @@ class ModernHTMLReporter:
             .table-container {{
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                border-radius: var(--radius-md);
             }}
             
             table {{
@@ -1081,6 +1208,10 @@ class ModernHTMLReporter:
             th, td {{
                 padding: var(--space-3);
                 font-size: 0.875rem;
+            }}
+            
+            tbody tr:hover {{
+                transform: translateX(2px);
             }}
             
             .footer-links {{
@@ -1118,20 +1249,53 @@ class ModernHTMLReporter:
                 transform: translateX(0);
             }}
         }}
-
+        
+        /* Hero section reveal animations */
+        @keyframes heroReveal {{
+            from {{
+                opacity: 0;
+                transform: translateY(30px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+        
+        @keyframes iconBounce {{
+            0%, 100% {{
+                transform: scale(1);
+            }}
+            50% {{
+                transform: scale(1.1);
+            }}
+        }}
+        
+        /* Staggered reveal for metrics cards */
         .metric-card {{
             animation: fadeIn var(--duration-slow) var(--ease-decelerate);
         }}
 
         .metric-card:nth-child(1) {{ animation-delay: 0ms; }}
-        .metric-card:nth-child(2) {{ animation-delay: 50ms; }}
-        .metric-card:nth-child(3) {{ animation-delay: 100ms; }}
-        .metric-card:nth-child(4) {{ animation-delay: 150ms; }}
-        .metric-card:nth-child(5) {{ animation-delay: 200ms; }}
-        .metric-card:nth-child(6) {{ animation-delay: 250ms; }}
+        .metric-card:nth-child(2) {{ animation-delay: 70ms; }}
+        .metric-card:nth-child(3) {{ animation-delay: 140ms; }}
+        .metric-card:nth-child(4) {{ animation-delay: 210ms; }}
+        .metric-card:nth-child(5) {{ animation-delay: 280ms; }}
+        .metric-card:nth-child(6) {{ animation-delay: 350ms; }}
         
+        /* Table reveal with slide */
         .table-container {{
-            animation: slideIn var(--duration-slow) var(--ease-decelerate) 300ms both;
+            animation: slideIn var(--duration-slow) var(--ease-decelerate) 400ms both;
+        }}
+        
+        /* Smooth scroll behavior */
+        html {{
+            scroll-behavior: smooth;
+        }}
+        
+        /* Section title reveal */
+        .section-title {{
+            animation: slideIn var(--duration-slow) var(--ease-decelerate) 350ms both;
         }}
     </style>
 </head>
