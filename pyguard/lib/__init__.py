@@ -20,8 +20,12 @@ from pyguard.lib.supply_chain import Dependency, SBOM, SupplyChainAnalyzer
 from pyguard.lib.mcp_integration import MCPIntegration, MCPServer
 from pyguard.lib.ml_detection import AnomalyDetector, MLRiskScorer
 from pyguard.lib.standards_integration import (
+    CERTSecureCodingMapper,
     GDPRTechnicalControls,
     HIPAASecurityRule,
+    IEEE12207Mapper,
+    MitreATTACKMapper,
+    SANSTop25Mapper,
     StandardsMapper,
 )
 
@@ -62,6 +66,10 @@ __all__ = [
     "AnomalyDetector",
     # Standards Integration
     "StandardsMapper",
+    "SANSTop25Mapper",
+    "CERTSecureCodingMapper",
+    "IEEE12207Mapper",
+    "MitreATTACKMapper",
     "GDPRTechnicalControls",
     "HIPAASecurityRule",
     # Caching
