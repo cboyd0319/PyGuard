@@ -16,14 +16,14 @@ class TestPyGuardLogger:
     def test_info_logging(self):
         """Test info level logging."""
         logger = PyGuardLogger()
-        logger.info("Test message", file="test.py")
+        logger.info("Test message", file_path="test.py")
         # Would verify log output
         assert True
 
     def test_error_logging(self):
         """Test error level logging."""
         logger = PyGuardLogger()
-        logger.error("Test error", file="test.py")
+        logger.error("Test error", file_path="test.py")
         # Would verify log output
         assert True
 
