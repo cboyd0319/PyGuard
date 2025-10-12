@@ -83,14 +83,13 @@ PyGuard/
 │
 ├── 🤝 Community
 │   ├── .github/                     # GitHub-specific files
-│   │   ├── workflows/              # CI/CD workflows
-│   │   │   ├── test.yml
-│   │   │   ├── lint.yml
-│   │   │   ├── quality.yml
-│   │   │   ├── benchmarks.yml
-│   │   │   ├── coverage.yml
-│   │   │   ├── release.yml
-│   │   │   └── codeql.yml
+│   │   ├── workflows/              # CI/CD workflows (6 optimized workflows)
+│   │   │   ├── test.yml           # Cross-platform testing (5 jobs)
+│   │   │   ├── lint.yml           # Code quality & linting
+│   │   │   ├── benchmarks.yml     # Performance benchmarks
+│   │   │   ├── coverage.yml       # Test coverage reports
+│   │   │   ├── release.yml        # Automated releases
+│   │   │   └── codeql.yml         # Security scanning
 │   │   ├── ISSUE_TEMPLATE/         # Issue templates
 │   │   │   ├── bug_report.md
 │   │   │   ├── feature_request.md
@@ -120,7 +119,7 @@ PyGuard/
 | Example Files | 4 | Usage examples |
 | Documentation | 8 | Markdown documentation |
 | Configuration | 11 | Config & tool settings |
-| CI/CD Workflows | 7 | GitHub Actions |
+| CI/CD Workflows | 6 | GitHub Actions (optimized) |
 | Scripts | 3 | Automation scripts |
 | Community Files | 7 | Guidelines & templates |
 
@@ -150,7 +149,7 @@ PyGuard/
 
 - **Makefile**: 15+ development tasks
 - **Scripts**: Setup, quality checks, releases
-- **CI/CD**: 7 GitHub Actions workflows
+- **CI/CD**: 6 optimized GitHub Actions workflows
 - **Tox**: Multi-version testing
 
 ### Documentation
@@ -291,7 +290,7 @@ PyGuard/
 - ✅ **Test Infrastructure**: 13 test files with fixtures
 - ✅ **Documentation**: 8 comprehensive docs
 - ✅ **Automation**: 15+ Make targets, 3 scripts
-- ✅ **CI/CD**: 7 GitHub Actions workflows
+- ✅ **CI/CD**: 6 optimized GitHub Actions workflows
 - ✅ **Docker Support**: Complete containerization
 - ✅ **Community**: Templates & guidelines
 - ✅ **Examples**: Real-world usage patterns
