@@ -1,4 +1,4 @@
-"""PyGuard library modules."""
+"""PyGuard library modules - v0.8.0 with 55+ security checks and 20+ auto-fixes!"""
 
 from pyguard.lib.advanced_security import (
     AdvancedSecurityAnalyzer,
@@ -28,6 +28,19 @@ from pyguard.lib.standards_integration import (
     SANSTop25Mapper,
     StandardsMapper,
 )
+# NEW in v0.8.0: Ultra-advanced security detectors
+from pyguard.lib.ultra_advanced_security import (
+    APIRateLimitDetector,
+    BusinessLogicDetector,
+    CachePoisoningDetector,
+    ContainerEscapeDetector,
+    GraphQLInjectionDetector,
+    JWTSecurityDetector,
+    PrototypePollutionDetector,
+    SSTIDetector,
+)
+# NEW in v0.8.0: Ultra-advanced auto-fixes
+from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
 
 __all__ = [
     # Core
@@ -44,12 +57,22 @@ __all__ = [
     "BestPracticesFixer",
     "FormattingFixer",
     "WhitespaceFixer",
+    "UltraAdvancedSecurityFixer",  # NEW v0.8.0
     # Advanced Security
     "AdvancedSecurityAnalyzer",
     "TaintAnalyzer",
     "ReDoSDetector",
     "RaceConditionDetector",
     "IntegerSecurityAnalyzer",
+    # Ultra-Advanced Security (NEW v0.8.0)
+    "GraphQLInjectionDetector",
+    "SSTIDetector",
+    "JWTSecurityDetector",
+    "APIRateLimitDetector",
+    "ContainerEscapeDetector",
+    "PrototypePollutionDetector",
+    "CachePoisoningDetector",
+    "BusinessLogicDetector",
     # Supply Chain
     "SupplyChainAnalyzer",
     "SBOM",
