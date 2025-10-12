@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyguard"
-version = "0.4.0-dev"
-description = "Python QA and Auto-Fix Tool - Automated code quality, security, and formatting for Python projects"
+version = "0.5.0-dev"
+description = "The World's Best Python Security & Compliance Tool - ML-powered detection, MCP integration, 6+ compliance frameworks"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}

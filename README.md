@@ -95,15 +95,22 @@ Top Issues:
 
 ## ✨ **Features**
 
-### **🚀 NEW in v0.4.0 (In Development)**
+### **🚀 NEW in v0.5.0 (In Development)**
+- ✅ **MCP Integration**: Model Context Protocol support for enhanced knowledge sources
+- ✅ **ML-Powered Detection**: AI-enhanced pattern recognition and anomaly detection
+- ✅ **Multi-Framework Compliance**: NIST CSF, ISO 27001, SOC 2, PCI DSS, GDPR, HIPAA
+- ✅ **Risk Scoring**: ML-based risk assessment with confidence scores
+- ✅ **Beginner-Friendly**: Comprehensive guide for non-technical users
+- ✅ **162 Tests**: Enhanced test suite (up from 115, +41%)
+- ✅ **69% Coverage**: Improved from 66%
+
+### **🚀 v0.4.0 Features**
 - ✅ **Taint Tracking**: Advanced data flow analysis from sources to sinks
 - ✅ **ReDoS Detection**: Regular Expression Denial of Service vulnerabilities
 - ✅ **Race Condition Detection**: Time-of-check to time-of-use (TOCTOU) issues
 - ✅ **Integer Security**: Overflow and underflow vulnerability detection
 - ✅ **Supply Chain Security**: SBOM generation, dependency vulnerability scanning
 - ✅ **Knowledge Integration**: OWASP Top 10 2021, CWE Top 25 2023 databases
-- ✅ **115 Tests**: Comprehensive test suite (up from 72)
-- ✅ **66% Coverage**: Improved from 57%
 
 ### **🚀 v0.3.0 Features**
 - ✅ **Enhanced Security Detection**: 10+ new vulnerability types
@@ -324,14 +331,17 @@ result = formatter.format_file(
 
 ## 🆚 **Comparison with Other Tools**
 
-| Feature | PyGuard v0.4 | Ruff | Bandit | Semgrep | SonarQube |
+| Feature | PyGuard v0.5 | Ruff | Bandit | Semgrep | SonarQube |
 |---------|--------------|------|--------|---------|-----------|
 | **Auto-Fix** | ✅ | ✅ | ❌ | ⚠️ Limited | ⚠️ Limited |
 | **Security Analysis** | ✅ 25+ checks | ⚠️ Limited | ✅ 10 checks | ✅ 15 checks | ✅ 18 checks |
 | **Taint Tracking** | ✅ Full | ❌ | ❌ | ⚠️ Limited | ✅ Full |
 | **ReDoS Detection** | ✅ | ❌ | ❌ | ❌ | ⚠️ Partial |
+| **ML Detection** | ✅ Built-in | ❌ | ❌ | ❌ | ✅ Paid |
 | **Supply Chain** | ✅ SBOM | ❌ | ❌ | ❌ | ✅ Paid |
+| **MCP Integration** | ✅ Yes | ❌ | ❌ | ❌ | ❌ |
 | **OWASP/CWE Alignment** | ✅ ASVS 5.0 | ❌ | ⚠️ Partial | ⚠️ Partial | ✅ Full |
+| **Compliance Frameworks** | ✅ 6+ Standards | ❌ | ❌ | ❌ | ✅ Paid |
 | **Knowledge Base** | ✅ Integrated | ❌ | ❌ | ❌ | ✅ Paid |
 | **AST Analysis** | ✅ Full | ✅ | ⚠️ Partial | ✅ | ✅ |
 | **Formatting** | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -342,19 +352,24 @@ result = formatter.format_file(
 | **HTML Reports** | ✅ | ❌ | ❌ | ✅ | ✅ |
 | **JSON Reports** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Python API** | ✅ Full | ⚠️ Limited | ✅ | ⚠️ Limited | ✅ |
+| **Beginner Friendly** | ✅ Yes | ⚠️ Some | ❌ | ❌ | ⚠️ Some |
 | **Open Source** | ✅ MIT | ✅ MIT | ✅ Apache | ✅ LGPL | ❌ Commercial |
 | **Cost** | **FREE** | **FREE** | **FREE** | Free/Paid | **$$$** |
 
-**Why PyGuard v0.4?**
+**Why PyGuard v0.5?**
 - **World-Class Security**: OWASP ASVS v5.0, CWE Top 25, NIST SSDF aligned
 - **Advanced Detection**: Taint tracking, ReDoS, race conditions, integer security
+- **ML-Powered**: AI-enhanced pattern recognition and anomaly detection
+- **MCP Integration**: Extensible knowledge sources via Model Context Protocol
+- **Multi-Framework Compliance**: NIST CSF, ISO 27001, SOC 2, PCI DSS, GDPR, HIPAA
 - **Supply Chain Security**: SBOM generation, dependency vulnerability scanning
 - **Knowledge Integration**: OWASP Top 10 2021, CWE Top 25 2023 databases
-- **All-in-One**: Security + Supply Chain + Quality + Formatting
+- **All-in-One**: Security + Supply Chain + Quality + Formatting + Compliance
 - **Intelligent Analysis**: Context-aware AST analysis with minimal false positives
+- **Beginner-Friendly**: Comprehensive guides for non-technical users
 - **Performance**: Parallel processing + smart caching
 - **Production-Ready**: Enterprise logging, metrics, and observability
-- **Standards-Based**: SWEBOK, OWASP, CWE, NIST, SLSA compliance
+- **Standards-Based**: SWEBOK, OWASP, CWE, NIST, SLSA, ISO, PCI DSS compliance
 
 ---
 
@@ -491,6 +506,7 @@ pylint pyguard/
 ## 📚 **Documentation**
 
 ### Core Documentation
+- [Beginner's Guide](docs/BEGINNER-GUIDE.md) 🆕 **Start Here!**
 - [User Guide](docs/user-guide.md)
 - [API Reference](docs/api-reference.md)
 - [Configuration Guide](docs/configuration.md)
@@ -498,9 +514,14 @@ pylint pyguard/
 
 ### Security Features
 - [Security Rules](docs/security-rules.md)
-- [Advanced Security Analysis](docs/ADVANCED-SECURITY.md) 🆕
-- [Supply Chain Security](docs/SUPPLY-CHAIN-SECURITY.md) 🆕
+- [Advanced Security Analysis](docs/ADVANCED-SECURITY.md)
+- [Supply Chain Security](docs/SUPPLY-CHAIN-SECURITY.md)
 - [Best Practices Checks](docs/best-practices.md)
+
+### Advanced Features
+- [MCP Integration](docs/MCP-INTEGRATION.md) 🆕
+- [ML Detection](docs/ML-DETECTION.md) 🆕
+- [Compliance Frameworks](docs/COMPLIANCE.md) 🆕
 
 ### Architecture & Development
 - [Architecture](docs/ARCHITECTURE.md)
