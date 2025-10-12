@@ -1,0 +1,94 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Run Ruff
+      run: ruff check pyguard/
+      continue-on-error: true
+    
+    - name: Run Pylint
+      run: pylint pyguard/ --exit-zero
+      continue-on-error: true
+    
+    - name: Run Flake8
+      run: flake8 pyguard/
+      continue-on-error: true
+    
+    - name: Run MyPy
+      run: mypy pyguard/ --ignore-missing-imports
+      continue-on-error: true
+
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort
+    
+    - name: Check formatting with Black
+      run: black --check pyguard/ tests/ examples/
+      continue-on-error: true
+    
+    - name: Check import sorting with isort
+      run: isort --check pyguard/ tests/ examples/
+      continue-on-error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Run Bandit
+      run: bandit -r pyguard/ -ll
+      continue-on-error: true
+    
+    - name: Run Safety check
+      run: safety check
+      continue-on-error: true
