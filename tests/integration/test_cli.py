@@ -36,7 +36,7 @@ class TestCLIIntegration:
             text=True
         )
         assert result.returncode == 0
-        assert result.stdout.strip() == "0.1.0"
+        assert result.stdout.strip() == "0.2.0"
 
 
 class TestEndToEnd:
@@ -61,12 +61,16 @@ class TestEndToEnd:
         assert isinstance(security_issues, list)
         
         # Apply fixes
-        security_fixes = security.fix_file(test_file)
-        bp_fixes = best_practices.fix_file(test_file)
+        security_result = security.fix_file(test_file)
+        bp_result = best_practices.fix_file(test_file)
         
-        # Verify fixes were attempted
-        assert isinstance(security_fixes, list)
-        assert isinstance(bp_fixes, list)
+        # Verify fixes were attempted (returns tuple: (success, fixes))
+        assert isinstance(security_result, tuple)
+        assert len(security_result) == 2
+        assert isinstance(security_result[1], list)
+        assert isinstance(bp_result, tuple)
+        assert len(bp_result) == 2
+        assert isinstance(bp_result[1], list)
 
     def test_backup_and_restore(self, temp_dir):
         """Test backup and restore functionality."""
@@ -86,7 +90,8 @@ class TestEndToEnd:
         
         # Restore backup
         if backup_path and backup_path.exists():
-            backup_mgr.restore_backup(test_file, backup_path)
+            success = backup_mgr.restore_backup(backup_path, test_file)
+            assert success, "Backup restoration should succeed"
             
             # Verify restoration
             assert test_file.read_text() == original_content
