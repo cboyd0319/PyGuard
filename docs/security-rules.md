@@ -4,19 +4,40 @@ Complete reference for security vulnerability detection and fixes in PyGuard.
 
 ## Overview
 
-PyGuard detects and fixes 9 categories of security vulnerabilities in Python code:
+PyGuard v0.3.0 detects and fixes **20+ categories** of security vulnerabilities in Python code, aligned with OWASP ASVS v5.0 and CWE Top 25:
 
-| Category | Severity | Auto-Fix | Count |
-|----------|----------|----------|-------|
-| Hardcoded Passwords | HIGH | ⚠️ Warning | - |
-| SQL Injection | HIGH | ⚠️ Warning | - |
-| Command Injection | HIGH | ⚠️ Warning | - |
-| Insecure Random | MEDIUM | ✅ Replace | - |
-| Unsafe YAML | HIGH | ✅ Replace | - |
-| Pickle Usage | MEDIUM | ⚠️ Warning | - |
-| eval()/exec() | HIGH | ⚠️ Warning | - |
-| Weak Crypto | MEDIUM | ✅ Replace | - |
-| Path Traversal | HIGH | ⚠️ Warning | - |
+### Core Vulnerabilities
+| Category | Severity | OWASP | CWE | Auto-Fix |
+|----------|----------|-------|-----|----------|
+| Code Injection | HIGH | ASVS-5.2.1 | CWE-95 | ⚠️ Warning |
+| Hardcoded Passwords | HIGH | ASVS-2.6.3 | CWE-798 | ⚠️ Warning |
+| SQL Injection | HIGH | ASVS-5.3.4 | CWE-89 | ⚠️ Warning |
+| Command Injection | HIGH | ASVS-5.3.3 | CWE-78 | ⚠️ Warning |
+| Unsafe Deserialization | HIGH | ASVS-5.5.3 | CWE-502 | ✅ Replace |
+
+### Injection Attacks (NEW in v0.3.0)
+| Category | Severity | OWASP | CWE | Auto-Fix |
+|----------|----------|-------|-----|----------|
+| XXE Injection | HIGH | ASVS-5.5.2 | CWE-611 | ⚠️ Warning |
+| LDAP Injection | HIGH | ASVS-5.3.7 | CWE-90 | ⚠️ Warning |
+| NoSQL Injection | HIGH | ASVS-5.3.4 | CWE-943 | ⚠️ Warning |
+| CSV Injection | MEDIUM | ASVS-5.2.2 | CWE-1236 | ⚠️ Warning |
+| Format String | MEDIUM | ASVS-5.2.8 | CWE-134 | ⚠️ Warning |
+
+### Cryptography & Random
+| Category | Severity | OWASP | CWE | Auto-Fix |
+|----------|----------|-------|-----|----------|
+| Weak Crypto | MEDIUM | ASVS-6.2.1 | CWE-327 | ✅ Replace |
+| Weak Random | MEDIUM | ASVS-6.3.1 | CWE-330 | ✅ Replace |
+| Timing Attacks | MEDIUM | ASVS-2.7.3 | CWE-208 | ⚠️ Warning |
+
+### Network & File Security
+| Category | Severity | OWASP | CWE | Auto-Fix |
+|----------|----------|-------|-----|----------|
+| SSRF | HIGH | ASVS-13.1.1 | CWE-918 | ⚠️ Warning |
+| Path Traversal | HIGH | ASVS-12.3.1 | CWE-22 | ⚠️ Warning |
+| Insecure Temp Files | HIGH | ASVS-12.3.2 | CWE-377 | ⚠️ Warning |
+| Insecure HTTP | MEDIUM | ASVS-9.1.1 | CWE-319 | ⚠️ Warning |
 
 ---
 
@@ -473,3 +494,377 @@ Or in configuration:
 [security]
 severity_levels = ["HIGH", "MEDIUM"]
 ```
+
+---
+
+## 10. XML External Entity (XXE) Injection
+
+**Severity**: HIGH  
+**OWASP**: ASVS-5.5.2  
+**CWE**: CWE-611
+
+### Description
+
+Detects XML parsing vulnerabilities that allow XML External Entity attacks.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - XXE vulnerability
+import xml.etree.ElementTree as ET
+tree = ET.parse('user_file.xml')
+
+import xml.dom.minidom as minidom
+doc = minidom.parse('data.xml')
+
+from lxml import etree
+root = etree.parse('input.xml')
+```
+
+### Fix Applied
+
+```python
+# ✅ Fixed - Warning added
+import xml.etree.ElementTree as ET
+tree = ET.parse('user_file.xml')  # WARNING: XXE vulnerability
+```
+
+### Recommendation
+
+Use defusedxml library or disable external entity processing:
+
+```python
+# ✅ Good - Use defusedxml
+from defusedxml import ElementTree as ET
+tree = ET.parse('user_file.xml')
+
+# ✅ Good - Disable external entities
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import XMLParser
+
+class SafeXMLParser(XMLParser):
+    def __init__(self):
+        super().__init__()
+        self.entity_decl = False
+
+parser = SafeXMLParser()
+tree = ET.parse('file.xml', parser=parser)
+```
+
+---
+
+## 11. Server-Side Request Forgery (SSRF)
+
+**Severity**: HIGH  
+**OWASP**: ASVS-13.1.1  
+**CWE**: CWE-918
+
+### Description
+
+Detects potential SSRF vulnerabilities where user-controlled URLs are used in HTTP requests.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - SSRF vulnerability
+import requests
+url = user_input
+response = requests.get(url)
+
+import urllib.request
+response = urllib.request.urlopen(user_url)
+```
+
+### Recommendation
+
+Validate and whitelist URLs:
+
+```python
+# ✅ Good - URL validation
+import requests
+from urllib.parse import urlparse
+
+ALLOWED_HOSTS = ['api.example.com', 'trusted-service.com']
+
+def safe_request(user_url):
+    parsed = urlparse(user_url)
+    if parsed.hostname not in ALLOWED_HOSTS:
+        raise ValueError("Untrusted host")
+    if parsed.scheme != 'https':
+        raise ValueError("Only HTTPS allowed")
+    return requests.get(user_url)
+```
+
+---
+
+## 12. Timing Attack Vulnerabilities
+
+**Severity**: MEDIUM  
+**OWASP**: ASVS-2.7.3  
+**CWE**: CWE-208
+
+### Description
+
+Detects direct string comparison of secrets that are vulnerable to timing attacks.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - Timing attack vulnerability
+if password == stored_password:
+    return True
+
+if token == expected_token:
+    authenticate()
+
+if api_key == valid_key:
+    grant_access()
+```
+
+### Recommendation
+
+Use constant-time comparison:
+
+```python
+# ✅ Good - Constant-time comparison
+import hmac
+
+if hmac.compare_digest(password, stored_password):
+    return True
+
+# ✅ Good - Using secrets module
+import secrets
+
+if secrets.compare_digest(token, expected_token):
+    authenticate()
+```
+
+---
+
+## 13. LDAP Injection
+
+**Severity**: HIGH  
+**OWASP**: ASVS-5.3.7  
+**CWE**: CWE-90
+
+### Description
+
+Detects LDAP queries that may be vulnerable to injection attacks.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - LDAP injection
+import ldap
+filter_str = f"(uid={username})"
+results = conn.search_s(base_dn, ldap.SCOPE_SUBTREE, filter_str)
+```
+
+### Recommendation
+
+Escape LDAP special characters:
+
+```python
+# ✅ Good - Proper escaping
+import ldap
+from ldap.filter import escape_filter_chars
+
+safe_username = escape_filter_chars(username)
+filter_str = f"(uid={safe_username})"
+results = conn.search_s(base_dn, ldap.SCOPE_SUBTREE, filter_str)
+```
+
+---
+
+## 14. NoSQL Injection
+
+**Severity**: HIGH  
+**OWASP**: ASVS-5.3.4  
+**CWE**: CWE-943
+
+### Description
+
+Detects NoSQL (MongoDB) queries vulnerable to injection attacks.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - NoSQL injection
+from pymongo import MongoClient
+query = f"{{'username': '{user_input}'}}"
+result = collection.find(query)
+```
+
+### Recommendation
+
+Use parameterized queries:
+
+```python
+# ✅ Good - Parameterized query
+from pymongo import MongoClient
+query = {'username': user_input}
+result = collection.find(query)
+
+# ✅ Good - With validation
+def validate_username(username):
+    if not username.isalnum():
+        raise ValueError("Invalid username")
+    return username
+
+safe_username = validate_username(user_input)
+query = {'username': safe_username}
+result = collection.find(query)
+```
+
+---
+
+## 15. CSV Injection (Formula Injection)
+
+**Severity**: MEDIUM  
+**OWASP**: ASVS-5.2.2  
+**CWE**: CWE-1236
+
+### Description
+
+Detects potential CSV injection vulnerabilities where cells starting with special characters can execute formulas.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - CSV injection
+import csv
+data = [user_input]
+writer.writerow(data)  # If user_input starts with =, +, -, @
+```
+
+### Recommendation
+
+Sanitize CSV data:
+
+```python
+# ✅ Good - Sanitize CSV cells
+import csv
+
+def sanitize_csv_value(value):
+    if value and value[0] in ['=', '+', '-', '@']:
+        return "'" + value
+    return value
+
+data = [sanitize_csv_value(user_input)]
+writer.writerow(data)
+```
+
+---
+
+## 16. Insecure Temporary Files
+
+**Severity**: HIGH  
+**OWASP**: ASVS-12.3.2  
+**CWE**: CWE-377
+
+### Description
+
+Detects usage of deprecated and insecure `tempfile.mktemp()`.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - Race condition vulnerability
+import tempfile
+temp_path = tempfile.mktemp()
+```
+
+### Recommendation
+
+Use secure alternatives:
+
+```python
+# ✅ Good - Secure temp file
+import tempfile
+
+# Option 1: TemporaryFile (auto-deleted)
+with tempfile.TemporaryFile() as f:
+    f.write(b'data')
+
+# Option 2: NamedTemporaryFile
+with tempfile.NamedTemporaryFile(delete=False) as f:
+    temp_path = f.name
+    f.write(b'data')
+
+# Option 3: mkstemp (returns file descriptor)
+fd, temp_path = tempfile.mkstemp()
+with os.fdopen(fd, 'w') as f:
+    f.write('data')
+```
+
+---
+
+## 17. Format String Vulnerabilities
+
+**Severity**: MEDIUM  
+**OWASP**: ASVS-5.2.8  
+**CWE**: CWE-134
+
+### Description
+
+Detects dynamic format strings that can lead to information disclosure.
+
+### Detected Patterns
+
+```python
+# ❌ Bad - Format string vulnerability
+fmt = user_input
+message = fmt.format(data)
+```
+
+### Recommendation
+
+Use safe formatting:
+
+```python
+# ✅ Good - F-strings with explicit values
+name = user_input
+message = f"Hello, {name}"
+
+# ✅ Good - Template strings
+from string import Template
+template = Template("Hello, $name")
+message = template.substitute(name=user_input)
+
+# ✅ Good - Fixed format string
+message = "Hello, {}".format(sanitized_input)
+```
+
+---
+
+## Summary of v0.3.0 Enhancements
+
+PyGuard v0.3.0 now detects **20+ security vulnerability categories**:
+
+**Injection Attacks (9 types):**
+- Code Injection (eval/exec)
+- SQL Injection
+- Command Injection
+- XXE Injection
+- LDAP Injection
+- NoSQL Injection
+- CSV Injection
+- Format String
+- Path Traversal
+
+**Cryptography & Authentication (3 types):**
+- Weak Cryptography
+- Weak Random
+- Timing Attacks
+
+**Deserialization & Data (2 types):**
+- Unsafe Deserialization (YAML, Pickle)
+- Hardcoded Credentials
+
+**Network & File Security (4 types):**
+- SSRF
+- Insecure HTTP
+- Insecure Temp Files
+- Path Traversal
+
+**Coverage:** All mapped to OWASP ASVS v5.0 and CWE Top 25 standards.

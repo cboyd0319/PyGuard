@@ -36,7 +36,7 @@ class TestCLIIntegration:
             text=True
         )
         assert result.returncode == 0
-        assert result.stdout.strip() == "0.2.0"
+        assert result.stdout.strip() == "0.3.0"
 
 
 class TestEndToEnd:

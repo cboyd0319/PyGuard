@@ -337,3 +337,132 @@ class TestIssueDataclasses:
         assert issue.severity == "MEDIUM"
         assert issue.line_number == 20
         assert issue.fix_suggestion == "Refactor"
+
+
+class TestEnhancedSecurityDetection:
+    """Test cases for enhanced security detection features (v0.3.0)."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.analyzer = ASTAnalyzer()
+    
+    def test_detect_xxe_vulnerability(self):
+        """Test detection of XML External Entity (XXE) vulnerabilities."""
+        code = """
+import xml.etree.ElementTree
+tree = xml.etree.ElementTree.parse('file.xml')
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('XXE' in issue.category for issue in security_issues)
+        assert any('CWE-611' in str(issue.cwe_id) for issue in security_issues)
+    
+    def test_detect_ssrf(self):
+        """Test detection of Server-Side Request Forgery (SSRF)."""
+        code = """
+import requests
+url = user_input
+response = requests.get(url)
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('SSRF' in issue.category for issue in security_issues)
+    
+    def test_detect_path_traversal(self):
+        """Test detection of path traversal vulnerabilities."""
+        code = """
+file_path = user_input
+with open(file_path, 'r') as f:
+    data = f.read()
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('Path Traversal' in issue.category for issue in security_issues)
+    
+    def test_detect_insecure_temp_file(self):
+        """Test detection of insecure temporary file creation."""
+        code = """
+import tempfile
+temp = tempfile.mktemp()
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('Temp File' in issue.category for issue in security_issues)
+        assert any('mkstemp' in issue.fix_suggestion for issue in security_issues)
+    
+    def test_detect_timing_attack(self):
+        """Test detection of timing attack vulnerabilities."""
+        code = """
+if password == stored_password:
+    return True
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('Timing Attack' in issue.category for issue in security_issues)
+        assert any('compare_digest' in issue.fix_suggestion for issue in security_issues)
+    
+    def test_detect_ldap_injection(self):
+        """Test detection of LDAP injection vulnerabilities."""
+        code = """
+import ldap
+results = ldap.search(filter_str)
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('LDAP' in issue.category for issue in security_issues)
+    
+    def test_detect_format_string_vuln(self):
+        """Test detection of format string vulnerabilities."""
+        code = """
+def process(user_input):
+    fmt = user_input
+    message = fmt.format(data)
+    return message
+"""
+        security_issues, _ = self.analyzer.analyze_code(code)
+        assert len(security_issues) > 0
+        assert any('Format String' in issue.category for issue in security_issues)
+
+
+class TestEnhancedCodeQuality:
+    """Test cases for enhanced code quality detection (v0.3.0)."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.analyzer = ASTAnalyzer()
+    
+    def test_detect_long_method(self):
+        """Test detection of long methods."""
+        code = """
+def long_function():
+    \"\"\"A very long function.\"\"\"
+""" + "\n".join([f"    x{i} = {i}" for i in range(60)]) + """
+    return x0
+"""
+        _, quality_issues = self.analyzer.analyze_code(code)
+        assert len(quality_issues) > 0
+        assert any('Long Method' in issue.category for issue in quality_issues)
+    
+    def test_detect_type_comparison(self):
+        """Test detection of type() usage instead of isinstance()."""
+        code = """
+x = "test"
+if type(x) == str:
+    pass
+"""
+        _, quality_issues = self.analyzer.analyze_code(code)
+        assert len(quality_issues) > 0
+        assert any('isinstance' in issue.fix_suggestion for issue in quality_issues)
+    
+    def test_overly_broad_exception(self):
+        """Test detection of overly broad exception handling."""
+        code = """
+try:
+    risky_operation()
+except Exception:
+    print("error")
+"""
+        _, quality_issues = self.analyzer.analyze_code(code)
+        # This should detect broad exception handling
+        broad_exceptions = [i for i in quality_issues if 'broad' in i.message.lower()]
+        assert len(broad_exceptions) > 0
