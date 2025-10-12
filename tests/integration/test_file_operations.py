@@ -23,7 +23,11 @@ class TestMultiFileOperations:
         # Process all files
         for file_path in files:
             result = fixer.fix_file(file_path)
-            assert isinstance(result, list)
+            assert isinstance(result, tuple)
+            assert len(result) == 2
+            success, fixes = result
+            assert isinstance(success, bool)
+            assert isinstance(fixes, list)
 
     def test_large_file_handling(self, temp_dir):
         """Test handling of large files."""
@@ -37,8 +41,12 @@ class TestMultiFileOperations:
         fixer = BestPracticesFixer()
         result = fixer.fix_file(large_file)
         
-        # Should complete without errors
-        assert isinstance(result, list)
+        # Should complete without errors (returns tuple: (success, fixes))
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        success, fixes = result
+        assert isinstance(success, bool)
+        assert isinstance(fixes, list)
 
 
 class TestFileEncodingHandling:
@@ -53,7 +61,11 @@ class TestFileEncodingHandling:
         
         fixer = BestPracticesFixer()
         result = fixer.fix_file(file_path)
-        assert isinstance(result, list)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        success, fixes = result
+        assert isinstance(success, bool)
+        assert isinstance(fixes, list)
 
     def test_file_with_syntax_error(self, temp_dir):
         """Test handling of files with syntax errors."""
@@ -66,7 +78,11 @@ class TestFileEncodingHandling:
         # Should handle gracefully without crashing
         try:
             result = fixer.fix_file(file_path)
-            assert isinstance(result, list)
+            assert isinstance(result, tuple)
+            assert len(result) == 2
+            success, fixes = result
+            assert isinstance(success, bool)
+            assert isinstance(fixes, list)
         except Exception as e:
             # Acceptable to skip files with syntax errors
             pytest.skip(f"Syntax error handling: {e}")
