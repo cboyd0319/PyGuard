@@ -1,6 +1,7 @@
 """Unit tests for best practices fixer module."""
 
 import pytest
+
 from pyguard.lib.best_practices import BestPracticesFixer
 
 

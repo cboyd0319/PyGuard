@@ -1,9 +1,10 @@
 """Integration tests for PyGuard CLI."""
 
-import pytest
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
+
+import pytest
 
 
 class TestCLIIntegration:
@@ -13,6 +14,7 @@ class TestCLIIntegration:
         """Test that CLI module can be imported."""
         try:
             from pyguard import cli
+
             assert cli is not None
         except ImportError as e:
             pytest.skip(f"CLI module not fully implemented: {e}")
@@ -23,7 +25,7 @@ class TestCLIIntegration:
             [sys.executable, "-m", "pyguard.cli", "--help"],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent.parent
+            cwd=Path(__file__).parent.parent.parent,
         )
         # CLI might not be fully implemented yet
         assert result.returncode in [0, 1, 2]
@@ -33,7 +35,7 @@ class TestCLIIntegration:
         result = subprocess.run(
             [sys.executable, "-c", "import pyguard; print(pyguard.__version__)"],
             capture_output=True,
-            text=True
+            text=True,
         )
         assert result.returncode == 0
         assert result.stdout.strip() == "0.3.0"
@@ -47,23 +49,23 @@ class TestEndToEnd:
         # Create test file
         test_file = temp_dir / "vulnerable.py"
         test_file.write_text(sample_vulnerable_code)
-        
+
         # Import and run PyGuard components
-        from pyguard import SecurityFixer, BestPracticesFixer
-        
+        from pyguard import BestPracticesFixer, SecurityFixer
+
         security = SecurityFixer()
         best_practices = BestPracticesFixer()
-        
+
         # Run analysis
         security_issues = security.scan_file_for_issues(test_file)
-        
+
         # Verify some issues were found
         assert isinstance(security_issues, list)
-        
+
         # Apply fixes
         security_result = security.fix_file(test_file)
         bp_result = best_practices.fix_file(test_file)
-        
+
         # Verify fixes were attempted (returns tuple: (success, fixes))
         assert isinstance(security_result, tuple)
         assert len(security_result) == 2
@@ -75,23 +77,23 @@ class TestEndToEnd:
     def test_backup_and_restore(self, temp_dir):
         """Test backup and restore functionality."""
         from pyguard import BackupManager
-        
+
         # Create test file
         test_file = temp_dir / "test.py"
         original_content = "print('hello')"
         test_file.write_text(original_content)
-        
+
         # Create backup
         backup_mgr = BackupManager()
         backup_path = backup_mgr.create_backup(test_file)
-        
+
         # Modify file
         test_file.write_text("print('modified')")
-        
+
         # Restore backup
         if backup_path and backup_path.exists():
             success = backup_mgr.restore_backup(backup_path, test_file)
             assert success, "Backup restoration should succeed"
-            
+
             # Verify restoration
             assert test_file.read_text() == original_content

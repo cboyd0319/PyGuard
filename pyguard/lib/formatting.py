@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from pyguard.lib.core import PyGuardLogger, FileOperations
+from pyguard.lib.core import FileOperations, PyGuardLogger
 
 
 class FormattingFixer:
@@ -79,10 +79,10 @@ class FormattingFixer:
         """
         try:
             args = ["autopep8", "--in-place"]
-            
+
             if aggressive > 0:
                 args.extend(["--aggressive"] * aggressive)
-            
+
             args.append(str(file_path))
 
             result = subprocess.run(
@@ -255,15 +255,15 @@ class WhitespaceFixer:
         Returns:
             Tuple of (fixed content, number of lines fixed)
         """
-        lines = content.split('\n')
+        lines = content.split("\n")
         fixed_count = 0
 
         for i, line in enumerate(lines):
-            if line.endswith(' ') or line.endswith('\t'):
+            if line.endswith(" ") or line.endswith("\t"):
                 lines[i] = line.rstrip()
                 fixed_count += 1
 
-        return '\n'.join(lines), fixed_count
+        return "\n".join(lines), fixed_count
 
     def fix_blank_lines(self, content: str) -> Tuple[str, int]:
         """
@@ -277,10 +277,10 @@ class WhitespaceFixer:
         """
         # Replace 3+ consecutive blank lines with 2
         import re
-        
+
         original_content = content
-        content = re.sub(r'\n\n\n+', '\n\n\n', content)
-        
+        content = re.sub(r"\n\n\n+", "\n\n\n", content)
+
         fixes = 0 if content == original_content else 1
         return content, fixes
 
@@ -294,8 +294,8 @@ class WhitespaceFixer:
         Returns:
             Tuple of (fixed content, whether changes were made)
         """
-        if '\r\n' in content:
-            return content.replace('\r\n', '\n'), True
+        if "\r\n" in content:
+            return content.replace("\r\n", "\n"), True
         return content, False
 
     def fix_file_whitespace(self, file_path: Path) -> Dict[str, any]:

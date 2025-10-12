@@ -1,7 +1,9 @@
 """Unit tests for security fixer module."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from pyguard.lib.security import SecurityFixer
 
 

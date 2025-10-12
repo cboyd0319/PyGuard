@@ -7,10 +7,10 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
-from pyguard.lib.security import SecurityFixer
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
+from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
+from pyguard.lib.security import SecurityFixer
 
 
 class PyGuardCLI:
@@ -50,7 +50,7 @@ class PyGuardCLI:
 
             # Apply fixes
             success, fixes = self.security_fixer.fix_file(file_path)
-            
+
             if success and fixes:
                 results["fixed"] += 1
                 results["fixes"].extend(fixes)
@@ -79,7 +79,7 @@ class PyGuardCLI:
 
             # Apply fixes
             success, fixes = self.best_practices_fixer.fix_file(file_path)
-            
+
             if success and fixes:
                 results["fixed"] += 1
                 results["fixes"].extend(fixes)
@@ -120,7 +120,7 @@ class PyGuardCLI:
                 use_black=use_black,
                 use_isort=use_isort,
             )
-            
+
             if result["success"]:
                 results["formatted"] += 1
             else:
@@ -128,7 +128,9 @@ class PyGuardCLI:
 
         return results
 
-    def run_full_analysis(self, files: List[Path], create_backup: bool = True, fix: bool = True) -> dict:
+    def run_full_analysis(
+        self, files: List[Path], create_backup: bool = True, fix: bool = True
+    ) -> dict:
         """
         Run full analysis and fixes on files.
 
@@ -169,7 +171,7 @@ class PyGuardCLI:
             for file_path in files:
                 issues = self.security_fixer.scan_file_for_issues(file_path)
                 security_issues.extend(issues)
-            
+
             results["security"] = {"issues_found": len(security_issues), "issues": security_issues}
 
         return results
@@ -184,24 +186,30 @@ class PyGuardCLI:
         print("\n" + "=" * 60)
         print("PyGuard Analysis Results")
         print("=" * 60)
-        
+
         if "security" in results:
             print("\n🔒 Security:")
             if "fixed" in results["security"]:
-                print(f"   Files fixed: {results['security']['fixed']}/{results['security']['total']}")
+                print(
+                    f"   Files fixed: {results['security']['fixed']}/{results['security']['total']}"
+                )
                 print(f"   Fixes applied: {len(results['security']['fixes'])}")
             elif "issues_found" in results["security"]:
                 print(f"   Issues found: {results['security']['issues_found']}")
-        
+
         if "best_practices" in results:
             print("\n✨ Best Practices:")
-            print(f"   Files fixed: {results['best_practices']['fixed']}/{results['best_practices']['total']}")
+            print(
+                f"   Files fixed: {results['best_practices']['fixed']}/{results['best_practices']['total']}"
+            )
             print(f"   Fixes applied: {len(results['best_practices']['fixes'])}")
-        
+
         if "formatting" in results:
             print("\n🎨 Formatting:")
-            print(f"   Files formatted: {results['formatting']['formatted']}/{results['formatting']['total']}")
-        
+            print(
+                f"   Files formatted: {results['formatting']['formatted']}/{results['formatting']['total']}"
+            )
+
         print("\n" + "=" * 60)
         print(f"✅ Analysis complete! Check logs/pyguard.jsonl for details.")
         print("=" * 60 + "\n")
@@ -210,7 +218,7 @@ class PyGuardCLI:
 def main():
     """Main CLI entry point."""
     from pyguard import __version__
-    
+
     parser = argparse.ArgumentParser(
         description="PyGuard - Python QA and Auto-Fix Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -286,7 +294,7 @@ def main():
     all_files = []
     for path_str in args.paths:
         path = Path(path_str)
-        
+
         if path.is_file() and path.suffix == ".py":
             all_files.append(path)
         elif path.is_dir():
@@ -308,12 +316,14 @@ def main():
     if args.security_only:
         results = {"security": cli.run_security_fixes(all_files, create_backup)}
     elif args.formatting_only:
-        results = {"formatting": cli.run_formatting(
-            all_files,
-            create_backup,
-            use_black=not args.no_black,
-            use_isort=not args.no_isort,
-        )}
+        results = {
+            "formatting": cli.run_formatting(
+                all_files,
+                create_backup,
+                use_black=not args.no_black,
+                use_isort=not args.no_isort,
+            )
+        }
     elif args.best_practices_only:
         results = {"best_practices": cli.run_best_practices_fixes(all_files, create_backup)}
     else:

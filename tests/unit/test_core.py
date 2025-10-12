@@ -1,8 +1,10 @@
 """Unit tests for core module."""
 
-import pytest
 from pathlib import Path
-from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
+
+import pytest
+
+from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
 
 
 class TestPyGuardLogger:

@@ -12,7 +12,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -20,6 +20,7 @@ from pyguard.lib.core import PyGuardLogger
 @dataclass
 class AnalysisMetrics:
     """Metrics from a PyGuard analysis run."""
+
     total_files: int
     files_analyzed: int
     files_with_issues: int
@@ -35,92 +36,90 @@ class AnalysisMetrics:
 class ConsoleReporter:
     """
     Console reporter with formatted output.
-    
+
     Provides beautiful, human-readable console output with colors and formatting.
     """
-    
+
     def __init__(self, use_color: bool = True):
         """
         Initialize console reporter.
-        
+
         Args:
             use_color: Whether to use ANSI color codes
         """
         self.logger = PyGuardLogger()
         self.use_color = use_color
-        
+
         # ANSI color codes
         self.COLORS = {
-            'RED': '\033[91m' if use_color else '',
-            'GREEN': '\033[92m' if use_color else '',
-            'YELLOW': '\033[93m' if use_color else '',
-            'BLUE': '\033[94m' if use_color else '',
-            'MAGENTA': '\033[95m' if use_color else '',
-            'CYAN': '\033[96m' if use_color else '',
-            'BOLD': '\033[1m' if use_color else '',
-            'RESET': '\033[0m' if use_color else ''
+            "RED": "\033[91m" if use_color else "",
+            "GREEN": "\033[92m" if use_color else "",
+            "YELLOW": "\033[93m" if use_color else "",
+            "BLUE": "\033[94m" if use_color else "",
+            "MAGENTA": "\033[95m" if use_color else "",
+            "CYAN": "\033[96m" if use_color else "",
+            "BOLD": "\033[1m" if use_color else "",
+            "RESET": "\033[0m" if use_color else "",
         }
-    
+
     def print_header(self, title: str):
         """Print a formatted header."""
         border = "=" * 70
         print(f"\n{self.COLORS['BOLD']}{self.COLORS['CYAN']}{border}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BOLD']}{self.COLORS['CYAN']}{title:^70}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BOLD']}{self.COLORS['CYAN']}{border}{self.COLORS['RESET']}\n")
-    
+
     def print_section(self, title: str):
         """Print a section header."""
         print(f"\n{self.COLORS['BOLD']}{self.COLORS['BLUE']}▶ {title}{self.COLORS['RESET']}")
         print(f"{self.COLORS['BLUE']}{'-' * 70}{self.COLORS['RESET']}")
-    
-    def print_metric(self, label: str, value: Any, color: str = 'GREEN'):
+
+    def print_metric(self, label: str, value: Any, color: str = "GREEN"):
         """Print a metric with label and value."""
-        color_code = self.COLORS.get(color, '')
-        reset = self.COLORS['RESET']
+        color_code = self.COLORS.get(color, "")
+        reset = self.COLORS["RESET"]
         print(f"  {label:.<50} {color_code}{value}{reset}")
-    
+
     def print_summary(self, metrics: AnalysisMetrics):
         """Print analysis summary."""
         self.print_header("PyGuard Analysis Summary")
-        
+
         # Files section
         self.print_section("Files Processed")
-        self.print_metric("Total files", metrics.total_files, 'BLUE')
-        self.print_metric("Files analyzed", metrics.files_analyzed, 'CYAN')
-        self.print_metric("Files with issues", metrics.files_with_issues, 'YELLOW')
-        self.print_metric("Files fixed", metrics.files_fixed, 'GREEN')
-        
+        self.print_metric("Total files", metrics.total_files, "BLUE")
+        self.print_metric("Files analyzed", metrics.files_analyzed, "CYAN")
+        self.print_metric("Files with issues", metrics.files_with_issues, "YELLOW")
+        self.print_metric("Files fixed", metrics.files_fixed, "GREEN")
+
         # Issues section
         self.print_section("Issues Detected")
-        self.print_metric("Total issues", metrics.total_issues, 'BLUE')
-        self.print_metric("Security issues", metrics.security_issues, 'RED')
-        self.print_metric("Quality issues", metrics.quality_issues, 'YELLOW')
-        self.print_metric("Fixes applied", metrics.fixes_applied, 'GREEN')
-        
+        self.print_metric("Total issues", metrics.total_issues, "BLUE")
+        self.print_metric("Security issues", metrics.security_issues, "RED")
+        self.print_metric("Quality issues", metrics.quality_issues, "YELLOW")
+        self.print_metric("Fixes applied", metrics.fixes_applied, "GREEN")
+
         # Performance section
         self.print_section("Performance")
-        self.print_metric(
-            "Total analysis time",
-            f"{metrics.analysis_time_seconds:.2f}s",
-            'CYAN'
-        )
-        self.print_metric(
-            "Average time per file",
-            f"{metrics.avg_time_per_file_ms:.2f}ms",
-            'CYAN'
-        )
-        
+        self.print_metric("Total analysis time", f"{metrics.analysis_time_seconds:.2f}s", "CYAN")
+        self.print_metric("Average time per file", f"{metrics.avg_time_per_file_ms:.2f}ms", "CYAN")
+
         # Status
         print()
         if metrics.total_issues == 0:
-            print(f"{self.COLORS['GREEN']}{self.COLORS['BOLD']}✅ No issues found! Code is clean.{self.COLORS['RESET']}")
+            print(
+                f"{self.COLORS['GREEN']}{self.COLORS['BOLD']}✅ No issues found! Code is clean.{self.COLORS['RESET']}"
+            )
         elif metrics.fixes_applied > 0:
-            print(f"{self.COLORS['YELLOW']}{self.COLORS['BOLD']}⚠️  Issues found and {metrics.fixes_applied} fixes applied.{self.COLORS['RESET']}")
+            print(
+                f"{self.COLORS['YELLOW']}{self.COLORS['BOLD']}⚠️  Issues found and {metrics.fixes_applied} fixes applied.{self.COLORS['RESET']}"
+            )
         else:
-            print(f"{self.COLORS['RED']}{self.COLORS['BOLD']}❌ Issues found but not fixed. Run with --fix to apply fixes.{self.COLORS['RESET']}")
-        
+            print(
+                f"{self.COLORS['RED']}{self.COLORS['BOLD']}❌ Issues found but not fixed. Run with --fix to apply fixes.{self.COLORS['RESET']}"
+            )
+
         print()
-    
+
     def print_issue_details(
         self,
         severity: str,
@@ -128,18 +127,14 @@ class ConsoleReporter:
         message: str,
         file_path: str,
         line_number: int,
-        fix_suggestion: Optional[str] = None
+        fix_suggestion: Optional[str] = None,
     ):
         """Print details of a single issue."""
-        severity_colors = {
-            'HIGH': 'RED',
-            'MEDIUM': 'YELLOW',
-            'LOW': 'CYAN'
-        }
-        color = severity_colors.get(severity, 'RESET')
+        severity_colors = {"HIGH": "RED", "MEDIUM": "YELLOW", "LOW": "CYAN"}
+        color = severity_colors.get(severity, "RESET")
         color_code = self.COLORS[color]
-        reset = self.COLORS['RESET']
-        
+        reset = self.COLORS["RESET"]
+
         print(f"\n{color_code}[{severity}] {category}{reset}")
         print(f"  File: {file_path}:{line_number}")
         print(f"  Issue: {message}")
@@ -150,28 +145,25 @@ class ConsoleReporter:
 class JSONReporter:
     """
     JSON reporter for machine-readable output.
-    
+
     Generates structured JSON reports suitable for CI/CD integration.
     """
-    
+
     def __init__(self):
         """Initialize JSON reporter."""
         self.logger = PyGuardLogger()
-    
+
     def generate_report(
-        self,
-        metrics: AnalysisMetrics,
-        issues: List[Dict[str, Any]],
-        fixes: List[Dict[str, Any]]
+        self, metrics: AnalysisMetrics, issues: List[Dict[str, Any]], fixes: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         Generate JSON report.
-        
+
         Args:
             metrics: Analysis metrics
             issues: List of issues found
             fixes: List of fixes applied
-            
+
         Returns:
             Report as dictionary
         """
@@ -181,31 +173,25 @@ class JSONReporter:
             "summary": asdict(metrics),
             "issues": issues,
             "fixes": fixes,
-            "status": self._get_status(metrics)
+            "status": self._get_status(metrics),
         }
-    
+
     def save_report(self, report: Dict[str, Any], output_path: Path):
         """
         Save report to JSON file.
-        
+
         Args:
             report: Report dictionary
             output_path: Path to output file
         """
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(report, f, indent=2, ensure_ascii=False)
-            
-            self.logger.success(
-                f"JSON report saved to {output_path}",
-                category="Reporting"
-            )
+
+            self.logger.success(f"JSON report saved to {output_path}", category="Reporting")
         except Exception as e:
-            self.logger.error(
-                f"Failed to save JSON report: {str(e)}",
-                category="Reporting"
-            )
-    
+            self.logger.error(f"Failed to save JSON report: {str(e)}", category="Reporting")
+
     def _get_status(self, metrics: AnalysisMetrics) -> str:
         """Get overall status based on metrics."""
         if metrics.total_issues == 0:
@@ -221,28 +207,25 @@ class JSONReporter:
 class HTMLReporter:
     """
     HTML reporter for visual reports.
-    
+
     Generates beautiful HTML reports with charts and interactive elements.
     """
-    
+
     def __init__(self):
         """Initialize HTML reporter."""
         self.logger = PyGuardLogger()
-    
+
     def generate_report(
-        self,
-        metrics: AnalysisMetrics,
-        issues: List[Dict[str, Any]],
-        fixes: List[Dict[str, Any]]
+        self, metrics: AnalysisMetrics, issues: List[Dict[str, Any]], fixes: List[Dict[str, Any]]
     ) -> str:
         """
         Generate HTML report.
-        
+
         Args:
             metrics: Analysis metrics
             issues: List of issues found
             fixes: List of fixes applied
-            
+
         Returns:
             HTML as string
         """
@@ -259,7 +242,7 @@ class HTMLReporter:
                 <td>{issue.get('message', '')}</td>
             </tr>
             """
-        
+
         # Generate HTML
         html = f"""
 <!DOCTYPE html>
@@ -400,25 +383,19 @@ class HTMLReporter:
 </html>
         """
         return html.strip()
-    
+
     def save_report(self, html: str, output_path: Path):
         """
         Save report to HTML file.
-        
+
         Args:
             html: HTML string
             output_path: Path to output file
         """
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(html)
-            
-            self.logger.success(
-                f"HTML report saved to {output_path}",
-                category="Reporting"
-            )
+
+            self.logger.success(f"HTML report saved to {output_path}", category="Reporting")
         except Exception as e:
-            self.logger.error(
-                f"Failed to save HTML report: {str(e)}",
-                category="Reporting"
-            )
+            self.logger.error(f"Failed to save HTML report: {str(e)}", category="Reporting")
