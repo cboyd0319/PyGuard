@@ -1,22 +1,23 @@
 """Unit tests for AST analyzer module."""
 
 import pytest
+
 from pyguard.lib.ast_analyzer import (
     ASTAnalyzer,
-    SecurityVisitor,
+    CodeQualityIssue,
     CodeQualityVisitor,
     SecurityIssue,
-    CodeQualityIssue
+    SecurityVisitor,
 )
 
 
 class TestSecurityVisitor:
     """Test cases for SecurityVisitor class."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
-    
+
     def test_detect_eval(self):
         """Test detection of eval() usage."""
         code = """
@@ -24,9 +25,9 @@ result = eval(user_input)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('eval' in issue.message for issue in security_issues)
+        assert any("eval" in issue.message for issue in security_issues)
         assert any(issue.severity == "HIGH" for issue in security_issues)
-    
+
     def test_detect_exec(self):
         """Test detection of exec() usage."""
         code = """
@@ -34,8 +35,8 @@ exec(code_string)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('exec' in issue.message for issue in security_issues)
-    
+        assert any("exec" in issue.message for issue in security_issues)
+
     def test_detect_yaml_load(self):
         """Test detection of unsafe yaml.load()."""
         code = """
@@ -44,9 +45,9 @@ data = yaml.load(file)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('yaml.load' in issue.message for issue in security_issues)
-        assert any('safe_load' in issue.fix_suggestion for issue in security_issues)
-    
+        assert any("yaml.load" in issue.message for issue in security_issues)
+        assert any("safe_load" in issue.fix_suggestion for issue in security_issues)
+
     def test_detect_pickle(self):
         """Test detection of pickle.load()."""
         code = """
@@ -55,8 +56,8 @@ data = pickle.load(file)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('pickle' in issue.message.lower() for issue in security_issues)
-    
+        assert any("pickle" in issue.message.lower() for issue in security_issues)
+
     def test_detect_subprocess_shell(self):
         """Test detection of subprocess with shell=True."""
         code = """
@@ -65,9 +66,9 @@ result = subprocess.call(cmd, shell=True)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('shell=True' in issue.message for issue in security_issues)
-        assert any('Command Injection' in issue.category for issue in security_issues)
-    
+        assert any("shell=True" in issue.message for issue in security_issues)
+        assert any("Command Injection" in issue.category for issue in security_issues)
+
     def test_detect_weak_hash(self):
         """Test detection of weak hashing algorithms."""
         code = """
@@ -76,9 +77,9 @@ hash_value = hashlib.md5(data).hexdigest()
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('md5' in issue.message.lower() for issue in security_issues)
-        assert any('sha256' in issue.fix_suggestion.lower() for issue in security_issues)
-    
+        assert any("md5" in issue.message.lower() for issue in security_issues)
+        assert any("sha256" in issue.fix_suggestion.lower() for issue in security_issues)
+
     def test_detect_insecure_random(self):
         """Test detection of insecure random module usage."""
         code = """
@@ -87,9 +88,9 @@ token = random.random()
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('random' in issue.message.lower() for issue in security_issues)
-        assert any('secrets' in issue.fix_suggestion.lower() for issue in security_issues)
-    
+        assert any("random" in issue.message.lower() for issue in security_issues)
+        assert any("secrets" in issue.fix_suggestion.lower() for issue in security_issues)
+
     def test_detect_hardcoded_password(self):
         """Test detection of hardcoded passwords."""
         code = """
@@ -98,9 +99,9 @@ api_key = "sk-1234567890"
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) >= 2
-        assert any('password' in issue.message.lower() for issue in security_issues)
-        assert any('api_key' in issue.message.lower() for issue in security_issues)
-    
+        assert any("password" in issue.message.lower() for issue in security_issues)
+        assert any("api_key" in issue.message.lower() for issue in security_issues)
+
     def test_owasp_asvs_ids(self):
         """Test that OWASP ASVS IDs are included."""
         code = """
@@ -110,7 +111,7 @@ result = eval(user_input)
         assert len(security_issues) > 0
         assert security_issues[0].owasp_id is not None
         assert security_issues[0].cwe_id is not None
-    
+
     def test_no_false_positives_for_safe_code(self):
         """Test that safe code doesn't trigger issues."""
         code = """
@@ -125,11 +126,11 @@ result = calculate(data)
 
 class TestCodeQualityVisitor:
     """Test cases for CodeQualityVisitor class."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
-    
+
     def test_detect_missing_docstring(self):
         """Test detection of missing docstrings."""
         code = """
@@ -138,8 +139,8 @@ def my_function(x):
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('docstring' in issue.message.lower() for issue in quality_issues)
-    
+        assert any("docstring" in issue.message.lower() for issue in quality_issues)
+
     def test_detect_high_complexity(self):
         """Test detection of high cyclomatic complexity."""
         code = """
@@ -168,8 +169,8 @@ def complex_function(x):
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('complexity' in issue.message.lower() for issue in quality_issues)
-    
+        assert any("complexity" in issue.message.lower() for issue in quality_issues)
+
     def test_detect_too_many_parameters(self):
         """Test detection of too many function parameters."""
         code = """
@@ -178,8 +179,8 @@ def many_params(a, b, c, d, e, f, g):
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('parameter' in issue.message.lower() for issue in quality_issues)
-    
+        assert any("parameter" in issue.message.lower() for issue in quality_issues)
+
     def test_detect_mutable_default(self):
         """Test detection of mutable default arguments."""
         code = """
@@ -189,8 +190,8 @@ def bad_default(items=[]):
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('mutable default' in issue.message.lower() for issue in quality_issues)
-    
+        assert any("mutable default" in issue.message.lower() for issue in quality_issues)
+
     def test_detect_none_comparison(self):
         """Test detection of incorrect None comparison."""
         code = """
@@ -199,8 +200,8 @@ if x == None:
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('is None' in issue.fix_suggestion for issue in quality_issues)
-    
+        assert any("is None" in issue.fix_suggestion for issue in quality_issues)
+
     def test_detect_bool_comparison(self):
         """Test detection of explicit bool comparison."""
         code = """
@@ -209,8 +210,8 @@ if condition == True:
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('True' in issue.message or 'False' in issue.message for issue in quality_issues)
-    
+        assert any("True" in issue.message or "False" in issue.message for issue in quality_issues)
+
     def test_detect_bare_except(self):
         """Test detection of bare except clauses."""
         code = """
@@ -221,8 +222,8 @@ except:
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('bare except' in issue.message.lower() for issue in quality_issues)
-    
+        assert any("bare except" in issue.message.lower() for issue in quality_issues)
+
     def test_complexity_report(self):
         """Test complexity report generation."""
         code = """
@@ -237,10 +238,10 @@ def complex_func(x):
     return "negative"
 """
         complexity = self.analyzer.get_complexity_report(code)
-        assert 'simple_func' in complexity
-        assert 'complex_func' in complexity
-        assert complexity['simple_func'] < complexity['complex_func']
-    
+        assert "simple_func" in complexity
+        assert "complex_func" in complexity
+        assert complexity["simple_func"] < complexity["complex_func"]
+
     def test_ignore_private_function_docstring(self):
         """Test that private functions don't require docstrings."""
         code = """
@@ -249,17 +250,17 @@ def _private_function(x):
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         # Should not complain about missing docstring for private functions
-        docstring_issues = [i for i in quality_issues if 'docstring' in i.message.lower()]
+        docstring_issues = [i for i in quality_issues if "docstring" in i.message.lower()]
         assert len(docstring_issues) == 0
 
 
 class TestASTAnalyzer:
     """Test cases for ASTAnalyzer class."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
-    
+
     def test_analyze_mixed_issues(self):
         """Test analysis with both security and quality issues."""
         code = """
@@ -276,7 +277,7 @@ def bad_function(x, y, z, a, b, c, d):
         security_issues, quality_issues = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
         assert len(quality_issues) > 0
-    
+
     def test_handle_syntax_error(self):
         """Test handling of code with syntax errors."""
         code = """
@@ -287,14 +288,14 @@ def broken(
         # Should return empty lists for unparseable code
         assert security_issues == []
         assert quality_issues == []
-    
+
     def test_empty_code(self):
         """Test analysis of empty code."""
         code = ""
         security_issues, quality_issues = self.analyzer.analyze_code(code)
         assert security_issues == []
         assert quality_issues == []
-    
+
     def test_comment_only_code(self):
         """Test analysis of comment-only code."""
         code = """
@@ -308,7 +309,7 @@ def broken(
 
 class TestIssueDataclasses:
     """Test issue dataclass structures."""
-    
+
     def test_security_issue_creation(self):
         """Test SecurityIssue dataclass."""
         issue = SecurityIssue(
@@ -318,12 +319,12 @@ class TestIssueDataclasses:
             line_number=10,
             column=5,
             owasp_id="ASVS-5.2.1",
-            cwe_id="CWE-95"
+            cwe_id="CWE-95",
         )
         assert issue.severity == "HIGH"
         assert issue.line_number == 10
         assert issue.owasp_id == "ASVS-5.2.1"
-    
+
     def test_quality_issue_creation(self):
         """Test CodeQualityIssue dataclass."""
         issue = CodeQualityIssue(
@@ -332,7 +333,7 @@ class TestIssueDataclasses:
             message="Test message",
             line_number=20,
             column=10,
-            fix_suggestion="Refactor"
+            fix_suggestion="Refactor",
         )
         assert issue.severity == "MEDIUM"
         assert issue.line_number == 20
@@ -341,11 +342,11 @@ class TestIssueDataclasses:
 
 class TestEnhancedSecurityDetection:
     """Test cases for enhanced security detection features (v0.3.0)."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
-    
+
     def test_detect_xxe_vulnerability(self):
         """Test detection of XML External Entity (XXE) vulnerabilities."""
         code = """
@@ -354,9 +355,9 @@ tree = xml.etree.ElementTree.parse('file.xml')
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('XXE' in issue.category for issue in security_issues)
-        assert any('CWE-611' in str(issue.cwe_id) for issue in security_issues)
-    
+        assert any("XXE" in issue.category for issue in security_issues)
+        assert any("CWE-611" in str(issue.cwe_id) for issue in security_issues)
+
     def test_detect_ssrf(self):
         """Test detection of Server-Side Request Forgery (SSRF)."""
         code = """
@@ -366,8 +367,8 @@ response = requests.get(url)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('SSRF' in issue.category for issue in security_issues)
-    
+        assert any("SSRF" in issue.category for issue in security_issues)
+
     def test_detect_path_traversal(self):
         """Test detection of path traversal vulnerabilities."""
         code = """
@@ -377,8 +378,8 @@ with open(file_path, 'r') as f:
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('Path Traversal' in issue.category for issue in security_issues)
-    
+        assert any("Path Traversal" in issue.category for issue in security_issues)
+
     def test_detect_insecure_temp_file(self):
         """Test detection of insecure temporary file creation."""
         code = """
@@ -387,9 +388,9 @@ temp = tempfile.mktemp()
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('Temp File' in issue.category for issue in security_issues)
-        assert any('mkstemp' in issue.fix_suggestion for issue in security_issues)
-    
+        assert any("Temp File" in issue.category for issue in security_issues)
+        assert any("mkstemp" in issue.fix_suggestion for issue in security_issues)
+
     def test_detect_timing_attack(self):
         """Test detection of timing attack vulnerabilities."""
         code = """
@@ -398,9 +399,9 @@ if password == stored_password:
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('Timing Attack' in issue.category for issue in security_issues)
-        assert any('compare_digest' in issue.fix_suggestion for issue in security_issues)
-    
+        assert any("Timing Attack" in issue.category for issue in security_issues)
+        assert any("compare_digest" in issue.fix_suggestion for issue in security_issues)
+
     def test_detect_ldap_injection(self):
         """Test detection of LDAP injection vulnerabilities."""
         code = """
@@ -409,8 +410,8 @@ results = ldap.search(filter_str)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('LDAP' in issue.category for issue in security_issues)
-    
+        assert any("LDAP" in issue.category for issue in security_issues)
+
     def test_detect_format_string_vuln(self):
         """Test detection of format string vulnerabilities."""
         code = """
@@ -421,28 +422,32 @@ def process(user_input):
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
-        assert any('Format String' in issue.category for issue in security_issues)
+        assert any("Format String" in issue.category for issue in security_issues)
 
 
 class TestEnhancedCodeQuality:
     """Test cases for enhanced code quality detection (v0.3.0)."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
-    
+
     def test_detect_long_method(self):
         """Test detection of long methods."""
-        code = """
+        code = (
+            """
 def long_function():
     \"\"\"A very long function.\"\"\"
-""" + "\n".join([f"    x{i} = {i}" for i in range(60)]) + """
+"""
+            + "\n".join([f"    x{i} = {i}" for i in range(60)])
+            + """
     return x0
 """
+        )
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('Long Method' in issue.category for issue in quality_issues)
-    
+        assert any("Long Method" in issue.category for issue in quality_issues)
+
     def test_detect_type_comparison(self):
         """Test detection of type() usage instead of isinstance()."""
         code = """
@@ -452,8 +457,8 @@ if type(x) == str:
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         assert len(quality_issues) > 0
-        assert any('isinstance' in issue.fix_suggestion for issue in quality_issues)
-    
+        assert any("isinstance" in issue.fix_suggestion for issue in quality_issues)
+
     def test_overly_broad_exception(self):
         """Test detection of overly broad exception handling."""
         code = """
@@ -464,5 +469,5 @@ except Exception:
 """
         _, quality_issues = self.analyzer.analyze_code(code)
         # This should detect broad exception handling
-        broad_exceptions = [i for i in quality_issues if 'broad' in i.message.lower()]
+        broad_exceptions = [i for i in quality_issues if "broad" in i.message.lower()]
         assert len(broad_exceptions) > 0

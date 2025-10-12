@@ -2,10 +2,11 @@
 Pytest configuration and shared fixtures for PyGuard tests.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def temp_dir():
 @pytest.fixture
 def sample_vulnerable_code():
     """Sample vulnerable Python code for testing."""
-    return '''
+    return """
 import random
 import yaml
 password = "admin123"
@@ -30,13 +31,13 @@ def get_user(user_id):
 
 token = random.random()
 data = yaml.load(file)
-'''
+"""
 
 
 @pytest.fixture
 def sample_bad_practices_code():
     """Sample code with bad practices."""
-    return '''
+    return """
 def foo(x=[]):
     x.append(1)
     return x
@@ -48,7 +49,7 @@ except:
 
 if x == None:
     pass
-'''
+"""
 
 
 @pytest.fixture
@@ -69,15 +70,15 @@ def fixtures_dir():
 def mock_logger(monkeypatch):
     """Mock the PyGuardLogger for testing."""
     logs = []
-    
+
     class MockLogger:
         def info(self, message, **kwargs):
             logs.append(("INFO", message, kwargs))
-        
+
         def warning(self, message, **kwargs):
             logs.append(("WARNING", message, kwargs))
-        
+
         def error(self, message, exception=None, **kwargs):
             logs.append(("ERROR", message, kwargs))
-    
+
     return MockLogger(), logs

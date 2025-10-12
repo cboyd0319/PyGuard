@@ -9,14 +9,14 @@ __version__ = "0.3.0"
 __author__ = "Chad Boyd"
 __license__ = "MIT"
 
-from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
-from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.best_practices import BestPracticesFixer
-from pyguard.lib.formatting import FormattingFixer
-from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue, CodeQualityIssue
 from pyguard.lib.cache import AnalysisCache, ConfigCache
-from pyguard.lib.parallel import ParallelProcessor, BatchProcessor
-from pyguard.lib.reporting import ConsoleReporter, JSONReporter, HTMLReporter, AnalysisMetrics
+from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
+from pyguard.lib.formatting import FormattingFixer
+from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
+from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
+from pyguard.lib.security import SecurityFixer
 
 __all__ = [
     "PyGuardLogger",

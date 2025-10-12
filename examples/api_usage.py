@@ -6,41 +6,42 @@ This example shows how to use PyGuard as a library in your own Python code.
 """
 
 from pathlib import Path
-from pyguard import SecurityFixer, BestPracticesFixer, DiffGenerator
+
+from pyguard import BestPracticesFixer, DiffGenerator, SecurityFixer
 
 
 def analyze_code(code: str) -> dict:
     """
     Analyze Python code and return results.
-    
+
     Args:
         code: Python source code as string
-        
+
     Returns:
         Dictionary with analysis results
     """
     security = SecurityFixer()
     best_practices = BestPracticesFixer()
-    
+
     # Create temporary file
     temp_file = Path("/tmp/temp_analysis.py")
     temp_file.write_text(code)
-    
+
     # Run analysis
     security_issues = security.scan_file_for_issues(temp_file)
     security_fixes = security.fix_file(temp_file)
     bp_fixes = best_practices.fix_file(temp_file)
-    
+
     # Get modified code
     modified_code = temp_file.read_text()
-    
+
     # Generate diff
     diff_gen = DiffGenerator()
     diff = diff_gen.generate_diff(code, modified_code, "code.py")
-    
+
     # Clean up
     temp_file.unlink()
-    
+
     return {
         "security_issues": security_issues,
         "security_fixes": len(security_fixes),
@@ -53,7 +54,7 @@ def analyze_code(code: str) -> dict:
 def main():
     """Run API usage example."""
     # Sample vulnerable code
-    sample_code = '''
+    sample_code = """
 import random
 password = "secret123"
 
@@ -62,17 +63,17 @@ def get_user(user_id):
     return query
 
 token = random.random()
-'''
-    
+"""
+
     print("🔍 Analyzing sample code...\n")
     results = analyze_code(sample_code)
-    
+
     print(f"Security issues found: {len(results['security_issues'])}")
     print(f"Security fixes applied: {results['security_fixes']}")
     print(f"Best practice fixes: {results['best_practice_fixes']}")
-    
+
     print("\n📝 Diff:")
-    print(results['diff'])
+    print(results["diff"])
 
 
 if __name__ == "__main__":
