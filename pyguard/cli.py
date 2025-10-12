@@ -209,9 +209,17 @@ class PyGuardCLI:
 
 def main():
     """Main CLI entry point."""
+    from pyguard import __version__
+    
     parser = argparse.ArgumentParser(
         description="PyGuard - Python QA and Auto-Fix Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"PyGuard {__version__}",
     )
 
     parser.add_argument(
