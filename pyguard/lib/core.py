@@ -123,6 +123,10 @@ class PyGuardLogger:
         """Log success level message."""
         self.log("SUCCESS", message, **kwargs)
     
+    def debug(self, message: str, **kwargs) -> None:
+        """Log debug level message."""
+        self.log("DEBUG", message, **kwargs)
+    
     def track_file_processed(self) -> None:
         """Track that a file was processed."""
         self.metrics["files_processed"] += 1
