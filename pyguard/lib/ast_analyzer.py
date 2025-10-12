@@ -11,6 +11,7 @@ References:
 """
 
 import ast
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -283,6 +284,101 @@ class SecurityVisitor(ast.NodeVisitor):
                 )
             )
 
+        # CWE-918: Template Injection (Jinja2, Mako)
+        if func_name in ["jinja2.Template", "Template", "mako.template.Template"]:
+            # Check if template string is dynamic
+            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+                self.issues.append(
+                    SecurityIssue(
+                        severity="HIGH",
+                        category="Template Injection",
+                        message=f"{func_name}() with dynamic template enables Server-Side Template Injection (SSTI)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use pre-defined templates; sanitize user input with autoescape=True; avoid user-controlled templates",
+                        owasp_id="ASVS-5.2.6",
+                        cwe_id="CWE-1336",
+                    )
+                )
+
+        # CWE-798: JWT Security Issues
+        if func_name in ["jwt.encode", "jwt.decode"]:
+            # Check for weak algorithms
+            algorithm_arg = self._get_keyword_arg(node, "algorithm")
+            if algorithm_arg and isinstance(algorithm_arg, ast.Constant):
+                if algorithm_arg.value in ["none", "HS256"]:
+                    self.issues.append(
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Weak JWT Algorithm",
+                            message=f"JWT using weak algorithm '{algorithm_arg.value}'",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Use RS256 or ES256 for JWT signing; avoid 'none' algorithm",
+                            owasp_id="ASVS-6.2.1",
+                            cwe_id="CWE-327",
+                        )
+                    )
+
+        # CWE-639: Insecure Direct Object Reference (IDOR)
+        if func_name in ["query.get", "get_object_or_404", "filter"]:
+            # Check if using user-supplied ID without authorization check
+            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+                self.issues.append(
+                    SecurityIssue(
+                        severity="HIGH",
+                        category="IDOR",
+                        message=f"{func_name}() may allow unauthorized access to objects (IDOR)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Verify user authorization before accessing objects; use permission checks",
+                        owasp_id="ASVS-4.1.1",
+                        cwe_id="CWE-639",
+                    )
+                )
+
+        # CWE-502: GraphQL Injection
+        if func_name in ["graphql.execute", "execute_graphql"]:
+            # Check for dynamic queries
+            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+                self.issues.append(
+                    SecurityIssue(
+                        severity="HIGH",
+                        category="GraphQL Injection",
+                        message=f"{func_name}() with dynamic query enables GraphQL injection",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use parameterized queries; validate and sanitize user input; implement query depth limiting",
+                        owasp_id="ASVS-5.3.8",
+                        cwe_id="CWE-943",
+                    )
+                )
+
+        # CWE-1004: Sensitive Cookie Without HttpOnly Flag
+        if func_name in ["set_cookie", "response.set_cookie"]:
+            httponly_arg = self._get_keyword_arg(node, "httponly")
+            secure_arg = self._get_keyword_arg(node, "secure")
+            samesite_arg = self._get_keyword_arg(node, "samesite")
+            
+            if not httponly_arg or (isinstance(httponly_arg, ast.Constant) and not httponly_arg.value):
+                self.issues.append(
+                    SecurityIssue(
+                        severity="MEDIUM",
+                        category="Insecure Cookie",
+                        message="Cookie set without HttpOnly flag - vulnerable to XSS",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Set httponly=True, secure=True, samesite='Strict' for sensitive cookies",
+                        owasp_id="ASVS-3.4.2",
+                        cwe_id="CWE-1004",
+                    )
+                )
+
         # CWE-134: Format String Vulnerability
         if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
             # Check if format string comes from a variable (potential user input)
@@ -342,6 +438,24 @@ class SecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
+        # CWE-489: Debug Code Detection
+        if func_name in ["pdb.set_trace", "ipdb.set_trace", "breakpoint", "pudb.set_trace", "pprint.pprint", "print"]:
+            # Only flag as issue in non-debug contexts
+            if func_name in ["pdb.set_trace", "ipdb.set_trace", "breakpoint", "pudb.set_trace"]:
+                self.issues.append(
+                    SecurityIssue(
+                        severity="LOW",
+                        category="Debug Code",
+                        message=f"{func_name}() debug statement found - should be removed in production",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Remove all debug statements before deploying to production",
+                        owasp_id="ASVS-14.3.3",
+                        cwe_id="CWE-489",
+                    )
+                )
+
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign):
@@ -350,7 +464,7 @@ class SecurityVisitor(ast.NodeVisitor):
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
 
-                # OWASP ASVS-2.6.3, CWE-798: Hardcoded Credentials
+                # OWASP ASVS-2.6.3, CWE-798: Hardcoded Credentials (Enhanced)
                 sensitive_names = [
                     "password",
                     "passwd",
@@ -363,21 +477,49 @@ class SecurityVisitor(ast.NodeVisitor):
                     "credential",
                     "private_key",
                     "access_key",
+                    "aws_key",
+                    "gcp_key",
+                    "azure_key",
+                    "slack_token",
+                    "github_token",
+                    "db_password",
+                    "mongodb_uri",
+                    "redis_password",
+                    "jwt_secret",
                 ]
 
                 if any(name in var_name for name in sensitive_names):
                     # Check if value is a hardcoded string
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        if node.value.value and node.value.value not in ["", "None", "null"]:
+                        value_str = node.value.value
+                        if value_str and value_str not in ["", "None", "null", "YOUR_KEY_HERE", "TODO"]:
+                            # Enhanced detection with pattern matching
+                            secret_patterns = {
+                                r"AKIA[0-9A-Z]{16}": "AWS Access Key",
+                                r"AIza[0-9A-Za-z\-_]{35}": "Google API Key",
+                                r"xox[baprs]-[0-9]{10,12}-[0-9]{10,12}-[0-9a-zA-Z]{24}": "Slack Token",
+                                r"sk_live_[0-9a-zA-Z]{24}": "Stripe Live Key",
+                                r"ghp_[0-9a-zA-Z]{36}": "GitHub Personal Access Token",
+                                r"mongodb(\+srv)?://[^/]+:[^@]+@": "MongoDB Connection String",
+                                r"postgres://[^/]+:[^@]+@": "PostgreSQL Connection String",
+                                r"mysql://[^/]+:[^@]+@": "MySQL Connection String",
+                            }
+                            
+                            detected_type = "Hardcoded Credentials"
+                            for pattern, secret_type in secret_patterns.items():
+                                if re.search(pattern, value_str):
+                                    detected_type = secret_type
+                                    break
+                            
                             self.issues.append(
                                 SecurityIssue(
                                     severity="HIGH",
-                                    category="Hardcoded Credentials",
-                                    message=f"Hardcoded {var_name} detected",
+                                    category=detected_type,
+                                    message=f"Hardcoded {detected_type} detected in variable '{var_name}'",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     code_snippet=self._get_code_snippet(node),
-                                    fix_suggestion="Use environment variables: os.environ.get('VAR_NAME') or config files",
+                                    fix_suggestion="Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)",
                                     owasp_id="ASVS-2.6.3",
                                     cwe_id="CWE-798",
                                 )
