@@ -10,7 +10,6 @@ References:
 - Anthropic MCP | https://github.com/anthropics/mcp | High | Reference implementation
 """
 
-import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 

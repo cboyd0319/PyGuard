@@ -12,7 +12,7 @@ import concurrent.futures
 import multiprocessing
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 

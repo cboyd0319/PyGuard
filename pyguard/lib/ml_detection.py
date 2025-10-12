@@ -140,8 +140,6 @@ class CodeFeatureExtractor:
 
     def _calculate_max_nesting(self, tree: ast.AST) -> int:
         """Calculate maximum nesting level in AST."""
-        max_depth = 0
-
         class DepthVisitor(ast.NodeVisitor):
             def __init__(self):
                 self.depth = 0

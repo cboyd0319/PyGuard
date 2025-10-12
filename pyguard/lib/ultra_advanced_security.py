@@ -25,7 +25,7 @@ References:
 import ast
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set
+from typing import List
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger

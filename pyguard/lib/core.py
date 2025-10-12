@@ -7,7 +7,6 @@ Provides logging, backup management, diff generation, and file operations.
 import difflib
 import json
 import logging
-import os
 import shutil
 import uuid
 from datetime import datetime
