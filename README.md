@@ -95,14 +95,25 @@ Top Issues:
 
 ## ✨ **Features**
 
-### **🚀 NEW in v0.5.0 (In Development)**
+### **🚀 NEW in v0.6.0 (In Development)**
+- ✅ **35+ Security Checks**: Industry-leading detection coverage (up from 20+)
+- ✅ **JWT Security**: Detect weak algorithms and insecure configurations
+- ✅ **Template Injection**: Jinja2/Mako SSTI detection (CWE-1336)
+- ✅ **Mass Assignment**: Detect CWE-915 vulnerabilities
+- ✅ **Clickjacking Protection**: Missing X-Frame-Options detection
+- ✅ **Dependency Confusion**: Supply chain attack detection
+- ✅ **Enhanced Secret Scanning**: AWS, GCP, Azure, Slack, GitHub tokens
+- ✅ **Backup File Detection**: .bak, .old, .env file exposure
+- ✅ **Memory Disclosure**: traceback, locals(), vars() exposure
+- ✅ **178 Tests**: Enhanced test suite (up from 162, +10%)
+- ✅ **70% Coverage**: Improved from 69%
+
+### **🚀 v0.5.0 Features**
 - ✅ **MCP Integration**: Model Context Protocol support for enhanced knowledge sources
 - ✅ **ML-Powered Detection**: AI-enhanced pattern recognition and anomaly detection
 - ✅ **Multi-Framework Compliance**: NIST CSF, ISO 27001, SOC 2, PCI DSS, GDPR, HIPAA
 - ✅ **Risk Scoring**: ML-based risk assessment with confidence scores
 - ✅ **Beginner-Friendly**: Comprehensive guide for non-technical users
-- ✅ **162 Tests**: Enhanced test suite (up from 115, +41%)
-- ✅ **69% Coverage**: Improved from 66%
 
 ### **🚀 v0.4.0 Features**
 - ✅ **Taint Tracking**: Advanced data flow analysis from sources to sinks
@@ -156,6 +167,8 @@ Top Issues:
 - ✅ **LDAP Injection** (ASVS-5.3.7, CWE-90): LDAP query vulnerabilities
 - ✅ **NoSQL Injection** (ASVS-5.3.4, CWE-943): MongoDB injection patterns
 - ✅ **CSV Injection** (ASVS-5.2.2, CWE-1236): Formula injection in CSV exports
+- ✅ **Template Injection** (ASVS-5.2.6, CWE-1336): Jinja2/Mako SSTI detection **[NEW v0.6.0]**
+- ✅ **GraphQL Injection** (ASVS-5.3.8, CWE-943): Dynamic GraphQL query risks **[NEW v0.6.0]**
 
 **Network & File Security:**
 - ✅ **SSRF** (ASVS-13.1.1, CWE-918): Server-Side Request Forgery
@@ -163,6 +176,20 @@ Top Issues:
 - ✅ **Path Traversal** (ASVS-12.3.1, CWE-22): Unsafe path operations
 - ✅ **Insecure Temp Files** (ASVS-12.3.2, CWE-377): tempfile.mktemp() usage
 - ✅ **Format String** (ASVS-5.2.8, CWE-134): Dynamic format string vulnerabilities
+- ✅ **Backup File Exposure** (ASVS-14.3.4, CWE-530): .bak, .old, .env detection **[NEW v0.6.0]**
+
+**Access Control & Sessions:**
+- ✅ **IDOR Detection** (ASVS-4.1.1, CWE-639): Insecure Direct Object Reference **[NEW v0.6.0]**
+- ✅ **Mass Assignment** (ASVS-5.1.2, CWE-915): Unvalidated object updates **[NEW v0.6.0]**
+- ✅ **Insecure Cookies** (ASVS-3.4.2, CWE-1004): Missing HttpOnly/Secure flags **[NEW v0.6.0]**
+- ✅ **JWT Security** (ASVS-6.2.1, CWE-327): Weak algorithm detection **[NEW v0.6.0]**
+- ✅ **Clickjacking** (ASVS-13.1.4, CWE-1021): Missing X-Frame-Options **[NEW v0.6.0]**
+
+**Information Disclosure:**
+- ✅ **Enhanced Secret Scanning**: AWS, GCP, Azure, Slack, GitHub tokens **[NEW v0.6.0]**
+- ✅ **Database Credentials**: MongoDB, Redis, PostgreSQL URIs **[NEW v0.6.0]**
+- ✅ **Memory Disclosure** (ASVS-7.4.1, CWE-212): traceback, locals(), vars() **[NEW v0.6.0]**
+- ✅ **Debug Code** (ASVS-14.3.3, CWE-489): pdb, ipdb, breakpoint() **[NEW v0.6.0]**
 
 **Supply Chain Security (NEW!):**
 - ✅ **Dependency Scanning**: Automatic vulnerability detection in dependencies
