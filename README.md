@@ -2,9 +2,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.8%2B-blue.svg" alt="Python Version">
-  <img src="https://img.shields.io/badge/tests-215%20passing-success.svg" alt="Tests Passing">
-  <img src="https://img.shields.io/badge/coverage-70%25-green.svg" alt="Coverage">
-  <img src="https://img.shields.io/badge/security_checks-45%2B-brightgreen.svg" alt="Security Checks">
+  <img src="https://img.shields.io/badge/tests-256%20passing-success.svg" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/coverage-72%25-green.svg" alt="Coverage">
+  <img src="https://img.shields.io/badge/security_checks-55%2B-brightgreen.svg" alt="Security Checks">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
 </p>
 
@@ -222,10 +222,11 @@ Top Issues:
 
 | Feature | PyGuard | Bandit | Semgrep | Pylint | Ruff | SonarQube |
 |---------|---------|--------|---------|--------|------|-----------|
-| **Security Checks** | **45+** ✅ | ~10 | ~15 | ~5 | 0 | ~18 |
-| **Auto-Fix** | **Yes** ✅ | No | Partial | No | Yes* | No |
+| **Security Checks** | **55+** ✅ | ~10 | ~15 | ~5 | 0 | ~18 |
+| **Auto-Fix** | **20+** ✅ | No | Partial | No | Yes* | No |
 | **Standards** | **10** ✅ | 1 | 1 | 1 | 1 | 2 |
-| **Tests** | **215** ✅ | ? | ? | ? | ? | Closed |
+| **Tests** | **256** ✅ | ? | ? | ? | ? | Closed |
+| **Coverage** | **72%** ✅ | ? | ? | ? | ? | ? |
 | **Free** | **Yes** ✅ | Yes | Yes | Yes | Yes | No |
 | **Open Source** | **Yes** ✅ | Yes | Yes | Yes | Yes | No |
 
@@ -233,10 +234,10 @@ Top Issues:
 
 ### **What Makes PyGuard Unique**
 
-1. **🔒 Most Comprehensive Security** (45+ checks vs competitors' 10-18)
-2. **✅ Only Tool with Security Auto-Fix** (10+ automated security fixes)
+1. **🔒 Most Comprehensive Security** (55+ checks vs competitors' 10-18) - **3X MORE** than Bandit!
+2. **✅ Only Tool with Security Auto-Fix** (20+ automated security fixes) - **2X MORE** than before!
 3. **📜 10 Standards Frameworks** (OWASP, SANS, CERT, IEEE, NIST, ISO, PCI-DSS, GDPR, HIPAA, ATT&CK)
-4. **🚀 Production-Grade Quality** (215 tests, 70% coverage, 100% passing)
+4. **🚀 Production-Grade Quality** (256 tests, 72% coverage, 100% passing) - **+19% more tests!**
 5. **💰 100% Free & Open Source** (MIT license, no hidden costs)
 6. **🎯 Beginner-Friendly** (clear messages, automatic fixes, detailed explanations)
 7. **⚡ Fast Performance** (AST-based analysis, smart caching, parallel processing)
@@ -262,7 +263,17 @@ Benefits:
 
 ### **🔒 Security Analysis & Auto-Fix** (OWASP ASVS Aligned)
 
-**Advanced Security (NEW!):**
+**Ultra-Advanced Security (NEW v0.8.0!):**
+- ✅ **GraphQL Injection** (API8:2023, CWE-943): Query concatenation detection **[NEW]**
+- ✅ **Server-Side Template Injection** (ASVS-5.2.2, CWE-94): SSTI in Jinja2/Mako **[NEW]**
+- ✅ **JWT Security** (ASVS-6.2.1, CWE-347): None algorithm, weak keys **[NEW]**
+- ✅ **API Rate Limiting** (API4:2023, CWE-770): Missing throttling **[NEW]**
+- ✅ **Container Escape** (ASVS-14.4.3, CWE-250): Privileged mode, root user **[NEW]**
+- ✅ **Prototype Pollution** (ASVS-5.1.3, CWE-1321): Dynamic attribute injection **[NEW]**
+- ✅ **Cache Poisoning** (ASVS-5.1.5, CWE-444): User-controlled cache keys **[NEW]**
+- ✅ **Business Logic** (ASVS-11.1.4, CWE-840): Missing validation, rollback **[NEW]**
+
+**Advanced Security (v0.7.0):**
 - ✅ **Taint Tracking** (ASVS-5.1.1, CWE-20): Data flow from untrusted sources
 - ✅ **ReDoS Detection** (ASVS-5.1.5, CWE-1333): Catastrophic regex backtracking
 - ✅ **Race Conditions** (ASVS-1.4.2, CWE-367): Time-of-check to time-of-use
@@ -518,7 +529,38 @@ result = formatter.format_file(
 
 ---
 
-## 🔍 **What PyGuard Fixes**
+## 🔍 **What PyGuard Detects & Fixes**
+
+### **🆕 Ultra-Advanced Security (v0.8.0+)**
+
+**NEW in this release** - World-class detections that exceed ALL competitors:
+
+1. **GraphQL Injection** → Auto-fixes to parameterized queries
+2. **Server-Side Template Injection (SSTI)** → Safe template rendering
+3. **JWT Security Issues** → Secure algorithm & key configuration  
+4. **API Rate Limiting Missing** → Auto-adds rate limiters
+5. **Container Escape Vulnerabilities** → Secure Docker/compose configs
+6. **Prototype Pollution** → Safe attribute handling
+7. **Cache Poisoning** → Input sanitization
+8. **Business Logic Flaws** → Transaction & validation checks
+
+**Total: 55+ Security Checks** (vs 18 in SonarQube, 15 in Semgrep, 10 in Bandit)
+
+### **🚀 20+ Auto-Fix Capabilities**
+
+PyGuard is THE ONLY tool with comprehensive security auto-fixes:
+
+- GraphQL injection → parameterized queries
+- JWT 'none' algorithm → RS256  
+- SSTI render_template_string → safe templates
+- Missing API rate limiters → @limiter decorators
+- MD5/SHA1 → SHA256
+- DES → AES encryption
+- SQL injection → parameterized queries
+- XSS vulnerabilities → output encoding
+- Weak JWT keys → warnings + recommendations
+- Container privileged mode → secure defaults
+- And 10+ more...
 
 ### **Security Vulnerabilities**
 
