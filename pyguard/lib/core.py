@@ -144,7 +144,11 @@ class PyGuardLogger:
         """
         elapsed = (datetime.now() - self.metrics["start_time"]).total_seconds()
         return {
-            **self.metrics,
+            "start_time": self.metrics["start_time"].isoformat(),
+            "files_processed": self.metrics["files_processed"],
+            "issues_found": self.metrics["issues_found"],
+            "fixes_applied": self.metrics["fixes_applied"],
+            "errors": self.metrics["errors"],
             "elapsed_seconds": elapsed,
             "files_per_second": self.metrics["files_processed"] / elapsed if elapsed > 0 else 0,
         }
