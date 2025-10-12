@@ -3,9 +3,13 @@
 import pytest
 
 from pyguard.lib.standards_integration import (
+    CERTSecureCodingMapper,
     ComplianceRequirement,
     GDPRTechnicalControls,
     HIPAASecurityRule,
+    IEEE12207Mapper,
+    MitreATTACKMapper,
+    SANSTop25Mapper,
     StandardsMapper,
 )
 
@@ -208,3 +212,171 @@ class TestHIPAASecurityRule:
         safeguards = result["safeguards_status"]
         # Should have at least one FAIL
         assert any(status == "FAIL" for status in safeguards.values())
+
+
+class TestSANSTop25Mapper:
+    """Test SANS CWE Top 25 mapper."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mapper = SANSTop25Mapper()
+
+    def test_initialization(self):
+        """Test SANS mapper initialization."""
+        assert self.mapper is not None
+        assert len(self.mapper.SANS_TOP_25_2024) == 25
+
+    def test_get_sans_ranking(self):
+        """Test getting SANS ranking for CWE."""
+        rank = self.mapper.get_sans_ranking("CWE-89")  # SQL Injection
+        assert rank == 3
+        
+        rank = self.mapper.get_sans_ranking("CWE-78")  # OS Command Injection
+        assert rank == 6
+
+    def test_get_sans_ranking_not_in_top25(self):
+        """Test getting ranking for CWE not in Top 25."""
+        rank = self.mapper.get_sans_ranking("CWE-9999")
+        assert rank is None
+
+    def test_prioritize_issues(self):
+        """Test prioritizing issues by SANS ranking."""
+        issues = [
+            {"type": "sql_injection", "cwe_id": "CWE-89"},  # Rank 3
+            {"type": "command_injection", "cwe_id": "CWE-78"},  # Rank 6
+            {"type": "other", "cwe_id": "CWE-9999"},  # Not in Top 25
+        ]
+        
+        prioritized = self.mapper.prioritize_issues(issues)
+        
+        # Should be ordered by SANS rank
+        assert prioritized[0]["cwe_id"] == "CWE-89"  # Rank 3 first
+        assert prioritized[1]["cwe_id"] == "CWE-78"  # Rank 6 second
+        assert prioritized[2]["cwe_id"] == "CWE-9999"  # Non-Top25 last
+
+    def test_generate_sans_report(self):
+        """Test generating SANS Top 25 report."""
+        issues = [
+            {"type": "sql_injection", "cwe_id": "CWE-89"},
+            {"type": "command_injection", "cwe_id": "CWE-78"},
+        ]
+        
+        report = self.mapper.generate_sans_report(issues)
+        
+        assert "total_top25_weaknesses_found" in report
+        assert report["total_top25_weaknesses_found"] == 2
+        assert "coverage_percentage" in report
+
+
+class TestCERTSecureCodingMapper:
+    """Test CERT Secure Coding mapper."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mapper = CERTSecureCodingMapper()
+
+    def test_initialization(self):
+        """Test CERT mapper initialization."""
+        assert self.mapper is not None
+        assert len(self.mapper.CERT_PYTHON_RULES) > 0
+
+    def test_map_to_cert_rules(self):
+        """Test mapping issues to CERT rules."""
+        rules = self.mapper.map_to_cert_rules("code_injection")
+        assert "IDS08-PY" in rules
+        
+        rules = self.mapper.map_to_cert_rules("insecure_random")
+        assert "SEC02-PY" in rules
+
+    def test_map_unknown_issue(self):
+        """Test mapping unknown issue type."""
+        rules = self.mapper.map_to_cert_rules("unknown_issue")
+        assert rules == []
+
+    def test_generate_cert_report(self):
+        """Test generating CERT compliance report."""
+        issues = [
+            {"type": "code_injection", "severity": "HIGH"},
+            {"type": "insecure_random", "severity": "MEDIUM"},
+        ]
+        
+        report = self.mapper.generate_cert_report(issues)
+        
+        assert "total_cert_violations" in report
+        assert report["total_cert_violations"] > 0
+        assert "violations_by_rule" in report
+
+
+class TestIEEE12207Mapper:
+    """Test IEEE 12207 lifecycle mapper."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mapper = IEEE12207Mapper()
+
+    def test_initialization(self):
+        """Test IEEE mapper initialization."""
+        assert self.mapper is not None
+        assert len(self.mapper.IEEE_PROCESSES) > 0
+
+    def test_map_to_lifecycle_processes(self):
+        """Test mapping to lifecycle processes."""
+        processes = self.mapper.map_to_lifecycle_processes("security")
+        assert len(processes) > 0
+        assert "6.4.3" in processes
+
+    def test_map_quality_issues(self):
+        """Test mapping quality issues to processes."""
+        processes = self.mapper.map_to_lifecycle_processes("quality")
+        assert len(processes) > 0
+
+    def test_generate_lifecycle_report(self):
+        """Test generating lifecycle compliance report."""
+        issues = [
+            {"category": "security", "severity": "HIGH"},
+            {"category": "quality", "severity": "MEDIUM"},
+        ]
+        
+        report = self.mapper.generate_lifecycle_report(issues)
+        
+        assert "lifecycle_compliance" in report
+        assert report["lifecycle_compliance"] in ["FULL", "PARTIAL"]
+
+
+class TestMitreATTACKMapper:
+    """Test Mitre ATT&CK framework mapper."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mapper = MitreATTACKMapper()
+
+    def test_initialization(self):
+        """Test ATT&CK mapper initialization."""
+        assert self.mapper is not None
+        assert len(self.mapper.ATTACK_TECHNIQUES) > 0
+
+    def test_map_to_attack_techniques(self):
+        """Test mapping issues to ATT&CK techniques."""
+        techniques = self.mapper.map_to_attack_techniques("code_injection")
+        assert len(techniques) > 0
+        assert "T1059" in techniques
+
+    def test_map_credentials_issue(self):
+        """Test mapping credential issues."""
+        techniques = self.mapper.map_to_attack_techniques("hardcoded_credentials")
+        assert "T1552" in techniques
+
+    def test_generate_threat_model(self):
+        """Test generating ATT&CK threat model."""
+        issues = [
+            {"type": "code_injection", "severity": "HIGH"},
+            {"type": "hardcoded_credentials", "severity": "HIGH"},
+        ]
+        
+        model = self.mapper.generate_threat_model(issues)
+        
+        assert "threat_exposure" in model
+        assert model["threat_exposure"] in ["LOW", "MEDIUM", "HIGH"]
+        assert "techniques_enabled" in model
+        assert "attack_surface" in model
+        assert "recommendations" in model

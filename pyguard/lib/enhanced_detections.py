@@ -379,3 +379,414 @@ class MemoryDisclosureDetector:
                     break
         
         return issues
+
+
+class AuthenticationBypassDetector:
+    """
+    Detect authentication bypass vulnerabilities.
+    
+    CWE-287: Improper Authentication
+    CWE-306: Missing Authentication for Critical Function
+    
+    References:
+    - OWASP ASVS v5.0 Section 2: Authentication
+    - SANS CWE Top 25 #14: CWE-287
+    """
+
+    BYPASS_PATTERNS = [
+        (r"if\s+True\s*:", "Hardcoded True condition bypasses authentication"),
+        (r"if\s+1\s*:", "Hardcoded 1 condition bypasses authentication"),
+        (r"if\s+False\s*:\s*#.*auth", "Disabled authentication check"),
+        (r"#.*authenticate\(", "Commented out authentication"),
+        (r"pass\s*#.*auth", "Authentication logic removed"),
+        (r"return\s+True\s*#.*auth", "Always returns authenticated"),
+    ]
+
+    def __init__(self):
+        """Initialize authentication bypass detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for authentication bypass patterns.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.BYPASS_PATTERNS:
+                if re.search(pattern, line, re.IGNORECASE):
+                    issues.append(
+                        SecurityIssue(
+                            severity="CRITICAL",
+                            category="Authentication Bypass",
+                            message=description,
+                            line_number=line_num,
+                            column=0,
+                            code_snippet=line.strip(),
+                            fix_suggestion="Implement proper authentication logic; never hardcode authentication decisions",
+                            owasp_id="ASVS-2.1.1",
+                            cwe_id="CWE-287",
+                        )
+                    )
+                    break
+        
+        return issues
+
+
+class AuthorizationBypassDetector:
+    """
+    Detect authorization bypass vulnerabilities.
+    
+    CWE-285: Improper Authorization
+    CWE-639: Insecure Direct Object Reference (IDOR)
+    
+    References:
+    - OWASP Top 10 2021 A01: Broken Access Control
+    - SANS CWE Top 25 #25: CWE-863
+    """
+
+    IDOR_PATTERNS = [
+        (r"\.get\(id\)", "Direct object access without authorization check"),
+        (r"\.get\(request\..*id", "User-supplied ID without ownership verification"),
+        (r"\.filter_by\(id=.*request", "Database query with user-supplied ID"),
+        (r"WHERE\s+id\s*=\s*['\"]?\w+['\"]?", "SQL query with unverified ID"),
+    ]
+
+    def __init__(self):
+        """Initialize authorization bypass detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for authorization bypass patterns.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.IDOR_PATTERNS:
+                if re.search(pattern, line, re.IGNORECASE):
+                    # Check if there's an ownership/permission check nearby
+                    context_start = max(0, line_num - 3)
+                    context_end = min(len(lines), line_num + 3)
+                    context = "\n".join(lines[context_start:context_end])
+                    
+                    # Look for authorization patterns
+                    if not re.search(r"(check_permission|authorize|owner|current_user)", context, re.IGNORECASE):
+                        issues.append(
+                            SecurityIssue(
+                                severity="HIGH",
+                                category="Authorization Bypass (IDOR)",
+                                message=description,
+                                line_number=line_num,
+                                column=0,
+                                code_snippet=line.strip(),
+                                fix_suggestion="Verify object ownership before access; check user permissions",
+                                owasp_id="ASVS-4.1.1",
+                                cwe_id="CWE-639",
+                            )
+                        )
+                        break
+        
+        return issues
+
+
+class InsecureSessionManagementDetector:
+    """
+    Detect insecure session management issues.
+    
+    CWE-384: Session Fixation
+    CWE-613: Insufficient Session Expiration
+    
+    References:
+    - OWASP ASVS v5.0 Section 3: Session Management
+    - OWASP Top 10 2021 A07: Identification and Authentication Failures
+    """
+
+    SESSION_PATTERNS = [
+        (r"session\[.+\]\s*=\s*request\.", "Session data from untrusted input"),
+        (r"session\.permanent\s*=\s*True", "Permanent session without timeout"),
+        (r"session_id\s*=\s*.*random\.", "Weak session ID generation"),
+        (r"cookie.*httponly\s*=\s*False", "Session cookie without HttpOnly flag"),
+        (r"cookie.*secure\s*=\s*False", "Session cookie without Secure flag"),
+    ]
+
+    def __init__(self):
+        """Initialize session management detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for insecure session management.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.SESSION_PATTERNS:
+                if re.search(pattern, line, re.IGNORECASE):
+                    issues.append(
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Insecure Session Management",
+                            message=description,
+                            line_number=line_num,
+                            column=0,
+                            code_snippet=line.strip(),
+                            fix_suggestion="Use secure session management; set HttpOnly, Secure, and SameSite flags; implement session timeout",
+                            owasp_id="ASVS-3.2.1",
+                            cwe_id="CWE-384",
+                        )
+                    )
+                    break
+        
+        return issues
+
+
+class ResourceLeakDetector:
+    """
+    Detect resource leak vulnerabilities.
+    
+    CWE-404: Improper Resource Shutdown or Release
+    CWE-772: Missing Release of Resource after Effective Lifetime
+    
+    References:
+    - CERT Secure Coding FIO51-PY
+    """
+
+    RESOURCE_PATTERNS = [
+        (r"open\([^)]+\)(?!.*with)", "File opened without context manager"),
+        (r"socket\.socket\(", "Socket opened without proper closure"),
+        (r"subprocess\.Popen\(", "Process without proper cleanup"),
+        (r"threading\.Thread\(", "Thread without join()"),
+    ]
+
+    def __init__(self):
+        """Initialize resource leak detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for resource leaks.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.RESOURCE_PATTERNS:
+                if re.search(pattern, line):
+                    # Check if 'with' statement is used in context
+                    context_start = max(0, line_num - 2)
+                    context = "\n".join(lines[context_start:line_num])
+                    
+                    if "with " not in context:
+                        issues.append(
+                            SecurityIssue(
+                                severity="MEDIUM",
+                                category="Resource Leak",
+                                message=description,
+                                line_number=line_num,
+                                column=0,
+                                code_snippet=line.strip(),
+                                fix_suggestion="Use context managers (with statement) to ensure proper resource cleanup",
+                                owasp_id="ASVS-1.4.2",
+                                cwe_id="CWE-404",
+                            )
+                        )
+                        break
+        
+        return issues
+
+
+class UncontrolledResourceConsumptionDetector:
+    """
+    Detect uncontrolled resource consumption (DoS) vulnerabilities.
+    
+    CWE-400: Uncontrolled Resource Consumption
+    CWE-770: Allocation of Resources Without Limits
+    
+    References:
+    - OWASP ASVS v5.0 Section 5.1.5: Input Validation
+    """
+
+    DOS_PATTERNS = [
+        (r"\.read\(\)(?!\s*\d+)", "Read without size limit"),
+        (r"\.readlines\(\)", "Read all lines without limit"),
+        (r"while\s+True:.*read", "Infinite loop with read"),
+        (r"for\s+.*in\s+.*\.read", "Unbounded iteration over input"),
+        (r"range\([^,)]+\)(?!.*if\s+.+<)", "Unbounded range without limit check"),
+    ]
+
+    def __init__(self):
+        """Initialize resource consumption detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for uncontrolled resource consumption.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.DOS_PATTERNS:
+                if re.search(pattern, line):
+                    issues.append(
+                        SecurityIssue(
+                            severity="MEDIUM",
+                            category="Resource Exhaustion (DoS)",
+                            message=f"Potential DoS: {description}",
+                            line_number=line_num,
+                            column=0,
+                            code_snippet=line.strip(),
+                            fix_suggestion="Set resource limits; validate input sizes; implement timeout mechanisms",
+                            owasp_id="ASVS-5.1.5",
+                            cwe_id="CWE-400",
+                        )
+                    )
+                    break
+        
+        return issues
+
+
+class ImproperCertificateValidationDetector:
+    """
+    Detect improper SSL/TLS certificate validation.
+    
+    CWE-295: Improper Certificate Validation
+    
+    References:
+    - OWASP ASVS v5.0 Section 9: Communications
+    - SANS CWE Top 25 (emerging)
+    """
+
+    CERT_PATTERNS = [
+        (r"verify\s*=\s*False", "SSL certificate verification disabled"),
+        (r"ssl\._create_unverified_context", "Unverified SSL context"),
+        (r"CERT_NONE", "Certificate verification disabled"),
+        (r"check_hostname\s*=\s*False", "Hostname verification disabled"),
+    ]
+
+    def __init__(self):
+        """Initialize certificate validation detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for improper certificate validation.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.CERT_PATTERNS:
+                if re.search(pattern, line):
+                    issues.append(
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Improper Certificate Validation",
+                            message=description,
+                            line_number=line_num,
+                            column=0,
+                            code_snippet=line.strip(),
+                            fix_suggestion="Enable SSL certificate verification; use default SSL context; validate hostnames",
+                            owasp_id="ASVS-9.1.2",
+                            cwe_id="CWE-295",
+                        )
+                    )
+                    break
+        
+        return issues
+
+
+class CryptographicNonceMisuseDetector:
+    """
+    Detect cryptographic nonce/IV misuse.
+    
+    CWE-323: Reusing a Nonce, Key Pair in Encryption
+    CWE-329: Not Using a Random IV with CBC Mode
+    
+    References:
+    - OWASP ASVS v5.0 Section 6.2: Cryptography
+    """
+
+    NONCE_PATTERNS = [
+        (r"iv\s*=\s*b['\"]\\x00", "Hardcoded IV (all zeros)"),
+        (r"nonce\s*=\s*b['\"]", "Hardcoded nonce"),
+        (r"iv\s*=\s*['\"]", "Hardcoded IV string"),
+        (r"\.encrypt\(.*,\s*iv\s*=\s*iv", "IV reuse detected"),
+    ]
+
+    def __init__(self):
+        """Initialize nonce misuse detector."""
+        self.logger = PyGuardLogger()
+
+    def scan_code(self, code: str) -> List[SecurityIssue]:
+        """
+        Scan code for nonce/IV misuse.
+        
+        Args:
+            code: Source code to scan
+            
+        Returns:
+            List of security issues found
+        """
+        issues = []
+        lines = code.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.NONCE_PATTERNS:
+                if re.search(pattern, line):
+                    issues.append(
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Cryptographic Nonce Misuse",
+                            message=description,
+                            line_number=line_num,
+                            column=0,
+                            code_snippet=line.strip(),
+                            fix_suggestion="Generate random IV/nonce for each encryption; use os.urandom() or secrets module",
+                            owasp_id="ASVS-6.2.2",
+                            cwe_id="CWE-323",
+                        )
+                    )
+                    break
+        
+        return issues

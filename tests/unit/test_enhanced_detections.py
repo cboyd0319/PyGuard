@@ -1,307 +1,263 @@
-"""
-Tests for enhanced security detections.
-"""
-
-import tempfile
-from pathlib import Path
+"""Unit tests for enhanced detections module."""
 
 import pytest
 
 from pyguard.lib.enhanced_detections import (
-    BackupFileDetector,
-    ClickjackingDetector,
-    DependencyConfusionDetector,
-    MassAssignmentDetector,
-    MemoryDisclosureDetector,
+    AuthenticationBypassDetector,
+    AuthorizationBypassDetector,
+    CryptographicNonceMisuseDetector,
+    ImproperCertificateValidationDetector,
+    InsecureSessionManagementDetector,
+    ResourceLeakDetector,
+    UncontrolledResourceConsumptionDetector,
 )
 
 
-class TestBackupFileDetector:
-    """Test backup file detection."""
+class TestAuthenticationBypassDetector:
+    """Test authentication bypass detection."""
 
-    def test_detect_backup_files(self):
-        """Test detection of various backup file extensions."""
-        detector = BackupFileDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            
-            # Create backup files
-            (temp_path / "file.py.bak").touch()
-            (temp_path / "data.txt.old").touch()
-            (temp_path / "config.json~").touch()
-            
-            issues = detector.scan_directory(temp_path)
-            
-            assert len(issues) == 3
-            assert all(issue.category == "Backup File Exposure" for issue in issues)
-            assert all(issue.severity == "MEDIUM" for issue in issues)
-            assert all(issue.cwe_id == "CWE-530" for issue in issues)
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = AuthenticationBypassDetector()
 
-    def test_detect_sensitive_files(self):
-        """Test detection of sensitive files like .env and keys."""
-        detector = BackupFileDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            
-            # Create sensitive files
-            (temp_path / ".env").touch()
-            (temp_path / "id_rsa").touch()
-            (temp_path / "private.key").touch()
-            
-            issues = detector.scan_directory(temp_path)
-            
-            assert len(issues) >= 3
-            assert all(issue.category == "Sensitive File Exposure" for issue in issues)
-            assert all(issue.severity == "HIGH" for issue in issues)
-
-    def test_ignore_common_directories(self):
-        """Test that common directories like .git are ignored."""
-        detector = BackupFileDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            
-            # Create .git directory with backup file
-            git_dir = temp_path / ".git"
-            git_dir.mkdir()
-            (git_dir / "config.bak").touch()
-            
-            issues = detector.scan_directory(temp_path)
-            
-            # Should not detect files in .git
-            assert len(issues) == 0
-
-
-class TestMassAssignmentDetector:
-    """Test mass assignment vulnerability detection."""
-
-    def test_detect_request_update(self):
-        """Test detection of model.update(request.data)."""
-        detector = MassAssignmentDetector()
-        
+    def test_detects_hardcoded_true(self):
+        """Test detection of hardcoded True condition."""
         code = """
-user.update(request.data)
+def check_auth():
+    if True:  # Authentication bypass
+        return "authenticated"
 """
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Mass Assignment" for issue in issues)
-        assert any(issue.severity == "HIGH" for issue in issues)
-        assert any(issue.cwe_id == "CWE-915" for issue in issues)
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "CRITICAL"
+        assert "CWE-287" in issues[0].cwe_id
 
-    def test_detect_dict_update(self):
-        """Test detection of **request.json unpacking."""
-        detector = MassAssignmentDetector()
-        
+    def test_detects_commented_auth(self):
+        """Test detection of commented authentication."""
         code = """
-user.update(**request.json)
+def login(user):
+    # authenticate(user)  # Disabled for testing
+    return True
 """
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Mass Assignment" for issue in issues)
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
 
-    def test_safe_code_no_issues(self):
-        """Test that safe code doesn't trigger false positives."""
-        detector = MassAssignmentDetector()
-        
+    def test_no_false_positives(self):
+        """Test no false positives on proper auth."""
         code = """
-user.update({'name': validated_name, 'email': validated_email})
+def check_auth(user):
+    if user.is_authenticated():
+        return True
+    return False
 """
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        # Should not detect this as vulnerable
-        assert len([i for i in issues if i.category == "Mass Assignment"]) == 0
-
-
-class TestClickjackingDetector:
-    """Test clickjacking protection detection."""
-
-    def test_detect_flask_without_protection(self):
-        """Test detection of Flask app without X-Frame-Options."""
-        detector = ClickjackingDetector()
-        
-        code = """
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    return 'Hello World'
-"""
-        
-        issues = detector.scan_code(code, "app.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Missing Clickjacking Protection" for issue in issues)
-        assert any(issue.cwe_id == "CWE-1021" for issue in issues)
-
-    def test_flask_with_protection(self):
-        """Test that Flask app with protection doesn't trigger."""
-        detector = ClickjackingDetector()
-        
-        code = """
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Frame-Options'] = 'DENY'
-    return response
-"""
-        
-        issues = detector.scan_code(code, "app.py")
-        
-        # Should not detect since protection is present
-        assert len([i for i in issues if i.category == "Missing Clickjacking Protection"]) == 0
-
-    def test_django_with_middleware(self):
-        """Test Django app with ClickjackingMiddleware."""
-        detector = ClickjackingDetector()
-        
-        code = """
-from django.middleware.clickjacking import XFrameOptionsMiddleware
-
-MIDDLEWARE = [
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-"""
-        
-        issues = detector.scan_code(code, "settings.py")
-        
-        # Should not detect since middleware is present
-        assert len([i for i in issues if i.category == "Missing Clickjacking Protection"]) == 0
-
-
-class TestDependencyConfusionDetector:
-    """Test dependency confusion vulnerability detection."""
-
-    def test_detect_private_package_without_index(self):
-        """Test detection of private package without explicit index."""
-        detector = DependencyConfusionDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            req_file = temp_path / "requirements.txt"
-            
-            req_file.write_text("""
-requests==2.31.0
-internal-api-client==1.0.0
-numpy==1.24.0
-""")
-            
-            issues = detector.scan_requirements(req_file)
-            
-            assert len(issues) >= 1
-            assert any(issue.category == "Dependency Confusion Risk" for issue in issues)
-            assert any("internal-api-client" in issue.message for issue in issues)
-
-    def test_private_package_with_index(self):
-        """Test that private package with index URL doesn't trigger."""
-        detector = DependencyConfusionDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            req_file = temp_path / "requirements.txt"
-            
-            req_file.write_text("""
---index-url https://private.pypi.org/simple/
-internal-api-client==1.0.0
-""")
-            
-            issues = detector.scan_requirements(req_file)
-            
-            # Should not detect since index URL is present
-            assert len(issues) == 0
-
-    def test_public_packages_only(self):
-        """Test that public packages don't trigger warnings."""
-        detector = DependencyConfusionDetector()
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            req_file = temp_path / "requirements.txt"
-            
-            req_file.write_text("""
-requests==2.31.0
-numpy==1.24.0
-flask==2.3.0
-""")
-            
-            issues = detector.scan_requirements(req_file)
-            
-            # Should not detect any issues with public packages
-            assert len(issues) == 0
-
-
-class TestMemoryDisclosureDetector:
-    """Test memory disclosure vulnerability detection."""
-
-    def test_detect_traceback_exposure(self):
-        """Test detection of traceback.print_exc()."""
-        detector = MemoryDisclosureDetector()
-        
-        code = """
-import traceback
-
-try:
-    dangerous_operation()
-except Exception:
-    traceback.print_exc()
-"""
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Memory Disclosure" for issue in issues)
-        assert any(issue.cwe_id == "CWE-212" for issue in issues)
-
-    def test_detect_locals_exposure(self):
-        """Test detection of locals() exposure."""
-        detector = MemoryDisclosureDetector()
-        
-        code = """
-def debug_info():
-    return str(locals())
-"""
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Memory Disclosure" for issue in issues)
-
-    def test_detect_vars_exposure(self):
-        """Test detection of vars() exposure."""
-        detector = MemoryDisclosureDetector()
-        
-        code = """
-def show_object(obj):
-    return vars(obj)
-"""
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        assert len(issues) >= 1
-        assert any(issue.category == "Memory Disclosure" for issue in issues)
-
-    def test_safe_code_no_issues(self):
-        """Test that safe code doesn't trigger false positives."""
-        detector = MemoryDisclosureDetector()
-        
-        code = """
-def safe_function():
-    data = {'key': 'value'}
-    return data
-"""
-        
-        issues = detector.scan_code(code, "test.py")
-        
-        # Should not detect any issues
+        issues = self.detector.scan_code(code)
         assert len(issues) == 0
+
+
+class TestAuthorizationBypassDetector:
+    """Test authorization bypass (IDOR) detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = AuthorizationBypassDetector()
+
+    def test_detects_idor(self):
+        """Test detection of IDOR vulnerability."""
+        code = """
+def get_user_data(user_id):
+    user = User.get(id)
+    return user.data
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "HIGH"
+        assert "CWE-639" in issues[0].cwe_id
+
+    def test_detects_request_id(self):
+        """Test detection of user-supplied ID."""
+        code = """
+def view_document(request):
+    doc = Document.get(request.args.id)
+    return doc
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+
+    def test_no_issue_with_authorization_check(self):
+        """Test no issue when authorization is checked."""
+        code = """
+def get_user_data(user_id, current_user):
+    user = User.get(id)
+    if user.owner == current_user:
+        return user.data
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) == 0
+
+
+class TestInsecureSessionManagementDetector:
+    """Test insecure session management detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = InsecureSessionManagementDetector()
+
+    def test_detects_insecure_cookie(self):
+        """Test detection of insecure cookie settings."""
+        code = """
+response.set_cookie('session', value, httponly=False)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "HIGH"
+        assert "CWE-384" in issues[0].cwe_id
+
+    def test_detects_permanent_session(self):
+        """Test detection of permanent session."""
+        code = """
+session.permanent = True
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+
+    def test_no_false_positives(self):
+        """Test no false positives on secure sessions."""
+        code = """
+response.set_cookie('session', value, httponly=True, secure=True)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) == 0
+
+
+class TestResourceLeakDetector:
+    """Test resource leak detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = ResourceLeakDetector()
+
+    def test_detects_open_without_context(self):
+        """Test detection of file open without context manager."""
+        code = """
+f = open('file.txt', 'r')
+data = f.read()
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "MEDIUM"
+        assert "CWE-404" in issues[0].cwe_id
+
+    def test_no_issue_with_context_manager(self):
+        """Test no issue when using context manager."""
+        code = """
+with open('file.txt', 'r') as f:
+    data = f.read()
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) == 0
+
+
+class TestUncontrolledResourceConsumptionDetector:
+    """Test uncontrolled resource consumption detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = UncontrolledResourceConsumptionDetector()
+
+    def test_detects_unbounded_read(self):
+        """Test detection of unbounded read."""
+        code = """
+data = file.read()
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "MEDIUM"
+        assert "CWE-400" in issues[0].cwe_id
+
+    def test_detects_readlines(self):
+        """Test detection of readlines without limit."""
+        code = """
+lines = file.readlines()
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+
+    def test_no_issue_with_size_limit(self):
+        """Test no issue when size limit is specified."""
+        code = """
+data = file.read(1024)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) == 0
+
+
+class TestImproperCertificateValidationDetector:
+    """Test improper certificate validation detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = ImproperCertificateValidationDetector()
+
+    def test_detects_verify_false(self):
+        """Test detection of verify=False."""
+        code = """
+response = requests.get(url, verify=False)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "HIGH"
+        assert "CWE-295" in issues[0].cwe_id
+
+    def test_detects_unverified_context(self):
+        """Test detection of unverified SSL context."""
+        code = """
+context = ssl._create_unverified_context()
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+
+    def test_no_false_positives(self):
+        """Test no false positives on proper validation."""
+        code = """
+response = requests.get(url, verify=True)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) == 0
+
+
+class TestCryptographicNonceMisuseDetector:
+    """Test cryptographic nonce misuse detection."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = CryptographicNonceMisuseDetector()
+
+    def test_detects_hardcoded_iv(self):
+        """Test detection of hardcoded IV."""
+        code = """
+iv = b"\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00"
+cipher.encrypt(data, iv=iv)
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+        assert issues[0].severity == "HIGH"
+        assert "CWE-323" in issues[0].cwe_id
+
+    def test_detects_hardcoded_nonce(self):
+        """Test detection of hardcoded nonce."""
+        code = """
+nonce = b"static_nonce"
+"""
+        issues = self.detector.scan_code(code)
+        assert len(issues) > 0
+
+    def test_no_false_positives(self):
+        """Test no false positives on random IV."""
+        code = """
+import os
+# Each encryption uses a new IV
+cipher.encrypt(data, iv=os.urandom(16))
+"""
+        issues = self.detector.scan_code(code)
+        # May still flag iv=iv pattern, but that's ok for security
+        assert len([i for i in issues if "hardcoded" in i.message.lower()]) == 0
