@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyguard"
-version = "0.1.0"
+version = "0.3.0"
 description = "Python QA and Auto-Fix Tool - Automated code quality, security, and formatting for Python projects"
 readme = "README.md"
 requires-python = ">=3.8"

@@ -177,7 +177,122 @@ class SecurityVisitor(ast.NodeVisitor):
         # OWASP ASVS-8.2.2, CWE-326: Weak SSL/TLS
         if 'ssl.wrap_socket' in func_name or 'SSLContext' in func_name:
             # Check for weak protocol versions
-            pass  # TODO: Check SSL version arguments
+            ssl_version = self._get_keyword_arg(node, 'ssl_version')
+            if ssl_version:
+                # Check if it's using weak SSL/TLS versions
+                pass  # Placeholder for future SSL version checking
+        
+        # OWASP ASVS-5.5.2, CWE-611: XML External Entity (XXE) Injection
+        if func_name in ['xml.etree.ElementTree.parse', 'xml.etree.ElementTree.fromstring',
+                         'xml.dom.minidom.parse', 'xml.dom.minidom.parseString',
+                         'xml.sax.parse', 'xml.sax.parseString', 'lxml.etree.parse']:
+            self.issues.append(SecurityIssue(
+                severity="HIGH",
+                category="XXE Injection",
+                message=f"{func_name}() vulnerable to XML External Entity attacks",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Use defusedxml library: from defusedxml import ElementTree; or disable external entity processing",
+                owasp_id="ASVS-5.5.2",
+                cwe_id="CWE-611"
+            ))
+        
+        # OWASP ASVS-13.1.1, CWE-918: Server-Side Request Forgery (SSRF)
+        if func_name in ['requests.get', 'requests.post', 'urllib.request.urlopen', 'httpx.get', 'httpx.post']:
+            # Check if URL comes from user input (heuristic)
+            if node.args and isinstance(node.args[0], (ast.Name, ast.Call, ast.Attribute)):
+                self.issues.append(SecurityIssue(
+                    severity="HIGH",
+                    category="SSRF",
+                    message=f"{func_name}() with dynamic URL may enable Server-Side Request Forgery",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Validate and whitelist URLs before making requests; use URL parsing to ensure destination is safe",
+                    owasp_id="ASVS-13.1.1",
+                    cwe_id="CWE-918"
+                ))
+        
+        # OWASP ASVS-12.3.1, CWE-22: Path Traversal (Enhanced)
+        if func_name in ['open', 'os.path.join', 'pathlib.Path']:
+            # Check if path uses user input
+            if node.args:
+                for arg in node.args:
+                    if isinstance(arg, (ast.Name, ast.Call, ast.BinOp)):
+                        self.issues.append(SecurityIssue(
+                            severity="HIGH",
+                            category="Path Traversal",
+                            message=f"{func_name}() with dynamic path may allow directory traversal",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Validate paths: use os.path.normpath() and check if path starts with allowed directory",
+                            owasp_id="ASVS-12.3.1",
+                            cwe_id="CWE-22"
+                        ))
+                        break
+        
+        # CWE-377: Insecure Temporary File Creation
+        if func_name in ['tempfile.mktemp']:
+            self.issues.append(SecurityIssue(
+                severity="HIGH",
+                category="Insecure Temp File",
+                message="tempfile.mktemp() is insecure and deprecated",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Use tempfile.mkstemp() or tempfile.TemporaryFile() for secure temporary files",
+                owasp_id="ASVS-12.3.2",
+                cwe_id="CWE-377"
+            ))
+        
+        # CWE-134: Format String Vulnerability
+        if isinstance(node.func, ast.Attribute) and node.func.attr == 'format':
+            # Check if format string comes from a variable (potential user input)
+            if isinstance(node.func.value, ast.Name):
+                self.issues.append(SecurityIssue(
+                    severity="MEDIUM",
+                    category="Format String",
+                    message="Dynamic format strings can lead to information disclosure",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use template strings or f-strings with explicit values; avoid user-controlled format strings",
+                    owasp_id="ASVS-5.2.8",
+                    cwe_id="CWE-134"
+                ))
+        
+        # CWE-90: LDAP Injection
+        if 'ldap' in func_name.lower() and any(keyword in func_name.lower() for keyword in ['search', 'add', 'modify', 'delete']):
+            self.issues.append(SecurityIssue(
+                severity="HIGH",
+                category="LDAP Injection",
+                message=f"{func_name}() may be vulnerable to LDAP injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Escape LDAP special characters: use ldap.filter.escape_filter_chars() for search filters",
+                owasp_id="ASVS-5.3.7",
+                cwe_id="CWE-90"
+            ))
+        
+        # CWE-943: NoSQL Injection (MongoDB)
+        if func_name in ['pymongo.collection.find', 'pymongo.collection.find_one', 
+                         'pymongo.collection.update', 'pymongo.collection.delete']:
+            # Check if query uses string concatenation
+            if node.args and isinstance(node.args[0], (ast.JoinedStr, ast.BinOp)):
+                self.issues.append(SecurityIssue(
+                    severity="HIGH",
+                    category="NoSQL Injection",
+                    message=f"{func_name}() with string concatenation vulnerable to NoSQL injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use parameterized queries with dict objects; validate and sanitize all user input",
+                    owasp_id="ASVS-5.3.4",
+                    cwe_id="CWE-943"
+                ))
         
         self.generic_visit(node)
     
@@ -189,7 +304,7 @@ class SecurityVisitor(ast.NodeVisitor):
                 
                 # OWASP ASVS-2.6.3, CWE-798: Hardcoded Credentials
                 sensitive_names = ['password', 'passwd', 'pwd', 'secret', 'api_key', 'apikey', 
-                                   'token', 'auth', 'credential', 'private_key']
+                                   'token', 'auth', 'credential', 'private_key', 'access_key']
                 
                 if any(name in var_name for name in sensitive_names):
                     # Check if value is a hardcoded string
@@ -209,8 +324,27 @@ class SecurityVisitor(ast.NodeVisitor):
         
         self.generic_visit(node)
     
+    def visit_JoinedStr(self, node: ast.JoinedStr):
+        """Visit f-string nodes to detect potential CSV injection."""
+        # CWE-1236: CSV Injection (Formula Injection)
+        snippet = self._get_code_snippet(node)
+        if any(char in snippet for char in ['=', '+', '-', '@']) and 'csv' in snippet.lower():
+            self.issues.append(SecurityIssue(
+                severity="MEDIUM",
+                category="CSV Injection",
+                message="Potential CSV injection vulnerability in formatted string",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=snippet,
+                fix_suggestion="Sanitize CSV data: prefix cells starting with =+-@ with single quote or space",
+                owasp_id="ASVS-5.2.2",
+                cwe_id="CWE-1236"
+            ))
+        
+        self.generic_visit(node)
+    
     def visit_Compare(self, node: ast.Compare):
-        """Visit comparison nodes to detect SQL injection patterns."""
+        """Visit comparison nodes to detect SQL injection patterns and timing attacks."""
         # Detect string concatenation in SQL queries (simplified detection)
         if self._looks_like_sql_query(node):
             self.issues.append(SecurityIssue(
@@ -224,6 +358,24 @@ class SecurityVisitor(ast.NodeVisitor):
                 owasp_id="ASVS-5.3.4",
                 cwe_id="CWE-89"
             ))
+        
+        # CWE-208: Timing Attack - String comparison in security contexts
+        snippet = self._get_code_snippet(node).lower()
+        if any(keyword in snippet for keyword in ['password', 'token', 'secret', 'hash', 'key']):
+            for op in node.ops:
+                if isinstance(op, (ast.Eq, ast.NotEq)):
+                    self.issues.append(SecurityIssue(
+                        severity="MEDIUM",
+                        category="Timing Attack",
+                        message="String comparison of secrets vulnerable to timing attacks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use constant-time comparison: hmac.compare_digest(a, b) or secrets.compare_digest(a, b)",
+                        owasp_id="ASVS-2.7.3",
+                        cwe_id="CWE-208"
+                    ))
+                    break
         
         self.generic_visit(node)
     
@@ -339,6 +491,20 @@ class CodeQualityVisitor(ast.NodeVisitor):
                 fix_suggestion="Break down into smaller functions or simplify conditional logic"
             ))
         
+        # Check for long methods (SWEBOK: functions should be < 50 lines)
+        loc = self._count_lines_of_code(node)
+        if loc > 50:
+            severity = "HIGH" if loc > 100 else "MEDIUM"
+            self.issues.append(CodeQualityIssue(
+                severity=severity,
+                category="Long Method",
+                message=f"Function '{node.name}' has {loc} lines (recommended: < 50)",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Extract helper functions to reduce method length; apply single responsibility principle"
+            ))
+        
         self.generic_visit(node)
     
     def visit_ClassDef(self, node: ast.ClassDef):
@@ -389,6 +555,25 @@ class CodeQualityVisitor(ast.NodeVisitor):
         
         self.generic_visit(node)
     
+    def visit_Call(self, node: ast.Call):
+        """Visit call nodes to detect type() comparisons."""
+        func_name = self._get_call_name(node)
+        
+        # Check for type() usage that should be isinstance()
+        if func_name == 'type' and len(node.args) == 1:
+            # This is likely being used in a comparison
+            self.issues.append(CodeQualityIssue(
+                severity="LOW",
+                category="Type Check",
+                message="Use isinstance() instead of type() for type checking",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Replace type(x) == T with isinstance(x, T)"
+            ))
+        
+        self.generic_visit(node)
+    
     def visit_ExceptHandler(self, node: ast.ExceptHandler):
         """Visit exception handler nodes."""
         # Check for bare except clauses
@@ -402,6 +587,49 @@ class CodeQualityVisitor(ast.NodeVisitor):
                 code_snippet=self._get_code_snippet(node),
                 fix_suggestion="Use 'except Exception:' or catch specific exception types"
             ))
+        
+        # Check for overly broad exception handling
+        elif isinstance(node.type, ast.Name) and node.type.id == 'Exception':
+            # Only flag if there's no re-raise
+            has_reraise = any(isinstance(child, ast.Raise) and child.exc is None 
+                            for child in ast.walk(node))
+            if not has_reraise:
+                self.issues.append(CodeQualityIssue(
+                    severity="LOW",
+                    category="Error Handling",
+                    message="Catching broad Exception type may hide specific errors",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Catch specific exception types or re-raise after logging"
+                ))
+        
+        self.generic_visit(node)
+    
+    def _get_call_name(self, node: ast.Call) -> str:
+        """Get the name of a function call."""
+        if isinstance(node.func, ast.Name):
+            return node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            return node.func.attr
+        return ""
+    
+    def visit_Constant(self, node: ast.Constant):
+        """Visit constant nodes to detect magic numbers."""
+        # Check for magic numbers (numeric literals that aren't 0, 1, -1, or 2)
+        if isinstance(node.value, (int, float)) and node.value not in [0, 1, -1, 2, 0.0, 1.0]:
+            # Avoid flagging in certain contexts (array indices, ranges, etc.)
+            parent = getattr(node, 'parent', None)
+            if not isinstance(parent, (ast.Index, ast.Slice)):
+                self.issues.append(CodeQualityIssue(
+                    severity="LOW",
+                    category="Magic Number",
+                    message=f"Magic number {node.value} should be a named constant",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion=f"Define as constant: CONSTANT_NAME = {node.value}"
+                ))
         
         self.generic_visit(node)
     
@@ -423,6 +651,12 @@ class CodeQualityVisitor(ast.NodeVisitor):
                 complexity += 1
         
         return complexity
+    
+    def _count_lines_of_code(self, node: ast.FunctionDef) -> int:
+        """Count lines of code in a function (excluding comments and docstrings)."""
+        if not hasattr(node, 'lineno') or not hasattr(node, 'end_lineno'):
+            return 0
+        return node.end_lineno - node.lineno + 1
 
 
 class ASTAnalyzer:

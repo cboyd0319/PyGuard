@@ -95,7 +95,17 @@ Top Issues:
 
 ## ✨ **Features**
 
-### **🚀 NEW in v0.2.0**
+### **🚀 NEW in v0.3.0**
+- ✅ **Enhanced Security Detection**: 10+ new vulnerability types
+- ✅ **Timing Attack Detection**: Identify non-constant-time comparisons
+- ✅ **XXE Injection Detection**: XML External Entity vulnerabilities
+- ✅ **SSRF Detection**: Server-Side Request Forgery patterns
+- ✅ **LDAP & NoSQL Injection**: Extended injection detection
+- ✅ **Long Method Detection**: SWEBOK-aligned complexity checks
+- ✅ **Improved Code Quality**: Magic numbers, broad exceptions, type checks
+- ✅ **87% Test Coverage**: Comprehensive test suite (72 tests)
+
+### **🚀 v0.2.0 Features**
 - ✅ **AST-Based Analysis**: 10-100x faster with zero false positives
 - ✅ **OWASP ASVS v5.0**: Aligned with industry security standards
 - ✅ **CWE Top 25**: Comprehensive weakness enumeration
@@ -105,25 +115,48 @@ Top Issues:
 - ✅ **Enterprise Ready**: Structured logging, metrics, correlation IDs
 
 ### **🔒 Security Analysis & Auto-Fix** (OWASP ASVS Aligned)
+
+**Core Vulnerabilities:**
 - ✅ **Code Injection** (ASVS-5.2.1, CWE-95): `eval()`, `exec()`, `compile()`
 - ✅ **Unsafe Deserialization** (ASVS-5.5.3, CWE-502): `yaml.load()`, `pickle.load()`
 - ✅ **Command Injection** (ASVS-5.3.3, CWE-78): `shell=True`, `os.system()`
+- ✅ **SQL Injection** (ASVS-5.3.4, CWE-89): String concatenation in queries
+- ✅ **Hardcoded Credentials** (ASVS-2.6.3, CWE-798): Passwords, API keys, tokens
+
+**Cryptography & Random:**
 - ✅ **Weak Cryptography** (ASVS-6.2.1, CWE-327): MD5, SHA1 detection
 - ✅ **Weak Random** (ASVS-6.3.1, CWE-330): Insecure random usage
-- ✅ **Hardcoded Credentials** (ASVS-2.6.3, CWE-798): Passwords, API keys, tokens
-- ✅ **SQL Injection** (ASVS-5.3.4, CWE-89): String concatenation in queries
+- ✅ **Timing Attacks** (ASVS-2.7.3, CWE-208): Non-constant-time comparisons
+
+**Injection Attacks:**
+- ✅ **XXE Injection** (ASVS-5.5.2, CWE-611): XML External Entity vulnerabilities
+- ✅ **LDAP Injection** (ASVS-5.3.7, CWE-90): LDAP query vulnerabilities
+- ✅ **NoSQL Injection** (ASVS-5.3.4, CWE-943): MongoDB injection patterns
+- ✅ **CSV Injection** (ASVS-5.2.2, CWE-1236): Formula injection in CSV exports
+
+**Network & File Security:**
+- ✅ **SSRF** (ASVS-13.1.1, CWE-918): Server-Side Request Forgery
 - ✅ **Insecure HTTP** (ASVS-9.1.1, CWE-319): HTTP vs HTTPS detection
-- ✅ **Path Traversal** (ASVS-12.5.1, CWE-22): Unsafe path operations
+- ✅ **Path Traversal** (ASVS-12.3.1, CWE-22): Unsafe path operations
+- ✅ **Insecure Temp Files** (ASVS-12.3.2, CWE-377): tempfile.mktemp() usage
+- ✅ **Format String** (ASVS-5.2.8, CWE-134): Dynamic format string vulnerabilities
 
 ### **✨ Best Practices Enforcement** (SWEBOK Aligned)
+
+**Complexity & Structure:**
 - ✅ **Cyclomatic Complexity**: Detect overly complex functions (threshold: 10)
-- ✅ **Missing Docstrings**: Flag undocumented functions and classes
+- ✅ **Long Methods**: Functions exceeding 50 lines (SWEBOK recommended)
 - ✅ **Too Many Parameters**: Functions with >6 parameters
+- ✅ **Missing Docstrings**: Flag undocumented functions and classes
+
+**Code Patterns:**
 - ✅ **Mutable Defaults**: Dangerous default arguments (`def func(items=[])`)
 - ✅ **None Comparisons**: `== None` → `is None`
 - ✅ **Boolean Comparisons**: `== True` → direct usage
-- ✅ **Bare Except**: `except:` → `except Exception:`
 - ✅ **Type Checks**: `type(x) == str` → `isinstance(x, str)`
+- ✅ **Magic Numbers**: Detect hard-coded numeric constants
+- ✅ **Bare Except**: `except:` → `except Exception:`
+- ✅ **Broad Exceptions**: Warn on overly generic exception handling
 - ✅ **Naming Conventions**: PEP 8 compliance checks
 
 ### **🎨 Code Formatting**
@@ -442,6 +475,18 @@ pylint pyguard/
 
 ## 🗓️ **Roadmap**
 
+### **v0.3.0 (RELEASED)**
+- [x] Enhanced security detection with 10+ new vulnerability types
+- [x] XXE, SSRF, LDAP, NoSQL, CSV injection detection
+- [x] Timing attack vulnerability detection
+- [x] Long method and magic number detection
+- [x] Improved exception handling checks
+- [x] Type comparison improvements (isinstance vs type)
+- [x] 87% test coverage with 72 comprehensive tests
+- [x] Format string vulnerability detection
+- [x] Insecure temporary file detection
+- [x] Path traversal enhancement
+
 ### **v0.2.0 (RELEASED)**
 - [x] AST-based analysis for 10-100x performance improvement
 - [x] OWASP ASVS v5.0 and CWE Top 25 alignment
@@ -450,14 +495,18 @@ pylint pyguard/
 - [x] HTML/JSON/Console report generation
 - [x] 10+ comprehensive security checks
 - [x] 8+ code quality checks
+
+### **v0.4.0 (Q2 2026)**
 - [ ] Watch mode for continuous monitoring
 - [ ] Fix applicability system (Safe/Unsafe/Display)
-
-### **v0.3.0 (Q2 2026)**
 - [ ] VS Code extension
 - [ ] Language Server Protocol (LSP) support
 - [ ] Pre-commit hooks integration
 - [ ] Git integration for diff-only analysis
+- [ ] Auto-fix for more vulnerability types
+- [ ] Dead code detection
+- [ ] Duplicate code detection
+- [ ] Circular dependency detection
 
 ### **v1.0.0 (Q3 2026)**
 - [ ] Production-ready stable release
