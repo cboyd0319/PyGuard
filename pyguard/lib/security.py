@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger, FileOperations
+from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
 
 
 class SecurityFixer:
@@ -20,6 +21,20 @@ class SecurityFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
         self.fixes_applied = []
+        self.ast_analyzer = ASTAnalyzer()
+
+    def scan_file_for_issues(self, file_path: Path) -> List[SecurityIssue]:
+        """
+        Scan a file for security issues using AST analysis.
+        
+        Args:
+            file_path: Path to Python file
+            
+        Returns:
+            List of security issues found
+        """
+        security_issues, _ = self.ast_analyzer.analyze_file(file_path)
+        return security_issues
 
     def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
         """

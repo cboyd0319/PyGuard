@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger, FileOperations
+from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue
 
 
 class BestPracticesFixer:
@@ -20,6 +21,35 @@ class BestPracticesFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
         self.fixes_applied = []
+        self.ast_analyzer = ASTAnalyzer()
+
+    def scan_file_for_issues(self, file_path: Path) -> List[CodeQualityIssue]:
+        """
+        Scan a file for code quality issues using AST analysis.
+        
+        Args:
+            file_path: Path to Python file
+            
+        Returns:
+            List of code quality issues found
+        """
+        _, quality_issues = self.ast_analyzer.analyze_file(file_path)
+        return quality_issues
+    
+    def get_complexity_report(self, file_path: Path) -> Dict[str, int]:
+        """
+        Get cyclomatic complexity report for a file.
+        
+        Args:
+            file_path: Path to Python file
+            
+        Returns:
+            Dictionary mapping function names to complexity scores
+        """
+        content = self.file_ops.read_file(file_path)
+        if content is None:
+            return {}
+        return self.ast_analyzer.get_complexity_report(content)
 
     def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
         """
