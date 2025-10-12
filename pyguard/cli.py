@@ -1,9 +1,12 @@
 """
 PyGuard CLI - Main entry point for PyGuard QA and Auto-Fix Tool.
+
+Enhanced with world-class UI using Rich library for beautiful, beginner-friendly output.
 """
 
 import argparse
 import sys
+import time
 from pathlib import Path
 from typing import List, Optional
 
@@ -11,6 +14,7 @@ from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 
 
 class PyGuardCLI:
@@ -22,6 +26,8 @@ class PyGuardCLI:
         self.backup_manager = BackupManager()
         self.file_ops = FileOperations()
         self.diff_generator = DiffGenerator()
+        self.ui = EnhancedConsole()
+        self.html_reporter = ModernHTMLReporter()
 
         # Initialize fixers
         self.security_fixer = SecurityFixer()
@@ -132,7 +138,7 @@ class PyGuardCLI:
         self, files: List[Path], create_backup: bool = True, fix: bool = True
     ) -> dict:
         """
-        Run full analysis and fixes on files.
+        Run full analysis and fixes on files with beautiful progress display.
 
         Args:
             files: List of Python files to analyze
@@ -142,77 +148,112 @@ class PyGuardCLI:
         Returns:
             Dictionary with comprehensive results
         """
+        start_time = time.time()
+        
         results = {
             "total_files": len(files),
+            "files_with_issues": 0,
+            "files_fixed": 0,
+            "total_issues": 0,
+            "security_issues": 0,
+            "quality_issues": 0,
+            "fixes_applied": 0,
             "security": {},
             "best_practices": {},
             "formatting": {},
+            "all_issues": [],
         }
 
-        self.logger.info(f"Starting full analysis of {len(files)} files...")
-
         if fix:
-            # Run security fixes
-            self.logger.info("Running security fixes...")
-            results["security"] = self.run_security_fixes(files, create_backup)
+            # Create progress bar
+            progress = self.ui.create_progress_bar()
+            with progress:
+                # Security fixes
+                task = progress.add_task("🔒 Security Analysis...", total=len(files))
+                results["security"] = self.run_security_fixes(files, create_backup)
+                progress.update(task, completed=len(files))
 
-            # Run best practices fixes
-            self.logger.info("Running best practices fixes...")
-            results["best_practices"] = self.run_best_practices_fixes(files, create_backup)
+                # Best practices
+                task = progress.add_task("✨ Best Practices...", total=len(files))
+                results["best_practices"] = self.run_best_practices_fixes(files, create_backup)
+                progress.update(task, completed=len(files))
 
-            # Run formatting
-            self.logger.info("Running formatting...")
-            results["formatting"] = self.run_formatting(files, create_backup)
+                # Formatting
+                task = progress.add_task("🎨 Formatting...", total=len(files))
+                results["formatting"] = self.run_formatting(files, create_backup)
+                progress.update(task, completed=len(files))
+
+            # Aggregate results
+            if "fixes" in results["security"]:
+                results["fixes_applied"] += len(results["security"]["fixes"])
+                results["security_issues"] += len(results["security"]["fixes"])
+            if "fixes" in results["best_practices"]:
+                results["fixes_applied"] += len(results["best_practices"]["fixes"])
+                results["quality_issues"] += len(results["best_practices"]["fixes"])
 
         else:
             # Just scan for issues
-            self.logger.info("Scanning for issues (no fixes will be applied)...")
             security_issues = []
-            for file_path in files:
-                issues = self.security_fixer.scan_file_for_issues(file_path)
-                security_issues.extend(issues)
+            progress = self.ui.create_progress_bar()
+            with progress:
+                task = progress.add_task("🔍 Scanning for issues...", total=len(files))
+                for i, file_path in enumerate(files):
+                    issues = self.security_fixer.scan_file_for_issues(file_path)
+                    for issue in issues:
+                        issue["file"] = str(file_path)
+                    security_issues.extend(issues)
+                    progress.update(task, advance=1)
 
             results["security"] = {"issues_found": len(security_issues), "issues": security_issues}
+            results["all_issues"] = security_issues
+            results["total_issues"] = len(security_issues)
+            results["security_issues"] = len(security_issues)
+
+        # Calculate timing
+        end_time = time.time()
+        results["analysis_time_seconds"] = end_time - start_time
+        results["avg_time_per_file_ms"] = (results["analysis_time_seconds"] / len(files)) * 1000 if files else 0
 
         return results
 
-    def print_results(self, results: dict) -> None:
+    def print_results(self, results: dict, generate_html: bool = True) -> None:
         """
-        Print formatted results.
+        Print beautiful formatted results using Rich UI.
 
         Args:
             results: Results dictionary
+            generate_html: Whether to generate HTML report
         """
-        print("\n" + "=" * 60)
-        print("PyGuard Analysis Results")
-        print("=" * 60)
+        # Print summary table
+        self.ui.print_summary_table(results)
 
-        if "security" in results:
-            print("\n🔒 Security:")
-            if "fixed" in results["security"]:
-                print(
-                    f"   Files fixed: {results['security']['fixed']}/{results['security']['total']}"
+        # Print issue details if available
+        if "all_issues" in results and results["all_issues"]:
+            self.ui.print_issue_details(results["all_issues"])
+
+        # Print success message
+        self.ui.print_success_message(results.get("fixes_applied", 0))
+
+        # Generate HTML report
+        html_path = None
+        if generate_html:
+            html_path = Path("pyguard-report.html")
+            html_content = self.html_reporter.generate_report(
+                metrics=results,
+                issues=results.get("all_issues", []),
+                fixes=results.get("security", {}).get("fixes", []) + results.get("best_practices", {}).get("fixes", []),
+            )
+            if self.html_reporter.save_report(html_content, html_path):
+                self.ui.console.print(
+                    f"[bold green]✅ HTML report saved:[/bold green] [cyan]{html_path}[/cyan]"
                 )
-                print(f"   Fixes applied: {len(results['security']['fixes'])}")
-            elif "issues_found" in results["security"]:
-                print(f"   Issues found: {results['security']['issues_found']}")
+                self.ui.console.print()
 
-        if "best_practices" in results:
-            print("\n✨ Best Practices:")
-            print(
-                f"   Files fixed: {results['best_practices']['fixed']}/{results['best_practices']['total']}"
-            )
-            print(f"   Fixes applied: {len(results['best_practices']['fixes'])}")
+        # Print next steps
+        self.ui.print_next_steps(html_path)
 
-        if "formatting" in results:
-            print("\n🎨 Formatting:")
-            print(
-                f"   Files formatted: {results['formatting']['formatted']}/{results['formatting']['total']}"
-            )
-
-        print("\n" + "=" * 60)
-        print(f"✅ Analysis complete! Check logs/pyguard.jsonl for details.")
-        print("=" * 60 + "\n")
+        # Print help message
+        self.ui.print_help_message()
 
 
 def main():
@@ -304,10 +345,15 @@ def main():
             print(f"Warning: {path} is not a Python file or directory, skipping...")
 
     if not all_files:
-        print("Error: No Python files found to analyze.")
+        cli.ui.print_error(
+            "No Python files found to analyze.",
+            "Make sure you specified the correct path and that Python files exist in that location."
+        )
         sys.exit(1)
 
-    print(f"\n🐍 PyGuard - Found {len(all_files)} Python files to analyze\n")
+    # Print banner and welcome
+    cli.ui.print_banner()
+    cli.ui.print_welcome(len(all_files))
 
     # Run analysis based on flags
     create_backup = not args.no_backup
