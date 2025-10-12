@@ -1,0 +1,111 @@
+# PyGuard Configuration Example
+# Copy this to your project root as `pyguard.toml` and customize
+
+[general]
+# Enable verbose output
+verbose = true
+# Create backups before modifications
+backup = true
+# Generate diffs for changes
+show_diff = true
+
+[security]
+# Enable security analysis
+enabled = true
+# Severity levels to check: HIGH, MEDIUM, LOW
+severity_levels = ["HIGH", "MEDIUM"]
+
+[security.rules]
+# Enable/disable specific security checks
+check_hardcoded_passwords = true
+check_sql_injection = true
+check_command_injection = true
+check_insecure_random = true
+check_yaml_load = true
+check_pickle = true
+check_eval_exec = true
+check_weak_crypto = true
+check_path_traversal = true
+
+[best_practices]
+# Enable best practices enforcement
+enabled = true
+# Maximum cyclomatic complexity
+max_complexity = 10
+# Minimum function length (lines)
+min_function_length = 3
+# Maximum function length (lines)
+max_function_length = 50
+
+[best_practices.rules]
+# Enable/disable specific best practice checks
+check_mutable_defaults = true
+check_bare_except = true
+check_none_comparison = true
+check_boolean_comparison = true
+check_type_check = true
+check_list_comprehension = true
+check_string_concatenation = true
+check_context_managers = true
+check_missing_docstrings = true
+check_global_variables = true
+
+[formatting]
+# Enable code formatting
+enabled = true
+# Line length limit
+line_length = 100
+# Python version targets
+target_version = ["py38", "py39", "py310", "py311"]
+
+[formatting.black]
+# Black-specific configuration
+skip_string_normalization = false
+skip_magic_trailing_comma = false
+
+[formatting.isort]
+# isort-specific configuration
+profile = "black"
+force_single_line = false
+line_length = 100
+
+[logging]
+# Log file path
+log_file = "logs/pyguard.jsonl"
+# Log level: DEBUG, INFO, WARNING, ERROR
+log_level = "INFO"
+# Include timestamps
+include_timestamp = true
+
+[output]
+# Output format: text, json, html
+format = "text"
+# Use colors in terminal output
+use_colors = true
+# Show file names in output
+show_filenames = true
+
+[files]
+# Include patterns (glob)
+include = ["**/*.py"]
+# Exclude patterns (glob)
+exclude = [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/.tox/**",
+    "**/.git/**",
+]
+# Follow symbolic links
+follow_symlinks = false
+
+[performance]
+# Enable parallel processing (planned for v0.2.0)
+parallel = false
+# Number of worker processes (0 = auto)
+workers = 0
+# Enable caching
+cache = true

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  pyguard:
+    build: .
+    image: pyguard:latest
+    container_name: pyguard
+    volumes:
+      # Mount your code directory
+      - ./:/code:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Mount backups directory
+      - ./backups:/app/backups
+    command: /code
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  pyguard-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pyguard:dev
+    container_name: pyguard-dev
+    volumes:
+      - ./:/app
+      - pyguard-cache:/root/.cache
+    working_dir: /app
+    command: bash
+    stdin_open: true
+    tty: true
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  pyguard-cache:
