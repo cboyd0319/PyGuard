@@ -3,6 +3,7 @@
 import secrets
 import yaml
 import hashlib
+from argon2 import PasswordHasher
 from typing import List, Optional
 
 # Secure password handling
@@ -31,8 +32,9 @@ def load_config(file_path: str):
 
 # Strong cryptography
 def hash_password(password: str) -> str:
-    """Hash password using SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password securely using Argon2."""
+    ph = PasswordHasher()
+    return ph.hash(password)
 
 # Proper default arguments
 def append_to_list(item: str, my_list: Optional[List] = None) -> List:
