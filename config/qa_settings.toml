@@ -1,0 +1,32 @@
+# PyGuard QA Settings
+
+[general]
+log_level = "INFO"
+log_file = "logs/pyguard.jsonl"
+backup_dir = ".pyguard_backups"
+max_backups = 10
+
+[formatting]
+line_length = 100
+use_black = true
+use_isort = true
+use_autopep8 = false
+
+[best_practices]
+check_docstrings = true
+check_naming_conventions = true
+check_complexity = true
+max_function_length = 50
+max_complexity = 10
+
+[analysis]
+# Enable parallel processing
+parallel = false
+# Number of workers (0 = auto)
+workers = 0
+
+[reporting]
+# Report format: json, html, text
+format = "json"
+output_dir = "reports"
+include_diffs = true

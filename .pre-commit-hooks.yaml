@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/cboyd0319/PyGuard
+    rev: v0.1.0
+    hooks:
+      - id: pyguard
+        name: PyGuard Security & Quality Analysis
+        description: Run PyGuard to check for security issues and code quality
+        entry: pyguard
+        language: python
+        types: [python]
+        args: ['--scan-only']
+        pass_filenames: true
+        require_serial: false
+        additional_dependencies: []
+
+      - id: pyguard-security
+        name: PyGuard Security Only
+        description: Run PyGuard security checks only
+        entry: pyguard
+        language: python
+        types: [python]
+        args: ['--security-only', '--scan-only']
+        pass_filenames: true
+
+      - id: pyguard-format
+        name: PyGuard Formatting
+        description: Format Python code with PyGuard
+        entry: pyguard
+        language: python
+        types: [python]
+        args: ['--formatting-only']
+        pass_filenames: true

@@ -1,0 +1,30 @@
+# PyGuard Configuration
+# Security rules and settings
+
+[security]
+# Enable/disable security checks
+enabled = true
+
+# Severity levels to check
+severity_levels = ["HIGH", "MEDIUM", "LOW"]
+
+# Specific checks
+[security.checks]
+hardcoded_passwords = true
+sql_injection = true
+command_injection = true
+insecure_random = true
+insecure_temp_files = true
+unsafe_yaml = true
+unsafe_pickle = true
+eval_exec_usage = true
+weak_crypto = true
+path_traversal = true
+
+# Patterns to exclude
+[security.exclude]
+patterns = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*_test.py",
+]

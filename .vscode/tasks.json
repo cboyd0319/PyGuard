@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PyGuard: Analyze Current File",
+      "type": "shell",
+      "command": "pyguard",
+      "args": [
+        "${file}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PyGuard: Scan Current File (No Fix)",
+      "type": "shell",
+      "command": "pyguard",
+      "args": [
+        "${file}",
+        "--scan-only"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PyGuard: Analyze Project",
+      "type": "shell",
+      "command": "pyguard",
+      "args": [
+        "${workspaceFolder}"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PyGuard: Security Check Only",
+      "type": "shell",
+      "command": "pyguard",
+      "args": [
+        "${workspaceFolder}",
+        "--security-only"
+      ],
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PyGuard: Format Current File",
+      "type": "shell",
+      "command": "pyguard",
+      "args": [
+        "${file}",
+        "--formatting-only"
+      ],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
