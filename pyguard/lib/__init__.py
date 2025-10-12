@@ -17,6 +17,13 @@ from pyguard.lib.parallel import ParallelProcessor, BatchProcessor
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.supply_chain import Dependency, SBOM, SupplyChainAnalyzer
+from pyguard.lib.mcp_integration import MCPIntegration, MCPServer
+from pyguard.lib.ml_detection import AnomalyDetector, MLRiskScorer
+from pyguard.lib.standards_integration import (
+    GDPRTechnicalControls,
+    HIPAASecurityRule,
+    StandardsMapper,
+)
 
 __all__ = [
     # Core
@@ -47,6 +54,16 @@ __all__ = [
     "KnowledgeIntegration",
     "KnowledgeBase",
     "SecurityIntelligence",
+    # MCP Integration
+    "MCPIntegration",
+    "MCPServer",
+    # ML Detection
+    "MLRiskScorer",
+    "AnomalyDetector",
+    # Standards Integration
+    "StandardsMapper",
+    "GDPRTechnicalControls",
+    "HIPAASecurityRule",
     # Caching
     "AnalysisCache",
     "ConfigCache",
