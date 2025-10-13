@@ -159,6 +159,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.LOW,
                         category=RuleCategory.REFACTOR,
                         fix_suggestion=f"Replace {func_name}() with {suggestion}",
+                                                file_path=self.file_path,
                     )
                 )
 
@@ -175,6 +176,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.REFACTOR,
                             fix_suggestion="Replace tuple([...]) with (...)",
+                                                    file_path=self.file_path,
                         )
                     )
 
@@ -191,6 +193,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.REFACTOR,
                             fix_suggestion="Remove redundant list() call",
+                                                    file_path=self.file_path,
                         )
                     )
 
@@ -208,6 +211,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 fix_suggestion="sorted() already returns a list",
+                                                        file_path=self.file_path,
                             )
                         )
 
@@ -225,6 +229,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 fix_suggestion="Use reverse=True parameter in sorted()",
+                                                        file_path=self.file_path,
                             )
                         )
 
@@ -243,6 +248,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 fix_suggestion=f"Remove redundant {inner_func}() call",
+                                                        file_path=self.file_path,
                             )
                         )
 
