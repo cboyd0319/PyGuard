@@ -51,7 +51,7 @@ jobs:
       if: always()
       
     - name: Upload SARIF report as artifact
-      uses: actions/upload-artifact@ea054b4fa8c456ac13e30ebaf0c4bf6a84a4f6f5 # v4.6.0
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: pyguard-sarif-report
         path: pyguard-report.sarif
