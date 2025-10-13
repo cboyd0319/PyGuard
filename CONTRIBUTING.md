@@ -508,6 +508,7 @@ The version number must be consistent across these files:
 - `pyguard/__init__.py` - `__version__` variable (runtime version)
 - `pyproject.toml` - `version` field (package version)
 - `Dockerfile` - `LABEL version` (container version)
+- `README.md` - Version badge (public-facing version)
 
 ### **Creating a Release** (Maintainers Only)
 
@@ -520,7 +521,7 @@ Use the automated release script:
 
 The script will:
 1. Prompt for the new version number
-2. Update all version files automatically
+2. Update all version files automatically (including README badge)
 3. Update CHANGELOG.md with the release date
 4. Run tests to verify everything works
 5. Create a git commit and tag
@@ -528,7 +529,7 @@ The script will:
 
 **Manual Release Steps** (if not using script):
 
-1. Update versions in all three files listed above
+1. Update versions in all four files listed above
 2. Update CHANGELOG.md:
    - Change `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
    - Add a new `## [Unreleased]` section at the top
@@ -545,6 +546,32 @@ The script will:
 - Never commit version mismatches
 - Always use the release script when possible to avoid human error
 - Tag format: `vX.Y.Z` (with lowercase 'v' prefix)
+- Git tags trigger automated release workflow (see `.github/workflows/release.yml`)
+
+### **Git Tagging Strategy**
+
+PyGuard uses annotated git tags to mark releases:
+
+```bash
+# Create annotated tag
+git tag -a v0.3.0 -m "Release version 0.3.0"
+
+# Push tag to trigger release workflow
+git push origin v0.3.0
+
+# List all tags
+git tag -l
+
+# Delete a tag (if needed)
+git tag -d v0.3.0
+git push origin :refs/tags/v0.3.0
+```
+
+**Important Notes:**
+- Tags should only be created from the `main` branch
+- Once pushed, tags should NOT be modified or deleted (immutable releases)
+- The release workflow automatically publishes to PyPI when a tag is pushed
+- Tag format MUST match `v*.*.*` pattern to trigger the release workflow
 
 ---
 

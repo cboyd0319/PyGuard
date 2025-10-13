@@ -63,10 +63,17 @@ class TestCLIIntegration:
         assert dockerfile_match, "Version not found in Dockerfile"
         dockerfile_version = dockerfile_match.group(1)
 
+        # Check README.md badge
+        readme_path = Path(__file__).parent.parent.parent / "README.md"
+        readme_content = readme_path.read_text()
+        readme_match = re.search(r'badge/version-([^-]+)-', readme_content)
+        assert readme_match, "Version badge not found in README.md"
+        readme_version = readme_match.group(1)
+
         # Assert all versions match
         assert (
-            init_version == pyproject_version == dockerfile_version
-        ), f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}"
+            init_version == pyproject_version == dockerfile_version == readme_version
+        ), f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
 
 
 class TestEndToEnd:
