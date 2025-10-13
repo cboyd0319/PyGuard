@@ -114,8 +114,7 @@ class PEP8Checker:
                     
                 self.logger.info(
                     f"Applied {fixes_applied} PEP 8 fixes",
-                    file_path=str(file_path),
-                    fixes=fixes_applied
+                    file_path=str(file_path)
                 )
                 
             return True, fixes_applied
