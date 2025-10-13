@@ -129,9 +129,16 @@ class PEP8Checker:
     
     def _check_indentation(self, lines: List[str]) -> None:
         """Check indentation issues (E1xx codes)."""
+        bracket_stack = []  # Track open brackets: [(char, line_num, col, indent)]
+        
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 continue
+            
+            # Check continuation line indentation BEFORE updating bracket stack
+            # This way we check based on the previous line's bracket status
+            if bracket_stack and line_num > 1:
+                self._check_continuation_indentation(line, line_num, lines, bracket_stack)
                 
             # E101: Indentation contains mixed spaces and tabs
             if '\t' in line[:len(line) - len(line.lstrip())]:
@@ -150,29 +157,82 @@ class PEP8Checker:
                         "E111", line_num, 0,
                         f"Indentation is not a multiple of 4 (found {indent} spaces)"
                     )
+            
+            # Track brackets for continuation line checks (E121-E131)
+            # Update stack AFTER checking the current line
+            self._update_bracket_stack(line, line_num, bracket_stack)
     
     def _fix_indentation(self, content: str) -> Tuple[str, int]:
         """Fix indentation issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
+        bracket_stack = []
         
-        for line in lines:
+        for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 fixed_lines.append(line)
+                # Update bracket stack even for empty lines
+                self._update_bracket_stack(line, line_num, bracket_stack)
                 continue
             
             # Fix mixed tabs and spaces - convert all to spaces
-            indent = line[:len(line) - len(line.lstrip())]
-            if '\t' in indent:
+            indent_str = line[:len(line) - len(line.lstrip())]
+            if '\t' in indent_str:
                 # Convert tabs to 4 spaces
-                fixed_indent = indent.replace('\t', '    ')
-                fixed_lines.append(fixed_indent + line.lstrip())
+                fixed_indent = indent_str.replace('\t', '    ')
+                fixed_line = fixed_indent + line.lstrip()
+                fixed_lines.append(fixed_line)
                 fixes += 1
-            else:
-                fixed_lines.append(line)
+                # Update bracket stack with fixed line
+                self._update_bracket_stack(fixed_line, line_num, bracket_stack)
+                continue
+            
+            # Check if we need to fix continuation line indentation (E121-E128)
+            fixed_line = line
+            if bracket_stack:
+                fixed_line, fixed = self._fix_continuation_indent(line, line_num, lines, bracket_stack)
+                if fixed:
+                    fixes += 1
+            
+            fixed_lines.append(fixed_line)
+            
+            # Update bracket stack with the (possibly fixed) line
+            self._update_bracket_stack(fixed_line, line_num, bracket_stack)
         
         return ''.join(fixed_lines), fixes
+    
+    def _fix_continuation_indent(
+        self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
+    ) -> Tuple[str, bool]:
+        """
+        Fix continuation line indentation issues.
+        
+        Returns:
+            Tuple of (fixed_line, was_fixed)
+        """
+        if not bracket_stack:
+            return line, False
+        
+        indent = len(line) - len(line.lstrip())
+        open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
+        
+        # Calculate the expected indent (hanging indent style)
+        expected_indent = open_indent + 4
+        
+        # Only fix if the current indent is clearly wrong and line doesn't close bracket
+        if not line.strip().startswith((')', ']', '}')):
+            # Fix under-indentation (E121, E122, E128) - only if significantly wrong
+            if indent < expected_indent and line_num > open_line_num:
+                fixed_line = ' ' * expected_indent + line.lstrip()
+                return fixed_line, True
+            
+            # Fix over-indentation (E126) - only if significantly wrong
+            elif indent > expected_indent + 4:
+                fixed_line = ' ' * expected_indent + line.lstrip()
+                return fixed_line, True
+        
+        return line, False
     
     def _is_continuation_line(self, lines: List[str], line_num: int) -> bool:
         """Check if a line is a continuation line."""
@@ -180,6 +240,110 @@ class PEP8Checker:
             return False
         line = lines[line_num - 1]
         return line.rstrip().endswith('\\') or line.rstrip().endswith(',')
+    
+    def _update_bracket_stack(self, line: str, line_num: int, bracket_stack: List[Tuple]) -> None:
+        """Update bracket stack for continuation line tracking."""
+        col = 0
+        indent = len(line) - len(line.lstrip())
+        
+        for char in line:
+            if char in '([{':
+                bracket_stack.append((char, line_num, col, indent))
+            elif char in ')]}':
+                if bracket_stack:
+                    open_char, _, _, _ = bracket_stack[-1]
+                    if (char == ')' and open_char == '(' or
+                        char == ']' and open_char == '[' or
+                        char == '}' and open_char == '{'):
+                        bracket_stack.pop()
+            col += 1
+    
+    def _check_continuation_indentation(
+        self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
+    ) -> None:
+        """
+        Check continuation line indentation (E121-E131).
+        
+        Continuation lines should be indented relative to the opening bracket
+        or using a hanging indent pattern.
+        """
+        if not bracket_stack:
+            return
+            
+        indent = len(line) - len(line.lstrip())
+        prev_line = lines[line_num - 2] if line_num > 1 else ""
+        prev_indent = len(prev_line) - len(prev_line.lstrip())
+        
+        # Get the most recent opening bracket info
+        open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
+        
+        # E121: Continuation line under-indented for hanging indent
+        # A hanging indent means the first line after opening bracket is indented
+        if open_line_num < line_num:
+            expected_indent = open_indent + 4  # Standard hanging indent
+            if indent < expected_indent and not line.strip().startswith((')',']','}')):
+                self._add_violation(
+                    "E121", line_num, 0,
+                    f"Continuation line under-indented for hanging indent (expected {expected_indent}, got {indent})"
+                )
+        
+        # E122: Continuation line missing indentation or outdented
+        if indent <= open_indent and line_num > open_line_num and not line.strip().startswith((')',']','}')):
+            self._add_violation(
+                "E122", line_num, 0,
+                "Continuation line missing indentation or outdented"
+            )
+        
+        # E125: Continuation line with same indent as next logical line
+        if indent > 0 and indent == prev_indent and line_num > open_line_num + 1:
+            # Check if this might conflict with next logical line
+            if not prev_line.rstrip().endswith((',', '\\')):
+                self._add_violation(
+                    "E125", line_num, 0,
+                    "Continuation line with same indent as next logical line"
+                )
+        
+        # E126: Continuation line over-indented for hanging indent
+        if indent > expected_indent + 4 and not line.strip().startswith((')',']','}')):
+            self._add_violation(
+                "E126", line_num, 0,
+                f"Continuation line over-indented for hanging indent (expected {expected_indent}, got {indent})"
+            )
+        
+        # E127: Continuation line over-indented for visual indent
+        # Visual indent means aligned with the opening delimiter
+        visual_indent = open_col + 1
+        if indent > visual_indent + 4 and open_line_num < line_num:
+            self._add_violation(
+                "E127", line_num, 0,
+                f"Continuation line over-indented for visual indent"
+            )
+        
+        # E128: Continuation line under-indented for visual indent
+        # Only flag if indent is clearly wrong (not using hanging indent either)
+        if (indent < visual_indent and indent < expected_indent and 
+            open_line_num < line_num and not line.strip().startswith((')',']','}'))):
+            self._add_violation(
+                "E128", line_num, 0,
+                "Continuation line under-indented for visual indent"
+            )
+        
+        # E129: Visually indented line with same indent as next logical line
+        # (Similar to E125 but for visual indenting)
+        if indent == visual_indent and prev_indent == indent:
+            if line_num > open_line_num + 1 and not prev_line.rstrip().endswith((',', '\\')):
+                self._add_violation(
+                    "E129", line_num, 0,
+                    "Visually indented line with same indent as next logical line"
+                )
+        
+        # E130: Continuation line indentation is not a multiple of four (comment)
+        # This is more of an informational message
+        if indent > 0 and indent % 4 != 0 and line_num > open_line_num:
+            self._add_violation(
+                "E130", line_num, 0,
+                f"Continuation line indentation is not a multiple of four (got {indent})"
+            )
     
     # ========================================================================
     # E2xx: Whitespace Checks
