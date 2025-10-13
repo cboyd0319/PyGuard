@@ -65,6 +65,56 @@ To use these MCP servers with GitHub Copilot:
 
 3. GitHub Copilot will automatically use these configured servers when available.
 
+## Configuration Format
+
+### HTTP Servers (Context7)
+
+HTTP servers require authentication via the `Authorization` header with Bearer token:
+
+```json
+{
+  "type": "http",
+  "url": "https://mcp.context7.com/mcp",
+  "headers": {
+    "Authorization": "Bearer $COPILOT_MCP_CONTEXT7_API_KEY"
+  }
+}
+```
+
+**Important:** Use the standard `Authorization` header with `Bearer` prefix for OAuth-style authentication.
+
+### Local Servers (OpenAI, Fetch, Playwright)
+
+Local servers use environment variables that must include the `$` prefix for substitution:
+
+```json
+{
+  "type": "local",
+  "command": "uvx",
+  "args": ["openai-websearch-mcp"],
+  "env": {
+    "OPENAI_API_KEY": "$COPILOT_MCP_OPENAI_API_KEY"
+  }
+}
+```
+
+**Important:** The `$` prefix is required for environment variable substitution. Without it, the literal string is passed instead of the variable value.
+
+## Validation
+
+A validation script is available to check your configuration:
+
+```bash
+.github/validate-mcp-config.sh
+```
+
+This script verifies:
+- JSON syntax validity
+- Correct server configuration structure
+- Proper authentication header formats
+- Environment variable reference formats
+- Required tool availability (npx, uvx)
+
 ## References
 
 - [Model Context Protocol Specification](https://modelcontextprotocol.io)
