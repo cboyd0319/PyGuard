@@ -40,6 +40,7 @@ class PEP8Checker:
         self.logger = PyGuardLogger()
         self.max_line_length = max_line_length
         self.violations: List[RuleViolation] = []
+        self.current_file_path = ""  # Track current file being checked
         
     def check_file(self, file_path: Path) -> List[RuleViolation]:
         """
@@ -56,6 +57,7 @@ class PEP8Checker:
                 content = f.read()
                 
             self.violations = []
+            self.current_file_path = str(file_path)  # Store for _add_violation
             lines = content.splitlines(keepends=True)
             
             # Run all checks
@@ -525,9 +527,9 @@ class PEP8Checker:
             category=RuleCategory.STYLE,
             severity=RuleSeverity.LOW if code.startswith('W') else RuleSeverity.MEDIUM,
             message=message,
-            file_path="",  # Will be set by caller
+            file_path=Path(self.current_file_path) if self.current_file_path else Path("."),
             line_number=line,
-            column_number=column,
+            column=column,
             fix_applicability=FixApplicability.AUTOMATIC if self._is_auto_fixable(code) else FixApplicability.MANUAL
         )
         self.violations.append(violation)
@@ -582,17 +584,19 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E101",
+                name="indentation-mixed-spaces-tabs",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.MEDIUM,
-                message="Indentation contains mixed spaces and tabs",
+                message_template="Indentation contains mixed spaces and tabs",
                 description="PEP 8 requires consistent use of spaces (not tabs) for indentation",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E111",
+                name="indentation-not-multiple-of-four",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Indentation is not a multiple of 4",
+                message_template="Indentation is not a multiple of 4",
                 description="PEP 8 recommends 4 spaces per indentation level",
                 fix_applicability=FixApplicability.MANUAL
             ),
@@ -604,49 +608,55 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E201",
+                name="whitespace-after-open-bracket",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Whitespace after '('",
+                message_template="Whitespace after '('",
                 description="Avoid extraneous whitespace immediately after opening brackets",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E202",
+                name="whitespace-before-close-bracket",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Whitespace before ')'",
+                message_template="Whitespace before ')'",
                 description="Avoid extraneous whitespace immediately before closing brackets",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E203",
+                name="whitespace-before-colon",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Whitespace before ':'",
+                message_template="Whitespace before ':'",
                 description="Avoid extraneous whitespace before colon",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E211",
+                name="whitespace-before-paren",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Whitespace before '('",
+                message_template="Whitespace before '('",
                 description="Do not use whitespace before function call parentheses",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E225",
+                name="missing-whitespace-around-operator",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Missing whitespace around operator",
+                message_template="Missing whitespace around operator",
                 description="Always use whitespace around binary operators",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E231",
+                name="missing-whitespace-after-comma",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Missing whitespace after ','",
+                message_template="Missing whitespace after ','",
                 description="Always use whitespace after comma",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
@@ -658,17 +668,19 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E301",
+                name="expected-1-blank-line",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Expected 1 blank line, found 0",
+                message_template="Expected 1 blank line, found 0",
                 description="Separate method definitions with one blank line",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E302",
+                name="expected-2-blank-lines",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Expected 2 blank lines, found less",
+                message_template="Expected 2 blank lines, found less",
                 description="Separate top-level function and class definitions with two blank lines",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
@@ -680,17 +692,19 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E401",
+                name="multiple-imports-on-line",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Multiple imports on one line",
+                message_template="Multiple imports on one line",
                 description="Put each import on a separate line",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="E402",
+                name="module-import-not-at-top",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.MEDIUM,
-                message="Module level import not at top of file",
+                message_template="Module level import not at top of file",
                 description="Imports should be placed at the top of the file",
                 fix_applicability=FixApplicability.MANUAL
             ),
@@ -702,9 +716,10 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E501",
+                name="line-too-long",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Line too long",
+                message_template="Line too long",
                 description="Limit all lines to a maximum of 79 characters",
                 fix_applicability=FixApplicability.MANUAL
             ),
@@ -716,25 +731,28 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="E701",
+                name="multiple-statements-colon",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.MEDIUM,
-                message="Multiple statements on one line (colon)",
+                message_template="Multiple statements on one line (colon)",
                 description="Compound statements should be on separate lines",
                 fix_applicability=FixApplicability.MANUAL
             ),
             Rule(
                 rule_id="E702",
+                name="multiple-statements-semicolon",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.MEDIUM,
-                message="Multiple statements on one line (semicolon)",
+                message_template="Multiple statements on one line (semicolon)",
                 description="Do not use semicolons to join statements",
                 fix_applicability=FixApplicability.MANUAL
             ),
             Rule(
                 rule_id="E703",
+                name="statement-ends-with-semicolon",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Statement ends with unnecessary semicolon",
+                message_template="Statement ends with unnecessary semicolon",
                 description="Remove trailing semicolons",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
@@ -746,25 +764,28 @@ class PEP8Rules:
         return [
             Rule(
                 rule_id="W291",
+                name="trailing-whitespace",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Trailing whitespace",
+                message_template="Trailing whitespace",
                 description="Remove trailing whitespace at the end of lines",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="W292",
+                name="no-newline-at-end-of-file",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="No newline at end of file",
+                message_template="No newline at end of file",
                 description="Files should end with a newline character",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
             Rule(
                 rule_id="W293",
+                name="blank-line-contains-whitespace",
                 category=RuleCategory.STYLE,
                 severity=RuleSeverity.LOW,
-                message="Blank line contains whitespace",
+                message_template="Blank line contains whitespace",
                 description="Remove whitespace from blank lines",
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
