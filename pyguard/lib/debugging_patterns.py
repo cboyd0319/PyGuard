@@ -48,7 +48,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
                     severity=RuleSeverity.LOW,
                     category=RuleCategory.STYLE,
                     fix_applicability=FixApplicability.SUGGESTED,
-                    suggestion="Replace with logger.info() or logger.debug()",
+                    fix_suggestion="Replace with logger.info() or logger.debug()",
                 )
             )
 
@@ -64,7 +64,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
                     severity=RuleSeverity.MEDIUM,
                     category=RuleCategory.ERROR,
                     fix_applicability=FixApplicability.AUTOMATIC,
-                    suggestion="Remove breakpoint() call",
+                    fix_suggestion="Remove breakpoint() call",
                 )
             )
 
@@ -86,7 +86,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
                     severity=RuleSeverity.MEDIUM,
                     category=RuleCategory.ERROR,
                     fix_applicability=FixApplicability.AUTOMATIC,
-                    suggestion=f"Remove {debugger}.set_trace() call",
+                    fix_suggestion=f"Remove {debugger}.set_trace() call",
                 )
             )
 
@@ -107,7 +107,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.LOW,
                         category=RuleCategory.STYLE,
                         fix_applicability=FixApplicability.AUTOMATIC,
-                        suggestion=f"Remove debug import: {alias.name}",
+                        fix_suggestion=f"Remove debug import: {alias.name}",
                     )
                 )
 
@@ -126,7 +126,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
                     severity=RuleSeverity.LOW,
                     category=RuleCategory.STYLE,
                     fix_applicability=FixApplicability.AUTOMATIC,
-                    suggestion=f"Remove debug import from {node.module}",
+                    fix_suggestion=f"Remove debug import from {node.module}",
                 )
             )
 
