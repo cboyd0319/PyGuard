@@ -102,8 +102,16 @@ class ReturnPatternVisitor(ast.NodeVisitor):
 
     def _check_missing_explicit_return(self, node: ast.FunctionDef) -> None:
         """RET503: Check for missing explicit return in function."""
-        # Skip if function is empty or only has docstring
-        if not node.body or (len(node.body) == 1 and isinstance(node.body[0], ast.Expr)):
+        # Skip if function is empty or only has docstring/pass
+        if not node.body:
+            return
+        
+        # Skip if function only has pass statement
+        if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+            return
+        
+        # Skip if function only has docstring
+        if len(node.body) == 1 and isinstance(node.body[0], ast.Expr):
             return
 
         # Skip if function already has return statements
@@ -112,7 +120,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                 return
 
         # Skip if function only raises exceptions
-        only_raises = all(isinstance(stmt, (ast.Raise, ast.Expr)) for stmt in node.body)
+        only_raises = all(isinstance(stmt, (ast.Raise, ast.Expr, ast.Pass)) for stmt in node.body)
         if only_raises:
             return
 
