@@ -1008,7 +1008,12 @@ class PEP8Checker:
     
     def _check_warnings(self, lines: List[str]) -> None:
         """Check warning issues (W codes)."""
+        binary_operators = ['+', '-', '*', '/', '//', '%', '**', '&', '|', '^', '<<', '>>', 
+                           '==', '!=', '<', '>', '<=', '>=', 'and', 'or']
+        
         for line_num, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
             # W291: Trailing whitespace
             if line.rstrip('\n\r') != line.rstrip():
                 self._add_violation(
@@ -1029,6 +1034,98 @@ class PEP8Checker:
                     "W293", line_num, 0,
                     "Blank line contains whitespace"
                 )
+            
+            # W503: Line break before binary operator (PEP 8 now prefers this style)
+            # Note: This is now considered acceptable, but we detect for completeness
+            if stripped and line_num > 1:
+                for op in binary_operators:
+                    # Check if line starts with operator
+                    if stripped.startswith(op + ' ') or (op in ['and', 'or'] and stripped.startswith(op + ' ')):
+                        # Only flag if previous line looks like continuation
+                        prev_line = lines[line_num - 2].strip() if line_num > 1 else ''
+                        if prev_line and not prev_line.endswith(':') and not prev_line.startswith('#'):
+                            # This is actually the preferred style in modern PEP 8
+                            # We'll flag it as INFO level
+                            pass  # Intentionally not flagging as this is now preferred
+                        break
+            
+            # W504: Line break after binary operator (older PEP 8 style)
+            if stripped and line_num < len(lines):
+                for op in binary_operators:
+                    # Check if line ends with operator (excluding comments)
+                    line_without_comment = stripped.split('#')[0].rstrip()
+                    if line_without_comment.endswith(' ' + op) or line_without_comment.endswith(op):
+                        # Check if next line is continuation
+                        next_line = lines[line_num].strip() if line_num < len(lines) else ''
+                        if next_line and not next_line.startswith('#'):
+                            # Modern PEP 8 discourages this style
+                            self._add_violation(
+                                "W504", line_num, len(line_without_comment) - len(op),
+                                "Line break after binary operator"
+                            )
+                        break
+            
+            # Phase 8.5: Deprecation Warnings (W601-W606)
+            # These detect Python 2 deprecated patterns
+            
+            # W601: .has_key() is deprecated, use 'in'
+            if '.has_key(' in stripped:
+                self._add_violation(
+                    "W601", line_num, stripped.find('.has_key('),
+                    ".has_key() is deprecated, use 'in'"
+                )
+            
+            # W602: Deprecated form of raising exception
+            if stripped.startswith('raise ') and ',' in stripped:
+                # raise Exception, args  -- old Python 2 style
+                parts = stripped[6:].split(',')
+                if len(parts) >= 2 and not any(x in stripped for x in ['(', '{']):
+                    self._add_violation(
+                        "W602", line_num, stripped.find(','),
+                        "Deprecated form of raising exception, use 'raise Exception(args)'"
+                    )
+            
+            # W603: '<>' is deprecated, use '!='
+            if '<>' in stripped:
+                self._add_violation(
+                    "W603", line_num, stripped.find('<>'),
+                    "'<>' is deprecated, use '!='"
+                )
+            
+            # W604: Backticks are deprecated, use 'repr()'
+            if '`' in stripped and not stripped.startswith('#'):
+                self._add_violation(
+                    "W604", line_num, stripped.find('`'),
+                    "Backticks are deprecated, use 'repr()'"
+                )
+            
+            # W605: Invalid escape sequence (use raw string or \\)
+            # This is a complex check that would need deeper analysis
+            # For now, check for common invalid escapes in strings
+            if '\\' in stripped and not stripped.startswith('#'):
+                # Check for invalid escape sequences
+                # This is a simplified check - full implementation would use tokenizer
+                for invalid_escape in ['\\w', '\\d', '\\s', '\\D', '\\W', '\\S']:
+                    if invalid_escape in stripped and not stripped.startswith('r"') and not stripped.startswith("r'"):
+                        # Could be regex pattern, but in regular strings it's invalid
+                        if '"' in stripped or "'" in stripped:
+                            self._add_violation(
+                                "W605", line_num, stripped.find(invalid_escape),
+                                "Invalid escape sequence, use raw string or double backslash"
+                            )
+                            break
+            
+            # W606: 'async' and 'await' are reserved keywords
+            # This was for Python 2/3 transition - now less relevant but still useful
+            if any(word in stripped for word in ['async', 'await']):
+                # Check if used as variable names (not as keywords)
+                import re as regex_module
+                # Simple check for assignment to async/await
+                if regex_module.search(r'\b(async|await)\s*=', stripped):
+                    self._add_violation(
+                        "W606", line_num, 0,
+                        "'async' and 'await' are reserved keywords, don't use as identifiers"
+                    )
     
     def _fix_trailing_whitespace(self, content: str) -> Tuple[str, int]:
         """Fix trailing whitespace issues."""
