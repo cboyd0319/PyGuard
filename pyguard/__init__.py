@@ -36,6 +36,7 @@ from pyguard.lib.string_operations import StringIssue, StringOperationsFixer, St
 from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
 from pyguard.lib.bugbear import BugbearChecker, BugbearVisitor, BUGBEAR_RULES
 from pyguard.lib.exception_handling import ExceptionHandlingChecker, ExceptionHandlingVisitor, EXCEPTION_HANDLING_RULES
+from pyguard.lib.debugging_patterns import DebuggingPatternChecker, DebuggingPatternVisitor, DEBUGGING_RULES
 from pyguard.lib.type_checker import TypeChecker, TypeInferenceEngine
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue
@@ -100,4 +101,8 @@ __all__ = [
     "ExceptionHandlingChecker",
     "ExceptionHandlingVisitor",
     "EXCEPTION_HANDLING_RULES",
+    # Debugging Patterns
+    "DebuggingPatternChecker",
+    "DebuggingPatternVisitor",
+    "DEBUGGING_RULES",
 ]
