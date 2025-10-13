@@ -217,7 +217,7 @@ class UltraAdvancedSecurityFixer:
                 # Check if next line is the function definition (no rate limiter)
                 if i + 1 < len(lines):
                     next_line = lines[i + 1]
-                    if next_line.strip().startswith('def ') and '@limiter' not in content[max(0, i-5):i]:
+                    if next_line.strip().startswith('def ') and '@limiter' not in content[max(0, i - 5):i]:
                         fixed_lines.append(line)
                         fixed_lines.append('@limiter.limit("100/hour")  # ADDED: Rate limiting to prevent abuse')
                         self.fixes_applied.append('API rate limiting added')

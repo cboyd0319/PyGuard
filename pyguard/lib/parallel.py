@@ -91,7 +91,7 @@ class ParallelProcessor:
 
                     if show_progress and completed % max(1, total // 10) == 0:
                         self.logger.info(
-                            f"Progress: {completed}/{total} files processed ({completed*100//total}%)",
+                            f"Progress: {completed}/{total} files processed ({completed * 100 // total}%)",
                             category="Parallel",
                         )
 
