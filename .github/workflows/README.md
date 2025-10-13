@@ -8,10 +8,12 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 **Triggers:** Pull requests opened/synchronized/reopened by Dependabot
 
 **What it does:**
-- Automatically approves and merges Dependabot PRs for patch and minor version updates
+- Automatically enables auto-merge for Dependabot PRs for patch and minor version updates
 - Waits for all status checks to pass before merging
 - Leaves a comment on major version updates requiring manual review
 - Uses squash merge to keep git history clean
+
+**Note:** This workflow uses `pull_request_target` to enable auto-merge. PR approval must be handled via repository settings (e.g., enabling auto-approve for Dependabot in branch protection) or manually, as GITHUB_TOKEN cannot approve its own PRs.
 
 **Safety features:**
 - Only auto-merges patch and minor updates (not major versions)

@@ -44,10 +44,10 @@ echo "   📡 Context7 (HTTP server):"
 if jq -e '.mcpServers.context7' "$CONFIG_FILE" >/dev/null 2>&1; then
     # Check Authorization header format
     AUTH_HEADER=$(jq -r '.mcpServers.context7.headers.Authorization // empty' "$CONFIG_FILE")
-    if [[ "$AUTH_HEADER" == Bearer\ \$* ]]; then
+    if [[ "$AUTH_HEADER" == Bearer\ \$\{*\} ]] || [[ "$AUTH_HEADER" == Bearer\ \$* ]]; then
         echo "      ✅ Authorization header format is correct (Bearer token)"
     else
-        echo "      ❌ Authorization header should use 'Bearer \$ENV_VAR' format"
+        echo "      ❌ Authorization header should use 'Bearer \${ENV_VAR}' or 'Bearer \$ENV_VAR' format"
         echo "         Current: $AUTH_HEADER"
         exit 1
     fi
@@ -60,10 +60,10 @@ echo "   🔍 OpenAI Web Search (Local server):"
 if jq -e '.mcpServers["openai-websearch"]' "$CONFIG_FILE" >/dev/null 2>&1; then
     # Check environment variable format
     OPENAI_KEY=$(jq -r '.mcpServers["openai-websearch"].env.OPENAI_API_KEY // empty' "$CONFIG_FILE")
-    if [[ "$OPENAI_KEY" == \$* ]]; then
+    if [[ "$OPENAI_KEY" == \$\{*\} ]] || [[ "$OPENAI_KEY" == \$* ]]; then
         echo "      ✅ Environment variable reference is correct (\$ prefix)"
     else
-        echo "      ❌ Environment variable should start with '\$' for substitution"
+        echo "      ❌ Environment variable should use '\${ENV_VAR}' or '\$ENV_VAR' format"
         echo "         Current: $OPENAI_KEY"
         exit 1
     fi
