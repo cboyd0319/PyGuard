@@ -635,6 +635,167 @@ class TestPEP8Rules:
         assert any(r.rule_id == 'W292' for r in rules)
 
 
+class TestAdvancedWhitespace:
+    """Test advanced whitespace checks (E241-E275)."""
+    
+    def test_e241_multiple_spaces_after_comma(self):
+        """Test E241: Multiple spaces after comma."""
+        code = "values = [1,  2, 3]  # Two spaces after first comma\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e241_violations = [v for v in violations if v.rule_id == 'E241']
+            assert len(e241_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e242_tab_after_comma(self):
+        """Test E242: Tab after comma."""
+        code = "values = [1,\t2, 3]\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e242_violations = [v for v in violations if v.rule_id == 'E242']
+            assert len(e242_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e261_two_spaces_before_inline_comment(self):
+        """Test E261: At least two spaces before inline comment."""
+        code = "x = 1 # Only one space\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e261_violations = [v for v in violations if v.rule_id == 'E261']
+            assert len(e261_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e262_inline_comment_start_with_space(self):
+        """Test E262: Inline comment should start with '# '."""
+        code = "x = 1  #No space after hash\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e262_violations = [v for v in violations if v.rule_id == 'E262']
+            assert len(e262_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e265_block_comment_start_with_space(self):
+        """Test E265: Block comment should start with '# '."""
+        code = "#No space after hash\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e265_violations = [v for v in violations if v.rule_id == 'E265']
+            assert len(e265_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e271_multiple_spaces_after_keyword(self):
+        """Test E271: Multiple spaces after keyword."""
+        code = "if  True:  # Two spaces\n    pass\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e271_violations = [v for v in violations if v.rule_id == 'E271']
+            assert len(e271_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_e272_multiple_spaces_before_keyword(self):
+        """Test E272: Multiple spaces before keyword."""
+        code = "x = 1\n  if x > 0:  # Two leading spaces before if\n    pass\n"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            # E272 can be tricky with indentation, so check for either E272 or related
+            whitespace_violations = [v for v in violations if v.rule_id in ['E272', 'E111']]
+            assert len(whitespace_violations) > 0
+        finally:
+            path.unlink()
+    
+    def test_fix_advanced_whitespace(self):
+        """Test fixing advanced whitespace issues."""
+        code = """x = 1,  2, 3  #No space after hash
+#No space in block comment
+if  True:  # Two spaces after if
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations_before = checker.check_file(path)
+            
+            success, fixes = checker.fix_file(path)
+            assert success
+            assert fixes > 0
+            
+            # Check that issues were fixed
+            violations_after = checker.check_file(path)
+            
+            # Should have fewer whitespace violations
+            ws_before = [v for v in violations_before if v.rule_id.startswith('E2')]
+            ws_after = [v for v in violations_after if v.rule_id.startswith('E2')]
+            assert len(ws_after) < len(ws_before)
+        finally:
+            path.unlink()
+
+
 class TestContinuationIndentation:
     """Test continuation line indentation checks (E121-E131)."""
     

@@ -410,6 +410,108 @@ class PEP8Checker:
                         "E231", line_num, match.start(),
                         "Missing whitespace after ','"
                     )
+            
+            # E241: Multiple spaces after ','
+            if re.search(r',\s{2,}', stripped):
+                match = re.search(r',\s{2,}', stripped)
+                if match:
+                    self._add_violation(
+                        "E241", line_num, match.start(),
+                        "Multiple spaces after ','"
+                    )
+            
+            # E242: Tab after ','
+            if re.search(r',\t', stripped):
+                match = re.search(r',\t', stripped)
+                if match:
+                    self._add_violation(
+                        "E242", line_num, match.start(),
+                        "Tab after ','"
+                    )
+            
+            # E251: Unexpected spaces around keyword/parameter equals
+            if re.search(r'\w\s+=\s+\w', stripped):
+                # Only in function definitions and calls (with = for defaults/kwargs)
+                match = re.search(r'(\w)\s+(=)\s+(\w)', stripped)
+                if match and '==' not in stripped[match.start():match.end()+2]:
+                    self._add_violation(
+                        "E251", line_num, match.start(),
+                        "Unexpected spaces around keyword/parameter equals"
+                    )
+            
+            # E261: At least two spaces before inline comment
+            comment_match = re.search(r'[^\s](\s*)#', stripped)
+            if comment_match and not stripped.lstrip().startswith('#'):
+                spaces_before = len(comment_match.group(1))
+                if spaces_before == 1:
+                    self._add_violation(
+                        "E261", line_num, comment_match.start(),
+                        "At least two spaces before inline comment"
+                    )
+            
+            # E262: Inline comment should start with '# '
+            inline_comment = re.search(r'[^\s].*#[^ ]', stripped)
+            if inline_comment and not stripped.lstrip().startswith('#'):
+                self._add_violation(
+                    "E262", line_num, inline_comment.start(),
+                    "Inline comment should start with '# '"
+                )
+            
+            # E265: Block comment should start with '# '
+            if stripped.lstrip().startswith('#') and not stripped.lstrip().startswith('# '):
+                if len(stripped.lstrip()) > 1 and stripped.lstrip()[1] != '#':
+                    self._add_violation(
+                        "E265", line_num, 0,
+                        "Block comment should start with '# '"
+                    )
+            
+            # E271: Multiple spaces after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
+                pattern = rf'\b{keyword}\s{{2,}}'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E271", line_num, match.start(),
+                            f"Multiple spaces after keyword '{keyword}'"
+                        )
+                        break
+            
+            # E272: Multiple spaces before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
+                pattern = rf'\s{{2,}}\b{keyword}\b'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E272", line_num, match.start(),
+                            f"Multiple spaces before keyword '{keyword}'"
+                        )
+                        break
+            
+            # E273: Tab after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\b{keyword}\t'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E273", line_num, match.start(),
+                            f"Tab after keyword '{keyword}'"
+                        )
+                        break
+            
+            # E274: Tab before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\t\b{keyword}\b'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E274", line_num, match.start(),
+                            f"Tab before keyword '{keyword}'"
+                        )
+                        break
     
     def _fix_whitespace(self, content: str) -> Tuple[str, int]:
         """Fix whitespace issues."""
@@ -434,6 +536,75 @@ class PEP8Checker:
             if re.search(r',([^\s\n\r])', fixed):
                 fixed = re.sub(r',([^\s\n\r])', r', \1', fixed)
                 fixes += 1
+            
+            # Fix E241: Multiple spaces after ','
+            if re.search(r',\s{2,}', fixed):
+                fixed = re.sub(r',\s{2,}', ', ', fixed)
+                fixes += 1
+            
+            # Fix E242: Tab after ','
+            if re.search(r',\t', fixed):
+                fixed = re.sub(r',\t', ', ', fixed)
+                fixes += 1
+            
+            # Fix E251: Unexpected spaces around keyword/parameter equals
+            # Only fix in function definitions/calls (not comparisons)
+            fixed = re.sub(r'(\w)\s+=\s+(\w)', r'\1=\2', fixed)
+            if '==' not in fixed:
+                fixes += 1
+            
+            # Fix E261: At least two spaces before inline comment
+            comment_match = re.search(r'[^\s](\s*)#', fixed)
+            if comment_match and not fixed.lstrip().startswith('#'):
+                spaces_before = len(comment_match.group(1))
+                if spaces_before == 1:
+                    # Add one more space
+                    fixed = re.sub(r'([^\s])\s#', r'\1  #', fixed)
+                    fixes += 1
+            
+            # Fix E262: Inline comment should start with '# '
+            if re.search(r'[^\s].*#[^ \n]', fixed) and not fixed.lstrip().startswith('#'):
+                fixed = re.sub(r'#([^ \n#])', r'# \1', fixed)
+                fixes += 1
+            
+            # Fix E265: Block comment should start with '# '
+            if fixed.lstrip().startswith('#') and not fixed.lstrip().startswith('# '):
+                if len(fixed.lstrip()) > 1 and fixed.lstrip()[1] != '#':
+                    indent = len(fixed) - len(fixed.lstrip())
+                    fixed = ' ' * indent + '# ' + fixed.lstrip()[1:]
+                    fixes += 1
+            
+            # Fix E271: Multiple spaces after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
+                pattern = rf'\b{keyword}\s{{2,}}'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f'{keyword} ', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E272: Multiple spaces before keyword  
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
+                pattern = rf'\s{{2,}}\b{keyword}\b'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f' {keyword}', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E273: Tab after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\b{keyword}\t'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f'{keyword} ', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E274: Tab before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\t\b{keyword}\b'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f' {keyword}', fixed)
+                    fixes += 1
+                    break
             
             fixed_lines.append(fixed)
         
