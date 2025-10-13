@@ -6,7 +6,7 @@ Integrates with black, isort, autopep8 for automated formatting.
 
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -154,7 +154,7 @@ class FormattingFixer:
         use_black: bool = True,
         use_isort: bool = True,
         use_autopep8: bool = False,
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Format a Python file using specified formatters.
 
@@ -208,7 +208,7 @@ class FormattingFixer:
         directory: Path,
         exclude_patterns: Optional[List[str]] = None,
         **format_options,
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """
         Format all Python files in a directory.
 
@@ -298,7 +298,7 @@ class WhitespaceFixer:
             return content.replace("\r\n", "\n"), True
         return content, False
 
-    def fix_file_whitespace(self, file_path: Path) -> Dict[str, any]:
+    def fix_file_whitespace(self, file_path: Path) -> Dict[str, Any]:
         """
         Fix all whitespace issues in a file.
 

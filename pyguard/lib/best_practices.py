@@ -7,7 +7,7 @@ Enforces PEP 8, Python idioms, and coding standards.
 import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -259,7 +259,7 @@ class BestPracticesFixer:
 
         return "\n".join(lines)
 
-    def analyze_complexity(self, file_path: Path) -> Dict[str, any]:
+    def analyze_complexity(self, file_path: Path) -> Dict[str, Any]:
         """
         Analyze code complexity metrics.
 

@@ -18,7 +18,7 @@ References:
 import ast
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -289,7 +289,7 @@ class AnomalyDetector:
         """Initialize anomaly detector."""
         self.logger = PyGuardLogger()
 
-    def detect_anomalies(self, code: str) -> List[Dict[str, any]]:
+    def detect_anomalies(self, code: str) -> List[Dict[str, Any]]:
         """
         Detect anomalous patterns in code.
 
