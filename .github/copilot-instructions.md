@@ -31,29 +31,71 @@
 
 ```
 PyGuard/
-├── pyguard/                  # Main package
-│   ├── __init__.py          # Package exports
-│   ├── cli.py               # Command-line interface
-│   └── lib/                 # Core library modules
-│       ├── core.py          # Logger, backup, diff, file ops
-│       ├── security.py      # Security vulnerability detection/fixes
-│       ├── best_practices.py # Code quality improvements
-│       ├── formatting.py    # Code formatting (Black, isort)
-│       ├── ast_analyzer.py  # AST-based static analysis
-│       ├── ml_detection.py  # ML-powered security detection
-│       ├── mcp_integration.py # Model Context Protocol integration
-│       └── enhanced_detections.py # Advanced vulnerability detection
-├── tests/                   # Test suite
-│   ├── unit/               # Unit tests
-│   ├── integration/        # Integration tests
-│   └── fixtures/           # Test fixtures and sample code
-├── config/                  # Configuration files
-│   ├── security_rules.toml
-│   └── qa_settings.toml
-├── docs/                    # Documentation
-├── examples/               # Example code and demos
-└── scripts/               # Utility scripts
+├── pyguard/                       # Main package
+│   ├── __init__.py               # Package exports
+│   ├── cli.py                    # Command-line interface
+│   └── lib/                      # Core library modules
+│       ├── core.py               # Logger, backup, diff, file ops
+│       ├── security.py           # Security vulnerability detection/fixes
+│       ├── advanced_security.py  # Advanced security (taint, race conditions, ReDoS)
+│       ├── ultra_advanced_security.py  # Ultra-advanced security features
+│       ├── best_practices.py     # Code quality improvements
+│       ├── formatting.py         # Code formatting (Black, isort)
+│       ├── ast_analyzer.py       # AST-based static analysis
+│       ├── ml_detection.py       # ML-powered security detection
+│       ├── enhanced_detections.py # Advanced vulnerability detection
+│       ├── ultra_advanced_fixes.py # Ultra-advanced automated fixes
+│       ├── mcp_integration.py    # Model Context Protocol integration
+│       ├── knowledge_integration.py # Knowledge base integration
+│       ├── standards_integration.py # Compliance standards (OWASP, PCI-DSS, etc.)
+│       ├── supply_chain.py       # Supply chain security analysis
+│       ├── cache.py              # Caching for performance
+│       ├── parallel.py           # Parallel processing utilities
+│       ├── reporting.py          # Report generation (JSON, HTML, console)
+│       └── ui.py                 # UI components and enhanced HTML reporting
+├── tests/                        # Test suite
+│   ├── unit/                    # Unit tests
+│   ├── integration/             # Integration tests
+│   └── fixtures/                # Test fixtures and sample code
+├── config/                       # Configuration files
+│   ├── security_rules.toml      # Security detection rules
+│   └── qa_settings.toml         # Quality assurance settings
+├── docs/                         # Documentation
+├── examples/                     # Example code and demos
+├── scripts/                      # Utility scripts
+└── benchmarks/                   # Performance benchmarks
 ```
+
+## Key Modules Overview
+
+### Core Modules
+- **`cli.py`** — Command-line interface with argument parsing and main entry point
+- **`lib/core.py`** — Core utilities: PyGuardLogger, BackupManager, DiffGenerator, FileOperations
+- **`lib/cache.py`** — Analysis caching for improved performance (AnalysisCache, ConfigCache)
+- **`lib/parallel.py`** — Parallel processing for batch operations (ParallelProcessor, BatchProcessor)
+
+### Security Analysis
+- **`lib/security.py`** — Core security vulnerability detection and fixes (SecurityFixer)
+- **`lib/advanced_security.py`** — Advanced analysis: taint tracking, race conditions, ReDoS, integer overflow
+- **`lib/ultra_advanced_security.py`** — Ultra-advanced security features and complex vulnerability patterns
+- **`lib/ast_analyzer.py`** — AST-based static analysis (ASTAnalyzer, SecurityVisitor, CodeQualityVisitor)
+- **`lib/enhanced_detections.py`** — Enhanced detection patterns for complex vulnerabilities
+- **`lib/ml_detection.py`** — Machine learning-powered security detection and risk scoring
+
+### Code Quality & Fixes
+- **`lib/best_practices.py`** — Code quality improvements (BestPracticesFixer, NamingConventionFixer)
+- **`lib/formatting.py`** — Code formatting with Black and isort (FormattingFixer, WhitespaceFixer)
+- **`lib/ultra_advanced_fixes.py`** — Advanced automated code fixes and refactoring
+
+### Integration & Compliance
+- **`lib/mcp_integration.py`** — Model Context Protocol integration for AI-powered assistance
+- **`lib/knowledge_integration.py`** — Knowledge base integration for security and compliance information
+- **`lib/standards_integration.py`** — Multi-framework compliance (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
+- **`lib/supply_chain.py`** — Supply chain security analysis and dependency scanning
+
+### Reporting & UI
+- **`lib/reporting.py`** — Report generation: JSONReporter, HTMLReporter, ConsoleReporter, AnalysisMetrics
+- **`lib/ui.py`** — Enhanced UI components and interactive HTML reporting (EnhancedConsole, ModernHTMLReporter)
 
 ## Development Workflow
 
