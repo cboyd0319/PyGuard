@@ -93,7 +93,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### **Prerequisites**
 
-- Python 3.8 or higher
+- Python 3.8 or higher (3.13 recommended for development)
 - Git
 - pip or Poetry
 
@@ -158,30 +158,34 @@ git checkout -b feature/my-feature
 # ... edit files ...
 
 # 3. Run tests
-pytest
+make test
 
 # 4. Format code
-black pyguard/
-isort pyguard/
+make format  # or make fmt
 
 # 5. Type check
-mypy pyguard/
+make type
 
 # 6. Lint code
-pylint pyguard/
+make lint
 
-# 7. Run full test suite with coverage
-pytest --cov=pyguard --cov-report=html
-
-# 8. Commit changes
+# 7. Commit changes
 git add .
 git commit -m "feat: add type hint fixer"
 
-# 9. Push to your fork
+# 8. Push to your fork
 git push origin feature/my-feature
 
-# 10. Open Pull Request on GitHub
+# 9. Open Pull Request on GitHub
 ```
+
+**Quick reference for Make targets:**
+- `make dev` - Install development dependencies
+- `make test` - Run test suite with coverage
+- `make lint` - Run all linters (ruff, pylint, mypy, flake8)
+- `make format` or `make fmt` - Format code with Black and isort
+- `make type` - Run type checking with mypy
+- `make clean` - Remove build artifacts
 
 ---
 
