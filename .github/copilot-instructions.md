@@ -414,12 +414,18 @@ line_length = 100
 
 ## Additional Resources
 
-- **Architecture:** `docs/ARCHITECTURE.md`
-- **Contributing:** `CONTRIBUTING.md`
-- **Security Policy:** `SECURITY.md`
-- **User Guide:** `docs/user-guide.md`
-- **API Reference:** `docs/api-reference.md`
-- **Security Rules:** `docs/security-rules.md`
+### Documentation
+- **Architecture:** `docs/ARCHITECTURE.md` — System design and component overview
+- **Contributing:** `CONTRIBUTING.md` — Contribution guidelines
+- **Security Policy:** `SECURITY.md` — Security reporting and policies
+- **User Guide:** `docs/user-guide.md` — End-user documentation
+- **API Reference:** `docs/api-reference.md` — API documentation
+- **Security Rules:** `docs/security-rules.md` — Security detection rules reference
+- **MCP Integration:** `docs/MCP-INTEGRATION.md` — Model Context Protocol integration guide
+
+### GitHub Copilot Configuration
+- **MCP Servers:** `.github/COPILOT-MCP-SERVERS.md` — MCP server configuration guide
+- **MCP Config:** `.github/copilot-mcp.json` — MCP server definitions (Context7, OpenAI, Fetch, Playwright)
 
 ---
 
