@@ -15,13 +15,24 @@ from pyguard.lib.cache import AnalysisCache, ConfigCache
 from pyguard.lib.code_simplification import CodeSimplificationFixer, SimplificationIssue
 from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer
+from pyguard.lib.import_manager import ImportAnalyzer, ImportManager
 from pyguard.lib.modern_python import ModernPythonFixer, ModernizationIssue
 from pyguard.lib.naming_conventions import NamingConventionFixer, NamingIssue
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 from pyguard.lib.performance_checks import PerformanceFixer, PerformanceIssue
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
+from pyguard.lib.rule_engine import (
+    FixApplicability,
+    Rule,
+    RuleCategory,
+    RuleExecutor,
+    RuleRegistry,
+    RuleSeverity,
+    RuleViolation,
+)
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
+from pyguard.lib.type_checker import TypeChecker, TypeInferenceEngine
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue
 
@@ -56,4 +67,18 @@ __all__ = [
     "AnalysisMetrics",
     "EnhancedConsole",
     "ModernHTMLReporter",
+    # Rule Engine
+    "Rule",
+    "RuleCategory",
+    "RuleSeverity",
+    "RuleViolation",
+    "RuleRegistry",
+    "RuleExecutor",
+    "FixApplicability",
+    # Type Checking
+    "TypeChecker",
+    "TypeInferenceEngine",
+    # Import Management
+    "ImportManager",
+    "ImportAnalyzer",
 ]
