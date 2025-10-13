@@ -22,10 +22,9 @@ References:
 - CWE Top 25 2024 | https://cwe.mitre.org/top25/ | High | Common weaknesses
 """
 
-import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -78,7 +77,7 @@ class UltraAdvancedSecurityFixer:
                         f'\"{{{{ query($var: String!) }}}}\"  # SECURITY: Use variables={{{var_name}: {var_name}}}',
                         line
                     )
-                    fixed_lines.append(f'# FIXED: GraphQL injection - use parameterized query')
+                    fixed_lines.append('# FIXED: GraphQL injection - use parameterized query')
                     fixed_lines.append(fixed_line)
                     self.fixes_applied.append('GraphQL injection → parameterized query')
                     modified = True
@@ -218,7 +217,7 @@ class UltraAdvancedSecurityFixer:
                 # Check if next line is the function definition (no rate limiter)
                 if i + 1 < len(lines):
                     next_line = lines[i + 1]
-                    if next_line.strip().startswith('def ') and '@limiter' not in content[max(0, i-5):i]:
+                    if next_line.strip().startswith('def ') and '@limiter' not in content[max(0, i - 5):i]:
                         fixed_lines.append(line)
                         fixed_lines.append('@limiter.limit("100/hour")  # ADDED: Rate limiting to prevent abuse')
                         self.fixes_applied.append('API rate limiting added')

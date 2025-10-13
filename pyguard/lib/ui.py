@@ -22,17 +22,12 @@ from rich.progress import (
     BarColumn,
     Progress,
     SpinnerColumn,
-    TaskID,
     TextColumn,
     TimeElapsedColumn,
 )
 from rich.table import Table
-from rich.text import Text
 from rich.tree import Tree
 from rich import box
-from rich.layout import Layout
-from rich.live import Live
-from rich.markdown import Markdown
 
 
 @dataclass
@@ -211,7 +206,6 @@ class EnhancedConsole:
         # Group issues by severity
         high_issues = [i for i in issues if i.get("severity") == "HIGH"]
         medium_issues = [i for i in issues if i.get("severity") == "MEDIUM"]
-        low_issues = [i for i in issues if i.get("severity") == "LOW"]
 
         # Print high severity issues
         if high_issues:
@@ -371,8 +365,6 @@ class ModernHTMLReporter:
         total_issues = len(issues)
         high_issues = len([i for i in issues if i.get("severity") == "HIGH"])
         medium_issues = len([i for i in issues if i.get("severity") == "MEDIUM"])
-        low_issues = len([i for i in issues if i.get("severity") == "LOW"])
-        security_issues = len([i for i in issues if "security" in i.get("category", "").lower()])
 
         # Status message
         if total_issues == 0:
@@ -426,7 +418,7 @@ class ModernHTMLReporter:
             """
 
         if not issue_rows_html:
-            issue_rows_html = f'''<tr role="row">
+            issue_rows_html = '''<tr role="row">
                 <td colspan="5" class="no-issues" role="cell">
                     <span class="icon" aria-hidden="true">🎉</span>
                     <div>No issues found! Your code is clean and secure.</div>

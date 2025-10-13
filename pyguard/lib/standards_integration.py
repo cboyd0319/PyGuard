@@ -27,7 +27,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -265,7 +265,7 @@ class StandardsMapper:
         Returns:
             Dictionary mapping standards to their requirements
         """
-        report = {
+        report: Dict[str, List[str]] = {
             "NIST-CSF": [],
             "ISO-27001": [],
             "SOC-2": [],
@@ -290,7 +290,7 @@ class StandardsMapper:
 
     def check_standard_compliance(
         self, standard: str, issues: List[Dict]
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Check compliance with a specific standard.
 
@@ -345,7 +345,7 @@ class GDPRTechnicalControls:
 
     def check_gdpr_technical_requirements(
         self, issues: List[Dict]
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Check GDPR technical requirements.
 
@@ -394,7 +394,7 @@ class HIPAASecurityRule:
         """Initialize HIPAA mapper."""
         self.logger = PyGuardLogger()
 
-    def check_hipaa_compliance(self, issues: List[Dict]) -> Dict[str, any]:
+    def check_hipaa_compliance(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Check HIPAA Security Rule compliance.
 
@@ -517,7 +517,7 @@ class SANSTop25Mapper:
         
         return sorted(issues, key=get_priority)
 
-    def generate_sans_report(self, issues: List[Dict]) -> Dict[str, any]:
+    def generate_sans_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate SANS Top 25 compliance report.
         
@@ -527,7 +527,7 @@ class SANSTop25Mapper:
         Returns:
             Report showing coverage of SANS Top 25
         """
-        top25_found = {}
+        top25_found: Dict[int, List[str]] = {}
         
         for issue in issues:
             cwe_id = issue.get("cwe_id", "")
@@ -600,7 +600,7 @@ class CERTSecureCodingMapper:
         
         return mappings.get(issue_type, [])
 
-    def generate_cert_report(self, issues: List[Dict]) -> Dict[str, any]:
+    def generate_cert_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate CERT Secure Coding compliance report.
         
@@ -610,7 +610,7 @@ class CERTSecureCodingMapper:
         Returns:
             Report showing CERT rule violations
         """
-        violations_by_rule = {}
+        violations_by_rule: Dict[str, List[str]] = {}
         
         for issue in issues:
             issue_type = issue.get("type", "unknown")
@@ -677,7 +677,7 @@ class IEEE12207Mapper:
         
         return mappings.get(issue_category, ["7.1.2"])  # Default to QA
 
-    def generate_lifecycle_report(self, issues: List[Dict]) -> Dict[str, any]:
+    def generate_lifecycle_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate IEEE 12207 lifecycle compliance report.
         
@@ -687,7 +687,7 @@ class IEEE12207Mapper:
         Returns:
             Report showing lifecycle process compliance
         """
-        process_violations = {}
+        process_violations: Dict[str, List[str]] = {}
         
         for issue in issues:
             category = issue.get("category", "quality")
@@ -758,7 +758,7 @@ class MitreATTACKMapper:
         
         return mappings.get(issue_type, [])
 
-    def generate_threat_model(self, issues: List[Dict]) -> Dict[str, any]:
+    def generate_threat_model(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate ATT&CK-based threat model.
         
@@ -768,7 +768,7 @@ class MitreATTACKMapper:
         Returns:
             Threat model showing potential ATT&CK techniques enabled
         """
-        techniques_enabled = {}
+        techniques_enabled: Dict[str, Dict[str, Any]] = {}
         
         for issue in issues:
             issue_type = issue.get("type", "unknown")

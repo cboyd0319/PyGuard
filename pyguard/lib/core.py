@@ -7,7 +7,6 @@ Provides logging, backup management, diff generation, and file operations.
 import difflib
 import json
 import logging
-import os
 import shutil
 import uuid
 from datetime import datetime
@@ -37,16 +36,16 @@ class PyGuardLogger:
         if log_file is None:
             log_dir = Path("logs")
             log_dir.mkdir(exist_ok=True)
-            log_file = log_dir / "pyguard.jsonl"
-
-        self.log_file = Path(log_file)
+            self.log_file = log_dir / "pyguard.jsonl"
+        else:
+            self.log_file = Path(log_file)
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Generate or use provided correlation ID
         self.correlation_id = correlation_id or str(uuid.uuid4())
 
         # Track metrics
-        self.metrics = {
+        self.metrics: Dict[str, Any] = {
             "start_time": datetime.now(),
             "files_processed": 0,
             "issues_found": 0,

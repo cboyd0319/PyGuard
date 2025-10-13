@@ -18,7 +18,7 @@ References:
 import ast
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -140,8 +140,6 @@ class CodeFeatureExtractor:
 
     def _calculate_max_nesting(self, tree: ast.AST) -> int:
         """Calculate maximum nesting level in AST."""
-        max_depth = 0
-
         class DepthVisitor(ast.NodeVisitor):
             def __init__(self):
                 self.depth = 0
@@ -291,7 +289,7 @@ class AnomalyDetector:
         """Initialize anomaly detector."""
         self.logger = PyGuardLogger()
 
-    def detect_anomalies(self, code: str) -> List[Dict[str, any]]:
+    def detect_anomalies(self, code: str) -> List[Dict[str, Any]]:
         """
         Detect anomalous patterns in code.
 

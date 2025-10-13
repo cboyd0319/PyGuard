@@ -8,7 +8,7 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger

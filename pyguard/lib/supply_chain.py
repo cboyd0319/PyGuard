@@ -12,13 +12,12 @@ References:
 - CycloneDX | https://cyclonedx.org/ | High | SBOM standard
 """
 
-import hashlib
 import json
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List, Optional
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

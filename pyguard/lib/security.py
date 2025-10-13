@@ -4,10 +4,9 @@ Security vulnerability fixes for Python code.
 Detects and fixes common security issues based on Bandit and best practices.
 """
 
-import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -250,15 +249,15 @@ class SecurityFixer:
 
         return content
 
-    def scan_file_for_issues(self, file_path: Path) -> List[Dict[str, str]]:
+    def scan_file_for_issues_legacy(self, file_path: Path) -> List[Dict[str, str]]:
         """
-        Scan file for security issues without fixing.
+        Scan file for security issues using regex patterns (legacy method).
 
         Args:
             file_path: Path to Python file
 
         Returns:
-            List of security issues found
+            List of security issues found as dictionaries
         """
         content = self.file_ops.read_file(file_path)
         if content is None:

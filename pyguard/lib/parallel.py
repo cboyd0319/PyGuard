@@ -12,7 +12,7 @@ import concurrent.futures
 import multiprocessing
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -91,7 +91,7 @@ class ParallelProcessor:
 
                     if show_progress and completed % max(1, total // 10) == 0:
                         self.logger.info(
-                            f"Progress: {completed}/{total} files processed ({completed*100//total}%)",
+                            f"Progress: {completed}/{total} files processed ({completed * 100 // total}%)",
                             category="Parallel",
                         )
 

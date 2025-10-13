@@ -12,7 +12,7 @@ References:
 
 import ast
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -361,8 +361,6 @@ class SecurityVisitor(ast.NodeVisitor):
         # CWE-1004: Sensitive Cookie Without HttpOnly Flag
         if func_name in ["set_cookie", "response.set_cookie"]:
             httponly_arg = self._get_keyword_arg(node, "httponly")
-            secure_arg = self._get_keyword_arg(node, "secure")
-            samesite_arg = self._get_keyword_arg(node, "samesite")
             
             if not httponly_arg or (isinstance(httponly_arg, ast.Constant) and not httponly_arg.value):
                 self.issues.append(

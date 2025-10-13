@@ -13,10 +13,7 @@ References:
 - OWASP Top 10 | https://owasp.org/Top10/ | High | Top web application security risks
 """
 
-import json
 from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from pyguard.lib.core import PyGuardLogger
