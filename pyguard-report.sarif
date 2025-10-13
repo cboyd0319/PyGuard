@@ -1,0 +1,229 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "PyGuard",
+          "version": "0.3.0",
+          "informationUri": "https://github.com/cboyd0319/PyGuard",
+          "semanticVersion": "0.3.0",
+          "rules": [
+            {
+              "id": "PY/CWE-78",
+              "name": "CommandInjection",
+              "shortDescription": {
+                "text": "Command Injection"
+              },
+              "fullDescription": {
+                "text": "subprocess.call() with shell=True allows command injection\n\nFix: Pass command as list and use shell=False (default): subprocess.run(['cmd', 'arg1', 'arg2'])"
+              },
+              "help": {
+                "text": "subprocess.call() with shell=True allows command injection\n\nFix: Pass command as list and use shell=False (default): subprocess.run(['cmd', 'arg1', 'arg2'])",
+                "markdown": "## Command Injection\n\nsubprocess.call() with shell=True allows command injection\n\n**CWE Reference:** [CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n\n**OWASP Reference:** ASVS-5.3.3\n\n### Recommended Fix\n\nPass command as list and use shell=False (default): subprocess.run(['cmd', 'arg1', 'arg2'])\n"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "injection",
+                  "high",
+                  "cwe-78",
+                  "owasp"
+                ],
+                "precision": "high",
+                "security-severity": "7.0",
+                "cwe": "CWE-78",
+                "owasp": "ASVS-5.3.3"
+              }
+            },
+            {
+              "id": "PY/CWE-798",
+              "name": "HardcodedCredentials",
+              "shortDescription": {
+                "text": "Hardcoded Credentials"
+              },
+              "fullDescription": {
+                "text": "Hardcoded Hardcoded Credentials detected in variable 'password'\n\nFix: Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)"
+              },
+              "help": {
+                "text": "Hardcoded Hardcoded Credentials detected in variable 'password'\n\nFix: Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)",
+                "markdown": "## Hardcoded Credentials\n\nHardcoded Hardcoded Credentials detected in variable 'password'\n\n**CWE Reference:** [CWE-798](https://cwe.mitre.org/data/definitions/798.html)\n\n**OWASP Reference:** ASVS-2.6.3\n\n### Recommended Fix\n\nUse environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)\n"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "high",
+                  "cwe-798",
+                  "owasp"
+                ],
+                "precision": "high",
+                "security-severity": "7.0",
+                "cwe": "CWE-798",
+                "owasp": "ASVS-2.6.3"
+              }
+            },
+            {
+              "id": "PY/CWE-95",
+              "name": "CodeInjection",
+              "shortDescription": {
+                "text": "Code Injection"
+              },
+              "fullDescription": {
+                "text": "Dangerous use of eval() - executes arbitrary code\n\nFix: Replace eval() with safer alternatives: ast.literal_eval() for literals, json.loads() for data"
+              },
+              "help": {
+                "text": "Dangerous use of eval() - executes arbitrary code\n\nFix: Replace eval() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
+                "markdown": "## Code Injection\n\nDangerous use of eval() - executes arbitrary code\n\n**CWE Reference:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)\n\n**OWASP Reference:** ASVS-5.2.1\n\n### Recommended Fix\n\nReplace eval() with safer alternatives: ast.literal_eval() for literals, json.loads() for data\n"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "injection",
+                  "high",
+                  "cwe-95",
+                  "owasp"
+                ],
+                "precision": "high",
+                "security-severity": "7.0",
+                "cwe": "CWE-95",
+                "owasp": "ASVS-5.2.1"
+              }
+            }
+          ],
+          "properties": {
+            "description": "Python security and code quality analysis tool with ML-powered detection and auto-fix capabilities",
+            "tags": [
+              "security",
+              "code-quality",
+              "python",
+              "static-analysis"
+            ]
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "PY/CWE-78",
+          "level": "error",
+          "message": {
+            "text": "subprocess.call() with shell=True allows command injection"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/tmp/test_vulnerable.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 4,
+                  "snippet": {
+                    "text": "subprocess.call(command, shell=True)"
+                  }
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Pass command as list and use shell=False (default): subprocess.run(['cmd', 'arg1', 'arg2'])"
+              }
+            }
+          ],
+          "properties": {
+            "cwe": "CWE-78",
+            "owasp": "ASVS-5.3.3"
+          }
+        },
+        {
+          "ruleId": "PY/CWE-798",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Hardcoded Credentials detected in variable 'password'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/tmp/test_vulnerable.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 0,
+                  "snippet": {
+                    "text": "PASSWORD = \"admin123\""
+                  }
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)"
+              }
+            }
+          ],
+          "properties": {
+            "cwe": "CWE-798",
+            "owasp": "ASVS-2.6.3"
+          }
+        },
+        {
+          "ruleId": "PY/CWE-95",
+          "level": "error",
+          "message": {
+            "text": "Dangerous use of eval() - executes arbitrary code"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/tmp/test_vulnerable.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 11,
+                  "snippet": {
+                    "text": "return eval(expression)"
+                  }
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace eval() with safer alternatives: ast.literal_eval() for literals, json.loads() for data"
+              }
+            }
+          ],
+          "properties": {
+            "cwe": "CWE-95",
+            "owasp": "ASVS-5.2.1"
+          }
+        }
+      ],
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2025-10-13T17:23:46.940088Z"
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGua
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
+from pyguard.lib.sarif_reporter import SARIFReporter
 
 
 class PyGuardCLI:
@@ -28,6 +29,7 @@ class PyGuardCLI:
         self.diff_generator = DiffGenerator()
         self.ui = EnhancedConsole()
         self.html_reporter = ModernHTMLReporter()
+        self.sarif_reporter = SARIFReporter()
 
         # Initialize fixers
         self.security_fixer = SecurityFixer()
@@ -193,6 +195,8 @@ class PyGuardCLI:
 
         else:
             # Just scan for issues
+            from dataclasses import asdict
+
             security_issues = []
             progress = self.ui.create_progress_bar()
             with progress:
@@ -200,8 +204,12 @@ class PyGuardCLI:
                 for i, file_path in enumerate(files):
                     issues = self.security_fixer.scan_file_for_issues(file_path)
                     for issue in issues:
-                        issue["file"] = str(file_path)
-                    security_issues.extend(issues)
+                        issue_dict = asdict(issue)
+                        issue_dict["file"] = str(file_path)
+                        # Rename line_number to line for consistency
+                        if "line_number" in issue_dict:
+                            issue_dict["line"] = issue_dict.pop("line_number")
+                        security_issues.append(issue_dict)
                     progress.update(task, advance=1)
 
             results["security"] = {"issues_found": len(security_issues), "issues": security_issues}
@@ -216,13 +224,16 @@ class PyGuardCLI:
 
         return results
 
-    def print_results(self, results: dict, generate_html: bool = True) -> None:
+    def print_results(
+        self, results: dict, generate_html: bool = True, generate_sarif: bool = False
+    ) -> None:
         """
         Print beautiful formatted results using Rich UI.
 
         Args:
             results: Results dictionary
             generate_html: Whether to generate HTML report
+            generate_sarif: Whether to generate SARIF report
         """
         # Print summary table
         self.ui.print_summary_table(results)
@@ -241,11 +252,31 @@ class PyGuardCLI:
             html_content = self.html_reporter.generate_report(
                 metrics=results,
                 issues=results.get("all_issues", []),
-                fixes=results.get("security", {}).get("fixes", []) + results.get("best_practices", {}).get("fixes", []),
+                fixes=results.get("security", {}).get("fixes", [])
+                + results.get("best_practices", {}).get("fixes", []),
             )
             if self.html_reporter.save_report(html_content, html_path):
                 self.ui.console.print(
                     f"[bold green]✅ HTML report saved:[/bold green] [cyan]{html_path}[/cyan]"
+                )
+                self.ui.console.print()
+
+        # Generate SARIF report
+        if generate_sarif:
+            sarif_path = Path("pyguard-report.sarif")
+            from pyguard import __version__
+
+            sarif_report = self.sarif_reporter.generate_report(
+                issues=results.get("all_issues", []),
+                tool_name="PyGuard",
+                tool_version=__version__,
+            )
+            if self.sarif_reporter.save_report(sarif_report, sarif_path):
+                self.ui.console.print(
+                    f"[bold green]✅ SARIF report saved:[/bold green] [cyan]{sarif_path}[/cyan]"
+                )
+                self.ui.console.print(
+                    "   Use this report for GitHub Code Scanning integration"
                 )
                 self.ui.console.print()
 
@@ -326,6 +357,18 @@ def main():
         help="Patterns to exclude (e.g., 'venv/*' 'tests/*')",
     )
 
+    parser.add_argument(
+        "--sarif",
+        action="store_true",
+        help="Generate SARIF report for GitHub Code Scanning integration",
+    )
+
+    parser.add_argument(
+        "--no-html",
+        action="store_true",
+        help="Don't generate HTML report",
+    )
+
     args = parser.parse_args()
 
     # Initialize CLI
@@ -377,7 +420,7 @@ def main():
         results = cli.run_full_analysis(all_files, create_backup, fix)
 
     # Print results
-    cli.print_results(results)
+    cli.print_results(results, generate_html=not args.no_html, generate_sarif=args.sarif)
 
 
 if __name__ == "__main__":

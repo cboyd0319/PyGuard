@@ -16,6 +16,7 @@ from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
+from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 
@@ -36,6 +37,7 @@ __all__ = [
     "ConsoleReporter",
     "JSONReporter",
     "HTMLReporter",
+    "SARIFReporter",
     "AnalysisMetrics",
     "EnhancedConsole",
     "ModernHTMLReporter",
