@@ -12,13 +12,18 @@ __license__ = "MIT"
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.best_practices import BestPracticesFixer
 from pyguard.lib.cache import AnalysisCache, ConfigCache
+from pyguard.lib.code_simplification import CodeSimplificationFixer, SimplificationIssue
 from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer
+from pyguard.lib.modern_python import ModernPythonFixer, ModernizationIssue
+from pyguard.lib.naming_conventions import NamingConventionFixer, NamingIssue
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
+from pyguard.lib.performance_checks import PerformanceFixer, PerformanceIssue
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
+from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue
 
 __all__ = [
     "PyGuardLogger",
@@ -27,9 +32,19 @@ __all__ = [
     "SecurityFixer",
     "BestPracticesFixer",
     "FormattingFixer",
+    "ModernPythonFixer",
+    "CodeSimplificationFixer",
+    "PerformanceFixer",
+    "UnusedCodeFixer",
+    "NamingConventionFixer",
     "ASTAnalyzer",
     "SecurityIssue",
     "CodeQualityIssue",
+    "ModernizationIssue",
+    "SimplificationIssue",
+    "PerformanceIssue",
+    "UnusedCodeIssue",
+    "NamingIssue",
     "AnalysisCache",
     "ConfigCache",
     "ParallelProcessor",
