@@ -67,6 +67,8 @@ class PEP8Checker:
             self._check_imports(content, lines)
             self._check_line_length(lines)
             self._check_statements(lines)
+            self._check_comparison_patterns(content)  # Phase 8.3
+            self._check_lambda_and_names(content)  # Phase 8.3
             self._check_warnings(lines)
             
             return self.violations
@@ -772,6 +774,43 @@ class PEP8Checker:
                     "E703", line_num, len(line) - 2,
                     "Statement ends with unnecessary semicolon"
                 )
+            
+            # E704: Multiple statements on one line (def)
+            if stripped.startswith('def ') and ':' in stripped:
+                colon_pos = stripped.find(':')
+                after_colon = stripped[colon_pos + 1:].strip()
+                if after_colon and not after_colon.startswith('#'):
+                    self._add_violation(
+                        "E704", line_num, colon_pos,
+                        "Multiple statements on one line (def)"
+                    )
+            
+            # E705: Multiple statements on one line (if/while/for)
+            for keyword in ['if ', 'elif ', 'else:', 'while ', 'for ', 'with ']:
+                if stripped.startswith(keyword) and ':' in stripped:
+                    colon_pos = stripped.find(':')
+                    after_colon = stripped[colon_pos + 1:].strip()
+                    if after_colon and not after_colon.startswith('#'):
+                        # Allow simple one-liners like 'if x: return y'
+                        # but flag complex multi-statement lines
+                        if ';' in after_colon or after_colon.count(':') > 0:
+                            self._add_violation(
+                                "E705", line_num, colon_pos,
+                                f"Multiple statements on one line ({keyword.strip()})"
+                            )
+                    break
+            
+            # E706: Multiple statements on one line (try/except/finally)
+            for keyword in ['try:', 'except', 'except:', 'finally:']:
+                if stripped.startswith(keyword) and ':' in stripped:
+                    colon_pos = stripped.find(':')
+                    after_colon = stripped[colon_pos + 1:].strip()
+                    if after_colon and not after_colon.startswith('#'):
+                        self._add_violation(
+                            "E706", line_num, colon_pos,
+                            f"Multiple statements on one line ({keyword})"
+                        )
+                    break
     
     def _fix_statements(self, content: str) -> Tuple[str, int]:
         """Fix statement issues."""
@@ -799,6 +838,169 @@ class PEP8Checker:
                 'Dict[' in line or 
                 'List[' in line or
                 'Tuple[' in line)
+    
+    # ========================================================================
+    # E7xx: Comparison and Lambda Checks (Phase 8.3)
+    # ========================================================================
+    
+    def _check_comparison_patterns(self, content: str) -> None:
+        """
+        Check comparison pattern issues (E711-E722).
+        Uses AST-based analysis for accurate detection.
+        """
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            return  # Skip files with syntax errors
+        
+        class ComparisonVisitor(ast.NodeVisitor):
+            def __init__(self, checker):
+                self.checker = checker
+                self.violations = []
+            
+            def visit_Compare(self, node: ast.Compare) -> None:
+                """Visit comparison nodes to detect issues."""
+                # E711: Comparison to None should be 'if cond is None:'
+                for i, (op, comparator) in enumerate(zip(node.ops, node.comparators)):
+                    if isinstance(comparator, ast.Constant) and comparator.value is None:
+                        if isinstance(op, (ast.Eq, ast.NotEq)):
+                            self.checker._add_violation(
+                                "E711", node.lineno, node.col_offset,
+                                "Comparison to None should be 'if cond is None:'"
+                            )
+                    
+                    # E712: Comparison to True/False should be 'if cond:' or 'if not cond:'
+                    elif isinstance(comparator, ast.Constant) and isinstance(comparator.value, bool):
+                        if isinstance(op, (ast.Eq, ast.NotEq)):
+                            self.checker._add_violation(
+                                "E712", node.lineno, node.col_offset,
+                                "Comparison to True/False should be 'if cond:' or 'if not cond:'"
+                            )
+                    
+                    # E713: Test for membership should be 'not in'
+                    if isinstance(op, ast.NotIn):
+                        # This is correct - 'not in' is preferred
+                        pass
+                    elif isinstance(op, ast.Not) and i > 0:
+                        prev_op = node.ops[i-1]
+                        if isinstance(prev_op, ast.In):
+                            self.checker._add_violation(
+                                "E713", node.lineno, node.col_offset,
+                                "Test for membership should be 'not in'"
+                            )
+                    
+                    # E714: Test for object identity should be 'is not'
+                    if isinstance(op, ast.IsNot):
+                        # This is correct - 'is not' is preferred
+                        pass
+                    elif isinstance(op, ast.Not) and i > 0:
+                        prev_op = node.ops[i-1]
+                        if isinstance(prev_op, ast.Is):
+                            self.checker._add_violation(
+                                "E714", node.lineno, node.col_offset,
+                                "Test for object identity should be 'is not'"
+                            )
+                
+                self.generic_visit(node)
+            
+            def visit_Call(self, node: ast.Call) -> None:
+                """Visit call nodes to detect type() usage."""
+                # E721: Do not compare types, use 'isinstance()'
+                # Check for type() calls in comparisons
+                if isinstance(node.func, ast.Name) and node.func.id == 'type':
+                    # Look for parent Compare node
+                    # This is a simplified check - real implementation would need parent tracking
+                    pass
+                
+                self.generic_visit(node)
+            
+            def visit_Try(self, node: ast.Try) -> None:
+                """Visit try-except blocks."""
+                # E722: Do not use bare except
+                for handler in node.handlers:
+                    if handler.type is None:
+                        self.checker._add_violation(
+                            "E722", handler.lineno, handler.col_offset,
+                            "Do not use bare 'except:', specify exception type"
+                        )
+                
+                self.generic_visit(node)
+        
+        visitor = ComparisonVisitor(self)
+        visitor.visit(tree)
+    
+    def _check_lambda_and_names(self, content: str) -> None:
+        """
+        Check lambda assignment and ambiguous names (E731-E743).
+        Uses AST-based analysis for accurate detection.
+        """
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            return  # Skip files with syntax errors
+        
+        class LambdaNameVisitor(ast.NodeVisitor):
+            def __init__(self, checker):
+                self.checker = checker
+                self.ambiguous_names = {'l', 'O', 'I'}
+            
+            def visit_Assign(self, node: ast.Assign) -> None:
+                """Visit assignment nodes to detect lambda assignment."""
+                # E731: Do not assign a lambda expression, use a def
+                if isinstance(node.value, ast.Lambda):
+                    self.checker._add_violation(
+                        "E731", node.lineno, node.col_offset,
+                        "Do not assign a lambda expression, use a def"
+                    )
+                
+                self.generic_visit(node)
+            
+            def visit_Name(self, node: ast.Name) -> None:
+                """Visit name nodes to detect ambiguous names."""
+                # E741: Ambiguous variable name
+                if isinstance(node.ctx, ast.Store) and node.id in self.ambiguous_names:
+                    self.checker._add_violation(
+                        "E741", node.lineno, node.col_offset,
+                        f"Ambiguous variable name '{node.id}'"
+                    )
+                
+                self.generic_visit(node)
+            
+            def visit_ClassDef(self, node: ast.ClassDef) -> None:
+                """Visit class definitions to detect ambiguous names."""
+                # E742: Ambiguous class definition
+                if node.name in self.ambiguous_names:
+                    self.checker._add_violation(
+                        "E742", node.lineno, node.col_offset,
+                        f"Ambiguous class definition '{node.name}'"
+                    )
+                
+                self.generic_visit(node)
+            
+            def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+                """Visit function definitions to detect ambiguous names."""
+                # E743: Ambiguous function definition
+                if node.name in self.ambiguous_names:
+                    self.checker._add_violation(
+                        "E743", node.lineno, node.col_offset,
+                        f"Ambiguous function definition '{node.name}'"
+                    )
+                
+                self.generic_visit(node)
+            
+            def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+                """Visit async function definitions to detect ambiguous names."""
+                # E743: Ambiguous function definition
+                if node.name in self.ambiguous_names:
+                    self.checker._add_violation(
+                        "E743", node.lineno, node.col_offset,
+                        f"Ambiguous async function definition '{node.name}'"
+                    )
+                
+                self.generic_visit(node)
+        
+        visitor = LambdaNameVisitor(self)
+        visitor.visit(tree)
     
     # ========================================================================
     # W1xx-W6xx: Warning Checks

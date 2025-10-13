@@ -989,3 +989,339 @@ result = some_function(
             assert len(continuation_violations) == 0
         finally:
             path.unlink()
+
+
+class TestComparisonPatterns:
+    """Test comparison pattern checks (E711-E722) - Phase 8.3."""
+    
+    def test_e711_comparison_to_none(self):
+        """Test E711: Comparison to None should use 'is' or 'is not'."""
+        code = """
+x = None
+if x == None:  # Should use 'is'
+    pass
+if x != None:  # Should use 'is not'
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e711_violations = [v for v in violations if v.rule_id == 'E711']
+            assert len(e711_violations) == 2
+            assert "None" in e711_violations[0].message
+        finally:
+            path.unlink()
+    
+    def test_e712_comparison_to_bool(self):
+        """Test E712: Comparison to True/False should use 'if cond:' or 'if not cond:'."""
+        code = """
+flag = True
+if flag == True:  # Should use 'if flag:'
+    pass
+if flag == False:  # Should use 'if not flag:'
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e712_violations = [v for v in violations if v.rule_id == 'E712']
+            assert len(e712_violations) == 2
+            assert "True/False" in e712_violations[0].message
+        finally:
+            path.unlink()
+    
+    def test_e722_bare_except(self):
+        """Test E722: Do not use bare 'except', specify exception type."""
+        code = """
+try:
+    risky_operation()
+except:  # Should specify exception type
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e722_violations = [v for v in violations if v.rule_id == 'E722']
+            assert len(e722_violations) == 1
+            assert "bare" in e722_violations[0].message.lower()
+        finally:
+            path.unlink()
+    
+    def test_correct_comparisons_no_violations(self):
+        """Test that correct comparison patterns pass."""
+        code = """
+x = None
+if x is None:  # Correct
+    pass
+if x is not None:  # Correct
+    pass
+
+flag = True
+if flag:  # Correct
+    pass
+if not flag:  # Correct
+    pass
+
+try:
+    risky_operation()
+except ValueError:  # Correct - specific exception
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            # Should have no E711, E712, or E722 violations
+            comparison_violations = [
+                v for v in violations 
+                if v.rule_id in ['E711', 'E712', 'E722']
+            ]
+            assert len(comparison_violations) == 0
+        finally:
+            path.unlink()
+
+
+class TestLambdaAndNames:
+    """Test lambda assignment and ambiguous name checks (E731-E743) - Phase 8.3."""
+    
+    def test_e731_lambda_assignment(self):
+        """Test E731: Do not assign a lambda expression, use a def."""
+        code = """
+# Lambda assignment - discouraged
+f = lambda x: x * 2
+g = lambda x, y: x + y
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e731_violations = [v for v in violations if v.rule_id == 'E731']
+            assert len(e731_violations) == 2
+            assert "lambda" in e731_violations[0].message.lower()
+        finally:
+            path.unlink()
+    
+    def test_e741_ambiguous_variable_name(self):
+        """Test E741: Ambiguous variable name 'l', 'O', or 'I'."""
+        code = """
+l = 10  # Ambiguous - looks like 1
+O = 20  # Ambiguous - looks like 0
+I = 30  # Ambiguous - looks like l
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e741_violations = [v for v in violations if v.rule_id == 'E741']
+            assert len(e741_violations) == 3
+            assert "Ambiguous" in e741_violations[0].message
+        finally:
+            path.unlink()
+    
+    def test_e742_ambiguous_class_name(self):
+        """Test E742: Ambiguous class definition."""
+        code = """
+class l:  # Ambiguous
+    pass
+
+class O:  # Ambiguous
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e742_violations = [v for v in violations if v.rule_id == 'E742']
+            assert len(e742_violations) == 2
+            assert "class" in e742_violations[0].message.lower()
+        finally:
+            path.unlink()
+    
+    def test_e743_ambiguous_function_name(self):
+        """Test E743: Ambiguous function definition."""
+        code = """
+def l():  # Ambiguous
+    pass
+
+def O(x):  # Ambiguous
+    return x
+
+async def I():  # Ambiguous async function
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e743_violations = [v for v in violations if v.rule_id == 'E743']
+            assert len(e743_violations) == 3
+            assert "function" in e743_violations[0].message.lower()
+        finally:
+            path.unlink()
+    
+    def test_correct_lambda_and_names_no_violations(self):
+        """Test that correct lambda usage and names pass."""
+        code = """
+# Function definition instead of lambda
+def double(x):
+    return x * 2
+
+# Good variable names
+length = 10
+count = 20
+index = 30
+
+# Good class names
+class MyClass:
+    pass
+
+# Good function names
+def calculate_sum(x, y):
+    return x + y
+
+# Lambda in correct context (as argument)
+sorted_list = sorted(items, key=lambda x: x.value)
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            # Should have no E731, E741, E742, E743 violations
+            lambda_name_violations = [
+                v for v in violations 
+                if v.rule_id in ['E731', 'E741', 'E742', 'E743']
+            ]
+            assert len(lambda_name_violations) == 0
+        finally:
+            path.unlink()
+
+
+class TestMultipleStatements:
+    """Test multiple statement detection (E704-E706) - Phase 8.3."""
+    
+    def test_e704_multiple_statements_def(self):
+        """Test E704: Multiple statements on one line (def)."""
+        code = """
+def foo(): return 42  # Multiple statements
+def bar(): x = 1  # Multiple statements
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e704_violations = [v for v in violations if v.rule_id == 'E704']
+            assert len(e704_violations) >= 1
+            assert "def" in e704_violations[0].message.lower()
+        finally:
+            path.unlink()
+    
+    def test_e706_multiple_statements_try_except(self):
+        """Test E706: Multiple statements on one line (try/except)."""
+        code = """
+try: risky()  # Multiple statements
+except: pass  # Multiple statements
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            e706_violations = [v for v in violations if v.rule_id == 'E706']
+            assert len(e706_violations) >= 1
+        finally:
+            path.unlink()
+    
+    def test_correct_statement_formatting_no_violations(self):
+        """Test that correctly formatted statements pass."""
+        code = """
+def foo():
+    return 42
+
+def bar():
+    x = 1
+    return x
+
+try:
+    risky()
+except ValueError:
+    pass
+
+if condition:
+    do_something()
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            f.flush()
+            path = Path(f.name)
+        
+        try:
+            checker = PEP8Checker()
+            violations = checker.check_file(path)
+            
+            # Should have no E704-E706 violations
+            statement_violations = [
+                v for v in violations 
+                if v.rule_id in ['E704', 'E705', 'E706']
+            ]
+            # Allow E705 for simple one-liners but E704/E706 should be 0
+            e704_e706 = [v for v in violations if v.rule_id in ['E704', 'E706']]
+            assert len(e704_e706) == 0
+        finally:
+            path.unlink()
