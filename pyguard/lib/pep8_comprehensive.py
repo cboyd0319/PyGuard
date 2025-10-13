@@ -129,9 +129,16 @@ class PEP8Checker:
     
     def _check_indentation(self, lines: List[str]) -> None:
         """Check indentation issues (E1xx codes)."""
+        bracket_stack = []  # Track open brackets: [(char, line_num, col, indent)]
+        
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 continue
+            
+            # Check continuation line indentation BEFORE updating bracket stack
+            # This way we check based on the previous line's bracket status
+            if bracket_stack and line_num > 1:
+                self._check_continuation_indentation(line, line_num, lines, bracket_stack)
                 
             # E101: Indentation contains mixed spaces and tabs
             if '\t' in line[:len(line) - len(line.lstrip())]:
@@ -150,29 +157,82 @@ class PEP8Checker:
                         "E111", line_num, 0,
                         f"Indentation is not a multiple of 4 (found {indent} spaces)"
                     )
+            
+            # Track brackets for continuation line checks (E121-E131)
+            # Update stack AFTER checking the current line
+            self._update_bracket_stack(line, line_num, bracket_stack)
     
     def _fix_indentation(self, content: str) -> Tuple[str, int]:
         """Fix indentation issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
+        bracket_stack = []
         
-        for line in lines:
+        for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 fixed_lines.append(line)
+                # Update bracket stack even for empty lines
+                self._update_bracket_stack(line, line_num, bracket_stack)
                 continue
             
             # Fix mixed tabs and spaces - convert all to spaces
-            indent = line[:len(line) - len(line.lstrip())]
-            if '\t' in indent:
+            indent_str = line[:len(line) - len(line.lstrip())]
+            if '\t' in indent_str:
                 # Convert tabs to 4 spaces
-                fixed_indent = indent.replace('\t', '    ')
-                fixed_lines.append(fixed_indent + line.lstrip())
+                fixed_indent = indent_str.replace('\t', '    ')
+                fixed_line = fixed_indent + line.lstrip()
+                fixed_lines.append(fixed_line)
                 fixes += 1
-            else:
-                fixed_lines.append(line)
+                # Update bracket stack with fixed line
+                self._update_bracket_stack(fixed_line, line_num, bracket_stack)
+                continue
+            
+            # Check if we need to fix continuation line indentation (E121-E128)
+            fixed_line = line
+            if bracket_stack:
+                fixed_line, fixed = self._fix_continuation_indent(line, line_num, lines, bracket_stack)
+                if fixed:
+                    fixes += 1
+            
+            fixed_lines.append(fixed_line)
+            
+            # Update bracket stack with the (possibly fixed) line
+            self._update_bracket_stack(fixed_line, line_num, bracket_stack)
         
         return ''.join(fixed_lines), fixes
+    
+    def _fix_continuation_indent(
+        self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
+    ) -> Tuple[str, bool]:
+        """
+        Fix continuation line indentation issues.
+        
+        Returns:
+            Tuple of (fixed_line, was_fixed)
+        """
+        if not bracket_stack:
+            return line, False
+        
+        indent = len(line) - len(line.lstrip())
+        open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
+        
+        # Calculate the expected indent (hanging indent style)
+        expected_indent = open_indent + 4
+        
+        # Only fix if the current indent is clearly wrong and line doesn't close bracket
+        if not line.strip().startswith((')', ']', '}')):
+            # Fix under-indentation (E121, E122, E128) - only if significantly wrong
+            if indent < expected_indent and line_num > open_line_num:
+                fixed_line = ' ' * expected_indent + line.lstrip()
+                return fixed_line, True
+            
+            # Fix over-indentation (E126) - only if significantly wrong
+            elif indent > expected_indent + 4:
+                fixed_line = ' ' * expected_indent + line.lstrip()
+                return fixed_line, True
+        
+        return line, False
     
     def _is_continuation_line(self, lines: List[str], line_num: int) -> bool:
         """Check if a line is a continuation line."""
@@ -180,6 +240,110 @@ class PEP8Checker:
             return False
         line = lines[line_num - 1]
         return line.rstrip().endswith('\\') or line.rstrip().endswith(',')
+    
+    def _update_bracket_stack(self, line: str, line_num: int, bracket_stack: List[Tuple]) -> None:
+        """Update bracket stack for continuation line tracking."""
+        col = 0
+        indent = len(line) - len(line.lstrip())
+        
+        for char in line:
+            if char in '([{':
+                bracket_stack.append((char, line_num, col, indent))
+            elif char in ')]}':
+                if bracket_stack:
+                    open_char, _, _, _ = bracket_stack[-1]
+                    if (char == ')' and open_char == '(' or
+                        char == ']' and open_char == '[' or
+                        char == '}' and open_char == '{'):
+                        bracket_stack.pop()
+            col += 1
+    
+    def _check_continuation_indentation(
+        self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
+    ) -> None:
+        """
+        Check continuation line indentation (E121-E131).
+        
+        Continuation lines should be indented relative to the opening bracket
+        or using a hanging indent pattern.
+        """
+        if not bracket_stack:
+            return
+            
+        indent = len(line) - len(line.lstrip())
+        prev_line = lines[line_num - 2] if line_num > 1 else ""
+        prev_indent = len(prev_line) - len(prev_line.lstrip())
+        
+        # Get the most recent opening bracket info
+        open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
+        
+        # E121: Continuation line under-indented for hanging indent
+        # A hanging indent means the first line after opening bracket is indented
+        if open_line_num < line_num:
+            expected_indent = open_indent + 4  # Standard hanging indent
+            if indent < expected_indent and not line.strip().startswith((')',']','}')):
+                self._add_violation(
+                    "E121", line_num, 0,
+                    f"Continuation line under-indented for hanging indent (expected {expected_indent}, got {indent})"
+                )
+        
+        # E122: Continuation line missing indentation or outdented
+        if indent <= open_indent and line_num > open_line_num and not line.strip().startswith((')',']','}')):
+            self._add_violation(
+                "E122", line_num, 0,
+                "Continuation line missing indentation or outdented"
+            )
+        
+        # E125: Continuation line with same indent as next logical line
+        if indent > 0 and indent == prev_indent and line_num > open_line_num + 1:
+            # Check if this might conflict with next logical line
+            if not prev_line.rstrip().endswith((',', '\\')):
+                self._add_violation(
+                    "E125", line_num, 0,
+                    "Continuation line with same indent as next logical line"
+                )
+        
+        # E126: Continuation line over-indented for hanging indent
+        if indent > expected_indent + 4 and not line.strip().startswith((')',']','}')):
+            self._add_violation(
+                "E126", line_num, 0,
+                f"Continuation line over-indented for hanging indent (expected {expected_indent}, got {indent})"
+            )
+        
+        # E127: Continuation line over-indented for visual indent
+        # Visual indent means aligned with the opening delimiter
+        visual_indent = open_col + 1
+        if indent > visual_indent + 4 and open_line_num < line_num:
+            self._add_violation(
+                "E127", line_num, 0,
+                f"Continuation line over-indented for visual indent"
+            )
+        
+        # E128: Continuation line under-indented for visual indent
+        # Only flag if indent is clearly wrong (not using hanging indent either)
+        if (indent < visual_indent and indent < expected_indent and 
+            open_line_num < line_num and not line.strip().startswith((')',']','}'))):
+            self._add_violation(
+                "E128", line_num, 0,
+                "Continuation line under-indented for visual indent"
+            )
+        
+        # E129: Visually indented line with same indent as next logical line
+        # (Similar to E125 but for visual indenting)
+        if indent == visual_indent and prev_indent == indent:
+            if line_num > open_line_num + 1 and not prev_line.rstrip().endswith((',', '\\')):
+                self._add_violation(
+                    "E129", line_num, 0,
+                    "Visually indented line with same indent as next logical line"
+                )
+        
+        # E130: Continuation line indentation is not a multiple of four (comment)
+        # This is more of an informational message
+        if indent > 0 and indent % 4 != 0 and line_num > open_line_num:
+            self._add_violation(
+                "E130", line_num, 0,
+                f"Continuation line indentation is not a multiple of four (got {indent})"
+            )
     
     # ========================================================================
     # E2xx: Whitespace Checks
@@ -246,6 +410,108 @@ class PEP8Checker:
                         "E231", line_num, match.start(),
                         "Missing whitespace after ','"
                     )
+            
+            # E241: Multiple spaces after ','
+            if re.search(r',\s{2,}', stripped):
+                match = re.search(r',\s{2,}', stripped)
+                if match:
+                    self._add_violation(
+                        "E241", line_num, match.start(),
+                        "Multiple spaces after ','"
+                    )
+            
+            # E242: Tab after ','
+            if re.search(r',\t', stripped):
+                match = re.search(r',\t', stripped)
+                if match:
+                    self._add_violation(
+                        "E242", line_num, match.start(),
+                        "Tab after ','"
+                    )
+            
+            # E251: Unexpected spaces around keyword/parameter equals
+            if re.search(r'\w\s+=\s+\w', stripped):
+                # Only in function definitions and calls (with = for defaults/kwargs)
+                match = re.search(r'(\w)\s+(=)\s+(\w)', stripped)
+                if match and '==' not in stripped[match.start():match.end()+2]:
+                    self._add_violation(
+                        "E251", line_num, match.start(),
+                        "Unexpected spaces around keyword/parameter equals"
+                    )
+            
+            # E261: At least two spaces before inline comment
+            comment_match = re.search(r'[^\s](\s*)#', stripped)
+            if comment_match and not stripped.lstrip().startswith('#'):
+                spaces_before = len(comment_match.group(1))
+                if spaces_before == 1:
+                    self._add_violation(
+                        "E261", line_num, comment_match.start(),
+                        "At least two spaces before inline comment"
+                    )
+            
+            # E262: Inline comment should start with '# '
+            inline_comment = re.search(r'[^\s].*#[^ ]', stripped)
+            if inline_comment and not stripped.lstrip().startswith('#'):
+                self._add_violation(
+                    "E262", line_num, inline_comment.start(),
+                    "Inline comment should start with '# '"
+                )
+            
+            # E265: Block comment should start with '# '
+            if stripped.lstrip().startswith('#') and not stripped.lstrip().startswith('# '):
+                if len(stripped.lstrip()) > 1 and stripped.lstrip()[1] != '#':
+                    self._add_violation(
+                        "E265", line_num, 0,
+                        "Block comment should start with '# '"
+                    )
+            
+            # E271: Multiple spaces after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
+                pattern = rf'\b{keyword}\s{{2,}}'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E271", line_num, match.start(),
+                            f"Multiple spaces after keyword '{keyword}'"
+                        )
+                        break
+            
+            # E272: Multiple spaces before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
+                pattern = rf'\s{{2,}}\b{keyword}\b'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E272", line_num, match.start(),
+                            f"Multiple spaces before keyword '{keyword}'"
+                        )
+                        break
+            
+            # E273: Tab after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\b{keyword}\t'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E273", line_num, match.start(),
+                            f"Tab after keyword '{keyword}'"
+                        )
+                        break
+            
+            # E274: Tab before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\t\b{keyword}\b'
+                if re.search(pattern, stripped):
+                    match = re.search(pattern, stripped)
+                    if match:
+                        self._add_violation(
+                            "E274", line_num, match.start(),
+                            f"Tab before keyword '{keyword}'"
+                        )
+                        break
     
     def _fix_whitespace(self, content: str) -> Tuple[str, int]:
         """Fix whitespace issues."""
@@ -270,6 +536,75 @@ class PEP8Checker:
             if re.search(r',([^\s\n\r])', fixed):
                 fixed = re.sub(r',([^\s\n\r])', r', \1', fixed)
                 fixes += 1
+            
+            # Fix E241: Multiple spaces after ','
+            if re.search(r',\s{2,}', fixed):
+                fixed = re.sub(r',\s{2,}', ', ', fixed)
+                fixes += 1
+            
+            # Fix E242: Tab after ','
+            if re.search(r',\t', fixed):
+                fixed = re.sub(r',\t', ', ', fixed)
+                fixes += 1
+            
+            # Fix E251: Unexpected spaces around keyword/parameter equals
+            # Only fix in function definitions/calls (not comparisons)
+            fixed = re.sub(r'(\w)\s+=\s+(\w)', r'\1=\2', fixed)
+            if '==' not in fixed:
+                fixes += 1
+            
+            # Fix E261: At least two spaces before inline comment
+            comment_match = re.search(r'[^\s](\s*)#', fixed)
+            if comment_match and not fixed.lstrip().startswith('#'):
+                spaces_before = len(comment_match.group(1))
+                if spaces_before == 1:
+                    # Add one more space
+                    fixed = re.sub(r'([^\s])\s#', r'\1  #', fixed)
+                    fixes += 1
+            
+            # Fix E262: Inline comment should start with '# '
+            if re.search(r'[^\s].*#[^ \n]', fixed) and not fixed.lstrip().startswith('#'):
+                fixed = re.sub(r'#([^ \n#])', r'# \1', fixed)
+                fixes += 1
+            
+            # Fix E265: Block comment should start with '# '
+            if fixed.lstrip().startswith('#') and not fixed.lstrip().startswith('# '):
+                if len(fixed.lstrip()) > 1 and fixed.lstrip()[1] != '#':
+                    indent = len(fixed) - len(fixed.lstrip())
+                    fixed = ' ' * indent + '# ' + fixed.lstrip()[1:]
+                    fixes += 1
+            
+            # Fix E271: Multiple spaces after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
+                pattern = rf'\b{keyword}\s{{2,}}'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f'{keyword} ', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E272: Multiple spaces before keyword  
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
+                pattern = rf'\s{{2,}}\b{keyword}\b'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f' {keyword}', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E273: Tab after keyword
+            for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\b{keyword}\t'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f'{keyword} ', fixed)
+                    fixes += 1
+                    break
+            
+            # Fix E274: Tab before keyword
+            for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
+                pattern = rf'\t\b{keyword}\b'
+                if re.search(pattern, fixed):
+                    fixed = re.sub(pattern, f' {keyword}', fixed)
+                    fixes += 1
+                    break
             
             fixed_lines.append(fixed)
         
