@@ -439,4 +439,76 @@ Ensure consistency across:
 
 ---
 
+## Quick Reference
+
+### Common Development Tasks
+
+**Setup and Test**
+```bash
+make dev              # Install with dev dependencies
+make test             # Run full test suite with coverage
+make test-fast        # Run tests without coverage
+make lint             # Run all linters (ruff, pylint, mypy, flake8)
+make format           # Format code with Black and isort
+make security         # Run Bandit security scan
+```
+
+**Running PyGuard**
+```bash
+pyguard src/                    # Scan and fix entire directory
+pyguard file.py                 # Scan and fix single file
+pyguard src/ --security-only    # Only security fixes
+pyguard src/ --scan-only        # Scan without fixing
+pyguard src/ --no-backup        # Skip backup creation
+```
+
+**Common Code Patterns**
+```python
+# Import core utilities
+from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
+
+# Import security analysis
+from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityVisitor
+
+# Import code quality
+from pyguard.lib.best_practices import BestPracticesFixer
+from pyguard.lib.formatting import FormattingFixer
+
+# Use structured logging
+logger = PyGuardLogger()
+logger.info("Operation complete", file_path=str(path), status="success")
+```
+
+**Testing Patterns**
+```python
+# Unit test structure
+def test_detect_vulnerability(self):
+    """Test detection of specific vulnerability."""
+    vulnerable_code = '''
+    # Sample vulnerable code
+    '''
+    analyzer = SecurityFixer()
+    issues = analyzer.analyze(vulnerable_code)
+    
+    assert len(issues) > 0
+    assert issues[0].severity == "HIGH"
+    assert "CWE-" in issues[0].cwe_id
+```
+
+### Key Files to Know
+
+| File | Purpose |
+|------|---------|
+| `pyguard/cli.py` | Main CLI entry point |
+| `pyguard/__init__.py` | Package exports |
+| `pyguard/lib/core.py` | Core utilities (logging, backup, diff) |
+| `pyguard/lib/security.py` | Security vulnerability detection |
+| `pyguard/lib/ast_analyzer.py` | AST-based static analysis |
+| `pyproject.toml` | Package configuration |
+| `pytest.ini` | Test configuration |
+| `Makefile` | Development commands |
+
+---
+
 **Remember:** PyGuard exists to help developers write more secure, maintainable Python code. Every feature should serve this mission while respecting user privacy and maintaining the highest code quality standards.
