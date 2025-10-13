@@ -93,7 +93,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### **Prerequisites**
 
-- Python 3.8 or higher (3.11 recommended for development)
+- Python 3.8 or higher (3.13 recommended for development)
 - Git
 - pip or Poetry
 

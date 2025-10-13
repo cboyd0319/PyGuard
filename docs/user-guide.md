@@ -325,7 +325,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       
       - name: Install PyGuard
         run: pip install pyguard
@@ -338,7 +338,7 @@ jobs:
 
 ```yaml
 pyguard:
-  image: python:3.11
+  image: python:3.13
   script:
     - pip install pyguard
     - pyguard src/ --scan-only
