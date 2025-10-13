@@ -220,6 +220,25 @@ class SARIFReporter:
                 result["fixes"] = [
                     {
                         "description": {"text": issue["fix_suggestion"]},
+                        "artifactChanges": [
+                            {
+                                "artifactLocation": {
+                                    "uri": issue.get("file", "unknown"),
+                                    "uriBaseId": "%SRCROOT%",
+                                },
+                                "replacements": [
+                                    {
+                                        "deletedRegion": {
+                                            "startLine": issue.get("line", 1),
+                                            "startColumn": max(1, issue.get("column", 1)),
+                                        },
+                                        "insertedContent": {
+                                            "text": issue.get("fix_suggestion", "")
+                                        },
+                                    }
+                                ],
+                            }
+                        ],
                     }
                 ]
 
@@ -249,7 +268,7 @@ class SARIFReporter:
         """
         file_path = issue.get("file", "unknown")
         line = issue.get("line", 1)
-        column = issue.get("column", 1)
+        column = max(1, issue.get("column", 1))  # Ensure column is >= 1 for SARIF compliance
 
         location = {
             "physicalLocation": {
