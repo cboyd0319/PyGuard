@@ -31,29 +31,96 @@
 
 ```
 PyGuard/
-├── pyguard/                  # Main package
-│   ├── __init__.py          # Package exports
-│   ├── cli.py               # Command-line interface
-│   └── lib/                 # Core library modules
-│       ├── core.py          # Logger, backup, diff, file ops
-│       ├── security.py      # Security vulnerability detection/fixes
-│       ├── best_practices.py # Code quality improvements
-│       ├── formatting.py    # Code formatting (Black, isort)
-│       ├── ast_analyzer.py  # AST-based static analysis
-│       ├── ml_detection.py  # ML-powered security detection
-│       ├── mcp_integration.py # Model Context Protocol integration
-│       └── enhanced_detections.py # Advanced vulnerability detection
-├── tests/                   # Test suite
-│   ├── unit/               # Unit tests
-│   ├── integration/        # Integration tests
-│   └── fixtures/           # Test fixtures and sample code
-├── config/                  # Configuration files
-│   ├── security_rules.toml
-│   └── qa_settings.toml
-├── docs/                    # Documentation
-├── examples/               # Example code and demos
-└── scripts/               # Utility scripts
+├── pyguard/                       # Main package
+│   ├── __init__.py               # Package exports
+│   ├── cli.py                    # Command-line interface
+│   └── lib/                      # Core library modules
+│       ├── core.py               # Logger, backup, diff, file ops
+│       ├── security.py           # Security vulnerability detection/fixes
+│       ├── advanced_security.py  # Advanced security (taint, race conditions, ReDoS)
+│       ├── ultra_advanced_security.py  # Ultra-advanced security features
+│       ├── best_practices.py     # Code quality improvements
+│       ├── formatting.py         # Code formatting (Black, isort)
+│       ├── ast_analyzer.py       # AST-based static analysis
+│       ├── ml_detection.py       # ML-powered security detection
+│       ├── enhanced_detections.py # Advanced vulnerability detection
+│       ├── ultra_advanced_fixes.py # Ultra-advanced automated fixes
+│       ├── mcp_integration.py    # Model Context Protocol integration
+│       ├── knowledge_integration.py # Knowledge base integration
+│       ├── standards_integration.py # Compliance standards (OWASP, PCI-DSS, etc.)
+│       ├── supply_chain.py       # Supply chain security analysis
+│       ├── cache.py              # Caching for performance
+│       ├── parallel.py           # Parallel processing utilities
+│       ├── reporting.py          # Report generation (JSON, HTML, console)
+│       └── ui.py                 # UI components and enhanced HTML reporting
+├── tests/                        # Test suite
+│   ├── unit/                    # Unit tests
+│   ├── integration/             # Integration tests
+│   └── fixtures/                # Test fixtures and sample code
+├── config/                       # Configuration files
+│   ├── security_rules.toml      # Security detection rules
+│   └── qa_settings.toml         # Quality assurance settings
+├── docs/                         # Documentation
+├── examples/                     # Example code and demos
+├── scripts/                      # Utility scripts
+└── benchmarks/                   # Performance benchmarks
 ```
+
+## Key Modules Overview
+
+### Core Modules
+- **`cli.py`** — Command-line interface with argument parsing and main entry point
+- **`lib/core.py`** — Core utilities: PyGuardLogger, BackupManager, DiffGenerator, FileOperations
+- **`lib/cache.py`** — Analysis caching for improved performance (AnalysisCache, ConfigCache)
+- **`lib/parallel.py`** — Parallel processing for batch operations (ParallelProcessor, BatchProcessor)
+
+### Security Analysis
+- **`lib/security.py`** — Core security vulnerability detection and fixes (SecurityFixer)
+- **`lib/advanced_security.py`** — Advanced analysis: taint tracking, race conditions, ReDoS, integer overflow
+- **`lib/ultra_advanced_security.py`** — Ultra-advanced security features and complex vulnerability patterns
+- **`lib/ast_analyzer.py`** — AST-based static analysis (ASTAnalyzer, SecurityVisitor, CodeQualityVisitor)
+- **`lib/enhanced_detections.py`** — Enhanced detection patterns for complex vulnerabilities
+- **`lib/ml_detection.py`** — Machine learning-powered security detection and risk scoring
+
+### Code Quality & Fixes
+- **`lib/best_practices.py`** — Code quality improvements (BestPracticesFixer, NamingConventionFixer)
+- **`lib/formatting.py`** — Code formatting with Black and isort (FormattingFixer, WhitespaceFixer)
+- **`lib/ultra_advanced_fixes.py`** — Advanced automated code fixes and refactoring
+
+### Integration & Compliance
+- **`lib/mcp_integration.py`** — Model Context Protocol integration for AI-powered assistance
+- **`lib/knowledge_integration.py`** — Knowledge base integration for security and compliance information
+- **`lib/standards_integration.py`** — Multi-framework compliance (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
+- **`lib/supply_chain.py`** — Supply chain security analysis and dependency scanning
+
+### Reporting & UI
+- **`lib/reporting.py`** — Report generation: JSONReporter, HTMLReporter, ConsoleReporter, AnalysisMetrics
+- **`lib/ui.py`** — Enhanced UI components and interactive HTML reporting (EnhancedConsole, ModernHTMLReporter)
+
+## Import Patterns
+
+PyGuard uses a two-level module structure with convenience exports at the package level:
+
+### Direct Module Imports (Recommended for Internal Development)
+```python
+from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
+from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityVisitor
+from pyguard.lib.best_practices import BestPracticesFixer
+```
+
+### Package-Level Imports (Recommended for External Use)
+```python
+# These are exported via pyguard/__init__.py for convenience
+from pyguard import PyGuardLogger, BackupManager, SecurityFixer
+from pyguard import ASTAnalyzer, BestPracticesFixer, FormattingFixer
+```
+
+### Example: Adding New Functionality
+When adding a new class or function that should be publicly available:
+1. Add it to the appropriate module in `pyguard/lib/`
+2. Export it in `pyguard/__init__.py` by adding to the import list and `__all__`
+3. Update tests in `tests/unit/` or `tests/integration/`
 
 ## Development Workflow
 
@@ -87,8 +154,36 @@ make format
 - **New features MUST have unit tests** in `tests/unit/`
 - **Integration tests** for CLI and multi-file operations in `tests/integration/`
 - **Fixtures:** Use recorded samples in `tests/fixtures/` for deterministic tests
-- **Coverage:** Aim for 70%+ coverage; never decrease existing coverage
+- **Coverage:** Aim for 70%+ coverage; never decrease existing coverage (current: 69%)
 - **Test naming:** `test_*.py` files, `Test*` classes, `test_*` methods
+
+### Test Structure
+```
+tests/
+├── unit/                           # Unit tests (257 total)
+│   ├── test_advanced_security.py   # Advanced security detection tests
+│   ├── test_ast_analyzer.py        # AST analysis tests
+│   ├── test_best_practices.py      # Code quality tests
+│   ├── test_cache.py               # Cache functionality tests
+│   ├── test_core.py                # Core utilities tests
+│   ├── test_enhanced_detections.py # Enhanced detection tests
+│   ├── test_formatting.py          # Formatting tests
+│   ├── test_knowledge_integration.py # Knowledge base tests
+│   ├── test_mcp_integration.py     # MCP integration tests
+│   ├── test_ml_detection.py        # ML detection tests
+│   ├── test_reporting.py           # Report generation tests
+│   ├── test_security.py            # Security detection tests
+│   ├── test_standards_integration.py # Compliance tests
+│   ├── test_supply_chain.py        # Supply chain security tests
+│   ├── test_ultra_advanced_fixes.py # Advanced fixes tests
+│   └── test_ultra_advanced_security.py # Ultra-advanced security tests
+├── integration/                    # Integration tests
+│   ├── test_cli.py                # CLI integration tests
+│   └── test_file_operations.py    # File operation integration tests
+└── fixtures/                       # Test fixtures and sample code
+    ├── sample_code/               # Sample Python files for testing
+    └── expected_outputs/          # Expected test outputs
+```
 
 ## Coding Standards
 
@@ -319,12 +414,18 @@ line_length = 100
 
 ## Additional Resources
 
-- **Architecture:** `docs/ARCHITECTURE.md`
-- **Contributing:** `CONTRIBUTING.md`
-- **Security Policy:** `SECURITY.md`
-- **User Guide:** `docs/user-guide.md`
-- **API Reference:** `docs/api-reference.md`
-- **Security Rules:** `docs/security-rules.md`
+### Documentation
+- **Architecture:** `docs/ARCHITECTURE.md` — System design and component overview
+- **Contributing:** `CONTRIBUTING.md` — Contribution guidelines
+- **Security Policy:** `SECURITY.md` — Security reporting and policies
+- **User Guide:** `docs/user-guide.md` — End-user documentation
+- **API Reference:** `docs/api-reference.md` — API documentation
+- **Security Rules:** `docs/security-rules.md` — Security detection rules reference
+- **MCP Integration:** `docs/MCP-INTEGRATION.md` — Model Context Protocol integration guide
+
+### GitHub Copilot Configuration
+- **MCP Servers:** `.github/COPILOT-MCP-SERVERS.md` — MCP server configuration guide
+- **MCP Config:** `.github/copilot-mcp.json` — MCP server definitions (Context7, OpenAI, Fetch, Playwright)
 
 ---
 
@@ -341,6 +442,78 @@ Ensure consistency across:
 - `.github/workflows/*.yml` (python-version: '3.13')
 - `.python-version` and `.tool-versions` (3.13.8)
 - Documentation examples
+
+---
+
+## Quick Reference
+
+### Common Development Tasks
+
+**Setup and Test**
+```bash
+make dev              # Install with dev dependencies
+make test             # Run full test suite with coverage
+make test-fast        # Run tests without coverage
+make lint             # Run all linters (ruff, pylint, mypy, flake8)
+make format           # Format code with Black and isort
+make security         # Run Bandit security scan
+```
+
+**Running PyGuard**
+```bash
+pyguard src/                    # Scan and fix entire directory
+pyguard file.py                 # Scan and fix single file
+pyguard src/ --security-only    # Only security fixes
+pyguard src/ --scan-only        # Scan without fixing
+pyguard src/ --no-backup        # Skip backup creation
+```
+
+**Common Code Patterns**
+```python
+# Import core utilities
+from pyguard.lib.core import PyGuardLogger, BackupManager, DiffGenerator
+
+# Import security analysis
+from pyguard.lib.security import SecurityFixer
+from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityVisitor
+
+# Import code quality
+from pyguard.lib.best_practices import BestPracticesFixer
+from pyguard.lib.formatting import FormattingFixer
+
+# Use structured logging
+logger = PyGuardLogger()
+logger.info("Operation complete", file_path=str(path), status="success")
+```
+
+**Testing Patterns**
+```python
+# Unit test structure
+def test_detect_vulnerability(self):
+    """Test detection of specific vulnerability."""
+    vulnerable_code = '''
+    # Sample vulnerable code
+    '''
+    analyzer = SecurityFixer()
+    issues = analyzer.analyze(vulnerable_code)
+    
+    assert len(issues) > 0
+    assert issues[0].severity == "HIGH"
+    assert "CWE-" in issues[0].cwe_id
+```
+
+### Key Files to Know
+
+| File | Purpose |
+|------|---------|
+| `pyguard/cli.py` | Main CLI entry point |
+| `pyguard/__init__.py` | Package exports |
+| `pyguard/lib/core.py` | Core utilities (logging, backup, diff) |
+| `pyguard/lib/security.py` | Security vulnerability detection |
+| `pyguard/lib/ast_analyzer.py` | AST-based static analysis |
+| `pyproject.toml` | Package configuration |
+| `pytest.ini` | Test configuration |
+| `Makefile` | Development commands |
 
 ---
 
