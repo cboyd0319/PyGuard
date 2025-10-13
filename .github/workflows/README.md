@@ -4,7 +4,21 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 
 ## 📋 Workflows Overview
 
-### 1. **test.yml** - Cross-Platform Testing
+### 1. **dependabot-auto-merge.yml** - Automatic Dependabot PR Management
+**Triggers:** Pull requests opened/synchronized/reopened by Dependabot
+
+**What it does:**
+- Automatically approves and merges Dependabot PRs for patch and minor version updates
+- Waits for all status checks to pass before merging
+- Leaves a comment on major version updates requiring manual review
+- Uses squash merge to keep git history clean
+
+**Safety features:**
+- Only auto-merges patch and minor updates (not major versions)
+- Requires all CI checks to pass before merging
+- Uses GitHub's auto-merge feature for safe merging
+
+### 2. **test.yml** - Cross-Platform Testing
 **Triggers:** Push/PR to `main` or `develop`
 
 **What it does:**
@@ -15,7 +29,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 
 **Why optimized:** Reduced from 15 jobs (3 OS × 5 Python versions) to 5 jobs, focusing on critical version combinations.
 
-### 2. **lint.yml** - Code Quality & Linting
+### 3. **lint.yml** - Code Quality & Linting
 **Triggers:** Push/PR to `main` or `develop`
 
 **What it does:**
@@ -31,7 +45,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 
 **Why consolidated:** Merged `lint.yml` and `quality.yml` to eliminate duplication and reduce workflow overhead.
 
-### 3. **coverage.yml** - Test Coverage
+### 4. **coverage.yml** - Test Coverage
 **Triggers:** Push/PR to `main`
 
 **What it does:**
@@ -45,7 +59,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 - Added coverage summary to GitHub Actions summary
 - Fixed artifact upload conditions
 
-### 4. **benchmarks.yml** - Performance Benchmarks
+### 5. **benchmarks.yml** - Performance Benchmarks
 **Triggers:** 
 - Push/PR to `main`
 - Weekly schedule (Monday 00:00 UTC)
@@ -61,7 +75,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 - Added workflow summary output
 - Added manual trigger capability
 
-### 5. **release.yml** - Automated Releases
+### 6. **release.yml** - Automated Releases
 **Triggers:** Version tags (`v*.*.*`)
 
 **What it does:**
@@ -75,7 +89,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 - Simplified changelog parsing logic
 - Updated to latest action versions
 
-### 6. **codeql.yml** - Security Scanning
+### 7. **codeql.yml** - Security Scanning
 **Triggers:**
 - Push/PR to `main`
 - Weekly schedule (Monday 00:00 UTC)
@@ -112,6 +126,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 
 | Workflow | Jobs | Avg Duration | Triggers |
 |----------|------|--------------|----------|
+| dependabot-auto-merge.yml | 1 | ~1-2 min | Dependabot PRs |
 | test.yml | 5 | ~3-5 min | Push, PR |
 | lint.yml | 2 | ~2-3 min | Push, PR |
 | coverage.yml | 1 | ~3-4 min | Push, PR (main) |
@@ -119,7 +134,7 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 | release.yml | 1 | ~2-3 min | Tags |
 | codeql.yml | 1 | ~5-10 min | Push, PR, Schedule, Manual |
 
-**Total:** 11 jobs across 6 workflows (down from ~20+ jobs in 7 workflows)
+**Total:** 12 jobs across 7 workflows
 
 ## 🔧 Maintenance Notes
 
@@ -144,6 +159,11 @@ Before pushing workflow changes:
 4. Monitor first runs carefully
 
 ## 📝 Change History
+
+### 2025-10-13
+- **Added:** `dependabot-auto-merge.yml` for automatic Dependabot PR management
+- **Added:** `.github/dependabot.yml` configuration for Python and GitHub Actions dependencies
+- **Feature:** Auto-approve and merge patch/minor updates, manual review for major versions
 
 ### 2025-10-12
 - **Removed:** `quality.yml` (consolidated into `lint.yml`)
