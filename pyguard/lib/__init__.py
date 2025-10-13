@@ -28,6 +28,7 @@ from pyguard.lib.standards_integration import (
     SANSTop25Mapper,
     StandardsMapper,
 )
+from pyguard.lib.string_operations import StringIssue, StringOperationsFixer, StringOperationsVisitor
 # NEW in v0.8.0: Ultra-advanced security detectors
 from pyguard.lib.ultra_advanced_security import (
     APIRateLimitDetector,
@@ -106,4 +107,8 @@ __all__ = [
     "ConsoleReporter",
     "HTMLReporter",
     "JSONReporter",
+    # String Operations
+    "StringIssue",
+    "StringOperationsFixer",
+    "StringOperationsVisitor",
 ]
