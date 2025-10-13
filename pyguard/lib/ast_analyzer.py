@@ -241,7 +241,7 @@ class SecurityVisitor(ast.NodeVisitor):
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Validate and whitelist URLs before making requests; use URL parsing to ensure destination is safe",
+                        fix_suggestion="Validate and Allowlist URLs before making requests; use URL parsing to ensure destination is safe",
                         owasp_id="ASVS-13.1.1",
                         cwe_id="CWE-918",
                     )

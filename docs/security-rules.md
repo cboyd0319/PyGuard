@@ -577,7 +577,7 @@ response = urllib.request.urlopen(user_url)
 
 ### Recommendation
 
-Validate and whitelist URLs:
+Validate and Allowlist URLs:
 
 ```python
 # ✅ Good - URL validation

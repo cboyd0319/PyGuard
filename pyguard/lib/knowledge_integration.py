@@ -149,7 +149,7 @@ class KnowledgeBase:
             "name": "Improper Input Validation",
             "rank": 4,
             "severity": "HIGH",
-            "mitigation": "Whitelist validation, type checking, bounds checking",
+            "mitigation": "Allowlist validation, type checking, bounds checking",
         },
         "CWE-78": {
             "name": "OS Command Injection",
@@ -173,7 +173,7 @@ class KnowledgeBase:
             "name": "Path Traversal",
             "rank": 8,
             "severity": "HIGH",
-            "mitigation": "Path canonicalization, whitelist validation",
+            "mitigation": "Path canonicalization, allowlist validation",
         },
         "CWE-352": {
             "name": "Cross-Site Request Forgery (CSRF)",
@@ -428,7 +428,7 @@ class SecurityIntelligence:
             "CWE-78": [
                 "✓ Avoid system calls when possible",
                 "✓ Use subprocess with shell=False",
-                "✓ Whitelist allowed commands",
+                "✓ Allowlist permitted commands",
                 "✓ Sanitize all input passed to system calls",
                 "✓ Use language-native APIs instead of shell commands",
             ],

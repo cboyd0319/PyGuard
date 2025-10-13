@@ -286,7 +286,7 @@ Don't rely on a single security check. Layer multiple defenses:
 # ✅ Multiple layers of defense
 user_input = request.args.get('filename')
 
-# Layer 1: Whitelist validation
+# Layer 1: Allowlist validation
 if not re.match(r'^[a-zA-Z0-9_-]+\.(txt|log)$', user_input):
     raise ValueError("Invalid filename")
 

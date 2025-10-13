@@ -1,44 +1,50 @@
-# Dependabot configuration for PyGuard
+# Standardized Dependabot Configuration
 # Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Last updated: October 2025
 
 version: 2
 updates:
-  # Maintain dependencies for Python/pip
+  # Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "00:00"
+      time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 10
+    reviewers:
+      - "cboyd0319"
+    assignees:
+      - "cboyd0319"
     labels:
       - "dependencies"
       - "python"
     commit-message:
-      prefix: "chore"
+      prefix: "deps"
       include: "scope"
-    # Group minor and patch updates together to reduce PR noise
+    # Group minor and patch updates to reduce PR noise
     groups:
-      minor-and-patch:
+      python-dependencies:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
-    # Only allow security updates for major versions to avoid breaking changes
-    allow:
-      - dependency-type: "all"
 
-  # Maintain GitHub Actions dependencies
+  # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "00:00"
+      time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
+    reviewers:
+      - "cboyd0319"
+    assignees:
+      - "cboyd0319"
     labels:
       - "dependencies"
       - "github-actions"

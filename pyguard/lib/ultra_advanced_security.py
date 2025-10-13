@@ -458,7 +458,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
-                            fix_suggestion='Whitelist allowed attributes or use a data class with fixed attributes',
+                            fix_suggestion='Allowlist allowed attributes or use a data class with fixed attributes',
                             owasp_id='ASVS-5.1.3',
                             cwe_id='CWE-1321'
                         )

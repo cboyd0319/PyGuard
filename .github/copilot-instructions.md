@@ -12,6 +12,46 @@
 - **Auto-fix:** Automatic remediation with backup/rollback support
 - **Reports:** HTML, JSON, console output with severity-based filtering
 
+## Repository Standards & Configuration
+
+### Workflow & Automation Standards
+- **Dependabot:** Weekly schedule (Mondays 09:00 UTC), commit prefix `chore(deps):`, grouped updates
+- **Auto-merge:** Automatic approval for all Dependabot PRs, auto-merge for patch/minor versions only
+- **CI/CD:** GitHub Actions workflows in `.github/workflows/` (see `python-qa.yml`, `dependabot-auto-merge.yml`)
+- **Quality Gates:** All PRs must pass linting (Ruff), type checking (mypy), tests (70% coverage), security scans before merge
+
+### File Organization Standards
+- **`.github/` directory:** Contains only GitHub-specific configs (workflows, templates, Copilot instructions)
+  - Templates: `pull_request_template.md`, `ISSUE_TEMPLATE/*.yml` (lowercase naming)
+  - Ownership: `CODEOWNERS` defines code review requirements (@cboyd0319)
+  - Actions: Custom actions if needed in `.github/actions/`
+- **Documentation:** All docs in `/docs`, never in `.github/`
+- **Scripts:** Development/deployment scripts in `/scripts`, never in `.github/`
+- **Configuration:** Security rules in `/config` (security_rules.toml, qa_settings.toml)
+
+### Inclusive Terminology Standards
+- **Required replacements:**
+  - Use "allowlist" instead of "whitelist"
+  - Use "denylist" instead of "blacklist"
+  - Use "main" branch instead of "master" branch
+  - Use "primary/replica" instead of "master/slave" in architecture discussions
+- **Code review:** All PRs checked for outdated terminology
+- **Detection rules:** PyGuard security rules updated to detect these patterns in user code
+
+### Configuration Management
+- **Security rules:** `config/security_rules.toml` — Detection patterns and severity levels
+- **QA settings:** `config/qa_settings.toml` — Code quality thresholds and preferences
+- **Secrets:** Environment variables only (never commit credentials)
+- **MCP integration:** `.github/copilot-mcp.json` for Model Context Protocol servers
+- **Compliance frameworks:** Built-in support for OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
+
+### GitHub Configuration Files
+- **Dependabot:** `.github/dependabot.yml` — Standardized across all repos
+- **Workflows:** `.github/workflows/*.yml` — GitHub Actions automation
+- **Templates:** `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/*.yml`
+- **Copilot:** `.github/copilot-instructions.md` (this file), `.github/copilot-mcp.json`
+- **Ownership:** `.github/CODEOWNERS` — Code review assignments (@cboyd0319)
+
 ## Core Principles
 
 ### Privacy & Security First

@@ -169,7 +169,7 @@ class MassAssignmentDetector:
                             line_number=line_num,
                             column=0,
                             code_snippet=line.strip(),
-                            fix_suggestion="Use explicit field whitelisting; validate allowed attributes before assignment",
+                            fix_suggestion="Use explicit field Allowlisting; validate allowed attributes before assignment",
                             owasp_id="ASVS-5.1.2",
                             cwe_id="CWE-915",
                         )
