@@ -1,296 +1,149 @@
 # PyGuard Architecture
 
-This document describes the architecture and design decisions of PyGuard.
+## What this is
 
-## Overview
+PyGuard scans Python code for security vulnerabilities, quality issues, and style problems. Applies fixes automatically. This doc explains how it works.
 
-PyGuard is a comprehensive Python QA and auto-fix tool that combines security analysis, best practices enforcement, and code formatting into a single, unified tool.
+## Design principles
 
-## Design Principles
+- Modularity: security, best practices, formatting are independent
+- Extensibility: add new rules without touching core
+- Non-destructive: creates backups before changes
+- Transparent: diffs and logs for all changes
+- Performance: AST-based analysis (10-100x faster than regex)
 
-1. **Modularity**: Each component (security, best practices, formatting) is independent
-2. **Extensibility**: Easy to add new rules and fixers
-3. **Non-destructive**: Always creates backups before modifications
-4. **Transparent**: Provides detailed diffs and logs of all changes
-5. **Performance**: Efficient regex-based pattern matching (AST-based coming in v0.2.0)
-
-## Architecture Diagram
+## Flow
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         PyGuard CLI                         │
-│                      (pyguard/cli.py)                       │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            ▼            ▼
-    ┌──────────────┐ ┌──────────┐ ┌──────────────┐
-    │   Security   │ │   Best   │ │  Formatting  │
-    │    Fixer     │ │ Practices│ │    Fixer     │
-    │              │ │  Fixer   │ │              │
-    └──────┬───────┘ └────┬─────┘ └──────┬───────┘
-           │              │               │
-           └──────────────┼───────────────┘
-                          │
-                          ▼
-              ┌───────────────────────┐
-              │    Core Utilities     │
-              │  ┌─────────────────┐  │
-              │  │  PyGuardLogger  │  │
-              │  │ BackupManager   │  │
-              │  │  DiffGenerator  │  │
-              │  │ FileOperations  │  │
-              │  └─────────────────┘  │
-              └───────────────────────┘
+CLI (pyguard/cli.py)
+  ├─→ SecurityFixer (pyguard/lib/security.py)
+  ├─→ BestPracticesFixer (pyguard/lib/best_practices.py)
+  └─→ FormattingFixer (pyguard/lib/formatting.py)
+       ↓
+  Core Utilities (pyguard/lib/core.py)
+    - PyGuardLogger (structured JSON logs)
+    - BackupManager (timestamped backups)
+    - DiffGenerator (unified diffs)
+    - FileOperations (safe I/O)
 ```
 
-## Component Overview
+**Data in**: Python source files
+**Data out**: Fixed files, backups, diffs, HTML/JSON reports
+**Trust boundary**: Reads local files only, no network access
 
-### CLI Layer (`pyguard/cli.py`)
+## Components
 
-- Entry point for command-line usage
-- Argument parsing and validation
-- Orchestrates calls to fixer modules
-- Handles output formatting and logging
+**CLI** (`pyguard/cli.py`)
+- Argument parsing, orchestration, output formatting
 
-### Security Module (`pyguard/lib/security.py`)
+**Security** (`pyguard/lib/security.py`)
+- Detects 55+ vulnerabilities (see README for list)
+- Auto-fixes 20+ issues
+- Methods: AST-based analysis, pattern matching
 
-**Purpose**: Detect and fix security vulnerabilities
+**Best Practices** (`pyguard/lib/best_practices.py`)
+- Enforces PEP 8, SWEBOK guidelines
+- Fixes: mutable defaults, bare except, type checks, etc.
 
-**Key Classes**:
-- `SecurityFixer`: Main class for security analysis
+**Formatting** (`pyguard/lib/formatting.py`)
+- Integrates: Black, isort, autopep8
 
-**Detection Methods**:
-- Regex-based pattern matching
-- AST-based analysis (planned for v0.2.0)
+**Core** (`pyguard/lib/core.py`)
+- Logging: structured JSONL (INFO/WARNING/ERROR)
+- Backups: timestamped with auto-cleanup
+- Diffs: colorized, git-style
+- File ops: safe I/O, directory traversal
 
-**Vulnerability Categories**:
-1. Hardcoded secrets (HIGH)
-2. SQL injection (HIGH)
-3. Command injection (HIGH)
-4. Insecure random (MEDIUM)
-5. Unsafe YAML loading (HIGH)
-6. Pickle usage (MEDIUM)
-7. eval()/exec() usage (HIGH)
-8. Weak cryptography (MEDIUM)
-9. Path traversal (HIGH)
+## Execution flow
 
-### Best Practices Module (`pyguard/lib/best_practices.py`)
+**Single file**:
+1. `pyguard myfile.py`
+2. Validate args
+3. Create backup → `.pyguard_backups/myfile.py.TIMESTAMP`
+4. Security scan → apply fixes → log
+5. Best practices scan → apply fixes → log
+6. Format (Black, isort) → log
+7. Generate diff
+8. Display summary + diff
+9. Write `logs/pyguard.jsonl`
 
-**Purpose**: Enforce Python coding best practices
-
-**Key Classes**:
-- `BestPracticesFixer`: Main class for best practices
-
-**Fix Categories**:
-1. Mutable default arguments
-2. Bare except clauses
-3. None comparison
-4. Boolean comparison
-5. Type checks (type() vs isinstance())
-6. List comprehensions
-7. String concatenation
-8. Context managers
-9. Missing docstrings
-10. Global variables
-
-### Formatting Module (`pyguard/lib/formatting.py`)
-
-**Purpose**: Apply consistent code formatting
-
-**Integrations**:
-- Black: Code formatting
-- isort: Import sorting
-- autopep8: PEP 8 compliance
-
-### Core Module (`pyguard/lib/core.py`)
-
-**Key Classes**:
-
-1. **PyGuardLogger**: Structured logging to JSONL
-   - Supports INFO, WARNING, ERROR levels
-   - Includes context (file, line, etc.)
-   - Machine-readable output
-
-2. **BackupManager**: File backup and restoration
-   - Creates timestamped backups
-   - Supports restoration
-   - Automatic cleanup
-
-3. **DiffGenerator**: Generate unified diffs
-   - Colorized output
-   - Configurable context lines
-   - Git-style format
-
-4. **FileOperations**: File I/O utilities
-   - Safe file reading/writing
-   - Directory traversal
-   - Python file detection
-
-## Data Flow
-
-### Single File Analysis
-
-```
-1. User runs: pyguard myfile.py
-2. CLI validates arguments
-3. CLI creates backup of myfile.py
-4. SecurityFixer analyzes myfile.py
-   - Scans for vulnerabilities
-   - Applies auto-fixes
-   - Logs results
-5. BestPracticesFixer analyzes myfile.py
-   - Scans for violations
-   - Applies auto-fixes
-   - Logs results
-6. FormattingFixer formats myfile.py
-   - Runs Black
-   - Runs isort
-   - Logs results
-7. DiffGenerator creates diff
-8. CLI displays summary and diff
-9. Logs written to pyguard.jsonl
-```
-
-### Directory Analysis
-
-```
-1. User runs: pyguard src/
-2. CLI discovers all .py files
-3. For each file:
-   - Run security analysis
-   - Run best practices analysis
-   - Run formatting
+**Directory** (parallel processing):
+1. `pyguard src/`
+2. Discover all `.py` files
+3. For each file: security → best practices → format
 4. Aggregate results
-5. Display summary statistics
-```
+5. Display summary
 
 ## Configuration
 
-### Configuration Hierarchy
+Precedence (highest to lowest):
+1. CLI args
+2. `./pyguard.toml` (project)
+3. `~/.config/pyguard/config.toml` (user)
+4. Built-in defaults
 
-1. **Command-line arguments** (highest priority)
-2. **Project configuration** (`pyguard.toml` in current directory)
-3. **User configuration** (`~/.config/pyguard/pyguard.toml`)
-4. **Default configuration** (built-in)
-
-### Configuration Files
-
-**`pyguard.toml`**: Main configuration
+Example `pyguard.toml`:
 ```toml
 [security]
 enabled = true
 severity_levels = ["HIGH", "MEDIUM"]
 
-[best_practices]
-enabled = true
-max_complexity = 10
-
 [formatting]
 line_length = 100
 ```
 
-**`config/security_rules.toml`**: Security rules
-```toml
-[rules]
-check_hardcoded_passwords = true
-check_sql_injection = true
-```
+## Error handling
 
-## Error Handling
+- Graceful degradation: module failure doesn't stop others
+- Detailed logging: all errors with context
+- Clear user feedback
+- Backups preserved on error
 
-1. **Graceful degradation**: If one module fails, others continue
-2. **Detailed logging**: All errors logged with context
-3. **User feedback**: Clear error messages
-4. **Backup preservation**: Backups never deleted on error
+## Testing
 
-## Testing Strategy
+- Unit tests: individual functions, mocked deps, fast
+- Integration tests: module interactions, file I/O, CLI
+- Fixtures: sample vulnerable/bad/correct code
 
-### Unit Tests (`tests/unit/`)
-- Test individual functions and methods
-- Mock external dependencies
-- Fast execution
+Current: 257 tests passing, 69% coverage
 
-### Integration Tests (`tests/integration/`)
-- Test module interactions
-- Test file I/O operations
-- Test CLI commands
+## Performance
 
-### Fixtures (`tests/fixtures/`)
-- Sample vulnerable code
-- Sample bad practices code
-- Sample correct code
+**Current** (v0.3.0):
+- AST-based analysis (10-100x faster than regex)
+- Parallel processing (6x speedup on 8 cores)
+- Smart caching (instant on unchanged files)
+- ~10-50ms per file
 
-## Performance Considerations
+**Limits**:
+- Tested: 10,000 lines per file, 100,000 total lines
+- Memory: ~50MB baseline + ~1KB per file
 
-### Current Implementation (v0.1.0)
-- **Pattern matching**: Regex-based (fast but limited)
-- **File processing**: Sequential (single-threaded)
-- **Performance**: ~100ms per file (small files)
+## Extending PyGuard
 
-### Planned Improvements (v0.2.0)
-- **Pattern matching**: AST-based (more accurate)
-- **File processing**: Parallel (multi-threaded)
-- **Caching**: Skip unchanged files
-- **Incremental**: Watch mode for continuous monitoring
-
-## Extension Points
-
-### Adding New Security Rules
-
+**Add security rule**:
 1. Add pattern to `SecurityFixer`
 2. Implement fix method
 3. Add tests
-4. Document in `docs/security-rules.md`
+4. Document
 
-Example:
 ```python
-def _fix_new_vulnerability(self, content: str) -> str:
-    """Fix description."""
-    if 'vulnerable_pattern' in content:
-        content = content.replace('vulnerable_pattern', 'safe_pattern')
+def _fix_new_vuln(self, content: str) -> str:
+    if 'bad_pattern' in content:
+        content = content.replace('bad_pattern', 'safe_pattern')
         self.fixes_applied.append("Fixed new vulnerability")
     return content
 ```
 
-### Adding New Best Practices
+## Security notes
 
-Similar process to security rules, but in `BestPracticesFixer`.
+- PyGuard does NOT execute analyzed code
+- Only reads/writes specified files (no network access)
+- Backups in separate directory (`.pyguard_backups/`)
+- Logs exclude secret values
 
-## Security Considerations
+## Future
 
-1. **Code Execution**: PyGuard does NOT execute analyzed code
-2. **File Access**: PyGuard only reads/writes specified files
-3. **Backup Safety**: Backups stored in separate directory
-4. **Log Safety**: Logs do not contain secret values
+**Plugin system** (v1.0+): Community-developed rules via plugin API
 
-## Future Architecture (v0.2.0+)
-
-### AST-Based Analysis
-
-```
-Source Code → AST → Visitors → Issues → Fixes → Modified AST → Code
-```
-
-Benefits:
-- More accurate detection
-- Context-aware fixes
-- Better performance
-- Support for complex patterns
-
-### Plugin System
-
-```
-PyGuard Core → Plugin API → Community Plugins
-```
-
-Allows third-party rule development.
-
-## Related Documents
-
-- [API Reference](api-reference.md)
-- [Security Rules](security-rules.md)
-- [Best Practices](best-practices.md)
-- [Configuration Guide](configuration.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+**See also**: [User Guide](user-guide.md), [Contributing](../CONTRIBUTING.md)

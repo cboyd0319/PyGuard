@@ -2,87 +2,63 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities in the following versions:
+| Version | Supported |
+|---------|-----------|
+| 0.3.x   | Yes       |
+| < 0.3   | No        |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.5.x   | :white_check_mark: |
-| 0.4.x   | :white_check_mark: |
-| 0.3.x   | :white_check_mark: |
-| < 0.3   | :x:                |
+## Reporting Vulnerabilities
 
-## Reporting a Vulnerability
+**Do not report security issues through public GitHub issues.**
 
-We take the security of PyGuard seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+Report via:
+- Email: security@pyguard.dev
+- GitHub Security Advisories (private)
 
-### Reporting Process
+Include:
+- Issue type (e.g., buffer overflow, injection)
+- Source file paths and locations (tag/branch/commit)
+- Steps to reproduce
+- Proof-of-concept or exploit code (if available)
+- Impact assessment
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+**Response**: Acknowledgment within 48 hours. Investigation, timeline, patch, credit (if desired).
 
-Instead, please report them via email to: **security@pyguard.dev** (or open a private security advisory on GitHub)
-
-You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
-
-Please include the following information in your report:
-
-- Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
-- Full paths of source file(s) related to the manifestation of the issue
-- The location of the affected source code (tag/branch/commit or direct URL)
-- Any special configuration required to reproduce the issue
-- Step-by-step instructions to reproduce the issue
-- Proof-of-concept or exploit code (if possible)
-- Impact of the issue, including how an attacker might exploit the issue
-
-### What to Expect
-
-After you submit a vulnerability report, we will:
-
-1. **Acknowledge** your email within 48 hours
-2. **Investigate** the issue and determine its impact and severity
-3. **Provide** an estimated timeline for a fix
-4. **Release** a security advisory and patch when ready
-5. **Credit** you in the security advisory (unless you prefer to remain anonymous)
-
-### Security Best Practices for Users
+## User Security Practices
 
 When using PyGuard:
+1. Review auto-fixes before applying to production.
+2. Keep PyGuard updated.
+3. Backup code before running fixes.
+4. Run in sandbox when analyzing untrusted code.
+5. Review logs regularly (`logs/pyguard.jsonl`).
 
-1. **Always review auto-fixes** before applying them to production code
-2. **Keep PyGuard updated** to the latest version
-3. **Use secure configurations** - review the security rules in `config/security_rules.toml`
-4. **Backup your code** before running auto-fixes
-5. **Run in a sandbox** when analyzing untrusted code
-6. **Review logs** regularly for security findings in `logs/pyguard.jsonl`
+## Security Considerations
 
-### Known Security Considerations
+- PyGuard analyzes but does not execute code. Still, review untrusted code carefully.
+- PyGuard reads and writes files. Set appropriate permissions on sensitive files.
+- Keep dependencies updated: `pip list --outdated`
 
-1. **Code Execution**: PyGuard analyzes Python code but does not execute it. However, always review code from untrusted sources.
-2. **File System Access**: PyGuard reads and writes files. Ensure proper permissions are set on sensitive files.
-3. **Dependencies**: Keep all dependencies updated. Run `pip list --outdated` regularly.
+## PyGuard Security Features
 
-### Security Features
+- Hardcoded secrets detection
+- SQL injection pattern detection
+- Command injection prevention
+- Unsafe deserialization warnings
+- Weak cryptography detection
+- Path traversal detection
 
-PyGuard includes several security-focused features:
+## Disclosure Process
 
-- 🔒 Detection of hardcoded secrets and credentials
-- 🔒 SQL injection pattern detection
-- 🔒 Command injection prevention
-- 🔒 Unsafe deserialization warnings (pickle)
-- 🔒 Weak cryptography detection
-- 🔒 Path traversal vulnerability detection
+On receiving a report:
+1. Confirm and determine affected versions.
+2. Audit for similar issues.
+3. Prepare fixes for supported versions.
+4. Release patches quickly.
 
-## Disclosure Policy
+## Policy Feedback
 
-When we receive a security bug report, we will:
-
-1. Confirm the problem and determine affected versions
-2. Audit code to find any similar problems
-3. Prepare fixes for all supported versions
-4. Release new security fix versions as quickly as possible
-
-## Comments on This Policy
-
-If you have suggestions on how this process could be improved, please submit a pull request or open an issue.
+Suggestions welcome via PR or issue.
 
 ---
 

@@ -79,6 +79,10 @@ docs/_build/
 docs/_static/
 docs/_templates/
 site/
+.vale/
+.vale.ini
+node_modules/
+package-lock.json
 
 # Jupyter
 .ipynb_checkpoints/
