@@ -323,6 +323,14 @@ make test
 make lint
 ```
 
+## Automated Maintenance
+
+PyGuard uses **Dependabot** for automatic dependency management:
+- 🤖 Auto-updates Python packages and GitHub Actions weekly
+- ✅ Auto-merges patch and minor updates after CI passes
+- ⚠️ Flags major updates for manual review
+- 📋 See [docs/DEPENDABOT.md](docs/DEPENDABOT.md) for details
+
 ## License
 
 MIT License. You can: use commercially, modify, distribute, sublicense. You cannot: hold author liable. Must: include license and copyright notice.
