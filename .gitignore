@@ -50,13 +50,20 @@ htmlcov/
 # IDEs
 .vscode/
 .idea/
+.cursor/
+.claude/
 *.swp
 *.swo
 *~
-.DS_Store
 .project
 .pydevproject
 .settings/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
 
 # MyPy
 .mypy_cache/
