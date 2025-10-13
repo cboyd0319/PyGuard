@@ -122,6 +122,21 @@ class SimplificationVisitor(ast.NodeVisitor):
                 )
             )
 
+        # SIM116: Use dict.get() with default instead of if-key-in-dict pattern
+        if self._is_dict_get_pattern(node):
+            self.issues.append(
+                SimplificationIssue(
+                    severity="LOW",
+                    category="Code Simplification",
+                    message="Use dict.get(key, default) instead of if-key-in-dict pattern",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Replace 'if key in dict: x = dict[key] else: x = default' with 'x = dict.get(key, default)'",
+                    rule_id="SIM116",
+                )
+            )
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
@@ -194,6 +209,36 @@ class SimplificationVisitor(ast.NodeVisitor):
                 )
             )
 
+        # SIM110: Use all() instead of for loop setting flag
+        if self._is_all_loop_pattern(node):
+            self.issues.append(
+                SimplificationIssue(
+                    severity="MEDIUM",
+                    category="Code Simplification",
+                    message="Use all() instead of for loop with flag variable",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Replace loop with: result = all(condition for item in items)",
+                    rule_id="SIM110",
+                )
+            )
+
+        # SIM111: Use any() instead of for loop setting flag
+        if self._is_any_loop_pattern(node):
+            self.issues.append(
+                SimplificationIssue(
+                    severity="MEDIUM",
+                    category="Code Simplification",
+                    message="Use any() instead of for loop with flag variable",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Replace loop with: result = any(condition for item in items)",
+                    rule_id="SIM111",
+                )
+            )
+
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try):
@@ -240,6 +285,25 @@ class SimplificationVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        """Visit function definitions for guard clause patterns."""
+        # SIM106: Use guard clauses (handle error cases first)
+        if self._should_use_guard_clause(node):
+            self.issues.append(
+                SimplificationIssue(
+                    severity="LOW",
+                    category="Code Simplification",
+                    message="Use guard clause - handle error cases first to reduce nesting",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Move error/edge case checks to the start with early return",
+                    rule_id="SIM106",
+                )
+            )
+
+        self.generic_visit(node)
+
     def visit_Dict(self, node: ast.Dict):
         """Visit dictionary creation."""
         # SIM118: Use .get() or 'in' instead of dict.keys()
@@ -281,7 +345,129 @@ class SimplificationVisitor(ast.NodeVisitor):
                             )
                         )
 
+            # SIM118: Use 'key in dict' instead of 'key in dict.keys()'
+            if isinstance(op, ast.In) and isinstance(comparator, ast.Call):
+                if (
+                    isinstance(comparator.func, ast.Attribute)
+                    and comparator.func.attr == "keys"
+                    and len(comparator.args) == 0
+                ):
+                    self.issues.append(
+                        SimplificationIssue(
+                            severity="LOW",
+                            category="Code Simplification",
+                            message="Use 'key in dict' instead of 'key in dict.keys()'",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Remove .keys() call - 'in' checks keys by default",
+                            rule_id="SIM118",
+                        )
+                    )
+
+        # SIM300-301: Simplify negated comparisons
+        if isinstance(node, ast.Compare) and len(node.ops) == 1 and len(node.comparators) == 1:
+            # This is handled in visit_UnaryOp to catch 'not (a == b)' patterns
+            pass
+
         self.generic_visit(node)
+
+    def visit_UnaryOp(self, node: ast.UnaryOp):
+        """Visit unary operations for simplification opportunities."""
+        if isinstance(node.op, ast.Not):
+            # SIM300: Use 'a == b' instead of 'not (a != b)'
+            if isinstance(node.operand, ast.Compare) and len(node.operand.ops) == 1:
+                op = node.operand.ops[0]
+                if isinstance(op, ast.NotEq):
+                    self.issues.append(
+                        SimplificationIssue(
+                            severity="LOW",
+                            category="Code Simplification",
+                            message="Use '==' instead of 'not ... !='",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Replace 'not (a != b)' with 'a == b'",
+                            rule_id="SIM300",
+                        )
+                    )
+                # SIM301: Use 'a != b' instead of 'not (a == b)'
+                elif isinstance(op, ast.Eq):
+                    self.issues.append(
+                        SimplificationIssue(
+                            severity="LOW",
+                            category="Code Simplification",
+                            message="Use '!=' instead of 'not ... =='",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Replace 'not (a == b)' with 'a != b'",
+                            rule_id="SIM301",
+                        )
+                    )
+
+            # Boolean simplification patterns
+            # SIM220-223: De Morgan's laws
+            if isinstance(node.operand, ast.BoolOp):
+                if isinstance(node.operand.op, ast.Or):
+                    # not (a or b) can be simplified to (not a and not b)
+                    # But this might make it more complex - only flag in specific cases
+                    # Check if all values are already negated
+                    all_negated = all(
+                        isinstance(v, ast.UnaryOp) and isinstance(v.op, ast.Not)
+                        for v in node.operand.values
+                    )
+                    if all_negated:
+                        self.issues.append(
+                            SimplificationIssue(
+                                severity="LOW",
+                                category="Code Simplification",
+                                message="Simplify 'not (not a or not b)' to 'a and b'",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                code_snippet=self._get_code_snippet(node),
+                                fix_suggestion="Apply De Morgan's law: not (not a or not b) => a and b",
+                                rule_id="SIM223",
+                            )
+                        )
+                elif isinstance(node.operand.op, ast.And):
+                    # not (a and b) can be simplified to (not a or not b)
+                    all_negated = all(
+                        isinstance(v, ast.UnaryOp) and isinstance(v.op, ast.Not)
+                        for v in node.operand.values
+                    )
+                    if all_negated:
+                        self.issues.append(
+                            SimplificationIssue(
+                                severity="LOW",
+                                category="Code Simplification",
+                                message="Simplify 'not (not a and not b)' to 'a or b'",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                code_snippet=self._get_code_snippet(node),
+                                fix_suggestion="Apply De Morgan's law: not (not a and not b) => a or b",
+                                rule_id="SIM222",
+                            )
+                        )
+
+        self.generic_visit(node)
+
+    def visit_Subscript(self, node: ast.Subscript):
+        """Visit subscript operations for dict key checks."""
+        # SIM116: Use dict.get() with default instead of if-else key check pattern
+        # This requires parent context to detect the pattern
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute):
+        """Visit attribute access for dict.keys() patterns."""
+        # SIM118: Use 'key in dict' instead of 'key in dict.keys()'
+        # This is detected in the parent In node
+        self.generic_visit(node)
+
+    def visit_In(self, node: ast.In):
+        """Visit 'in' comparisons."""
+        # This is actually part of Compare, handled there
+        pass
 
     # Helper methods for pattern detection
 
@@ -373,6 +559,110 @@ class SimplificationVisitor(ast.NodeVisitor):
         # Pattern: i = 0; for item in items: ... i += 1
         # This requires analyzing surrounding context
         # Simplified - return False for now
+        return False
+
+    def _is_all_loop_pattern(self, node: ast.For) -> bool:
+        """
+        Check if loop follows pattern: flag = True; for x in items: if not cond: flag = False.
+        
+        This is a simplified detection - a full implementation would need flow analysis.
+        We check for loops that:
+        1. Have an if statement that sets a variable to False
+        2. Could be replaced with all()
+        """
+        # Look for pattern: for item in items: if not condition: result = False
+        if len(node.body) == 1 and isinstance(node.body[0], ast.If):
+            if_stmt = node.body[0]
+            # Check if body contains assignment to False
+            if len(if_stmt.body) == 1 and isinstance(if_stmt.body[0], ast.Assign):
+                assign = if_stmt.body[0]
+                if len(assign.targets) == 1 and isinstance(assign.value, ast.Constant):
+                    if assign.value.value is False:
+                        return True
+        return False
+
+    def _is_any_loop_pattern(self, node: ast.For) -> bool:
+        """
+        Check if loop follows pattern: flag = False; for x in items: if cond: flag = True.
+        
+        This is a simplified detection - a full implementation would need flow analysis.
+        We check for loops that:
+        1. Have an if statement that sets a variable to True
+        2. Could be replaced with any()
+        """
+        # Look for pattern: for item in items: if condition: result = True
+        if len(node.body) == 1 and isinstance(node.body[0], ast.If):
+            if_stmt = node.body[0]
+            # Check if body contains assignment to True
+            if len(if_stmt.body) == 1 and isinstance(if_stmt.body[0], ast.Assign):
+                assign = if_stmt.body[0]
+                if len(assign.targets) == 1 and isinstance(assign.value, ast.Constant):
+                    if assign.value.value is True:
+                        return True
+        return False
+
+    def _should_use_guard_clause(self, node: ast.FunctionDef) -> bool:
+        """
+        Check if function has pattern that could use guard clauses.
+        
+        Pattern: if condition: [large body] else: [small error handling]
+        Should be: if error_condition: return/raise; [large body]
+        """
+        if not node.body:
+            return False
+
+        # Look for function starting with large if-else where else has return/raise
+        first_stmt = node.body[0]
+        if isinstance(first_stmt, ast.If) and first_stmt.orelse:
+            # Check if the else clause is simple (has return or raise)
+            else_clause = first_stmt.orelse
+            if len(else_clause) <= 2:  # Small else clause
+                has_return_or_raise = any(
+                    isinstance(stmt, (ast.Return, ast.Raise)) for stmt in else_clause
+                )
+                # And the main body is large
+                if has_return_or_raise and len(first_stmt.body) > 3:
+                    return True
+
+        return False
+
+    def _is_dict_get_pattern(self, node: ast.If) -> bool:
+        """
+        Check if pattern: if key in dict: x = dict[key] else: x = default.
+        
+        This can be replaced with: x = dict.get(key, default)
+        """
+        # Pattern: if key in dict_var:
+        if not isinstance(node.test, ast.Compare):
+            return False
+
+        if len(node.test.ops) != 1 or not isinstance(node.test.ops[0], ast.In):
+            return False
+
+        # Check if body has assignment from dict subscript
+        if not node.body or not node.orelse:
+            return False
+
+        if len(node.body) != 1 or not isinstance(node.body[0], ast.Assign):
+            return False
+
+        body_assign = node.body[0]
+        if len(body_assign.targets) != 1:
+            return False
+
+        # Check if the value is a subscript (dict[key])
+        if isinstance(body_assign.value, ast.Subscript):
+            # And else clause also assigns to same variable
+            if len(node.orelse) == 1 and isinstance(node.orelse[0], ast.Assign):
+                else_assign = node.orelse[0]
+                if len(else_assign.targets) == 1:
+                    # Check if same target variable
+                    body_target = body_assign.targets[0]
+                    else_target = else_assign.targets[0]
+                    if isinstance(body_target, ast.Name) and isinstance(else_target, ast.Name):
+                        if body_target.id == else_target.id:
+                            return True
+
         return False
 
     def _get_call_name(self, node: ast.Call) -> str:

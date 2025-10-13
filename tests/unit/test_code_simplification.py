@@ -187,3 +187,213 @@ except:
 
         # Clean up
         path.unlink()
+
+
+class TestPhase3Simplifications:
+    """Test Phase 3 code simplification enhancements."""
+
+    def test_detect_negated_comparison_eq(self):
+        """Test detection of not (a == b) pattern (SIM301)."""
+        code = """
+if not (x == y):
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM301" for issue in visitor.issues)
+        assert any("!=" in issue.message for issue in visitor.issues)
+
+    def test_detect_negated_comparison_neq(self):
+        """Test detection of not (a != b) pattern (SIM300)."""
+        code = """
+if not (x != y):
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM300" for issue in visitor.issues)
+        assert any("==" in issue.message for issue in visitor.issues)
+
+    def test_detect_de_morgan_or(self):
+        """Test detection of not (not a or not b) pattern (SIM223)."""
+        code = """
+if not (not x or not y):
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM223" for issue in visitor.issues)
+        assert any("and" in issue.message.lower() for issue in visitor.issues)
+
+    def test_detect_de_morgan_and(self):
+        """Test detection of not (not a and not b) pattern (SIM222)."""
+        code = """
+if not (not x and not y):
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM222" for issue in visitor.issues)
+        assert any("or" in issue.message.lower() for issue in visitor.issues)
+
+    def test_detect_dict_keys_in_check(self):
+        """Test detection of key in dict.keys() pattern (SIM118)."""
+        code = """
+my_dict = {}
+if "key" in my_dict.keys():
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM118" for issue in visitor.issues)
+        assert any(".keys()" in issue.message for issue in visitor.issues)
+
+    def test_detect_all_loop_pattern(self):
+        """Test detection of all() loop pattern (SIM110)."""
+        code = """
+result = True
+for item in items:
+    if not condition(item):
+        result = False
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM110" for issue in visitor.issues)
+        assert any("all()" in issue.message for issue in visitor.issues)
+
+    def test_detect_any_loop_pattern(self):
+        """Test detection of any() loop pattern (SIM111)."""
+        code = """
+result = False
+for item in items:
+    if condition(item):
+        result = True
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM111" for issue in visitor.issues)
+        assert any("any()" in issue.message for issue in visitor.issues)
+
+    def test_detect_guard_clause_pattern(self):
+        """Test detection of guard clause opportunity (SIM106)."""
+        code = """
+def process(data):
+    if data:
+        # Large processing block
+        step1()
+        step2()
+        step3()
+        step4()
+    else:
+        return None
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM106" for issue in visitor.issues)
+        assert any("guard" in issue.message.lower() for issue in visitor.issues)
+
+    def test_detect_dict_get_pattern(self):
+        """Test detection of dict.get() opportunity (SIM116)."""
+        code = """
+if "key" in my_dict:
+    value = my_dict["key"]
+else:
+    value = default
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "SIM116" for issue in visitor.issues)
+        assert any("dict.get" in issue.message.lower() for issue in visitor.issues)
+
+    def test_no_false_positives_simple_comparisons(self):
+        """Test that simple valid comparisons don't trigger issues."""
+        code = """
+if x != y:
+    pass
+if x == y:
+    pass
+if x and y:
+    pass
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        # Should not have SIM300/301 issues for normal comparisons
+        assert not any(issue.rule_id in ["SIM300", "SIM301"] for issue in visitor.issues)
+
+    def test_no_false_positives_normal_loops(self):
+        """Test that normal loops don't trigger issues."""
+        code = """
+for item in items:
+    process(item)
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        # Should have no issues for normal loop
+        assert len(visitor.issues) == 0
+
+    def test_comprehensive_integration(self):
+        """Test multiple Phase 3 rules together."""
+        code = """
+def complex_function(data):
+    # SIM106: Guard clause opportunity
+    if data:
+        # Large body
+        x = 1
+        y = 2
+        z = 3
+        result = x + y + z
+    else:
+        return None
+    
+    # SIM118: dict.keys() unnecessary
+    if "key" in data.keys():
+        pass
+    
+    # SIM300: Negated comparison
+    if not (x != y):
+        pass
+    
+    # SIM110: Use all()
+    for item in items:
+        if not check(item):
+            flag = False
+"""
+        tree = ast.parse(code)
+        visitor = SimplificationVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        # Should detect multiple issues
+        assert len(visitor.issues) >= 3
+        rule_ids = {issue.rule_id for issue in visitor.issues}
+        assert "SIM106" in rule_ids or "SIM118" in rule_ids or "SIM300" in rule_ids
