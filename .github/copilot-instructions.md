@@ -330,7 +330,7 @@ line_length = 100
 
 ## Python Version Pinning
 
-**Recommended development version:** Python 3.13
+**Recommended development version:** Python 3.13.8
 **Minimum supported version:** Python 3.8
 **Maximum tested version:** Python 3.13
 
@@ -338,7 +338,8 @@ Ensure consistency across:
 - `README.md` badges
 - `pyproject.toml` (requires-python)
 - `Dockerfile` (FROM python:3.13-slim)
-- `.github/workflows/*.yml` (python-version)
+- `.github/workflows/*.yml` (python-version: '3.13')
+- `.python-version` and `.tool-versions` (3.13.8)
 - Documentation examples
 
 ---
