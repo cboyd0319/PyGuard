@@ -33,6 +33,7 @@ from pyguard.lib.rule_engine import (
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.string_operations import StringIssue, StringOperationsFixer, StringOperationsVisitor
+from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
 from pyguard.lib.type_checker import TypeChecker, TypeInferenceEngine
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue
@@ -86,4 +87,7 @@ __all__ = [
     "StringIssue",
     "StringOperationsFixer",
     "StringOperationsVisitor",
+    # PEP 8 Comprehensive
+    "PEP8Checker",
+    "PEP8Rules",
 ]
