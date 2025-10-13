@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyguard"
-version = "0.5.0-dev"
+version = "0.3.0"
 description = "The World's Best Python Security & Compliance Tool - ML-powered detection, MCP integration, 6+ compliance frameworks"
 readme = "README.md"
 requires-python = ">=3.8"

@@ -5,7 +5,7 @@ FROM python:3.13-slim
 
 LABEL maintainer="Chad Boyd <your.email@example.com>"
 LABEL description="PyGuard - Python QA and Auto-Fix Tool"
-LABEL version="0.1.0"
+LABEL version="0.3.0"
 
 # Set working directory
 WORKDIR /app

@@ -39,6 +39,8 @@ fi
 echo ""
 echo "📋 Release checklist:"
 echo "  - Update version in pyguard/__init__.py"
+echo "  - Update version in pyproject.toml"
+echo "  - Update version in Dockerfile"
 echo "  - Update CHANGELOG.md"
 echo "  - Run tests"
 echo "  - Create git tag"
@@ -57,6 +59,8 @@ fi
 echo ""
 echo "🔄 Updating version..."
 sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" pyguard/__init__.py
+sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" pyproject.toml
+sed -i "s/LABEL version=\".*\"/LABEL version=\"$NEW_VERSION\"/" Dockerfile
 
 echo "📝 Updating CHANGELOG..."
 DATE=$(date +%Y-%m-%d)
@@ -77,7 +81,7 @@ echo "📦 Building packages..."
 python -m build
 
 echo "📝 Creating git commit..."
-git add pyguard/__init__.py CHANGELOG.md
+git add pyguard/__init__.py pyproject.toml Dockerfile CHANGELOG.md
 git commit -m "Release version $NEW_VERSION"
 
 echo "🏷️  Creating git tag..."
