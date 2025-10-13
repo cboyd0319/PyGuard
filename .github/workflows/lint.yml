@@ -46,7 +46,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload PyGuard SARIF Results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
       with:
         sarif_file: pyguard-report.sarif
         category: pyguard-self-check
