@@ -12,6 +12,7 @@ Thank you for considering contributing to PyGuard! We want to make contributing 
 - [Testing Guidelines](#testing-guidelines)
 - [Commit Message Format](#commit-message-format)
 - [Pull Request Process](#pull-request-process)
+- [Release and Version Management](#release-and-version-management)
 - [Project Structure](#project-structure)
 - [Performance Considerations](#performance-considerations)
 
@@ -491,6 +492,86 @@ Fixes #123
 - Your changes will be included in the next release
 - You'll be added to CONTRIBUTORS.md
 - Thank you for your contribution! 🎉
+
+---
+
+## 🏷️ **Release and Version Management**
+
+PyGuard follows [Semantic Versioning](https://semver.org/) (SemVer):
+- **Major (X.0.0)**: Breaking changes, major feature additions
+- **Minor (0.X.0)**: New features, backwards compatible
+- **Patch (0.0.X)**: Bug fixes, minor improvements
+
+### **Version Consistency**
+
+The version number must be consistent across these files:
+- `pyguard/__init__.py` - `__version__` variable (runtime version)
+- `pyproject.toml` - `version` field (package version)
+- `Dockerfile` - `LABEL version` (container version)
+- `README.md` - Version badge (public-facing version)
+
+### **Creating a Release** (Maintainers Only)
+
+Use the automated release script:
+
+```bash
+# From the main branch with no uncommitted changes
+./scripts/release.sh
+```
+
+The script will:
+1. Prompt for the new version number
+2. Update all version files automatically (including README badge)
+3. Update CHANGELOG.md with the release date
+4. Run tests to verify everything works
+5. Create a git commit and tag
+6. Display next steps for pushing and publishing
+
+**Manual Release Steps** (if not using script):
+
+1. Update versions in all four files listed above
+2. Update CHANGELOG.md:
+   - Change `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
+   - Add a new `## [Unreleased]` section at the top
+3. Run tests: `make test`
+4. Commit changes: `git commit -m "Release version X.Y.Z"`
+5. Create tag: `git tag -a vX.Y.Z -m "Release version X.Y.Z"`
+6. Push: `git push && git push --tags`
+7. Create GitHub release from the tag
+8. Build and publish to PyPI: `python -m build && python -m twine upload dist/*`
+
+### **Version Guidelines**
+
+- Development versions use `-dev` suffix (e.g., `0.4.0-dev`)
+- Never commit version mismatches
+- Always use the release script when possible to avoid human error
+- Tag format: `vX.Y.Z` (with lowercase 'v' prefix)
+- Git tags trigger automated release workflow (see `.github/workflows/release.yml`)
+
+### **Git Tagging Strategy**
+
+PyGuard uses annotated git tags to mark releases:
+
+```bash
+# Create annotated tag
+git tag -a v0.3.0 -m "Release version 0.3.0"
+
+# Push tag to trigger release workflow
+git push origin v0.3.0
+
+# List all tags
+git tag -l
+
+# Delete a tag (if needed)
+git tag -d v0.3.0
+git push origin :refs/tags/v0.3.0
+```
+
+**Important Notes:**
+- Tags should only be created from the `main` branch
+- Once pushed, tags should NOT be modified or deleted (immutable releases)
+- The release workflow automatically publishes to PyPI when a tag is pushed
+- Tag format MUST match `v*.*.*` pattern to trigger the release workflow
 
 ---
 

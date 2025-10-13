@@ -40,6 +40,41 @@ class TestCLIIntegration:
         assert result.returncode == 0
         assert result.stdout.strip() == "0.3.0"
 
+    def test_version_consistency(self):
+        """Test that version is consistent across all files."""
+        import re
+
+        # Get version from __init__.py
+        import pyguard
+
+        init_version = pyguard.__version__
+
+        # Check pyproject.toml
+        pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+        pyproject_content = pyproject_path.read_text()
+        pyproject_match = re.search(r'^version = "([^"]+)"', pyproject_content, re.MULTILINE)
+        assert pyproject_match, "Version not found in pyproject.toml"
+        pyproject_version = pyproject_match.group(1)
+
+        # Check Dockerfile
+        dockerfile_path = Path(__file__).parent.parent.parent / "Dockerfile"
+        dockerfile_content = dockerfile_path.read_text()
+        dockerfile_match = re.search(r'LABEL version="([^"]+)"', dockerfile_content)
+        assert dockerfile_match, "Version not found in Dockerfile"
+        dockerfile_version = dockerfile_match.group(1)
+
+        # Check README.md badge
+        readme_path = Path(__file__).parent.parent.parent / "README.md"
+        readme_content = readme_path.read_text()
+        readme_match = re.search(r'badge/version-([^-]+)-', readme_content)
+        assert readme_match, "Version badge not found in README.md"
+        readme_version = readme_match.group(1)
+
+        # Assert all versions match
+        assert (
+            init_version == pyproject_version == dockerfile_version == readme_version
+        ), f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
+
 
 class TestEndToEnd:
     """End-to-end integration tests."""

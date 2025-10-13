@@ -114,13 +114,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Release Checklist
 - [ ] Update version in `pyguard/__init__.py`
 - [ ] Update version in `pyproject.toml`
+- [ ] Update version in `Dockerfile`
+- [ ] Update version badge in `README.md`
 - [ ] Update CHANGELOG.md with release date
 - [ ] Run full test suite (`pytest`)
 - [ ] Build package (`python -m build`)
-- [ ] Create git tag (`git tag v0.1.0`)
-- [ ] Push to GitHub (`git push --tags`)
+- [ ] Create git tag (`git tag v0.3.0`)
+- [ ] Push to GitHub (`git push && git push --tags`)
 - [ ] Publish to PyPI (`python -m twine upload dist/*`)
 - [ ] Create GitHub release with notes
+
+**Note**: Use `scripts/release.sh` to automate these steps.
 
 ---
 

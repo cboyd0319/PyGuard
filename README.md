@@ -1,6 +1,7 @@
 # PyGuard
 
 <p align="center">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.8%2B-blue.svg" alt="Python Version">
   <img src="https://img.shields.io/badge/tests-256%20passing-success.svg" alt="Tests Passing">
   <img src="https://img.shields.io/badge/coverage-72%25-green.svg" alt="Coverage">
