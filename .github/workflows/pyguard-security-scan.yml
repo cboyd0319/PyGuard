@@ -1,0 +1,59 @@
+name: PyGuard Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  security-events: write  # Required for uploading SARIF results
+  actions: read
+
+jobs:
+  pyguard-scan:
+    name: PyGuard Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+    - name: Set up Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.13'
+        
+    - name: Install PyGuard
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        
+    - name: Run PyGuard Security Scan
+      run: |
+        pyguard . \
+          --scan-only \
+          --sarif \
+          --no-html \
+          --exclude "tests/*" "venv/*" ".venv/*" "build/*" "dist/*" ".git/*" ".github/*" "benchmarks/*" "examples/*" "docs/*" || true
+      continue-on-error: true
+      
+    - name: Upload SARIF results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
+      with:
+        sarif_file: pyguard-report.sarif
+        category: pyguard
+      if: always()
+      
+    - name: Upload SARIF report as artifact
+      uses: actions/upload-artifact@ea054b4fa8c456ac13e30ebaf0c4bf6a84a4f6f5 # v4.6.0
+      with:
+        name: pyguard-sarif-report
+        path: pyguard-report.sarif
+        retention-days: 30
+      if: always()

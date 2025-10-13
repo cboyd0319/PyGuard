@@ -27,9 +27,12 @@ pyguard src/ --security-only
 
 # Scan without applying fixes
 pyguard src/ --scan-only
+
+# Generate SARIF for GitHub Security tab
+pyguard src/ --scan-only --sarif
 ```
 
-Expected output: backups in `.pyguard_backups/`, fixed files in place, HTML report at `pyguard-report.html`.
+Expected output: backups in `.pyguard_backups/`, fixed files in place, HTML report at `pyguard-report.html`, optional SARIF at `pyguard-report.sarif`.
 
 ## What this is
 
@@ -88,6 +91,9 @@ pyguard src/ --security-only
 # Scan for CI/CD (no file changes)
 pyguard src/ --scan-only
 
+# Generate SARIF report for GitHub Code Scanning
+pyguard src/ --scan-only --sarif --no-html
+
 # Skip backup creation
 pyguard src/ --no-backup
 
@@ -130,6 +136,43 @@ use_isort = true
 | `formatting.use_isort` | bool | true | false | Enable isort |
 
 Create `pyguard.toml` in project root or use `~/.config/pyguard/config.toml`.
+
+### GitHub Integration
+
+PyGuard integrates seamlessly with GitHub Code Scanning via SARIF reports:
+
+```yaml
+# .github/workflows/pyguard-security-scan.yml
+name: PyGuard Security Scan
+
+on: [push, pull_request]
+
+permissions:
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install pyguard
+      - run: pyguard . --scan-only --sarif --no-html
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pyguard-report.sarif
+```
+
+**Features:**
+- 🔒 Automatic upload to GitHub Security tab
+- 📊 SARIF 2.1.0 compliant reports
+- 🏷️ CWE/OWASP vulnerability mappings
+- 🔧 Fix suggestions for each issue
+- 📈 Track security trends over time
+
+See [docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md) for complete setup instructions.
 
 **Core vulnerabilities** — OWASP ASVS v5.0, CWE Top 25 aligned
 - Code injection (eval, exec, compile) — CWE-95
