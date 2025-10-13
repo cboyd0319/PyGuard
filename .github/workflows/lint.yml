@@ -1,4 +1,7 @@
-name: Linting & Quality
+name: PyGuard Self-Analysis
+
+# This workflow dogfoods PyGuard - PyGuard analyzes itself!
+# This proves PyGuard works in production and serves as a living example.
 
 on:
   push:
@@ -8,10 +11,11 @@ on:
 
 permissions:
   contents: read
+  security-events: write  # For future SARIF upload
 
 jobs:
-  lint:
-    name: Code Quality
+  pyguard-self-check:
+    name: PyGuard Self-Dogfooding 🐶
     runs-on: ubuntu-latest
 
     steps:
@@ -24,10 +28,61 @@ jobs:
         python-version: '3.13'
         cache: 'pip'
 
-    - name: Install dependencies
+    - name: Install PyGuard (itself!)
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
+
+    - name: Run PyGuard on pyguard/ (core library)
+      run: |
+        pyguard pyguard/ --scan-only --no-backup || {
+          echo "::warning::PyGuard found issues in core library"
+          exit 0  # Don't fail build, just warn for now
+        }
+      continue-on-error: true
+
+    - name: Run PyGuard on tests/ (test suite)
+      run: |
+        pyguard tests/ --scan-only --no-backup || {
+          echo "::warning::PyGuard found issues in tests"
+          exit 0
+        }
+      continue-on-error: true
+
+    - name: Run PyGuard on examples/ (example code)
+      run: |
+        pyguard examples/ --scan-only --no-backup || {
+          echo "::warning::PyGuard found issues in examples"
+          exit 0
+        }
+      continue-on-error: true
+
+    # TODO: Add SARIF output once implemented in PyGuard CLI
+    # - name: Upload PyGuard SARIF Results
+    #   uses: github/codeql-action/upload-sarif@v3
+    #   with:
+    #     sarif_file: pyguard-results.sarif
+    #     category: pyguard-self-check
+
+  # Keep traditional linters as backup validation until PyGuard SARIF is ready
+  lint-backup:
+    name: Traditional Linting (Backup)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Set up Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.13'
+        cache: 'pip'
+
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort mypy flake8
 
     - name: Check formatting with Black
       run: |
@@ -37,11 +92,6 @@ jobs:
       run: |
         isort --check-only pyguard/ tests/ examples/ --profile=black
 
-    - name: Lint with Pylint
-      run: |
-        pylint pyguard/ --max-line-length=100 --disable=C0111 || echo "Pylint found issues"
-      continue-on-error: true
-
     - name: Type check with mypy
       run: |
         mypy pyguard/ --ignore-missing-imports
@@ -50,31 +100,5 @@ jobs:
       run: |
         flake8 pyguard/ --max-line-length=100 --ignore=E203,W503
 
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-    - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-      with:
-        python-version: '3.13'
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install bandit safety
-
-    - name: Run Bandit
-      run: |
-        bandit -r pyguard/ -ll
-      continue-on-error: true
-
-    - name: Run Safety check
-      run: |
-        safety check --json || echo "Safety check completed"
-      continue-on-error: true
+  # Security scanning moved to dedicated security workflow (Bandit + Safety)
+  # See codeql.yml for GitHub's native security analysis

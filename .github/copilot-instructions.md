@@ -2,6 +2,30 @@
 
 > **Purpose:** PyGuard is a comprehensive Python security & code quality analysis tool with ML-powered detection, auto-fix capabilities, and support for 10+ compliance frameworks (OWASP, CWE, PCI-DSS, HIPAA, etc.). It detects 55+ security vulnerabilities and code quality issues while maintaining 100% local operation with no telemetry.
 
+## Quick Reference (Most Common Commands)
+```bash
+# Development setup
+make dev                    # Install with dev dependencies
+pip install -e ".[dev]"     # Alternative install
+
+# Running PyGuard
+pyguard scan .                          # Scan current directory
+pyguard scan --fix .                    # Scan and auto-fix issues
+pyguard scan --framework owasp .        # Scan with OWASP compliance
+pyguard scan --severity HIGH .          # Only HIGH severity issues
+pyguard scan --format json --output report.json .  # JSON report
+
+# Quality checks (run before every commit)
+make test          # Run all tests with coverage (70% min)
+make lint          # Run all linters (ruff, pylint, mypy, flake8)
+make format        # Format with Black and isort
+make security      # Bandit security scan
+make clean         # Remove build artifacts
+
+# Quick test cycle
+make format && make lint && make test
+```
+
 ## Project Overview
 
 - **Core functionality:** Static analysis → Detection → Auto-fix → Report
@@ -66,6 +90,31 @@
 - **Type hints:** Required for new code, mypy-friendly
 - **Testing:** pytest with 70%+ coverage target
 - **Logging:** Structured JSON logs (PyGuardLogger in `pyguard/lib/core.py`)
+
+## MCP Integration (Model Context Protocol)
+
+PyGuard integrates with MCP servers for enhanced AI capabilities:
+
+### Built-in (GitHub Copilot)
+- **github-mcp:** Repository operations, issues, PRs (OAuth, automatic - no config needed)
+
+### External (Configured)
+- **context7:** Version-specific Python security documentation (HTTP, needs API key)
+  - Provides accurate docs for Bandit, Ruff, mypy, pytest, OWASP, CWE standards
+  - No hallucinations, direct from source
+- **openai-websearch:** Web search via OpenAI for current threat intelligence (local/uvx, needs API key)
+  - Use for emerging security patterns, new CVEs, compliance updates
+- **fetch:** Web content fetching (local/npx, ready)
+  - Useful for CVE databases, NVD, security advisories
+- **playwright:** Browser automation for web security testing (local/npx, ready)
+  - Test web application security patterns
+
+**Config:** `.github/copilot-mcp.json` (HTTP and local command servers)  
+**Important:** GitHub MCP tools are built-in to Copilot. Do NOT add GitHub server to copilot-mcp.json. Personal Access Tokens (PAT) are NOT supported for GitHub MCP - it uses OAuth automatically.
+
+**Environment Variables Required:**
+- `COPILOT_MCP_CONTEXT7_API_KEY` — For Context7 documentation access
+- `COPILOT_MCP_OPENAI_API_KEY` — For OpenAI web search capabilities
 
 ## Repository Structure
 
@@ -303,6 +352,55 @@ def detect_sql_injection(self, code: str) -> list[SecurityIssue]:
     return issues
 ```
 
+## Data Contracts
+
+### SecurityIssue Record
+```python
+@dataclass
+class SecurityIssue:
+    """Represents a detected security vulnerability."""
+    severity: str  # "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"
+    category: str  # e.g., "SQL Injection", "XSS", "Hardcoded Secret"
+    message: str
+    file_path: str
+    line_number: int
+    cwe_id: str  # e.g., "CWE-89"
+    owasp_id: Optional[str]  # e.g., "ASVS-5.3.4"
+    confidence: float  # 0.0-1.0 (ML confidence score)
+    fix_suggestion: Optional[str]
+    code_snippet: Optional[str]
+```
+
+### AnalysisResult Record
+```python
+@dataclass
+class AnalysisResult:
+    """Results from analyzing a file or directory."""
+    total_files: int
+    total_issues: int
+    issues_by_severity: dict[str, int]  # {"CRITICAL": 0, "HIGH": 5, ...}
+    issues: list[SecurityIssue]
+    execution_time: float
+    scan_timestamp: str  # ISO 8601 format
+    frameworks_applied: list[str]  # ["owasp", "pci-dss", ...]
+```
+
+### Configuration Schema
+```python
+@dataclass
+class PyGuardConfig:
+    """PyGuard configuration."""
+    severity_threshold: str = "MEDIUM"  # Minimum severity to report
+    frameworks: list[str] = field(default_factory=list)  # Compliance frameworks
+    exclude_patterns: list[str] = field(default_factory=list)
+    auto_fix: bool = False
+    backup_enabled: bool = True
+    max_line_length: int = 100
+    enable_ml: bool = True  # Enable ML-powered detection
+```
+
+> If you add fields, maintain backward compatibility and provide migration guidance.
+
 ## Testing Patterns
 
 ### Security Detection Tests
@@ -402,6 +500,50 @@ Before submitting a PR, verify:
 2. Identify bottlenecks in AST parsing or pattern matching
 3. Add caching where appropriate
 4. Maintain code clarity; premature optimization is the root of all evil
+
+## Common Pitfalls & Gotchas
+
+1. **Python Version:** Supports 3.8+ but recommend 3.13 for development
+   - Check with `python3 --version` or `python --version`
+   - CI tests on Python 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13
+
+2. **Virtual Environment:** Always activate before development
+   - Symptom: `ModuleNotFoundError: No module named 'pyguard'`
+   - Fix: `source .venv/bin/activate` (Linux/Mac) or `.venv\Scripts\activate` (Windows)
+
+3. **Import Paths:** Use proper import patterns (see Import Patterns section)
+   - ✅ GOOD: `from pyguard.lib.core import PyGuardLogger`
+   - ✅ ALSO GOOD: `from pyguard import PyGuardLogger` (via __init__.py)
+   - ❌ AVOID: `from ..lib.core import PyGuardLogger`
+
+4. **Type Hints:** Required for new code (mypy checking)
+   - All public functions need type hints
+   - Use `# type: ignore[<code>]` sparingly with justification
+
+5. **Test Isolation:** Tests must not depend on external services
+   - Mock all HTTP calls
+   - Use fixtures for test data
+   - No live API calls in tests
+
+6. **Secrets:** Never commit .env or files containing secrets
+   - .gitignore already handles this
+   - CI fails if secrets detected in code
+
+7. **AST Parsing:** Handle syntax errors gracefully
+   - Symptom: `SyntaxError` on malformed Python files
+   - Fix: Catch and log, continue with next file (don't crash entire scan)
+
+8. **Coverage Threshold:** Maintain 70% minimum coverage
+   - Running tests will fail if coverage drops below threshold
+   - Add tests before adding new features
+
+9. **Security Rule Updates:** Keep CWE/OWASP mappings current
+   - Reference official databases (cwe.mitre.org, owasp.org)
+   - Document sources in code comments
+
+10. **Auto-Fix Idempotency:** All fixes must be idempotent
+    - Running fix twice should produce same result as running once
+    - Test with `--fix` flag multiple times
 
 ## Absolute Rules
 

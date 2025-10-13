@@ -35,6 +35,24 @@ jobs:
       run: |
         twine check dist/*
 
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        artifact-name: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
+        output-file: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
+        format: spdx-json
+
+    - name: Attest Build Provenance
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: dist/*
+
+    - name: Create Checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.sha256
+        cd ..
+
     - name: Publish to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -63,7 +81,10 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048 # v2.2.0
       with:
-        files: dist/*
+        files: |
+          dist/*
+          dist/checksums.sha256
+          pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         body_path: release_notes.md
         draft: false
         prerelease: false
