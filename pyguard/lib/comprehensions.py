@@ -23,127 +23,239 @@ class ComprehensionVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             func_name = node.func.id
 
-            # C400: Unnecessary generator (use list comprehension)
-            if func_name == "list" and len(node.args) == 1:
+            # Handle cases where we have exactly 1 argument
+            if len(node.args) == 1:
                 arg = node.args[0]
-                if isinstance(arg, ast.GeneratorExp):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C400",
-                            message="Unnecessary generator - use list comprehension instead",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace list(generator) with [comprehension]",
+                
+                # Check for different patterns based on func_name and arg type
+                if func_name == "list":
+                    # C400: Unnecessary generator (use list comprehension)
+                    if isinstance(arg, ast.GeneratorExp):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C400",
+                                message="Unnecessary generator - use list comprehension instead",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace list(generator) with [comprehension]",
+                            )
                         )
-                    )
-
-            # C401: Unnecessary generator (use set comprehension)
-            elif func_name == "set" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.GeneratorExp):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C401",
-                            message="Unnecessary generator - use set comprehension instead",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace set(generator) with {comprehension}",
+                    # C410: Unnecessary list passed to list()
+                    elif isinstance(arg, ast.List):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C410",
+                                message="Unnecessary list passed to list()",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                fix_suggestion="Remove redundant list() call",
+                                file_path=self.file_path,
+                            )
                         )
-                    )
-
-            # C402: Unnecessary generator (use dict comprehension)
-            elif func_name == "dict" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.GeneratorExp):
-                    # Check if generator yields tuples for dict
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C402",
-                            message="Unnecessary generator - use dict comprehension instead",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace dict(generator) with {k: v for ...}",
+                    # C411: Unnecessary list call around sorted()
+                    elif isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                        if arg.func.id == "sorted":
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="C411",
+                                    message="Unnecessary list() around sorted()",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.LOW,
+                                    category=RuleCategory.REFACTOR,
+                                    fix_suggestion="sorted() already returns a list",
+                                    file_path=self.file_path,
+                                )
+                            )
+                    # C416: Unnecessary list comprehension
+                    if isinstance(arg, (ast.ListComp, ast.SetComp)):
+                        # Check if it's just iterating without transformation
+                        comp = arg
+                        if len(comp.generators) == 1:
+                            gen = comp.generators[0]
+                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):
+                                if comp.elt.id == gen.target.id and not gen.ifs:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="C416",
+                                            message="Unnecessary comprehension - use constructor directly",
+                                            line_number=node.lineno,
+                                            column=node.col_offset,
+                                            severity=RuleSeverity.LOW,
+                                            category=RuleCategory.REFACTOR,
+                                            file_path=self.file_path,
+                                            fix_suggestion=f"Replace {func_name}([x for x in ...]) with {func_name}(...)",
+                                        )
+                                    )
+                
+                elif func_name == "set":
+                    # C401: Unnecessary generator (use set comprehension)
+                    if isinstance(arg, ast.GeneratorExp):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C401",
+                                message="Unnecessary generator - use set comprehension instead",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace set(generator) with {comprehension}",
+                            )
                         )
-                    )
-
-            # C403: Unnecessary list comprehension (use set comprehension)
-            elif func_name == "set" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.ListComp):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C403",
-                            message="Unnecessary list comprehension - use set comprehension",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace set([...]) with {...}",
+                    # C403: Unnecessary list comprehension (use set comprehension)
+                    elif isinstance(arg, ast.ListComp):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C403",
+                                message="Unnecessary list comprehension - use set comprehension",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace set([...]) with {...}",
+                            )
                         )
-                    )
-
-            # C404: Unnecessary list comprehension (use dict comprehension)
-            elif func_name == "dict" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.ListComp):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C404",
-                            message="Unnecessary list comprehension - use dict comprehension",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace dict([...]) with {k: v for ...}",
+                    # C405: Unnecessary list literal (use set literal)
+                    elif isinstance(arg, ast.List):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C405",
+                                message="Unnecessary list literal - use set literal",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace set([...]) with {...}",
+                            )
                         )
-                    )
-
-            # C405: Unnecessary list literal (use set literal)
-            elif func_name == "set" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.List):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C405",
-                            message="Unnecessary list literal - use set literal",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace set([...]) with {...}",
+                    # C416: Unnecessary set comprehension
+                    if isinstance(arg, (ast.ListComp, ast.SetComp)):
+                        # Check if it's just iterating without transformation
+                        comp = arg
+                        if len(comp.generators) == 1:
+                            gen = comp.generators[0]
+                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):
+                                if comp.elt.id == gen.target.id and not gen.ifs:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="C416",
+                                            message="Unnecessary comprehension - use constructor directly",
+                                            line_number=node.lineno,
+                                            column=node.col_offset,
+                                            severity=RuleSeverity.LOW,
+                                            category=RuleCategory.REFACTOR,
+                                            file_path=self.file_path,
+                                            fix_suggestion=f"Replace {func_name}({{x for x in ...}}) with {func_name}(...)",
+                                        )
+                                    )
+                
+                elif func_name == "dict":
+                    # C402: Unnecessary generator (use dict comprehension)
+                    if isinstance(arg, ast.GeneratorExp):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C402",
+                                message="Unnecessary generator - use dict comprehension instead",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace dict(generator) with {k: v for ...}",
+                            )
                         )
-                    )
-
-            # C406: Unnecessary list literal (use dict literal)
-            elif func_name == "dict" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.List):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C406",
-                            message="Unnecessary list literal - use dict literal",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                            fix_suggestion="Replace dict([...]) with {...}",
+                    # C404: Unnecessary list comprehension (use dict comprehension)
+                    elif isinstance(arg, ast.ListComp):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C404",
+                                message="Unnecessary list comprehension - use dict comprehension",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace dict([...]) with {k: v for ...}",
+                            )
                         )
-                    )
-
-            # C408: Unnecessary dict/list/tuple call
+                    # C406: Unnecessary list literal (use dict literal)
+                    elif isinstance(arg, ast.List):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C406",
+                                message="Unnecessary list literal - use dict literal",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                file_path=self.file_path,
+                                fix_suggestion="Replace dict([...]) with {...}",
+                            )
+                        )
+                
+                elif func_name == "tuple":
+                    # C409: Unnecessary list passed to tuple()
+                    if isinstance(arg, ast.List):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="C409",
+                                message="Unnecessary list passed to tuple()",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.REFACTOR,
+                                fix_suggestion="Replace tuple([...]) with (...)",
+                                file_path=self.file_path,
+                            )
+                        )
+                
+                elif func_name == "sorted":
+                    # C413: Unnecessary list/reversed call around sorted()
+                    if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                        if arg.func.id in ("reversed", "list"):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="C413",
+                                    message=f"Unnecessary {arg.func.id}() around sorted()",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.LOW,
+                                    category=RuleCategory.REFACTOR,
+                                    fix_suggestion="Use reverse=True parameter in sorted()",
+                                    file_path=self.file_path,
+                                )
+                            )
+                
+                # C414: Unnecessary list/reversed/sorted call inside set/sorted/list/tuple
+                if func_name in ("set", "sorted", "list", "tuple"):
+                    if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                        inner_func = arg.func.id
+                        # Avoid duplicate C411 (list(sorted())) and C413 (sorted(list/reversed()))
+                        if inner_func in ("list", "reversed", "sorted", "tuple"):
+                            if not (func_name == "list" and inner_func == "sorted"):  # Skip C411
+                                if not (func_name == "sorted" and inner_func in ("list", "reversed")):  # Skip C413
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="C414",
+                                            message=f"Unnecessary {inner_func}() call inside {func_name}()",
+                                            line_number=node.lineno,
+                                            column=node.col_offset,
+                                            severity=RuleSeverity.LOW,
+                                            category=RuleCategory.REFACTOR,
+                                            fix_suggestion=f"Remove redundant {inner_func}() call",
+                                            file_path=self.file_path,
+                                        )
+                                    )
+            
+            # C408: Unnecessary dict/list/tuple call (no arguments)
             elif func_name in ("dict", "list", "tuple") and not node.args and not node.keywords:
                 suggestion = {
                     "dict": "{}",
@@ -159,121 +271,9 @@ class ComprehensionVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.LOW,
                         category=RuleCategory.REFACTOR,
                         fix_suggestion=f"Replace {func_name}() with {suggestion}",
-                                                file_path=self.file_path,
+                        file_path=self.file_path,
                     )
                 )
-
-            # C409: Unnecessary list passed to tuple()
-            elif func_name == "tuple" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.List):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C409",
-                            message="Unnecessary list passed to tuple()",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            fix_suggestion="Replace tuple([...]) with (...)",
-                                                    file_path=self.file_path,
-                        )
-                    )
-
-            # C410: Unnecessary list passed to list()
-            elif func_name == "list" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.List):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="C410",
-                            message="Unnecessary list passed to list()",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.REFACTOR,
-                            fix_suggestion="Remove redundant list() call",
-                                                    file_path=self.file_path,
-                        )
-                    )
-
-            # C411: Unnecessary list call around sorted()
-            elif func_name == "list" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
-                    if arg.func.id == "sorted":
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="C411",
-                                message="Unnecessary list() around sorted()",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.REFACTOR,
-                                fix_suggestion="sorted() already returns a list",
-                                                        file_path=self.file_path,
-                            )
-                        )
-
-            # C413: Unnecessary list/reversed call around sorted()
-            elif func_name == "sorted" and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
-                    if arg.func.id in ("reversed", "list"):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="C413",
-                                message=f"Unnecessary {arg.func.id}() around sorted()",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.REFACTOR,
-                                fix_suggestion="Use reverse=True parameter in sorted()",
-                                                        file_path=self.file_path,
-                            )
-                        )
-
-            # C414: Unnecessary list/reversed/sorted call inside set/sorted/list/tuple
-            elif func_name in ("set", "sorted", "list", "tuple") and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
-                    inner_func = arg.func.id
-                    if inner_func in ("list", "reversed", "sorted", "tuple"):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="C414",
-                                message=f"Unnecessary {inner_func}() call inside {func_name}()",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.REFACTOR,
-                                fix_suggestion=f"Remove redundant {inner_func}() call",
-                                                        file_path=self.file_path,
-                            )
-                        )
-
-            # C416: Unnecessary list/set comprehension
-            elif func_name in ("list", "set") and len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, (ast.ListComp, ast.SetComp)):
-                    # Check if it's just iterating without transformation
-                    comp = arg
-                    if len(comp.generators) == 1:
-                        gen = comp.generators[0]
-                        if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):
-                            if comp.elt.id == gen.target.id and not gen.ifs:
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="C416",
-                                        message="Unnecessary comprehension - use constructor directly",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.LOW,
-                                        category=RuleCategory.REFACTOR,
-                            file_path=self.file_path,
-                                        fix_suggestion=f"Replace {func_name}([x for x in ...]) with {func_name}(...)",
-                                    )
-                                )
 
         self.generic_visit(node)
 
