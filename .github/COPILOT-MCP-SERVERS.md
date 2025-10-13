@@ -8,6 +8,10 @@
 
 This document describes the Model Context Protocol (MCP) servers configured for GitHub Copilot in the PyGuard repository. These servers enhance Copilot's capabilities by providing access to external data sources and tools.
 
+> ⚠️ **Note:** GitHub MCP (repository operations, issues, PRs) is **built-in to GitHub Copilot** and uses OAuth
+> authentication automatically. It does NOT require configuration in this file and does NOT support Personal Access
+> Tokens (PAT). This document covers only the external MCP servers that require explicit configuration.
+
 ## What is MCP?
 
 **Model Context Protocol (MCP)** is an open standard that enables AI assistants to access external data sources and tools through a standardized interface. MCP servers act as bridges between GitHub Copilot and various services, providing:

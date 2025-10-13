@@ -96,7 +96,20 @@ make format && make lint && make test
 PyGuard integrates with MCP servers for enhanced AI capabilities:
 
 ### Built-in (GitHub Copilot)
-- **github-mcp:** Repository operations, issues, PRs (OAuth, automatic - no config needed)
+- **github-mcp:** Repository operations, issues, PRs (OAuth authentication, automatic - no config needed)
+
+> ⚠️ **CRITICAL: GitHub MCP Authentication**
+> 
+> GitHub MCP tools are **built-in to GitHub Copilot** and use **OAuth authentication automatically**.
+> 
+> **DO NOT:**
+> - Add GitHub server configuration to `.github/copilot-mcp.json`
+> - Attempt to use Personal Access Tokens (PAT) with GitHub MCP
+> - Configure any GitHub-related authentication manually
+> 
+> **ERROR:** If you see `API returned status 400: Personal Access Tokens are not supported for this endpoint`,
+> you are attempting to use a PAT where OAuth is required. GitHub MCP uses OAuth through Copilot's built-in
+> authentication only.
 
 ### External (Configured)
 - **context7:** Version-specific Python security documentation (HTTP, needs API key)
@@ -109,8 +122,7 @@ PyGuard integrates with MCP servers for enhanced AI capabilities:
 - **playwright:** Browser automation for web security testing (local/npx, ready)
   - Test web application security patterns
 
-**Config:** `.github/copilot-mcp.json` (HTTP and local command servers)  
-**Important:** GitHub MCP tools are built-in to Copilot. Do NOT add GitHub server to copilot-mcp.json. Personal Access Tokens (PAT) are NOT supported for GitHub MCP - it uses OAuth automatically.
+**Config:** `.github/copilot-mcp.json` (HTTP and local command servers for external integrations only)
 
 **Environment Variables Required:**
 - `COPILOT_MCP_CONTEXT7_API_KEY` — For Context7 documentation access
