@@ -51,3 +51,11 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    # Group minor and patch updates to reduce PR noise
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
