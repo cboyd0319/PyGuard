@@ -79,7 +79,7 @@ jobs:
         awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md || echo "See CHANGELOG.md for details" > release_notes.md
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048 # v2.2.0
+      uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
       with:
         files: |
           dist/*
