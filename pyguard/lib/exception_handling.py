@@ -43,6 +43,26 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
 
     def visit_Raise(self, node: ast.Raise) -> None:
         """Check raise statement patterns."""
+        # TRY001: Raise without from inside except
+        if self.in_except_handler and node.exc and not node.cause:
+            # Check if this is a re-raise of a different exception type
+            # (raising the same exception or bare raise is OK)
+            if not (node.exc is None):  # bare raise is OK
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="TRY001",
+                        category=RuleCategory.WARNING,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Use 'raise ... from ...' to preserve exception chain in except handler",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Add 'from' clause: raise NewError(...) from original_error",
+                        fix_applicability=FixApplicability.MANUAL,
+                        source_tool="exception_handling",
+                    )
+                )
+        
         # TRY002: Raise vanilla Exception
         if node.exc and isinstance(node.exc, ast.Call):
             if isinstance(node.exc.func, ast.Name) and node.exc.func.id == "Exception":

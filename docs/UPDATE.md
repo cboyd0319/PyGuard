@@ -126,14 +126,15 @@ When starting work on PyGuard:
 
 - **Version:** 0.3.0
 - **Python Support:** 3.11+ (minimum), 3.13.8 (recommended for development)
-- **Tests:** 802 passing (was 796, +6 new pyupgrade tests)
+- **Tests:** 805 passing (was 796, +9 new tests)
 - **Coverage:** 77% (exceeds 70%+ target! ✅)
-- **Total Rules:** 377 implemented (was 370, +7 pyupgrade rules)
+- **Total Rules:** 378 implemented (was 370, +8 new rules)
 - **Security Checks:** 65+ 
 - **Auto-fix Capabilities:** 150+
 - **Compliance Frameworks:** 10 (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
 
 **Recent Updates:**
+- ✅ Exception Handling TRY001 rule added (1 new rule, 3 tests, raise-without-from detection)
 - ✅ Pyupgrade UP036-UP042 rules completed (7 new rules, 6 tests, 79% coverage for modern_python.py)
 - ✅ XSS Detection Module completed (10 new rules, 28 tests, 89% coverage)
 
@@ -1162,6 +1163,15 @@ cat docs/UPDATE.md
 
 ## Changelog
 
+### 2025-10-14 - Exception Handling TRY001 Rule Addition
+- ✅ Added TRY001: raise-without-from-inside-except detection
+- Detects when exceptions are raised in except handlers without 'from' clause
+- Added 3 comprehensive tests covering positive and negative cases
+- Maintains exception chain context for better debugging
+- Updated tests from 802 to 805 (+3)
+- Updated rules from 377 to 378 (+1)
+- Maintained 77% test coverage
+
 ### 2025-10-14 - Pyupgrade UP036-UP042 Rules Completion
 - ✅ Completed Phase 1 Task #3: Complete pyupgrade Rules (UP prefix)
 - Added 7 new pyupgrade rules (UP036-UP042) to `pyguard/lib/modern_python.py`
@@ -1223,8 +1233,8 @@ cat docs/UPDATE.md
 
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
-| **Tests** | 770 | 802 | +32 |
-| **Rules** | 360 | 377 | +17 |
+| **Tests** | 770 | 805 | +35 |
+| **Rules** | 360 | 378 | +18 |
 | **Security Checks** | 55+ | 65+ | +10 |
 | **Coverage** | 77% | 77% | Maintained |
 | **Files** | 45 modules | 47 modules | +2 |
