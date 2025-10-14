@@ -1,0 +1,226 @@
+"""
+Datetime timezone pattern detection (DTZ prefix rules).
+
+This module implements flake8-datetimez rules to detect naive datetime
+usage and encourage timezone-aware datetime objects.
+
+Part of PyGuard's comprehensive linter replacement initiative.
+"""
+
+import ast
+from dataclasses import dataclass
+from typing import List, Optional
+
+
+@dataclass
+class DatetimeIssue:
+    """Represents a datetime pattern issue."""
+
+    rule_id: str
+    line: int
+    col: int
+    message: str
+    severity: str = "MEDIUM"
+    category: str = "datetime"
+    suggested_fix: Optional[str] = None
+
+
+class DatetimePatternVisitor(ast.NodeVisitor):
+    """
+    AST visitor to detect datetime timezone issues.
+    
+    Detects patterns like:
+    - datetime.now() without timezone
+    - datetime.utcnow() (deprecated)
+    - datetime() constructor without timezone
+    - date.today() (naive)
+    - And more...
+    """
+
+    def __init__(self):
+        self.issues: List[DatetimeIssue] = []
+
+    def visit_Call(self, node: ast.Call) -> None:
+        """Check for datetime-related calls."""
+        if isinstance(node.func, ast.Attribute):
+            self._check_datetime_call(node)
+        
+        self.generic_visit(node)
+
+    def _check_datetime_call(self, node: ast.Call) -> None:
+        """Check if this is a problematic datetime call."""
+        if not isinstance(node.func, ast.Attribute):
+            return
+
+        method_name = node.func.attr
+        
+        # Check if it's a datetime module call
+        if isinstance(node.func.value, ast.Name):
+            module_name = node.func.value.id
+            if module_name == "datetime":
+                self._check_datetime_method(node, method_name)
+        elif isinstance(node.func.value, ast.Attribute):
+            # datetime.datetime.now(), datetime.date.today(), etc.
+            if isinstance(node.func.value.value, ast.Name):
+                if node.func.value.value.id == "datetime":
+                    parent_class = node.func.value.attr
+                    self._check_datetime_class_method(node, parent_class, method_name)
+
+    def _check_datetime_method(self, node: ast.Call, method_name: str) -> None:
+        """Check datetime module methods."""
+        # This handles calls like: datetime.now(), datetime.utcnow()
+        # where 'datetime' refers to the datetime class
+        if method_name == "now":
+            # Check if timezone argument is provided
+            if not self._has_tz_argument(node):
+                self.issues.append(
+                    DatetimeIssue(
+                        rule_id="DTZ001",
+                        line=node.lineno,
+                        col=node.col_offset,
+                        message="datetime.now() without timezone, use datetime.now(tz=...) for timezone awareness",
+                        severity="MEDIUM",
+                        suggested_fix="Use datetime.now(tz=timezone.utc) or datetime.now(tz=ZoneInfo('...'))",
+                    )
+                )
+        elif method_name == "utcnow":
+            self.issues.append(
+                DatetimeIssue(
+                    rule_id="DTZ003",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="datetime.utcnow() is deprecated, use datetime.now(tz=timezone.utc)",
+                    severity="HIGH",
+                    suggested_fix="Replace with datetime.now(tz=timezone.utc)",
+                )
+            )
+        elif method_name == "today":
+            self.issues.append(
+                DatetimeIssue(
+                    rule_id="DTZ002",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="date.today() returns naive date, use datetime.now(tz=...).date() for timezone awareness",
+                    severity="LOW",
+                    suggested_fix="Use datetime.now(tz=timezone.utc).date() for timezone-aware dates",
+                )
+            )
+        elif method_name == "utcfromtimestamp":
+            self.issues.append(
+                DatetimeIssue(
+                    rule_id="DTZ004",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="datetime.utcfromtimestamp() is deprecated, use datetime.fromtimestamp(ts, tz=timezone.utc)",
+                    severity="HIGH",
+                    suggested_fix="Replace with datetime.fromtimestamp(timestamp, tz=timezone.utc)",
+                )
+            )
+        elif method_name == "fromtimestamp":
+            if not self._has_tz_argument(node):
+                self.issues.append(
+                    DatetimeIssue(
+                        rule_id="DTZ005",
+                        line=node.lineno,
+                        col=node.col_offset,
+                        message="datetime.fromtimestamp() without timezone, use tz parameter",
+                        severity="MEDIUM",
+                        suggested_fix="Use datetime.fromtimestamp(timestamp, tz=timezone.utc)",
+                    )
+                )
+        elif method_name == "strptime":
+            # Check if result is converted to timezone-aware
+            self.issues.append(
+                DatetimeIssue(
+                    rule_id="DTZ007",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="datetime.strptime() returns naive datetime, consider .replace(tzinfo=...)",
+                    severity="LOW",
+                    suggested_fix="Call .replace(tzinfo=timezone.utc) on result",
+                )
+            )
+
+    def _check_datetime_class_method(self, node: ast.Call, class_name: str, method_name: str) -> None:
+        """Check datetime class methods like datetime.datetime.now()."""
+        if class_name == "datetime":
+            self._check_datetime_method(node, method_name)
+        elif class_name == "date":
+            if method_name == "today":
+                self.issues.append(
+                    DatetimeIssue(
+                        rule_id="DTZ002",
+                        line=node.lineno,
+                        col=node.col_offset,
+                        message="date.today() returns naive date, use datetime.now(tz=...).date()",
+                        severity="LOW",
+                        suggested_fix="Use datetime.now(tz=timezone.utc).date()",
+                    )
+                )
+
+    def _has_tz_argument(self, node: ast.Call) -> bool:
+        """Check if call has tz or tzinfo argument."""
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if keyword.arg in {"tz", "tzinfo"}:
+                return True
+        
+        # For some methods, second positional argument is tz
+        if len(node.args) >= 2:
+            return True
+        
+        return False
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        """Check for datetime attribute access."""
+        # Check for .replace() calls without tzinfo
+        # This is handled in visit_Call
+        self.generic_visit(node)
+
+
+class DatetimeChecker:
+    """Main checker class for datetime pattern detection."""
+
+    def __init__(self):
+        self.visitor = DatetimePatternVisitor()
+
+    def check_code(self, code: str, filename: str = "<string>") -> List[DatetimeIssue]:
+        """
+        Check Python code for datetime timezone issues.
+
+        Args:
+            code: Python source code to check
+            filename: Optional filename for error reporting
+
+        Returns:
+            List of DatetimeIssue objects representing detected issues
+        """
+        try:
+            tree = ast.parse(code, filename=filename)
+            self.visitor.visit(tree)
+            return self.visitor.issues
+        except SyntaxError:
+            return []
+
+    def get_issues(self) -> List[DatetimeIssue]:
+        """Get all detected issues."""
+        return self.visitor.issues
+
+
+def check_file(filepath: str) -> List[DatetimeIssue]:
+    """
+    Check a Python file for datetime timezone issues.
+
+    Args:
+        filepath: Path to Python file
+
+    Returns:
+        List of DatetimeIssue objects
+    """
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            code = f.read()
+        checker = DatetimeChecker()
+        return checker.check_code(code, filepath)
+    except Exception:
+        return []

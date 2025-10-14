@@ -48,6 +48,11 @@ from pyguard.lib.ultra_advanced_security import (
 )
 # NEW in v0.8.0: Ultra-advanced auto-fixes
 from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
+# NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
+from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
+from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
+from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
+from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
 
 __all__ = [
     # Core
@@ -138,4 +143,16 @@ __all__ = [
     "DebuggingPatternChecker",
     "DebuggingPatternVisitor",
     "DEBUGGING_RULES",
+    # Pathlib Patterns (NEW v0.9.0)
+    "PathlibChecker",
+    "PathlibIssue",
+    # Async Patterns (NEW v0.9.0)
+    "AsyncChecker",
+    "AsyncIssue",
+    # Logging Patterns (NEW v0.9.0)
+    "LoggingChecker",
+    "LoggingIssue",
+    # Datetime Patterns (NEW v0.9.0)
+    "DatetimeChecker",
+    "DatetimeIssue",
 ]
