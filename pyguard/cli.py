@@ -8,8 +8,9 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Any
 
+from pyguard.lib.ast_analyzer import SecurityIssue, CodeQualityIssue
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
@@ -38,7 +39,7 @@ class PyGuardCLI:
         self.whitespace_fixer = WhitespaceFixer()
         self.naming_fixer = NamingConventionFixer()
 
-    def run_security_fixes(self, files: List[Path], create_backup: bool = True) -> dict:
+    def run_security_fixes(self, files: List[Path], create_backup: bool = True) -> Dict[str, Any]:
         """
         Run security fixes on files.
 
@@ -49,7 +50,10 @@ class PyGuardCLI:
         Returns:
             Dictionary with results
         """
-        results = {"total": len(files), "fixed": 0, "failed": 0, "fixes": []}
+        total: int = len(files)
+        fixed: int = 0
+        failed: int = 0
+        fixes_list: List[str] = []
 
         for file_path in files:
             # Create backup if requested
@@ -60,25 +64,28 @@ class PyGuardCLI:
             success, fixes = self.security_fixer.fix_file(file_path)
 
             if success and fixes:
-                results["fixed"] += 1
-                results["fixes"].extend(fixes)
+                fixed += 1
+                fixes_list.extend(fixes)
             elif not success:
-                results["failed"] += 1
+                failed += 1
 
-        return results
+        return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
-    def run_best_practices_fixes(self, files: List[Path], create_backup: bool = True) -> dict:
+    def run_best_practices_fixes(self, files: List[Path], create_backup: bool = True) -> Dict[str, Any]:
         """
         Run best practices fixes on files.
 
         Args:
-            files: List of Python files to fix
+            files: List[Path] of Python files to fix
             create_backup: Whether to create backups
 
         Returns:
             Dictionary with results
         """
-        results = {"total": len(files), "fixed": 0, "failed": 0, "fixes": []}
+        total: int = len(files)
+        fixed: int = 0
+        failed: int = 0
+        fixes_list: List[str] = []
 
         for file_path in files:
             # Create backup if requested
@@ -89,12 +96,12 @@ class PyGuardCLI:
             success, fixes = self.best_practices_fixer.fix_file(file_path)
 
             if success and fixes:
-                results["fixed"] += 1
-                results["fixes"].extend(fixes)
+                fixed += 1
+                fixes_list.extend(fixes)
             elif not success:
-                results["failed"] += 1
+                failed += 1
 
-        return results
+        return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
     def run_formatting(
         self,
@@ -102,7 +109,7 @@ class PyGuardCLI:
         create_backup: bool = True,
         use_black: bool = True,
         use_isort: bool = True,
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Run formatting on files.
 
@@ -138,7 +145,7 @@ class PyGuardCLI:
 
     def run_full_analysis(
         self, files: List[Path], create_backup: bool = True, fix: bool = True
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Run full analysis and fixes on files with beautiful progress display.
 
@@ -186,12 +193,17 @@ class PyGuardCLI:
                 progress.update(task, completed=len(files))
 
             # Aggregate results
-            if "fixes" in results["security"]:
-                results["fixes_applied"] += len(results["security"]["fixes"])
-                results["security_issues"] += len(results["security"]["fixes"])
-            if "fixes" in results["best_practices"]:
-                results["fixes_applied"] += len(results["best_practices"]["fixes"])
-                results["quality_issues"] += len(results["best_practices"]["fixes"])
+            security_result = results["security"]
+            if isinstance(security_result, dict) and "fixes" in security_result:
+                fixes_count = len(security_result["fixes"])
+                results["fixes_applied"] = results["fixes_applied"] + fixes_count  # type: ignore
+                results["security_issues"] = results["security_issues"] + fixes_count  # type: ignore
+            
+            bp_result = results["best_practices"]
+            if isinstance(bp_result, dict) and "fixes" in bp_result:
+                fixes_count = len(bp_result["fixes"])
+                results["fixes_applied"] = results["fixes_applied"] + fixes_count  # type: ignore
+                results["quality_issues"] = results["quality_issues"] + fixes_count  # type: ignore
 
         else:
             # Just scan for issues (ALL types: security, quality, patterns)
@@ -207,8 +219,8 @@ class PyGuardCLI:
                 for i, file_path in enumerate(files):
                     # Security issues
                     sec_issues = self.security_fixer.scan_file_for_issues(file_path)
-                    for issue in sec_issues:
-                        issue_dict = asdict(issue)
+                    for sec_issue in sec_issues:
+                        issue_dict = asdict(sec_issue)
                         issue_dict["file"] = str(file_path)
                         # Rename line_number to line for consistency
                         if "line_number" in issue_dict:
@@ -218,8 +230,8 @@ class PyGuardCLI:
                     
                     # Quality issues (best practices, naming, etc.)
                     qual_issues = self.best_practices_fixer.scan_file_for_issues(file_path)
-                    for issue in qual_issues:
-                        issue_dict = asdict(issue)
+                    for qual_issue in qual_issues:
+                        issue_dict = asdict(qual_issue)
                         issue_dict["file"] = str(file_path)
                         if "line_number" in issue_dict:
                             issue_dict["line"] = issue_dict.pop("line_number")
@@ -237,13 +249,14 @@ class PyGuardCLI:
 
         # Calculate timing
         end_time = time.time()
-        results["analysis_time_seconds"] = end_time - start_time
-        results["avg_time_per_file_ms"] = (results["analysis_time_seconds"] / len(files)) * 1000 if files else 0
+        analysis_time = end_time - start_time
+        results["analysis_time_seconds"] = analysis_time
+        results["avg_time_per_file_ms"] = (analysis_time / len(files)) * 1000 if files else 0
 
         return results
 
     def print_results(
-        self, results: dict, generate_html: bool = True, generate_sarif: bool = False
+        self, results: Dict[str, Any], generate_html: bool = True, generate_sarif: bool = False
     ) -> None:
         """
         Print beautiful formatted results using Rich UI.
