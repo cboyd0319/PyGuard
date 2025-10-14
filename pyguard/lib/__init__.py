@@ -55,6 +55,8 @@ from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
 from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
 # NEW in v0.10.0: Refurb patterns (refactoring opportunities)
 from pyguard.lib.refurb_patterns import RefurbPatternChecker, REFURB_RULES
+# NEW in v0.10.0: PIE patterns (code smells)
+from pyguard.lib.pie_patterns import PIEPatternChecker, PIE_RULES
 
 __all__ = [
     # Core
@@ -160,4 +162,7 @@ __all__ = [
     # Refurb Patterns (NEW v0.10.0)
     "RefurbPatternChecker",
     "REFURB_RULES",
+    # PIE Patterns (NEW v0.10.0)
+    "PIEPatternChecker",
+    "PIE_RULES",
 ]
