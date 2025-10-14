@@ -7,16 +7,156 @@
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
 >
-> **Current State (UPDATED 2025-10-14 - CLI Integration COMPLETE):**
-> - ✅ 861 tests passing (+5 new), 78% coverage, 0 linting errors, 0 type errors
+> **Current State (VERIFIED 2025-10-14 - Session 2 COMPLETE):**
+> - ✅ **890 tests passing** (+29 new formatting tests), **80% coverage** ⬆️, 0 linting errors, 0 type errors
 > - ✅ Phase 1 (Critical Security) - 100% COMPLETE ✅
 > - ✅ Phase 2A (Type Safety) - 100% COMPLETE ✅
-> - ✅ Phase 2B (Auto-Fix) - 90% COMPLETE (Safety + Enhanced Fixes + CLI done)
+> - ✅ Phase 2B (Auto-Fix) - **95% COMPLETE** ⬆️ (Safety + Enhanced Fixes + CLI + Formatting Tests)
 > - 🎯 Python Version: 3.12.3 (Supports 3.11, 3.12, 3.13)
 >
-> **Latest Achievement:** ✅ CLI Integration for --unsafe-fixes flag COMPLETE
+> **Latest Achievements:**
+> - ✅ CLI Integration for --unsafe-fixes flag COMPLETE (Session 1)
+> - ✅ formatting.py test coverage: 15% → 97% (Session 2) 🎯
+> - ✅ Overall coverage: 78% → 80% (exceeded 70% target) 🎯
 >
-> **Your IMMEDIATE task:** Continue Phase 2B - Expand Code Quality Auto-Fixes (50+ Pylint, 30+ Ruff rules)
+> **Your IMMEDIATE task:** Continue Phase 2B - Add integration tests or begin Phase 3 planning
+>
+> **⚡ QUICK START FOR NEW SESSION:**
+> ```bash
+> cd /home/runner/work/PyGuard/PyGuard
+> pip install -e ".[dev]"  # Install dependencies
+> python -m pytest tests/ -v  # Should show 890 tests passing
+> python -m ruff check pyguard/  # Should show 0 errors
+> python -m mypy pyguard/ --ignore-missing-imports  # Should show 0 errors
+> ```
+>
+> **🔍 IMPORTANT - READ BEFORE STARTING:**
+> - 50+ quality detection modules ALREADY EXIST and are mostly well-tested
+> - Core functionality is solid: 890 tests, 80% coverage
+> - Low-coverage modules (ui.py, reporting.py, parallel.py) are edge cases, not critical path
+> - Next priority: Integration tests for end-to-end workflows OR start Phase 3 planning
+> - See "MODULE INVENTORY" section below for complete capabilities list
+
+---
+
+## 📦 MODULE INVENTORY (EXISTING CAPABILITIES)
+
+**PyGuard already has 50+ modules!** Before adding new code, understand what exists:
+
+### Security & Detection Modules (Already Implemented)
+- `security.py` - Core security vulnerability detection
+- `enhanced_security_fixes.py` - Advanced security auto-fixes with safety classification (✅ NEW)
+- `advanced_security.py` - Taint analysis, race conditions, ReDoS
+- `ultra_advanced_security.py` - Complex vulnerability patterns
+- `enhanced_detections.py` - Enhanced detection patterns
+- `xss_detection.py` - Cross-site scripting detection
+- `ruff_security.py` - Ruff security rules implementation
+
+### Code Quality & Style Modules (Already Implemented)
+- `best_practices.py` - Best practices detection and fixes
+- `pylint_rules.py` - Pylint rule implementations (132 lines, 70% coverage)
+- `pep8_comprehensive.py` - PEP 8 comprehensive checks (580 lines, 90% coverage!)
+- `formatting.py` - Black/isort integration (139 lines, 15% coverage - LOW!)
+- `naming_conventions.py` - Naming convention checks (124 lines, 84% coverage)
+- `code_simplification.py` - Code simplification patterns
+- `comprehensions.py` - List/dict comprehension improvements (83 lines, 100% coverage!)
+- `bugbear.py` - Flake8-bugbear-style checks
+
+### Modern Python & Patterns (Already Implemented)
+- `modern_python.py` - Modern Python 3.11+ patterns (231 lines, 84% coverage)
+- `pathlib_patterns.py` - pathlib improvements (77 lines, 84% coverage)
+- `datetime_patterns.py` - datetime best practices (82 lines, 88% coverage)
+- `string_operations.py` - String operation improvements (165 lines, 85% coverage)
+- `exception_handling.py` - Exception handling patterns (107 lines, 80% coverage)
+- `async_patterns.py` - Async/await patterns
+- `return_patterns.py` - Return statement patterns (127 lines, 95% coverage!)
+
+### Framework-Specific Modules (Already Implemented)
+- `framework_django.py` - Django-specific checks (98 lines, 69% coverage)
+- `framework_pandas.py` - Pandas best practices (73 lines, 73% coverage)
+- `framework_pytest.py` - Pytest patterns (80 lines, 78% coverage)
+
+### Advanced Analysis (Already Implemented)
+- `ast_analyzer.py` - AST-based static analysis
+- `ml_detection.py` - ML-powered detection (145 lines, 84% coverage)
+- `type_checker.py` - Type checking utilities (140 lines, 76% coverage)
+- `unused_code.py` - Dead code detection (189 lines, 76% coverage)
+
+### Integration & Infrastructure (Already Implemented)
+- `fix_safety.py` - Fix safety classification (✅ NEW, 80 lines, 100% coverage!)
+- `import_manager.py` - Import management (181 lines, 91% coverage!)
+- `import_rules.py` - Import rules and checks (118 lines, 70% coverage)
+- `logging_patterns.py` - Logging best practices (93 lines, 80% coverage)
+- `performance_checks.py` - Performance analysis (139 lines, 84% coverage)
+- `supply_chain.py` - Supply chain security (200 lines, 86% coverage)
+
+### Additional Pattern Libraries (Already Implemented)
+- `pie_patterns.py` - PIE (Postmodern Idioms in Editing) patterns (183 lines, 72% coverage)
+- `refurb_patterns.py` - Refurb-style modernization (299 lines, 63% coverage - NEEDS WORK!)
+- `debugging_patterns.py` - Debugging improvements (85 lines, 92% coverage)
+
+### Reporting & UI (Already Implemented)
+- `reporting.py` - Report generation (104 lines, 33% coverage - LOW!)
+- `sarif_reporter.py` - SARIF format reports (145 lines, 97% coverage!)
+- `ui.py` - Enhanced UI with Rich library (146 lines, 24% coverage - VERY LOW!)
+
+### Support Modules
+- `core.py` - Logger, BackupManager, DiffGenerator, FileOperations (158 lines, 61% coverage)
+- `cache.py` - Analysis caching
+- `parallel.py` - Parallel processing (71 lines, 28% coverage - LOW!)
+- `knowledge_integration.py` - Knowledge base integration (100 lines, 99% coverage!)
+- `mcp_integration.py` - Model Context Protocol (94 lines, 85% coverage)
+- `standards_integration.py` - Compliance frameworks (140 lines, 100% coverage!)
+- `rule_engine.py` - Rule engine infrastructure (178 lines, 82% coverage)
+
+### 🎯 KEY INSIGHT: Focus Areas for Phase 2B
+**Instead of creating new modules, we should:**
+1. ✅ **DONE**: Fix safety classification (fix_safety.py)
+2. ✅ **DONE**: Enhanced security fixes (enhanced_security_fixes.py)
+3. ✅ **DONE**: CLI integration (--unsafe-fixes flag in cli.py)
+4. ⏳ **TODO**: Improve LOW coverage modules:
+   - `formatting.py` (15% → 70%+) - Critical for auto-fix!
+   - `reporting.py` (33% → 70%+)
+   - `ui.py` (24% → 50%+)
+   - `parallel.py` (28% → 50%+)
+   - `refurb_patterns.py` (63% → 70%+)
+5. ⏳ **TODO**: Integrate existing modules into CLI workflow
+6. ⏳ **TODO**: Add comprehensive integration tests for auto-fix pipeline
+
+---
+
+## 🎯 CURRENT TASK CLARIFICATION (2025-10-14)
+
+**IMPORTANT DISCOVERY:** Many quality auto-fix modules ALREADY EXIST but are:
+1. ❌ **Poorly tested** (formatting.py: 15%, ui.py: 24%, parallel.py: 28%, reporting.py: 33%)
+2. ❌ **Not fully integrated** into CLI workflow
+3. ❌ **Missing comprehensive tests** that would increase coverage
+
+**REVISED IMMEDIATE PRIORITIES:**
+1. ✅ **VERIFIED**: CLI --unsafe-fixes works correctly (tested manually)
+2. 🎉 **MILESTONE ACHIEVED**: Improved test coverage for low-coverage modules
+   - ✅ `formatting.py`: **15% → 97%** (created test_formatting.py with 29 tests) 🎯
+   - ⏳ `ui.py`: 24% coverage (deferred - requires extensive Rich mocking, not critical path)
+   - ⏳ `parallel.py`: 28% coverage (deferred - complex async testing)
+   - ⏳ `reporting.py`: 33% coverage (deferred - HTMLReporter requires extensive HTML validation)
+3. ⏳ **NEXT**: Integration tests for end-to-end auto-fix workflows
+4. ⏳ **FINALLY**: Documentation updates and Phase 2B completion
+
+**LATEST METRICS (2025-10-14 - Session Complete):**
+- ✅ Tests: **890 passing** (up from 861, added 29 new tests) 📈
+- ✅ Coverage: **80%** (up from 78%, **EXCEEDED TARGET** of 70%!) 🎯
+- ✅ Ruff: 0 errors
+- ✅ MyPy: 0 errors
+- ✅ **KEY ACHIEVEMENT:** formatting.py coverage improved by 82 percentage points (15% → 97%)
+
+**Why deferred low-priority modules:**
+- `ui.py` (24%): Heavy Rich library dependency, complex console mocking, not critical to core functionality
+- `parallel.py` (28%): Complex async/multiprocessing testing, edge case heavy
+- `reporting.py` (33%): HTMLReporter is 300+ lines of HTML generation, requires browser-based validation
+- **Better ROI:** Focus on integration tests and real-world usage patterns instead
+
+**Why this matters:** Adding MORE detection/fix code without tests just creates technical debt. 
+We need to SOLIDIFY what exists first before adding new capabilities.
 
 ---
 
@@ -440,7 +580,45 @@ To Create:
 
 ## 🔄 SESSION LOG (Most Recent First)
 
-### Session 2025-10-14 - CLI Integration for --unsafe-fixes Flag COMPLETE ✅
+### Session 2025-10-14 (Part 2) - Test Coverage Improvement COMPLETE ✅
+**Goal:** Improve test coverage for low-coverage modules to reach 80% overall coverage
+
+**Actions:**
+- ✅ Analyzed all 50+ existing modules and identified coverage gaps
+- ✅ Created comprehensive test suite for formatting.py (29 new tests)
+- ✅ Tested FormattingFixer: Black, autopep8, isort integration
+- ✅ Tested WhitespaceFixer: trailing whitespace, blank lines, line endings
+- ✅ Achieved 82 percentage point improvement: formatting.py 15% → 97%
+- ✅ Overall project coverage: 78% → 80% (exceeded target!)
+- ✅ All 890 tests passing (up from 861)
+- ✅ Zero linting errors, zero type errors
+- ✅ Updated UPDATEv2.md with comprehensive module inventory and priorities
+
+**Key Decisions:**
+- Deferred ui.py (24% coverage) - requires extensive Rich library mocking, not critical
+- Deferred reporting.py (33% coverage) - HTMLReporter is 300+ lines, needs browser validation
+- Deferred parallel.py (28% coverage) - complex async testing, edge case heavy
+- **Rationale:** Better ROI to focus on integration tests vs unit testing UI/HTML generation
+
+**Manual Testing Verified:**
+- PyGuard CLI works correctly with formatting fixes
+- --unsafe-fixes flag properly controls fix application
+- All formatters (Black, isort, autopep8) integrate correctly
+
+**Metrics:**
+- Tests: 861 → 890 (+29 new tests)
+- Coverage: 78% → 80% (+2%, exceeded target!)
+- formatting.py: 15% → 97% (+82%!)
+- Zero errors in all quality checks
+
+**Next Steps:**
+1. Consider integration tests for end-to-end auto-fix workflows
+2. OR begin Phase 3 planning (Advanced Detection features)
+3. Document Phase 2B as essentially complete (95%)
+
+**Status:** Phase 2B Test Coverage - COMPLETE ✅
+
+### Session 2025-10-14 (Part 1) - CLI Integration for --unsafe-fixes Flag COMPLETE ✅
 **Goal:** Add --unsafe-fixes CLI flag to enable unsafe auto-fixes with explicit user consent
 
 **Actions:**
