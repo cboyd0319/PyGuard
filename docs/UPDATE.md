@@ -711,27 +711,52 @@ PyGuard aims to replace ALL of these tools for Python development:
    - **Status:** ✅ 100% COMPLETE - Zero MyPy errors achieved!
    - **Actual time:** 2 sessions (faster than expected)
 
-**Sub-Phase 2B: Auto-Fix Expansion (In Progress)**
+**Sub-Phase 2B: Auto-Fix Expansion (🔄 IN PROGRESS - Started 2025-10-14)**
 
-1. **Expand Security Auto-Fixes**
-   - [ ] SQL injection → parameterized queries (safe refactoring)
+**Current Session Goals:**
+1. Analyze existing auto-fix implementations and identify gaps
+2. Enhance security auto-fixes from warnings to actual code transformations
+3. Implement fix safety classification system
+4. Add comprehensive tests for all new auto-fixes
+
+**Detailed Implementation Plan:**
+
+1. **Expand Security Auto-Fixes** [🔄 IN PROGRESS]
+   - [🔄] SQL injection → parameterized queries (ACTUAL code transformation, not just warnings)
+     - Current: Adds warning comments only
+     - Target: Transform `cursor.execute("SELECT * FROM users WHERE id = " + user_id)` 
+       → `cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))`
    - [ ] Command injection → safe subprocess patterns
+     - Transform `os.system(cmd)` → `subprocess.run([cmd], shell=False, check=True)`
    - [ ] Hardcoded secrets → environment variable suggestions
+     - Transform `API_KEY = "secret"` → `API_KEY = os.getenv("API_KEY")`
    - [ ] Path traversal → safe path handling
+     - Add `pathlib.Path().resolve()` validation
    - [ ] Expected: 3-4 days
 
 2. **Expand Code Quality Auto-Fixes**
    - [ ] Implement auto-fix for 50+ Pylint rules
+     - redundant-parentheses, unnecessary-semicolon, trailing-whitespace, etc.
    - [ ] Implement auto-fix for 30+ Ruff rules
+     - Comprehension simplification, unnecessary-else, etc.
    - [ ] Refactor suggestions with safe transformations
    - [ ] Expected: 4-5 days
 
-3. **Implement Safe vs. Unsafe Fix Classification**
-   - [ ] Create fix safety analyzer
-   - [ ] Classify all existing fixes
-   - [ ] Add `--unsafe-fixes` CLI flag
-   - [ ] Files: `pyguard/lib/ultra_advanced_fixes.py`
+3. **Implement Safe vs. Unsafe Fix Classification** [🔄 IN PROGRESS]
+   - [🔄] Create `FixSafetyClassifier` class
+     - Classify each fix as SAFE, UNSAFE, or WARNING_ONLY
+     - SAFE: Can be applied automatically (import sorting, quote normalization)
+     - UNSAFE: Requires review (SQL refactoring, logic changes)
+     - WARNING_ONLY: Just adds comments (hardcoded secrets)
+   - [ ] Classify all existing fixes (150+ fixes)
+   - [ ] Add `--unsafe-fixes` CLI flag to enable unsafe transformations
+   - [ ] Files: `pyguard/lib/fix_safety.py` (new), update `pyguard/cli.py`
    - [ ] Expected: 2-3 days
+
+**Progress Tracking:**
+- Total existing auto-fixes: ~150 (mostly warnings/comments)
+- Target real code transformations: 50+ security + 80+ quality = 130+ actual fixes
+- Safety classification coverage: 100% of all fixes
 
 ### Phase 3: Advanced Detection (3-4 weeks)
 **Goal: Implement advanced patterns not available in competitor tools**

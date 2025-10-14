@@ -25,6 +25,11 @@ from pyguard.lib.exception_handling import (
     ExceptionHandlingChecker,
     ExceptionHandlingVisitor,
 )
+from pyguard.lib.fix_safety import (
+    FixClassification,
+    FixSafety,
+    FixSafetyClassifier,
+)
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
 from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
@@ -170,6 +175,10 @@ __all__ = [
     "ExceptionHandlingChecker",
     "ExceptionHandlingVisitor",
     "EXCEPTION_HANDLING_RULES",
+    # Fix Safety Classification (NEW Phase 2B)
+    "FixSafetyClassifier",
+    "FixSafety",
+    "FixClassification",
     # Return Patterns
     "ReturnPatternChecker",
     "ReturnPatternVisitor",
