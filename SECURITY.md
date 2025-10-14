@@ -9,33 +9,33 @@
 
 ## Reporting Vulnerabilities
 
-**Do not report security issues through public GitHub issues.**
+**Do not use public GitHub issues for security reports.**
 
 Report via:
 - GitHub Security Advisories (private)
-- Contact: https://github.com/cboyd0319
+- Direct contact: https://github.com/cboyd0319
 
 Include:
-- Issue type (e.g., buffer overflow, injection)
-- Source file paths and locations (tag/branch/commit)
+- Issue type (buffer overflow, injection, etc.)
+- Source file paths (tag/branch/commit)
 - Steps to reproduce
-- Proof-of-concept or exploit code (if available)
+- Proof-of-concept code (if available)
 - Impact assessment
 
-**Response**: Acknowledgment within 48 hours. Investigation, timeline, patch, credit (if desired).
+**Response:** Acknowledgment within 48 hours. Then investigation, timeline, patch, credit (if desired).
 
-## User Security Practices
+## Best Practices
 
 When using PyGuard:
-1. Review auto-fixes before applying to production.
-2. Keep PyGuard updated.
-3. Backup code before running fixes.
-4. Run in sandbox when analyzing untrusted code.
-5. Review logs regularly (`logs/pyguard.jsonl`).
+1. Review auto-fixes before production
+2. Keep PyGuard updated
+3. Backup code before running fixes
+4. Sandbox untrusted code
+5. Review logs regularly (`logs/pyguard.jsonl`)
 
 ## Security Considerations
 
-- PyGuard analyzes but does not execute code. Still, review untrusted code carefully.
+- PyGuard analyzes code (does not execute it). Still review untrusted code carefully.
 - PyGuard reads and writes files. Set appropriate permissions on sensitive files.
 - Keep dependencies updated: `pip list --outdated`
 

@@ -16,7 +16,7 @@ from pyguard.lib.core import PyGuardLogger
 class PyGuardWatcher(FileSystemEventHandler):
     """File system event handler for PyGuard watch mode."""
 
-    def __init__(self, callback: Callable[[Path], None], patterns: Set[str] = None):
+    def __init__(self, callback: Callable[[Path], None], patterns: Set[str] | None = None):
         """Initialize the watcher.
 
         Args:
@@ -38,7 +38,7 @@ class PyGuardWatcher(FileSystemEventHandler):
         if event.is_directory:
             return
 
-        path = Path(event.src_path)
+        path = Path(str(event.src_path))
 
         # Check if file matches our patterns
         if not self._should_process(path):

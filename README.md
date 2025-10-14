@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Tests](https://img.shields.io/badge/tests-991%20passing-success.svg)
+![Tests](https://img.shields.io/badge/tests-1002%20passing-success.svg)
 ![Coverage](https://img.shields.io/badge/coverage-82%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -110,6 +110,9 @@ pyguard src/ --no-backup
 # Exclude patterns
 pyguard src/ --exclude "tests/*" --exclude "migrations/*"
 
+# Watch mode (re-analyze on file changes)
+pyguard src/ --watch
+
 # Use config file
 pyguard src/ -c pyguard.toml
 ```
@@ -149,7 +152,7 @@ Create `pyguard.toml` in project root or use `~/.config/pyguard/config.toml`.
 
 ### GitHub Integration
 
-PyGuard integrates seamlessly with GitHub Code Scanning via SARIF reports:
+PyGuard generates SARIF 2.1.0 reports for GitHub Code Scanning:
 
 ```yaml
 # .github/workflows/pyguard-security-scan.yml
@@ -175,12 +178,12 @@ jobs:
           sarif_file: pyguard-report.sarif
 ```
 
-**Features:**
-- 🔒 Automatic upload to GitHub Security tab
-- 📊 SARIF 2.1.0 compliant reports
-- 🏷️ CWE/OWASP vulnerability mappings
-- 🔧 Fix suggestions for each issue
-- 📈 Track security trends over time
+**What you get:**
+- Upload to GitHub Security tab
+- SARIF 2.1.0 compliant reports
+- CWE/OWASP vulnerability mappings
+- Fix suggestions for each issue
+- Security trend tracking
 
 See [docs/README.md](docs/README.md) for complete documentation.
 
@@ -225,12 +228,12 @@ See [docs/README.md](docs/README.md) for complete documentation.
 - Debug code (pdb, ipdb, breakpoint())
 
 **Supply chain**
-- Dependency scanning (automatic vulnerability detection)
+- Dependency scanning (finds known vulnerabilities)
 - SBOM generation (CycloneDX format)
 - License detection
 - Risk scoring
 
-**20+ auto-fixes** — only tool with comprehensive security auto-fixes
+**20+ auto-fixes** — most comprehensive security auto-fixes available
 - GraphQL injection → parameterized queries
 - JWT 'none' algorithm → RS256
 - SSTI render_template_string → safe templates
@@ -260,61 +263,50 @@ See [docs/README.md](docs/README.md) for complete documentation.
 
 ## Why PyGuard
 
-### Unmatched Comprehensiveness
+### Comprehensiveness
 
 - **55+ security checks** vs Bandit (~10), Semgrep (~15), Ruff (~15)
 - **150+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
-- **150+ auto-fixes** (safe + unsafe modes) — **only tool with comprehensive security auto-fixes**
+- **150+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
 - **Framework-specific rules** for Django, Flask, FastAPI, Pandas, Pytest
 - **10+ compliance frameworks** — OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 
-### Superior Technology
+### Technology
 
-- **AST-based analysis** — 10-100x faster than regex, zero false positives from comments/strings
-- **ML-powered detection** — pattern recognition, anomaly detection, intelligent risk scoring
+- **AST-based analysis** — 10-100x faster than regex, eliminates false positives from comments/strings
+- **ML-powered detection** — pattern recognition, anomaly detection, risk scoring
 - **Context-aware** — understands Python semantics, not just text patterns
 - **Supply chain security** — dependency scanning, SBOM generation (CycloneDX/SPDX), license detection
 
-### Production-Ready Quality
+### Production Quality
 
-- **991 tests, 82% coverage** — thoroughly tested, production-ready
-- **50 specialized modules** — 26,813 lines of analysis code
+- **1002 tests, 82% coverage** — tested, production-ready
+- **51 specialized modules** — 26,886 lines of analysis code
 - **100% local** — no SaaS, no telemetry, no external dependencies for core functionality
 - **Privacy-first** — all analysis happens on your machine, no data leaves your environment
 
-### Unification & Efficiency
+### Unified Platform
 
-**Replaces 7+ tools** in one unified platform:
-1. **Bandit** (security scanning)
-2. **Semgrep** (pattern matching)
-3. **Ruff** (fast linting)
-4. **Pylint** (code quality)
-5. **Black** (code formatting)
-6. **isort** (import sorting)
-7. **mypy** (type checking - planned)
+**Replaces 7+ tools:**
+1. Bandit (security scanning)
+2. Semgrep (pattern matching)
+3. Ruff (fast linting)
+4. Pylint (code quality)
+5. Black (code formatting)
+6. isort (import sorting)
+7. mypy (type checking - partial)
 
-**Single config file. Single command. Unified reports. One tool to maintain.**
+Single config file. Single command. Unified reports.
 
 ## Security
 
-**Secrets handling**
-- Never commit credentials. Use environment variables or config files.
-- Required: none (PyGuard reads local files only)
-- Optional: `PYGUARD_LOG_LEVEL` for logging control
+**Secrets:** Use environment variables. Never commit credentials. PyGuard requires no secrets (reads local files only). Optional: `PYGUARD_LOG_LEVEL` for logging control.
 
-**Least privilege**
-- PyGuard needs read access to scan files, write access to fix files.
-- No network access required (runs entirely offline).
-- No elevated privileges needed.
+**Least privilege:** Read access to scan files, write access to fix files. No network access required (runs offline). No elevated privileges needed.
 
-**Supply chain**
-- Releases signed with GPG (planned for v1.0).
-- SBOM published at `/releases/tag/v*` (CycloneDX format).
-- Dependencies: 13 packages, all from PyPI (see pyproject.toml).
+**Supply chain:** Releases signed with GPG (v1.0+). SBOM published at `/releases/tag/v*` (CycloneDX format). Dependencies: 14 packages from PyPI (see pyproject.toml).
 
-**Disclosure**
-- GitHub Security Advisories (private reporting)
-- Contact: https://github.com/cboyd0319
+**Disclosure:** GitHub Security Advisories or https://github.com/cboyd0319 (see SECURITY.md)
 
 ## Troubleshooting
 

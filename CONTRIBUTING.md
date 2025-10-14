@@ -6,9 +6,9 @@ Be respectful, inclusive, collaborative, and professional. Report unacceptable b
 
 ## How to Contribute
 
-**Reporting bugs**
-1. Check [existing issues](https://github.com/cboyd0319/PyGuard/issues) first.
-2. Include: title, steps to reproduce, expected vs actual, PyGuard version, Python version, OS, code sample.
+**Report bugs:**
+1. Check [existing issues](https://github.com/cboyd0319/PyGuard/issues) first
+2. Include: title, steps to reproduce, expected vs actual, PyGuard version, Python version, OS, code sample
 
 Example:
 ```
@@ -37,9 +37,9 @@ Environment: PyGuard 0.3.0, Python 3.11.5, macOS 14.1
 
 ## Development Setup
 
-**Prerequisites**: Python 3.8+ (3.13 recommended), Git, pip
+**Prerequisites:** Python 3.11+ (3.13 recommended), Git, pip
 
-**Setup**:
+**Setup:**
 ```bash
 git clone https://github.com/YOUR_USERNAME/PyGuard.git
 cd PyGuard

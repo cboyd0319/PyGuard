@@ -465,7 +465,9 @@ def main():
         
         def analyze_file(file_path: Path):
             """Analyze a single file in watch mode."""
-            cli.ui.print_info(f"Analyzing {file_path}...")
+            from rich.console import Console
+            console = Console()
+            console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
             
             if args.security_only:
                 cli.run_security_fixes([file_path], create_backup)
@@ -476,7 +478,7 @@ def main():
             else:
                 cli.run_full_analysis([file_path], create_backup, fix)
             
-            cli.ui.print_success("Analysis complete")
+            console.print("[green]✓ Analysis complete[/green]")
         
         # Convert paths back to Path objects for watch mode
         watch_paths = [Path(p) for p in args.paths]
