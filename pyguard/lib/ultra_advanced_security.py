@@ -34,7 +34,7 @@ from pyguard.lib.core import PyGuardLogger
 @dataclass
 class AdvancedSecurityPattern:
     """Advanced security pattern detection result."""
-    
+
     pattern_type: str
     severity: str
     description: str
@@ -53,7 +53,7 @@ class GraphQLInjectionDetector:
     GraphQL queries can be vulnerable to injection if user input is directly
     concatenated into queries without proper sanitization.
     """
-    
+
     GRAPHQL_PATTERNS = [
         (r'query\s*=\s*["\'][^"\']*["\'].*?\+', 'String concatenation in GraphQL query'),
         (r'query\s*=\s*f["\']', 'F-string formatting in GraphQL query'),
@@ -61,11 +61,11 @@ class GraphQLInjectionDetector:
         (r'graphql\.execute\([^,)]*\+', 'Concatenated user input in execute'),
         (r'graphql_sync\([^,)]*\+', 'Concatenated user input in graphql_sync'),
     ]
-    
+
     def __init__(self):
         """Initialize GraphQL injection detector."""
         self.logger = PyGuardLogger()
-    
+
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for GraphQL injection vulnerabilities.
@@ -78,7 +78,7 @@ class GraphQLInjectionDetector:
         """
         issues = []
         lines = code.split('\n')
-        
+
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.GRAPHQL_PATTERNS:
                 if re.search(pattern, line):
@@ -95,7 +95,7 @@ class GraphQLInjectionDetector:
                             cwe_id='CWE-943'
                         )
                     )
-        
+
         return issues
 
 
@@ -109,44 +109,44 @@ class SSTIDetector(ast.NodeVisitor):
     Template engines like Jinja2, Mako, and Django templates can execute arbitrary
     code if user input is directly rendered in templates.
     """
-    
+
     TEMPLATE_ENGINES = {
         'jinja2': ['Template', 'Environment'],
         'mako': ['Template'],
         'django': ['Template'],
         'flask': ['render_template_string'],
     }
-    
+
     def __init__(self, source_lines: List[str]):
         """Initialize SSTI detector."""
         self.issues: List[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
         self.using_template_engine = False
-    
+
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
             return self.source_lines[node.lineno - 1].strip()
         return ''
-    
+
     def visit_Import(self, node: ast.Import):
         """Track template engine imports."""
         for alias in node.names:
             if any(engine in alias.name for engine in self.TEMPLATE_ENGINES):
                 self.using_template_engine = True
         self.generic_visit(node)
-    
+
     def visit_ImportFrom(self, node: ast.ImportFrom):
         """Track template engine imports."""
         if node.module and any(engine in node.module for engine in self.TEMPLATE_ENGINES):
             self.using_template_engine = True
         self.generic_visit(node)
-    
+
     def visit_Call(self, node: ast.Call):
         """Check for SSTI vulnerabilities in template rendering."""
         call_name = self._get_call_name(node)
-        
+
         # Check for render_template_string with user input
         if 'render_template_string' in call_name:
             # Check if any argument might be user-controlled
@@ -165,7 +165,7 @@ class SSTIDetector(ast.NodeVisitor):
                             cwe_id='CWE-94'
                         )
                     )
-        
+
         # Check for Template() with string concatenation
         if 'Template' in call_name:
             for arg in node.args:
@@ -183,9 +183,9 @@ class SSTIDetector(ast.NodeVisitor):
                             cwe_id='CWE-94'
                         )
                     )
-        
+
         self.generic_visit(node)
-    
+
     def _get_call_name(self, node: ast.Call) -> str:
         """Extract the full name of a function call."""
         if isinstance(node.func, ast.Name):
@@ -216,7 +216,7 @@ class JWTSecurityDetector:
     - Not validating signatures
     - Using symmetric keys for public APIs
     """
-    
+
     JWT_ISSUES = [
         (r'algorithm\s*=\s*["\']none["\']', 'JWT with "none" algorithm is insecure'),
         (r'verify_signature\s*=\s*False', 'JWT signature verification disabled'),
@@ -224,11 +224,11 @@ class JWTSecurityDetector:
         (r'jwt\.decode\([^,]+,\s*verify=False', 'JWT decoded without verification'),
         (r'key\s*=\s*["\'][^"\']{1,8}["\']', 'JWT with short key (< 8 chars)'),
     ]
-    
+
     def __init__(self):
         """Initialize JWT security detector."""
         self.logger = PyGuardLogger()
-    
+
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for JWT security issues.
@@ -241,7 +241,7 @@ class JWTSecurityDetector:
         """
         issues = []
         lines = code.split('\n')
-        
+
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.JWT_ISSUES:
                 if re.search(pattern, line, re.IGNORECASE):
@@ -259,7 +259,7 @@ class JWTSecurityDetector:
                             cwe_id='CWE-347'
                         )
                     )
-        
+
         return issues
 
 
@@ -272,37 +272,37 @@ class APIRateLimitDetector(ast.NodeVisitor):
     
     APIs without rate limiting can be abused for DoS attacks or resource exhaustion.
     """
-    
+
     API_DECORATORS = {'@app.route', '@api.route', '@router.get', '@router.post', '@endpoint'}
     RATE_LIMIT_DECORATORS = {'@limiter', '@rate_limit', '@throttle', '@limit'}
-    
+
     def __init__(self, source_lines: List[str]):
         """Initialize API rate limit detector."""
         self.issues: List[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
-    
+
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
             return self.source_lines[node.lineno - 1].strip()
         return ''
-    
+
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Check API endpoints for rate limiting."""
         # Check if function has API decorator
         has_api_decorator = False
         has_rate_limit = False
-        
+
         for decorator in node.decorator_list:
             decorator_name = self._get_decorator_name(decorator)
-            
+
             if any(api_dec in decorator_name for api_dec in self.API_DECORATORS):
                 has_api_decorator = True
-            
+
             if any(limit_dec in decorator_name for limit_dec in self.RATE_LIMIT_DECORATORS):
                 has_rate_limit = True
-        
+
         # Report if API endpoint lacks rate limiting
         if has_api_decorator and not has_rate_limit:
             self.issues.append(
@@ -318,9 +318,9 @@ class APIRateLimitDetector(ast.NodeVisitor):
                     cwe_id='CWE-770'
                 )
             )
-        
+
         self.generic_visit(node)
-    
+
     def _get_decorator_name(self, decorator) -> str:
         """Extract decorator name as string."""
         if isinstance(decorator, ast.Name):
@@ -362,7 +362,7 @@ class ContainerEscapeDetector:
     - Host namespace sharing
     - Insecure volume mounts
     """
-    
+
     CONTAINER_RISKS = [
         (r'--privileged', 'Privileged container mode enables escape'),
         (r'privileged:\s*true', 'Privileged mode in docker-compose'),
@@ -374,11 +374,11 @@ class ContainerEscapeDetector:
         (r'--ipc=host', 'Host IPC namespace sharing reduces isolation'),
         (r'cap_add:\s*-\s*SYS_ADMIN', 'SYS_ADMIN capability enables escape'),
     ]
-    
+
     def __init__(self):
         """Initialize container escape detector."""
         self.logger = PyGuardLogger()
-    
+
     def scan_file(self, file_path: str, content: str) -> List[SecurityIssue]:
         """
         Scan Docker/container configuration files for escape vulnerabilities.
@@ -391,13 +391,13 @@ class ContainerEscapeDetector:
             List of security issues found
         """
         issues = []
-        
+
         # Only scan relevant files
         if not any(name in file_path.lower() for name in ['dockerfile', 'docker-compose', '.yml', '.yaml']):
             return issues
-        
+
         lines = content.split('\n')
-        
+
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.CONTAINER_RISKS:
                 if re.search(pattern, line, re.IGNORECASE):
@@ -414,7 +414,7 @@ class ContainerEscapeDetector:
                             cwe_id='CWE-250'
                         )
                     )
-        
+
         return issues
 
 
@@ -428,23 +428,23 @@ class PrototypePollutionDetector(ast.NodeVisitor):
     While more common in JavaScript, Python objects can also be polluted through
     __dict__, __class__, and dynamic attribute assignment.
     """
-    
+
     def __init__(self, source_lines: List[str]):
         """Initialize prototype pollution detector."""
         self.issues: List[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
-    
+
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
             return self.source_lines[node.lineno - 1].strip()
         return ''
-    
+
     def visit_Call(self, node: ast.Call):
         """Check for dangerous dynamic attribute operations."""
         call_name = self._get_call_name(node)
-        
+
         # setattr with user input
         if call_name == 'setattr':
             if len(node.args) >= 2:
@@ -463,9 +463,9 @@ class PrototypePollutionDetector(ast.NodeVisitor):
                             cwe_id='CWE-1321'
                         )
                     )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Assign(self, node: ast.Assign):
         """Check for __dict__ manipulation."""
         # Check if assigning to __dict__
@@ -486,9 +486,9 @@ class PrototypePollutionDetector(ast.NodeVisitor):
                                 cwe_id='CWE-1321'
                             )
                         )
-        
+
         self.generic_visit(node)
-    
+
     def _get_call_name(self, node: ast.Call) -> str:
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):
@@ -496,7 +496,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
         elif isinstance(node.func, ast.Attribute):
             return node.func.attr
         return ''
-    
+
     def _is_dict_access(self, node: ast.Subscript) -> bool:
         """Check if node accesses a dictionary."""
         return isinstance(node.value, ast.Name)
@@ -512,18 +512,18 @@ class CachePoisoningDetector:
     Cache poisoning can occur when user-controlled input is used in cache keys
     without proper sanitization.
     """
-    
+
     CACHE_PATTERNS = [
         (r'@cache.*\(.*request\.', 'Caching with request data in key'),
         (r'cache\.set\([^,]*request\.', 'Cache key includes request data'),
         (r'cache_key\s*=\s*.*\+.*request\.', 'Concatenating request data into cache key'),
         (r'memcache.*set.*user', 'User-controlled cache key'),
     ]
-    
+
     def __init__(self):
         """Initialize cache poisoning detector."""
         self.logger = PyGuardLogger()
-    
+
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for cache poisoning vulnerabilities.
@@ -536,7 +536,7 @@ class CachePoisoningDetector:
         """
         issues = []
         lines = code.split('\n')
-        
+
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.CACHE_PATTERNS:
                 if re.search(pattern, line):
@@ -553,7 +553,7 @@ class CachePoisoningDetector:
                             cwe_id='CWE-444'
                         )
                     )
-        
+
         return issues
 
 
@@ -570,39 +570,39 @@ class BusinessLogicDetector(ast.NodeVisitor):
     - Missing idempotency checks
     - Inadequate balance/quantity checks
     """
-    
+
     def __init__(self, source_lines: List[str]):
         """Initialize business logic detector."""
         self.issues: List[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
-    
+
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
             return self.source_lines[node.lineno - 1].strip()
         return ''
-    
+
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Check functions for business logic issues."""
         func_body_str = ast.unparse(node) if hasattr(ast, 'unparse') else ''
-        
+
         # Check for financial operations without proper validation
         if any(keyword in node.name.lower() for keyword in ['payment', 'transfer', 'withdraw', 'charge', 'refund']):
             has_balance_check = False
             has_rollback = False
-            
+
             for child in ast.walk(node):
                 # Check for balance/amount validation
                 if isinstance(child, ast.Compare):
                     has_balance_check = True
-                
+
                 # Check for transaction rollback
                 if isinstance(child, ast.Call):
                     call_name = self._get_call_name(child)
                     if 'rollback' in call_name or 'rollback' in func_body_str:
                         has_rollback = True
-            
+
             if not has_balance_check:
                 self.issues.append(
                     SecurityIssue(
@@ -617,7 +617,7 @@ class BusinessLogicDetector(ast.NodeVisitor):
                         cwe_id='CWE-840'
                     )
                 )
-            
+
             if not has_rollback:
                 self.issues.append(
                     SecurityIssue(
@@ -632,9 +632,9 @@ class BusinessLogicDetector(ast.NodeVisitor):
                         cwe_id='CWE-840'
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def _get_call_name(self, node: ast.Call) -> str:
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):

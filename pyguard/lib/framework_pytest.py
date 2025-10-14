@@ -46,17 +46,17 @@ class PytestVisitor(ast.NodeVisitor):
         if not self.is_test_file:
             self.generic_visit(node)
             return
-        
+
         is_test_func = node.name.startswith('test_')
         is_fixture = any(
             isinstance(dec, ast.Name) and dec.id == 'fixture' or
             (isinstance(dec, ast.Attribute) and dec.attr == 'fixture') or
-            (isinstance(dec, ast.Call) and 
+            (isinstance(dec, ast.Call) and
              (isinstance(dec.func, ast.Name) and dec.func.id == 'fixture' or
               isinstance(dec.func, ast.Attribute) and dec.func.attr == 'fixture'))
             for dec in node.decorator_list
         )
-        
+
         if is_test_func:
             # PT001: Use @pytest.fixture() instead of fixture without call
             for dec in node.decorator_list:
@@ -73,7 +73,7 @@ class PytestVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-            
+
             # PT002: Test function contains yield - should be a fixture
             has_yield = any(isinstance(n, ast.Yield) for n in ast.walk(node))
             if has_yield and not is_fixture:
@@ -89,7 +89,7 @@ class PytestVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-            
+
             # PT004: Fixture does not return/yield anything
             if is_fixture:
                 has_return = any(
@@ -97,7 +97,7 @@ class PytestVisitor(ast.NodeVisitor):
                     for n in ast.walk(node)
                 )
                 has_yield = any(isinstance(n, (ast.Yield, ast.YieldFrom)) for n in ast.walk(node))
-                
+
                 if not has_return and not has_yield:
                     self.violations.append(
                         RuleViolation(
@@ -111,7 +111,7 @@ class PytestVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.NONE,
                         )
                     )
-            
+
             # PT006: Wrong name(s) for pytest parametrize values
             for dec in node.decorator_list:
                 if isinstance(dec, ast.Call):
@@ -122,10 +122,10 @@ class PytestVisitor(ast.NodeVisitor):
                             if isinstance(argnames, ast.Constant) and isinstance(argnames.value, str):
                                 # Check if argvalues is properly structured
                                 pass
-            
+
             # PT009: Use unittest.TestCase.assert* methods instead of plain assert in unittest
             # This is more relevant for unittest migration
-            
+
             # PT011: pytest.raises() too broad - should specify exception type
             for stmt in ast.walk(node):
                 if isinstance(stmt, ast.With):
@@ -146,7 +146,7 @@ class PytestVisitor(ast.NodeVisitor):
                                             fix_applicability=FixApplicability.NONE,
                                         )
                                     )
-            
+
             # PT015: Assertion always fails - pytest.fail() instead of assert False
             for stmt in ast.walk(node):
                 if isinstance(stmt, ast.Assert):
@@ -163,7 +163,7 @@ class PytestVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SAFE,
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_Assert(self, node: ast.Assert) -> None:
@@ -171,7 +171,7 @@ class PytestVisitor(ast.NodeVisitor):
         if not self.is_test_file:
             self.generic_visit(node)
             return
-        
+
         # PT018: Composite assertion can be split
         if isinstance(node.test, ast.BoolOp):
             if isinstance(node.test.op, ast.And):
@@ -187,10 +187,10 @@ class PytestVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         # PT019: Use @pytest.mark.xfail instead of assert with condition
         # This requires more context about the test structure
-        
+
         self.generic_visit(node)
 
 
@@ -211,7 +211,7 @@ class PytestRulesChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             # Only check test files

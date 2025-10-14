@@ -22,7 +22,6 @@ from pyguard.lib.rule_engine import (
     RuleViolation,
 )
 
-
 logger = PyGuardLogger()
 
 
@@ -508,7 +507,7 @@ class BugbearChecker:
             List of violations found
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 source = f.read()
 
             tree = ast.parse(source, filename=str(file_path))

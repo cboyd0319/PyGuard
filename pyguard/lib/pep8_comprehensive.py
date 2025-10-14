@@ -7,13 +7,17 @@ Covers all major PEP 8 style issues without external dependencies.
 
 import ast
 import re
-import tokenize
-from io import StringIO
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict, Set
+from typing import List, Tuple
 
 from pyguard.lib.core import PyGuardLogger
-from pyguard.lib.rule_engine import Rule, RuleViolation, RuleCategory, RuleSeverity, FixApplicability
+from pyguard.lib.rule_engine import (
+    FixApplicability,
+    Rule,
+    RuleCategory,
+    RuleSeverity,
+    RuleViolation,
+)
 
 
 class PEP8Checker:
@@ -29,7 +33,7 @@ class PEP8Checker:
     - E7xx: Statements
     - W1xx-W6xx: Warnings
     """
-    
+
     def __init__(self, max_line_length: int = 79):
         """
         Initialize PEP 8 checker.
@@ -41,7 +45,7 @@ class PEP8Checker:
         self.max_line_length = max_line_length
         self.violations: List[RuleViolation] = []
         self.current_file_path = ""  # Track current file being checked
-        
+
     def check_file(self, file_path: Path) -> List[RuleViolation]:
         """
         Check a file for PEP 8 violations.
@@ -53,13 +57,13 @@ class PEP8Checker:
             List of rule violations
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 content = f.read()
-                
+
             self.violations = []
             self.current_file_path = str(file_path)  # Store for _add_violation
             lines = content.splitlines(keepends=True)
-            
+
             # Run all checks
             self._check_indentation(lines)
             self._check_whitespace(lines)
@@ -70,13 +74,13 @@ class PEP8Checker:
             self._check_comparison_patterns(content)  # Phase 8.3
             self._check_lambda_and_names(content)  # Phase 8.3
             self._check_warnings(lines)
-            
+
             return self.violations
-            
+
         except Exception as e:
             self.logger.error(f"Error checking file: {e}", file_path=str(file_path))
             return []
-    
+
     def fix_file(self, file_path: Path) -> Tuple[bool, int]:
         """
         Automatically fix PEP 8 violations in a file.
@@ -88,60 +92,60 @@ class PEP8Checker:
             Tuple of (success, number of fixes applied)
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 content = f.read()
-            
+
             fixed_content = content
             fixes_applied = 0
-            
+
             # Apply fixes in order (some depend on previous fixes)
             fixed_content, count = self._fix_trailing_whitespace(fixed_content)
             fixes_applied += count
-            
+
             fixed_content, count = self._fix_blank_lines(fixed_content)
             fixes_applied += count
-            
+
             fixed_content, count = self._fix_whitespace(fixed_content)
             fixes_applied += count
-            
+
             fixed_content, count = self._fix_indentation(fixed_content)
             fixes_applied += count
-            
+
             fixed_content, count = self._fix_statements(fixed_content)
             fixes_applied += count
-            
+
             if fixes_applied > 0:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(fixed_content)
-                    
+
                 self.logger.info(
                     f"Applied {fixes_applied} PEP 8 fixes",
                     file_path=str(file_path)
                 )
-                
+
             return True, fixes_applied
-            
+
         except Exception as e:
             self.logger.error(f"Error fixing file: {e}", file_path=str(file_path))
             return False, 0
-    
+
     # ========================================================================
     # E1xx: Indentation Checks
     # ========================================================================
-    
+
     def _check_indentation(self, lines: List[str]) -> None:
         """Check indentation issues (E1xx codes)."""
         bracket_stack = []  # Track open brackets: [(char, line_num, col, indent)]
-        
+
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 continue
-            
+
             # Check continuation line indentation BEFORE updating bracket stack
             # This way we check based on the previous line's bracket status
             if bracket_stack and line_num > 1:
                 self._check_continuation_indentation(line, line_num, lines, bracket_stack)
-                
+
             # E101: Indentation contains mixed spaces and tabs
             if '\t' in line[:len(line) - len(line.lstrip())]:
                 if ' ' in line[:len(line) - len(line.lstrip())]:
@@ -149,7 +153,7 @@ class PEP8Checker:
                         "E101", line_num, 0,
                         "Indentation contains mixed spaces and tabs"
                     )
-            
+
             # E111: Indentation is not a multiple of 4
             indent = len(line) - len(line.lstrip())
             if indent > 0 and indent % 4 != 0:
@@ -159,25 +163,25 @@ class PEP8Checker:
                         "E111", line_num, 0,
                         f"Indentation is not a multiple of 4 (found {indent} spaces)"
                     )
-            
+
             # Track brackets for continuation line checks (E121-E131)
             # Update stack AFTER checking the current line
             self._update_bracket_stack(line, line_num, bracket_stack)
-    
+
     def _fix_indentation(self, content: str) -> Tuple[str, int]:
         """Fix indentation issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
         bracket_stack = []
-        
+
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
                 fixed_lines.append(line)
                 # Update bracket stack even for empty lines
                 self._update_bracket_stack(line, line_num, bracket_stack)
                 continue
-            
+
             # Fix mixed tabs and spaces - convert all to spaces
             indent_str = line[:len(line) - len(line.lstrip())]
             if '\t' in indent_str:
@@ -189,21 +193,21 @@ class PEP8Checker:
                 # Update bracket stack with fixed line
                 self._update_bracket_stack(fixed_line, line_num, bracket_stack)
                 continue
-            
+
             # Check if we need to fix continuation line indentation (E121-E128)
             fixed_line = line
             if bracket_stack:
                 fixed_line, fixed = self._fix_continuation_indent(line, line_num, lines, bracket_stack)
                 if fixed:
                     fixes += 1
-            
+
             fixed_lines.append(fixed_line)
-            
+
             # Update bracket stack with the (possibly fixed) line
             self._update_bracket_stack(fixed_line, line_num, bracket_stack)
-        
+
         return ''.join(fixed_lines), fixes
-    
+
     def _fix_continuation_indent(
         self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
     ) -> Tuple[str, bool]:
@@ -215,39 +219,34 @@ class PEP8Checker:
         """
         if not bracket_stack:
             return line, False
-        
+
         indent = len(line) - len(line.lstrip())
         open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
-        
+
         # Calculate the expected indent (hanging indent style)
         expected_indent = open_indent + 4
-        
+
         # Only fix if the current indent is clearly wrong and line doesn't close bracket
         if not line.strip().startswith((')', ']', '}')):
             # Fix under-indentation (E121, E122, E128) - only if significantly wrong
-            if indent < expected_indent and line_num > open_line_num:
+            if indent < expected_indent and line_num > open_line_num or indent > expected_indent + 4:
                 fixed_line = ' ' * expected_indent + line.lstrip()
                 return fixed_line, True
-            
-            # Fix over-indentation (E126) - only if significantly wrong
-            elif indent > expected_indent + 4:
-                fixed_line = ' ' * expected_indent + line.lstrip()
-                return fixed_line, True
-        
+
         return line, False
-    
+
     def _is_continuation_line(self, lines: List[str], line_num: int) -> bool:
         """Check if a line is a continuation line."""
         if line_num < 1 or line_num > len(lines):
             return False
         line = lines[line_num - 1]
         return line.rstrip().endswith('\\') or line.rstrip().endswith(',')
-    
+
     def _update_bracket_stack(self, line: str, line_num: int, bracket_stack: List[Tuple]) -> None:
         """Update bracket stack for continuation line tracking."""
         col = 0
         indent = len(line) - len(line.lstrip())
-        
+
         for char in line:
             if char in '([{':
                 bracket_stack.append((char, line_num, col, indent))
@@ -259,7 +258,7 @@ class PEP8Checker:
                         char == '}' and open_char == '{'):
                         bracket_stack.pop()
             col += 1
-    
+
     def _check_continuation_indentation(
         self, line: str, line_num: int, lines: List[str], bracket_stack: List[Tuple]
     ) -> None:
@@ -271,14 +270,14 @@ class PEP8Checker:
         """
         if not bracket_stack:
             return
-            
+
         indent = len(line) - len(line.lstrip())
         prev_line = lines[line_num - 2] if line_num > 1 else ""
         prev_indent = len(prev_line) - len(prev_line.lstrip())
-        
+
         # Get the most recent opening bracket info
         open_char, open_line_num, open_col, open_indent = bracket_stack[-1]
-        
+
         # E121: Continuation line under-indented for hanging indent
         # A hanging indent means the first line after opening bracket is indented
         if open_line_num < line_num:
@@ -288,14 +287,14 @@ class PEP8Checker:
                     "E121", line_num, 0,
                     f"Continuation line under-indented for hanging indent (expected {expected_indent}, got {indent})"
                 )
-        
+
         # E122: Continuation line missing indentation or outdented
         if indent <= open_indent and line_num > open_line_num and not line.strip().startswith((')',']','}')):
             self._add_violation(
                 "E122", line_num, 0,
                 "Continuation line missing indentation or outdented"
             )
-        
+
         # E125: Continuation line with same indent as next logical line
         if indent > 0 and indent == prev_indent and line_num > open_line_num + 1:
             # Check if this might conflict with next logical line
@@ -304,32 +303,32 @@ class PEP8Checker:
                     "E125", line_num, 0,
                     "Continuation line with same indent as next logical line"
                 )
-        
+
         # E126: Continuation line over-indented for hanging indent
         if indent > expected_indent + 4 and not line.strip().startswith((')',']','}')):
             self._add_violation(
                 "E126", line_num, 0,
                 f"Continuation line over-indented for hanging indent (expected {expected_indent}, got {indent})"
             )
-        
+
         # E127: Continuation line over-indented for visual indent
         # Visual indent means aligned with the opening delimiter
         visual_indent = open_col + 1
         if indent > visual_indent + 4 and open_line_num < line_num:
             self._add_violation(
                 "E127", line_num, 0,
-                f"Continuation line over-indented for visual indent"
+                "Continuation line over-indented for visual indent"
             )
-        
+
         # E128: Continuation line under-indented for visual indent
         # Only flag if indent is clearly wrong (not using hanging indent either)
-        if (indent < visual_indent and indent < expected_indent and 
+        if (indent < visual_indent and indent < expected_indent and
             open_line_num < line_num and not line.strip().startswith((')',']','}'))):
             self._add_violation(
                 "E128", line_num, 0,
                 "Continuation line under-indented for visual indent"
             )
-        
+
         # E129: Visually indented line with same indent as next logical line
         # (Similar to E125 but for visual indenting)
         if indent == visual_indent and prev_indent == indent:
@@ -338,7 +337,7 @@ class PEP8Checker:
                     "E129", line_num, 0,
                     "Visually indented line with same indent as next logical line"
                 )
-        
+
         # E130: Continuation line indentation is not a multiple of four (comment)
         # This is more of an informational message
         if indent > 0 and indent % 4 != 0 and line_num > open_line_num:
@@ -346,16 +345,16 @@ class PEP8Checker:
                 "E130", line_num, 0,
                 f"Continuation line indentation is not a multiple of four (got {indent})"
             )
-    
+
     # ========================================================================
     # E2xx: Whitespace Checks
     # ========================================================================
-    
+
     def _check_whitespace(self, lines: List[str]) -> None:
         """Check whitespace issues (E2xx codes)."""
         for line_num, line in enumerate(lines, 1):
             stripped = line.rstrip('\n\r')
-            
+
             # E201: Whitespace after '('
             if re.search(r'\(\s+', stripped):
                 match = re.search(r'\(\s+', stripped)
@@ -364,7 +363,7 @@ class PEP8Checker:
                         "E201", line_num, match.start(),
                         "Whitespace after '('"
                     )
-            
+
             # E202: Whitespace before ')'
             if re.search(r'\s+\)', stripped):
                 match = re.search(r'\s+\)', stripped)
@@ -373,7 +372,7 @@ class PEP8Checker:
                         "E202", line_num, match.start(),
                         "Whitespace before ')'"
                     )
-            
+
             # E203: Whitespace before ':'
             if re.search(r'\s+:', stripped):
                 # Exclude slicing (e.g., [1 :2] is acceptable)
@@ -383,7 +382,7 @@ class PEP8Checker:
                         "E203", line_num, match.start(),
                         "Whitespace before ':'"
                     )
-            
+
             # E211: Whitespace before '('
             if re.search(r'\s+\(', stripped):
                 # Only for function calls, not after keywords
@@ -393,7 +392,7 @@ class PEP8Checker:
                         "E211", line_num, match.start(),
                         "Whitespace before '('"
                     )
-            
+
             # E225: Missing whitespace around operator
             operators = ['+', '-', '*', '/', '%', '**', '//', '==', '!=', '<', '>', '<=', '>=']
             for op in operators:
@@ -403,7 +402,7 @@ class PEP8Checker:
                         "E225", line_num, 0,
                         f"Missing whitespace around operator '{op}'"
                     )
-            
+
             # E231: Missing whitespace after ','
             if re.search(r',[^\s\n\r]', stripped):
                 match = re.search(r',[^\s\n\r]', stripped)
@@ -412,7 +411,7 @@ class PEP8Checker:
                         "E231", line_num, match.start(),
                         "Missing whitespace after ','"
                     )
-            
+
             # E241: Multiple spaces after ','
             if re.search(r',\s{2,}', stripped):
                 match = re.search(r',\s{2,}', stripped)
@@ -421,7 +420,7 @@ class PEP8Checker:
                         "E241", line_num, match.start(),
                         "Multiple spaces after ','"
                     )
-            
+
             # E242: Tab after ','
             if re.search(r',\t', stripped):
                 match = re.search(r',\t', stripped)
@@ -430,7 +429,7 @@ class PEP8Checker:
                         "E242", line_num, match.start(),
                         "Tab after ','"
                     )
-            
+
             # E251: Unexpected spaces around keyword/parameter equals
             if re.search(r'\w\s+=\s+\w', stripped):
                 # Only in function definitions and calls (with = for defaults/kwargs)
@@ -440,7 +439,7 @@ class PEP8Checker:
                         "E251", line_num, match.start(),
                         "Unexpected spaces around keyword/parameter equals"
                     )
-            
+
             # E261: At least two spaces before inline comment
             comment_match = re.search(r'[^\s](\s*)#', stripped)
             if comment_match and not stripped.lstrip().startswith('#'):
@@ -450,7 +449,7 @@ class PEP8Checker:
                         "E261", line_num, comment_match.start(),
                         "At least two spaces before inline comment"
                     )
-            
+
             # E262: Inline comment should start with '# '
             inline_comment = re.search(r'[^\s].*#[^ ]', stripped)
             if inline_comment and not stripped.lstrip().startswith('#'):
@@ -458,7 +457,7 @@ class PEP8Checker:
                     "E262", line_num, inline_comment.start(),
                     "Inline comment should start with '# '"
                 )
-            
+
             # E265: Block comment should start with '# '
             if stripped.lstrip().startswith('#') and not stripped.lstrip().startswith('# '):
                 if len(stripped.lstrip()) > 1 and stripped.lstrip()[1] != '#':
@@ -466,7 +465,7 @@ class PEP8Checker:
                         "E265", line_num, 0,
                         "Block comment should start with '# '"
                     )
-            
+
             # E271: Multiple spaces after keyword
             for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
                 pattern = rf'\b{keyword}\s{{2,}}'
@@ -478,7 +477,7 @@ class PEP8Checker:
                             f"Multiple spaces after keyword '{keyword}'"
                         )
                         break
-            
+
             # E272: Multiple spaces before keyword
             for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
                 pattern = rf'\s{{2,}}\b{keyword}\b'
@@ -490,7 +489,7 @@ class PEP8Checker:
                             f"Multiple spaces before keyword '{keyword}'"
                         )
                         break
-            
+
             # E273: Tab after keyword
             for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
                 pattern = rf'\b{keyword}\t'
@@ -502,7 +501,7 @@ class PEP8Checker:
                             f"Tab after keyword '{keyword}'"
                         )
                         break
-            
+
             # E274: Tab before keyword
             for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
                 pattern = rf'\t\b{keyword}\b'
@@ -514,47 +513,47 @@ class PEP8Checker:
                             f"Tab before keyword '{keyword}'"
                         )
                         break
-    
+
     def _fix_whitespace(self, content: str) -> Tuple[str, int]:
         """Fix whitespace issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
-        
+
         for line in lines:
             fixed = line
-            
+
             # Fix E201: Whitespace after '('
             if re.search(r'\(\s+', fixed):
                 fixed = re.sub(r'\(\s+', '(', fixed)
                 fixes += 1
-            
+
             # Fix E202: Whitespace before ')'
             if re.search(r'\s+\)', fixed):
                 fixed = re.sub(r'\s+\)', ')', fixed)
                 fixes += 1
-            
+
             # Fix E231: Missing whitespace after ','
             if re.search(r',([^\s\n\r])', fixed):
                 fixed = re.sub(r',([^\s\n\r])', r', \1', fixed)
                 fixes += 1
-            
+
             # Fix E241: Multiple spaces after ','
             if re.search(r',\s{2,}', fixed):
                 fixed = re.sub(r',\s{2,}', ', ', fixed)
                 fixes += 1
-            
+
             # Fix E242: Tab after ','
             if re.search(r',\t', fixed):
                 fixed = re.sub(r',\t', ', ', fixed)
                 fixes += 1
-            
+
             # Fix E251: Unexpected spaces around keyword/parameter equals
             # Only fix in function definitions/calls (not comparisons)
             fixed = re.sub(r'(\w)\s+=\s+(\w)', r'\1=\2', fixed)
             if '==' not in fixed:
                 fixes += 1
-            
+
             # Fix E261: At least two spaces before inline comment
             comment_match = re.search(r'[^\s](\s*)#', fixed)
             if comment_match and not fixed.lstrip().startswith('#'):
@@ -563,19 +562,19 @@ class PEP8Checker:
                     # Add one more space
                     fixed = re.sub(r'([^\s])\s#', r'\1  #', fixed)
                     fixes += 1
-            
+
             # Fix E262: Inline comment should start with '# '
             if re.search(r'[^\s].*#[^ \n]', fixed) and not fixed.lstrip().startswith('#'):
                 fixed = re.sub(r'#([^ \n#])', r'# \1', fixed)
                 fixes += 1
-            
+
             # Fix E265: Block comment should start with '# '
             if fixed.lstrip().startswith('#') and not fixed.lstrip().startswith('# '):
                 if len(fixed.lstrip()) > 1 and fixed.lstrip()[1] != '#':
                     indent = len(fixed) - len(fixed.lstrip())
                     fixed = ' ' * indent + '# ' + fixed.lstrip()[1:]
                     fixes += 1
-            
+
             # Fix E271: Multiple spaces after keyword
             for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return', 'yield']:
                 pattern = rf'\b{keyword}\s{{2,}}'
@@ -583,15 +582,15 @@ class PEP8Checker:
                     fixed = re.sub(pattern, f'{keyword} ', fixed)
                     fixes += 1
                     break
-            
-            # Fix E272: Multiple spaces before keyword  
+
+            # Fix E272: Multiple spaces before keyword
             for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class', 'return']:
                 pattern = rf'\s{{2,}}\b{keyword}\b'
                 if re.search(pattern, fixed):
                     fixed = re.sub(pattern, f' {keyword}', fixed)
                     fixes += 1
                     break
-            
+
             # Fix E273: Tab after keyword
             for keyword in ['if', 'elif', 'while', 'for', 'with', 'def', 'class']:
                 pattern = rf'\b{keyword}\t'
@@ -599,7 +598,7 @@ class PEP8Checker:
                     fixed = re.sub(pattern, f'{keyword} ', fixed)
                     fixes += 1
                     break
-            
+
             # Fix E274: Tab before keyword
             for keyword in ['if', 'elif', 'else', 'while', 'for', 'with', 'def', 'class']:
                 pattern = rf'\t\b{keyword}\b'
@@ -607,11 +606,11 @@ class PEP8Checker:
                     fixed = re.sub(pattern, f' {keyword}', fixed)
                     fixes += 1
                     break
-            
+
             fixed_lines.append(fixed)
-        
+
         return ''.join(fixed_lines), fixes
-    
+
     def _is_keyword_before(self, line: str, pos: int) -> bool:
         """Check if position follows a Python keyword."""
         keywords = ['if', 'elif', 'while', 'for', 'with', 'def', 'class', 'return']
@@ -619,17 +618,17 @@ class PEP8Checker:
             if line[:pos].rstrip().endswith(kw):
                 return True
         return False
-    
+
     # ========================================================================
     # E3xx: Blank Line Checks
     # ========================================================================
-    
+
     def _check_blank_lines(self, lines: List[str]) -> None:
         """Check blank line issues (E3xx codes)."""
         for line_num, line in enumerate(lines, 1):
             if line_num < 3:
                 continue
-            
+
             # E301: Expected 1 blank line, found 0
             if line.startswith('class ') or line.startswith('def '):
                 if line_num > 1:
@@ -639,7 +638,7 @@ class PEP8Checker:
                             "E301", line_num, 0,
                             "Expected 1 blank line, found 0"
                         )
-            
+
             # E302: Expected 2 blank lines, found N
             if line.startswith('class ') or (line.startswith('def ') and self._is_top_level(lines, line_num)):
                 blank_count = 0
@@ -647,23 +646,23 @@ class PEP8Checker:
                 while idx >= 0 and not lines[idx].strip():
                     blank_count += 1
                     idx -= 1
-                
+
                 if blank_count < 2:
                     self._add_violation(
                         "E302", line_num, 0,
                         f"Expected 2 blank lines, found {blank_count}"
                     )
-    
+
     def _fix_blank_lines(self, content: str) -> Tuple[str, int]:
         """Fix blank line issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
         i = 0
-        
+
         while i < len(lines):
             line = lines[i]
-            
+
             # Add appropriate blank lines before class/def
             if line.startswith('class ') or (line.startswith('def ') and self._is_top_level(lines, i + 1)):
                 # Count existing blank lines
@@ -672,7 +671,7 @@ class PEP8Checker:
                 while idx >= 0 and not lines[idx].strip():
                     blank_count += 1
                     idx -= 1
-                
+
                 # Need 2 blank lines before top-level class/function
                 if blank_count < 2 and idx >= 0:
                     for _ in range(2 - blank_count):
@@ -683,35 +682,35 @@ class PEP8Checker:
                     for _ in range(blank_count - 2):
                         fixed_lines.pop()
                         fixes += 1
-            
+
             fixed_lines.append(line)
             i += 1
-        
+
         return ''.join(fixed_lines), fixes
-    
+
     def _is_top_level(self, lines: List[str], line_num: int) -> bool:
         """Check if a line is at top level (not indented)."""
         if line_num < 1 or line_num > len(lines):
             return False
         line = lines[line_num - 1]
         return not line.startswith(' ') and not line.startswith('\t')
-    
+
     # ========================================================================
     # E4xx: Import Checks
     # ========================================================================
-    
+
     def _check_imports(self, content: str, lines: List[str]) -> None:
         """Check import issues (E4xx codes)."""
         for line_num, line in enumerate(lines, 1):
             stripped = line.strip()
-            
+
             # E401: Multiple imports on one line
             if stripped.startswith('import ') and ',' in stripped:
                 self._add_violation(
                     "E401", line_num, 0,
                     "Multiple imports on one line"
                 )
-            
+
             # E402: Module level import not at top of file
             if stripped.startswith(('import ', 'from ')):
                 # Check if there's non-import code before this
@@ -723,11 +722,11 @@ class PEP8Checker:
                             "Module level import not at top of file"
                         )
                         break
-    
+
     # ========================================================================
     # E5xx: Line Length Checks
     # ========================================================================
-    
+
     def _check_line_length(self, lines: List[str]) -> None:
         """Check line length issues (E5xx codes)."""
         for line_num, line in enumerate(lines, 1):
@@ -738,16 +737,16 @@ class PEP8Checker:
                     "E501", line_num, self.max_line_length,
                     f"Line too long ({line_length} > {self.max_line_length} characters)"
                 )
-    
+
     # ========================================================================
     # E7xx: Statement Checks
     # ========================================================================
-    
+
     def _check_statements(self, lines: List[str]) -> None:
         """Check statement issues (E7xx codes)."""
         for line_num, line in enumerate(lines, 1):
             stripped = line.strip()
-            
+
             # E701: Multiple statements on one line (colon)
             if ':' in stripped and not stripped.startswith('#'):
                 # Check for multiple statements after colon
@@ -760,21 +759,21 @@ class PEP8Checker:
                             "E701", line_num, colon_pos,
                             "Multiple statements on one line (colon)"
                         )
-            
+
             # E702: Multiple statements on one line (semicolon)
             if ';' in stripped and not stripped.startswith('#'):
                 self._add_violation(
                     "E702", line_num, stripped.find(';'),
                     "Multiple statements on one line (semicolon)"
                 )
-            
+
             # E703: Statement ends with unnecessary semicolon
             if stripped.endswith(';') and not stripped.startswith('#'):
                 self._add_violation(
                     "E703", line_num, len(line) - 2,
                     "Statement ends with unnecessary semicolon"
                 )
-            
+
             # E704: Multiple statements on one line (def)
             if stripped.startswith('def ') and ':' in stripped:
                 colon_pos = stripped.find(':')
@@ -784,7 +783,7 @@ class PEP8Checker:
                         "E704", line_num, colon_pos,
                         "Multiple statements on one line (def)"
                     )
-            
+
             # E705: Multiple statements on one line (if/while/for)
             for keyword in ['if ', 'elif ', 'else:', 'while ', 'for ', 'with ']:
                 if stripped.startswith(keyword) and ':' in stripped:
@@ -799,7 +798,7 @@ class PEP8Checker:
                                 f"Multiple statements on one line ({keyword.strip()})"
                             )
                     break
-            
+
             # E706: Multiple statements on one line (try/except/finally)
             for keyword in ['try:', 'except', 'except:', 'finally:']:
                 if stripped.startswith(keyword) and ':' in stripped:
@@ -811,38 +810,38 @@ class PEP8Checker:
                             f"Multiple statements on one line ({keyword})"
                         )
                     break
-    
+
     def _fix_statements(self, content: str) -> Tuple[str, int]:
         """Fix statement issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
-        
+
         for line in lines:
             fixed = line
-            
+
             # Fix E703: Remove trailing semicolons
             if fixed.rstrip().endswith(';'):
                 fixed = fixed.rstrip()[:-1] + '\n'
                 fixes += 1
-            
+
             fixed_lines.append(fixed)
-        
+
         return ''.join(fixed_lines), fixes
-    
+
     def _is_dict_or_typehint(self, line: str) -> bool:
         """Check if line is a dictionary definition or type hint."""
         # Simple heuristic: check for common patterns
-        return ('{' in line or 
-                '->' in line or 
-                'Dict[' in line or 
+        return ('{' in line or
+                '->' in line or
+                'Dict[' in line or
                 'List[' in line or
                 'Tuple[' in line)
-    
+
     # ========================================================================
     # E7xx: Comparison and Lambda Checks (Phase 8.3)
     # ========================================================================
-    
+
     def _check_comparison_patterns(self, content: str) -> None:
         """
         Check comparison pattern issues (E711-E722).
@@ -852,12 +851,12 @@ class PEP8Checker:
             tree = ast.parse(content)
         except SyntaxError:
             return  # Skip files with syntax errors
-        
+
         class ComparisonVisitor(ast.NodeVisitor):
             def __init__(self, checker):
                 self.checker = checker
                 self.violations = []
-            
+
             def visit_Compare(self, node: ast.Compare) -> None:
                 """Visit comparison nodes to detect issues."""
                 # E711: Comparison to None should be 'if cond is None:'
@@ -868,7 +867,7 @@ class PEP8Checker:
                                 "E711", node.lineno, node.col_offset,
                                 "Comparison to None should be 'if cond is None:'"
                             )
-                    
+
                     # E712: Comparison to True/False should be 'if cond:' or 'if not cond:'
                     elif isinstance(comparator, ast.Constant) and isinstance(comparator.value, bool):
                         if isinstance(op, (ast.Eq, ast.NotEq)):
@@ -876,7 +875,7 @@ class PEP8Checker:
                                 "E712", node.lineno, node.col_offset,
                                 "Comparison to True/False should be 'if cond:' or 'if not cond:'"
                             )
-                    
+
                     # E713: Test for membership should be 'not in'
                     if isinstance(op, ast.NotIn):
                         # This is correct - 'not in' is preferred
@@ -888,7 +887,7 @@ class PEP8Checker:
                                 "E713", node.lineno, node.col_offset,
                                 "Test for membership should be 'not in'"
                             )
-                    
+
                     # E714: Test for object identity should be 'is not'
                     if isinstance(op, ast.IsNot):
                         # This is correct - 'is not' is preferred
@@ -900,9 +899,9 @@ class PEP8Checker:
                                 "E714", node.lineno, node.col_offset,
                                 "Test for object identity should be 'is not'"
                             )
-                
+
                 self.generic_visit(node)
-            
+
             def visit_Call(self, node: ast.Call) -> None:
                 """Visit call nodes to detect type() usage."""
                 # E721: Do not compare types, use 'isinstance()'
@@ -911,9 +910,9 @@ class PEP8Checker:
                     # Look for parent Compare node
                     # This is a simplified check - real implementation would need parent tracking
                     pass
-                
+
                 self.generic_visit(node)
-            
+
             def visit_Try(self, node: ast.Try) -> None:
                 """Visit try-except blocks."""
                 # E722: Do not use bare except
@@ -923,12 +922,12 @@ class PEP8Checker:
                             "E722", handler.lineno, handler.col_offset,
                             "Do not use bare 'except:', specify exception type"
                         )
-                
+
                 self.generic_visit(node)
-        
+
         visitor = ComparisonVisitor(self)
         visitor.visit(tree)
-    
+
     def _check_lambda_and_names(self, content: str) -> None:
         """
         Check lambda assignment and ambiguous names (E731-E743).
@@ -938,12 +937,12 @@ class PEP8Checker:
             tree = ast.parse(content)
         except SyntaxError:
             return  # Skip files with syntax errors
-        
+
         class LambdaNameVisitor(ast.NodeVisitor):
             def __init__(self, checker):
                 self.checker = checker
                 self.ambiguous_names = {'l', 'O', 'I'}
-            
+
             def visit_Assign(self, node: ast.Assign) -> None:
                 """Visit assignment nodes to detect lambda assignment."""
                 # E731: Do not assign a lambda expression, use a def
@@ -952,9 +951,9 @@ class PEP8Checker:
                         "E731", node.lineno, node.col_offset,
                         "Do not assign a lambda expression, use a def"
                     )
-                
+
                 self.generic_visit(node)
-            
+
             def visit_Name(self, node: ast.Name) -> None:
                 """Visit name nodes to detect ambiguous names."""
                 # E741: Ambiguous variable name
@@ -963,9 +962,9 @@ class PEP8Checker:
                         "E741", node.lineno, node.col_offset,
                         f"Ambiguous variable name '{node.id}'"
                     )
-                
+
                 self.generic_visit(node)
-            
+
             def visit_ClassDef(self, node: ast.ClassDef) -> None:
                 """Visit class definitions to detect ambiguous names."""
                 # E742: Ambiguous class definition
@@ -974,9 +973,9 @@ class PEP8Checker:
                         "E742", node.lineno, node.col_offset,
                         f"Ambiguous class definition '{node.name}'"
                     )
-                
+
                 self.generic_visit(node)
-            
+
             def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
                 """Visit function definitions to detect ambiguous names."""
                 # E743: Ambiguous function definition
@@ -985,9 +984,9 @@ class PEP8Checker:
                         "E743", node.lineno, node.col_offset,
                         f"Ambiguous function definition '{node.name}'"
                     )
-                
+
                 self.generic_visit(node)
-            
+
             def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
                 """Visit async function definitions to detect ambiguous names."""
                 # E743: Ambiguous function definition
@@ -996,45 +995,45 @@ class PEP8Checker:
                         "E743", node.lineno, node.col_offset,
                         f"Ambiguous async function definition '{node.name}'"
                     )
-                
+
                 self.generic_visit(node)
-        
+
         visitor = LambdaNameVisitor(self)
         visitor.visit(tree)
-    
+
     # ========================================================================
     # W1xx-W6xx: Warning Checks
     # ========================================================================
-    
+
     def _check_warnings(self, lines: List[str]) -> None:
         """Check warning issues (W codes)."""
-        binary_operators = ['+', '-', '*', '/', '//', '%', '**', '&', '|', '^', '<<', '>>', 
+        binary_operators = ['+', '-', '*', '/', '//', '%', '**', '&', '|', '^', '<<', '>>',
                            '==', '!=', '<', '>', '<=', '>=', 'and', 'or']
-        
+
         for line_num, line in enumerate(lines, 1):
             stripped = line.strip()
-            
+
             # W291: Trailing whitespace
             if line.rstrip('\n\r') != line.rstrip():
                 self._add_violation(
                     "W291", line_num, len(line.rstrip('\n\r')),
                     "Trailing whitespace"
                 )
-            
+
             # W292: No newline at end of file
             if line_num == len(lines) and not line.endswith('\n'):
                 self._add_violation(
                     "W292", line_num, len(line),
                     "No newline at end of file"
                 )
-            
+
             # W293: Blank line contains whitespace
             if not line.strip() and line != '\n':
                 self._add_violation(
                     "W293", line_num, 0,
                     "Blank line contains whitespace"
                 )
-            
+
             # W503: Line break before binary operator (PEP 8 now prefers this style)
             # Note: This is now considered acceptable, but we detect for completeness
             if stripped and line_num > 1:
@@ -1048,7 +1047,7 @@ class PEP8Checker:
                             # We'll flag it as INFO level
                             pass  # Intentionally not flagging as this is now preferred
                         break
-            
+
             # W504: Line break after binary operator (older PEP 8 style)
             if stripped and line_num < len(lines):
                 for op in binary_operators:
@@ -1064,17 +1063,17 @@ class PEP8Checker:
                                 "Line break after binary operator"
                             )
                         break
-            
+
             # Phase 8.5: Deprecation Warnings (W601-W606)
             # These detect Python 2 deprecated patterns
-            
+
             # W601: .has_key() is deprecated, use 'in'
             if '.has_key(' in stripped:
                 self._add_violation(
                     "W601", line_num, stripped.find('.has_key('),
                     ".has_key() is deprecated, use 'in'"
                 )
-            
+
             # W602: Deprecated form of raising exception
             if stripped.startswith('raise ') and ',' in stripped:
                 # raise Exception, args  -- old Python 2 style
@@ -1084,21 +1083,21 @@ class PEP8Checker:
                         "W602", line_num, stripped.find(','),
                         "Deprecated form of raising exception, use 'raise Exception(args)'"
                     )
-            
+
             # W603: '<>' is deprecated, use '!='
             if '<>' in stripped:
                 self._add_violation(
                     "W603", line_num, stripped.find('<>'),
                     "'<>' is deprecated, use '!='"
                 )
-            
+
             # W604: Backticks are deprecated, use 'repr()'
             if '`' in stripped and not stripped.startswith('#'):
                 self._add_violation(
                     "W604", line_num, stripped.find('`'),
                     "Backticks are deprecated, use 'repr()'"
                 )
-            
+
             # W605: Invalid escape sequence (use raw string or \\)
             # This is a complex check that would need deeper analysis
             # For now, check for common invalid escapes in strings
@@ -1114,7 +1113,7 @@ class PEP8Checker:
                                 "Invalid escape sequence, use raw string or double backslash"
                             )
                             break
-            
+
             # W606: 'async' and 'await' are reserved keywords
             # This was for Python 2/3 transition - now less relevant but still useful
             if any(word in stripped for word in ['async', 'await']):
@@ -1126,13 +1125,13 @@ class PEP8Checker:
                         "W606", line_num, 0,
                         "'async' and 'await' are reserved keywords, don't use as identifiers"
                     )
-    
+
     def _fix_trailing_whitespace(self, content: str) -> Tuple[str, int]:
         """Fix trailing whitespace issues."""
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
-        
+
         for i, line in enumerate(lines):
             # W291: Remove trailing whitespace
             stripped = line.rstrip()
@@ -1141,18 +1140,18 @@ class PEP8Checker:
                 fixes += 1
             else:
                 fixed_lines.append(line)
-        
+
         # W292: Ensure newline at end of file
         if fixed_lines and not fixed_lines[-1].endswith('\n'):
             fixed_lines[-1] += '\n'
             fixes += 1
-        
+
         return ''.join(fixed_lines), fixes
-    
+
     # ========================================================================
     # Helper Methods
     # ========================================================================
-    
+
     def _add_violation(self, code: str, line: int, column: int, message: str) -> None:
         """Add a PEP 8 violation."""
         violation = RuleViolation(
@@ -1166,7 +1165,7 @@ class PEP8Checker:
             fix_applicability=FixApplicability.AUTOMATIC if self._is_auto_fixable(code) else FixApplicability.MANUAL
         )
         self.violations.append(violation)
-    
+
     def _is_auto_fixable(self, code: str) -> bool:
         """Check if a PEP 8 violation is automatically fixable."""
         auto_fixable = [
@@ -1182,35 +1181,35 @@ class PEP8Checker:
 
 class PEP8Rules:
     """PEP 8 rule definitions for the rule engine."""
-    
+
     @staticmethod
     def get_all_rules() -> List[Rule]:
         """Get all PEP 8 rules."""
         rules = []
-        
+
         # E1xx: Indentation rules
         rules.extend(PEP8Rules._get_indentation_rules())
-        
+
         # E2xx: Whitespace rules
         rules.extend(PEP8Rules._get_whitespace_rules())
-        
+
         # E3xx: Blank line rules
         rules.extend(PEP8Rules._get_blank_line_rules())
-        
+
         # E4xx: Import rules
         rules.extend(PEP8Rules._get_import_rules())
-        
+
         # E5xx: Line length rules
         rules.extend(PEP8Rules._get_line_length_rules())
-        
+
         # E7xx: Statement rules
         rules.extend(PEP8Rules._get_statement_rules())
-        
+
         # W codes: Warning rules
         rules.extend(PEP8Rules._get_warning_rules())
-        
+
         return rules
-    
+
     @staticmethod
     def _get_indentation_rules() -> List[Rule]:
         """Get indentation rules (E1xx)."""
@@ -1234,7 +1233,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.MANUAL
             ),
         ]
-    
+
     @staticmethod
     def _get_whitespace_rules() -> List[Rule]:
         """Get whitespace rules (E2xx)."""
@@ -1294,7 +1293,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
         ]
-    
+
     @staticmethod
     def _get_blank_line_rules() -> List[Rule]:
         """Get blank line rules (E3xx)."""
@@ -1318,7 +1317,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
         ]
-    
+
     @staticmethod
     def _get_import_rules() -> List[Rule]:
         """Get import rules (E4xx)."""
@@ -1342,7 +1341,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.MANUAL
             ),
         ]
-    
+
     @staticmethod
     def _get_line_length_rules() -> List[Rule]:
         """Get line length rules (E5xx)."""
@@ -1357,7 +1356,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.MANUAL
             ),
         ]
-    
+
     @staticmethod
     def _get_statement_rules() -> List[Rule]:
         """Get statement rules (E7xx)."""
@@ -1390,7 +1389,7 @@ class PEP8Rules:
                 fix_applicability=FixApplicability.AUTOMATIC
             ),
         ]
-    
+
     @staticmethod
     def _get_warning_rules() -> List[Rule]:
         """Get warning rules (W codes)."""

@@ -5,10 +5,10 @@ Implements Ruff C4 rules for detecting opportunities to use comprehensions.
 """
 
 import ast
-from typing import List, Optional
 from pathlib import Path
+from typing import List
 
-from .rule_engine import Rule, RuleViolation, RuleCategory, RuleSeverity
+from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
 
 
 class ComprehensionVisitor(ast.NodeVisitor):
@@ -26,7 +26,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
             # Handle cases where we have exactly 1 argument
             if len(node.args) == 1:
                 arg = node.args[0]
-                
+
                 # Check for different patterns based on func_name and arg type
                 if func_name == "list":
                     # C400: Unnecessary generator (use list comprehension)
@@ -92,7 +92,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                             fix_suggestion=f"Replace {func_name}([x for x in ...]) with {func_name}(...)",
                                         )
                                     )
-                
+
                 elif func_name == "set":
                     # C401: Unnecessary generator (use set comprehension)
                     if isinstance(arg, ast.GeneratorExp):
@@ -156,7 +156,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                             fix_suggestion=f"Replace {func_name}({{x for x in ...}}) with {func_name}(...)",
                                         )
                                     )
-                
+
                 elif func_name == "dict":
                     # C402: Unnecessary generator (use dict comprehension)
                     if isinstance(arg, ast.GeneratorExp):
@@ -200,7 +200,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                 fix_suggestion="Replace dict([...]) with {...}",
                             )
                         )
-                
+
                 elif func_name == "tuple":
                     # C409: Unnecessary list passed to tuple()
                     if isinstance(arg, ast.List):
@@ -216,7 +216,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                 file_path=self.file_path,
                             )
                         )
-                
+
                 elif func_name == "sorted":
                     # C413: Unnecessary list/reversed call around sorted()
                     if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
@@ -233,7 +233,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                 )
                             )
-                
+
                 # C414: Unnecessary list/reversed/sorted call inside set/sorted/list/tuple
                 if func_name in ("set", "sorted", "list", "tuple"):
                     if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
@@ -254,7 +254,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                                             file_path=self.file_path,
                                         )
                                     )
-            
+
             # C408: Unnecessary dict/list/tuple call (no arguments)
             elif func_name in ("dict", "list", "tuple") and not node.args and not node.keywords:
                 suggestion = {
@@ -286,8 +286,8 @@ class ComprehensionChecker:
 
     def _create_rules(self) -> List[Rule]:
         """Create comprehension rules."""
-        from .rule_engine import Rule, RuleCategory, RuleSeverity, FixApplicability
-        
+        from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
+
         return [
             Rule(
                 rule_id="C400",

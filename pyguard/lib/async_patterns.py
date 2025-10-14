@@ -101,13 +101,13 @@ class AsyncPatternVisitor(ast.NodeVisitor):
             self._check_time_sleep(node)
             self._check_open_call(node)
             self._check_sync_requests(node)
-        
+
         self.generic_visit(node)
 
     def _check_blocking_call(self, node: ast.Call) -> None:
         """Check for generic blocking calls."""
         call_name = self._get_call_name(node)
-        
+
         if call_name in self.blocking_calls:
             self.issues.append(
                 AsyncIssue(
@@ -199,7 +199,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
                                 suggested_fix="Replace 'with' with 'async with'",
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:
@@ -222,7 +222,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
                             suggested_fix="Use 'async for' if iterating over async iterable",
                         )
                     )
-        
+
         self.generic_visit(node)
 
 
@@ -266,7 +266,7 @@ def check_file(filepath: str) -> List[AsyncIssue]:
         List of AsyncIssue objects
     """
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             code = f.read()
         checker = AsyncChecker()
         return checker.check_code(code, filepath)

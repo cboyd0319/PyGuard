@@ -11,7 +11,7 @@ Based on Ruff TRY rules: https://docs.astral.sh/ruff/rules/#tryceratops-try
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -21,7 +21,6 @@ from pyguard.lib.rule_engine import (
     RuleSeverity,
     RuleViolation,
 )
-
 
 logger = PyGuardLogger()
 
@@ -239,7 +238,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                     func_name = item.context_expr.func.id
                 elif isinstance(item.context_expr.func, ast.Attribute):
                     func_name = item.context_expr.func.attr
-                
+
                 if func_name == "suppress":
                     # Using suppress - check if exception types are specific
                     if item.context_expr.args:
@@ -281,7 +280,7 @@ class ExceptionHandlingChecker:
             List of violations found
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 source = f.read()
 
             tree = ast.parse(source, filename=str(file_path))

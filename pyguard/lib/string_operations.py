@@ -10,7 +10,7 @@ import ast
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -54,11 +54,11 @@ class StringOperationsVisitor(ast.NodeVisitor):
         """Detect the dominant quote style in the file."""
         single_quotes = self.source_code.count("'")
         double_quotes = self.source_code.count('"')
-        
+
         # Subtract escaped quotes and f-strings
         single_quotes -= self.source_code.count("\\'")
         double_quotes -= self.source_code.count('\\"')
-        
+
         # Dominant style is the one used more
         if double_quotes > single_quotes * 1.5:
             self.quote_style = "double"
@@ -83,7 +83,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                     rule_id="PG-S001",
                 )
             )
-        
+
         self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp):
@@ -104,7 +104,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                         rule_id="PG-S002",
                     )
                 )
-        
+
         # PG-S005: String concatenation (+ operator)
         if isinstance(node.op, ast.Add):
             if self._is_string_concatenation(node):
@@ -120,7 +120,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                         rule_id="PG-S005",
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def visit_JoinedStr(self, node: ast.JoinedStr):
@@ -139,7 +139,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                     rule_id="PG-S003",
                 )
             )
-        
+
         self.generic_visit(node)
 
     def visit_Constant(self, node: ast.Constant):
@@ -161,7 +161,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                         rule_id="PG-S004",
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For):
@@ -183,7 +183,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
                                 rule_id="PG-S006",
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def _is_format_call(self, node: ast.Call) -> bool:
@@ -203,14 +203,14 @@ class StringOperationsVisitor(ast.NodeVisitor):
         # Check if either operand is a string
         left_is_string = isinstance(node.left, (ast.Constant, ast.Str, ast.JoinedStr))
         right_is_string = isinstance(node.right, (ast.Constant, ast.Str, ast.JoinedStr))
-        
+
         if left_is_string or right_is_string:
             return True
-        
+
         # Check for nested concatenation (a + b + c)
         if isinstance(node.left, ast.BinOp) and isinstance(node.left.op, ast.Add):
             return self._is_string_concatenation(node.left)
-        
+
         return False
 
     def _is_string_augassign(self, node: ast.AugAssign) -> bool:
@@ -226,15 +226,15 @@ class StringOperationsVisitor(ast.NodeVisitor):
         """Check if the string uses inconsistent quotes."""
         if not self.quote_style:
             return False
-        
+
         # Skip docstrings (triple-quoted strings)
         if '"""' in line_text or "'''" in line_text:
             return False
-        
+
         # Skip strings with quotes inside (they need the other quote type)
         if '"' in string_value or "'" in string_value:
             return False
-        
+
         # Check if the line uses the non-preferred quote style
         if self.quote_style == "double":
             # Looking for single quotes when double is preferred
@@ -367,14 +367,14 @@ class StringOperationsFixer:
             List of (file_path, issues) tuples
         """
         results: List[Tuple[Path, List[StringIssue]]] = []
-        
+
         for py_file in directory.rglob("*.py"):
             if exclude_patterns:
                 if any(pattern in str(py_file) for pattern in exclude_patterns):
                     continue
-            
+
             issues = self.analyze_file(py_file)
             if issues:
                 results.append((py_file, issues))
-        
+
         return results

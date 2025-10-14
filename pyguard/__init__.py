@@ -11,16 +11,33 @@ __license__ = "MIT"
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.best_practices import BestPracticesFixer
+from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker, BugbearVisitor
 from pyguard.lib.cache import AnalysisCache, ConfigCache
 from pyguard.lib.code_simplification import CodeSimplificationFixer, SimplificationIssue
 from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
+from pyguard.lib.debugging_patterns import (
+    DEBUGGING_RULES,
+    DebuggingPatternChecker,
+    DebuggingPatternVisitor,
+)
+from pyguard.lib.exception_handling import (
+    EXCEPTION_HANDLING_RULES,
+    ExceptionHandlingChecker,
+    ExceptionHandlingVisitor,
+)
 from pyguard.lib.formatting import FormattingFixer
 from pyguard.lib.import_manager import ImportAnalyzer, ImportManager
-from pyguard.lib.modern_python import ModernPythonFixer, ModernizationIssue
+from pyguard.lib.modern_python import ModernizationIssue, ModernPythonFixer
 from pyguard.lib.naming_conventions import NamingConventionFixer, NamingIssue
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
+from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
 from pyguard.lib.performance_checks import PerformanceFixer, PerformanceIssue
-from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
+from pyguard.lib.reporting import (
+    AnalysisMetrics,
+    ConsoleReporter,
+    HTMLReporter,
+    JSONReporter,
+)
 from pyguard.lib.rule_engine import (
     FixApplicability,
     Rule,
@@ -32,11 +49,11 @@ from pyguard.lib.rule_engine import (
 )
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
-from pyguard.lib.string_operations import StringIssue, StringOperationsFixer, StringOperationsVisitor
-from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
-from pyguard.lib.bugbear import BugbearChecker, BugbearVisitor, BUGBEAR_RULES
-from pyguard.lib.exception_handling import ExceptionHandlingChecker, ExceptionHandlingVisitor, EXCEPTION_HANDLING_RULES
-from pyguard.lib.debugging_patterns import DebuggingPatternChecker, DebuggingPatternVisitor, DEBUGGING_RULES
+from pyguard.lib.string_operations import (
+    StringIssue,
+    StringOperationsFixer,
+    StringOperationsVisitor,
+)
 from pyguard.lib.type_checker import TypeChecker, TypeInferenceEngine
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue

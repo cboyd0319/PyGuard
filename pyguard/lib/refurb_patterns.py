@@ -492,7 +492,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                 if isinstance(func, ast.Attribute) and func.attr == "open":
                     # Check if using 'w' mode and then read()
                     pass
-        
+
         # FURB123: Unnecessary assignment before return in context manager
         if len(node.body) >= 2:
             if isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):
@@ -512,17 +512,17 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SAFE,
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Detect binary operation patterns (FURB116, 118-119)."""
         # FURB118: operator.itemgetter() instead of lambda
         # This is detected in visit_Lambda
-        
-        # FURB119: operator.attrgetter() instead of lambda  
+
+        # FURB119: operator.attrgetter() instead of lambda
         # This is detected in visit_Lambda
-        
+
         self.generic_visit(node)
 
     def visit_Lambda(self, node: ast.Lambda) -> None:
@@ -543,7 +543,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-        
+
         # FURB119: lambda x: x.attr -> operator.attrgetter('attr')
         if isinstance(node.body, ast.Attribute):
             if isinstance(node.body.value, ast.Name) and len(node.args.args) == 1:
@@ -560,7 +560,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:
@@ -581,7 +581,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         # FURB136: Delete instead of assigning None/empty
         for stmt in node.body:
             if isinstance(stmt, ast.Assign):
@@ -599,7 +599,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_ListComp(self, node: ast.ListComp) -> None:
@@ -621,7 +621,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         # FURB145: Use startswith/endswith instead of slice comparison in comprehension
         for generator in node.generators:
             for if_clause in generator.ifs:
@@ -639,7 +639,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_DictComp(self, node: ast.DictComp) -> None:
@@ -661,20 +661,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
         """Detect comparison patterns (FURB150, 152, 154)."""
         # FURB150: Use operator.eq() instead of == in certain contexts
         # FURB152: Use math.log() instead of log2/log10 where applicable
-        
+
         # FURB154: Use math.perm/comb instead of manual calculation
         if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq):
             if isinstance(node.left, ast.BinOp):
                 # Check for factorial/combinatorial patterns
                 pass
-        
+
         self.generic_visit(node)
 
 
@@ -695,7 +695,7 @@ class RefurbPatternChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             tree = ast.parse(code)
@@ -722,7 +722,7 @@ class RefurbPatternChecker:
             Tuple of (success, number of fixes applied)
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             original_code = code

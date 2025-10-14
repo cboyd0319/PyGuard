@@ -45,7 +45,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
         """Check for logging-related calls."""
         if isinstance(node.func, ast.Attribute):
             self._check_logging_call(node)
-        
+
         self.generic_visit(node)
 
     def _check_logging_call(self, node: ast.Call) -> None:
@@ -82,7 +82,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
             return
 
         first_arg = node.args[0]
-        
+
         # Check for f-strings (LOG001)
         if isinstance(first_arg, ast.JoinedStr):
             self.issues.append(
@@ -225,7 +225,7 @@ def check_file(filepath: str) -> List[LoggingIssue]:
         List of LoggingIssue objects
     """
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             code = f.read()
         checker = LoggingChecker()
         return checker.check_code(code, filepath)

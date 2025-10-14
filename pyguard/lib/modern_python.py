@@ -9,7 +9,7 @@ import ast
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

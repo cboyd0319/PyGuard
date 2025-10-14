@@ -6,9 +6,8 @@ Complements mypy/pytype by focusing on practical type improvements and auto-fixe
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (

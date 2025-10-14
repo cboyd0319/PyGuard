@@ -116,7 +116,7 @@ class DependencyParser:
         dependencies = []
         for line in content.split("\n"):
             line = line.strip()
-            
+
             # Skip comments and empty lines
             if not line or line.startswith("#"):
                 continue

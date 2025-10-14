@@ -14,9 +14,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import List, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -44,7 +43,7 @@ class ImportVisitor(ast.NodeVisitor):
     def visit_Import(self, node: ast.Import) -> None:
         """Detect Import statement issues (TID001-TID003, I001-I003)."""
         self.imports.append(node)
-        
+
         # TID001: Banned imports (configurable)
         banned_modules = ['os.path']  # Should use pathlib
         for alias in node.names:
@@ -61,20 +60,20 @@ class ImportVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         # TID002: Relative imports beyond parent (dangerous)
         # Handled in visit_ImportFrom
-        
+
         # TID003: Import module only, not from import for certain modules
         # Example: import typing vs from typing import Dict
         # This is a style choice
-        
+
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Detect ImportFrom statement issues (TID002-TID005, TCH001-TCH003)."""
         self.from_imports.append(node)
-        
+
         # TID002: Relative imports beyond parent level
         if node.level and node.level > 2:
             self.violations.append(
@@ -89,7 +88,7 @@ class ImportVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # TID004: Import from future should be at top
         if node.module == '__future__':
             # Check if it's not at the top (allowing docstring)
@@ -106,7 +105,7 @@ class ImportVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         # TID005: Banned from imports
         if node.module and node.module.startswith('typing'):
             # Check if we're in TYPE_CHECKING block
@@ -127,18 +126,18 @@ class ImportVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         # TCH002: Type-checking imports for third-party types
         if node.module in ['numpy', 'pandas', 'django', 'flask']:
             # Check if imported for type hints only
             # This requires flow analysis to determine if used at runtime
             pass
-        
+
         # TCH003: Type-checking imports in TYPE_CHECKING block used at runtime
         if self.type_checking_block:
             # Would need to track usage to detect this
             pass
-        
+
         self.generic_visit(node)
 
     def visit_If(self, node: ast.If) -> None:
@@ -151,7 +150,7 @@ class ImportVisitor(ast.NodeVisitor):
             if node.test.attr == 'TYPE_CHECKING':
                 self.type_checking_block = True
                 self.in_type_checking_block_line = node.lineno
-        
+
         self.generic_visit(node)
         self.type_checking_block = False
 
@@ -174,15 +173,15 @@ class ImportOrderChecker:
         Within each group, imports should be alphabetically sorted.
         """
         violations: List[RuleViolation] = []
-        
+
         try:
             tree = ast.parse(code)
             imports = []
-            
+
             for node in ast.walk(tree):
                 if isinstance(node, (ast.Import, ast.ImportFrom)):
                     imports.append(node)
-            
+
             # I001: Import block not sorted
             # Check if imports are grouped correctly
             stdlib_modules = {
@@ -190,7 +189,7 @@ class ImportOrderChecker:
                 'datetime', 'itertools', 'functools', 'io', 'abc', 'contextlib',
                 'ast', 'unittest', 'logging', 'warnings', 'traceback', 'time',
             }
-            
+
             prev_group = -1
             for node in imports:
                 if isinstance(node, ast.Import):
@@ -202,7 +201,7 @@ class ImportOrderChecker:
                         continue  # Relative import
                 else:
                     continue
-                
+
                 # Determine group: 0=stdlib, 1=third-party, 2=local
                 if module in stdlib_modules:
                     curr_group = 0
@@ -210,7 +209,7 @@ class ImportOrderChecker:
                     curr_group = 2
                 else:
                     curr_group = 1
-                
+
                 # Check if order is violated
                 if curr_group < prev_group:
                     violations.append(
@@ -225,15 +224,15 @@ class ImportOrderChecker:
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-                
+
                 prev_group = curr_group
-            
+
             # I002: Missing blank line between import groups
             # Would need to check line spacing between imports
-            
+
         except SyntaxError:
             pass
-        
+
         return violations
 
 
@@ -255,17 +254,17 @@ class ImportRulesChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             violations = []
-            
+
             # AST-based checks
             tree = ast.parse(code)
             visitor = ImportVisitor(file_path, code)
             visitor.visit(tree)
             violations.extend(visitor.violations)
-            
+
             # Import order checks
             order_violations = self.order_checker.check_import_order(file_path, code)
             violations.extend(order_violations)
@@ -290,7 +289,7 @@ class ImportRulesChecker:
             Tuple of (success, number of fixes applied)
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             original_code = code

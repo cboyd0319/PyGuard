@@ -361,7 +361,7 @@ class SecurityVisitor(ast.NodeVisitor):
         # CWE-1004: Sensitive Cookie Without HttpOnly Flag
         if func_name in ["set_cookie", "response.set_cookie"]:
             httponly_arg = self._get_keyword_arg(node, "httponly")
-            
+
             if not httponly_arg or (isinstance(httponly_arg, ast.Constant) and not httponly_arg.value):
                 self.issues.append(
                     SecurityIssue(
@@ -502,13 +502,13 @@ class SecurityVisitor(ast.NodeVisitor):
                                 r"postgres://[^/]+:[^@]+@": "PostgreSQL Connection String",
                                 r"mysql://[^/]+:[^@]+@": "MySQL Connection String",
                             }
-                            
+
                             detected_type = "Hardcoded Credentials"
                             for pattern, secret_type in secret_patterns.items():
                                 if re.search(pattern, value_str):
                                     detected_type = secret_type
                                     break
-                            
+
                             self.issues.append(
                                 SecurityIssue(
                                     severity="HIGH",

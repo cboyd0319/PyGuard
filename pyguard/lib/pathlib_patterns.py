@@ -221,7 +221,7 @@ def check_file(filepath: str) -> List[PathlibIssue]:
         List of PathlibIssue objects
     """
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             code = f.read()
         checker = PathlibChecker()
         return checker.check_code(code, filepath)

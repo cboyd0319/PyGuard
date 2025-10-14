@@ -44,7 +44,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
         """Check for datetime-related calls."""
         if isinstance(node.func, ast.Attribute):
             self._check_datetime_call(node)
-        
+
         self.generic_visit(node)
 
     def _check_datetime_call(self, node: ast.Call) -> None:
@@ -53,7 +53,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
             return
 
         method_name = node.func.attr
-        
+
         # Check if it's a datetime module call
         if isinstance(node.func.value, ast.Name):
             module_name = node.func.value.id
@@ -164,11 +164,11 @@ class DatetimePatternVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg in {"tz", "tzinfo"}:
                 return True
-        
+
         # For some methods, second positional argument is tz
         if len(node.args) >= 2:
             return True
-        
+
         return False
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
@@ -218,7 +218,7 @@ def check_file(filepath: str) -> List[DatetimeIssue]:
         List of DatetimeIssue objects
     """
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             code = f.read()
         checker = DatetimeChecker()
         return checker.check_code(code, filepath)

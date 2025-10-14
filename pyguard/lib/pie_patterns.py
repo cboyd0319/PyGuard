@@ -304,7 +304,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="PIE803",
-                                    message=f"Prefer '==' over 'is' for literal comparison",
+                                    message="Prefer '==' over 'is' for literal comparison",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.MEDIUM,
@@ -313,7 +313,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SAFE,
                                 )
                             )
-        
+
         # PIE806: Unnecessary 'elif' with only 'pass' body
         if isinstance(node.orelse, list) and len(node.orelse) == 1:
             if isinstance(node.orelse[0], ast.If):
@@ -331,7 +331,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         # PIE807: Prefer 'or' over single-item 'in' check
         if isinstance(node.test, ast.Compare):
             if len(node.test.ops) == 1 and isinstance(node.test.ops[0], ast.In):
@@ -460,7 +460,7 @@ class PIEPatternChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             tree = ast.parse(code)
@@ -487,7 +487,7 @@ class PIEPatternChecker:
             Tuple of (success, number of fixes applied)
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             original_code = code

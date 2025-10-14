@@ -8,17 +8,58 @@ from pyguard.lib.advanced_security import (
     TaintAnalyzer,
 )
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
+from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.best_practices import BestPracticesFixer
+from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker, BugbearVisitor
 from pyguard.lib.cache import AnalysisCache, ConfigCache
+from pyguard.lib.comprehensions import ComprehensionChecker, ComprehensionVisitor
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
+from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
+from pyguard.lib.debugging_patterns import (
+    DEBUGGING_RULES,
+    DebuggingPatternChecker,
+    DebuggingPatternVisitor,
+)
+from pyguard.lib.exception_handling import (
+    EXCEPTION_HANDLING_RULES,
+    ExceptionHandlingChecker,
+    ExceptionHandlingVisitor,
+)
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
-from pyguard.lib.knowledge_integration import KnowledgeBase, KnowledgeIntegration, SecurityIntelligence
-from pyguard.lib.parallel import ParallelProcessor, BatchProcessor
-from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
-from pyguard.lib.security import SecurityFixer
-from pyguard.lib.supply_chain import Dependency, SBOM, SupplyChainAnalyzer
+from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
+from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
+from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker
+
+# NEW in v0.11.0: Import rules, Pylint rules, Framework-specific rules
+from pyguard.lib.import_rules import IMPORT_RULES, ImportRulesChecker
+from pyguard.lib.knowledge_integration import (
+    KnowledgeBase,
+    KnowledgeIntegration,
+    SecurityIntelligence,
+)
+from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
 from pyguard.lib.mcp_integration import MCPIntegration, MCPServer
 from pyguard.lib.ml_detection import AnomalyDetector, MLRiskScorer
+from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
+
+# NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
+from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
+from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
+
+# NEW in v0.10.0: PIE patterns (code smells)
+from pyguard.lib.pie_patterns import PIE_RULES, PIEPatternChecker
+from pyguard.lib.pylint_rules import PYLINT_RULES, PylintRulesChecker
+
+# NEW in v0.10.0: Refurb patterns (refactoring opportunities)
+from pyguard.lib.refurb_patterns import REFURB_RULES, RefurbPatternChecker
+from pyguard.lib.reporting import (
+    AnalysisMetrics,
+    ConsoleReporter,
+    HTMLReporter,
+    JSONReporter,
+)
+from pyguard.lib.return_patterns import ReturnPatternChecker, ReturnPatternVisitor
+from pyguard.lib.security import SecurityFixer
 from pyguard.lib.standards_integration import (
     CERTSecureCodingMapper,
     GDPRTechnicalControls,
@@ -28,13 +69,16 @@ from pyguard.lib.standards_integration import (
     SANSTop25Mapper,
     StandardsMapper,
 )
-from pyguard.lib.string_operations import StringIssue, StringOperationsFixer, StringOperationsVisitor
-from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
-from pyguard.lib.bugbear import BugbearChecker, BugbearVisitor, BUGBEAR_RULES
-from pyguard.lib.exception_handling import ExceptionHandlingChecker, ExceptionHandlingVisitor, EXCEPTION_HANDLING_RULES
-from pyguard.lib.return_patterns import ReturnPatternChecker, ReturnPatternVisitor
-from pyguard.lib.comprehensions import ComprehensionChecker, ComprehensionVisitor
-from pyguard.lib.debugging_patterns import DebuggingPatternChecker, DebuggingPatternVisitor, DEBUGGING_RULES
+from pyguard.lib.string_operations import (
+    StringIssue,
+    StringOperationsFixer,
+    StringOperationsVisitor,
+)
+from pyguard.lib.supply_chain import SBOM, Dependency, SupplyChainAnalyzer
+
+# NEW in v0.8.0: Ultra-advanced auto-fixes
+from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
+
 # NEW in v0.8.0: Ultra-advanced security detectors
 from pyguard.lib.ultra_advanced_security import (
     APIRateLimitDetector,
@@ -46,23 +90,6 @@ from pyguard.lib.ultra_advanced_security import (
     PrototypePollutionDetector,
     SSTIDetector,
 )
-# NEW in v0.8.0: Ultra-advanced auto-fixes
-from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
-# NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
-from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
-from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
-from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
-from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
-# NEW in v0.10.0: Refurb patterns (refactoring opportunities)
-from pyguard.lib.refurb_patterns import RefurbPatternChecker, REFURB_RULES
-# NEW in v0.10.0: PIE patterns (code smells)
-from pyguard.lib.pie_patterns import PIEPatternChecker, PIE_RULES
-# NEW in v0.11.0: Import rules, Pylint rules, Framework-specific rules
-from pyguard.lib.import_rules import ImportRulesChecker, IMPORT_RULES
-from pyguard.lib.pylint_rules import PylintRulesChecker, PYLINT_RULES
-from pyguard.lib.framework_django import DjangoRulesChecker, DJANGO_RULES
-from pyguard.lib.framework_pytest import PytestRulesChecker, PYTEST_RULES
-from pyguard.lib.framework_pandas import PandasRulesChecker, PANDAS_RULES
 
 __all__ = [
     # Core

@@ -36,13 +36,13 @@ class UltraAdvancedSecurityFixer:
     Implements intelligent, context-aware fixes for complex security issues
     with minimal code changes and maximum safety preservation.
     """
-    
+
     def __init__(self):
         """Initialize ultra-advanced security fixer."""
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
         self.fixes_applied: List[str] = []
-    
+
     def fix_graphql_injection(self, content: str) -> Tuple[str, bool]:
         """
         Fix GraphQL injection by converting to parameterized queries.
@@ -63,7 +63,7 @@ class UltraAdvancedSecurityFixer:
         modified = False
         lines = content.split('\n')
         fixed_lines = []
-        
+
         for line in lines:
             # Pattern: query = "..." + variable + "..."
             if re.search(r'query\s*=\s*["\'][^"\']*["\'].*?\+', line):
@@ -91,9 +91,9 @@ class UltraAdvancedSecurityFixer:
                 modified = True
             else:
                 fixed_lines.append(line)
-        
+
         return '\n'.join(fixed_lines), modified
-    
+
     def fix_jwt_security(self, content: str) -> Tuple[str, bool]:
         """
         Fix JWT security issues.
@@ -110,7 +110,7 @@ class UltraAdvancedSecurityFixer:
             (fixed_content, modified)
         """
         modified = False
-        
+
         # Fix 'none' algorithm
         if 'algorithm="none"' in content or "algorithm='none'" in content:
             content = re.sub(
@@ -120,7 +120,7 @@ class UltraAdvancedSecurityFixer:
             )
             self.fixes_applied.append('JWT algorithm: none → RS256')
             modified = True
-        
+
         # Fix disabled verification
         if 'verify=False' in content:
             content = re.sub(
@@ -130,7 +130,7 @@ class UltraAdvancedSecurityFixer:
             )
             self.fixes_applied.append('JWT verification: disabled → enabled')
             modified = True
-        
+
         # Add warning for short keys
         if re.search(r'key\s*=\s*["\'][^"\']{1,16}["\']', content):
             lines = content.split('\n')
@@ -142,9 +142,9 @@ class UltraAdvancedSecurityFixer:
             content = '\n'.join(fixed_lines)
             self.fixes_applied.append('JWT weak key warning added')
             modified = True
-        
+
         return content, modified
-    
+
     def fix_ssti_vulnerabilities(self, content: str) -> Tuple[str, bool]:
         """
         Fix Server-Side Template Injection vulnerabilities.
@@ -162,7 +162,7 @@ class UltraAdvancedSecurityFixer:
         modified = False
         lines = content.split('\n')
         fixed_lines = []
-        
+
         for line in lines:
             # render_template_string with variable
             if 'render_template_string' in line and re.search(r'render_template_string\([a-zA-Z_]', line):
@@ -180,9 +180,9 @@ class UltraAdvancedSecurityFixer:
                 modified = True
             else:
                 fixed_lines.append(line)
-        
+
         return '\n'.join(fixed_lines), modified
-    
+
     def fix_api_rate_limiting(self, content: str) -> Tuple[str, bool]:
         """
         Add rate limiting to API endpoints.
@@ -208,10 +208,10 @@ class UltraAdvancedSecurityFixer:
         lines = content.split('\n')
         fixed_lines = []
         i = 0
-        
+
         while i < len(lines):
             line = lines[i]
-            
+
             # Check if this is an API route decorator
             if re.search(r'@(app|api|router)\.(route|get|post|put|delete)', line):
                 # Check if next line is the function definition (no rate limiter)
@@ -224,18 +224,18 @@ class UltraAdvancedSecurityFixer:
                         modified = True
                         i += 1
                         continue
-            
+
             fixed_lines.append(line)
             i += 1
-        
+
         # Add limiter import if not present and we added limits
         if modified and 'from flask_limiter' not in content:
             import_lines = ['# ADDED: Rate limiter import', 'from flask_limiter import Limiter', '']
             fixed_lines = import_lines + fixed_lines
             self.fixes_applied.append('flask_limiter import added')
-        
+
         return '\n'.join(fixed_lines), modified
-    
+
     def fix_weak_cryptography(self, content: str) -> Tuple[str, bool]:
         """
         Fix weak cryptographic algorithms.
@@ -253,7 +253,7 @@ class UltraAdvancedSecurityFixer:
             (fixed_content, modified)
         """
         modified = False
-        
+
         # Fix MD5
         if 'hashlib.md5' in content:
             content = re.sub(
@@ -263,7 +263,7 @@ class UltraAdvancedSecurityFixer:
             )
             self.fixes_applied.append('Crypto: MD5 → SHA256')
             modified = True
-        
+
         # Fix SHA1
         if 'hashlib.sha1' in content:
             content = re.sub(
@@ -273,7 +273,7 @@ class UltraAdvancedSecurityFixer:
             )
             self.fixes_applied.append('Crypto: SHA1 → SHA256')
             modified = True
-        
+
         # Fix DES
         if re.search(r'(Crypto|Cryptodome)\.Cipher\.DES', content):
             content = re.sub(
@@ -291,9 +291,9 @@ class UltraAdvancedSecurityFixer:
             )
             self.fixes_applied.append('Crypto: DES → AES')
             modified = True
-        
+
         return content, modified
-    
+
     def fix_container_security(self, content: str, file_path: str) -> Tuple[str, bool]:
         """
         Fix container security issues in Dockerfiles and docker-compose.yml.
@@ -311,11 +311,11 @@ class UltraAdvancedSecurityFixer:
             (fixed_content, modified)
         """
         modified = False
-        
+
         # Only process container files
         if 'dockerfile' not in file_path.lower() and 'docker-compose' not in file_path.lower():
             return content, modified
-        
+
         # Fix Dockerfile
         if 'dockerfile' in file_path.lower():
             # Fix USER root
@@ -327,7 +327,7 @@ class UltraAdvancedSecurityFixer:
                 )
                 self.fixes_applied.append('Container: USER root → nonroot')
                 modified = True
-        
+
         # Fix docker-compose.yml
         if 'docker-compose' in file_path.lower():
             # Fix privileged mode
@@ -339,14 +339,14 @@ class UltraAdvancedSecurityFixer:
                 )
                 self.fixes_applied.append('Container: privileged disabled')
                 modified = True
-            
+
             # Add security_opt if missing
             if 'security_opt:' not in content and 'services:' in content:
                 lines = content.split('\n')
                 fixed_lines = []
                 in_service = False
                 indent = '    '
-                
+
                 for line in lines:
                     fixed_lines.append(line)
                     if re.match(r'^\s+\w+:', line) and 'services:' not in line:
@@ -359,11 +359,11 @@ class UltraAdvancedSecurityFixer:
                         in_service = False
                         self.fixes_applied.append('Container: security_opt added')
                         modified = True
-                
+
                 content = '\n'.join(fixed_lines)
-        
+
         return content, modified
-    
+
     def fix_sql_injection_enhanced(self, content: str) -> Tuple[str, bool]:
         """
         Enhanced SQL injection fixes with parameterization.
@@ -377,7 +377,7 @@ class UltraAdvancedSecurityFixer:
         modified = False
         lines = content.split('\n')
         fixed_lines = []
-        
+
         for line in lines:
             # SQL with .format()
             if re.search(r'(SELECT|INSERT|UPDATE|DELETE).*\.format\(', line, re.IGNORECASE):
@@ -395,9 +395,9 @@ class UltraAdvancedSecurityFixer:
                 modified = True
             else:
                 fixed_lines.append(line)
-        
+
         return '\n'.join(fixed_lines), modified
-    
+
     def fix_xss_vulnerabilities(self, content: str) -> Tuple[str, bool]:
         """
         Fix Cross-Site Scripting (XSS) vulnerabilities.
@@ -413,7 +413,7 @@ class UltraAdvancedSecurityFixer:
         modified = False
         lines = content.split('\n')
         fixed_lines = []
-        
+
         for line in lines:
             # Unescaped HTML output
             if re.search(r'(innerHTML|\.html\(|\.write\()', line):
@@ -431,9 +431,9 @@ class UltraAdvancedSecurityFixer:
                 modified = True
             else:
                 fixed_lines.append(line)
-        
+
         return '\n'.join(fixed_lines), modified
-    
+
     def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
         """
         Apply all ultra-advanced security fixes to a file.
@@ -445,14 +445,14 @@ class UltraAdvancedSecurityFixer:
             (success, list of fixes applied)
         """
         self.fixes_applied = []
-        
+
         try:
             content = self.file_ops.read_file(file_path)
             if not content:
                 return False, []
-            
+
             original_content = content
-            
+
             # Apply all fixes
             content, _ = self.fix_graphql_injection(content)
             content, _ = self.fix_jwt_security(content)
@@ -462,7 +462,7 @@ class UltraAdvancedSecurityFixer:
             content, _ = self.fix_container_security(content, str(file_path))
             content, _ = self.fix_sql_injection_enhanced(content)
             content, _ = self.fix_xss_vulnerabilities(content)
-            
+
             # Write back if changed
             if content != original_content:
                 success = self.file_ops.write_file(file_path, content)
@@ -474,9 +474,9 @@ class UltraAdvancedSecurityFixer:
                         details={'fixes': self.fixes_applied}
                     )
                 return success, self.fixes_applied
-            
+
             return True, []
-            
+
         except Exception as e:
             self.logger.error(
                 f'Error applying ultra-advanced fixes: {str(e)}',

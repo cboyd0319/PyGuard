@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -27,7 +28,6 @@ from rich.progress import (
 )
 from rich.table import Table
 from rich.tree import Tree
-from rich import box
 
 
 @dataclass
@@ -390,13 +390,13 @@ class ModernHTMLReporter:
                 "MEDIUM": "🟡",
                 "LOW": "🟢",
             }.get(severity, "⚪")
-            
+
             severity_label = {
                 "HIGH": "Critical severity",
-                "MEDIUM": "Medium severity", 
+                "MEDIUM": "Medium severity",
                 "LOW": "Low severity",
             }.get(severity, "Unknown severity")
-            
+
             file_name = Path(issue.get('file', '')).name
             category = issue.get('category', 'Unknown')
             line_num = issue.get('line', 0)
