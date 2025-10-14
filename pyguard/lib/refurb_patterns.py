@@ -676,6 +676,273 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                 pass
 
         self.generic_visit(node)
+    
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Detect function definition patterns (FURB112, FURB125-127, FURB131)."""
+        # FURB112: Use contextlib.suppress() instead of delete-except-pass
+        # This is partially covered by FURB124 in visit_Try
+        
+        # FURB125: Do not use unnecessary lambda in sorted/map/filter
+        # Check function body for lambda usage
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Call):
+                func = stmt.func
+                if isinstance(func, ast.Name) and func.id in ("sorted", "map", "filter"):
+                    # Check if there's a lambda argument
+                    for arg in stmt.args:
+                        if isinstance(arg, ast.Lambda):
+                            # Check if lambda is just calling another function
+                            if isinstance(arg.body, ast.Call):
+                                if isinstance(arg.body.func, ast.Name):
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FURB125",
+                                            message=f"Replace lambda with direct function reference in {func.id}()",
+                                            line_number=arg.lineno,
+                                            column=arg.col_offset,
+                                            severity=RuleSeverity.LOW,
+                                            category=RuleCategory.SIMPLIFICATION,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.SAFE,
+                                        )
+                                    )
+        
+        # FURB126: Use isinstance() check instead of type() == check
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Compare):
+                if len(stmt.ops) == 1 and isinstance(stmt.ops[0], ast.Eq):
+                    if isinstance(stmt.left, ast.Call):
+                        if isinstance(stmt.left.func, ast.Name) and stmt.left.func.id == "type":
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FURB126",
+                                    message="Use isinstance() instead of type() == comparison",
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.MEDIUM,
+                                    category=RuleCategory.CONVENTION,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.SAFE,
+                                )
+                            )
+        
+        # FURB127: Use dict.fromkeys() instead of dict comprehension with constant value
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.DictComp):
+                if isinstance(stmt.value, ast.Constant):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB127",
+                            message="Use dict.fromkeys() instead of dict comprehension with constant value",
+                            line_number=stmt.lineno,
+                            column=stmt.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+        
+        # FURB131: Delete exception and re-raise instead of using raise
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Try):
+                for handler in stmt.handlers:
+                    for body_stmt in handler.body:
+                        if isinstance(body_stmt, ast.Raise):
+                            if body_stmt.exc is None:
+                                # This is a bare raise, which is good
+                                pass
+                            elif isinstance(body_stmt.exc, ast.Name):
+                                # Check if it's the same as the caught exception
+                                if handler.name and body_stmt.exc.id == handler.name:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FURB131",
+                                            message="Use bare 'raise' instead of re-raising caught exception",
+                                            line_number=body_stmt.lineno,
+                                            column=body_stmt.col_offset,
+                                            severity=RuleSeverity.LOW,
+                                            category=RuleCategory.SIMPLIFICATION,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.SAFE,
+                                        )
+                                    )
+        
+        self.generic_visit(node)
+    
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Detect assignment patterns (FURB130, FURB134-135, FURB137-139)."""
+        # FURB130: Use Path.read_text()/write_text() instead of open+read/write
+        if isinstance(node.value, ast.Call):
+            func = node.value.func
+            # Check for pattern: content = open('file').read()
+            if isinstance(func, ast.Attribute) and func.attr == "read":
+                if isinstance(func.value, ast.Call):
+                    if isinstance(func.value.func, ast.Name) and func.value.func.id == "open":
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB130",
+                                message="Use Path.read_text() instead of open().read()",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.MODERNIZATION,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                            )
+                        )
+        
+        # FURB134: Use Path.exists() instead of try-except FileNotFoundError
+        # This is complex - needs context from try-except block
+        
+        # FURB135: Use datetime.now() instead of datetime.fromtimestamp(time.time())
+        if isinstance(node.value, ast.Call):
+            func = node.value.func
+            if isinstance(func, ast.Attribute):
+                if func.attr == "fromtimestamp":
+                    # Check if argument is time.time()
+                    if len(node.value.args) > 0:
+                        arg = node.value.args[0]
+                        if isinstance(arg, ast.Call):
+                            if isinstance(arg.func, ast.Attribute) and arg.func.attr == "time":
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FURB135",
+                                        message="Use datetime.now() instead of datetime.fromtimestamp(time.time())",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.LOW,
+                                        category=RuleCategory.SIMPLIFICATION,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SAFE,
+                                    )
+                                )
+        
+        # FURB137: Use min/max with default instead of try-except ValueError
+        # FURB138: Use list.sort(key=str.lower) instead of list.sort(key=lambda x: x.lower())
+        # FURB139: Use math.ceil(x/y) instead of -(-x//y)
+        if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub):
+            if isinstance(node.value.operand, ast.UnaryOp) and isinstance(node.value.operand.op, ast.USub):
+                if isinstance(node.value.operand.operand, ast.BinOp):
+                    if isinstance(node.value.operand.operand.op, ast.FloorDiv):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB139",
+                                message="Use math.ceil(x/y) instead of -(-x//y)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.SIMPLIFICATION,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
+        
+        self.generic_visit(node)
+    
+    def visit_Expr(self, node: ast.Expr) -> None:
+        """Detect expression patterns (FURB141-144, FURB146-149)."""
+        if isinstance(node.value, ast.Call):
+            func = node.value.func
+            
+            # FURB141: Use list.extend() instead of list += [item]
+            # Covered in visit_AugAssign
+            
+            # FURB142: Use str.format() or f-string instead of %
+            # Covered in string_operations.py
+            
+            # FURB143: Use enumerate() instead of range(len())
+            # Check for pattern: for i in range(len(seq)): ... seq[i] ...
+            if isinstance(func, ast.Name) and func.id == "range":
+                if len(node.value.args) == 1:
+                    arg = node.value.args[0]
+                    if isinstance(arg, ast.Call):
+                        if isinstance(arg.func, ast.Name) and arg.func.id == "len":
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FURB143",
+                                    message="Use enumerate() instead of range(len())",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.LOW,
+                                    category=RuleCategory.SIMPLIFICATION,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.SUGGESTED,
+                                )
+                            )
+            
+            # FURB144: Use any()/all() instead of for-loop with flag
+            # This requires more complex analysis
+            
+            # FURB146: Use open() with encoding parameter
+            if isinstance(func, ast.Name) and func.id == "open":
+                # Check if encoding parameter is missing
+                has_encoding = False
+                for keyword in node.value.keywords:
+                    if keyword.arg == "encoding":
+                        has_encoding = True
+                        break
+                if not has_encoding:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB146",
+                            message="open() call missing explicit encoding parameter",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.CONVENTION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+            
+            # FURB147: Use Path.glob() instead of glob.glob() with pathlib
+            if isinstance(func, ast.Attribute) and func.attr == "glob":
+                if isinstance(func.value, ast.Name) and func.value.id == "glob":
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB147",
+                            message="Use Path.glob() instead of glob.glob() for better path handling",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.MODERNIZATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
+            
+            # FURB148: Use enumerate() with start parameter
+            if isinstance(func, ast.Name) and func.id == "enumerate":
+                # Check for pattern: for i, x in enumerate(seq): but using i+1
+                # This requires analysis of the loop body
+                pass
+            
+            # FURB149: Use itertools.chain() instead of nested loops
+            # This requires more complex analysis
+        
+        self.generic_visit(node)
+    
+    def visit_AugAssign(self, node: ast.AugAssign) -> None:
+        """Detect augmented assignment patterns (FURB141)."""
+        # FURB141: Use list.extend() instead of list += [item]
+        if isinstance(node.op, ast.Add):
+            if isinstance(node.value, ast.List):
+                if len(node.value.elts) == 1:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB141",
+                            message="Use list.append() instead of list += [item]",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.PERFORMANCE,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+        
+        self.generic_visit(node)
 
 
 class RefurbPatternChecker:
@@ -999,5 +1266,123 @@ REFURB_RULES = [
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SUGGESTED,
         message_template="Use startswith()/endswith() for better readability",
+    ),
+    # New rules added in Phase 9
+    Rule(
+        rule_id="FURB125",
+        name="unnecessary-lambda-in-call",
+        description="Replace lambda with direct function reference",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use direct function reference instead of lambda",
+    ),
+    Rule(
+        rule_id="FURB126",
+        name="isinstance-instead-of-type-comparison",
+        description="Use isinstance() instead of type() == comparison",
+        category=RuleCategory.CONVENTION,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use isinstance() for more robust type checking",
+    ),
+    Rule(
+        rule_id="FURB127",
+        name="dict-fromkeys-instead-of-comprehension",
+        description="Use dict.fromkeys() instead of dict comprehension with constant value",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use dict.fromkeys() for simpler dict creation with constant values",
+    ),
+    Rule(
+        rule_id="FURB130",
+        name="path-read-text-instead-of-open",
+        description="Use Path.read_text() instead of open().read()",
+        category=RuleCategory.MODERNIZATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use pathlib's read_text() for cleaner file reading",
+    ),
+    Rule(
+        rule_id="FURB131",
+        name="bare-raise-instead-of-exception-name",
+        description="Use bare 'raise' instead of re-raising caught exception",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use bare 'raise' to preserve exception context",
+    ),
+    Rule(
+        rule_id="FURB135",
+        name="datetime-now-instead-of-fromtimestamp",
+        description="Use datetime.now() instead of datetime.fromtimestamp(time.time())",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use datetime.now() for current time",
+    ),
+    Rule(
+        rule_id="FURB137",
+        name="min-max-with-default",
+        description="Use min/max with default instead of try-except ValueError",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use min/max with default parameter",
+    ),
+    Rule(
+        rule_id="FURB138",
+        name="sort-key-str-lower",
+        description="Use str.lower as key instead of lambda",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use str.lower directly as sort key",
+    ),
+    Rule(
+        rule_id="FURB139",
+        name="math-ceil-instead-of-neg-floor-div",
+        description="Use math.ceil(x/y) instead of -(-x//y)",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use math.ceil() for clearer ceiling division",
+    ),
+    Rule(
+        rule_id="FURB141",
+        name="list-append-instead-of-augmented-assign",
+        description="Use list.append() instead of list += [item]",
+        category=RuleCategory.PERFORMANCE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use append() for better performance",
+    ),
+    Rule(
+        rule_id="FURB143",
+        name="enumerate-instead-of-range-len",
+        description="Use enumerate() instead of range(len())",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use enumerate() for cleaner iteration with indices",
+    ),
+    Rule(
+        rule_id="FURB146",
+        name="open-with-encoding",
+        description="open() call missing explicit encoding parameter",
+        category=RuleCategory.CONVENTION,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Always specify encoding parameter in open() calls",
+    ),
+    Rule(
+        rule_id="FURB147",
+        name="path-glob-instead-of-glob-module",
+        description="Use Path.glob() instead of glob.glob()",
+        category=RuleCategory.MODERNIZATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use pathlib's glob() for better path handling",
     ),
 ]

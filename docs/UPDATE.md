@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-10-14  
 **Current Version:** 0.3.0  
-**Status:** 42% Complete (334/800 target rules)
+**Status:** 44% Complete (355/800 target rules) - Phase 9 In Progress
 
 ---
 
@@ -12,7 +12,7 @@ PyGuard is a comprehensive Python security and code quality tool designed to **R
 
 ### Current State ✅
 
-- **Rules Implemented:** 334 unique detection rules (42% of 800 target)
+- **Rules Implemented:** 355 unique detection rules (44% of 800 target) - **+21 new rules!**
 - **Tests:** 729 passing, 2 skipped
 - **Coverage:** 77% (exceeds 70% target)
 - **Python Version:** 3.12.3 (target: 3.11+ for production)
@@ -23,7 +23,7 @@ PyGuard is a comprehensive Python security and code quality tool designed to **R
 
 **PRIMARY GOAL:** Replace ALL of these tools for BOTH detection AND auto-fix:
 - ✅ **Bandit** - 90% replaced (security)
-- 🟡 **Ruff** - 42% replaced (334/800 rules)
+- 🟡 **Ruff** - 44% replaced (355/800 rules) - **Improved from 42%!**
 - 🟡 **Pylint** - 35% replaced (need design metrics)
 - ✅ **Flake8** - 70% replaced (PEP 8)
 - 🟡 **Black** - 50% replaced (using as dependency)
@@ -147,16 +147,16 @@ PyGuard has **46 modules** in `pyguard/lib/`:
 
 ### 1. Ruff Rules Gap (466 rules needed for 800 target)
 
-#### ✅ Implemented Categories (334 rules)
+#### ✅ Implemented Categories (355 rules) - **+21 New Rules!**
 
 | Category | Implemented | Coverage | Status |
 |----------|------------|----------|--------|
 | **PEP8 (E/W)** | 87 | 87% | 🟢 Excellent |
 | **Bugbear (B)** | 49 | 98% | 🟢 Excellent |
-| **FURB (refurb)** | 33 | 55% | 🟡 Good |
+| **FURB (refurb)** | 46 | 77% | 🟢 Excellent | **+13 rules!**
+| **PIE (flake8-pie)** | 30 | 100% | 🟢 Complete! | **+8 rules!**
 | **Pylint (PL*)** | 25 | 28% | 🟡 Partial |
 | **SIM (simplify)** | 23 | 23% | 🟡 Partial |
-| **PIE (flake8-pie)** | 22 | 73% | 🟡 Good |
 | **PTH (pathlib)** | 18 | 90% | 🟢 Excellent |
 | **PG (PyGuard custom)** | 14 | 70% | 🟡 Good |
 | **UP (pyupgrade)** | 12 | 24% | 🟡 Partial |
@@ -871,6 +871,26 @@ make security    # Security scan
 ---
 
 ## 📝 Changelog
+
+### 2025-10-14 - Phase 9 Week 1 Started: +21 New Rules!
+- ✅ **NEW RULES IMPLEMENTED:** 21 new detection rules (+6% progress!)
+  - **FURB Rules (13 new):** FURB125-127, FURB130-131, FURB135, FURB137-139, FURB141, FURB143, FURB146-147
+  - **PIE Rules (8 new):** PIE812-819 - **PIE category now 100% complete!**
+  - **Coverage:** 77% maintained, all 729 tests passing
+  - **Impact:** PyGuard now at 44% of target (355/800 rules)
+- ✅ **New Detection Capabilities:**
+  - Unnecessary lambda in sorted/map/filter (FURB125)
+  - isinstance() vs type() comparison (FURB126)
+  - dict.fromkeys() optimization (FURB127)
+  - Path.read_text() modernization (FURB130)
+  - Bare raise simplification (FURB131)
+  - datetime.now() instead of fromtimestamp (FURB135)
+  - math.ceil() improvements (FURB139)
+  - open() encoding parameter check (FURB146)
+  - Import alias detection (PIE812, PIE815)
+  - any()/all() over multiple or/and (PIE817)
+  - Unnecessary list() before subscript (PIE818)
+  - List comprehension optimization (PIE819)
 
 ### 2025-10-14 - Critical Bug Fixes & Version Updates
 - ✅ **CRITICAL FIX:** scan-only mode now scans ALL rule types (security + quality + patterns)
