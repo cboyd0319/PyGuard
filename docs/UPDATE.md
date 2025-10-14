@@ -65,7 +65,7 @@ All 5 Phase 1 tasks verified complete:
 ```bash
 cd /home/runner/work/PyGuard/PyGuard  # Always use this absolute path
 pip install -e ".[dev]"                # Install with dev dependencies
-python -m pytest tests/ -v             # Verify tests pass (should be 770 tests)
+python -m pytest tests/ -v             # Verify tests pass (should be 805 tests)
 ```
 
 ### Before Making Changes
