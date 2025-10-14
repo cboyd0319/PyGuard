@@ -7,14 +7,54 @@
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
 >
-> **Current State (VERIFIED 2025-10-14):**
-> - ✅ 856 tests passing, 78% coverage, 0 linting errors, 0 type errors
+> **Current State (UPDATED 2025-10-14 - CLI Integration COMPLETE):**
+> - ✅ 861 tests passing (+5 new), 78% coverage, 0 linting errors, 0 type errors
 > - ✅ Phase 1 (Critical Security) - 100% COMPLETE ✅
 > - ✅ Phase 2A (Type Safety) - 100% COMPLETE ✅
-> - 🔄 Phase 2B (Auto-Fix) - 80% COMPLETE (Safety + Enhanced Fixes done, CLI pending)
+> - ✅ Phase 2B (Auto-Fix) - 90% COMPLETE (Safety + Enhanced Fixes + CLI done)
 > - 🎯 Python Version: 3.12.3 (Supports 3.11, 3.12, 3.13)
 >
-> **Your IMMEDIATE task:** Continue Phase 2B - CLI Integration for --unsafe-fixes flag
+> **Latest Achievement:** ✅ CLI Integration for --unsafe-fixes flag COMPLETE
+>
+> **Your IMMEDIATE task:** Continue Phase 2B - Expand Code Quality Auto-Fixes (50+ Pylint, 30+ Ruff rules)
+
+---
+
+## 🎉 LATEST COMPLETION: CLI Integration for --unsafe-fixes Flag (2025-10-14)
+
+### What Was Implemented
+**Feature:** `--unsafe-fixes` command-line flag to enable unsafe auto-fixes with explicit user consent
+
+**Files Modified:**
+1. `pyguard/cli.py` - Integrated EnhancedSecurityFixer and added CLI argument
+2. `tests/integration/test_cli.py` - Added 5 comprehensive integration tests
+
+**Key Capabilities:**
+- ✅ Safe fixes ALWAYS applied (yaml.safe_load, is None, mkstemp, etc.)
+- ✅ Unsafe fixes ONLY with `--unsafe-fixes` flag (SQL parameterization, command injection fixes)
+- ✅ Clear WARNING in help text about potential behavior changes
+- ✅ Full test coverage with 5 new integration tests
+- ✅ Manual testing verified correct behavior
+
+**Usage Examples:**
+```bash
+# Apply only SAFE fixes (default)
+pyguard scan.py
+
+# Apply BOTH safe and unsafe fixes (explicit opt-in)
+pyguard scan.py --unsafe-fixes
+
+# See help text with warnings
+pyguard --help
+```
+
+**Testing Results:**
+- 861 tests passing (+5 new tests)
+- 78% coverage maintained
+- 0 linting errors
+- 0 type errors
+
+**What's Next:** Expand Code Quality Auto-Fixes (50+ Pylint rules, 30+ Ruff rules)
 
 ---
 
