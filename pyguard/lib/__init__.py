@@ -53,6 +53,8 @@ from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
 from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
 from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
+# NEW in v0.10.0: Refurb patterns (refactoring opportunities)
+from pyguard.lib.refurb_patterns import RefurbPatternChecker, REFURB_RULES
 
 __all__ = [
     # Core
@@ -155,4 +157,7 @@ __all__ = [
     # Datetime Patterns (NEW v0.9.0)
     "DatetimeChecker",
     "DatetimeIssue",
+    # Refurb Patterns (NEW v0.10.0)
+    "RefurbPatternChecker",
+    "REFURB_RULES",
 ]
