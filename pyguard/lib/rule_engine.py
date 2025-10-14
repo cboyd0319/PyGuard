@@ -24,6 +24,8 @@ class RuleCategory(Enum):
     STYLE = "style"  # Code style and formatting
     CONVENTION = "convention"  # Coding conventions
     REFACTOR = "refactor"  # Refactoring suggestions
+    SIMPLIFICATION = "simplification"  # Code simplification opportunities
+    MODERNIZATION = "modernization"  # Code modernization opportunities
     PERFORMANCE = "performance"  # Performance issues
     TYPE = "type"  # Type checking issues
     IMPORT = "import"  # Import-related issues
@@ -47,6 +49,7 @@ class FixApplicability(Enum):
     """Whether and how a fix can be applied."""
 
     AUTOMATIC = "automatic"  # Safe to apply automatically
+    SAFE = "safe"  # Alias for AUTOMATIC - safe to apply automatically
     SUGGESTED = "suggested"  # User should review before applying
     MANUAL = "manual"  # Requires manual intervention
     NONE = "none"  # No automated fix available
