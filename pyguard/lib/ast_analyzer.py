@@ -67,12 +67,48 @@ class SecurityVisitor(ast.NodeVisitor):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
+    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+        """
+        Check if a node has suppression comment.
+        
+        Supports comments like:
+        - # pyguard: disable
+        - # pyguard: disable=CWE-89,CWE-22
+        - # noqa
+        - # noqa: CWE-89
+        """
+        if not hasattr(node, "lineno") or node.lineno > len(self.source_lines):
+            return False
+            
+        line = self.source_lines[node.lineno - 1]
+        
+        # Check for PyGuard suppression
+        if "# pyguard: disable" in line:
+            # Generic disable (no rule specified)
+            if "=" not in line.split("# pyguard: disable")[1]:
+                return True
+            # Specific rule check
+            if rule_id and f"={rule_id}" in line:
+                return True
+                
+        # Check for noqa suppression
+        if "# noqa" in line:
+            after_noqa = line.split("# noqa")[1]
+            # Generic noqa (no colon or empty after colon)
+            if ":" not in after_noqa or not after_noqa.split(":")[1].strip():
+                return True
+            # Specific rule check
+            if rule_id and f": {rule_id}" in after_noqa:
+                return True
+                
+        return False
+
     def visit_Call(self, node: ast.Call):
         """Visit function call nodes."""
         func_name = self._get_call_name(node)
 
         # OWASP ASVS-5.2.1, CWE-95: Code Injection
-        if func_name in ["eval", "exec", "compile"]:
+        if func_name in ["eval", "exec", "compile"] and not self._is_suppressed(node, "CWE-95"):
             self.issues.append(
                 SecurityIssue(
                     severity="HIGH",
@@ -641,11 +677,47 @@ class CodeQualityVisitor(ast.NodeVisitor):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
+    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+        """
+        Check if a node has suppression comment.
+        
+        Supports comments like:
+        - # pyguard: disable
+        - # pyguard: disable=COMPLEXITY,LONG-METHOD
+        - # noqa
+        - # noqa: COMPLEXITY
+        """
+        if not hasattr(node, "lineno") or node.lineno > len(self.source_lines):
+            return False
+            
+        line = self.source_lines[node.lineno - 1]
+        
+        # Check for PyGuard suppression
+        if "# pyguard: disable" in line:
+            # Generic disable (no rule specified)
+            if "=" not in line.split("# pyguard: disable")[1]:
+                return True
+            # Specific rule check
+            if rule_id and f"={rule_id}" in line:
+                return True
+                
+        # Check for noqa suppression
+        if "# noqa" in line:
+            after_noqa = line.split("# noqa")[1]
+            # Generic noqa (no colon or empty after colon)
+            if ":" not in after_noqa or not after_noqa.split(":")[1].strip():
+                return True
+            # Specific rule check
+            if rule_id and f": {rule_id}" in after_noqa:
+                return True
+                
+        return False
+
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Visit function definition nodes."""
         # Check for missing docstrings (except private functions)
         if not node.name.startswith("_"):
-            if not ast.get_docstring(node):
+            if not ast.get_docstring(node) and not self._is_suppressed(node, "DOCUMENTATION"):
                 self.issues.append(
                     CodeQualityIssue(
                         severity="LOW",
