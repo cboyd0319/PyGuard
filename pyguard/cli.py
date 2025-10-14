@@ -12,6 +12,7 @@ from typing import Dict, List, Any
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
+from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
@@ -21,8 +22,13 @@ from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 class PyGuardCLI:
     """Main PyGuard CLI application."""
 
-    def __init__(self):
-        """Initialize PyGuard CLI."""
+    def __init__(self, allow_unsafe_fixes: bool = False):
+        """
+        Initialize PyGuard CLI.
+        
+        Args:
+            allow_unsafe_fixes: Whether to allow unsafe auto-fixes
+        """
         self.logger = PyGuardLogger()
         self.backup_manager = BackupManager()
         self.file_ops = FileOperations()
@@ -33,6 +39,7 @@ class PyGuardCLI:
 
         # Initialize fixers
         self.security_fixer = SecurityFixer()
+        self.enhanced_security_fixer = EnhancedSecurityFixer(allow_unsafe=allow_unsafe_fixes)
         self.best_practices_fixer = BestPracticesFixer()
         self.formatting_fixer = FormattingFixer()
         self.whitespace_fixer = WhitespaceFixer()
@@ -59,13 +66,18 @@ class PyGuardCLI:
             if create_backup:
                 self.backup_manager.create_backup(file_path)
 
-            # Apply fixes
-            success, fixes = self.security_fixer.fix_file(file_path)
+            # Apply fixes from both fixers
+            # Original security fixer
+            success1, fixes1 = self.security_fixer.fix_file(file_path)
+            
+            # Enhanced security fixer with safety classifications
+            success2, fixes2 = self.enhanced_security_fixer.fix_file(file_path)
 
-            if success and fixes:
+            if (success1 and fixes1) or (success2 and fixes2):
                 fixed += 1
-                fixes_list.extend(fixes)
-            elif not success:
+                fixes_list.extend(fixes1)
+                fixes_list.extend(fixes2)
+            elif not success1 or not success2:
                 failed += 1
 
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
@@ -399,10 +411,18 @@ def main():
         help="Don't generate HTML report",
     )
 
+    parser.add_argument(
+        "--unsafe-fixes",
+        action="store_true",
+        help="Enable unsafe auto-fixes that may change code behavior. "
+             "WARNING: These fixes include SQL parameterization, command injection "
+             "refactoring, and path traversal validation. Review changes carefully!",
+    )
+
     args = parser.parse_args()
 
-    # Initialize CLI
-    cli = PyGuardCLI()
+    # Initialize CLI with unsafe fixes flag
+    cli = PyGuardCLI(allow_unsafe_fixes=args.unsafe_fixes)
 
     # Collect files
     all_files = []
