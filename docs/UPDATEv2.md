@@ -2,10 +2,19 @@
 
 > **🚀 INSTANT AI ONBOARDING - START HERE!**
 >
-> **This is a continuation of docs/UPDATE.md which was getting too large.**
-> **Read this file FIRST for the latest status, then refer to UPDATE.md for historical context.**
+> **Last Updated:** 2025-10-14 (Session 3)  
+> **Status:** Phase 2B COMPLETE ✅ | 911 tests | 81% coverage | 0 errors
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
+>
+> **Quick Setup (60 seconds):**
+> ```bash
+> cd /home/runner/work/PyGuard/PyGuard
+> pip install -e ".[dev]"                # Install (already done if in session)
+> python -m pytest tests/ -v             # Run tests (should show 911 passing)
+> python -m ruff check pyguard/          # Lint (should show 0 errors)
+> python -m mypy pyguard/ --ignore-missing-imports  # Type check (0 errors)
+> ```
 >
 > **Current State (VERIFIED 2025-10-14 - Session 3 COMPLETE):**
 > - ✅ **911 tests passing** (+21 new integration tests), **81% coverage** ⬆️, 0 linting errors, 0 type errors
