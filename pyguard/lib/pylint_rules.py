@@ -360,7 +360,7 @@ class PylintVisitor(ast.NodeVisitor):
                 line_number=node.lineno,
                 column=node.col_offset,
                 severity=RuleSeverity.MEDIUM,
-                category=RuleCategory.MAINTAINABILITY,
+                category=RuleCategory.CONVENTION,
                 file_path=self.file_path,
                 fix_applicability=FixApplicability.NONE,
             )
@@ -575,7 +575,7 @@ PYLINT_RULES = [
         rule_id="PLW0603",
         name="global-statement",
         description="Using the global statement",
-        category=RuleCategory.MAINTAINABILITY,
+        category=RuleCategory.CONVENTION,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.NONE,
         message_template="Avoid global statement - consider refactoring",

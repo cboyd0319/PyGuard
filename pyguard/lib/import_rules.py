@@ -84,7 +84,7 @@ class ImportVisitor(ast.NodeVisitor):
                     line_number=node.lineno,
                     column=node.col_offset,
                     severity=RuleSeverity.MEDIUM,
-                    category=RuleCategory.MAINTAINABILITY,
+                    category=RuleCategory.CONVENTION,
                     file_path=self.file_path,
                     fix_applicability=FixApplicability.NONE,
                 )
@@ -336,7 +336,7 @@ IMPORT_RULES = [
         rule_id="TID002",
         name="relative-imports-level",
         description="Relative imports should not be too deep",
-        category=RuleCategory.MAINTAINABILITY,
+        category=RuleCategory.CONVENTION,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.NONE,
         message_template="Avoid deep relative imports (max 2 levels)",

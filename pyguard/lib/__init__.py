@@ -57,6 +57,12 @@ from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
 from pyguard.lib.refurb_patterns import RefurbPatternChecker, REFURB_RULES
 # NEW in v0.10.0: PIE patterns (code smells)
 from pyguard.lib.pie_patterns import PIEPatternChecker, PIE_RULES
+# NEW in v0.11.0: Import rules, Pylint rules, Framework-specific rules
+from pyguard.lib.import_rules import ImportRulesChecker, IMPORT_RULES
+from pyguard.lib.pylint_rules import PylintRulesChecker, PYLINT_RULES
+from pyguard.lib.framework_django import DjangoRulesChecker, DJANGO_RULES
+from pyguard.lib.framework_pytest import PytestRulesChecker, PYTEST_RULES
+from pyguard.lib.framework_pandas import PandasRulesChecker, PANDAS_RULES
 
 __all__ = [
     # Core
@@ -165,4 +171,17 @@ __all__ = [
     # PIE Patterns (NEW v0.10.0)
     "PIEPatternChecker",
     "PIE_RULES",
+    # Import Rules (NEW v0.11.0)
+    "ImportRulesChecker",
+    "IMPORT_RULES",
+    # Pylint Rules (NEW v0.11.0)
+    "PylintRulesChecker",
+    "PYLINT_RULES",
+    # Framework Rules (NEW v0.11.0)
+    "DjangoRulesChecker",
+    "DJANGO_RULES",
+    "PytestRulesChecker",
+    "PYTEST_RULES",
+    "PandasRulesChecker",
+    "PANDAS_RULES",
 ]
