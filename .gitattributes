@@ -1,0 +1,77 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source code
+*.py text eol=lf diff=python
+*.pyi text eol=lf diff=python
+*.pyx text eol=lf diff=python
+
+# Configuration files
+*.toml text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+
+# Scripts
+*.sh text eol=lf
+*.bash text eol=lf
+Makefile text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+*.dockerignore text eol=lf
+docker-compose*.yml text eol=lf
+
+# Web assets (for reports)
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# Binary files
+*.pyc binary
+*.pyo binary
+*.so binary
+*.dll binary
+*.exe binary
+*.whl binary
+*.tar.gz binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# GitHub Linguist overrides
+# Mark documentation and examples as documentation
+docs/** linguist-documentation
+examples/** linguist-documentation
+*.md linguist-documentation
+
+# Mark test files
+tests/** linguist-detectable=false
+
+# Mark generated files
+htmlcov/** linguist-generated=true
+.coverage linguist-generated=true
+
+# Export ignore (exclude from GitHub archive)
+.github export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+tests/ export-ignore
+benchmarks/ export-ignore
+.editorconfig export-ignore
+.pre-commit-hooks.yaml export-ignore
+tox.ini export-ignore
+pytest.ini export-ignore
+Makefile export-ignore
+htmlcov/ export-ignore
