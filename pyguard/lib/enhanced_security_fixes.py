@@ -289,7 +289,7 @@ class EnhancedSecurityFixer:
                     f'.execute("{sql_part}?", ({variable},)',
                     line
                 )
-                fixed_lines.append(f'# FIXED: SQL injection → parameterized query')
+                fixed_lines.append('# FIXED: SQL injection → parameterized query')
                 fixed_lines.append(fixed_line)
                 self.fixes_applied.append(f"SQL injection: parameterized query for {variable}")
                 self.logger.info(
