@@ -193,17 +193,132 @@ def check(a, b):
         assert "== False" not in fixed_code
 
 
+    def test_detect_unnecessary_list_call(self, tmp_path):
+        """Test detection of unnecessary list() call around iterable."""
+        code = '''
+result = list(range(10))
+items = list(enumerate([1, 2, 3]))
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE802" for v in violations)
+
+    def test_detect_is_for_literals(self, tmp_path):
+        """Test detection of 'is' used with literals."""
+        code = '''
+if value is "string":
+    pass
+if num is 42:
+    pass
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE803" for v in violations)
+
+    def test_detect_single_iteration_loop(self, tmp_path):
+        """Test detection of loop that only iterates once."""
+        code = '''
+for item in items:
+    result = process(item)
+    break
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE805" for v in violations)
+
+    def test_detect_unnecessary_elif_pass(self, tmp_path):
+        """Test detection of unnecessary elif with only pass."""
+        code = '''
+if x > 0:
+    print("positive")
+elif x < 0:
+    pass
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE806" for v in violations)
+
+    def test_detect_empty_list_call(self, tmp_path):
+        """Test detection of list() instead of []."""
+        code = '''
+empty = list()
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE809" for v in violations)
+
+    def test_detect_multiple_calls_in_except(self, tmp_path):
+        """Test detection of multiple calls in exception handler."""
+        code = '''
+try:
+    risky_operation()
+except Exception:
+    log_error()
+    notify_admin()
+    cleanup()
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE810" for v in violations)
+
+    def test_detect_redundant_tuple_unpacking(self, tmp_path):
+        """Test detection of redundant tuple unpacking."""
+        code = '''
+for a, b in items:
+    result = (a, b)
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "PIE811" for v in violations)
+
+
 class TestRuleRegistration:
     """Test that PIE rules are properly defined."""
 
     def test_rules_defined(self):
         """Test that PIE rules are defined."""
-        assert len(PIE_RULES) >= 14
+        assert len(PIE_RULES) >= 21
         rule_ids = {rule.rule_id for rule in PIE_RULES}
         expected_ids = {
             "PIE790", "PIE791", "PIE792", "PIE793", "PIE794",
             "PIE795", "PIE796", "PIE797", "PIE799", "PIE800",
-            "PIE801", "PIE804", "PIE807", "PIE808"
+            "PIE801", "PIE802", "PIE803", "PIE804", "PIE805",
+            "PIE806", "PIE807", "PIE808", "PIE809", "PIE810", "PIE811"
         }
         assert expected_ids.issubset(rule_ids)
 

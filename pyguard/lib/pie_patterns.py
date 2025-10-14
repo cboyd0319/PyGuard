@@ -203,7 +203,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
-        """Detect call-related code smells (PIE797, PIE801, PIE804)."""
+        """Detect call-related code smells (PIE797, PIE801, PIE802, PIE804, PIE809)."""
         # PIE797: Unnecessary list comprehension
         if isinstance(node.func, ast.Name) and node.func.id == "list":
             if len(node.args) == 1 and isinstance(node.args[0], ast.ListComp):
@@ -236,6 +236,26 @@ class PIEPatternVisitor(ast.NodeVisitor):
                     )
                 )
 
+        # PIE802: Unnecessary iteration with list()
+        if isinstance(node.func, ast.Name) and node.func.id == "list":
+            if len(node.args) == 1:
+                arg = node.args[0]
+                # Check if already an iterable that doesn't need list()
+                if isinstance(arg, ast.Call):
+                    if isinstance(arg.func, ast.Name) and arg.func.id in ("range", "enumerate", "zip", "map", "filter"):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="PIE802",
+                                message=f"Unnecessary list() call around {arg.func.id}() - it already returns an iterable",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.PERFORMANCE,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
+
         # PIE804: Unnecessary dict.keys() in loop
         if isinstance(node.func, ast.Name) and node.func.id in ("list", "tuple", "set"):
             if len(node.args) == 1 and isinstance(node.args[0], ast.Call):
@@ -254,10 +274,64 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         )
                     )
 
+        # PIE809: Prefer '[]' over 'list()' call
+        if isinstance(node.func, ast.Name) and node.func.id == "list":
+            if len(node.args) == 0 and len(node.keywords) == 0:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE809",
+                        message="Prefer '[]' over 'list()' for empty list",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.STYLE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
         self.generic_visit(node)
 
     def visit_If(self, node: ast.If) -> None:
-        """Detect if-related code smells (PIE807, PIE808)."""
+        """Detect if-related code smells (PIE803, PIE806, PIE807, PIE808)."""
+        # PIE803: Prefer '==' over 'is' for literals
+        if isinstance(node.test, ast.Compare):
+            for op, comparator in zip(node.test.ops, node.test.comparators):
+                if isinstance(op, (ast.Is, ast.IsNot)):
+                    if isinstance(comparator, ast.Constant):
+                        # Check if it's a literal (not None, True, False)
+                        if comparator.value not in (None, True, False):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="PIE803",
+                                    message=f"Prefer '==' over 'is' for literal comparison",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.MEDIUM,
+                                    category=RuleCategory.ERROR,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.SAFE,
+                                )
+                            )
+        
+        # PIE806: Unnecessary 'elif' with only 'pass' body
+        if isinstance(node.orelse, list) and len(node.orelse) == 1:
+            if isinstance(node.orelse[0], ast.If):
+                elif_node = node.orelse[0]
+                if len(elif_node.body) == 1 and isinstance(elif_node.body[0], ast.Pass):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="PIE806",
+                            message="Unnecessary 'elif' with only 'pass' - remove it",
+                            line_number=elif_node.lineno,
+                            column=elif_node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.STYLE,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+        
         # PIE807: Prefer 'or' over single-item 'in' check
         if isinstance(node.test, ast.Compare):
             if len(node.test.ops) == 1 and isinstance(node.test.ops[0], ast.In):
@@ -292,6 +366,79 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
+
+        self.generic_visit(node)
+
+    def visit_For(self, node: ast.For) -> None:
+        """Detect for-loop related code smells (PIE805, PIE811)."""
+        # PIE805: Prefer 'next()' over for loop with single iteration
+        # Check if loop has only one iteration (has break as first statement)
+        if len(node.body) > 0:
+            if isinstance(node.body[0], ast.Break) or (
+                len(node.body) == 2 and isinstance(node.body[1], ast.Break)
+            ):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE805",
+                        message="Prefer 'next()' over for loop that only gets first item",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
+        # PIE811: Redundant tuple unpacking
+        # Check if target is a tuple and there's immediate re-packing
+        if isinstance(node.target, ast.Tuple):
+            # Check if the loop body just re-creates the tuple
+            for stmt in node.body:
+                if isinstance(stmt, ast.Assign):
+                    if isinstance(stmt.value, ast.Tuple):
+                        if len(stmt.value.elts) == len(node.target.elts):
+                            # Check if it's the same variables
+                            target_names = [
+                                elt.id for elt in node.target.elts if isinstance(elt, ast.Name)
+                            ]
+                            value_names = [
+                                elt.id for elt in stmt.value.elts if isinstance(elt, ast.Name)
+                            ]
+                            if target_names == value_names:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="PIE811",
+                                        message="Redundant tuple unpacking - values are immediately re-packed",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.LOW,
+                                        category=RuleCategory.SIMPLIFICATION,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SUGGESTED,
+                                    )
+                                )
+
+        self.generic_visit(node)
+
+    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
+        """Detect exception handler code smells (PIE810)."""
+        # PIE810: Multiple calls in exception handler
+        # Check if there are multiple function calls in the exception handler
+        calls = [stmt for stmt in node.body if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call)]
+        if len(calls) > 1:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="PIE810",
+                    message="Multiple calls in exception handler - consider refactoring",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.DESIGN,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
 
         self.generic_visit(node)
 
@@ -508,5 +655,68 @@ PIE_RULES = [
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SUGGESTED,
         message_template="Remove 'else' after 'return' - code can be dedented",
+    ),
+    Rule(
+        rule_id="PIE802",
+        name="unnecessary-list-call",
+        description="Unnecessary list() call around iterable",
+        category=RuleCategory.PERFORMANCE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove unnecessary list() call - argument is already an iterable",
+    ),
+    Rule(
+        rule_id="PIE803",
+        name="prefer-equality-for-literals",
+        description="Prefer '==' over 'is' for literal comparison",
+        category=RuleCategory.ERROR,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use '==' instead of 'is' when comparing with literals",
+    ),
+    Rule(
+        rule_id="PIE805",
+        name="prefer-next-over-single-iteration-loop",
+        description="Prefer 'next()' over for loop with single iteration",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use 'next(iterable)' instead of for loop that only gets first item",
+    ),
+    Rule(
+        rule_id="PIE806",
+        name="unnecessary-elif-pass",
+        description="Unnecessary 'elif' with only 'pass' body",
+        category=RuleCategory.STYLE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove unnecessary 'elif' with only 'pass'",
+    ),
+    Rule(
+        rule_id="PIE809",
+        name="prefer-list-literal",
+        description="Prefer '[]' over 'list()' call",
+        category=RuleCategory.STYLE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use '[]' instead of 'list()' for empty list",
+    ),
+    Rule(
+        rule_id="PIE810",
+        name="multiple-calls-in-except",
+        description="Multiple calls in exception handler",
+        category=RuleCategory.DESIGN,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Consider refactoring exception handler with multiple calls",
+    ),
+    Rule(
+        rule_id="PIE811",
+        name="redundant-tuple-unpacking",
+        description="Redundant tuple unpacking",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Remove redundant tuple unpacking and re-packing",
     ),
 ]
