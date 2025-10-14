@@ -61,6 +61,14 @@ from pyguard.lib.notebook_security import (
     NotebookSecurityAnalyzer,
     scan_notebook,
 )
+
+# NEW in v0.3.0: AI-powered explanations
+from pyguard.lib.ai_explainer import (
+    AIExplainer,
+    FixRationale,
+    SecurityExplanation,
+    explain,
+)
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 
 # NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
@@ -164,6 +172,11 @@ __all__ = [
     "NotebookIssue",
     "NotebookCell",
     "scan_notebook",
+    # AI Explainer (NEW v0.3.0)
+    "AIExplainer",
+    "SecurityExplanation",
+    "FixRationale",
+    "explain",
     # Standards Integration
     "StandardsMapper",
     "SANSTop25Mapper",
