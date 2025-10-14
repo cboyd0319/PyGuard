@@ -20,10 +20,16 @@ from pyguard.lib.debugging_patterns import (
     DebuggingPatternChecker,
     DebuggingPatternVisitor,
 )
+from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 from pyguard.lib.exception_handling import (
     EXCEPTION_HANDLING_RULES,
     ExceptionHandlingChecker,
     ExceptionHandlingVisitor,
+)
+from pyguard.lib.fix_safety import (
+    FixClassification,
+    FixSafety,
+    FixSafetyClassifier,
 )
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
@@ -107,6 +113,7 @@ __all__ = [
     "FormattingFixer",
     "WhitespaceFixer",
     "UltraAdvancedSecurityFixer",  # NEW v0.8.0
+    "EnhancedSecurityFixer",  # NEW Phase 2B - Real code transformations
     # Advanced Security
     "AdvancedSecurityAnalyzer",
     "TaintAnalyzer",
@@ -170,6 +177,10 @@ __all__ = [
     "ExceptionHandlingChecker",
     "ExceptionHandlingVisitor",
     "EXCEPTION_HANDLING_RULES",
+    # Fix Safety Classification (NEW Phase 2B)
+    "FixSafetyClassifier",
+    "FixSafety",
+    "FixClassification",
     # Return Patterns
     "ReturnPatternChecker",
     "ReturnPatternVisitor",
