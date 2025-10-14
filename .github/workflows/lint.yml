@@ -35,7 +35,9 @@ jobs:
 
     - name: Run PyGuard Self-Analysis
       run: |
-        pyguard pyguard/ tests/ examples/ \
+        # Only scan production code (pyguard/), exclude tests and examples
+        # Tests contain intentionally vulnerable code for testing PyGuard
+        pyguard pyguard/ \
           --scan-only \
           --no-backup \
           --sarif \
