@@ -189,12 +189,22 @@ class DebuggingPatternChecker:
             new_lines = []
 
             for line in lines:
+                # Get the indentation of the line
+                indent_match = re.match(r'^(\s*)', line)
+                indent = indent_match.group(1) if indent_match else ""
+                stripped = line.strip()
+                
+                # Skip already commented lines (idempotency check)
+                if stripped.startswith('#'):
+                    new_lines.append(line)
+                    continue
+                
                 # Skip lines with breakpoint(), pdb.set_trace(), etc.
                 if re.search(r"\bbreakpoint\s*\(", line):
-                    new_lines.append(f"# {line}  # REMOVED by PyGuard")
+                    new_lines.append(f"{indent}# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 elif re.search(r"\b(pdb|ipdb|pudb)\.set_trace\s*\(", line):
-                    new_lines.append(f"# {line}  # REMOVED by PyGuard")
+                    new_lines.append(f"{indent}# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 # Keep print statements but add a comment (user might need them)
                 elif re.search(r"\bprint\s*\(", line):
@@ -205,10 +215,10 @@ class DebuggingPatternChecker:
                         new_lines.append(line)
                 # Remove debug imports
                 elif re.search(r"^import\s+(pdb|ipdb|pudb|pdbpp)\b", line):
-                    new_lines.append(f"# {line}  # REMOVED by PyGuard")
+                    new_lines.append(f"# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 elif re.search(r"^from\s+(pdb|ipdb|pudb|pdbpp)\s+import", line):
-                    new_lines.append(f"# {line}  # REMOVED by PyGuard")
+                    new_lines.append(f"# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 else:
                     new_lines.append(line)
