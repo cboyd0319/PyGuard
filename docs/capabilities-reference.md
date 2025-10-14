@@ -8,16 +8,17 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Total Library Modules** | 53 | ✅ Production |
+| **Total Library Modules** | 55 | ✅ Production |
 | **Security Vulnerability Checks** | 55+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Automated Fixes (Safe + Unsafe)** | 179+ | ✅ All Detections Covered |
 | **Framework-Specific Rules** | 75+ | ✅ 4 Frameworks |
 | **Compliance Frameworks Supported** | 10+ | ✅ Full Coverage |
 | **ML-Powered Features** | 5 | ✅ Active |
-| **Lines of Analysis Code** | 27,380+ | ✅ Production |
-| **Test Coverage** | 83% | 🎯 Target: 100% |
-| **Total Tests** | 1115 | ✅ Comprehensive |
+| **Advanced Features (NEW v0.3.0)** | 2 | ✅ Notebook + AI Explainer |
+| **Lines of Analysis Code** | 28,000+ | ✅ Production |
+| **Test Coverage** | 84% | 🎯 Target: 100% |
+| **Total Tests** | 1168 | ✅ Comprehensive |
 | **GitHub Actions Integration** | ✅ Native | ✅ SARIF Support |
 | **SARIF 2.1.0 Compliance** | ✅ Full | ✅ Code Scanning |
 
@@ -27,16 +28,204 @@
 
 ## Table of Contents
 
-1. [Security Vulnerability Detection (55+ Checks)](#security-vulnerability-detection)
-2. [Code Quality Analysis (150+ Rules)](#code-quality-analysis)
-3. [Framework-Specific Checks](#framework-specific-checks)
-4. [Compliance & Standards Integration](#compliance--standards-integration)
-5. [Auto-Fix Capabilities (150+ Fixes)](#auto-fix-capabilities)
-6. [ML-Powered Features](#ml-powered-features)
-7. [Supply Chain Security](#supply-chain-security)
-8. [Analysis Engines](#analysis-engines)
-9. [Reporting & Integration](#reporting--integration)
-10. [Planned Features (Roadmap)](#planned-features-roadmap)
+1. [Advanced Features (NEW v0.3.0)](#advanced-features-new-v030) ⭐
+2. [Security Vulnerability Detection (55+ Checks)](#security-vulnerability-detection)
+3. [Code Quality Analysis (150+ Rules)](#code-quality-analysis)
+4. [Framework-Specific Checks](#framework-specific-checks)
+5. [Compliance & Standards Integration](#compliance--standards-integration)
+6. [Auto-Fix Capabilities (150+ Fixes)](#auto-fix-capabilities)
+7. [ML-Powered Features](#ml-powered-features)
+8. [Supply Chain Security](#supply-chain-security)
+9. [Analysis Engines](#analysis-engines)
+10. [Reporting & Integration](#reporting--integration)
+11. [Planned Features (Roadmap)](#planned-features-roadmap)
+
+---
+
+## Advanced Features (NEW v0.3.0)
+
+PyGuard introduces cutting-edge capabilities that differentiate it from all other Python security tools.
+
+### 🎯 Jupyter Notebook Security Analysis
+
+**Module**: `notebook_security.py` (180 lines, 99% coverage)
+
+PyGuard is **one of the few tools** with native Jupyter notebook support. Most security tools require converting notebooks to Python files, losing context and notebook-specific vulnerabilities.
+
+#### Notebook-Specific Detection (8+ Categories)
+
+| Category | Severity | Description | Unique to PyGuard |
+|----------|----------|-------------|-------------------|
+| **Hardcoded Secrets** | HIGH | Passwords, API keys, AWS credentials in cells | ✅ Yes |
+| **Magic Commands** | HIGH | Dangerous magic commands (!, %system, %%bash) | ✅ Yes |
+| **Code Injection** | CRITICAL | eval/exec in notebook cells | Shared |
+| **Command Injection** | CRITICAL | subprocess with shell=True | Shared |
+| **Unsafe Deserialization** | HIGH | pickle.load() in notebooks | Shared |
+| **Information Disclosure** | MEDIUM | Paths in cell outputs | ✅ Yes |
+| **Execution Order Issues** | MEDIUM | Variables used before definition | ✅ Yes |
+| **Extension Loading** | HIGH | Loading untrusted extensions | ✅ Yes |
+
+#### Key Features
+
+- **Cell-by-cell analysis**: Scans each cell independently
+- **Execution order tracking**: Detects variables used before definition
+- **Magic command detection**: Identifies dangerous Jupyter-specific syntax
+- **Output scanning**: Checks cell outputs for sensitive information
+- **Cross-cell dependencies**: Analyzes data flow between cells
+- **Automated fixes**: Redacts secrets, comments unsafe code
+
+#### Usage
+
+```python
+from pyguard import scan_notebook
+
+# Scan a notebook
+issues = scan_notebook('analysis.ipynb')
+
+for issue in issues:
+    print(f"{issue.severity}: {issue.message}")
+    print(f"  Cell {issue.cell_index}, Line {issue.line_number}")
+    print(f"  Fix: {issue.fix_suggestion}")
+```
+
+#### Comparison
+
+| Feature | PyGuard | Bandit | Ruff | Semgrep | nbqa |
+|---------|---------|--------|------|---------|------|
+| Native .ipynb support | ✅ | ❌ | ❌ | ❌ | ⚠️ |
+| Cell order analysis | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Magic command detection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Output scanning | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Automated fixes | ✅ | ❌ | ⚠️ | ❌ | ❌ |
+
+**Documentation**: See `docs/notebook-security-guide.md`
+
+---
+
+### 🤖 AI-Powered Vulnerability Explanations
+
+**Module**: `ai_explainer.py` (267 lines, 100% coverage)
+
+PyGuard provides **educational, natural language explanations** for every vulnerability type. Unlike other tools that just report issues, PyGuard teaches developers **why** issues matter and **how** to fix them properly.
+
+#### Comprehensive Explanations (7+ Vulnerabilities)
+
+Each explanation includes:
+
+1. **What is it?** - Clear description of the vulnerability
+2. **Why dangerous?** - Real-world impact and consequences
+3. **How to exploit?** - Attack vectors (technical understanding)
+4. **How to fix?** - Step-by-step remediation
+5. **Vulnerable example** - Code that demonstrates the issue
+6. **Secure example** - Corrected, secure code
+7. **References** - OWASP, CWE, and educational links
+
+Covered vulnerabilities:
+- SQL Injection (CWE-89)
+- Command Injection (CWE-78)
+- Code Injection (CWE-95)
+- Hardcoded Secrets (CWE-798)
+- Unsafe Deserialization (CWE-502)
+- Cross-Site Scripting (CWE-79)
+- Path Traversal (CWE-22)
+
+#### Fix Rationale Generation
+
+PyGuard explains **why a specific fix was chosen**, not just what to change:
+
+```python
+from pyguard import AIExplainer
+
+explainer = AIExplainer()
+rationale = explainer.explain_fix(
+    original="eval(user_input)",
+    fixed="ast.literal_eval(user_input)",
+    vulnerability_type="CODE_INJECTION"
+)
+
+print(rationale.why_this_fix)
+# "ast.literal_eval() only evaluates Python literals, preventing code execution."
+
+print(rationale.alternatives)
+# ["Use JSON for structured data", "Design to avoid dynamic evaluation", ...]
+
+print(rationale.security_impact)
+# "Eliminates code injection risk entirely."
+```
+
+#### Educational Levels (Beginner → Advanced)
+
+PyGuard adjusts explanation complexity based on audience:
+
+**Beginner**: Simplified terms, omits technical exploitation details
+```python
+explanation = explain("SQL_INJECTION", level="beginner")
+# Uses: "cleaning" instead of "sanitization"
+# Uses: "attack" instead of "exploitation"
+```
+
+**Intermediate**: Balanced technical and practical (default)
+
+**Advanced**: Full technical details, exploit techniques, security analysis
+
+#### Interactive Learning Modules
+
+Generate complete learning content with quiz questions:
+
+```python
+content = explainer.generate_learning_content("COMMAND_INJECTION")
+
+# Includes:
+# - Learning objectives
+# - Vulnerable vs secure patterns
+# - Quiz question with 4 options
+# - Detailed explanation
+# - Further reading links
+```
+
+Example quiz:
+```
+Q: Why is subprocess.run(cmd, shell=True) dangerous?
+   1. It's slower than shell=False
+   2. It allows shell metacharacter injection ✓
+   3. It requires more memory
+   4. It's deprecated
+
+Explanation: shell=True allows shell metacharacters like ; | & to chain commands maliciously.
+```
+
+#### Usage
+
+```python
+from pyguard import explain, AIExplainer
+
+# Quick explanation
+explanation = explain("SQL_INJECTION")
+print(explanation.how_to_fix)
+
+# Detailed explainer
+explainer = AIExplainer()
+content = explainer.generate_learning_content("XSS")
+print(content["quiz_question"])
+```
+
+#### Comparison
+
+| Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
+|---------|---------|--------|------|---------|------|-----------|
+| Natural language explanations | ✅ Full | ❌ | ❌ | ❌ | ⚠️ Basic | ⚠️ Basic |
+| Fix rationale | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Educational levels | ✅ 3 levels | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Interactive quizzes | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| No external AI API | ✅ | N/A | N/A | N/A | ❌ | ⚠️ |
+
+**Benefits**:
+- **Learn while you scan**: Developers improve security knowledge
+- **Understand "why"**: Not just what's wrong, but why it matters
+- **Team training**: Use as educational material for security training
+- **No privacy concerns**: Rule-based templates, no external AI calls
+
+**Demo**: Run `python examples/advanced_features_demo.py`
 
 ---
 
