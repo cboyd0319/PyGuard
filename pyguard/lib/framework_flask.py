@@ -300,7 +300,7 @@ class FlaskSecurityChecker:
                     # Fix debug=True to debug=False
                     content = re.sub(
                         r"\.run\([^)]*debug\s*=\s*True",
-                        lambda m: m.group(0).replace("debug=True", "debug=False"),
+                        lambda m: str(m.group(0)).replace("debug=True", "debug=False"),
                         content,
                     )
                     fixes_applied.append("Disabled Flask debug mode")
