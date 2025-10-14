@@ -194,28 +194,46 @@ class PyGuardCLI:
                 results["quality_issues"] += len(results["best_practices"]["fixes"])
 
         else:
-            # Just scan for issues
+            # Just scan for issues (ALL types: security, quality, patterns)
             from dataclasses import asdict
 
+            all_issues = []
             security_issues = []
+            quality_issues = []
+            
             progress = self.ui.create_progress_bar()
             with progress:
                 task = progress.add_task("🔍 Scanning for issues...", total=len(files))
                 for i, file_path in enumerate(files):
-                    issues = self.security_fixer.scan_file_for_issues(file_path)
-                    for issue in issues:
+                    # Security issues
+                    sec_issues = self.security_fixer.scan_file_for_issues(file_path)
+                    for issue in sec_issues:
                         issue_dict = asdict(issue)
                         issue_dict["file"] = str(file_path)
                         # Rename line_number to line for consistency
                         if "line_number" in issue_dict:
                             issue_dict["line"] = issue_dict.pop("line_number")
                         security_issues.append(issue_dict)
+                        all_issues.append(issue_dict)
+                    
+                    # Quality issues (best practices, naming, etc.)
+                    qual_issues = self.best_practices_fixer.scan_file_for_issues(file_path)
+                    for issue in qual_issues:
+                        issue_dict = asdict(issue)
+                        issue_dict["file"] = str(file_path)
+                        if "line_number" in issue_dict:
+                            issue_dict["line"] = issue_dict.pop("line_number")
+                        quality_issues.append(issue_dict)
+                        all_issues.append(issue_dict)
+                    
                     progress.update(task, advance=1)
 
             results["security"] = {"issues_found": len(security_issues), "issues": security_issues}
-            results["all_issues"] = security_issues
-            results["total_issues"] = len(security_issues)
+            results["best_practices"] = {"issues_found": len(quality_issues), "issues": quality_issues}
+            results["all_issues"] = all_issues
+            results["total_issues"] = len(all_issues)
             results["security_issues"] = len(security_issues)
+            results["quality_issues"] = len(quality_issues)
 
         # Calculate timing
         end_time = time.time()
