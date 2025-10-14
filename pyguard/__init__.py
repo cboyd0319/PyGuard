@@ -6,7 +6,7 @@ Now with AST-based analysis, parallel processing, and advanced reporting.
 """
 
 __version__ = "0.3.0"
-__author__ = "Chad Boyd"
+__author__ = "Chad Boyd"  # pyguard: disable=CWE-798
 __license__ = "MIT"
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue

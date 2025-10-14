@@ -39,7 +39,7 @@ class PandasVisitor(ast.NodeVisitor):
 
     def _detect_pandas(self, code: str) -> bool:
         """Check if file uses pandas."""
-        return 'import pandas' in code or 'from pandas' in code
+        return 'import pandas' in code or 'from pandas' in code  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
 
     def visit_Call(self, node: ast.Call) -> None:
         """Detect pandas call issues (PD001-PD015)."""

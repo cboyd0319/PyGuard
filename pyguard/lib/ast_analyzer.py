@@ -60,6 +60,11 @@ class SecurityVisitor(ast.NodeVisitor):
         self.source_lines = source_lines
         self.in_function = False
         self.current_function = None
+    
+    def _add_issue(self, node: ast.AST, issue: SecurityIssue) -> None:
+        """Add issue if not suppressed."""
+        if not self._is_suppressed(node, issue.cwe_id):
+            self.issues.append(issue)
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
@@ -67,46 +72,77 @@ class SecurityVisitor(ast.NodeVisitor):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
+    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+        """
+        Check if a node has suppression comment.
+        
+        Supports comments like:
+        - # pyguard: disable
+        - # pyguard: disable=CWE-89,CWE-22
+        - # noqa
+        - # noqa: CWE-89
+        """
+        if not hasattr(node, "lineno") or node.lineno > len(self.source_lines):
+            return False
+            
+        line = self.source_lines[node.lineno - 1]
+        
+        # Check for PyGuard suppression
+        if "# pyguard: disable" in line:
+            # Generic disable (no rule specified)
+            if "=" not in line.split("# pyguard: disable")[1]:
+                return True
+            # Specific rule check
+            if rule_id and f"={rule_id}" in line:
+                return True
+                
+        # Check for noqa suppression
+        if "# noqa" in line:
+            after_noqa = line.split("# noqa")[1]
+            # Generic noqa (no colon or empty after colon)
+            if ":" not in after_noqa or not after_noqa.split(":")[1].strip():
+                return True
+            # Specific rule check
+            if rule_id and f": {rule_id}" in after_noqa:
+                return True
+                
+        return False
+
     def visit_Call(self, node: ast.Call):
         """Visit function call nodes."""
         func_name = self._get_call_name(node)
 
         # OWASP ASVS-5.2.1, CWE-95: Code Injection
         if func_name in ["eval", "exec", "compile"]:
-            self.issues.append(
-                SecurityIssue(
-                    severity="HIGH",
-                    category="Code Injection",
-                    message=f"Dangerous use of {func_name}() - executes arbitrary code",
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    code_snippet=self._get_code_snippet(node),
-                    fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
-                    owasp_id="ASVS-5.2.1",
-                    cwe_id="CWE-95",
-                )
-            )
+            self._add_issue(node, SecurityIssue(
+                severity="HIGH",
+                category="Code Injection",
+                message=f"Dangerous use of {func_name}() - executes arbitrary code",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
+                owasp_id="ASVS-5.2.1",
+                cwe_id="CWE-95",
+            ))
 
         # OWASP ASVS-5.5.3, CWE-502: Unsafe Deserialization - YAML
         if func_name == "yaml.load":
-            self.issues.append(
-                SecurityIssue(
-                    severity="HIGH",
-                    category="Unsafe Deserialization",
-                    message="yaml.load() allows arbitrary code execution",
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    code_snippet=self._get_code_snippet(node),
-                    fix_suggestion="Use yaml.safe_load() instead, which only deserializes safe types",
-                    owasp_id="ASVS-5.5.3",
-                    cwe_id="CWE-502",
-                )
-            )
+            self._add_issue(node, SecurityIssue(
+                severity="HIGH",
+                category="Unsafe Deserialization",
+                message="yaml.load() allows arbitrary code execution",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Use yaml.safe_load() instead, which only deserializes safe types",
+                owasp_id="ASVS-5.5.3",
+                cwe_id="CWE-502",
+            ))
 
         # OWASP ASVS-5.5.3, CWE-502: Unsafe Deserialization - Pickle
         if func_name in ["pickle.load", "pickle.loads"]:
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="MEDIUM",
                     category="Unsafe Deserialization",
                     message=f"{func_name}() can execute arbitrary code during unpickling",
@@ -123,8 +159,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name in ["subprocess.call", "subprocess.run", "subprocess.Popen", "os.system"]:
             shell_arg = self._get_keyword_arg(node, "shell")
             if shell_arg and isinstance(shell_arg, ast.Constant) and shell_arg.value is True:
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="Command Injection",
                         message=f"{func_name}() with shell=True allows command injection",
@@ -140,8 +175,7 @@ class SecurityVisitor(ast.NodeVisitor):
         # OWASP ASVS-6.2.1, CWE-327: Weak Cryptography
         if func_name in ["hashlib.md5", "hashlib.sha1"]:
             hash_type = func_name.split(".")[1].upper()
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="MEDIUM",
                     category="Weak Cryptography",
                     message=f"{hash_type} is cryptographically broken",
@@ -158,8 +192,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name.startswith("random.") and func_name not in ["random.seed", "random.choice"]:
             # Check if in security context
             if self._in_security_context(node):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="MEDIUM",
                         category="Weak Random",
                         message="random module is not cryptographically secure",
@@ -177,8 +210,7 @@ class SecurityVisitor(ast.NodeVisitor):
             if node.args and isinstance(node.args[0], ast.Constant):
                 url = node.args[0].value
                 if isinstance(url, str) and url.startswith("http://"):
-                    self.issues.append(
-                        SecurityIssue(
+                    self._add_issue(node, SecurityIssue(
                             severity="MEDIUM",
                             category="Insecure Communication",
                             message="Using insecure HTTP instead of HTTPS",
@@ -209,8 +241,7 @@ class SecurityVisitor(ast.NodeVisitor):
             "xml.sax.parseString",
             "lxml.etree.parse",
         ]:
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="HIGH",
                     category="XXE Injection",
                     message=f"{func_name}() vulnerable to XML External Entity attacks",
@@ -233,8 +264,7 @@ class SecurityVisitor(ast.NodeVisitor):
         ]:
             # Check if URL comes from user input (heuristic)
             if node.args and isinstance(node.args[0], (ast.Name, ast.Call, ast.Attribute)):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="SSRF",
                         message=f"{func_name}() with dynamic URL may enable Server-Side Request Forgery",
@@ -253,8 +283,7 @@ class SecurityVisitor(ast.NodeVisitor):
             if node.args:
                 for arg in node.args:
                     if isinstance(arg, (ast.Name, ast.Call, ast.BinOp)):
-                        self.issues.append(
-                            SecurityIssue(
+                        self._add_issue(node, SecurityIssue(
                                 severity="HIGH",
                                 category="Path Traversal",
                                 message=f"{func_name}() with dynamic path may allow directory traversal",
@@ -270,8 +299,7 @@ class SecurityVisitor(ast.NodeVisitor):
 
         # CWE-377: Insecure Temporary File Creation
         if func_name in ["tempfile.mktemp"]:
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="HIGH",
                     category="Insecure Temp File",
                     message="tempfile.mktemp() is insecure and deprecated",
@@ -288,8 +316,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name in ["jinja2.Template", "Template", "mako.template.Template"]:
             # Check if template string is dynamic
             if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="Template Injection",
                         message=f"{func_name}() with dynamic template enables Server-Side Template Injection (SSTI)",
@@ -308,8 +335,7 @@ class SecurityVisitor(ast.NodeVisitor):
             algorithm_arg = self._get_keyword_arg(node, "algorithm")
             if algorithm_arg and isinstance(algorithm_arg, ast.Constant):
                 if algorithm_arg.value in ["none", "HS256"]:
-                    self.issues.append(
-                        SecurityIssue(
+                    self._add_issue(node, SecurityIssue(
                             severity="HIGH",
                             category="Weak JWT Algorithm",
                             message=f"JWT using weak algorithm '{algorithm_arg.value!r}'",
@@ -326,8 +352,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name in ["query.get", "get_object_or_404", "filter"]:
             # Check if using user-supplied ID without authorization check
             if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="IDOR",
                         message=f"{func_name}() may allow unauthorized access to objects (IDOR)",
@@ -344,8 +369,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name in ["graphql.execute", "execute_graphql"]:
             # Check for dynamic queries
             if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="GraphQL Injection",
                         message=f"{func_name}() with dynamic query enables GraphQL injection",
@@ -363,8 +387,7 @@ class SecurityVisitor(ast.NodeVisitor):
             httponly_arg = self._get_keyword_arg(node, "httponly")
 
             if not httponly_arg or (isinstance(httponly_arg, ast.Constant) and not httponly_arg.value):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="MEDIUM",
                         category="Insecure Cookie",
                         message="Cookie set without HttpOnly flag - vulnerable to XSS",
@@ -381,8 +404,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
             # Check if format string comes from a variable (potential user input)
             if isinstance(node.func.value, ast.Name):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="MEDIUM",
                         category="Format String",
                         message="Dynamic format strings can lead to information disclosure",
@@ -397,10 +419,9 @@ class SecurityVisitor(ast.NodeVisitor):
 
         # CWE-90: LDAP Injection
         if "ldap" in func_name.lower() and any(
-            keyword in func_name.lower() for keyword in ["search", "add", "modify", "delete"]
+            keyword in func_name.lower() for keyword in ["search", "add", "modify", "delete"]  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
         ):
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="HIGH",
                     category="LDAP Injection",
                     message=f"{func_name}() may be vulnerable to LDAP injection",
@@ -422,8 +443,7 @@ class SecurityVisitor(ast.NodeVisitor):
         ]:
             # Check if query uses string concatenation
             if node.args and isinstance(node.args[0], (ast.JoinedStr, ast.BinOp)):
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="HIGH",
                         category="NoSQL Injection",
                         message=f"{func_name}() with string concatenation vulnerable to NoSQL injection",
@@ -440,8 +460,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if func_name in ["pdb.set_trace", "ipdb.set_trace", "breakpoint", "pudb.set_trace", "pprint.pprint", "print"]:
             # Only flag as issue in non-debug contexts
             if func_name in ["pdb.set_trace", "ipdb.set_trace", "breakpoint", "pudb.set_trace"]:
-                self.issues.append(
-                    SecurityIssue(
+                self._add_issue(node, SecurityIssue(
                         severity="LOW",
                         category="Debug Code",
                         message=f"{func_name}() debug statement found - should be removed in production",
@@ -509,8 +528,7 @@ class SecurityVisitor(ast.NodeVisitor):
                                     detected_type = secret_type
                                     break
 
-                            self.issues.append(
-                                SecurityIssue(
+                            self._add_issue(node, SecurityIssue(
                                     severity="HIGH",
                                     category=detected_type,
                                     message=f"Hardcoded {detected_type} detected in variable '{var_name}'",
@@ -530,8 +548,7 @@ class SecurityVisitor(ast.NodeVisitor):
         # CWE-1236: CSV Injection (Formula Injection)
         snippet = self._get_code_snippet(node)
         if any(char in snippet for char in ["=", "+", "-", "@"]) and "csv" in snippet.lower():
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="MEDIUM",
                     category="CSV Injection",
                     message="Potential CSV injection vulnerability in formatted string",
@@ -550,8 +567,7 @@ class SecurityVisitor(ast.NodeVisitor):
         """Visit comparison nodes to detect SQL injection patterns and timing attacks."""
         # Detect string concatenation in SQL queries (simplified detection)
         if self._looks_like_sql_query(node):
-            self.issues.append(
-                SecurityIssue(
+            self._add_issue(node, SecurityIssue(
                     severity="HIGH",
                     category="SQL Injection",
                     message="Potential SQL injection vulnerability",
@@ -569,8 +585,7 @@ class SecurityVisitor(ast.NodeVisitor):
         if any(keyword in snippet for keyword in ["password", "token", "secret", "hash", "key"]):
             for op in node.ops:
                 if isinstance(op, (ast.Eq, ast.NotEq)):
-                    self.issues.append(
-                        SecurityIssue(
+                    self._add_issue(node, SecurityIssue(
                             severity="MEDIUM",
                             category="Timing Attack",
                             message="String comparison of secrets vulnerable to timing attacks",
@@ -604,7 +619,7 @@ class SecurityVisitor(ast.NodeVisitor):
     def _get_keyword_arg(self, node: ast.Call, keyword: str) -> Optional[ast.AST]:
         """Get a keyword argument from a function call."""
         for kw in node.keywords:
-            if kw.arg == keyword:
+            if kw.arg == keyword:  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                 return kw.value
         return None
 
@@ -635,19 +650,61 @@ class CodeQualityVisitor(ast.NodeVisitor):
         self.source_lines = source_lines
         self.complexity_by_function: Dict[str, int] = {}
 
+    def _add_issue(self, node: 'ast.AST', issue: CodeQualityIssue) -> None:
+        """Add issue if not suppressed."""
+        # Extract rule ID from category for suppression check
+        rule_id = issue.category.upper().replace(' ', '-')
+        if not self._is_suppressed(node, rule_id):
+            self.issues.append(issue)
+
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
+    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+        """
+        Check if a node has suppression comment.
+        
+        Supports comments like:
+        - # pyguard: disable
+        - # pyguard: disable=COMPLEXITY,LONG-METHOD
+        - # noqa
+        - # noqa: COMPLEXITY
+        """
+        if not hasattr(node, "lineno") or node.lineno > len(self.source_lines):
+            return False
+            
+        line = self.source_lines[node.lineno - 1]
+        
+        # Check for PyGuard suppression
+        if "# pyguard: disable" in line:
+            # Generic disable (no rule specified)
+            if "=" not in line.split("# pyguard: disable")[1]:
+                return True
+            # Specific rule check
+            if rule_id and f"={rule_id}" in line:
+                return True
+                
+        # Check for noqa suppression
+        if "# noqa" in line:
+            after_noqa = line.split("# noqa")[1]
+            # Generic noqa (no colon or empty after colon)
+            if ":" not in after_noqa or not after_noqa.split(":")[1].strip():
+                return True
+            # Specific rule check
+            if rule_id and f": {rule_id}" in after_noqa:
+                return True
+                
+        return False
+
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Visit function definition nodes."""
         # Check for missing docstrings (except private functions)
         if not node.name.startswith("_"):
-            if not ast.get_docstring(node):
-                self.issues.append(
-                    CodeQualityIssue(
+            if not ast.get_docstring(node) and not self._is_suppressed(node, "DOCUMENTATION"):
+                self._add_issue(node, CodeQualityIssue(
                         severity="LOW",
                         category="Documentation",
                         message=f"Function '{node.name}' lacks docstring",
@@ -661,8 +718,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         # Check for too many parameters
         num_params = len(node.args.args)
         if num_params > 6:
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity="MEDIUM",
                     category="Complexity",
                     message=f"Function '{node.name}' has {num_params} parameters (max recommended: 6)",
@@ -676,8 +732,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         # Check for mutable default arguments
         for default in node.args.defaults:
             if isinstance(default, (ast.List, ast.Dict, ast.Set)):
-                self.issues.append(
-                    CodeQualityIssue(
+                self._add_issue(node, CodeQualityIssue(
                         severity="HIGH",
                         category="Anti-pattern",
                         message="Mutable default argument detected",
@@ -694,8 +749,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
 
         if complexity > 10:
             severity = "HIGH" if complexity > 20 else "MEDIUM"
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity=severity,
                     category="Complexity",
                     message=f"Function '{node.name}' has cyclomatic complexity of {complexity} (threshold: 10)",
@@ -710,8 +764,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         loc = self._count_lines_of_code(node)
         if loc > 50:
             severity = "HIGH" if loc > 100 else "MEDIUM"
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity=severity,
                     category="Long Method",
                     message=f"Function '{node.name}' has {loc} lines (recommended: < 50)",
@@ -728,8 +781,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         """Visit class definition nodes."""
         # Check for missing docstrings
         if not ast.get_docstring(node):
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity="LOW",
                     category="Documentation",
                     message=f"Class '{node.name}' lacks docstring",
@@ -749,8 +801,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
             if isinstance(comparator, ast.Constant) and comparator.value is None:
                 if isinstance(op, (ast.Eq, ast.NotEq)):
                     suggested_op = "is None" if isinstance(op, ast.Eq) else "is not None"
-                    self.issues.append(
-                        CodeQualityIssue(
+                    self._add_issue(node, CodeQualityIssue(
                             severity="LOW",
                             category="Style",
                             message="Use 'is None' instead of '== None'",
@@ -764,8 +815,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
             # Check for comparison with True/False
             if isinstance(comparator, ast.Constant) and isinstance(comparator.value, bool):
                 if isinstance(op, ast.Eq):
-                    self.issues.append(
-                        CodeQualityIssue(
+                    self._add_issue(node, CodeQualityIssue(
                             severity="LOW",
                             category="Style",
                             message=f"Avoid explicit comparison with {comparator.value}",
@@ -785,8 +835,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         # Check for type() usage that should be isinstance()
         if func_name == "type" and len(node.args) == 1:
             # This is likely being used in a comparison
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity="LOW",
                     category="Type Check",
                     message="Use isinstance() instead of type() for type checking",
@@ -803,8 +852,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         """Visit exception handler nodes."""
         # Check for bare except clauses
         if node.type is None:
-            self.issues.append(
-                CodeQualityIssue(
+            self._add_issue(node, CodeQualityIssue(
                     severity="MEDIUM",
                     category="Error Handling",
                     message="Bare except clause catches all exceptions including system exits",
@@ -822,8 +870,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
                 isinstance(child, ast.Raise) and child.exc is None for child in ast.walk(node)
             )
             if not has_reraise:
-                self.issues.append(
-                    CodeQualityIssue(
+                self._add_issue(node, CodeQualityIssue(
                         severity="LOW",
                         category="Error Handling",
                         message="Catching broad Exception type may hide specific errors",
@@ -851,8 +898,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
             # Avoid flagging in certain contexts (array indices, ranges, etc.)
             parent = getattr(node, "parent", None)
             if not isinstance(parent, (ast.Index, ast.Slice)):
-                self.issues.append(
-                    CodeQualityIssue(
+                self._add_issue(node, CodeQualityIssue(
                         severity="LOW",
                         category="Magic Number",
                         message=f"Magic number {node.value} should be a named constant",

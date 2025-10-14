@@ -786,7 +786,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call):
             func = node.value.func
             if isinstance(func, ast.Attribute):
-                if func.attr == "fromtimestamp":
+                if func.attr == "fromtimestamp":  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
                     # Check if argument is time.time()
                     if len(node.value.args) > 0:
                         arg = node.value.args[0]

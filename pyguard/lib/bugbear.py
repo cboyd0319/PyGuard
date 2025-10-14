@@ -247,7 +247,7 @@ class BugbearVisitor(ast.NodeVisitor):
             if isinstance(item, ast.FunctionDef):
                 if item.name == "__eq__":
                     has_eq = True
-                elif item.name == "__hash__":
+                elif item.name == "__hash__":  # pyguard: disable=CWE-208
                     has_hash = True
 
         if has_eq and not has_hash:
