@@ -195,3 +195,98 @@ def func() -> List[str]:
 
         # Clean up
         path.unlink()
+
+    def test_detect_outdated_version_check(self):
+        """Test detection of outdated version checks (UP036)."""
+        code = """
+import sys
+
+if sys.version_info < (3, 7):
+    print("Old Python")
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP036" for issue in visitor.issues)
+        assert any("Outdated version check" in issue.message for issue in visitor.issues)
+
+    def test_detect_quoted_annotation(self):
+        """Test detection of quoted type annotations (UP037)."""
+        code = """
+x: "int" = 5
+y: "str" = "hello"
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP037" for issue in visitor.issues)
+        assert any("Remove quotes" in issue.message for issue in visitor.issues)
+
+    def test_detect_non_pep604_isinstance(self):
+        """Test detection of isinstance with tuple instead of | (UP038)."""
+        code = """
+def check_type(x):
+    if isinstance(x, (int, str, float)):
+        return True
+    return False
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP038" for issue in visitor.issues)
+        assert any("isinstance" in issue.message and "|" in issue.message for issue in visitor.issues)
+
+    def test_detect_type_alias(self):
+        """Test detection of TypeAlias that should use type statement (UP040)."""
+        code = """
+from typing import TypeAlias
+
+MyType: TypeAlias = int
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP040" for issue in visitor.issues)
+        assert any("TypeAlias" in issue.message or "type" in issue.message.lower() for issue in visitor.issues)
+
+    def test_detect_asyncio_timeout_error(self):
+        """Test detection of asyncio.TimeoutError (UP041)."""
+        code = """
+from asyncio import TimeoutError
+
+async def func():
+    raise TimeoutError()
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP041" for issue in visitor.issues)
+        assert any("TimeoutError" in issue.message for issue in visitor.issues)
+
+    def test_detect_str_enum(self):
+        """Test detection of str + Enum that should use StrEnum (UP042)."""
+        code = """
+from enum import Enum
+
+class Color(str, Enum):
+    RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+"""
+        tree = ast.parse(code)
+        visitor = ModernPythonVisitor(code.splitlines())
+        visitor.visit(tree)
+
+        assert len(visitor.issues) > 0
+        assert any(issue.rule_id == "UP042" for issue in visitor.issues)
+        assert any("StrEnum" in issue.message for issue in visitor.issues)
