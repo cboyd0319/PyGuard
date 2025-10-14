@@ -6,6 +6,122 @@
 
 ---
 
+## 🚨 ESSENTIAL QUICK START - READ THIS FIRST! 🚨
+
+**For AI Assistants starting a new session:** This section will save you 10-15 minutes of exploration time.
+
+### ⚡ Immediate Context (30 seconds)
+- **Current State:** 265/1,536 rules (30.8% complete), 729 tests (77% coverage), ZERO errors ✅
+- **Python Version:** 3.11+ minimum (currently running 3.12.3)
+- **Test Command:** `pytest tests/ -v --tb=short` (180s timeout)
+- **Rule Count Command:** `grep -rh 'rule_id="[^"]*"' pyguard/lib/*.py | sed -E 's/.*rule_id="([^"]+)".*/\1/' | sort -u | wc -l`
+- **Quality Gates:** All 729 tests must pass, coverage ≥77%, zero linter errors
+
+### 🎯 Priority Implementation Order (Next 500 rules)
+1. **Ruff S (Security)** - 73 rules - Map existing security rules + add missing ones
+2. **Ruff F (Pyflakes)** - 41 rules - Critical error detection (imports, names, undefined vars)
+3. **Ruff E (PEP8)** - 43 rules - Complete PEP8 coverage (E4xx, E5xx, E7xx)
+4. **Ruff UP (pyupgrade)** - 35 rules - Python modernization patterns
+5. **Ruff PTH (pathlib)** - 34 rules - os.path → pathlib conversions
+6. **Ruff PLE (Pylint)** - 36 rules - Pylint error detection
+7. **Ruff PT (pytest)** - 31 rules - pytest best practices
+8. **Pylint R/C/W** - 330 messages - Design metrics, conventions, warnings
+
+### 📂 Key Files & Locations
+```
+pyguard/lib/
+├── security.py           # 55+ security rules (map to Ruff S codes)
+├── pep8_comprehensive.py # 87 PEP8 rules (E/W codes)
+├── bugbear.py            # 49 Bugbear rules (B codes)
+├── refurb_patterns.py    # 46 FURB rules
+├── pie_patterns.py       # 30 PIE rules (100% complete!)
+├── modern_python.py      # 17 UP rules (need 35 more)
+├── pathlib_patterns.py   # 18 PTH rules (need 34 more)
+├── pylint_rules.py       # 25 PL rules (need 88 more)
+└── [40+ other modules]
+
+tests/unit/               # 257 test files (one per module pattern)
+docs/UPDATE.md            # THIS FILE - update after EVERY session
+docs/MISSING_RULES_DETAILED.md  # Complete gap analysis
+```
+
+### 🛠️ Quick Start Commands
+```bash
+# Setup (first time)
+cd /home/runner/work/PyGuard/PyGuard
+pip install -e ".[dev]" -q
+
+# Verify baseline (always run first!)
+pytest tests/ -v --tb=short  # Should show 729 passed, 2 skipped
+
+# After making changes
+pytest tests/unit/test_[module].py -v  # Test specific module
+pytest tests/ -x -q  # Quick test (stop on first failure)
+pytest tests/ --cov=pyguard  # Check coverage (must be ≥77%)
+
+# Count rules (to update this file)
+grep -rh 'rule_id="[^"]*"' pyguard/lib/*.py | sed -E 's/.*rule_id="([^"]+)".*/\1/' | sort -u | wc -l
+
+# Get Ruff rule info
+ruff rule S102  # Get details about a specific Ruff rule
+python3 -c "import subprocess; import json; result = subprocess.run(['ruff', 'rule', '--all', '--output-format=json'], capture_output=True, text=True); data = json.loads(result.stdout); print(f'Total: {len(data)}')"
+```
+
+### ⚠️ Critical Gotchas to Avoid
+1. **DON'T use RuleCategory.BEST_PRACTICE** - Use CONVENTION instead (doesn't exist in enum)
+2. **DON'T break existing tests** - All 729 must pass, 2 skipped OK
+3. **DON'T lower coverage** - Must stay ≥77% (currently 77%)
+4. **DON'T skip UPDATE.md updates** - Update after EVERY implementation session
+5. **DO verify rule counts** - Use grep command above to verify actual registered rules
+6. **DO follow existing patterns** - Check similar modules for consistent style
+7. **DO run full test suite** - Before committing (pytest tests/ -v)
+
+### 📝 After Implementing New Rules - Checklist
+- [ ] Run `pytest tests/ -v` - All tests must pass
+- [ ] Run coverage check - Must be ≥77%
+- [ ] Count rules with grep command above
+- [ ] Update "Last Updated" date in this file
+- [ ] Update rule counts in "Current State Summary"
+- [ ] Update category percentages
+- [ ] Add changelog entry at bottom of this file
+- [ ] Update "Recent Progress" section
+- [ ] Commit with clear message
+
+### 🔍 How to Add a New Rule (5-minute guide)
+1. **Find the right module** - See table above for category → file mapping
+2. **Add detection in Visitor class:**
+   ```python
+   def visit_NodeType(self, node: ast.NodeType) -> None:
+       if [condition]:
+           self.violations.append(
+               RuleViolation(
+                   rule_id="RUFF123",  # Use proper code
+                   message="Clear, actionable message",
+                   line_number=node.lineno,
+                   severity=RuleSeverity.HIGH,
+                   category=RuleCategory.SECURITY,
+                   fix_applicability=FixApplicability.SAFE,
+               )
+           )
+       self.generic_visit(node)
+   ```
+3. **Register at end of file:**
+   ```python
+   Rule(
+       rule_id="RUFF123",
+       name="rule-name-kebab-case",
+       description="Brief description",
+       category=RuleCategory.SECURITY,
+       severity=RuleSeverity.HIGH,
+       fix_applicability=FixApplicability.SAFE,
+   )
+   ```
+4. **Add tests** - Minimum 2 (positive + negative)
+5. **Run tests** - `pytest tests/unit/test_[module].py -v`
+6. **Update this file** - See checklist above
+
+---
+
 ## 🚨 CRITICAL REALITY CHECK (2025-10-14)
 
 **What Changed:** Comprehensive automated analysis of Ruff 0.14.0, Pylint 4.0.0, mypy 1.18.2
