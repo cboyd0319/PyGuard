@@ -8,16 +8,16 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Total Library Modules** | 51 | ✅ Production |
+| **Total Library Modules** | 52 | ✅ Production |
 | **Security Vulnerability Checks** | 55+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Automated Fixes (Safe + Unsafe)** | 150+ | ✅ Active |
 | **Framework-Specific Rules** | 75+ | ✅ 4 Frameworks |
 | **Compliance Frameworks Supported** | 10+ | ✅ Full Coverage |
 | **ML-Powered Features** | 5 | ✅ Active |
-| **Lines of Analysis Code** | 26,886 | ✅ Production |
-| **Test Coverage** | 82% | ✅ Excellent |
-| **Total Tests** | 1002 | ✅ Comprehensive |
+| **Lines of Analysis Code** | 27,019 | ✅ Production |
+| **Test Coverage** | 81% | ✅ Excellent |
+| **Total Tests** | 1035 | ✅ Comprehensive |
 
 **Replaces these tools**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial)
 
@@ -757,7 +757,7 @@ Features:
 
 ### Watch Mode
 
-**Module**: `watch.py` (150 lines) ✅ NEW
+**Module**: `watch.py` (150 lines) ✅ COMPLETE
 
 Real-time file monitoring for development:
 - Monitors Python files for changes
@@ -765,6 +765,55 @@ Real-time file monitoring for development:
 - Configurable file patterns
 - Excludes backup/hidden files
 - Clean interrupt handling (Ctrl+C)
+
+### Git Hooks Integration
+
+**Module**: `git_hooks.py` (390 lines) ✅ NEW
+**CLI**: `pyguard-hooks` command ✅ NEW
+**Coverage**: 84% (33 tests)
+
+Comprehensive Git hooks management for automatic code quality checks:
+
+**Installation & Management:**
+- Install pre-commit and pre-push hooks
+- Automatic hook script generation
+- Force overwrite existing hooks
+- Uninstall PyGuard hooks safely
+- List all installed hooks
+- Validate hook installation
+- Test hooks before use
+
+**Hook Features:**
+- Pre-commit: Scans only staged files
+- Pre-push: Comprehensive codebase scan
+- Executable permission handling
+- Git worktree support
+- Non-git repository detection
+- PyGuard hook identification
+
+**CLI Commands:**
+```bash
+pyguard-hooks install              # Install pre-commit hook
+pyguard-hooks install --type pre-push  # Install pre-push hook
+pyguard-hooks uninstall            # Remove hook
+pyguard-hooks list                 # List all hooks
+pyguard-hooks validate             # Check installation
+pyguard-hooks test                 # Test hook execution
+```
+
+**Integration Support:**
+- Native git hooks
+- Pre-commit framework compatibility
+- CI/CD complementary checks
+- Team workflow integration
+- Emergency bypass mechanism (`--no-verify`)
+
+**Documentation:**
+- Complete usage guide (`docs/git-hooks-guide.md`)
+- Troubleshooting section
+- Best practices
+- Performance optimization tips
+- Security considerations
 
 **Usage:**
 ```bash
@@ -873,10 +922,14 @@ From `docs/UPDATEv2.md` and `README.md`:
 - Configurable file patterns
 - Integration ready for IDEs
 
-**Pre-commit Hooks:**
-- Git hook integration
-- Automatic scanning before commit
-- Commit message validation
+**Pre-commit Hooks:** ✅ COMPLETE
+- Git hook installation and management
+- Pre-commit and pre-push hook support
+- Automatic scanning before commit/push
+- Hook validation and testing
+- CLI tool: `pyguard-hooks`
+- Integration with pre-commit framework
+- Comprehensive documentation
 
 **VS Code Extension:**
 - Inline error display
@@ -943,15 +996,15 @@ From `docs/UPDATEv2.md` and `README.md`:
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Total Modules** | 51 | ✅ Implemented |
+| **Total Modules** | 52 | ✅ Implemented |
 | **Security Checks** | 55+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 150+ | ✅ Safe + Unsafe |
 | **Framework Rules** | 75+ | ✅ 4 frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full mapping |
-| **Test Coverage** | 82% | ✅ Excellent |
-| **Total Tests** | 1002 | ✅ Comprehensive |
-| **Lines of Code** | 26,886 (lib) | ✅ Production-ready |
+| **Test Coverage** | 81% | ✅ Excellent |
+| **Total Tests** | 1035 | ✅ Comprehensive |
+| **Lines of Code** | 27,019 (lib) | ✅ Production-ready |
 
 ### Comparison to Other Tools
 

@@ -35,6 +35,12 @@ from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
 from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
 from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker
+from pyguard.lib.git_hooks import (
+    GitHooksManager,
+    install_git_hooks,
+    uninstall_git_hooks,
+    validate_git_hooks,
+)
 
 # NEW in v0.11.0: Import rules, Pylint rules, Framework-specific rules
 from pyguard.lib.import_rules import IMPORT_RULES, ImportRulesChecker
@@ -222,4 +228,9 @@ __all__ = [
     "PYTEST_RULES",
     "PandasRulesChecker",
     "PANDAS_RULES",
+    # Git Hooks (NEW v0.4.0)
+    "GitHooksManager",
+    "install_git_hooks",
+    "uninstall_git_hooks",
+    "validate_git_hooks",
 ]
