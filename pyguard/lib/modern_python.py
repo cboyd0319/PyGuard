@@ -43,7 +43,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
     
     def _get_full_name(self, node: ast.expr) -> str:
@@ -52,7 +52,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
             return node.id
         elif isinstance(node, ast.Attribute):
             parts = []
-            current = node
+            current: ast.expr = node
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
@@ -404,7 +404,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                     major_version = comparator.elts[0].value
                                     if isinstance(comparator.elts[1], ast.Constant):
                                         minor_version = comparator.elts[1].value
-                                        if major_version == 3 and minor_version < 8:
+                                        if isinstance(major_version, int) and isinstance(minor_version, int) and major_version == 3 and minor_version < 8:
                                             self.issues.append(
                                                 ModernizationIssue(
                                                     severity="MEDIUM",
@@ -502,7 +502,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
