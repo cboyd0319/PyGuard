@@ -46,7 +46,7 @@ class PandasVisitor(ast.NodeVisitor):
         if not self.is_pandas_file:
             self.generic_visit(node)
             return
-        
+
         # PD002: inplace=True usage
         for keyword in node.keywords:
             if keyword.arg == 'inplace':
@@ -63,14 +63,14 @@ class PandasVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-        
+
         # PD003: Use of deprecated pandas methods
         if isinstance(node.func, ast.Attribute):
             deprecated_methods = {
                 'append': 'Use pd.concat() instead',
                 'ix': 'Use .loc[] or .iloc[] instead',
             }
-            
+
             if node.func.attr in deprecated_methods:
                 self.violations.append(
                     RuleViolation(
@@ -84,10 +84,10 @@ class PandasVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-            
+
             # PD008: Use .loc for assignment
             # This is detected in visit_Assign
-            
+
             # PD010: Use .to_numpy() instead of .values
             if node.func.attr == 'values':
                 self.violations.append(
@@ -102,7 +102,7 @@ class PandasVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-            
+
             # PD011: Use .to_numpy() instead of np.asarray() on DataFrame/Series
             if isinstance(node.func.value, ast.Name) and node.func.value.id == 'np':
                 if node.func.attr in ('asarray', 'array'):
@@ -119,12 +119,12 @@ class PandasVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-            
+
             # PD013: Use .melt() instead of .stack()
             if node.func.attr == 'stack':
                 # Context-dependent, but generally melt is preferred
                 pass
-        
+
         self.generic_visit(node)
 
     def visit_For(self, node: ast.For) -> None:
@@ -132,7 +132,7 @@ class PandasVisitor(ast.NodeVisitor):
         if not self.is_pandas_file:
             self.generic_visit(node)
             return
-        
+
         # PD007: Iterating over DataFrame with .iterrows()
         if isinstance(node.iter, ast.Call):
             if isinstance(node.iter.func, ast.Attribute):
@@ -149,12 +149,12 @@ class PandasVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-                
+
                 # PD009: Using .apply() when a vectorized alternative exists
                 elif node.iter.func.attr == 'apply':
                     # This requires semantic analysis to determine if vectorization is possible
                     pass
-        
+
         self.generic_visit(node)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
@@ -162,7 +162,7 @@ class PandasVisitor(ast.NodeVisitor):
         if not self.is_pandas_file:
             self.generic_visit(node)
             return
-        
+
         # PD008: Use .loc or .iloc for indexing, not chained indexing
         # Check for chained indexing: df[...][...]
         if isinstance(node.value, ast.Subscript):
@@ -178,7 +178,7 @@ class PandasVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.SUGGESTED,
                 )
             )
-        
+
         self.generic_visit(node)
 
 
@@ -199,7 +199,7 @@ class PandasRulesChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             # Only check files that use pandas

@@ -6,8 +6,6 @@ Implements isort-like functionality natively with additional analysis capabiliti
 """
 
 import ast
-import re
-from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 

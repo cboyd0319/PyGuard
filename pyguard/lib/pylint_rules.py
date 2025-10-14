@@ -14,7 +14,7 @@ References:
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -53,13 +53,13 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLR0912: Too many branches
         branches = 0
         for child in ast.walk(node):
             if isinstance(child, (ast.If, ast.For, ast.While, ast.ExceptHandler)):
                 branches += 1
-        
+
         if branches > 12:
             self.violations.append(
                 RuleViolation(
@@ -73,7 +73,7 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLR0913: Too many arguments
         total_args = (
             len(node.args.posonlyargs) +
@@ -82,7 +82,7 @@ class PylintVisitor(ast.NodeVisitor):
         )
         if (node.args.vararg or node.args.kwarg):
             total_args += 1
-        
+
         if total_args > 5:
             self.violations.append(
                 RuleViolation(
@@ -96,7 +96,7 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLR0915: Too many statements
         statements = [n for n in ast.walk(node) if isinstance(n, ast.stmt)]
         if len(statements) > 50:
@@ -112,7 +112,7 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLW0120: Else clause on loop without break
         for child in ast.walk(node):
             if isinstance(child, (ast.For, ast.While)):
@@ -123,7 +123,7 @@ class PylintVisitor(ast.NodeVisitor):
                         if isinstance(stmt, ast.Break):
                             has_break = True
                             break
-                    
+
                     if not has_break:
                         self.violations.append(
                             RuleViolation(
@@ -137,7 +137,7 @@ class PylintVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -153,7 +153,7 @@ class PylintVisitor(ast.NodeVisitor):
                                 if isinstance(target, ast.Attribute):
                                     if isinstance(target.value, ast.Name) and target.value.id == 'self':
                                         instance_attrs.add(target.attr)
-        
+
         if len(instance_attrs) > 7:
             self.violations.append(
                 RuleViolation(
@@ -167,14 +167,14 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLR0903: Too few public methods
         public_methods = 0
         for child in node.body:
             if isinstance(child, ast.FunctionDef):
                 if not child.name.startswith('_'):
                     public_methods += 1
-        
+
         if public_methods < 2 and len(node.body) > 1:
             # Only flag if class has more than just __init__
             methods = [m for m in node.body if isinstance(m, ast.FunctionDef)]
@@ -191,7 +191,7 @@ class PylintVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.NONE,
                     )
                 )
-        
+
         # PLR0904: Too many public methods
         if public_methods > 20:
             self.violations.append(
@@ -206,7 +206,7 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         # PLE0102: Function redefinition (same name)
         method_names = {}
         for child in node.body:
@@ -225,7 +225,7 @@ class PylintVisitor(ast.NodeVisitor):
                         )
                     )
                 method_names[child.name] = child.lineno
-        
+
         self.generic_visit(node)
 
     def visit_If(self, node: ast.If) -> None:
@@ -237,7 +237,7 @@ class PylintVisitor(ast.NodeVisitor):
                 if isinstance(value, ast.Call):
                     if isinstance(value.func, ast.Name) and value.func.id == 'isinstance':
                         isinstance_calls.append(value)
-            
+
             if len(isinstance_calls) >= 2:
                 # Check if they all check the same variable
                 first_arg = isinstance_calls[0].args[0]
@@ -259,7 +259,7 @@ class PylintVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         # PLW0125: Using type() instead of isinstance()
         if isinstance(node.test, ast.Compare):
             if isinstance(node.test.left, ast.Call):
@@ -276,14 +276,14 @@ class PylintVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Raise(self, node: ast.Raise) -> None:
         """Detect raise statement issues (PLW0707, PLE0711, PLE0712)."""
         # PLW0707: Raise with from inside except without chaining
         # Would need to track if we're in an except handler
-        
+
         # PLE0711: NotImplemented raised instead of NotImplementedError
         if isinstance(node.exc, ast.Name):
             if node.exc.id == 'NotImplemented':
@@ -299,7 +299,7 @@ class PylintVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
@@ -322,7 +322,7 @@ class PylintVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SAFE,
                                 )
                             )
-        
+
         # PLW0127: Self-comparison (x == x)
         if len(node.ops) == 1 and len(node.comparators) == 1:
             if isinstance(node.left, ast.Name) and isinstance(node.comparators[0], ast.Name):
@@ -339,14 +339,14 @@ class PylintVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.NONE,
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Return(self, node: ast.Return) -> None:
         """Detect return statement issues (PLR1711)."""
         # PLR1711: Useless return at end of function
         # This requires knowing if it's the last statement, handled elsewhere
-        
+
         self.generic_visit(node)
 
     def visit_Global(self, node: ast.Global) -> None:
@@ -365,7 +365,7 @@ class PylintVisitor(ast.NodeVisitor):
                 fix_applicability=FixApplicability.NONE,
             )
         )
-        
+
         self.generic_visit(node)
 
     def visit_Assert(self, node: ast.Assert) -> None:
@@ -384,7 +384,7 @@ class PylintVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.NONE,
                 )
             )
-        
+
         self.generic_visit(node)
 
 
@@ -405,7 +405,7 @@ class PylintRulesChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             tree = ast.parse(code)

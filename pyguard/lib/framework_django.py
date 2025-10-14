@@ -46,7 +46,7 @@ class DjangoVisitor(ast.NodeVisitor):
         if not self.is_django_file:
             self.generic_visit(node)
             return
-        
+
         # DJ001: Django ORM .raw() SQL query - potential SQL injection
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == 'raw':
@@ -66,13 +66,13 @@ class DjangoVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-            
+
             # DJ006: Django model without __str__ method
             # This is checked in visit_ClassDef
-            
+
             # DJ008: Model without Meta.ordering
             # This is checked in visit_ClassDef
-            
+
             # DJ012: Model .objects.get() without exception handling
             if node.func.attr == 'get':
                 if isinstance(node.func.value, ast.Attribute):
@@ -80,16 +80,16 @@ class DjangoVisitor(ast.NodeVisitor):
                         # Check if wrapped in try-except
                         # This requires parent context, handled in checker
                         pass
-        
+
         # DJ003: Django render() without csrf_token
         if isinstance(node.func, ast.Name) and node.func.id == 'render':
             # Check if template context has csrf_token
             # This is complex and requires template analysis
             pass
-        
+
         # DJ007: Django forms without clean methods
         # This is checked in visit_ClassDef
-        
+
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -97,18 +97,18 @@ class DjangoVisitor(ast.NodeVisitor):
         if not self.is_django_file:
             self.generic_visit(node)
             return
-        
+
         # Check if this is a Django Model
         is_model = False
         is_form = False
-        
+
         for base in node.bases:
             if isinstance(base, ast.Attribute):
                 if base.attr in ('Model', 'AbstractModel'):
                     is_model = True
                 elif base.attr in ('Form', 'ModelForm'):
                     is_form = True
-        
+
         if is_model:
             # DJ006: Model without __str__ method
             has_str = any(
@@ -128,7 +128,7 @@ class DjangoVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-            
+
             # DJ008: Model without Meta.ordering
             has_meta = False
             has_ordering = False
@@ -140,7 +140,7 @@ class DjangoVisitor(ast.NodeVisitor):
                             for target in meta_item.targets:
                                 if isinstance(target, ast.Name) and target.id == 'ordering':
                                     has_ordering = True
-            
+
             if has_meta and not has_ordering:
                 self.violations.append(
                     RuleViolation(
@@ -154,20 +154,20 @@ class DjangoVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         if is_form:
             # DJ007: Forms should have clean methods for validation
             clean_methods = [
                 item.name for item in node.body
                 if isinstance(item, ast.FunctionDef) and item.name.startswith('clean')
             ]
-            
+
             # Check if form has fields but no clean methods
             has_fields = any(
                 isinstance(item, ast.Assign)
                 for item in node.body
             )
-            
+
             if has_fields and not clean_methods:
                 self.violations.append(
                     RuleViolation(
@@ -181,7 +181,7 @@ class DjangoVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.NONE,
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -189,7 +189,7 @@ class DjangoVisitor(ast.NodeVisitor):
         if not self.is_django_file:
             self.generic_visit(node)
             return
-        
+
         # DJ013: Django settings - DEBUG = True in production
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -207,7 +207,7 @@ class DjangoVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-                
+
                 # DJ010: SECRET_KEY hardcoded
                 if target.id == 'SECRET_KEY':
                     if isinstance(node.value, ast.Constant):
@@ -223,7 +223,7 @@ class DjangoVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         self.generic_visit(node)
 
 
@@ -244,7 +244,7 @@ class DjangoRulesChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             # Only check files that appear to be Django-related

@@ -45,10 +45,10 @@ class BackupFileDetector:
     """
 
     BACKUP_EXTENSIONS = {
-        ".bak", ".backup", ".old", ".orig", ".tmp", ".temp", 
+        ".bak", ".backup", ".old", ".orig", ".tmp", ".temp",
         ".swp", ".swo", ".save", "~", ".copy"
     }
-    
+
     SENSITIVE_PATTERNS = {
         r"\.env$": "Environment file with secrets",
         r"\.env\.local$": "Local environment file",
@@ -84,14 +84,14 @@ class BackupFileDetector:
             List of file security issues found
         """
         issues = []
-        
+
         for root, dirs, files in os.walk(directory):
             # Skip common ignore directories
             dirs[:] = [d for d in dirs if d not in {".git", ".venv", "node_modules", "__pycache__", ".tox"}]
-            
+
             for filename in files:
                 file_path = Path(root) / filename
-                
+
                 # Check for backup file extensions
                 if any(str(filename).endswith(ext) for ext in self.BACKUP_EXTENSIONS):
                     issues.append(
@@ -105,7 +105,7 @@ class BackupFileDetector:
                             cwe_id="CWE-530",
                         )
                     )
-                
+
                 # Check for sensitive file patterns
                 for pattern, description in self.SENSITIVE_PATTERNS.items():
                     if re.search(pattern, str(filename)):
@@ -121,7 +121,7 @@ class BackupFileDetector:
                             )
                         )
                         break
-        
+
         return issues
 
 
@@ -157,7 +157,7 @@ class MassAssignmentDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern in self.VULNERABLE_PATTERNS:
                 if re.search(pattern, line):
@@ -175,7 +175,7 @@ class MassAssignmentDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -217,7 +217,7 @@ class ClickjackingDetector:
             List of security issues found
         """
         issues = []
-        
+
         # Detect web framework usage
         framework = None
         for fw, patterns in self.FRAMEWORK_PATTERNS.items():
@@ -227,7 +227,7 @@ class ClickjackingDetector:
                     break
             if framework:
                 break
-        
+
         if framework:
             # Check for X-Frame-Options or Content-Security-Policy
             has_protection = (
@@ -236,7 +236,7 @@ class ClickjackingDetector:
                 re.search(r"ClickjackingMiddleware", code) or
                 re.search(r"clickjacking", code, re.IGNORECASE)
             )
-            
+
             if not has_protection:
                 issues.append(
                     SecurityIssue(
@@ -251,7 +251,7 @@ class ClickjackingDetector:
                         cwe_id="CWE-1021",
                     )
                 )
-        
+
         return issues
 
 
@@ -287,27 +287,27 @@ class DependencyConfusionDetector:
             List of file security issues found
         """
         issues = []
-        
+
         if not requirements_file.exists():
             return issues
-        
+
         content = requirements_file.read_text()
         lines = content.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            
+
             # Extract package name
             package_name = line.split("==")[0].split(">=")[0].split("~=")[0].strip()
-            
+
             # Check if it looks like a private package
             for pattern in self.PRIVATE_PACKAGE_INDICATORS:
                 if re.match(pattern, package_name):
                     # Check if index-url is specified
                     has_index = "--index-url" in content or "--extra-index-url" in content
-                    
+
                     if not has_index:
                         issues.append(
                             FileSecurityIssue(
@@ -321,7 +321,7 @@ class DependencyConfusionDetector:
                             )
                         )
                     break
-        
+
         return issues
 
 
@@ -359,7 +359,7 @@ class MemoryDisclosureDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.MEMORY_PATTERNS:
                 if re.search(pattern, line):
@@ -377,7 +377,7 @@ class MemoryDisclosureDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -418,7 +418,7 @@ class AuthenticationBypassDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.BYPASS_PATTERNS:
                 if re.search(pattern, line, re.IGNORECASE):
@@ -436,7 +436,7 @@ class AuthenticationBypassDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -475,7 +475,7 @@ class AuthorizationBypassDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.IDOR_PATTERNS:
                 if re.search(pattern, line, re.IGNORECASE):
@@ -483,7 +483,7 @@ class AuthorizationBypassDetector:
                     context_start = max(0, line_num - 3)
                     context_end = min(len(lines), line_num + 3)
                     context = "\n".join(lines[context_start:context_end])
-                    
+
                     # Look for authorization patterns
                     if not re.search(r"(check_permission|authorize|owner|current_user)", context, re.IGNORECASE):
                         issues.append(
@@ -500,7 +500,7 @@ class AuthorizationBypassDetector:
                             )
                         )
                         break
-        
+
         return issues
 
 
@@ -540,7 +540,7 @@ class InsecureSessionManagementDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SESSION_PATTERNS:
                 if re.search(pattern, line, re.IGNORECASE):
@@ -558,7 +558,7 @@ class InsecureSessionManagementDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -596,14 +596,14 @@ class ResourceLeakDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.RESOURCE_PATTERNS:
                 if re.search(pattern, line):
                     # Check if 'with' statement is used in context
                     context_start = max(0, line_num - 2)
                     context = "\n".join(lines[context_start:line_num])
-                    
+
                     if "with " not in context:
                         issues.append(
                             SecurityIssue(
@@ -619,7 +619,7 @@ class ResourceLeakDetector:
                             )
                         )
                         break
-        
+
         return issues
 
 
@@ -658,7 +658,7 @@ class UncontrolledResourceConsumptionDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.DOS_PATTERNS:
                 if re.search(pattern, line):
@@ -676,7 +676,7 @@ class UncontrolledResourceConsumptionDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -714,7 +714,7 @@ class ImproperCertificateValidationDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.CERT_PATTERNS:
                 if re.search(pattern, line):
@@ -732,7 +732,7 @@ class ImproperCertificateValidationDetector:
                         )
                     )
                     break
-        
+
         return issues
 
 
@@ -770,7 +770,7 @@ class CryptographicNonceMisuseDetector:
         """
         issues = []
         lines = code.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.NONCE_PATTERNS:
                 if re.search(pattern, line):
@@ -788,5 +788,5 @@ class CryptographicNonceMisuseDetector:
                         )
                     )
                     break
-        
+
         return issues

@@ -11,7 +11,7 @@ Detects debugging statements that should not be in production code:
 import ast
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -151,7 +151,7 @@ class DebuggingPatternChecker:
             List of rule violations
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             tree = ast.parse(code)
@@ -178,7 +178,7 @@ class DebuggingPatternChecker:
             Tuple of (success, number of fixes applied)
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
             original_code = code
@@ -193,17 +193,14 @@ class DebuggingPatternChecker:
                 indent_match = re.match(r'^(\s*)', line)
                 indent = indent_match.group(1) if indent_match else ""
                 stripped = line.strip()
-                
+
                 # Skip already commented lines (idempotency check)
                 if stripped.startswith('#'):
                     new_lines.append(line)
                     continue
-                
+
                 # Skip lines with breakpoint(), pdb.set_trace(), etc.
-                if re.search(r"\bbreakpoint\s*\(", line):
-                    new_lines.append(f"{indent}# {stripped}  # REMOVED by PyGuard")
-                    fixes_applied += 1
-                elif re.search(r"\b(pdb|ipdb|pudb)\.set_trace\s*\(", line):
+                if re.search(r"\bbreakpoint\s*\(", line) or re.search(r"\b(pdb|ipdb|pudb)\.set_trace\s*\(", line):
                     new_lines.append(f"{indent}# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 # Keep print statements but add a comment (user might need them)
@@ -214,10 +211,7 @@ class DebuggingPatternChecker:
                     else:
                         new_lines.append(line)
                 # Remove debug imports
-                elif re.search(r"^import\s+(pdb|ipdb|pudb|pdbpp)\b", line):
-                    new_lines.append(f"# {stripped}  # REMOVED by PyGuard")
-                    fixes_applied += 1
-                elif re.search(r"^from\s+(pdb|ipdb|pudb|pdbpp)\s+import", line):
+                elif re.search(r"^import\s+(pdb|ipdb|pudb|pdbpp)\b", line) or re.search(r"^from\s+(pdb|ipdb|pudb|pdbpp)\s+import", line):
                     new_lines.append(f"# {stripped}  # REMOVED by PyGuard")
                     fixes_applied += 1
                 else:

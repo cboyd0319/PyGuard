@@ -5,10 +5,10 @@ Implements Ruff RET rules for detecting suboptimal return patterns.
 """
 
 import ast
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
 
-from .rule_engine import Rule, RuleViolation, RuleCategory, RuleSeverity
+from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
 
 
 class ReturnPatternVisitor(ast.NodeVisitor):
@@ -105,11 +105,11 @@ class ReturnPatternVisitor(ast.NodeVisitor):
         # Skip if function is empty or only has docstring/pass
         if not node.body:
             return
-        
+
         # Skip if function only has pass statement
         if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
             return
-        
+
         # Skip if function only has docstring
         if len(node.body) == 1 and isinstance(node.body[0], ast.Expr):
             return
@@ -166,7 +166,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
             if isinstance(stmt, ast.If) and stmt.orelse:
                 # Check if all branches in if/elif end with return
                 if_ends_with_return = self._branch_ends_with_return(stmt.body)
-                
+
                 if if_ends_with_return and stmt.orelse:
                     # Check if it's an elif or else
                     first_else = stmt.orelse[0]
@@ -189,7 +189,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.If) and stmt.orelse:
                 if_ends_with_return = self._branch_ends_with_return(stmt.body)
-                
+
                 if if_ends_with_return and stmt.orelse:
                     first_else = stmt.orelse[0]
                     if isinstance(first_else, ast.If):  # It's an elif
@@ -211,7 +211,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.If) and stmt.orelse:
                 if_ends_with_continue = self._branch_ends_with_continue(stmt.body)
-                
+
                 if if_ends_with_continue:
                     first_else = stmt.orelse[0]
                     if not isinstance(first_else, ast.If):
@@ -233,7 +233,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.If) and stmt.orelse:
                 if_ends_with_break = self._branch_ends_with_break(stmt.body)
-                
+
                 if if_ends_with_break:
                     first_else = stmt.orelse[0]
                     if not isinstance(first_else, ast.If):
@@ -280,8 +280,8 @@ class ReturnPatternChecker:
 
     def _create_rules(self) -> List[Rule]:
         """Create return pattern rules."""
-        from .rule_engine import Rule, RuleCategory, RuleSeverity, FixApplicability
-        
+        from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
+
         return [
             Rule(
                 rule_id="RET501",

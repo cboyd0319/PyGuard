@@ -62,7 +62,7 @@ class AnalysisCache:
         """Load cache from disk."""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file, "r") as f:
+                with open(self.cache_file) as f:
                     data = json.load(f)
                     for file_path, entry_dict in data.items():
                         # Extract data if it exists

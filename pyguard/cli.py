@@ -13,9 +13,9 @@ from typing import List
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
+from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
-from pyguard.lib.sarif_reporter import SARIFReporter
 
 
 class PyGuardCLI:
@@ -151,7 +151,7 @@ class PyGuardCLI:
             Dictionary with comprehensive results
         """
         start_time = time.time()
-        
+
         results = {
             "total_files": len(files),
             "files_with_issues": 0,

@@ -197,7 +197,7 @@ class NamingConventionVisitor(ast.NodeVisitor):
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
-                        fix_suggestion=f"Use single underscore or regular name",
+                        fix_suggestion="Use single underscore or regular name",
                         rule_id="N807",
                         name=node.name,
                     )

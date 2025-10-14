@@ -514,7 +514,7 @@ class SANSTop25Mapper:
             rank = self.get_sans_ranking(cwe_id)
             # Issues in Top 25 get their rank, others get 999
             return rank if rank else 999
-        
+
         return sorted(issues, key=get_priority)
 
     def generate_sans_report(self, issues: List[Dict]) -> Dict[str, Any]:
@@ -528,16 +528,16 @@ class SANSTop25Mapper:
             Report showing coverage of SANS Top 25
         """
         top25_found: Dict[int, List[str]] = {}
-        
+
         for issue in issues:
             cwe_id = issue.get("cwe_id", "")
             rank = self.get_sans_ranking(cwe_id)
-            
+
             if rank:
                 if rank not in top25_found:
                     top25_found[rank] = []
                 top25_found[rank].append(issue)
-        
+
         return {
             "total_top25_weaknesses_found": len(top25_found),
             "weaknesses_by_rank": {
@@ -597,7 +597,7 @@ class CERTSecureCodingMapper:
             "unsafe_deserialization": ["SER01-PY"],
             "none_comparison": ["EXP52-PY"],
         }
-        
+
         return mappings.get(issue_type, [])
 
     def generate_cert_report(self, issues: List[Dict]) -> Dict[str, Any]:
@@ -611,16 +611,16 @@ class CERTSecureCodingMapper:
             Report showing CERT rule violations
         """
         violations_by_rule: Dict[str, List[str]] = {}
-        
+
         for issue in issues:
             issue_type = issue.get("type", "unknown")
             cert_rules = self.map_to_cert_rules(issue_type)
-            
+
             for rule_id in cert_rules:
                 if rule_id not in violations_by_rule:
                     violations_by_rule[rule_id] = []
                 violations_by_rule[rule_id].append(issue)
-        
+
         return {
             "total_cert_violations": sum(len(v) for v in violations_by_rule.values()),
             "violations_by_rule": {
@@ -674,7 +674,7 @@ class IEEE12207Mapper:
             "complexity": ["6.4.3", "7.2.2"],
             "maintainability": ["6.4.7", "7.1.2"],
         }
-        
+
         return mappings.get(issue_category, ["7.1.2"])  # Default to QA
 
     def generate_lifecycle_report(self, issues: List[Dict]) -> Dict[str, Any]:
@@ -688,16 +688,16 @@ class IEEE12207Mapper:
             Report showing lifecycle process compliance
         """
         process_violations: Dict[str, List[str]] = {}
-        
+
         for issue in issues:
             category = issue.get("category", "quality")
             processes = self.map_to_lifecycle_processes(category)
-            
+
             for process_id in processes:
                 if process_id not in process_violations:
                     process_violations[process_id] = []
                 process_violations[process_id].append(issue)
-        
+
         return {
             "lifecycle_compliance": "PARTIAL" if process_violations else "FULL",
             "process_gaps": {
@@ -755,7 +755,7 @@ class MitreATTACKMapper:
             "path_traversal": ["T1083"],
             "sql_injection": ["T1210"],
         }
-        
+
         return mappings.get(issue_type, [])
 
     def generate_threat_model(self, issues: List[Dict]) -> Dict[str, Any]:
@@ -769,11 +769,11 @@ class MitreATTACKMapper:
             Threat model showing potential ATT&CK techniques enabled
         """
         techniques_enabled: Dict[str, Dict[str, Any]] = {}
-        
+
         for issue in issues:
             issue_type = issue.get("type", "unknown")
             techniques = self.map_to_attack_techniques(issue_type)
-            
+
             for technique_id in techniques:
                 if technique_id not in techniques_enabled:
                     techniques_enabled[technique_id] = {
@@ -781,7 +781,7 @@ class MitreATTACKMapper:
                         "issues": [],
                     }
                 techniques_enabled[technique_id]["issues"].append(issue)
-        
+
         return {
             "threat_exposure": "HIGH" if len(techniques_enabled) > 5 else "MEDIUM" if len(techniques_enabled) > 2 else "LOW",
             "techniques_enabled": len(techniques_enabled),

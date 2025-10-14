@@ -386,12 +386,12 @@ class FileOperations:
         file_path = Path(file_path)
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 return f.read()
         except UnicodeDecodeError:
             # Try with different encoding
             try:
-                with open(file_path, "r", encoding="latin-1") as f:
+                with open(file_path, encoding="latin-1") as f:
                     return f.read()
             except Exception as e:
                 self.logger.error(

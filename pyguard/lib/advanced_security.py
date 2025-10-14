@@ -87,7 +87,7 @@ class TaintAnalyzer(ast.NodeVisitor):
         """Track variable assignments from tainted sources."""
         if isinstance(node.value, ast.Call):
             call_name = self._get_call_name(node.value)
-            
+
             # Check if assigning from a taint source
             for source_pattern, source_type in self.TAINT_SOURCES.items():
                 if call_name.startswith(source_pattern):

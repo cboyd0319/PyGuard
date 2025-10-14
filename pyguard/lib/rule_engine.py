@@ -10,7 +10,7 @@ import ast
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -288,7 +288,7 @@ class RuleExecutor:
             rules = self.registry.get_enabled_rules()
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
         except Exception as e:
             self.logger.error(
