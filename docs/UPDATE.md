@@ -872,6 +872,16 @@ make security    # Security scan
 
 ## 📝 Changelog
 
+### 2025-10-14 - Critical Bug Fixes & Version Updates
+- ✅ **CRITICAL FIX:** scan-only mode now scans ALL rule types (security + quality + patterns)
+  - **Before:** Only 1 security issue detected
+  - **After:** 6 issues detected (1 security + 5 quality)
+  - **Impact:** Users can now properly scan without applying fixes
+- ✅ Updated minimum Python version from 3.8+ to 3.11+ per requirements
+- ✅ Updated README badges and pyproject.toml to reflect Python 3.11+
+- ✅ Updated Black target versions to 3.11, 3.12, 3.13 only
+- ✅ Verified all 729 tests still pass with 77% coverage
+
 ### 2025-10-14 - UPDATE.md Created
 - ✅ Created comprehensive tracking document
 - ✅ Documented current state (77% coverage, 729 tests, 334 rules)
@@ -910,10 +920,14 @@ make security    # Security scan
 ### Immediate Actions (This Week)
 
 1. ✅ Create UPDATE.md tracking document
-2. [ ] Review and prioritize Phase 9 rules
-3. [ ] Set up development environment for Phase 9
-4. [ ] Create templates for new rule modules
-5. [ ] Begin FURB completion (FURB112, 125-160)
+2. ✅ Update minimum Python version to 3.11+ (was 3.8+)
+3. ✅ Update README badges and pyproject.toml for Python 3.11+
+4. ✅ Fix CRITICAL bug: scan-only mode now scans ALL rule types (was only security)
+5. ✅ Verified all tests still pass (729 passing, 77% coverage)
+6. [ ] Review and prioritize Phase 9 rules
+7. [ ] Set up development environment for Phase 9
+8. [ ] Create templates for new rule modules
+9. [ ] Begin FURB completion (FURB112, 125-160)
 
 ### Short-term (Next Month)
 
