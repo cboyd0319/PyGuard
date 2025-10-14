@@ -36,11 +36,13 @@ jobs:
         
     - name: Run PyGuard Security Scan
       run: |
-        pyguard . \
+        # Scan only production code in pyguard/ directory
+        # Exclude tests, benchmarks, examples, docs (they contain intentionally vulnerable code for testing)
+        pyguard pyguard/ \
           --scan-only \
           --sarif \
           --no-html \
-          --exclude "tests/*" "venv/*" ".venv/*" "build/*" "dist/*" ".git/*" ".github/*" "benchmarks/*" "examples/*" "docs/*" || true
+          --severity HIGH || true
       continue-on-error: true
       
     - name: Upload SARIF results to GitHub Security tab

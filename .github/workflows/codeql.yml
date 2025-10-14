@@ -27,6 +27,12 @@ jobs:
       with:
         languages: python
         queries: security-extended
+        # Exclude test files and examples - they contain intentionally vulnerable code
+        paths-ignore:
+          - 'tests/**'
+          - 'examples/**'
+          - 'benchmarks/**'
+          - 'docs/**'
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
