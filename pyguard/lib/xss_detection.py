@@ -365,7 +365,7 @@ def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
         if re.search(r'@app\.route|def.*view.*\(request', line):
             # Check if CSP header is set in next few lines
             context_lines = lines[max(0, i-1):min(len(lines), i+10)]
-            if not any("Content-Security-Policy" in l for l in context_lines):
+            if not any("Content-Security-Policy" in context_line for context_line in context_lines):
                 patterns.append(("missing_csp", i, line.strip()))
 
         # Pattern: Dangerous Jinja2 filters (safe, bypass escaping)

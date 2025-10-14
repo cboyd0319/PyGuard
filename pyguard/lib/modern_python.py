@@ -409,7 +409,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                                 ModernizationIssue(
                                                     severity="MEDIUM",
                                                     category="Modern Python",
-                                                    message=f"Outdated version check for Python < 3.8",
+                                                    message="Outdated version check for Python < 3.8",
                                                     line_number=node.lineno,
                                                     column=node.col_offset,
                                                     code_snippet=self._get_code_snippet(node),

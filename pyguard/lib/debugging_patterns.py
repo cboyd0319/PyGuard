@@ -181,7 +181,6 @@ class DebuggingPatternChecker:
             with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
-            original_code = code
             fixes_applied = 0
 
             # Remove/comment out debugging statements

@@ -138,9 +138,6 @@ class ImportAnalyzer:
         if first_import_line is None:
             return code  # No imports to sort
 
-        # Extract import lines
-        import_lines = lines[first_import_line - 1 : last_import_line]
-
         # Sort imports by category
         sorted_imports = []
 

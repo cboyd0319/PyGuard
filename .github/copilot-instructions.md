@@ -85,7 +85,7 @@ make format && make lint && make test
 - **Backup before fix:** Always create backups before applying auto-fixes.
 
 ### Code Quality Standards
-- **Language:** Python 3.8+ (recommend 3.13 for development)
+- **Language:** Python 3.11+ (recommend 3.13 for development)
 - **Style:** PEP 8/PEP 257 with Black formatter (line length: 100)
 - **Type hints:** Required for new code, mypy-friendly
 - **Testing:** pytest with 70%+ coverage target
@@ -515,9 +515,9 @@ Before submitting a PR, verify:
 
 ## Common Pitfalls & Gotchas
 
-1. **Python Version:** Supports 3.8+ but recommend 3.13 for development
+1. **Python Version:** Supports 3.11+ but recommend 3.13 for development
    - Check with `python3 --version` or `python --version`
-   - CI tests on Python 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13
+   - CI tests on Python 3.11, 3.12, and 3.13
 
 2. **Virtual Environment:** Always activate before development
    - Symptom: `ModuleNotFoundError: No module named 'pyguard'`
@@ -626,7 +626,7 @@ line_length = 100
 ## Python Version Pinning
 
 **Recommended development version:** Python 3.13.8
-**Minimum supported version:** Python 3.8
+**Minimum supported version:** Python 3.11
 **Maximum tested version:** Python 3.13
 
 Ensure consistency across:

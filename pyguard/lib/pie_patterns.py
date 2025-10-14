@@ -610,7 +610,6 @@ class PIEPatternChecker:
             with open(file_path, encoding="utf-8") as f:
                 code = f.read()
 
-            original_code = code
             fixes_applied = 0
 
             # Fix PIE792: == False -> is False
