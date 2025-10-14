@@ -1,7 +1,7 @@
 # PyGuard — Python security scanner and auto-fixer
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![Tests](https://img.shields.io/badge/tests-729%20passing-success.svg)
 ![Coverage](https://img.shields.io/badge/coverage-77%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -49,7 +49,7 @@ Target users: Python developers, security teams, CI/CD pipelines.
 
 | Item | Version | Why |
 |------|---------|-----|
-| Python | 3.8+ | Runtime (3.13 recommended for dev) |
+| Python | 3.11+ | Runtime (3.13.8 recommended for dev) |
 | pip | latest | Package manager |
 
 Optional: Black, isort (auto-installed with PyGuard).
