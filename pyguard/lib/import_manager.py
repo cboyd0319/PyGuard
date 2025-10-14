@@ -443,8 +443,51 @@ class ImportManager:
             fixes.append("Sorted imports")
             content = sorted_content
 
-        # Remove unused imports (placeholder - needs implementation)
-        # TODO: Implement unused import removal
+        # Remove unused imports
+        try:
+            tree = ast.parse(content)
+            unused_imports = self.analyzer.find_unused_imports(tree, content)
+
+            if unused_imports:
+                # Remove unused imports from the content
+                lines = content.splitlines()
+                lines_to_remove = set()
+
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        for alias in node.names:
+                            name = alias.asname if alias.asname else alias.name.split(".")[0]
+                            if name in unused_imports:
+                                # Mark line for removal if all imports on it are unused
+                                lines_to_remove.add(node.lineno - 1)
+
+                    elif isinstance(node, ast.ImportFrom):
+                        names_to_keep = []
+                        for alias in node.names:
+                            if alias.name == "*":
+                                continue
+                            name = alias.asname if alias.asname else alias.name
+                            if name not in unused_imports:
+                                names_to_keep.append(alias)
+
+                        # If all imports from this line are unused, mark for removal
+                        if not names_to_keep and node.lineno:
+                            lines_to_remove.add(node.lineno - 1)
+
+                # Remove marked lines
+                if lines_to_remove:
+                    new_lines = [
+                        line for i, line in enumerate(lines) if i not in lines_to_remove
+                    ]
+                    content = "\n".join(new_lines)
+                    fixes.append(f"Removed {len(lines_to_remove)} unused imports")
+
+        except SyntaxError:
+            # If there's a syntax error, skip unused import removal
+            self.logger.warning(
+                "Syntax error in file, skipping unused import removal",
+                file_path=str(file_path),
+            )
 
         if fixes:
             success = self.file_ops.write_file(file_path, content)
