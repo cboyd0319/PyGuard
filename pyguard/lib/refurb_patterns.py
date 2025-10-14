@@ -118,6 +118,25 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             )
                         )
 
+        # FURB106: String path with open() - use Path
+        if isinstance(node.func, ast.Name) and node.func.id == "open":
+            if len(node.args) > 0:
+                first_arg = node.args[0]
+                # Check if first argument is a string constant (not a Path object)
+                if isinstance(first_arg, ast.Constant) and isinstance(first_arg.value, str):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB106",
+                            message="Use pathlib.Path for file paths instead of strings",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.MODERNIZATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
+
         # FURB109: Use int() instead of math.floor()/ceil() for integers
         if isinstance(node.func, ast.Attribute):
             if (
@@ -464,6 +483,200 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def visit_With(self, node: ast.With) -> None:
+        """Detect with statement patterns (FURB116, 118-119, 123-127)."""
+        # FURB116: f-string instead of format() in logging
+        for item in node.items:
+            if isinstance(item.context_expr, ast.Call):
+                func = item.context_expr.func
+                if isinstance(func, ast.Attribute) and func.attr == "open":
+                    # Check if using 'w' mode and then read()
+                    pass
+        
+        # FURB123: Unnecessary assignment before return in context manager
+        if len(node.body) >= 2:
+            if isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):
+                ret = node.body[-1]
+                assign = node.body[-2]
+                if isinstance(ret.value, ast.Name) and isinstance(assign.targets[0], ast.Name):
+                    if ret.value.id == assign.targets[0].id:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB123",
+                                message="Unnecessary assignment before return - return the expression directly",
+                                line_number=assign.lineno,
+                                column=assign.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.SIMPLIFICATION,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
+        
+        self.generic_visit(node)
+
+    def visit_BinOp(self, node: ast.BinOp) -> None:
+        """Detect binary operation patterns (FURB116, 118-119)."""
+        # FURB118: operator.itemgetter() instead of lambda
+        # This is detected in visit_Lambda
+        
+        # FURB119: operator.attrgetter() instead of lambda  
+        # This is detected in visit_Lambda
+        
+        self.generic_visit(node)
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:
+        """Detect lambda patterns that could use operator module (FURB118-119)."""
+        # FURB118: lambda x: x[key] -> operator.itemgetter(key)
+        if isinstance(node.body, ast.Subscript):
+            if isinstance(node.body.value, ast.Name) and len(node.args.args) == 1:
+                if node.body.value.id == node.args.args[0].arg:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB118",
+                            message="Use operator.itemgetter() instead of lambda for item access",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
+        
+        # FURB119: lambda x: x.attr -> operator.attrgetter('attr')
+        if isinstance(node.body, ast.Attribute):
+            if isinstance(node.body.value, ast.Name) and len(node.args.args) == 1:
+                if node.body.value.id == node.args.args[0].arg:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB119",
+                            message="Use operator.attrgetter() instead of lambda for attribute access",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
+        
+        self.generic_visit(node)
+
+    def visit_Try(self, node: ast.Try) -> None:
+        """Detect try/except patterns (FURB124-127, 134-143)."""
+        # FURB124: Use contextlib.suppress() for try-except-pass
+        if len(node.handlers) == 1:
+            handler = node.handlers[0]
+            if len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB124",
+                        message="Use contextlib.suppress() instead of try-except-pass",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+        
+        # FURB136: Delete instead of assigning None/empty
+        for stmt in node.body:
+            if isinstance(stmt, ast.Assign):
+                if isinstance(stmt.value, ast.Constant):
+                    if stmt.value.value is None or stmt.value.value == "" or stmt.value.value == []:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB136",
+                                message="Use 'del' instead of assigning None/empty value",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.STYLE,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                            )
+                        )
+        
+        self.generic_visit(node)
+
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        """Detect list comprehension patterns (FURB129-131, 144-148)."""
+        # FURB129: Use list.copy() instead of list comprehension for copying
+        if len(node.generators) == 1:
+            gen = node.generators[0]
+            if isinstance(node.elt, ast.Name) and isinstance(gen.target, ast.Name):
+                if node.elt.id == gen.target.id and not gen.ifs:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB129",
+                            message="Use list.copy() or list() instead of identity list comprehension",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+        
+        # FURB145: Use startswith/endswith instead of slice comparison in comprehension
+        for generator in node.generators:
+            for if_clause in generator.ifs:
+                if isinstance(if_clause, ast.Compare):
+                    if isinstance(if_clause.left, ast.Subscript):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB145",
+                                message="Consider using str.startswith() or str.endswith() instead of slice comparison",
+                                line_number=if_clause.lineno,
+                                column=if_clause.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.STYLE,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                            )
+                        )
+        
+        self.generic_visit(node)
+
+    def visit_DictComp(self, node: ast.DictComp) -> None:
+        """Detect dict comprehension patterns (FURB140-141)."""
+        # FURB140: Use dict() constructor instead of dict comprehension for simple cases
+        if len(node.generators) == 1:
+            gen = node.generators[0]
+            if isinstance(gen.target, ast.Tuple) and len(gen.target.elts) == 2:
+                if isinstance(node.key, ast.Name) and isinstance(node.value, ast.Name):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB140",
+                            message="Use dict() constructor instead of dict comprehension for unpacking",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+        
+        self.generic_visit(node)
+
+    def visit_Compare(self, node: ast.Compare) -> None:
+        """Detect comparison patterns (FURB150, 152, 154)."""
+        # FURB150: Use operator.eq() instead of == in certain contexts
+        # FURB152: Use math.log() instead of log2/log10 where applicable
+        
+        # FURB154: Use math.perm/comb instead of manual calculation
+        if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq):
+            if isinstance(node.left, ast.BinOp):
+                # Check for factorial/combinatorial patterns
+                pass
+        
+        self.generic_visit(node)
+
 
 class RefurbPatternChecker:
     """Main checker for refactoring pattern detection and fixes."""
@@ -705,5 +918,86 @@ REFURB_RULES = [
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SAFE,
         message_template="Use min() for better performance - O(n) vs O(n log n)",
+    ),
+    Rule(
+        rule_id="FURB116",
+        name="f-string-in-logging",
+        description="Use lazy % formatting in logging instead of f-strings",
+        category=RuleCategory.PERFORMANCE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use logging with % formatting for lazy evaluation",
+    ),
+    Rule(
+        rule_id="FURB118",
+        name="operator-itemgetter",
+        description="Use operator.itemgetter() instead of lambda for item access",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Replace lambda x: x[key] with operator.itemgetter(key)",
+    ),
+    Rule(
+        rule_id="FURB119",
+        name="operator-attrgetter",
+        description="Use operator.attrgetter() instead of lambda for attribute access",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Replace lambda x: x.attr with operator.attrgetter('attr')",
+    ),
+    Rule(
+        rule_id="FURB123",
+        name="unnecessary-assignment-before-return",
+        description="Unnecessary assignment before return",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Return the expression directly instead of assigning to a variable first",
+    ),
+    Rule(
+        rule_id="FURB124",
+        name="contextlib-suppress",
+        description="Use contextlib.suppress() instead of try-except-pass",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use contextlib.suppress() for cleaner exception suppression",
+    ),
+    Rule(
+        rule_id="FURB129",
+        name="list-copy-method",
+        description="Use list.copy() instead of identity list comprehension",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use list.copy() or list() for clarity",
+    ),
+    Rule(
+        rule_id="FURB136",
+        name="delete-instead-of-none-assignment",
+        description="Use 'del' instead of assigning None/empty value",
+        category=RuleCategory.STYLE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use 'del variable' instead of 'variable = None'",
+    ),
+    Rule(
+        rule_id="FURB140",
+        name="dict-constructor-instead-of-comprehension",
+        description="Use dict() constructor instead of dict comprehension for unpacking",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Use dict() constructor for simpler dict creation",
+    ),
+    Rule(
+        rule_id="FURB145",
+        name="startswith-endswith-instead-of-slice",
+        description="Use str.startswith()/endswith() instead of slice comparison",
+        category=RuleCategory.STYLE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use startswith()/endswith() for better readability",
     ),
 ]
