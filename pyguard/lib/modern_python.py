@@ -45,10 +45,47 @@ class ModernPythonVisitor(ast.NodeVisitor):
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return self.source_lines[node.lineno - 1].strip()
         return ""
+    
+    def _get_full_name(self, node: ast.expr) -> str:
+        """Get full name of an expression (for attributes)."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            parts = []
+            current = node
+            while isinstance(current, ast.Attribute):
+                parts.append(current.attr)
+                current = current.value
+            if isinstance(current, ast.Name):
+                parts.append(current.id)
+            return ".".join(reversed(parts))
+        return ""
 
     def visit_Call(self, node: ast.Call):
         """Visit function call nodes."""
         func_name = self._get_call_name(node)
+        
+        # UP038: Use X | Y for isinstance() instead of (X, Y) in Python 3.10+
+        if func_name == "isinstance" and len(node.args) == 2:
+            second_arg = node.args[1]
+            if isinstance(second_arg, ast.Tuple) and len(second_arg.elts) > 1:
+                types = []
+                for elt in second_arg.elts:
+                    if isinstance(elt, ast.Name):
+                        types.append(elt.id)
+                if types:
+                    self.issues.append(
+                        ModernizationIssue(
+                            severity="LOW",
+                            category="Modern Python",
+                            message="Use X | Y for isinstance() instead of tuple (Python 3.10+)",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion=f"isinstance(x, ({', '.join(types)})) → isinstance(x, {' | '.join(types)})",
+                            rule_id="UP038",
+                        )
+                    )
 
         # UP001: Detect old-style super()
         if func_name == "super" and len(node.args) == 2:
@@ -189,6 +226,23 @@ class ModernPythonVisitor(ast.NodeVisitor):
                     )
                 )
 
+            # UP041: Detect asyncio.TimeoutError (use TimeoutError in Python 3.11+)
+            if node.module == "asyncio":
+                for alias in node.names:
+                    if alias.name == "TimeoutError":
+                        self.issues.append(
+                            ModernizationIssue(
+                                severity="LOW",
+                                category="Modern Python",
+                                message="Use builtin 'TimeoutError' instead of 'asyncio.TimeoutError' (Python 3.11+)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                code_snippet=self._get_code_snippet(node),
+                                fix_suggestion="from asyncio import TimeoutError → use builtin TimeoutError",
+                                rule_id="UP041",
+                            )
+                        )
+
             # UP005: Detect unnecessary __future__ imports
             if node.module == "__future__":
                 for alias in node.names:
@@ -305,6 +359,100 @@ class ModernPythonVisitor(ast.NodeVisitor):
                 
                 # UP017: Use datetime.timezone.utc instead of datetime.timezone(datetime.timedelta(0))
                 # UP018: Native literals instead of str(), int(), etc.
+        
+        self.generic_visit(node)
+    
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Visit class definitions for enum modernization."""
+        # UP042: Use StrEnum instead of str + Enum (Python 3.11+)
+        # Check if class inherits from both str and Enum
+        if len(node.bases) >= 2:
+            base_names = []
+            for base in node.bases:
+                if isinstance(base, ast.Name):
+                    base_names.append(base.id)
+            
+            if "str" in base_names and "Enum" in base_names:
+                self.issues.append(
+                    ModernizationIssue(
+                        severity="LOW",
+                        category="Modern Python",
+                        message="Use enum.StrEnum instead of (str, Enum) (Python 3.11+)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="class MyEnum(str, Enum): → class MyEnum(StrEnum):",
+                        rule_id="UP042",
+                    )
+                )
+        
+        self.generic_visit(node)
+    
+    def visit_If(self, node: ast.If) -> None:
+        """Visit if statements for version check modernization."""
+        # UP036: Outdated version blocks - check for sys.version_info comparisons
+        if isinstance(node.test, ast.Compare):
+            if isinstance(node.test.left, ast.Attribute):
+                # Check for sys.version_info patterns
+                full_name = self._get_full_name(node.test.left)
+                if full_name == "sys.version_info":
+                    # Check if comparing against outdated version (< 3.8)
+                    for comparator in node.test.comparators:
+                        if isinstance(comparator, ast.Tuple):
+                            if len(comparator.elts) >= 2:
+                                if isinstance(comparator.elts[0], ast.Constant):
+                                    major_version = comparator.elts[0].value
+                                    if isinstance(comparator.elts[1], ast.Constant):
+                                        minor_version = comparator.elts[1].value
+                                        if major_version == 3 and minor_version < 8:
+                                            self.issues.append(
+                                                ModernizationIssue(
+                                                    severity="MEDIUM",
+                                                    category="Modern Python",
+                                                    message=f"Outdated version check for Python < 3.8",
+                                                    line_number=node.lineno,
+                                                    column=node.col_offset,
+                                                    code_snippet=self._get_code_snippet(node),
+                                                    fix_suggestion="Remove version check for Python < 3.8 as minimum is 3.8+",
+                                                    rule_id="UP036",
+                                                )
+                                            )
+        
+        self.generic_visit(node)
+    
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Visit annotated assignments for type alias modernization."""
+        # UP037: Quoted annotations - check for string annotations that should be unquoted
+        if isinstance(node.annotation, ast.Constant) and isinstance(node.annotation.value, str):
+            # In Python 3.10+, we can use unquoted annotations
+            self.issues.append(
+                ModernizationIssue(
+                    severity="LOW",
+                    category="Modern Python",
+                    message="Remove quotes from type annotations (Python 3.10+)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion=f"Remove quotes: '{node.annotation.value}' → {node.annotation.value}",
+                    rule_id="UP037",
+                )
+            )
+        
+        # UP040: Use 'type' statement for type aliases (Python 3.12+)
+        # Example: MyType: TypeAlias = int → type MyType = int
+        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
+            self.issues.append(
+                ModernizationIssue(
+                    severity="LOW",
+                    category="Modern Python",
+                    message="Use 'type' statement for type aliases (Python 3.12+)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="MyType: TypeAlias = int → type MyType = int",
+                    rule_id="UP040",
+                )
+            )
         
         self.generic_visit(node)
     

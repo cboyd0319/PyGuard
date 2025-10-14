@@ -369,3 +369,51 @@ def good_function():
         violations = checker.check_code(code)
         # Should have minimal or no violations
         assert len(violations) <= 1
+
+
+class TestRaiseWithoutFrom:
+    """Test TRY001: Raise without from inside except."""
+
+    def test_detect_raise_without_from(self):
+        """Test detection of raise without from in except handler."""
+        code = """
+def process():
+    try:
+        do_something()
+    except ValueError:
+        raise RuntimeError("Processing failed")
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        try001_violations = [v for v in violations if v.rule_id == "TRY001"]
+        assert len(try001_violations) >= 1
+        assert "from" in try001_violations[0].message.lower()
+
+    def test_allow_raise_with_from(self):
+        """Test that raise with from is allowed."""
+        code = """
+def process():
+    try:
+        do_something()
+    except ValueError as e:
+        raise RuntimeError("Processing failed") from e
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        try001_violations = [v for v in violations if v.rule_id == "TRY001"]
+        assert len(try001_violations) == 0
+
+    def test_allow_bare_raise(self):
+        """Test that bare raise is allowed."""
+        code = """
+def process():
+    try:
+        do_something()
+    except ValueError:
+        log_error()
+        raise
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        try001_violations = [v for v in violations if v.rule_id == "TRY001"]
+        assert len(try001_violations) == 0
