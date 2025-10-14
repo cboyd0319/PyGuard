@@ -52,6 +52,15 @@ from pyguard.lib.knowledge_integration import (
 from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
 from pyguard.lib.mcp_integration import MCPIntegration, MCPServer
 from pyguard.lib.ml_detection import AnomalyDetector, MLRiskScorer
+
+# NEW in v0.3.0: Notebook security analysis
+from pyguard.lib.notebook_security import (
+    NotebookCell,
+    NotebookFixer,
+    NotebookIssue,
+    NotebookSecurityAnalyzer,
+    scan_notebook,
+)
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 
 # NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
@@ -149,6 +158,12 @@ __all__ = [
     # ML Detection
     "MLRiskScorer",
     "AnomalyDetector",
+    # Notebook Security (NEW v0.3.0)
+    "NotebookSecurityAnalyzer",
+    "NotebookFixer",
+    "NotebookIssue",
+    "NotebookCell",
+    "scan_notebook",
     # Standards Integration
     "StandardsMapper",
     "SANSTop25Mapper",
