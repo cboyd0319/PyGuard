@@ -48,7 +48,9 @@ htmlcov/
 .stestr/
 
 # IDEs
-.vscode/
+# .vscode/ config files are tracked for team consistency
+# Local overrides should go in .vscode/*.local.json
+.vscode/*.local.json
 .idea/
 .cursor/
 .claude/
@@ -114,4 +116,16 @@ pyguard-report.html
 pyguard-report.json
 pyguard-report.sarif
 test_demo/
+
+# Build artifacts (setuptools/wheel)
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Ruff cache
+.ruff_cache/
+
+# pyenv
+.python-version.local
 
