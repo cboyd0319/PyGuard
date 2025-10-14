@@ -19,22 +19,33 @@ Welcome to the PyGuard documentation! This index will help you find the informat
 
 ### Features & Capabilities
 
-1. **[Security Rules Reference](security-rules.md)**
+1. **[Features Overview](FEATURES.md)**
+   - Complete feature list
+   - AST-based analysis details
+   - Industry standards alignment
+   - Performance comparisons
+
+2. **[Security Rules Reference](security-rules.md)**
    - All security vulnerability checks
    - Severity levels and auto-fix capabilities
    - Examples and recommendations
 
-2. **[Best Practices Reference](best-practices.md)**
+3. **[Best Practices Reference](best-practices.md)**
    - Code quality improvements
    - Python conventions and standards
    - Performance considerations
 
-3. **[API Reference](api-reference.md)**
+4. **[AST Analysis](ast-analysis.md)**
+   - Abstract Syntax Tree analysis
+   - Code pattern detection
+   - Static analysis techniques
+
+5. **[API Reference](api-reference.md)**
    - Complete Python API documentation
    - Class and method references
    - Usage examples
 
-### Configuration
+### Configuration & Compliance
 
 - [**Configuration Guide**](configuration.md)
   - All configuration options
@@ -42,16 +53,26 @@ Welcome to the PyGuard documentation! This index will help you find the informat
   - Configuration hierarchy
   - [Example Configuration](../examples/pyguard.toml.example)
 
+- [**Compliance Frameworks**](COMPLIANCE.md)
+  - NIST CSF, ISO 27001, SOC 2
+  - PCI DSS, GDPR, HIPAA
+  - Framework mappings and reports
+
 ### Integration
 
 - **CI/CD Integration**
-  - [GitHub Actions](.github/workflows/)
+  - [GitHub Actions](../.github/workflows/)
   - GitLab CI (coming soon)
   - Jenkins (coming soon)
 
 - **Pre-commit Hooks**
   - [Installation guide](user-guide.md#pre-commit-integration)
-  - [Configuration](.pre-commit-hooks.yaml)
+  - [Configuration](../.pre-commit-hooks.yaml)
+
+- [**Model Context Protocol (MCP)**](MCP-GUIDE.md)
+  - MCP server integration
+  - GitHub Copilot enhancement
+  - External knowledge sources
 
 ## 🔧 Technical Documentation
 
@@ -103,9 +124,10 @@ Welcome to the PyGuard documentation! This index will help you find the informat
 
 ### Getting Help
 
-1. **[Issues](https://github.com/cboyd0319/PyGuard/issues)** - Bug reports and feature requests
-2. **[Discussions](https://github.com/cboyd0319/PyGuard/discussions)** - Questions and community
-3. **Documentation** - You're here! 📖
+1. **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
+2. **[Issues](https://github.com/cboyd0319/PyGuard/issues)** - Bug reports and feature requests
+3. **[Discussions](https://github.com/cboyd0319/PyGuard/discussions)** - Questions and community
+4. **Documentation** - You're here! 📖
 
 ### Useful Links
 
@@ -193,6 +215,11 @@ line_length = 100
 | Security Rules | ✅ Complete | 2025-10-12 |
 | Best Practices | ✅ Complete | 2025-10-12 |
 | Architecture | ✅ Complete | 2025-10-12 |
+| Features | ✅ Complete | 2025-10-12 |
+| Compliance | ✅ Complete | 2025-10-12 |
+| AST Analysis | ✅ Complete | 2025-10-12 |
+| MCP Guide | ✅ Complete | 2025-10-13 |
+| Troubleshooting | ✅ Complete | 2025-10-12 |
 | Contributing | ✅ Complete | 2025-10-12 |
 
 ## 🤝 Contributing to Documentation
