@@ -152,10 +152,34 @@ Create `pyguard.toml` in project root or use `~/.config/pyguard/config.toml`.
 
 ### GitHub Integration
 
-PyGuard generates SARIF 2.1.0 reports for GitHub Code Scanning:
+**Option 1: Use PyGuard as a GitHub Action (Recommended)**
 
 ```yaml
-# .github/workflows/pyguard-security-scan.yml
+# .github/workflows/pyguard-security.yml
+name: PyGuard Security Scan
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cboyd0319/PyGuard@main
+        with:
+          paths: '.'
+          scan-only: 'true'
+          upload-sarif: 'true'
+```
+
+**Option 2: Install and Run PyGuard**
+
+```yaml
+# .github/workflows/pyguard-manual.yml
 name: PyGuard Security Scan
 
 on: [push, pull_request]
@@ -179,15 +203,20 @@ jobs:
 ```
 
 **What you get:**
-- Upload to GitHub Security tab
-- SARIF 2.1.0 compliant reports
-- CWE/OWASP vulnerability mappings
-- Fix suggestions for each issue
-- Security trend tracking
+- ✅ Upload to GitHub Security tab
+- ✅ SARIF 2.1.0 compliant reports
+- ✅ CWE/OWASP vulnerability mappings
+- ✅ Fix suggestions for each issue
+- ✅ Security trend tracking
+- ✅ Pull request annotations
+
+**📖 See [GitHub Action Guide](docs/github-action-guide.md) for complete setup instructions and examples**
 
 See [docs/index.md](docs/index.md) for complete documentation hub.
 
 **📖 [COMPLETE CAPABILITIES REFERENCE](docs/capabilities-reference.md) — Detailed catalog of ALL 55+ security checks, 150+ code quality rules, auto-fixes, and features**
+
+**🎯 [GITHUB ACTION GUIDE](docs/github-action-guide.md) — Complete guide for using PyGuard in GitHub Actions workflows with examples and best practices**
 
 ## Advanced Features (NEW!)
 

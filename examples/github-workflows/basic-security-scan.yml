@@ -1,0 +1,36 @@
+# Basic PyGuard Security Scan
+# 
+# This workflow performs basic security scanning on every push and pull request.
+# Results are uploaded to GitHub Security tab for tracking.
+#
+# Usage: Copy to .github/workflows/pyguard-security.yml
+
+name: PyGuard Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# Required permissions for SARIF upload
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run PyGuard Security Scan
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: '.'
+        scan-only: 'true'
+        security-only: 'true'
+        upload-sarif: 'true'
