@@ -64,7 +64,7 @@ class SecurityVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_Call(self, node: ast.Call):
@@ -312,7 +312,7 @@ class SecurityVisitor(ast.NodeVisitor):
                         SecurityIssue(
                             severity="HIGH",
                             category="Weak JWT Algorithm",
-                            message=f"JWT using weak algorithm '{algorithm_arg.value}'",
+                            message=f"JWT using weak algorithm '{algorithm_arg.value!r}'",
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
@@ -591,8 +591,8 @@ class SecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
-            parts = []
-            current = node.func
+            parts: list[str] = []
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.insert(0, current.attr)
                 current = current.value
@@ -638,7 +638,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -886,7 +886,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
 
     def _count_lines_of_code(self, node: ast.FunctionDef) -> int:
         """Count lines of code in a function (excluding comments and docstrings)."""
-        if not hasattr(node, "lineno") or not hasattr(node, "end_lineno"):
+        if not hasattr(node, "lineno") or not hasattr(node, "end_lineno") or node.end_lineno is None:
             return 0
         return node.end_lineno - node.lineno + 1
 
