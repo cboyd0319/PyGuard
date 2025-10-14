@@ -39,6 +39,7 @@ dependencies = [
     "vulture>=2.14",
     "ruff>=0.14.0",
     "rich>=13.0.0",
+    "watchdog>=3.0.0",
 ]
 
 [project.optional-dependencies]

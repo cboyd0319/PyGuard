@@ -419,6 +419,13 @@ def main():
              "refactoring, and path traversal validation. Review changes carefully!",
     )
 
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Watch mode: monitor files for changes and re-analyze automatically. "
+             "Press Ctrl+C to stop.",
+    )
+
     args = parser.parse_args()
 
     # Initialize CLI with unsafe fixes flag
@@ -451,6 +458,32 @@ def main():
     # Run analysis based on flags
     create_backup = not args.no_backup
     fix = not args.scan_only
+
+    # Watch mode
+    if args.watch:
+        from pyguard.lib.watch import run_watch_mode
+        
+        def analyze_file(file_path: Path):
+            """Analyze a single file in watch mode."""
+            from rich.console import Console
+            console = Console()
+            console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
+            
+            if args.security_only:
+                cli.run_security_fixes([file_path], create_backup)
+            elif args.formatting_only:
+                cli.run_formatting([file_path], create_backup, use_black=not args.no_black, use_isort=not args.no_isort)
+            elif args.best_practices_only:
+                cli.run_best_practices_fixes([file_path], create_backup)
+            else:
+                cli.run_full_analysis([file_path], create_backup, fix)
+            
+            console.print("[green]✓ Analysis complete[/green]")
+        
+        # Convert paths back to Path objects for watch mode
+        watch_paths = [Path(p) for p in args.paths]
+        run_watch_mode(watch_paths, analyze_file)
+        return
 
     if args.security_only:
         results = {"security": cli.run_security_fixes(all_files, create_backup)}
