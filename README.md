@@ -2,9 +2,10 @@
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![Tests](https://img.shields.io/badge/tests-257%20passing-success.svg)
-![Coverage](https://img.shields.io/badge/coverage-69%25-green.svg)
+![Tests](https://img.shields.io/badge/tests-729%20passing-success.svg)
+![Coverage](https://img.shields.io/badge/coverage-77%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Rules](https://img.shields.io/badge/rules-334%20implemented-blue.svg)
 
 **TL;DR**: Install PyGuard, run it on your codebase, get security fixes and quality improvements applied automatically. Works locally, no telemetry.
 
@@ -250,11 +251,12 @@ See [docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md) for complete setup 
 
 | Feature | PyGuard | Bandit | Semgrep | Pylint | Ruff | SonarQube |
 |---------|---------|--------|---------|--------|------|-----------|
+| Total rules | 334 | ~10 | ~15 | ~300 | ~800 | ~400 |
 | Security checks | 55+ | ~10 | ~15 | ~5 | 0 | ~18 |
-| Auto-fix | 20+ | No | Partial | No | Style only | No |
+| Auto-fix | 150+ | No | Partial | No | Style only | No |
 | Standards | 10 | 1 | 1 | 1 | 1 | 2 |
-| Tests | 257 | Unknown | Unknown | Unknown | Unknown | Closed |
-| Coverage | 69% | Unknown | Unknown | Unknown | Unknown | Unknown |
+| Tests | 729 | Unknown | Unknown | Unknown | Unknown | Closed |
+| Coverage | 77% | Unknown | Unknown | Unknown | Unknown | Unknown |
 | Free | Yes | Yes | Yes | Yes | Yes | No |
 | Open source | Yes (MIT) | Yes | Yes | Yes | Yes | No |
 
