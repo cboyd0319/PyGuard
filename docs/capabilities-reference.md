@@ -16,10 +16,12 @@
 | **Compliance Frameworks Supported** | 10+ | ✅ Full Coverage |
 | **ML-Powered Features** | 5 | ✅ Active |
 | **Lines of Analysis Code** | 27,019 | ✅ Production |
-| **Test Coverage** | 81% | ✅ Excellent |
-| **Total Tests** | 1035 | ✅ Comprehensive |
+| **Test Coverage** | 82% | ✅ Excellent |
+| **Total Tests** | 1037 | ✅ Comprehensive |
+| **GitHub Actions Integration** | ✅ Native | ✅ SARIF Support |
+| **SARIF 2.1.0 Compliance** | ✅ Full | ✅ Code Scanning |
 
-**Replaces these tools**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial)
+**Replaces these tools**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial) • Safety
 
 ---
 
@@ -1008,24 +1010,86 @@ From `docs/UPDATEv2.md` and `README.md`:
 
 ### Comparison to Other Tools
 
-| Feature | PyGuard | Bandit | Ruff | Semgrep | Pylint |
-|---------|---------|--------|------|---------|--------|
-| Security Checks | 55+ | ~10 | ~15 | ~20 | ~5 |
-| Code Quality | 150+ | 0 | 800+ | ~50 | 200+ |
-| Auto-Fixes | 150+ | 0 | Limited | 0 | 0 |
-| ML-Powered | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
-| Compliance | 10+ | 0 | 0 | 0 | 0 |
-| Local-Only | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Cloud | ✅ Yes |
-| Framework Support | 4 | 2 | 3 | 4 | 2 |
+**PyGuard vs. Leading Security & Code Quality Tools**
 
-**PyGuard replaces 7+ tools:**
-1. Bandit (security)
-2. Semgrep (pattern matching)
-3. Ruff (linting)
-4. Pylint (quality)
-5. Black (formatting)
-6. isort (imports)
-7. mypy (type checking)
+| Feature | PyGuard | Bandit | Ruff Security | Semgrep | Snyk Code | SonarQube |
+|---------|---------|--------|---------------|---------|-----------|-----------|
+| **Security Checks** | 55+ | 40+ | 73 (S-rules) | 100+ | 200+ | 100+ |
+| **Code Quality Rules** | 150+ | 0 | 800+ | 50+ | 100+ | 500+ |
+| **Auto-Fixes** | 150+ | ❌ No | ~80 | ❌ No | ❌ No | ❌ No |
+| **ML-Powered Detection** | ✅ Yes | ❌ No | ❌ No | ❌ No | ✅ Yes | ⚠️ Limited |
+| **Compliance Frameworks** | 10+ | 0 | 0 | 0 | ⚠️ Limited | ✅ Yes |
+| **Local-Only/No Telemetry** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |
+| **Framework Support** | 4 | 2 | 3 | 4+ | 5+ | 6+ |
+| **SARIF Output** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
+| **GitHub Actions** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native | ✅ Native |
+| **CWE Mappings** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
+| **OWASP Top 10 2021** | ✅ Full | ⚠️ Partial | ⚠️ Partial | ✅ Full | ✅ Full | ✅ Full |
+| **Cost** | Free | Free | Free | Free/Paid | Paid | Free/Paid |
+
+#### Detailed Feature Comparison
+
+**Security Detection Coverage by Category**
+
+| Vulnerability Type | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
+|-------------------|---------|--------|------|---------|------|-----------|
+| SQL Injection | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Command Injection | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| XSS | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
+| Hardcoded Secrets | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Insecure Deserialization | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Path Traversal | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SSRF | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
+| Weak Cryptography | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Authentication Issues | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ |
+| Authorization Issues | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Insecure Config | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Logging/Monitoring Issues | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ |
+| Taint Tracking | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| ReDoS | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Race Conditions | ✅ | ✅ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Integer Overflow | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| GraphQL Injection | ✅ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ |
+| SSTI | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
+| JWT Security | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Container Security | ✅ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ |
+
+**Legend**: ✅ Full Support | ⚠️ Partial/Limited | ❌ Not Supported
+
+**PyGuard Unique Advantages:**
+
+1. **All-in-One Solution**: Replaces 7+ tools (Bandit + Semgrep + Ruff + Pylint + Black + isort + mypy)
+2. **Auto-Fix Capability**: 150+ automated fixes (safe + unsafe options)
+3. **ML-Powered**: Risk scoring, anomaly detection, vulnerability prediction
+4. **100% Local**: No telemetry, no cloud dependencies, complete privacy
+5. **Multi-Framework Compliance**: 10+ frameworks (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
+6. **Advanced Detection**: Taint tracking, race conditions, ReDoS, integer overflow
+7. **Framework-Specific**: Django, Flask, FastAPI, Pandas custom rules
+8. **GitHub Actions Native**: Built-in action with SARIF upload
+
+**Tool Replacement Matrix:**
+
+PyGuard replaces these specialized tools:
+
+| Tool | Purpose | PyGuard Module |
+|------|---------|---------------|
+| **Bandit** | Security scanning | `security.py`, `advanced_security.py` |
+| **Semgrep** | Pattern matching | `ast_analyzer.py`, `rule_engine.py` |
+| **Ruff** | Linting & formatting | `ruff_security.py`, `pep8_comprehensive.py` |
+| **Pylint** | Code quality | `pylint_rules.py`, `best_practices.py` |
+| **Black** | Code formatting | `formatting.py` |
+| **isort** | Import sorting | `import_rules.py`, `import_manager.py` |
+| **mypy** | Type checking | `type_checker.py` |
+| **Safety** | Dependency checking | `supply_chain.py` |
+
+**Coverage Statistics:**
+
+- **Total Security Checks**: 55+ unique vulnerability types
+- **CWE Coverage**: 100+ CWE IDs mapped
+- **OWASP Coverage**: OWASP Top 10 2021 + OWASP ASVS 4.0
+- **Code Quality Rules**: 150+ rules across 10+ categories
+- **Auto-Fixes**: 150+ automated fixes with backup/rollback
+- **Test Coverage**: 82% (1037 tests passing)
 
 ---
 
@@ -1060,8 +1124,11 @@ pyguard src/ --unsafe-fixes
 
 ### CI/CD Integration
 ```bash
-# Generate SARIF for GitHub
+# Generate SARIF for GitHub Code Scanning
 pyguard . --scan-only --sarif --no-html
+
+# SARIF output location
+# Creates: pyguard-report.sarif
 ```
 
 ### Framework-Specific
@@ -1072,6 +1139,130 @@ pyguard . --framework django
 # Flask project  
 pyguard . --framework flask
 ```
+
+---
+
+## GitHub Actions Integration
+
+### Using PyGuard as a GitHub Action
+
+PyGuard provides a reusable GitHub Action for easy workflow integration:
+
+```yaml
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  security-events: write  # Required for uploading SARIF results
+
+jobs:
+  pyguard-scan:
+    name: PyGuard Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run PyGuard Security Scan
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: '.'
+        python-version: '3.13'
+        scan-only: 'true'
+        security-only: 'false'
+        severity: 'LOW'
+        exclude: 'tests/* venv/* .venv/* build/* dist/*'
+        sarif-file: 'pyguard-report.sarif'
+        upload-sarif: 'true'
+        fail-on-issues: 'false'
+```
+
+### Action Inputs
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `paths` | Paths to scan (space-separated) | `.` |
+| `python-version` | Python version to use | `3.13` |
+| `scan-only` | Only scan without fixing issues | `true` |
+| `security-only` | Only run security checks | `false` |
+| `severity` | Minimum severity level (LOW, MEDIUM, HIGH, CRITICAL) | `LOW` |
+| `exclude` | Patterns to exclude (space-separated) | `tests/* venv/* .venv/*...` |
+| `sarif-file` | Output SARIF file path | `pyguard-report.sarif` |
+| `upload-sarif` | Upload SARIF results to GitHub Security tab | `true` |
+| `fail-on-issues` | Fail the action if security issues are found | `false` |
+| `unsafe-fixes` | Enable unsafe auto-fixes | `false` |
+
+### Action Outputs
+
+| Output | Description |
+|--------|-------------|
+| `issues-found` | Number of security issues found |
+| `sarif-file` | Path to generated SARIF report |
+
+### SARIF Output for GitHub Code Scanning
+
+PyGuard generates SARIF 2.1.0 compliant reports with:
+
+- **CWE/OWASP Mappings**: All security issues mapped to CWE IDs and OWASP categories
+- **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW mapped to SARIF error/warning/note levels
+- **Fix Suggestions**: Automated fix suggestions included in SARIF format
+- **Code Snippets**: Vulnerable code snippets included in results
+- **GitHub Integration**: Full compatibility with GitHub Code Scanning Security tab
+- **Compliance Metadata**: Multi-framework compliance tags (OWASP, PCI-DSS, HIPAA, etc.)
+
+#### SARIF Report Structure
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [{
+    "tool": {
+      "driver": {
+        "name": "PyGuard",
+        "version": "0.3.0",
+        "informationUri": "https://github.com/cboyd0319/PyGuard",
+        "organization": "PyGuard",
+        "downloadUri": "https://github.com/cboyd0319/PyGuard/releases",
+        "rules": [/* 55+ security rules */]
+      }
+    },
+    "results": [/* Security findings */],
+    "columnKind": "utf16CodeUnits",  // GitHub compatibility
+    "automationDetails": {
+      "id": "pyguard/0.3.0",
+      "guid": "pyguard-security-scan"
+    }
+  }]
+}
+```
+
+#### SARIF Features
+
+| Feature | Support | Description |
+|---------|---------|-------------|
+| **CWE Mappings** | ✅ Full | All security issues mapped to CWE IDs |
+| **OWASP Top 10** | ✅ Full | OWASP Top 10 2021 coverage |
+| **OWASP ASVS** | ✅ Full | OWASP ASVS compliance mappings |
+| **Severity Scores** | ✅ Full | Security-severity scores (1.0-9.0) |
+| **Fix Suggestions** | ✅ Full | Automated remediation suggestions |
+| **Code Snippets** | ✅ Full | Vulnerable code context included |
+| **Multi-framework** | ✅ Full | 10+ compliance frameworks supported |
+| **GitHub Security Tab** | ✅ Full | Direct integration with Code Scanning |
+
+### Viewing Results in GitHub
+
+After running PyGuard with SARIF output, results appear in:
+
+1. **Security Tab**: `https://github.com/OWNER/REPO/security/code-scanning`
+2. **Pull Request Annotations**: Issues shown inline on PR diffs
+3. **Status Checks**: Pass/fail status based on configuration
 
 ---
 
