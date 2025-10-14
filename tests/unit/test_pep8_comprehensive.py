@@ -1511,12 +1511,15 @@ s = `object`
         finally:
             path.unlink()
     
+    @pytest.mark.filterwarnings("ignore::SyntaxWarning")
     def test_w605_invalid_escape_sequence(self):
         """Test W605: Invalid escape sequence."""
-        code = """
+        # Use raw strings to avoid SyntaxWarning in test code itself
+        # Note: SyntaxWarnings when parsing the temp file are expected and suppressed
+        code = r"""
 # Invalid escape sequence (should use raw string)
-pattern = "\\d+"  # Valid with double backslash
-invalid = "\\w+"  # Should be r"\\w+" for regex
+pattern = "\d+"  # Invalid escape sequence
+invalid = "\w+"  # Invalid escape sequence
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             f.write(code)

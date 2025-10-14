@@ -15,7 +15,7 @@ References:
 import json
 import re
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -441,7 +441,7 @@ class SupplyChainAnalyzer:
         sbom = SBOM(
             project_name=project_dir.name,
             project_version="unknown",  # Would be parsed from setup.py/pyproject.toml
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             dependencies=unique_deps,
             total_dependencies=len(unique_deps),
         )
