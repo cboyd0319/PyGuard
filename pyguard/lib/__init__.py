@@ -20,6 +20,7 @@ from pyguard.lib.debugging_patterns import (
     DebuggingPatternChecker,
     DebuggingPatternVisitor,
 )
+from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 from pyguard.lib.exception_handling import (
     EXCEPTION_HANDLING_RULES,
     ExceptionHandlingChecker,
@@ -112,6 +113,7 @@ __all__ = [
     "FormattingFixer",
     "WhitespaceFixer",
     "UltraAdvancedSecurityFixer",  # NEW v0.8.0
+    "EnhancedSecurityFixer",  # NEW Phase 2B - Real code transformations
     # Advanced Security
     "AdvancedSecurityAnalyzer",
     "TaintAnalyzer",
