@@ -58,6 +58,7 @@ Repository = "https://github.com/cboyd0319/PyGuard"
 
 [project.scripts]
 pyguard = "pyguard.cli:main"
+pyguard-hooks = "pyguard.git_hooks_cli:main"
 
 [tool.black]
 line-length = 100
