@@ -668,9 +668,8 @@ To Create:
 - `pyguard/lib/core.py` - Core utilities (logger, backup, etc.)
 
 ### Related Documentation
-- See `docs/UPDATE.md` for complete historical context
-- See `docs/ARCHITECTURE.md` for system design
-- See `docs/security-rules.md` for security detection rules
+- See `docs/README.md` for complete documentation (architecture, usage, API)
+- See `docs/security-rules.md` for security detection rules reference
 
 ### External Resources
 - Ruff rules: https://docs.astral.sh/ruff/rules/

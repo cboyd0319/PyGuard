@@ -492,7 +492,7 @@ Before submitting a PR, verify:
 2. Add detection method with CWE/OWASP mapping
 3. Add fix suggestion and remediation guidance
 4. Create unit tests in `tests/unit/test_security.py`
-5. Document in `docs/security-rules.md`
+5. Document in `docs/security-rules.md` or `docs/README.md`
 
 ### Improve Auto-Fix Logic
 1. Check existing fix patterns in `pyguard/lib/security.py`
@@ -505,7 +505,7 @@ Before submitting a PR, verify:
 1. Study existing mappings in knowledge base modules
 2. Map CWE IDs to framework requirements
 3. Add framework-specific reporting
-4. Document in `docs/compliance.md` (or relevant doc)
+4. Document in `docs/README.md` (compliance section)
 
 ### Optimize Performance
 1. Profile with `python -m cProfile`
@@ -609,13 +609,11 @@ line_length = 100
 ## Additional Resources
 
 ### Documentation
-- **Architecture:** `docs/ARCHITECTURE.md` — System design and component overview
+- **Main Docs:** `docs/README.md` — Comprehensive documentation (architecture, usage, API)
+- **Development:** `docs/UPDATEv2.md` — Development status and roadmap
+- **Security Rules:** `docs/security-rules.md` — Security detection rules reference
 - **Contributing:** `CONTRIBUTING.md` — Contribution guidelines
 - **Security Policy:** `SECURITY.md` — Security reporting and policies
-- **User Guide:** `docs/user-guide.md` — End-user documentation
-- **API Reference:** `docs/api-reference.md` — API documentation
-- **Security Rules:** `docs/security-rules.md` — Security detection rules reference
-- **MCP Integration:** `docs/MCP-INTEGRATION.md` — Model Context Protocol integration guide
 
 ### GitHub Copilot Configuration
 - **MCP Servers:** `.github/COPILOT-MCP-SERVERS.md` — MCP server configuration guide
