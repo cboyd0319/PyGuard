@@ -89,8 +89,8 @@ class StringOperationsVisitor(ast.NodeVisitor):
     def visit_BinOp(self, node: ast.BinOp):
         """Visit binary operations for % formatting."""
         # PG-S002: Detect % formatting that should be f-string
-        if isinstance(node.op, ast.Mod) and isinstance(node.left, (ast.Constant, ast.Str)):
-            left_value = node.left.value if isinstance(node.left, ast.Constant) else node.left.s
+        if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Constant):
+            left_value = node.left.value
             if isinstance(left_value, str) and '%' in left_value:
                 self.issues.append(
                     StringIssue(
@@ -191,7 +191,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "format":
                 # Check if it's called on a string
-                if isinstance(node.func.value, (ast.Constant, ast.Str)):
+                if isinstance(node.func.value, ast.Constant):
                     return True
                 # Check if it's a variable.format() call
                 if isinstance(node.func.value, ast.Name):
@@ -201,8 +201,8 @@ class StringOperationsVisitor(ast.NodeVisitor):
     def _is_string_concatenation(self, node: ast.BinOp) -> bool:
         """Check if this is a string concatenation operation."""
         # Check if either operand is a string
-        left_is_string = isinstance(node.left, (ast.Constant, ast.Str, ast.JoinedStr))
-        right_is_string = isinstance(node.right, (ast.Constant, ast.Str, ast.JoinedStr))
+        left_is_string = isinstance(node.left, (ast.Constant, ast.JoinedStr))
+        right_is_string = isinstance(node.right, (ast.Constant, ast.JoinedStr))
 
         if left_is_string or right_is_string:
             return True

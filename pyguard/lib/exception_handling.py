@@ -85,8 +85,8 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
         if node.exc and isinstance(node.exc, ast.Call):
             if node.exc.args:
                 for arg in node.exc.args:
-                    if isinstance(arg, (ast.Constant, ast.Str)):
-                        msg = arg.value if isinstance(arg, ast.Constant) else arg.s
+                    if isinstance(arg, ast.Constant):
+                        msg = arg.value
                         if isinstance(msg, str) and len(msg) > 200:
                             self.violations.append(
                                 RuleViolation(

@@ -87,7 +87,7 @@ class BugbearVisitor(ast.NodeVisitor):
     def visit_Raise(self, node: ast.Raise) -> None:
         """Check raise statement patterns."""
         # B016: Cannot raise a literal - no exception will be caught
-        if node.exc and isinstance(node.exc, (ast.Constant, ast.Num, ast.Str)):
+        if node.exc and isinstance(node.exc, ast.Constant):
             self.violations.append(
                 RuleViolation(
                     rule_id="B016",
@@ -186,7 +186,7 @@ class BugbearVisitor(ast.NodeVisitor):
                     ast.FormattedValue,
                 ),
             ):
-                if isinstance(stmt.value, (ast.Constant, ast.Num, ast.Str)):
+                if isinstance(stmt.value, ast.Constant):
                     # Skip docstrings
                     if stmt is node.body[0]:
                         continue
@@ -272,12 +272,8 @@ class BugbearVisitor(ast.NodeVisitor):
         """Check function call patterns."""
         # B005: Using .strip() with same character repeated
         if isinstance(node.func, ast.Attribute) and node.func.attr == "strip":
-            if node.args and isinstance(node.args[0], (ast.Constant, ast.Str)):
-                value = (
-                    node.args[0].value
-                    if isinstance(node.args[0], ast.Constant)
-                    else node.args[0].s
-                )
+            if node.args and isinstance(node.args[0], ast.Constant):
+                value = node.args[0].value
                 if isinstance(value, str) and len(value) > 1:
                     if len(set(value)) == 1:
                         self.violations.append(
@@ -442,13 +438,9 @@ class BugbearVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call):
             if isinstance(node.value.func, ast.Name) and node.value.func.id == "setattr":
                 if len(node.value.args) >= 2 and isinstance(
-                    node.value.args[1], (ast.Constant, ast.Str)
+                    node.value.args[1], ast.Constant
                 ):
-                    attr_name = (
-                        node.value.args[1].value
-                        if isinstance(node.value.args[1], ast.Constant)
-                        else node.value.args[1].s
-                    )
+                    attr_name = node.value.args[1].value
                     self.violations.append(
                         RuleViolation(
                             rule_id="B010",

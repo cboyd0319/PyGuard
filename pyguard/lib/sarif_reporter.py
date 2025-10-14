@@ -10,7 +10,7 @@ GitHub Integration: https://docs.github.com/en/code-security/code-scanning
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -110,7 +110,7 @@ class SARIFReporter:
             "invocations": [
                 {
                     "executionSuccessful": True,
-                    "endTimeUtc": datetime.utcnow().isoformat() + "Z",
+                    "endTimeUtc": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 }
             ],
         }
