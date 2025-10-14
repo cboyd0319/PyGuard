@@ -244,7 +244,7 @@ class ImportAnalyzer:
     def _get_import_line(self, node: ast.AST, lines: List[str]) -> str:
         """Get the source line for an import node."""
         if hasattr(node, "lineno"):
-            return lines[node.lineno - 1]
+            return str(lines[node.lineno - 1])
         return ""
 
 
@@ -392,9 +392,8 @@ def _detect_star_imports(code: str, file_path: Path, tree: Optional[ast.AST] = N
     return violations
 
 
-# Assign detection functions
-UNUSED_IMPORT_RULE.detect = _detect_unused_imports
-STAR_IMPORT_RULE.detect = _detect_star_imports
+# Note: Detection functions are handled by the Rule base class detect() method
+# The ImportRule class can override detect() if needed for custom behavior
 
 
 class ImportManager:

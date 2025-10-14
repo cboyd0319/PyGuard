@@ -115,8 +115,9 @@ class BestPracticesFixer:
         lines = content.split("\n")
         for i, line in enumerate(lines):
             # Match bare except (not except Exception, except SomeError, etc.)
-            if re.match(r"^(\s*)except\s*:\s*$", line):
-                indent = re.match(r"^(\s*)", line).group(1)
+            match = re.match(r"^(\s*)except\s*:\s*$", line)
+            if match:
+                indent = match.group(1)
                 lines[i] = f"{indent}except Exception:  # FIXED: Catch specific exceptions"
                 self.fixes_applied.append("Replaced bare except with except Exception")
 
@@ -310,7 +311,7 @@ class NamingConventionFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def check_naming_conventions(self, file_path: Path) -> List[Dict[str, str]]:
+    def check_naming_conventions(self, file_path: Path) -> List[Dict[str, Any]]:
         """
         Check for naming convention violations.
 
@@ -324,7 +325,7 @@ class NamingConventionFixer:
         if content is None:
             return []
 
-        violations = []
+        violations: List[Dict[str, Any]] = []
 
         try:
             tree = ast.parse(content)

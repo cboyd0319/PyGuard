@@ -54,12 +54,12 @@ class UnusedCodeVisitor(ast.NodeVisitor):
         self.used_names: Set[str] = set()
 
         # Current function context
-        self.current_function = None
+        self.current_function: str | None = None
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_Import(self, node: ast.Import):
@@ -81,7 +81,7 @@ class UnusedCodeVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Track function definitions and arguments."""
-        old_function = self.current_function
+        old_function: str | None = self.current_function
         self.current_function = node.name
 
         # Track arguments
@@ -136,7 +136,7 @@ class UnusedCodeVisitor(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
         """Track async function definitions."""
         # Same logic as FunctionDef
-        old_function = self.current_function
+        old_function: str | None = self.current_function
         self.current_function = node.name
 
         arg_names = set()

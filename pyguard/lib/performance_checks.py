@@ -43,7 +43,7 @@ class PerformanceVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_For(self, node: ast.For):
@@ -68,19 +68,19 @@ class PerformanceVisitor(ast.NodeVisitor):
                 )
 
         # PERF102: Detect list concatenation in loop
-        for stmt in ast.walk(node):
-            if isinstance(stmt, ast.AugAssign) and isinstance(stmt.op, ast.Add):
-                if isinstance(stmt.target, ast.Name):
+        for stmt_node in ast.walk(node):
+            if isinstance(stmt_node, ast.AugAssign) and isinstance(stmt_node.op, ast.Add):
+                if isinstance(stmt_node.target, ast.Name):
                     # Check if augmenting a list
-                    if isinstance(stmt.value, (ast.List, ast.ListComp)):
+                    if isinstance(stmt_node.value, (ast.List, ast.ListComp)):
                         self.issues.append(
                             PerformanceIssue(
                                 severity="HIGH",
                                 category="Performance",
                                 message="List concatenation in loop - use list.extend() or list comprehension",
-                                line_number=stmt.lineno,
-                                column=stmt.col_offset,
-                                code_snippet=self._get_code_snippet(stmt),
+                                line_number=stmt_node.lineno,
+                                column=stmt_node.col_offset,
+                                code_snippet=self._get_code_snippet(stmt_node),
                                 fix_suggestion="Replace 'result += [item]' with 'result.append(item)' or use list comprehension",
                                 rule_id="PERF102",
                             )
@@ -224,7 +224,7 @@ class PerformanceVisitor(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value

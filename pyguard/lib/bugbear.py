@@ -454,11 +454,11 @@ class BugbearVisitor(ast.NodeVisitor):
                             rule_id="B010",
                             category=RuleCategory.WARNING,
                             severity=RuleSeverity.LOW,
-                            message=f"Do not use setattr with constant attribute name '{attr_name}'",
+                            message=f"Do not use setattr with constant attribute name {attr_name!r}",
                             file_path=self.file_path,
                             line_number=node.lineno,
                             column=node.col_offset,
-                            fix_suggestion=f"Use direct assignment: obj.{attr_name} = value",
+                            fix_suggestion=f"Use direct assignment: obj.{attr_name!r} = value",
                             fix_applicability=FixApplicability.AUTOMATIC,
                             source_tool="bugbear",
                         )

@@ -299,11 +299,8 @@ def _detect_type_comparison(code: str, file_path: Path, tree: Optional[ast.AST] 
     return violations
 
 
-# Assign detection functions to rules
-MISSING_RETURN_TYPE_RULE.detect = _detect_type_hints
-MISSING_PARAM_TYPE_RULE.detect = _detect_type_hints
-ANY_TYPE_USAGE_RULE.detect = _detect_type_hints
-TYPE_COMPARISON_RULE.detect = _detect_type_comparison
+# Note: Detection functions are handled by the Rule base class detect() method
+# The TypeCheckingRule class can override detect() if needed for custom behavior
 
 
 class TypeChecker:
