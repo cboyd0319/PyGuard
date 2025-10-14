@@ -12,8 +12,8 @@
 **Do not report security issues through public GitHub issues.**
 
 Report via:
-- Email: security@pyguard.dev
 - GitHub Security Advisories (private)
+- Contact: https://github.com/cboyd0319
 
 Include:
 - Issue type (e.g., buffer overflow, injection)

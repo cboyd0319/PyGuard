@@ -326,7 +326,7 @@ Priority areas for contributions:
 
 - [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions)
 - Issues tagged `question`
-- Email: your.email@example.com
+- Contact: https://github.com/cboyd0319
 
 ## License
 

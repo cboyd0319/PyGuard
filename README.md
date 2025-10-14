@@ -313,8 +313,8 @@ See [docs/README.md](docs/README.md) for complete documentation.
 - Dependencies: 13 packages, all from PyPI (see pyproject.toml).
 
 **Disclosure**
-- Email: security@pyguard.dev (PGP key in SECURITY.md)
-- Or: GitHub Security Advisories (private reporting)
+- GitHub Security Advisories (private reporting)
+- Contact: https://github.com/cboyd0319
 
 ## Troubleshooting
 
