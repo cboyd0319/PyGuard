@@ -47,7 +47,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def _detect_dominant_quote_style(self) -> None:
@@ -268,6 +268,8 @@ class StringOperationsFixer:
         """
         try:
             content = self.file_ops.read_file(file_path)
+            if content is None:
+                return []
             tree = ast.parse(content, filename=str(file_path))
             source_lines = content.splitlines()
 
@@ -310,6 +312,8 @@ class StringOperationsFixer:
 
         try:
             content = self.file_ops.read_file(file_path)
+            if content is None:
+                return False, ["Failed to read file"]
             modified_content = content
             applied_fixes: List[str] = []
 
