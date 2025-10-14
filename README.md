@@ -1,4 +1,4 @@
-# PyGuard — Comprehensive Python Security & Code Quality Platform
+# PyGuard — Python Security & Code Quality Analysis
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
@@ -6,7 +6,7 @@
 ![Coverage](https://img.shields.io/badge/coverage-82%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-**TL;DR**: The world's most comprehensive Python analysis tool. Replaces 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with 55+ security checks, 150+ code quality rules, 150+ auto-fixes, ML-powered detection, and 10+ compliance frameworks. Works locally, no telemetry.
+**TL;DR**: Replace 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with one. Finds 55+ security issues, enforces 150+ quality rules, fixes 179+ problems automatically. Runs locally, no telemetry.
 
 ```bash
 pip install pyguard
@@ -36,23 +36,23 @@ Expected output: backups in `.pyguard_backups/`, fixed files in place, HTML repo
 
 ## What this is
 
-PyGuard is a **comprehensive Python analysis platform** that combines security scanning, code quality analysis, compliance checking, and automated fixes in one tool. It analyzes Python code using AST-based detection, machine learning, and framework-specific rules to identify issues and automatically fix them.
+Static analysis tool for Python. Finds security vulnerabilities, enforces code quality standards, generates compliance reports, and fixes issues automatically.
 
-**Comprehensive Coverage:**
-- 🔒 **55+ security vulnerability checks** (SQL injection, XSS, hardcoded secrets, command injection, SSRF, etc.)
-- ✨ **150+ code quality rules** (PEP 8, Pylint, Bugbear, code smells, best practices)
-- 🎯 **Framework-specific analysis** (Django, Flask, FastAPI, Pandas, Pytest)
-- 📋 **10+ compliance frameworks** (OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR)
-- 🤖 **ML-powered detection** (pattern recognition, anomaly detection, risk scoring)
-- 🔧 **150+ auto-fixes** (safe and unsafe modes) — **only tool with comprehensive security auto-fixes**
-- 📦 **Supply chain security** (dependency scanning, SBOM generation, license detection)
-- 🏃 **Performance optimized** (AST-based, 10-100x faster than regex, parallel processing)
+**What it does**:
+- Finds 55+ security vulnerabilities (SQL injection, XSS, hardcoded secrets, command injection, SSRF)
+- Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
+- Framework-specific checks (Django, Flask, FastAPI, Pandas, Pytest)
+- Maps to 10+ compliance frameworks (OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR)
+- ML pattern recognition, anomaly detection, risk scoring
+- **179+ auto-fixes** (safe and unsafe modes) — only tool with complete auto-fix coverage
+- Supply chain security (dependency scanning, SBOM generation, license detection)
+- AST-based (10-100x faster than regex), parallel processing
 
-**Built for:** Python developers, security teams, DevSecOps engineers, compliance officers, and CI/CD pipelines.
+**Built for**: Python developers, security teams, DevSecOps engineers, compliance officers, CI/CD pipelines.
 
-**Pain solved:** Maintaining 7+ tools (Bandit + Ruff + Pylint + Black + isort + mypy + Semgrep) with overlapping reports, configuration conflicts, and no unified auto-fix. PyGuard replaces all of them.
+**Problem solved**: Juggling 7+ tools with overlapping reports, config conflicts, and no unified auto-fix. PyGuard replaces them all.
 
-**Privacy-first:** Runs 100% locally. Zero telemetry. No SaaS. No external API calls (except optional MCP integrations).
+**Privacy**: Runs locally. No telemetry. No SaaS. No external API calls (except optional MCP integrations).
 
 ## Prerequisites
 
