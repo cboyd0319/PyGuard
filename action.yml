@@ -1,0 +1,136 @@
+name: 'PyGuard Security Scanner'
+description: 'Run PyGuard security and code quality analysis with SARIF output for GitHub Code Scanning'
+author: 'cboyd0319'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  paths:
+    description: 'Paths to scan (space-separated)'
+    required: false
+    default: '.'
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.13'
+  scan-only:
+    description: 'Only scan without fixing issues'
+    required: false
+    default: 'true'
+  security-only:
+    description: 'Only run security checks'
+    required: false
+    default: 'false'
+  severity:
+    description: 'Minimum severity level (LOW, MEDIUM, HIGH, CRITICAL)'
+    required: false
+    default: 'LOW'
+  exclude:
+    description: 'Patterns to exclude (space-separated)'
+    required: false
+    default: 'tests/* venv/* .venv/* build/* dist/* .git/* .github/* node_modules/*'
+  sarif-file:
+    description: 'Output SARIF file path'
+    required: false
+    default: 'pyguard-report.sarif'
+  upload-sarif:
+    description: 'Upload SARIF results to GitHub Security tab'
+    required: false
+    default: 'true'
+  fail-on-issues:
+    description: 'Fail the action if security issues are found'
+    required: false
+    default: 'false'
+  unsafe-fixes:
+    description: 'Enable unsafe auto-fixes'
+    required: false
+    default: 'false'
+
+outputs:
+  issues-found:
+    description: 'Number of security issues found'
+    value: ${{ steps.scan.outputs.issues-found }}
+  sarif-file:
+    description: 'Path to generated SARIF report'
+    value: ${{ steps.scan.outputs.sarif-file }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        
+    - name: Install PyGuard
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyguard
+        
+    - name: Run PyGuard Security Scan
+      id: scan
+      shell: bash
+      run: |
+        # Build PyGuard command
+        CMD="pyguard"
+        
+        # Add flags based on inputs
+        if [ "${{ inputs.scan-only }}" == "true" ]; then
+          CMD="$CMD --scan-only"
+        fi
+        
+        if [ "${{ inputs.security-only }}" == "true" ]; then
+          CMD="$CMD --security-only"
+        fi
+        
+        if [ "${{ inputs.unsafe-fixes }}" == "true" ]; then
+          CMD="$CMD --unsafe-fixes"
+        fi
+        
+        # Add SARIF output
+        CMD="$CMD --sarif --no-html"
+        
+        # Add exclude patterns
+        if [ -n "${{ inputs.exclude }}" ]; then
+          for pattern in ${{ inputs.exclude }}; do
+            CMD="$CMD --exclude \"$pattern\""
+          done
+        fi
+        
+        # Add paths
+        CMD="$CMD ${{ inputs.paths }}"
+        
+        # Run PyGuard and capture exit code
+        echo "Running: $CMD"
+        eval $CMD || EXIT_CODE=$?
+        
+        # Count issues from SARIF file if it exists
+        if [ -f "${{ inputs.sarif-file }}" ]; then
+          ISSUES=$(jq '[.runs[0].results // []] | length' "${{ inputs.sarif-file }}" 2>/dev/null || echo "0")
+          echo "issues-found=$ISSUES" >> $GITHUB_OUTPUT
+          echo "sarif-file=${{ inputs.sarif-file }}" >> $GITHUB_OUTPUT
+          echo "Found $ISSUES security issues"
+        else
+          echo "issues-found=0" >> $GITHUB_OUTPUT
+          echo "sarif-file=" >> $GITHUB_OUTPUT
+        fi
+        
+        # Fail if requested and issues found
+        if [ "${{ inputs.fail-on-issues }}" == "true" ] && [ "$ISSUES" != "0" ]; then
+          echo "::error::Found $ISSUES security issues, failing as requested"
+          exit 1
+        fi
+        
+        # Exit with original code if not failing on issues
+        exit ${EXIT_CODE:-0}
+      continue-on-error: ${{ inputs.fail-on-issues != 'true' }}
+      
+    - name: Upload SARIF results to GitHub Security tab
+      if: ${{ inputs.upload-sarif == 'true' && always() }}
+      uses: github/codeql-action/upload-sarif@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: pyguard

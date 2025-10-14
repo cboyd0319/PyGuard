@@ -373,3 +373,52 @@ class TestSARIFReporter:
         assert "description" in driver["properties"]
         assert "tags" in driver["properties"]
         assert "security" in driver["properties"]["tags"]
+
+    def test_github_code_scanning_compatibility(self):
+        """Test GitHub Code Scanning specific features."""
+        reporter = SARIFReporter()
+        report = reporter.generate_report(
+            issues=[
+                {
+                    "severity": "HIGH",
+                    "category": "SQL Injection",
+                    "message": "SQL injection vulnerability",
+                    "file": "app.py",
+                    "line": 10,
+                    "column": 5,
+                    "cwe_id": "CWE-89",
+                    "owasp_id": "A03:2021",
+                }
+            ]
+        )
+
+        run = report["runs"][0]
+        
+        # Check columnKind for GitHub compatibility
+        assert run["columnKind"] == "utf16CodeUnits"
+        
+        # Check automation details
+        assert "automationDetails" in run
+        assert "id" in run["automationDetails"]
+        assert "guid" in run["automationDetails"]
+        
+        # Check tool organization and download URI
+        driver = run["tool"]["driver"]
+        assert "organization" in driver
+        assert driver["organization"] == "PyGuard"
+        assert "downloadUri" in driver
+        assert "releases" in driver["downloadUri"]
+        
+        # Check enhanced tags
+        assert "sarif" in driver["properties"]["tags"]
+        assert "owasp" in driver["properties"]["tags"]
+        assert "cwe" in driver["properties"]["tags"]
+
+    def test_working_directory_in_invocations(self):
+        """Test working directory is included in invocations."""
+        reporter = SARIFReporter()
+        report = reporter.generate_report(issues=[])
+
+        invocations = report["runs"][0]["invocations"]
+        assert "workingDirectory" in invocations[0]
+        assert "uri" in invocations[0]["workingDirectory"]

@@ -102,17 +102,30 @@ class SARIFReporter:
                             "code-quality",
                             "python",
                             "static-analysis",
+                            "owasp",
+                            "cwe",
+                            "sarif",
                         ],
                     },
+                    "organization": "PyGuard",
+                    "downloadUri": "https://github.com/cboyd0319/PyGuard/releases",
                 }
             },
             "results": results,
+            "columnKind": "utf16CodeUnits",  # GitHub Code Scanning expects UTF-16 code units
             "invocations": [
                 {
                     "executionSuccessful": True,
                     "endTimeUtc": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                    "workingDirectory": {
+                        "uri": "file:///"
+                    },
                 }
             ],
+            "automationDetails": {
+                "id": f"pyguard/{tool_version}",
+                "guid": "pyguard-security-scan",
+            },
         }
 
         # Add repository information if provided

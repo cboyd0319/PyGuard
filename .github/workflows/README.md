@@ -107,6 +107,24 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 - Removed unnecessary autobuild step
 - Added manual trigger capability
 
+### 8. **pyguard-security-scan.yml** - PyGuard Self-Analysis
+**Triggers:**
+- Push/PR to `main` or `develop`
+- Daily schedule (00:00 UTC)
+- Manual workflow dispatch
+
+**What it does:**
+- Runs PyGuard on its own codebase (dogfooding)
+- Generates SARIF report for GitHub Code Scanning
+- Uploads results to Security tab
+- Saves SARIF artifact for 30 days
+
+**Features:**
+- Comprehensive security scanning with PyGuard's 55+ vulnerability checks
+- SARIF 2.1.0 compliant output with CWE/OWASP mappings
+- Integration with GitHub Security tab
+- Automated compliance checking
+
 ## 🎯 Design Principles
 
 ### Cost Optimization
@@ -135,8 +153,9 @@ This directory contains the CI/CD workflows for PyGuard. All workflows have been
 | benchmarks.yml | 1 | ~1-2 min | Push, PR, Schedule, Manual |
 | release.yml | 1 | ~2-3 min | Tags |
 | codeql.yml | 1 | ~5-10 min | Push, PR, Schedule, Manual |
+| pyguard-security-scan.yml | 1 | ~2-4 min | Push, PR, Schedule, Manual |
 
-**Total:** 12 jobs across 7 workflows
+**Total:** 13 jobs across 8 workflows
 
 ## 🔧 Maintenance Notes
 
@@ -176,8 +195,70 @@ Before pushing workflow changes:
 - **Enhanced:** `codeql.yml` with better queries and manual trigger
 - **Updated:** All workflows to latest action versions
 
+## 🚀 Using PyGuard as a GitHub Action
+
+PyGuard can be used as a reusable GitHub Action in any Python project. See the root `action.yml` file for the action definition.
+
+### Quick Start
+
+```yaml
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  pyguard-scan:
+    name: PyGuard Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run PyGuard
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: '.'
+        scan-only: 'true'
+        upload-sarif: 'true'
+```
+
+### Available Inputs
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `paths` | Paths to scan | `.` |
+| `python-version` | Python version | `3.13` |
+| `scan-only` | Only scan without fixing | `true` |
+| `security-only` | Only security checks | `false` |
+| `severity` | Minimum severity | `LOW` |
+| `exclude` | Patterns to exclude | `tests/* venv/*...` |
+| `sarif-file` | SARIF output path | `pyguard-report.sarif` |
+| `upload-sarif` | Upload to GitHub Security | `true` |
+| `fail-on-issues` | Fail on issues | `false` |
+
+### Outputs
+
+- `issues-found`: Number of security issues found
+- `sarif-file`: Path to generated SARIF report
+
+### Viewing Results
+
+Results appear in:
+1. **Security Tab**: `https://github.com/OWNER/REPO/security/code-scanning`
+2. **Pull Requests**: Inline annotations on PR diffs
+3. **Workflow Logs**: Detailed output in Actions tab
+
 ## 🔗 Related Documentation
 
 - [Contributing Guide](../../CONTRIBUTING.md)
-- [Repository Structure](../../docs/REPOSITORY_STRUCTURE.md)
+- [Capabilities Reference](../../docs/capabilities-reference.md)
+- [Security Policy](../../SECURITY.md)
 - [Release Process](../../CHANGELOG.md#release-process)
