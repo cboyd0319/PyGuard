@@ -252,8 +252,8 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> None:
-        """Detect with statement patterns."""
-        # Check for pathlib usage opportunities
+        """Detect with statement patterns (FURB106, FURB116, 118-119, 123-127)."""
+        # Check for pathlib usage opportunities (FURB106)
         for item in node.items:
             if isinstance(item.context_expr, ast.Call):
                 if isinstance(item.context_expr.func, ast.Name):
@@ -275,10 +275,30 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                     )
                                 )
 
+        # FURB123: Unnecessary assignment before return in context manager
+        if len(node.body) >= 2:
+            if isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):
+                ret = node.body[-1]
+                assign = node.body[-2]
+                if isinstance(ret.value, ast.Name) and isinstance(assign.targets[0], ast.Name):
+                    if ret.value.id == assign.targets[0].id:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB123",
+                                message="Unnecessary assignment before return - return the expression directly",
+                                line_number=assign.lineno,
+                                column=assign.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.SIMPLIFICATION,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
+
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
-        """Detect comparison patterns that could be improved."""
+        """Detect comparison patterns (FURB107, FURB150, FURB152, FURB154)."""
         # FURB107: sys.version_info >= (3, x) - use sys.version_info >= (3, x, 0) for clarity
         if isinstance(node.left, ast.Attribute):
             if (
@@ -301,6 +321,14 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SAFE,
                                 )
                             )
+
+        # FURB150: Use operator.eq() instead of == in certain contexts
+        # FURB152: Use math.log() instead of log2/log10 where applicable
+        # FURB154: Use math.perm/comb instead of manual calculation
+        if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq):
+            if isinstance(node.left, ast.BinOp):
+                # Check for factorial/combinatorial patterns
+                pass
 
         self.generic_visit(node)
 
@@ -483,37 +511,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_With(self, node: ast.With) -> None:
-        """Detect with statement patterns (FURB116, 118-119, 123-127)."""
-        # FURB116: f-string instead of format() in logging
-        for item in node.items:
-            if isinstance(item.context_expr, ast.Call):
-                func = item.context_expr.func
-                if isinstance(func, ast.Attribute) and func.attr == "open":
-                    # Check if using 'w' mode and then read()
-                    pass
 
-        # FURB123: Unnecessary assignment before return in context manager
-        if len(node.body) >= 2:
-            if isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):
-                ret = node.body[-1]
-                assign = node.body[-2]
-                if isinstance(ret.value, ast.Name) and isinstance(assign.targets[0], ast.Name):
-                    if ret.value.id == assign.targets[0].id:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB123",
-                                message="Unnecessary assignment before return - return the expression directly",
-                                line_number=assign.lineno,
-                                column=assign.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SIMPLIFICATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
-
-        self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Detect binary operation patterns (FURB116, 118-119)."""
@@ -664,18 +662,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Compare(self, node: ast.Compare) -> None:
-        """Detect comparison patterns (FURB150, 152, 154)."""
-        # FURB150: Use operator.eq() instead of == in certain contexts
-        # FURB152: Use math.log() instead of log2/log10 where applicable
 
-        # FURB154: Use math.perm/comb instead of manual calculation
-        if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq):
-            if isinstance(node.left, ast.BinOp):
-                # Check for factorial/combinatorial patterns
-                pass
-
-        self.generic_visit(node)
     
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Detect function definition patterns (FURB112, FURB125-127, FURB131)."""

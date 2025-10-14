@@ -143,7 +143,6 @@ class LoggingPatternVisitor(ast.NodeVisitor):
         if not node.args:
             return
 
-        first_arg = node.args[0]
         # Already handled in _check_string_formatting via _check_if_string_concat
         pass
 

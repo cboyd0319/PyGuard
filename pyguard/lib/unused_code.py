@@ -336,8 +336,7 @@ class UnusedCodeFixer:
 
         # Group issues by type
         unused_imports = [i for i in issues if i.rule_id == "F401"]
-        unused_vars = [i for i in issues if i.rule_id == "F841"]
-        unused_args = [i for i in issues if i.rule_id == "ARG001"]
+        # unused_vars and unused_args not used yet but reserved for future functionality
 
         # Remove unused imports
         lines = content.splitlines(keepends=True)
@@ -359,11 +358,6 @@ class UnusedCodeFixer:
         if lines_to_remove:
             lines = [line for i, line in enumerate(lines) if i not in lines_to_remove]
             content = "".join(lines)
-
-        # Prefix unused arguments with underscore
-        for issue in unused_args:
-            # This requires AST transformation; for now just log
-            self.fixes_applied.append(f"ARG001: Found unused argument {issue.name}")
 
         # Write back if changes were made
         if content != original_content:

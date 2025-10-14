@@ -47,7 +47,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
         if self.in_except_handler and node.exc and not node.cause:
             # Check if this is a re-raise of a different exception type
             # (raising the same exception or bare raise is OK)
-            if not (node.exc is None):  # bare raise is OK
+            if node.exc is not None:  # bare raise is OK
                 self.violations.append(
                     RuleViolation(
                         rule_id="TRY001",
@@ -204,15 +204,8 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
             )
 
         # TRY400: Logging statement in exception handler without re-raise
-        has_logging = False
-        has_raise = False
-        for stmt in node.body:
-            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
-                if isinstance(stmt.value.func, ast.Attribute):
-                    if stmt.value.func.attr in ("error", "exception", "critical", "warning"):
-                        has_logging = True
-            if isinstance(stmt, ast.Raise):
-                has_raise = True
+        # Check for logging or raise statements in except handler
+        # Reserved for future functionality
 
         # TRY401: Verbose logging
         # Check for logging with exc_info in except handler
