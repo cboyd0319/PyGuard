@@ -2,10 +2,9 @@
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Tests](https://img.shields.io/badge/tests-729%20passing-success.svg)
-![Coverage](https://img.shields.io/badge/coverage-77%25-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-991%20passing-success.svg)
+![Coverage](https://img.shields.io/badge/coverage-82%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Rules](https://img.shields.io/badge/rules-360%20implemented-blue.svg)
 
 **TL;DR**: Install PyGuard, run it on your codebase, get security fixes and quality improvements applied automatically. Works locally, no telemetry.
 
@@ -173,7 +172,7 @@ jobs:
 - 🔧 Fix suggestions for each issue
 - 📈 Track security trends over time
 
-See [docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md) for complete setup instructions.
+See [docs/README.md](docs/README.md) for complete documentation.
 
 **Core vulnerabilities** — OWASP ASVS v5.0, CWE Top 25 aligned
 - Code injection (eval, exec, compile) — CWE-95
@@ -247,24 +246,14 @@ See [docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md) for complete setup 
 - Trailing whitespace removal
 - Line ending normalization
 
-## Comparison
+## Why PyGuard
 
-| Feature | PyGuard | Bandit | Semgrep | Pylint | Ruff | SonarQube |
-|---------|---------|--------|---------|--------|------|-----------|
-| Total rules | 360 | ~10 | ~15 | ~300 | ~800 | ~400 |
-| Security checks | 55+ | ~10 | ~15 | ~5 | 0 | ~18 |
-| Auto-fix | 150+ | No | Partial | No | Style only | No |
-| Standards | 10 | 1 | 1 | 1 | 1 | 2 |
-| Tests | 729 | Unknown | Unknown | Unknown | Unknown | Closed |
-| Coverage | 77% | Unknown | Unknown | Unknown | Unknown | Unknown |
-| Free | Yes | Yes | Yes | Yes | Yes | No |
-| Open source | Yes (MIT) | Yes | Yes | Yes | Yes | No |
-
-Why PyGuard:
-- 3x more security checks than Bandit
-- Only tool with comprehensive security auto-fixes
-- Runs locally (no SaaS required)
-- Replaces 5 tools (Bandit + Pylint + Black + isort + Ruff)
+- **55+ security checks** vs Bandit (~10), Semgrep (~15)
+- **150+ auto-fixes** vs competitors (none with security auto-fix)
+- **991 tests, 82% coverage** - thoroughly tested
+- **10+ compliance frameworks** - OWASP, PCI DSS, HIPAA, SOC 2, ISO 27001
+- **100% local** - no SaaS, no telemetry, no third-party services
+- **Replaces 5 tools** - Bandit + Pylint + Black + isort + Ruff in one
 
 ## Security
 
@@ -331,25 +320,14 @@ Why PyGuard:
 
 ## Roadmap
 
-Current: v0.3.0 (257 tests passing, 69% coverage)
+Current: v0.3.0 (991 tests, 82% coverage)
 
-Planned releases:
-- [ ] v0.4.0 (Q2 2026) — Watch mode, fix applicability system, pre-commit hooks
-- [ ] v0.5.0 (Q3 2026) — VS Code extension, LSP support, git diff-only analysis
-- [ ] v1.0.0 (Q4 2026) — Production-ready stable release, >90% test coverage, signed releases
+Planned:
+- [ ] v0.4.0 — Watch mode, pre-commit hooks, VS Code extension
+- [ ] v0.5.0 — LSP support, git diff analysis
+- [ ] v1.0.0 — Production stable, >90% coverage, signed releases
 
-Feature backlog (prioritized by user requests):
-- [ ] Watch mode for continuous monitoring
-- [ ] Fix applicability system (Safe/Unsafe/Display)
-- [ ] VS Code extension
-- [ ] Language Server Protocol (LSP) support
-- [ ] Pre-commit hooks integration
-- [ ] Git integration (diff-only analysis)
-- [ ] Dead code detection
-- [ ] Duplicate code detection
-- [ ] Circular dependency detection
-
-See [GitHub Issues](https://github.com/cboyd0319/PyGuard/issues) for full backlog.
+See [docs/UPDATEv2.md](docs/UPDATEv2.md) for detailed development status.
 
 ## Contributing
 
@@ -368,13 +346,9 @@ make test
 make lint
 ```
 
-## Automated Maintenance
+## Maintenance
 
-PyGuard uses **Dependabot** for automatic dependency management:
-- 🤖 Auto-updates Python packages and GitHub Actions weekly
-- ✅ Auto-merges patch and minor updates after CI passes
-- ⚠️ Flags major updates for manual review
-- 📋 See [docs/DEPENDABOT.md](docs/DEPENDABOT.md) for details
+Dependabot auto-updates dependencies weekly. Auto-merges patch/minor updates after CI passes.
 
 ## License
 
