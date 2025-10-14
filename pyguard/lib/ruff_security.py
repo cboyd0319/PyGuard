@@ -465,15 +465,17 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     )
                 )
         
+        # S303: suspicious-insecure-hash-usage (similar to S324 but covers more cases)
         # S324: hashlib-insecure-hash-function
         elif func_name == "hashlib.new" or func_name in ("hashlib.md5", "hashlib.sha1"):
             # Check if it's md5, sha1, or other weak hashes
             if func_name == "hashlib.new" and node.args:
-                if isinstance(node.args[0], ast.Constant) and node.args[0].value in ("md5", "sha1"):
+                if isinstance(node.args[0], ast.Constant) and node.args[0].value in ("md5", "sha1", "sha"):
                     algorithm = node.args[0].value
+                    rule_id = "S303" if algorithm in ("md5", "sha") else "S324"
                     self.violations.append(
                         RuleViolation(
-                            rule_id="S324",
+                            rule_id=rule_id,
                             category=RuleCategory.SECURITY,
                             severity=RuleSeverity.MEDIUM,
                             message=f"Insecure hash function: {algorithm}",
@@ -485,11 +487,12 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                             source_tool="ruff",
                         )
                     )
-            elif func_name in ("hashlib.md5", "hashlib.sha1"):
+            elif func_name in ("hashlib.md5", "hashlib.sha1", "hashlib.sha"):
                 algorithm = func_name.split(".")[-1]
+                rule_id = "S303" if algorithm == "sha" else "S324"
                 self.violations.append(
                     RuleViolation(
-                        rule_id="S324",
+                        rule_id=rule_id,
                         category=RuleCategory.SECURITY,
                         severity=RuleSeverity.MEDIUM,
                         message=f"Insecure hash function: {algorithm}",
@@ -502,9 +505,196 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     )
                 )
         
-        # S602-S607: subprocess with shell=True or partial path
+        # S304: suspicious-insecure-cipher-usage
+        elif func_name in ("Crypto.Cipher.ARC2", "Crypto.Cipher.ARC4", "Crypto.Cipher.Blowfish", "Crypto.Cipher.DES", "Crypto.Cipher.XOR"):
+            cipher = func_name.split(".")[-1]
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S304",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message=f"Insecure cipher: {cipher}",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use AES cipher from cryptography library: from cryptography.fernet import Fernet",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S305: suspicious-insecure-cipher-mode-usage
+        elif "Crypto.Cipher" in func_name and any(mode in str(node.keywords) for mode in ["MODE_ECB"]):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S305",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Use of insecure cipher mode (ECB)",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use CBC, GCM, or another secure mode instead of ECB",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S308: suspicious-mark-safe-usage (Django)
+        elif func_name in ("django.utils.safestring.mark_safe", "mark_safe"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S308",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="mark_safe() can lead to XSS if used with user input",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Ensure input is properly sanitized before using mark_safe()",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S310: suspicious-url-open-usage
+        elif func_name in ("urllib.request.urlopen", "urllib.urlopen", "urllib2.urlopen"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S310",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="urllib.urlopen can be used for SSRF attacks",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use requests library with timeout and proper validation",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S312: suspicious-telnet-usage
+        elif func_name.startswith("telnetlib."):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S312",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="telnetlib usage detected - telnet is insecure",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use SSH or another secure protocol",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S313-S320: XML-related function calls
+        elif func_name in ("xml.etree.ElementTree.parse", "xml.etree.ElementTree.fromstring",
+                          "xml.etree.ElementTree.XMLParser"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S313",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="xml.etree.ElementTree is vulnerable to XML attacks",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use defusedxml.ElementTree instead",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        elif func_name.startswith("xml.sax"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S317",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="xml.sax is vulnerable to XML attacks",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use defusedxml.sax instead",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        elif func_name.startswith("xml.dom.minidom"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S318",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="xml.dom.minidom is vulnerable to XML attacks",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use defusedxml.minidom instead",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        elif func_name.startswith("xml.dom.pulldom"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S319",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="xml.dom.pulldom is vulnerable to XML attacks",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use defusedxml.pulldom instead",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S321: suspicious-ftp-lib-usage
+        elif func_name.startswith("ftplib."):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S321",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ftplib usage detected - FTP is insecure",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use SFTP or another secure file transfer protocol",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S323: suspicious-unverified-context-usage
+        elif func_name == "ssl._create_unverified_context":
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S323",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="ssl._create_unverified_context() disables SSL verification",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use ssl.create_default_context() for proper verification",
+                    fix_applicability=FixApplicability.SAFE,
+                    source_tool="ruff",
+                )
+            )
+        
+        # S602-S612: subprocess and related security issues
         elif func_name in ("subprocess.Popen", "subprocess.call", "subprocess.check_call",
-                          "subprocess.check_output", "subprocess.run"):
+                          "subprocess.check_output", "subprocess.run", "os.system", 
+                          "os.popen", "os.spawn", "commands.getstatusoutput"):
             # S602: subprocess-popen-with-shell-equals-true
             has_shell_true = any(
                 kw.arg == "shell" and 
@@ -544,6 +734,176 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
+            
+            # S604-S607: Additional subprocess checks
+            # S604: call-with-shell-equals-true
+            if func_name in ("subprocess.call", "subprocess.check_call", "subprocess.check_output") and has_shell_true:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S604",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message=f"{func_name}() called with shell=True",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Use shell=False to prevent shell injection",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+            
+            # S605: start-process-with-a-shell
+            if func_name == "os.system":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S605",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="os.system() executes commands through shell",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Use subprocess.run() with shell=False instead",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+            
+            # S606: start-process-with-no-shell
+            if func_name == "os.popen":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S606",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="os.popen() is deprecated and insecure",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Use subprocess.run() instead",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+        
+        # S608: hardcoded-sql-expression
+        elif func_name in ("cursor.execute", "connection.execute") or "execute" in func_name:
+            # Check if SQL query is built with string formatting
+            if node.args and isinstance(node.args[0], (ast.JoinedStr, ast.BinOp)):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S608",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Possible SQL injection via string formatting",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Use parameterized queries with placeholders: cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+        
+        # S502-S509: SSL/TLS security
+        elif func_name.startswith("ssl."):
+            # S502: ssl-insecure-version
+            if "SSLv2" in func_name or "SSLv3" in func_name:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S502",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Use of insecure SSL/TLS version",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Use TLS 1.2 or higher",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+            
+            # S504: ssl-with-no-version
+            if func_name == "ssl.wrap_socket" and not any(kw.arg == "ssl_version" for kw in node.keywords):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S504",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="ssl.wrap_socket() called without explicit ssl_version",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Specify ssl_version=PROTOCOL_TLSv1_2 or higher",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                        source_tool="ruff",
+                    )
+                )
+        
+        # S505: weak-cryptographic-key
+        elif func_name in ("Crypto.PublicKey.RSA.generate", "Crypto.PublicKey.DSA.generate"):
+            # Check key size
+            if node.args and isinstance(node.args[0], ast.Constant):
+                key_size = node.args[0].value
+                if isinstance(key_size, int) and key_size < 2048:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="S505",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message=f"Weak cryptographic key size: {key_size} bits",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            fix_suggestion="Use at least 2048-bit keys for RSA",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                            source_tool="ruff",
+                        )
+                    )
+        
+        # S701-S704: Template security (Jinja2, Mako)
+        if "jinja2" in func_name.lower() or func_name == "Environment":
+            # S701: jinja2-autoescape-false
+            autoescape_false = any(
+                kw.arg == "autoescape" and 
+                isinstance(kw.value, ast.Constant) and 
+                kw.value.value is False
+                for kw in node.keywords
+            )
+            if autoescape_false:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="S701",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Jinja2 autoescape is disabled, leading to XSS vulnerability",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        fix_suggestion="Enable autoescape: autoescape=True",
+                        fix_applicability=FixApplicability.SAFE,
+                        source_tool="ruff",
+                    )
+                )
+        
+        elif "mako" in func_name.lower():
+            # S702: mako-templates
+            self.violations.append(
+                RuleViolation(
+                    rule_id="S702",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Mako templates allow arbitrary Python code execution",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Use Jinja2 with autoescape enabled instead",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                    source_tool="ruff",
+                )
+            )
         
         self.generic_visit(node)
 
@@ -670,6 +1030,40 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
+        
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        """Check attribute access for security issues."""
+        # S103: bad-file-permissions - check for overly permissive chmod
+        if isinstance(node.value, ast.Name):
+            parent = getattr(node, '_parent', None)
+            if isinstance(parent, ast.Call):
+                func_name = self._get_call_name(parent)
+                if func_name in ("os.chmod", "pathlib.Path.chmod"):
+                    # Check if mode argument is overly permissive
+                    if parent.args:
+                        mode_arg = parent.args[0] if func_name == "os.chmod" and len(parent.args) > 1 else parent.args[0]
+                        if isinstance(mode_arg, ast.Constant):
+                            # Check for overly permissive modes like 0o777, 0o666
+                            mode_value = mode_arg.value
+                            if isinstance(mode_value, int):
+                                # Check if world-writable (other write bit set)
+                                if mode_value & 0o002:  # Other write
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="S103",
+                                            category=RuleCategory.SECURITY,
+                                            severity=RuleSeverity.HIGH,
+                                            message=f"chmod with overly permissive mode {oct(mode_value)}",
+                                            file_path=self.file_path,
+                                            line_number=parent.lineno,
+                                            column=parent.col_offset,
+                                            fix_suggestion="Use more restrictive permissions like 0o644 or 0o755",
+                                            fix_applicability=FixApplicability.SUGGESTED,
+                                            source_tool="ruff",
+                                        )
+                                    )
         
         self.generic_visit(node)
 
@@ -1010,5 +1404,194 @@ RUFF_SECURITY_RULES = [
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SUGGESTED,
         message_template="Unclear subprocess call",
+    ),
+    Rule(
+        rule_id="S303",
+        name="suspicious-insecure-hash-usage",
+        description="Use of insecure hash functions (MD5, SHA)",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Insecure hash function",
+    ),
+    Rule(
+        rule_id="S304",
+        name="suspicious-insecure-cipher-usage",
+        description="Use of insecure cipher (ARC2, ARC4, Blowfish, DES, XOR)",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Insecure cipher usage",
+    ),
+    Rule(
+        rule_id="S305",
+        name="suspicious-insecure-cipher-mode-usage",
+        description="Use of insecure cipher mode (ECB)",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Insecure cipher mode",
+    ),
+    Rule(
+        rule_id="S308",
+        name="suspicious-mark-safe-usage",
+        description="Django mark_safe() can lead to XSS",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious mark_safe usage",
+    ),
+    Rule(
+        rule_id="S310",
+        name="suspicious-url-open-usage",
+        description="urllib.urlopen() can be used for SSRF attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious urlopen usage",
+    ),
+    Rule(
+        rule_id="S312",
+        name="suspicious-telnet-usage",
+        description="telnetlib usage detected",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious telnet usage",
+    ),
+    Rule(
+        rule_id="S313",
+        name="suspicious-xmlc-element-tree-usage",
+        description="xml.etree.ElementTree is vulnerable to XML attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious XML usage",
+    ),
+    Rule(
+        rule_id="S317",
+        name="suspicious-xml-sax-usage",
+        description="xml.sax is vulnerable to XML attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious XML SAX usage",
+    ),
+    Rule(
+        rule_id="S318",
+        name="suspicious-xml-mini-dom-usage",
+        description="xml.dom.minidom is vulnerable to XML attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious XML minidom usage",
+    ),
+    Rule(
+        rule_id="S319",
+        name="suspicious-xml-pull-dom-usage",
+        description="xml.dom.pulldom is vulnerable to XML attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious XML pulldom usage",
+    ),
+    Rule(
+        rule_id="S321",
+        name="suspicious-ftp-lib-usage",
+        description="ftplib usage detected - FTP is insecure",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Suspicious FTP usage",
+    ),
+    Rule(
+        rule_id="S323",
+        name="suspicious-unverified-context-usage",
+        description="ssl._create_unverified_context() disables SSL verification",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Unverified SSL context",
+    ),
+    Rule(
+        rule_id="S502",
+        name="ssl-insecure-version",
+        description="Use of insecure SSL/TLS version",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Insecure SSL/TLS version",
+    ),
+    Rule(
+        rule_id="S504",
+        name="ssl-with-no-version",
+        description="ssl.wrap_socket() called without explicit ssl_version",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="SSL without version specified",
+    ),
+    Rule(
+        rule_id="S505",
+        name="weak-cryptographic-key",
+        description="Weak cryptographic key size",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Weak cryptographic key",
+    ),
+    Rule(
+        rule_id="S604",
+        name="call-with-shell-equals-true",
+        description="subprocess.call() with shell=True",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Shell injection risk",
+    ),
+    Rule(
+        rule_id="S605",
+        name="start-process-with-a-shell",
+        description="os.system() executes commands through shell",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Process started with shell",
+    ),
+    Rule(
+        rule_id="S606",
+        name="start-process-with-no-shell",
+        description="os.popen() is deprecated and insecure",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Insecure process start",
+    ),
+    Rule(
+        rule_id="S608",
+        name="hardcoded-sql-expression",
+        description="Possible SQL injection via string formatting",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="SQL injection risk",
+    ),
+    Rule(
+        rule_id="S701",
+        name="jinja2-autoescape-false",
+        description="Jinja2 autoescape is disabled",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Jinja2 autoescape disabled",
+    ),
+    Rule(
+        rule_id="S702",
+        name="mako-templates",
+        description="Mako templates allow arbitrary code execution",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Mako template usage",
     ),
 ]
