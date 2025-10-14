@@ -68,27 +68,27 @@ class CodeFeatureExtractor:
         Returns:
             Dictionary of feature names to values
         """
-        features = {}
+        features: Dict[str, float] = {}
 
         try:
             tree = ast.parse(code)
 
             # Complexity features
-            features["num_functions"] = len(
+            features["num_functions"] = float(len(
                 [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
-            )
-            features["num_classes"] = len(
+            ))
+            features["num_classes"] = float(len(
                 [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
-            )
-            features["num_imports"] = len(
+            ))
+            features["num_imports"] = float(len(
                 [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
-            )
+            ))
 
             # Depth and nesting
-            features["max_nesting"] = self._calculate_max_nesting(tree)
+            features["max_nesting"] = float(self._calculate_max_nesting(tree))
 
             # API usage patterns (security-relevant)
-            features["eval_count"] = len(
+            features["eval_count"] = float(len(
                 [
                     n
                     for n in ast.walk(tree)
@@ -96,24 +96,24 @@ class CodeFeatureExtractor:
                     and isinstance(n.func, ast.Name)
                     and n.func.id in ["eval", "exec", "compile"]
                 ]
-            )
+            ))
 
-            features["subprocess_count"] = code.count("subprocess.") + code.count(
+            features["subprocess_count"] = float(code.count("subprocess.") + code.count(
                 "os.system"
-            )
-            features["network_count"] = code.count("socket.") + code.count("requests.")
-            features["file_ops_count"] = code.count("open(") + code.count("file(")
+            ))
+            features["network_count"] = float(code.count("socket.") + code.count("requests."))
+            features["file_ops_count"] = float(code.count("open(") + code.count("file("))
 
             # String patterns
-            features["hardcoded_strings"] = len(
+            features["hardcoded_strings"] = float(len(
                 re.findall(r'["\'](?:password|api_key|secret|token)["\']', code.lower())
-            )
-            features["sql_patterns"] = len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code))
+            ))
+            features["sql_patterns"] = float(len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code)))
 
             # Exception handling
-            features["bare_except"] = code.count("except:")
+            features["bare_except"] = float(code.count("except:"))
             features["try_except_ratio"] = (
-                code.count("try:") / max(1, features["num_functions"])
+                code.count("try:") / max(1.0, features["num_functions"])
             )
 
         except SyntaxError:

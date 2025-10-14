@@ -84,48 +84,48 @@ class SARIFReporter:
         results = self._convert_issues_to_results(issues)
 
         # Build SARIF report structure
-        sarif_report = {
-            "$schema": self.SARIF_SCHEMA,
-            "version": self.SARIF_VERSION,
-            "runs": [
-                {
-                    "tool": {
-                        "driver": {
-                            "name": tool_name,
-                            "version": tool_version,
-                            "informationUri": "https://github.com/cboyd0319/PyGuard",
-                            "semanticVersion": tool_version,
-                            "rules": rules,
-                            "properties": {
-                                "description": (
-                                    "Python security and code quality analysis tool with "
-                                    "ML-powered detection and auto-fix capabilities"
-                                ),
-                                "tags": [
-                                    "security",
-                                    "code-quality",
-                                    "python",
-                                    "static-analysis",
-                                ],
-                            },
-                        }
+        run: Dict[str, Any] = {
+            "tool": {
+                "driver": {
+                    "name": tool_name,
+                    "version": tool_version,
+                    "informationUri": "https://github.com/cboyd0319/PyGuard",
+                    "semanticVersion": tool_version,
+                    "rules": rules,
+                    "properties": {
+                        "description": (
+                            "Python security and code quality analysis tool with "
+                            "ML-powered detection and auto-fix capabilities"
+                        ),
+                        "tags": [
+                            "security",
+                            "code-quality",
+                            "python",
+                            "static-analysis",
+                        ],
                     },
-                    "results": results,
-                    "invocations": [
-                        {
-                            "executionSuccessful": True,
-                            "endTimeUtc": datetime.utcnow().isoformat() + "Z",
-                        }
-                    ],
+                }
+            },
+            "results": results,
+            "invocations": [
+                {
+                    "executionSuccessful": True,
+                    "endTimeUtc": datetime.utcnow().isoformat() + "Z",
                 }
             ],
         }
 
         # Add repository information if provided
         if repository_uri:
-            sarif_report["runs"][0]["versionControlProvenance"] = [
+            run["versionControlProvenance"] = [
                 {"repositoryUri": repository_uri}
             ]
+
+        sarif_report = {
+            "$schema": self.SARIF_SCHEMA,
+            "version": self.SARIF_VERSION,
+            "runs": [run],
+        }
 
         return sarif_report
 

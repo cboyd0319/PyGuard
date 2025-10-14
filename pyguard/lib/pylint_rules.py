@@ -208,7 +208,7 @@ class PylintVisitor(ast.NodeVisitor):
             )
 
         # PLE0102: Function redefinition (same name)
-        method_names = {}
+        method_names: Dict[str, int] = {}
         for child in node.body:
             if isinstance(child, ast.FunctionDef):
                 if child.name in method_names:

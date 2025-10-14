@@ -286,7 +286,7 @@ class DependencyConfusionDetector:
         Returns:
             List of file security issues found
         """
-        issues = []
+        issues: List[FileSecurityIssue] = []
 
         if not requirements_file.exists():
             return issues

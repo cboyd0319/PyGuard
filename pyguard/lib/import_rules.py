@@ -199,8 +199,7 @@ class ImportOrderChecker:
                         module = node.module.split('.')[0]
                     else:
                         continue  # Relative import
-                else:
-                    continue
+                # No else needed - only Import and ImportFrom are added to imports list
 
                 # Determine group: 0=stdlib, 1=third-party, 2=local
                 if module in stdlib_modules:

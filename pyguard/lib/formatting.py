@@ -167,39 +167,43 @@ class FormattingFixer:
         Returns:
             Dictionary with formatting results
         """
-        results = {
-            "file": str(file_path),
-            "success": True,
-            "formatters_applied": [],
-            "errors": [],
-        }
+        formatters_applied: List[str] = []
+        errors: List[str] = []
+        success_flag = True
 
         # Sort imports first (if using isort)
         if use_isort:
             success, output = self.sort_imports_with_isort(file_path)
             if success:
-                results["formatters_applied"].append("isort")
+                formatters_applied.append("isort")
             else:
-                results["errors"].append(f"isort: {output}")
-                results["success"] = False
+                errors.append(f"isort: {output}")
+                success_flag = False
 
         # Format with autopep8 (if requested, before Black)
         if use_autopep8 and not use_black:
             success, output = self.format_with_autopep8(file_path)
             if success:
-                results["formatters_applied"].append("autopep8")
+                formatters_applied.append("autopep8")
             else:
-                results["errors"].append(f"autopep8: {output}")
-                results["success"] = False
+                errors.append(f"autopep8: {output}")
+                success_flag = False
 
         # Format with Black (recommended)
         if use_black:
             success, output = self.format_with_black(file_path)
             if success:
-                results["formatters_applied"].append("black")
+                formatters_applied.append("black")
             else:
-                results["errors"].append(f"black: {output}")
-                results["success"] = False
+                errors.append(f"black: {output}")
+                success_flag = False
+
+        results = {
+            "file": str(file_path),
+            "success": success_flag,
+            "formatters_applied": formatters_applied,
+            "errors": errors,
+        }
 
         return results
 

@@ -24,7 +24,7 @@ class MCPServer:
     url: str
     enabled: bool = True
     api_key: Optional[str] = None
-    capabilities: List[str] = None
+    capabilities: Optional[List[str]] = None
 
     def __post_init__(self):
         if self.capabilities is None:
@@ -50,7 +50,7 @@ class MCPResponse:
     confidence: float  # 0.0 to 1.0
     source: str
     timestamp: str
-    recommendations: List[str] = None
+    recommendations: Optional[List[str]] = None
 
     def __post_init__(self):
         if self.recommendations is None:
@@ -235,7 +235,7 @@ class MCPIntegration:
         )
 
         for server in self.servers.values():
-            if server.enabled and "vulnerability_detection" in server.capabilities:
+            if server.enabled and server.capabilities and "vulnerability_detection" in server.capabilities:
                 response = self._query_server(server, query)
                 if response and response.success:
                     return response.data
@@ -261,11 +261,11 @@ class MCPIntegration:
             context={"issue_type": issue_type},
         )
 
-        recommendations = []
+        recommendations: List[str] = []
         for server in self.servers.values():
-            if server.enabled and "code_patterns" in server.capabilities:
+            if server.enabled and server.capabilities and "code_patterns" in server.capabilities:
                 response = self._query_server(server, query)
-                if response and response.success:
+                if response and response.success and response.recommendations:
                     recommendations.extend(response.recommendations)
 
         return recommendations
