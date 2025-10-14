@@ -1,0 +1,47 @@
+# Security Gate - Fail on High/Critical Issues
+#
+# This workflow blocks pull requests that introduce high or critical security issues.
+# Use this to enforce security standards before merging.
+#
+# Usage: Copy to .github/workflows/security-gate.yml
+
+name: Security Gate
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-gate:
+    name: Security Quality Gate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: PyGuard Security Gate
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: '.'
+        scan-only: 'true'
+        security-only: 'true'
+        severity: 'HIGH'
+        fail-on-issues: 'true'
+        upload-sarif: 'true'
+    
+    - name: Comment PR (if issues found)
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '⚠️ **Security Gate Failed**\n\nHigh or critical security issues were detected. Please review the security findings in the workflow logs and fix the issues before merging.'
+          })

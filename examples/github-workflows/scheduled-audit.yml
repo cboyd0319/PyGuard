@@ -1,0 +1,44 @@
+# Scheduled Security Audit
+#
+# This workflow runs daily security scans and tracks security trends over time.
+# Results are uploaded to GitHub Security tab.
+#
+# Usage: Copy to .github/workflows/security-audit.yml
+
+name: Daily Security Audit
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-audit:
+    name: Scheduled Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run PyGuard Security Audit
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: '.'
+        scan-only: 'true'
+        security-only: 'true'
+        severity: 'LOW'  # Report all issues
+        upload-sarif: 'true'
+    
+    - name: Upload SARIF artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-audit-${{ github.run_number }}
+        path: pyguard-report.sarif
+        retention-days: 90  # Keep for 90 days
+      if: always()

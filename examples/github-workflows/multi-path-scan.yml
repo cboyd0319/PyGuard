@@ -1,0 +1,73 @@
+# Multi-Path Security Scan
+#
+# This workflow scans multiple directories with different configurations.
+# Useful for monorepos or projects with distinct security requirements.
+#
+# Usage: Copy to .github/workflows/multi-scan.yml
+
+name: Multi-Path Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan-backend:
+    name: Scan Backend (Strict)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Scan Backend Code
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: 'backend/ api/'
+        scan-only: 'true'
+        security-only: 'true'
+        severity: 'MEDIUM'
+        fail-on-issues: 'true'
+        sarif-file: 'backend-security.sarif'
+        upload-sarif: 'true'
+  
+  scan-scripts:
+    name: Scan Scripts (Permissive)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Scan Scripts and Tools
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: 'scripts/ tools/'
+        scan-only: 'true'
+        security-only: 'true'
+        severity: 'HIGH'
+        fail-on-issues: 'false'
+        sarif-file: 'scripts-security.sarif'
+        upload-sarif: 'true'
+  
+  scan-tests:
+    name: Scan Tests (Advisory)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Scan Test Code
+      uses: cboyd0319/PyGuard@main
+      with:
+        paths: 'tests/'
+        scan-only: 'true'
+        security-only: 'false'  # Include quality checks
+        severity: 'LOW'
+        fail-on-issues: 'false'
+        sarif-file: 'tests-analysis.sarif'
+        upload-sarif: 'true'
