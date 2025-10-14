@@ -29,17 +29,18 @@ classifiers = [
 ]
 
 dependencies = [
-    "pylint>=3.0.0",
-    "flake8>=6.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.5.0",
-    "bandit>=1.7.5",
-    "autopep8>=2.0.0",
+    "pylint>=4.0.0",
+    "flake8>=7.3.0",
+    "black>=25.9.0",
+    "isort>=7.0.0",
+    "mypy>=1.18.0",
+    "bandit>=1.8.6",
+    "autopep8>=2.3.2",
     "pydocstyle>=6.3.0",
-    "safety>=2.3.0",
+    "safety>=3.6.0",
     "radon>=6.0.1",
-    "vulture>=2.9.1",
+    "vulture>=2.14",
+    "ruff>=0.14.0",
     "rich>=13.0.0",
 ]
 
