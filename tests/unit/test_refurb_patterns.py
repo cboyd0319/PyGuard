@@ -99,6 +99,112 @@ exists = os.path.exists(path)
         assert len(violations) > 0
         assert any(v.rule_id == "FURB108" for v in violations)
 
+    def test_detect_math_floor_for_int(self, tmp_path):
+        """Test detection of math.floor() used for int conversion."""
+        code = '''
+import math
+value = math.floor(3.7)
+another = math.ceil(2.3)
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB109" for v in violations)
+
+    def test_detect_if_else_expression(self, tmp_path):
+        """Test detection of if-else that should use conditional expression."""
+        code = '''
+if condition:
+    result = "yes"
+else:
+    result = "no"
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB110" for v in violations)
+
+    def test_detect_os_listdir(self, tmp_path):
+        """Test detection of os.listdir() instead of Path.iterdir()."""
+        code = '''
+import os
+files = os.listdir("/some/path")
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB111" for v in violations)
+
+    def test_detect_repeated_append(self, tmp_path):
+        """Test detection of repeated append() in loop."""
+        code = '''
+for item in items:
+    result.append(item * 2)
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB113" for v in violations)
+
+    def test_detect_dict_setdefault(self, tmp_path):
+        """Test detection of if-not-in pattern instead of setdefault()."""
+        code = '''
+if key not in mydict:
+    mydict[key] = []
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB120" for v in violations)
+
+    def test_detect_max_instead_of_sorted_last(self, tmp_path):
+        """Test detection of sorted()[-1] instead of max()."""
+        code = '''
+largest = sorted(numbers)[-1]
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB132" for v in violations)
+
+    def test_detect_min_instead_of_sorted_first(self, tmp_path):
+        """Test detection of sorted()[0] instead of min()."""
+        code = '''
+smallest = sorted(numbers)[0]
+'''
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB133" for v in violations)
+
     def test_no_violations_for_clean_code(self, tmp_path):
         """Test that clean code produces no violations."""
         code = '''
@@ -109,6 +215,8 @@ def process_file(path: Path):
         return f.read()
 
 result = sorted(x * 2 for x in range(10))
+largest = max(numbers)
+smallest = min(numbers)
 '''
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -116,8 +224,8 @@ result = sorted(x * 2 for x in range(10))
         checker = RefurbPatternChecker()
         violations = checker.check_file(file_path)
 
-        # Should have no FURB102 or FURB104 violations
-        assert not any(v.rule_id in ("FURB102", "FURB104") for v in violations)
+        # Should have no FURB102, FURB104, FURB132, FURB133 violations
+        assert not any(v.rule_id in ("FURB102", "FURB104", "FURB132", "FURB133") for v in violations)
 
 
 class TestAutoFix:
@@ -148,9 +256,13 @@ class TestRuleRegistration:
 
     def test_rules_defined(self):
         """Test that FURB rules are defined."""
-        assert len(REFURB_RULES) >= 7
+        assert len(REFURB_RULES) >= 18
         rule_ids = {rule.rule_id for rule in REFURB_RULES}
-        expected_ids = {"FURB101", "FURB102", "FURB104", "FURB105", "FURB106", "FURB107", "FURB108"}
+        expected_ids = {
+            "FURB101", "FURB102", "FURB104", "FURB105", "FURB106", "FURB107", "FURB108",
+            "FURB109", "FURB110", "FURB111", "FURB113", "FURB114", "FURB115",
+            "FURB120", "FURB121", "FURB122", "FURB132", "FURB133"
+        }
         assert expected_ids.issubset(rule_ids)
 
     def test_rule_metadata(self):
