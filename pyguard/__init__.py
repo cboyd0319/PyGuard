@@ -63,6 +63,26 @@ from pyguard.lib.xss_detection import (
     check_xss_vulnerabilities,
     detect_xss_patterns,
 )
+from pyguard.lib.ci_integration import (
+    CIIntegrationGenerator,
+    PreCommitHookGenerator,
+    generate_ci_config,
+    install_pre_commit_hook,
+)
+from pyguard.lib.performance_profiler import (
+    PerformanceProfiler,
+    PerformanceOptimizationSuggester,
+    analyze_performance,
+)
+from pyguard.lib.dependency_analyzer import (
+    DependencyGraphAnalyzer,
+    analyze_project_dependencies,
+)
+from pyguard.lib.custom_rules import (
+    CustomRule,
+    CustomRuleEngine,
+    create_rule_engine_from_config,
+)
 
 __all__ = [
     "PyGuardLogger",
@@ -133,4 +153,20 @@ __all__ = [
     "XSS_RULES",
     "check_xss_vulnerabilities",
     "detect_xss_patterns",
+    # CI/CD Integration
+    "CIIntegrationGenerator",
+    "PreCommitHookGenerator",
+    "generate_ci_config",
+    "install_pre_commit_hook",
+    # Performance Profiler
+    "PerformanceProfiler",
+    "PerformanceOptimizationSuggester",
+    "analyze_performance",
+    # Dependency Analyzer
+    "DependencyGraphAnalyzer",
+    "analyze_project_dependencies",
+    # Custom Rules Engine
+    "CustomRule",
+    "CustomRuleEngine",
+    "create_rule_engine_from_config",
 ]
