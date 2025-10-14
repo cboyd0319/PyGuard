@@ -39,7 +39,8 @@ class DjangoVisitor(ast.NodeVisitor):
 
     def _detect_django_imports(self, code: str) -> bool:
         """Check if file uses Django."""
-        return 'from django' in code or 'import django' in code
+        # String literal check for import detection, not SQL injection
+        return 'from django' in code or 'import django' in code  # pyguard: disable=CWE-89
 
     def visit_Call(self, node: ast.Call) -> None:
         """Detect Django-specific call issues (DJ001-DJ013)."""

@@ -60,6 +60,11 @@ class SecurityVisitor(ast.NodeVisitor):
         self.source_lines = source_lines
         self.in_function = False
         self.current_function = None
+    
+    def _add_issue(self, node: ast.AST, issue: SecurityIssue) -> None:
+        """Add issue if not suppressed."""
+        if not self._is_suppressed(node, issue.cwe_id):
+            self.issues.append(issue)
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
@@ -108,36 +113,32 @@ class SecurityVisitor(ast.NodeVisitor):
         func_name = self._get_call_name(node)
 
         # OWASP ASVS-5.2.1, CWE-95: Code Injection
-        if func_name in ["eval", "exec", "compile"] and not self._is_suppressed(node, "CWE-95"):
-            self.issues.append(
-                SecurityIssue(
-                    severity="HIGH",
-                    category="Code Injection",
-                    message=f"Dangerous use of {func_name}() - executes arbitrary code",
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    code_snippet=self._get_code_snippet(node),
-                    fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
-                    owasp_id="ASVS-5.2.1",
-                    cwe_id="CWE-95",
-                )
-            )
+        if func_name in ["eval", "exec", "compile"]:
+            self._add_issue(node, SecurityIssue(
+                severity="HIGH",
+                category="Code Injection",
+                message=f"Dangerous use of {func_name}() - executes arbitrary code",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
+                owasp_id="ASVS-5.2.1",
+                cwe_id="CWE-95",
+            ))
 
         # OWASP ASVS-5.5.3, CWE-502: Unsafe Deserialization - YAML
         if func_name == "yaml.load":
-            self.issues.append(
-                SecurityIssue(
-                    severity="HIGH",
-                    category="Unsafe Deserialization",
-                    message="yaml.load() allows arbitrary code execution",
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    code_snippet=self._get_code_snippet(node),
-                    fix_suggestion="Use yaml.safe_load() instead, which only deserializes safe types",
-                    owasp_id="ASVS-5.5.3",
-                    cwe_id="CWE-502",
-                )
-            )
+            self._add_issue(node, SecurityIssue(
+                severity="HIGH",
+                category="Unsafe Deserialization",
+                message="yaml.load() allows arbitrary code execution",
+                line_number=node.lineno,
+                column=node.col_offset,
+                code_snippet=self._get_code_snippet(node),
+                fix_suggestion="Use yaml.safe_load() instead, which only deserializes safe types",
+                owasp_id="ASVS-5.5.3",
+                cwe_id="CWE-502",
+            ))
 
         # OWASP ASVS-5.5.3, CWE-502: Unsafe Deserialization - Pickle
         if func_name in ["pickle.load", "pickle.loads"]:

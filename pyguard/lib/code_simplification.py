@@ -349,7 +349,7 @@ class SimplificationVisitor(ast.NodeVisitor):
             if isinstance(op, ast.In) and isinstance(comparator, ast.Call):
                 if (
                     isinstance(comparator.func, ast.Attribute)
-                    and comparator.func.attr == "keys"
+                    and comparator.func.attr == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     and len(comparator.args) == 0
                 ):
                     self.issues.append(

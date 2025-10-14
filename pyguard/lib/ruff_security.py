@@ -366,7 +366,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
             has_safe_loader = any(
                 isinstance(kw.value, ast.Attribute) and 
                 kw.value.attr in ("SafeLoader", "CSafeLoader")
-                for kw in node.keywords if kw.arg == "Loader"
+                for kw in node.keywords if kw.arg == "Loader"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
             )
             if not has_safe_loader:
                 self.violations.append(
@@ -425,7 +425,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                           "requests.patch", "requests.head", "requests.request", "httpx.get",
                           "httpx.post", "httpx.Client", "httpx.AsyncClient"):
             # S113: request-without-timeout
-            has_timeout = any(kw.arg == "timeout" for kw in node.keywords)
+            has_timeout = any(kw.arg == "timeout" for kw in node.keywords)  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
             if not has_timeout:
                 self.violations.append(
                     RuleViolation(
@@ -826,7 +826,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                 )
             
             # S504: ssl-with-no-version
-            if func_name == "ssl.wrap_socket" and not any(kw.arg == "ssl_version" for kw in node.keywords):
+            if func_name == "ssl.wrap_socket" and not any(kw.arg == "ssl_version" for kw in node.keywords):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                 self.violations.append(
                     RuleViolation(
                         rule_id="S504",

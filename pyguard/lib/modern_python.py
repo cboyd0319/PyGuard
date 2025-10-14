@@ -314,7 +314,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
             # UP011/UP033: lru_cache without parentheses
             if isinstance(decorator, ast.Call):
                 if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr == "lru_cache" and len(decorator.args) == 0 and len(decorator.keywords) == 0:
+                    if decorator.func.attr == "lru_cache" and len(decorator.args) == 0 and len(decorator.keywords) == 0:  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                         self.issues.append(
                             ModernizationIssue(
                                 severity="LOW",

@@ -260,7 +260,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name) and node.func.id in ("list", "tuple", "set"):
             if len(node.args) == 1 and isinstance(node.args[0], ast.Call):
                 inner = node.args[0]
-                if isinstance(inner.func, ast.Attribute) and inner.func.attr == "keys":
+                if isinstance(inner.func, ast.Attribute) and inner.func.attr == "keys":  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     self.violations.append(
                         RuleViolation(
                             rule_id="PIE804",

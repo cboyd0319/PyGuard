@@ -39,7 +39,7 @@ class PytestVisitor(ast.NodeVisitor):
 
     def _detect_pytest(self, code: str) -> bool:
         """Check if file uses pytest."""
-        return 'import pytest' in code or 'from pytest' in code
+        return 'import pytest' in code or 'from pytest' in code  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Detect test function issues (PT001-PT027)."""
