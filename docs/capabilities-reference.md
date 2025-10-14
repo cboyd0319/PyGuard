@@ -1,265 +1,272 @@
 # PyGuard Capabilities Reference
 
-**Complete catalog of all security checks, code quality rules, auto-fixes, and features in PyGuard v0.3.0**
+**Complete catalog of all capabilities, features, and integrations in PyGuard**
 
-> **TL;DR**: PyGuard is a comprehensive Python analysis tool that replaces 7+ tools (Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy) with 55+ security checks, 150+ code quality rules, 150+ auto-fixes, ML-powered detection, and 10+ compliance frameworks.
+> **TL;DR**: Comprehensive Python security and code quality platform. Replaces 7+ tools (Bandit, Ruff, Pylint, Semgrep, Black, isort, mypy) with 55+ security checks, 150+ code quality rules, 179+ auto-fixes, ML-powered detection, and 10+ compliance frameworks. Runs locally, no telemetry.
 
-## Quick Statistics
+## Statistics at a Glance
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Total Library Modules** | 55 | ✅ Production |
-| **Security Vulnerability Checks** | 55+ | ✅ Active |
+| **Library Modules** | 59 | ✅ Production |
+| **Total Lines of Code** | 30,500+ | ✅ Production |
+| **Security Checks** | 55+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
-| **Automated Fixes (Safe + Unsafe)** | 179+ | ✅ All Detections Covered |
-| **Framework-Specific Rules** | 75+ | ✅ 4 Frameworks |
-| **Compliance Frameworks Supported** | 10+ | ✅ Full Coverage |
-| **ML-Powered Features** | 5 | ✅ Active |
-| **Advanced Features (NEW v0.3.0)** | 2 | ✅ Notebook + AI Explainer |
-| **Lines of Analysis Code** | 28,000+ | ✅ Production |
+| **Auto-Fixes** | 179+ | ✅ 100% Coverage |
+| **Framework Rules** | 75+ | ✅ 4 Frameworks |
+| **Compliance Frameworks** | 10+ | ✅ Full Mapping |
+| **ML Features** | 5 | ✅ Active |
+| **Test Files** | 62 | ✅ Comprehensive |
 | **Test Coverage** | 84% | 🎯 Target: 100% |
-| **Total Tests** | 1168 | ✅ Comprehensive |
-| **GitHub Actions Integration** | ✅ Native | ✅ SARIF Support |
-| **SARIF 2.1.0 Compliance** | ✅ Full | ✅ Code Scanning |
+| **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
-**Replaces these tools**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial) • Safety
+**Tool Replacement Matrix**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial) • Safety • Flake8
 
 ---
 
 ## Table of Contents
 
-1. [Advanced Features (NEW v0.3.0)](#advanced-features-new-v030) ⭐
-2. [Security Vulnerability Detection (55+ Checks)](#security-vulnerability-detection)
-3. [Code Quality Analysis (150+ Rules)](#code-quality-analysis)
-4. [Framework-Specific Checks](#framework-specific-checks)
-5. [Compliance & Standards Integration](#compliance--standards-integration)
-6. [Auto-Fix Capabilities (150+ Fixes)](#auto-fix-capabilities)
-7. [ML-Powered Features](#ml-powered-features)
-8. [Supply Chain Security](#supply-chain-security)
-9. [Analysis Engines](#analysis-engines)
-10. [Reporting & Integration](#reporting--integration)
-11. [Planned Features (Roadmap)](#planned-features-roadmap)
+### Core Capabilities
+1. [Security Detection](#1-security-detection) — 55+ vulnerability checks
+2. [Code Quality](#2-code-quality) — 150+ rules across 10 categories
+3. [Auto-Fix System](#3-auto-fix-system) — 179+ fixes, 100% coverage
+4. [Framework Support](#4-framework-support) — Django, Flask, Pandas, Pytest
+
+### Advanced Capabilities
+5. [Advanced Security](#5-advanced-security) — Jupyter notebooks, AI explanations
+6. [Compliance Standards](#6-compliance-standards) — 10+ frameworks (OWASP, PCI-DSS, HIPAA)
+7. [ML-Powered Analysis](#7-ml-powered-analysis) — Pattern recognition, anomaly detection
+8. [Supply Chain Security](#8-supply-chain-security) — SBOM, dependency scanning
+
+### Integration & Tooling
+9. [CI/CD Integration](#9-cicd-integration) — 5+ platforms, pre-commit hooks
+10. [Performance Tools](#10-performance-tools) — Profiling, optimization suggestions
+11. [Dependency Analysis](#11-dependency-analysis) — Graph visualization, circular detection
+12. [Custom Rules](#12-custom-rules) — User-defined security and quality rules
+13. [Reporting](#13-reporting) — HTML, JSON, SARIF, console
+
+### Development & Future
+14. [Analysis Engines](#14-analysis-engines) — AST, ML, type checking
+15. [Planned Features](#15-planned-features) — Roadmap and future work
 
 ---
 
-## Advanced Features (NEW v0.3.0)
+## 1. Security Detection
 
-PyGuard introduces cutting-edge capabilities that differentiate it from all other Python security tools.
+PyGuard implements **55+ security vulnerability checks** across 8 specialized security modules.
 
-### 🎯 Jupyter Notebook Security Analysis
+### Security Modules Overview
 
-**Module**: `notebook_security.py` (180 lines, 99% coverage)
-
-PyGuard is **one of the few tools** with native Jupyter notebook support. Most security tools require converting notebooks to Python files, losing context and notebook-specific vulnerabilities.
-
-#### Notebook-Specific Detection (8+ Categories)
-
-| Category | Severity | Description | Unique to PyGuard |
-|----------|----------|-------------|-------------------|
-| **Hardcoded Secrets** | HIGH | Passwords, API keys, AWS credentials in cells | ✅ Yes |
-| **Magic Commands** | HIGH | Dangerous magic commands (!, %system, %%bash) | ✅ Yes |
-| **Code Injection** | CRITICAL | eval/exec in notebook cells | Shared |
-| **Command Injection** | CRITICAL | subprocess with shell=True | Shared |
-| **Unsafe Deserialization** | HIGH | pickle.load() in notebooks | Shared |
-| **Information Disclosure** | MEDIUM | Paths in cell outputs | ✅ Yes |
-| **Execution Order Issues** | MEDIUM | Variables used before definition | ✅ Yes |
-| **Extension Loading** | HIGH | Loading untrusted extensions | ✅ Yes |
-
-#### Key Features
-
-- **Cell-by-cell analysis**: Scans each cell independently
-- **Execution order tracking**: Detects variables used before definition
-- **Magic command detection**: Identifies dangerous Jupyter-specific syntax
-- **Output scanning**: Checks cell outputs for sensitive information
-- **Cross-cell dependencies**: Analyzes data flow between cells
-- **Automated fixes**: Redacts secrets, comments unsafe code
-
-#### Usage
-
-```python
-from pyguard import scan_notebook
-
-# Scan a notebook
-issues = scan_notebook('analysis.ipynb')
-
-for issue in issues:
-    print(f"{issue.severity}: {issue.message}")
-    print(f"  Cell {issue.cell_index}, Line {issue.line_number}")
-    print(f"  Fix: {issue.fix_suggestion}")
-```
-
-#### Comparison
-
-| Feature | PyGuard | Bandit | Ruff | Semgrep | nbqa |
-|---------|---------|--------|------|---------|------|
-| Native .ipynb support | ✅ | ❌ | ❌ | ❌ | ⚠️ |
-| Cell order analysis | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Magic command detection | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Output scanning | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Automated fixes | ✅ | ❌ | ⚠️ | ❌ | ❌ |
-
-**Documentation**: See `docs/notebook-security-guide.md`
-
----
-
-### 🤖 AI-Powered Vulnerability Explanations
-
-**Module**: `ai_explainer.py` (267 lines, 100% coverage)
-
-PyGuard provides **educational, natural language explanations** for every vulnerability type. Unlike other tools that just report issues, PyGuard teaches developers **why** issues matter and **how** to fix them properly.
-
-#### Comprehensive Explanations (7+ Vulnerabilities)
-
-Each explanation includes:
-
-1. **What is it?** - Clear description of the vulnerability
-2. **Why dangerous?** - Real-world impact and consequences
-3. **How to exploit?** - Attack vectors (technical understanding)
-4. **How to fix?** - Step-by-step remediation
-5. **Vulnerable example** - Code that demonstrates the issue
-6. **Secure example** - Corrected, secure code
-7. **References** - OWASP, CWE, and educational links
-
-Covered vulnerabilities:
-- SQL Injection (CWE-89)
-- Command Injection (CWE-78)
-- Code Injection (CWE-95)
-- Hardcoded Secrets (CWE-798)
-- Unsafe Deserialization (CWE-502)
-- Cross-Site Scripting (CWE-79)
-- Path Traversal (CWE-22)
-
-#### Fix Rationale Generation
-
-PyGuard explains **why a specific fix was chosen**, not just what to change:
-
-```python
-from pyguard import AIExplainer
-
-explainer = AIExplainer()
-rationale = explainer.explain_fix(
-    original="eval(user_input)",
-    fixed="ast.literal_eval(user_input)",
-    vulnerability_type="CODE_INJECTION"
-)
-
-print(rationale.why_this_fix)
-# "ast.literal_eval() only evaluates Python literals, preventing code execution."
-
-print(rationale.alternatives)
-# ["Use JSON for structured data", "Design to avoid dynamic evaluation", ...]
-
-print(rationale.security_impact)
-# "Eliminates code injection risk entirely."
-```
-
-#### Educational Levels (Beginner → Advanced)
-
-PyGuard adjusts explanation complexity based on audience:
-
-**Beginner**: Simplified terms, omits technical exploitation details
-```python
-explanation = explain("SQL_INJECTION", level="beginner")
-# Uses: "cleaning" instead of "sanitization"
-# Uses: "attack" instead of "exploitation"
-```
-
-**Intermediate**: Balanced technical and practical (default)
-
-**Advanced**: Full technical details, exploit techniques, security analysis
-
-#### Interactive Learning Modules
-
-Generate complete learning content with quiz questions:
-
-```python
-content = explainer.generate_learning_content("COMMAND_INJECTION")
-
-# Includes:
-# - Learning objectives
-# - Vulnerable vs secure patterns
-# - Quiz question with 4 options
-# - Detailed explanation
-# - Further reading links
-```
-
-Example quiz:
-```
-Q: Why is subprocess.run(cmd, shell=True) dangerous?
-   1. It's slower than shell=False
-   2. It allows shell metacharacter injection ✓
-   3. It requires more memory
-   4. It's deprecated
-
-Explanation: shell=True allows shell metacharacters like ; | & to chain commands maliciously.
-```
-
-#### Usage
-
-```python
-from pyguard import explain, AIExplainer
-
-# Quick explanation
-explanation = explain("SQL_INJECTION")
-print(explanation.how_to_fix)
-
-# Detailed explainer
-explainer = AIExplainer()
-content = explainer.generate_learning_content("XSS")
-print(content["quiz_question"])
-```
-
-#### Comparison
-
-| Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
-|---------|---------|--------|------|---------|------|-----------|
-| Natural language explanations | ✅ Full | ❌ | ❌ | ❌ | ⚠️ Basic | ⚠️ Basic |
-| Fix rationale | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Educational levels | ✅ 3 levels | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Interactive quizzes | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| No external AI API | ✅ | N/A | N/A | N/A | ❌ | ⚠️ |
-
-**Benefits**:
-- **Learn while you scan**: Developers improve security knowledge
-- **Understand "why"**: Not just what's wrong, but why it matters
-- **Team training**: Use as educational material for security training
-- **No privacy concerns**: Rule-based templates, no external AI calls
-
-**Demo**: Run `python examples/advanced_features_demo.py`
-
----
-
-## Security Vulnerability Detection
-
-PyGuard detects **55+ security vulnerability types** with CWE/OWASP mappings. All checks are implemented across 6 specialized security modules.
+| Module | Lines | Checks | CWE Coverage | Status |
+|--------|-------|--------|--------------|--------|
+| `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
+| `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
+| `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
+| `xss_detection.py` | 541 | 5 XSS types | Multi-framework | ✅ Complete |
+| `advanced_security.py` | 408 | 14 vulns | Taint, race, ReDoS | ✅ Complete |
+| `security.py` | 289 | 20 vulns | Core security | ✅ Complete |
+| `notebook_security.py` | 180 | 8+ checks | Jupyter-specific | ✅ Complete |
+| `supply_chain.py` | 488 | Dependencies | SBOM, licenses | ✅ Complete |
 
 ### Core Security Checks (20 vulnerabilities)
 
-**Module**: `security.py` (289 lines)
+**Module**: `security.py`
 
-| Vulnerability | Severity | CWE | OWASP | Auto-Fix |
-|--------------|----------|-----|-------|----------|
-| Hardcoded Passwords/Secrets | HIGH | CWE-798 | ASVS-2.6.3 | ✅ Environment vars (unsafe) |
-| API Keys in Code | HIGH | CWE-798 | ASVS-2.6.3 | ✅ Config files (unsafe) |
-| SQL Injection | HIGH | CWE-89 | ASVS-5.3.4 | ✅ Parameterized (unsafe) |
-| Command Injection | HIGH | CWE-78 | ASVS-5.3.3 | ✅ Safe subprocess (unsafe) |
-| Code Injection (eval/exec) | HIGH | CWE-95 | ASVS-5.2.1 | ✅ ast.literal_eval (safe) |
-| Unsafe Deserialization (pickle) | HIGH | CWE-502 | ASVS-5.5.3 | ✅ JSON (safe) |
-| Unsafe YAML Loading | HIGH | CWE-502 | ASVS-5.5.3 | ✅ safe_load |
-| Path Traversal | HIGH | CWE-22 | ASVS-12.3.1 | ✅ Path validation (unsafe) |
-| Insecure Temp Files | HIGH | CWE-377 | ASVS-12.3.2 | ✅ mkstemp (safe) |
-| Weak Cryptography (MD5/SHA1) | MEDIUM | CWE-327 | ASVS-6.2.1 | ✅ SHA256 |
-| Weak Random (random module) | MEDIUM | CWE-330 | ASVS-6.3.1 | ✅ secrets |
-
-**Key Features:**
-- AST-based detection (zero false positives from comments/strings)
-- Context-aware analysis
-- Automatic safe replacements for common vulnerabilities
-- Detailed fix recommendations
+| Vulnerability | Severity | CWE | OWASP | Auto-Fix | Safety |
+|--------------|----------|-----|-------|----------|--------|
+| Hardcoded Passwords/Secrets | HIGH | CWE-798 | ASVS-2.6.3 | ✅ | UNSAFE |
+| SQL Injection | HIGH | CWE-89 | ASVS-5.3.4 | ✅ | UNSAFE |
+| Command Injection | HIGH | CWE-78 | ASVS-5.3.3 | ✅ | UNSAFE |
+| Code Injection (eval/exec) | HIGH | CWE-95 | ASVS-5.2.1 | ✅ | SAFE |
+| Unsafe Deserialization | HIGH | CWE-502 | ASVS-5.5.3 | ✅ | SAFE |
+| Path Traversal | HIGH | CWE-22 | ASVS-12.3.1 | ✅ | UNSAFE |
+| Weak Cryptography | MEDIUM | CWE-327 | ASVS-6.2.1 | ✅ | SAFE |
+| Weak Random | MEDIUM | CWE-330 | ASVS-6.3.1 | ✅ | SAFE |
+| Insecure Temp Files | HIGH | CWE-377 | ASVS-12.3.2 | ✅ | SAFE |
+| Unsafe YAML Loading | HIGH | CWE-502 | ASVS-5.5.3 | ✅ | SAFE |
 
 ### Advanced Security (14 vulnerabilities)
 
-**Module**: `advanced_security.py` (408 lines)
+**Module**: `advanced_security.py`
+
+| Feature | CWE | Implementation | Status |
+|---------|-----|----------------|--------|
+| Taint Tracking | CWE-20 | Full path analysis | ✅ Complete |
+| ReDoS Detection | CWE-1333 | Pattern complexity | ✅ Complete |
+| Race Conditions | CWE-362 | TOCTOU analysis | ✅ Complete |
+| Integer Overflow | CWE-190 | Bounds checking | ✅ Complete |
+| Memory Disclosure | CWE-209 | Traceback detection | ✅ Complete |
+| Timing Attacks | CWE-208 | Comparison analysis | ✅ Complete |
+| Buffer Overflow | CWE-120 | ctypes/CFFI usage | ✅ Complete |
+
+### Ultra-Advanced Security (21+ vulnerabilities)
+
+**Module**: `ultra_advanced_security.py`
+
+| Vulnerability | Frameworks | Auto-Fix | Status |
+|--------------|------------|----------|--------|
+| GraphQL Injection | GraphQL | ✅ Parameterized | ✅ Complete |
+| Server-Side Template Injection | Jinja2/Mako | ✅ Safe templates | ✅ Complete |
+| JWT Security | JWT | ✅ RS256 | ✅ Complete |
+| API Rate Limiting | Flask/FastAPI | ✅ @limiter | ✅ Complete |
+| Container Security | Docker | ✅ Secure config | ✅ Complete |
+| Insecure Cookies | Flask/Django | ✅ Secure flags | ✅ Complete |
+| IDOR | All | ✅ Authz checks | ✅ Complete |
+| Mass Assignment | Django/SQLAlchemy | ✅ Allowlist | ✅ Complete |
+| CORS Misconfiguration | Flask/FastAPI | ✅ Strict origins | ✅ Complete |
+| XXE | XML parsers | ✅ Safe parser | ✅ Complete |
+| LDAP Injection | python-ldap | ✅ Escaping | ✅ Complete |
+| NoSQL Injection | MongoDB | ✅ Parameterized | ✅ Complete |
+| SSRF | requests/urllib | ✅ URL validation | ✅ Complete |
+| Open Redirect | Flask/Django | ✅ URL validation | ✅ Complete |
+
+### Jupyter Notebook Security (8+ checks)
+
+**Module**: `notebook_security.py` — Industry-leading native `.ipynb` support
+
+| Check | Severity | Unique to PyGuard |
+|-------|----------|-------------------|
+| Hardcoded Secrets in Cells | HIGH | ✅ Yes |
+| Dangerous Magic Commands | HIGH | ✅ Yes (!, %system, %%bash) |
+| Code Injection (eval/exec) | CRITICAL | No |
+| Command Injection | CRITICAL | No |
+| Path Disclosure in Outputs | MEDIUM | ✅ Yes |
+| Execution Order Issues | MEDIUM | ✅ Yes (vars before def) |
+| Unsafe Extension Loading | HIGH | ✅ Yes (%load_ext) |
+| Unsafe Deserialization | HIGH | No |
+
+**Competitive Advantage**: Only tool with comprehensive notebook support including cell order analysis, magic command detection, and output scanning.
+
+### XSS Detection (5 types, multi-framework)
+
+**Module**: `xss_detection.py`
+
+| XSS Type | Frameworks | Detection Method |
+|----------|-----------|------------------|
+| Reflected XSS | Django, Flask, FastAPI | Unescaped template vars |
+| Stored XSS | All | DB → Template without escape |
+| DOM-based XSS | JavaScript in templates | innerHTML assignments |
+| URL Parameter XSS | Flask, Django | Request args in HTML |
+| Template Injection | Jinja2, Mako | Dynamic rendering |
+
+---
+
+## 2. Code Quality
+
+PyGuard enforces **150+ code quality rules** across 14 comprehensive modules.
+
+### Code Quality Modules Overview
+
+| Module | Lines | Rules | Category | Status |
+|--------|-------|-------|----------|--------|
+| `pep8_comprehensive.py` | 1425 | 88 rules | Style | ✅ Complete |
+| `refurb_patterns.py` | 1376 | 35+ rules | Modernization | ✅ Complete |
+| `pie_patterns.py` | 915 | 25+ rules | Code smells | ✅ Complete |
+| `code_simplification.py` | 761 | Refactoring | Simplification | ✅ Complete |
+| `bugbear.py` | 729 | 40+ rules | Bug patterns | ✅ Complete |
+| `pylint_rules.py` | 611 | 60+ rules | Quality | ✅ Complete |
+| `modern_python.py` | 658 | 30+ rules | pyupgrade | ✅ Complete |
+| `comprehensions.py` | 441 | Optimization | List/dict | ✅ Complete |
+| `exception_handling.py` | 446 | Best practices | Exceptions | ✅ Complete |
+| `naming_conventions.py` | 421 | PEP 8 naming | Conventions | ✅ Complete |
+| `unused_code.py` | 374 | Dead code | Detection | ✅ Complete |
+| `best_practices.py` | 363 | 20+ patterns | Best practices | ✅ Complete |
+| `string_operations.py` | 384 | String patterns | Optimization | ✅ Complete |
+| `async_patterns.py` | 274 | async/await | Async code | ✅ Complete |
+
+### PEP 8 Style (88 rules)
+
+**Module**: `pep8_comprehensive.py` — Native pycodestyle implementation
+
+| Category | Rules | Auto-Fix | Examples |
+|----------|-------|----------|----------|
+| Indentation (E1xx) | 13 | ✅ | E101, E111, E121, E122, E131 |
+| Whitespace (E2xx) | 20 | ✅ | E201-E211, E221-E231, E241-E275 |
+| Blank Lines (E3xx) | 6 | ✅ | E301-E306 |
+| Imports (E4xx) | 3 | ✅ | E401, E402 |
+| Line Length (E5xx) | 2 | ✅ | E501, E502 |
+| Statements (E7xx) | 4 | ✅ | E701-E704 |
+| Runtime (E9xx) | 3 | ⚠️ | E901, E902, E999 (syntax) |
+| Warnings (W1xx-W6xx) | 37 | ✅ | W191, W291-W293, W503-W606 |
+
+### Pylint Rules (60+ rules)
+
+**Module**: `pylint_rules.py`
+
+| Category | Description | Rules | Status |
+|----------|-------------|-------|--------|
+| PLR (Refactor) | Code refactoring | 20+ | ✅ Complete |
+| PLC (Convention) | Coding standards | 15+ | ✅ Complete |
+| PLW (Warning) | Problem code | 15+ | ✅ Complete |
+| PLE (Error) | Likely errors | 10+ | ✅ Complete |
+
+**Common Checks**: Cyclomatic complexity, function length, parameter count, local variables, duplicate code
+
+### Bugbear (40+ bug patterns)
+
+**Module**: `bugbear.py` — Catches likely bugs
+
+| Pattern | Description | Auto-Fix |
+|---------|-------------|----------|
+| B001-B006 | Loop/iteration issues | ✅ |
+| B007 | Unused loop variables | ✅ |
+| B008-B009 | Function call defaults | ✅ |
+| B010-B015 | Exception handling | ✅ |
+| B016-B020 | Type checking anti-patterns | ✅ |
+| B021-B025 | Context manager issues | ✅ |
+| B026-B030 | String/byte issues | ✅ |
+
+### Modern Python (35+ patterns)
+
+**Module**: `refurb_patterns.py` + `modern_python.py` — Modernization for Python 3.8+
+
+| Pattern Type | Target Version | Auto-Fix | Examples |
+|-------------|----------------|----------|----------|
+| Path operations | 3.8+ | ✅ | os.path → pathlib |
+| Type annotations | 3.9-3.10 | ✅ | List[X] → list[X] |
+| String operations | 3.9+ | ✅ | % → f-strings |
+| Collections | 3.9+ | ✅ | New methods |
+| Context managers | 3.10+ | ✅ | Parenthesized |
+| Union syntax | 3.10+ | ✅ | Optional[X] → X \| None |
+
+### Best Practices (20+ patterns)
+
+**Module**: `best_practices.py`
+
+| Practice | Description | Auto-Fix |
+|----------|-------------|----------|
+| Mutable defaults | `def f(x=[])` | ✅ None + init |
+| Bare except | `except: pass` | ✅ Add type |
+| None comparison | `x == None` | ✅ `is None` |
+| Boolean comparison | `x == True` | ✅ `if x` |
+| Type checking | `type(x) == int` | ✅ isinstance() |
+| Context managers | File operations | ✅ Add with |
+| Missing docstrings | Functions | ✅ Template |
+
+---
+
+### Ruff Security Rules (73 Bandit rules)
+
+**Module**: `ruff_security.py` (1598 lines) — Most comprehensive module
+
+Implements **all 73 Ruff S (Security) rules** from Bandit:
+
+| Rule Category | Count | Examples |
+|--------------|-------|----------|
+| Shell Injection | 8 | S602-S609 (subprocess, os.system) |
+| Cryptography | 12 | S301-S324 (weak crypto, SSL) |
+| Deserialization | 6 | S301, S302, S403, S404, S506 |
+| SQL Injection | 4 | S608, string formatting |
+| Path Operations | 5 | S101-S103, S108 |
+| Network Security | 8 | S401, S505-S507 (SSL, FTP) |
+| Code Execution | 10 | S102, S307, S403-S406 |
+| File Operations | 7 | S101, S108, S110, S111 |
+| XML/XXE | 3 | S314-S316 (ElementTree) |
+| Misc Security | 10 | Assertions, try-except-pass |
+
+### Core Security Checks (20 vulnerabilities)
+
+**Module**: `security.py`
 
 | Feature | Description | CWE | Implementation |
 |---------|-------------|-----|----------------|
@@ -375,276 +382,467 @@ Implements **all 73 Ruff S (Security) rules** from Bandit:
 
 ---
 
-## Code Quality Analysis
+## 3. Auto-Fix System
 
-PyGuard enforces **150+ code quality rules** across 7 comprehensive modules, covering PEP 8, Python idioms, complexity, performance, and best practices.
+PyGuard provides **179+ automated fixes** — the most comprehensive auto-fix system of any Python security tool.
 
-### PEP 8 Comprehensive (88 style rules)
+### Auto-Fix Modules
 
-**Module**: `pep8_comprehensive.py` (1,424 lines)
+| Module | Lines | Fixes | Safety Level | Status |
+|--------|-------|-------|--------------|--------|
+| `missing_auto_fixes.py` | 743 | 72 fixes | UNSAFE | ✅ Complete |
+| `ultra_advanced_fixes.py` | 490 | 27 fixes | UNSAFE | ✅ Complete |
+| `enhanced_security_fixes.py` | 458 | 20 fixes | UNSAFE | ✅ Complete |
+| `fix_safety.py` | 403 | Classification | System | ✅ Complete |
+| `formatting.py` | 280 | PEP 8 fixes | SAFE | ✅ Complete |
 
-Native implementation of **all pycodestyle E/W codes**:
+### Fix Safety Classification
 
-| Category | Rules | Auto-Fix | Examples |
-|----------|-------|----------|----------|
-| Indentation (E1xx) | 13 rules | ✅ Yes | E101, E111, E121, E122, E131 |
-| Whitespace (E2xx) | 20 rules | ✅ Yes | E201-E211, E221-E231, E241-E275 |
-| Blank Lines (E3xx) | 6 rules | ✅ Yes | E301, E302, E303, E304, E305, E306 |
-| Imports (E4xx) | 3 rules | ✅ Yes | E401, E402 |
-| Line Length (E5xx) | 2 rules | ✅ Yes | E501, E502 |
-| Statement (E7xx) | 4 rules | ✅ Yes | E701, E702, E703, E704 |
-| Runtime (E9xx) | 3 rules | ⚠️ Detect | E901, E902, E999 (syntax errors) |
-| Warnings (W1xx-W6xx) | 37 rules | ✅ Yes | W191, W291-W293, W503-W606 |
+| Level | Count | Description | Flag Required |
+|-------|-------|-------------|---------------|
+| **SAFE** | 107+ | Won't change behavior | No (default) |
+| **UNSAFE** | 72+ | May require testing | `--unsafe-fixes` |
+| **MANUAL** | Rare | Human review required | N/A |
 
-**Key Features:**
-- 100% auto-fix for style issues
-- Configurable line length (default: 100)
-- Smart indentation handling
-- Trailing whitespace removal
-- Import statement organization
+### Safe Auto-Fixes (107+ fixes)
 
-### Pylint Rules (60+ rules)
+Applied automatically without `--unsafe-fixes` flag:
 
-**Module**: `pylint_rules.py` (611 lines)
+**Security (37+)**:
+- `yaml.load()` → `yaml.safe_load()`
+- `random.random()` → `secrets.token_hex()`
+- `hashlib.md5()` → `hashlib.sha256()`
+- `eval()` → `ast.literal_eval()`
+- `pickle` → `JSON` (simple data)
+- Remove debug code (pdb, breakpoint())
+- XXE → safe XML parser
+- Weak passwords → strong requirements
 
-Implements Pylint's comprehensive rule categories:
+**Style (40+)**:
+- All PEP 8 violations
+- Trailing whitespace
+- Import sorting (isort)
+- Code formatting (Black)
 
-| Category | Description | Rules | Examples |
-|----------|-------------|-------|----------|
-| PLR (Refactor) | Code refactoring opportunities | 20+ rules | Too many branches, statements, arguments |
-| PLC (Convention) | Coding standard violations | 15+ rules | Unnecessary lambda, wrong import order |
-| PLW (Warning) | Code that may cause problems | 15+ rules | Unused variables, dangerous defaults |
-| PLE (Error) | Likely errors in code | 10+ rules | Nonexistent members, bad super calls |
+**Quality (30+)**:
+- Mutable defaults: `def f(x=[])` → `def f(x=None)`
+- None comparison: `x == None` → `x is None`
+- Type checking: `type(x) == int` → `isinstance(x, int)`
+- Bare except: `except:` → `except Exception:`
 
-**Common Checks:**
-- Cyclomatic complexity (threshold: 10)
-- Function/method length (max: 50 lines)
-- Too many parameters (max: 6)
-- Too many local variables (max: 15)
-- Duplicate code detection
-- Unused variable detection
+### Unsafe Auto-Fixes (72+ fixes)
 
-### Bugbear Rules (40+ bug patterns)
+Require explicit `--unsafe-fixes` flag:
 
-**Module**: `bugbear.py` (729 lines)
+| Fix Type | Risk | Description |
+|----------|------|-------------|
+| SQL Parameterization | UNSAFE | May change query structure |
+| SSTI Protection | UNSAFE | Template rendering changes |
+| JWT Algorithm | UNSAFE | Auth system impact |
+| Rate Limiting | UNSAFE | Performance impact |
+| CORS Configuration | UNSAFE | API access changes |
+| Hardcoded Secrets | UNSAFE | Config changes needed |
+| IDOR Protection | UNSAFE | Authorization logic |
+| SSRF Protection | UNSAFE | URL validation |
 
-Catches likely bugs and design problems:
-
-| Pattern | Description | Auto-Fix |
-|---------|-------------|----------|
-| B001-B006 | Loop and iteration issues | ✅ Yes |
-| B007 | Unused loop variables | ✅ Yes |
-| B008-B009 | Function call defaults | ✅ Yes |
-| B010-B015 | Exception handling issues | ✅ Yes |
-| B016-B020 | Type checking anti-patterns | ✅ Yes |
-| B021-B025 | Context manager issues | ✅ Yes |
-| B026-B030 | String/byte issues | ✅ Yes |
-| B901-B950 | Advanced bugs | ⚠️ Warning |
-
-**Examples:**
-- Do not use mutable data structures for argument defaults
-- Do not use `assert False` for errors
-- Abstract class with no abstract methods
-- Loop variable overwritten by assignment
-- Within an except clause, use `raise` without arguments
-
-### Refurb Patterns (35+ modernization rules)
-
-**Module**: `refurb_patterns.py` (1,375 lines)
-
-Refactoring opportunities for modern Python:
-
-| Pattern | Description | Python Version | Auto-Fix |
-|---------|-------------|----------------|----------|
-| FURB101-110 | Path operations | 3.8+ | ✅ pathlib |
-| FURB111-120 | String operations | 3.9+ | ✅ Modern methods |
-| FURB121-130 | Collections | 3.9+ | ✅ Optimized patterns |
-| FURB131-140 | Type annotations | 3.10+ | ✅ Union syntax |
-| FURB141-150 | Comprehensions | 3.8+ | ✅ Generator expressions |
-| FURB151-160 | Context managers | 3.8+ | ✅ contextlib |
-| FURB161-170 | Decorators | 3.9+ | ✅ functools |
-| FURB171-180 | Error handling | 3.10+ | ✅ Better exceptions |
-
-**Modern Python Features:**
-- Use `Path` instead of `os.path`
-- Use `with` statements for file operations
-- Use `@lru_cache` for memoization
-- Use `f-strings` instead of `.format()`
-- Use type union syntax `X | Y` (Python 3.10+)
-
-### PIE Patterns (25+ code smells)
-
-**Module**: `pie_patterns.py` (914 lines)
-
-Detects unnecessary patterns and code smells:
-
-| Pattern | Description | Auto-Fix |
-|---------|-------------|----------|
-| PIE781-790 | Redundant pass statements | ✅ Remove |
-| PIE791-800 | Unnecessary comprehensions | ✅ Simplify |
-| PIE801-810 | Multiple isinstance checks | ✅ Combine |
-| PIE811-820 | String literal duplicates | ✅ Extract constant |
-| PIE821-830 | Unnecessary list calls | ✅ Remove |
-| PIE831-840 | Multiple classes per file | ⚠️ Warning |
-| PIE841-850 | Unnecessary return None | ✅ Remove |
-| PIE851-860 | Dict/list operations | ✅ Optimize |
-
-**Code Smell Detection:**
-- Unnecessary pass in if/else/for/while
-- Multiple isinstance() that could be a tuple
-- Unnecessary list/dict around iteration
-- Pointless statements
-- Unnecessary list comprehension
-
-### Modern Python (pyupgrade - 30+ patterns)
-
-**Module**: `modern_python.py` (658 lines)
-
-Modernizes Python code to 3.8+ idioms:
-
-| Category | Patterns | Target Version | Auto-Fix |
-|----------|----------|----------------|----------|
-| Type Annotations | 8 rules | 3.9-3.10 | ✅ Modern syntax |
-| String Operations | 6 rules | 3.8+ | ✅ f-strings |
-| Collections | 7 rules | 3.9+ | ✅ New methods |
-| Typing Imports | 5 rules | 3.9-3.10 | ✅ Simplify |
-| Context Managers | 4 rules | 3.10+ | ✅ Parenthesized |
-
-**Modernization Examples:**
-- `typing.List[X]` → `list[X]` (Python 3.9+)
-- `typing.Optional[X]` → `X | None` (Python 3.10+)
-- `"%s" % x` → `f"{x}"`
-- `"".join(list_comp)` → `"".join(gen_exp)`
-- Remove unnecessary `object` inheritance in Python 3
-
-### Best Practices (20+ patterns)
-
-**Module**: `best_practices.py` (363 lines)
-
-| Practice | Description | Auto-Fix |
-|----------|-------------|----------|
-| Mutable Default Arguments | def func(x=[]) | ✅ None + initialize |
-| Bare Except | except: pass | ✅ Add exception type |
-| None Comparison | if x == None | ✅ is None |
-| Boolean Comparison | if x == True | ✅ if x |
-| Type Checking | type(x) == int | ✅ isinstance() |
-| List Comprehension | Better than loops | ✅ Convert |
-| String Concatenation | Better with join() | ✅ Convert |
-| Context Managers | Open files with 'with' | ✅ Add with |
-| Missing Docstrings | Functions need docs | ✅ Template (safe) |
-| Global Variables | Avoid global state | ✅ Refactoring guide (unsafe) |
+**Features**:
+- Automatic backup before fixes (`.pyguard_backups/`)
+- Rollback capability if tests fail
+- Detailed fix explanations
+- Impact assessment
+- Multi-level safety classification
 
 ---
 
-## Framework-Specific Checks
+## 4. Framework Support
 
 PyGuard includes specialized rules for popular Python frameworks.
 
-### Django Framework (25+ rules)
+### Framework Modules
 
-**Module**: `framework_django.py` (333 lines)
+| Framework | Module | Lines | Rules | Auto-Fix | Status |
+|-----------|--------|-------|-------|----------|--------|
+| Django | `framework_django.py` | 333 | 25+ | ✅ | ✅ Complete |
+| Flask/FastAPI | `framework_flask.py` | 409 | 20+ | ✅ | ✅ Complete |
+| Pandas | `framework_pandas.py` | 279 | 15+ | ⚠️ | ✅ Complete |
+| Pytest | `framework_pytest.py` | 300 | 18+ | ⚠️ | ✅ Complete |
 
-| Category | Rules | Description |
-|----------|-------|-------------|
-| Security | 12 rules | CSRF, XSS, SQL injection, debug mode |
-| ORM Best Practices | 8 rules | N+1 queries, select_related, raw SQL |
-| Template Security | 5 rules | Safe template rendering, autoescape |
+### Django Rules (25+)
 
-**Key Checks:**
+**Security (12)**:
 - DEBUG = True in production
 - SECRET_KEY in version control
 - Missing CSRF middleware
 - SQL injection in raw queries
-- XSS in templates (missing |safe, |escape)
+- XSS in templates
 - Insecure session cookies
-- Missing security headers
+
+**ORM (8)**:
 - N+1 query problems
+- Missing select_related/prefetch_related
+- Raw SQL usage
 
-### Flask Framework (20+ rules)
+### Flask/FastAPI Rules (20+)
 
-**Module**: `framework_flask.py` (409 lines)
-
-| Category | Rules | Description |
-|----------|-------|-------------|
-| Security | 10 rules | Debug mode, SSTI, CSRF, sessions |
-| Configuration | 5 rules | Secret key, production settings |
-| Route Security | 5 rules | SQL injection, XSS in routes |
-
-**Key Checks:**
-- Debug mode enabled in production
-- Weak/default SECRET_KEY
+**Security (10)**:
+- Debug mode in production
+- Weak SECRET_KEY
 - Missing CSRF protection
-- Server-Side Template Injection (SSTI)
-- Insecure session configuration
+- Server-Side Template Injection
+- Insecure session config
 - Missing rate limiting
-- SQL injection in route handlers
-- XSS in response rendering
 
-**Auto-Fixes:**
-- Add CSRF protection
-- Secure session configuration
-- Add rate limiting decorators
-- Fix template injection
+### Pandas Rules (15+)
 
-### Pandas Framework (15+ rules)
-
-**Module**: `framework_pandas.py` (279 lines)
-
-| Category | Rules | Description |
-|----------|-------|-------------|
-| Performance | 8 rules | Vectorization, apply() usage |
-| Anti-patterns | 7 rules | Chained assignment, iterrows() |
-
-**Key Checks:**
-- Use of iterrows() (slow, use itertuples())
-- Chained assignment warnings
-- Missing vectorization opportunities
+**Performance (8)**:
+- Use of iterrows() (slow)
+- Missing vectorization
 - Inefficient apply() usage
+
+**Anti-patterns (7)**:
+- Chained assignment warnings
 - DataFrame copy warnings
-- Missing inplace operations
-- Deprecated method usage
 
-### Pytest Framework (18+ rules)
+### Pytest Rules (18+)
 
-**Module**: `framework_pytest.py` (300 lines)
-
-| Category | Rules | Description |
-|----------|-------|-------------|
-| Test Structure | 8 rules | Naming, fixtures, assertions |
-| Best Practices | 6 rules | Parametrization, mocking |
-| Anti-patterns | 4 rules | Common test mistakes |
-
-**Key Checks:**
-- Test function naming (must start with test_)
-- Fixture best practices
-- Assertion style (assert vs pytest.fail)
-- Parametrize usage
-- Mock/patch best practices
-- Test organization
+**Best Practices (8)**:
+- Test function naming (test_*)
+- Fixture usage
+- Assertion style
+- Parametrization
 
 ---
 
-## Compliance & Standards Integration
+## 5. Advanced Security
 
-PyGuard maps vulnerabilities to **10+ compliance frameworks**.
+### Jupyter Notebook Security
 
-**Module**: `standards_integration.py` (795 lines)
+**Module**: `notebook_security.py` — Industry-leading native `.ipynb` support
+
+**Unique Features**:
+- Cell-by-cell analysis
+- Execution order tracking
+- Magic command detection (!, %system, %%bash)
+- Output scanning for sensitive data
+- Cross-cell dependency analysis
+- Automated fixes
+
+**See**: `docs/notebook-security-guide.md` for complete guide.
+
+### AI-Powered Explanations
+
+**Module**: `ai_explainer.py` — Educational platform
+
+**Features**:
+- Natural language explanations (7+ vulnerabilities)
+- Fix rationale generation
+- Educational levels (beginner/intermediate/advanced)
+- Interactive quiz generation
+- No external AI calls (privacy-preserving)
+
+**See**: `docs/guides/ADVANCED_FEATURES.md` for examples.
+
+---
+
+## 6. Compliance Standards
+
+PyGuard maps all vulnerabilities to **10+ compliance frameworks**.
+
+**Module**: `standards_integration.py` (796 lines)
 
 ### Supported Frameworks
 
-| Framework | Version | Rules Mapped | Coverage |
-|-----------|---------|--------------|----------|
-| **OWASP ASVS** | v5.0 | 55+ | Full Top 10 |
-| **CWE** | Top 25 2024 | 55+ | Complete |
-| **PCI DSS** | v4.0 | 40+ | Requirements 6, 11 |
-| **HIPAA** | Current | 35+ | Technical safeguards |
-| **SOC 2** | Type II | 30+ | Security criteria |
-| **ISO 27001** | 2022 | 35+ | A.14 (Development) |
-| **NIST CSF** | 2.0 | 25+ | Protect function |
-| **GDPR** | Current | 20+ | Data protection |
-| **CCPA** | Current | 15+ | Security provisions |
-| **FedRAMP** | Current | 30+ | Security controls |
-| **SOX** | Current | 15+ | IT controls |
+| Framework | Version | Rules | Usage |
+|-----------|---------|-------|-------|
+| OWASP ASVS | v5.0 | 55+ | `--framework owasp` |
+| CWE | Top 25 2024 | 55+ | Always included |
+| PCI DSS | v4.0 | 40+ | `--framework pci-dss` |
+| HIPAA | Current | 35+ | `--framework hipaa` |
+| SOC 2 | Type II | 30+ | `--framework soc2` |
+| ISO 27001 | 2022 | 35+ | `--framework iso27001` |
+| NIST CSF | 2.0 | 25+ | `--framework nist` |
+| GDPR | Current | 20+ | `--framework gdpr` |
+| CCPA | Current | 15+ | `--framework ccpa` |
+| FedRAMP | Current | 30+ | `--framework fedramp` |
+| SOX | Current | 15+ | `--framework sox` |
+
+### Mapping Example
+
+| PyGuard Check | OWASP | CWE | PCI DSS | HIPAA |
+|--------------|-------|-----|---------|-------|
+| SQL Injection | ASVS-5.3.4 | CWE-89 | 6.5.1 | 164.308(a)(1) |
+| Hardcoded Secrets | ASVS-2.6.3 | CWE-798 | 3.4, 8.2.1 | 164.312(a)(2) |
+| Weak Crypto | ASVS-6.2.1 | CWE-327 | 4.1, 8.2.1 | 164.312(e) |
+| Path Traversal | ASVS-12.3.1 | CWE-22 | 6.5.8 | 164.312(a) |
+
+---
+
+## 7. ML-Powered Analysis
+
+**Module**: `ml_detection.py` (389 lines)
+
+### ML Capabilities
+
+| Feature | Algorithm | Purpose | Status |
+|---------|-----------|---------|--------|
+| Pattern Recognition | Logistic Regression | Identify vulnerability patterns | ✅ Active |
+| Anomaly Detection | Isolation Forest | Detect unusual code | ✅ Active |
+| Risk Scoring | Random Forest | Calculate risk | ✅ Active |
+| Code Similarity | TF-IDF + Cosine | Find duplicates | ✅ Active |
+| Complexity Prediction | Neural Network | Maintainability | ✅ Active |
+
+**Features**:
+- Lightweight (no deep learning, fast)
+- 100% local (privacy-preserving)
+- Incremental learning
+- Explainable decisions
+
+---
+
+## 8. Supply Chain Security
+
+**Module**: `supply_chain.py` (488 lines)
+
+### Features
+
+| Feature | Description | Output |
+|---------|-------------|--------|
+| Dependency Scanning | Known vulnerabilities | JSON, SARIF |
+| SBOM Generation | Bill of Materials | CycloneDX, SPDX |
+| License Detection | Package licenses | JSON report |
+| Risk Scoring | Supply chain risk | Numeric score |
+| Update Recommendations | Safer versions | JSON |
+
+### Checks Performed
+
+1. **Vulnerability Detection**: NVD, OSV, GitHub Advisory, PyPI
+2. **License Compliance**: Identify incompatible licenses, GPL/AGPL warnings
+3. **Package Integrity**: Hash verification, typosquatting detection
+4. **Dependency Risk**: Unmaintained packages, outdated versions
+
+---
+
+## 9. CI/CD Integration
+
+**Module**: `ci_integration.py` — Auto-generate CI/CD configs
+
+### Supported Platforms
+
+| Platform | Config File | Features |
+|----------|------------|----------|
+| GitHub Actions | `.github/workflows/` | SARIF upload, security tab |
+| GitLab CI | `.gitlab-ci.yml` | SAST reports |
+| CircleCI | `.circleci/config.yml` | Artifacts |
+| Azure Pipelines | `azure-pipelines.yml` | Build artifacts |
+| Pre-commit hooks | `.git/hooks/` | Local scanning |
+
+**Usage**:
+```python
+from pyguard import generate_ci_config, install_pre_commit_hook
+
+generate_ci_config("github_actions", ".github/workflows/pyguard.yml")
+install_pre_commit_hook()
+```
+
+**See**: `docs/guides/advanced-integrations.md` for complete guide.
+
+---
+
+## 10. Performance Tools
+
+**Module**: `performance_profiler.py` — Bottleneck detection
+
+### Detections (6+ patterns)
+
+| Pattern | Impact | Fix |
+|---------|--------|-----|
+| List concatenation in loops | O(n²) | Use list.append() |
+| Nested loops without early exit | High | Add break/continue |
+| Uncompiled regex | 10-100x slower | re.compile() |
+| Redundant .keys() | Unnecessary | Direct iteration |
+| sum() with comprehension | Slow | Generator expression |
+| Complex comprehensions | Readability | Split or loop |
+
+**Usage**:
+```python
+from pyguard import analyze_performance
+
+issues = analyze_performance("mycode.py")
+for issue in issues:
+    print(f"{issue.severity}: {issue.message}")
+    print(f"  Impact: {issue.estimated_impact}")
+```
+
+---
+
+## 11. Dependency Analysis
+
+**Module**: `dependency_analyzer.py` — Architecture insights
+
+### Features
+
+| Feature | Description | Output |
+|---------|-------------|--------|
+| Dependency Graph | Module relationships | Mermaid diagram |
+| Circular Detection | A → B → C → A | List of cycles |
+| God Modules | High coupling | Module list |
+| Complexity Analysis | Too many deps | Statistics |
+| Visualization | Graph export | vis.js, D3, Cytoscape |
+
+**Usage**:
+```python
+from pyguard import analyze_project_dependencies
+
+analyzer = analyze_project_dependencies("src/", package_name="myproject")
+stats = analyzer.get_dependency_stats()
+cycles = analyzer.find_circular_dependencies()
+diagram = analyzer.generate_mermaid_diagram()
+```
+
+---
+
+## 12. Custom Rules
+
+**Module**: `custom_rules.py` — User-defined rules
+
+### Features
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| TOML Config | Rule definitions | ✅ Complete |
+| Regex Rules | Pattern matching | ✅ Complete |
+| AST Rules | Accurate detection | ✅ Complete |
+| Enable/Disable | Dynamic control | ✅ Complete |
+| Export | TOML format | ✅ Complete |
+
+**Usage**:
+```python
+from pyguard import create_rule_engine_from_config
+
+engine = create_rule_engine_from_config("custom_rules.toml")
+violations = engine.check_file("mycode.py")
+```
+
+**Example**: 25+ example rules in `examples/custom_rules_example.toml`
+
+---
+
+## 13. Reporting
+
+### Report Modules
+
+| Module | Lines | Format | Use Case |
+|--------|-------|--------|----------|
+| `reporting.py` | 401 | JSON/Console | Machine-readable |
+| `sarif_reporter.py` | 480 | SARIF 2.1.0 | GitHub Code Scanning |
+| `ui.py` | 1414 | HTML/Rich | Human-readable |
+
+### Report Formats
+
+| Format | Features | Integration |
+|--------|----------|-------------|
+| Console | Color-coded, severity groups | Interactive CLI |
+| HTML | Charts, graphs, expandable | Browser viewing |
+| JSON | Structured data | CI/CD pipelines |
+| SARIF 2.1.0 | CWE/OWASP mapping | GitHub Security tab |
+| Markdown | Easy sharing | Documentation |
+
+### SARIF Features
+
+- Full CWE/OWASP mappings
+- Fix suggestions
+- Code snippets
+- Severity scores
+- Multi-framework compliance tags
+- GitHub Code Scanning integration
+
+**See**: GitHub Actions integration in section 9.
+
+---
+
+## 14. Analysis Engines
+
+### AST-Based Analysis
+
+**Module**: `ast_analyzer.py` (979 lines)
+
+| Engine | Speed | Accuracy | Purpose |
+|--------|-------|----------|---------|
+| AST Walker | Very Fast | 100% | Python AST traversal |
+| Control Flow Graph | Fast | 95% | Execution paths |
+| Data Flow Analysis | Medium | 90% | Variable tracking |
+| Type Inference | Fast | 85% | Static types |
+
+**Benefits**: 10-100x faster than regex, zero false positives from comments/strings
+
+### Additional Analysis
+
+| Module | Purpose | Status |
+|--------|---------|--------|
+| `type_checker.py` | Static type analysis | ✅ Complete |
+| `rule_engine.py` | Custom rule execution | ✅ Complete |
+| `ml_detection.py` | ML-powered detection | ✅ Complete |
+
+### Pattern Detection Modules (9)
+
+Specialized modules for specific code patterns:
+- `import_manager.py` (507 lines) — Import optimization
+- `comprehensions.py` (441 lines) — List/dict optimization
+- `exception_handling.py` (446 lines) — Exception best practices
+- `async_patterns.py` (274 lines) — async/await patterns
+- `datetime_patterns.py` (226 lines) — datetime usage
+- `logging_patterns.py` (232 lines) — Logging best practices
+- `return_patterns.py` (381 lines) — Return statements
+- `pathlib_patterns.py` (229 lines) — pathlib usage
+- `debugging_patterns.py` (220 lines) — Debug code detection
+
+---
+
+## 15. Planned Features
+
+### v0.4.0 (In Progress)
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Watch Mode | ✅ Complete | HIGH |
+| Git Hooks | ✅ Complete | HIGH |
+| VS Code Extension | ⏳ Planned | MEDIUM |
+
+### v0.5.0
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| Language Server Protocol | IDE-agnostic integration | HIGH |
+| Git Diff Analysis | Scan only changed files | HIGH |
+| Enhanced ML | Deep learning models | MEDIUM |
+
+### v1.0.0 (Production Stable)
+
+**Goals**:
+- 100% test coverage (currently 84%)
+- Signed releases (GPG)
+- Performance optimizations
+- Enterprise features
+
+**Enterprise (Planned)**:
+- Team collaboration
+- Central policy management
+- Custom rule definitions
+- API access
+- Cloud integration (optional)
+
+### Future Considerations
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| JavaScript/TypeScript analysis | ⏳ Research | Multi-language support |
+| Go security scanning | ⏳ Research | Extend beyond Python |
+| Rust best practices | ⏳ Research | Systems programming |
+| AI-powered fix suggestions | ⏳ Research | Enhanced automation |
+| Plugin system | ⏳ Planned | Extensibility |
+| Web dashboard | ⏳ Planned | Team analytics |
+
+---
 
 ### Compliance Mapping Examples
 
@@ -656,907 +854,75 @@ PyGuard maps vulnerabilities to **10+ compliance frameworks**.
 | Path Traversal | ASVS-12.3.1 | CWE-22 | 6.5.8 | 164.312(a) |
 | XSS | ASVS-5.2.3 | CWE-79 | 6.5.7 | 164.312(a) |
 
-### Compliance Reporting
-
-Generate compliance-specific reports:
-```bash
-pyguard src/ --framework owasp       # OWASP ASVS report
-pyguard src/ --framework pci-dss     # PCI DSS report  
-pyguard src/ --framework hipaa       # HIPAA compliance
-pyguard src/ --framework all         # All frameworks
-```
-
----
-
-## Auto-Fix Capabilities
-
-PyGuard provides **179+ automated fixes** - the most comprehensive auto-fix system of any Python security tool. **100% of detections now have auto-fixes** (29 new auto-fixes added in v0.3.1).
-
-### Safe Auto-Fixes (107+ fixes)
-
-Applied automatically without `--unsafe-fixes` flag:
-
-**Security Fixes (37+):**
-- yaml.load() → yaml.safe_load()
-- random.random() → secrets.token_hex()
-- hashlib.md5() → hashlib.sha256()
-- hashlib.sha1() → hashlib.sha256()
-- tempfile.mktemp() → tempfile.mkstemp()
-- Remove debug code (pdb, breakpoint())
-- eval() → ast.literal_eval()
-- pickle → JSON (for simple data)
-- XXE → safe XML parser
-- Format strings → input validation
-- Memory disclosure → safe logging
-- Weak passwords → strong requirements
-
-**Code Quality Fixes (40+):**
-- Mutable defaults: def f(x=[]) → def f(x=None)
-- None comparison: x == None → x is None
-- Boolean comparison: x == True → x
-- Type checking: type(x) == int → isinstance(x, int)
-- Bare except: except: → except Exception:
-- String concatenation loops → join()
-
-**Style Fixes (30+):**
-- All PEP 8 style violations
-- Trailing whitespace removal
-- Line length enforcement
-- Import sorting (isort)
-- Code formatting (Black)
-
-### Unsafe Auto-Fixes (72+ fixes)
-
-Require explicit `--unsafe-fixes` flag:
-
-**Modules**: `enhanced_security_fixes.py` (458 lines), `ultra_advanced_fixes.py` (490 lines), `missing_auto_fixes.py` (361 lines)
-
-| Fix Type | Safety Level | Description |
-|----------|-------------|-------------|
-| GraphQL Injection | UNSAFE | Convert to parameterized queries |
-| SSTI Protection | UNSAFE | Replace render_template_string() |
-| JWT Algorithm Fix | UNSAFE | Change 'none' to 'RS256' |
-| Rate Limiting | UNSAFE | Add @limiter decorators |
-| Container Security | UNSAFE | Remove privileged mode |
-| Cookie Security | UNSAFE | Add HttpOnly, Secure flags |
-| CORS Configuration | UNSAFE | Restrict origins |
-| SQL to Parameterized | UNSAFE | Rewrite SQL queries |
-| XSS Output Encoding | UNSAFE | Add escape functions |
-| Hardcoded Secrets | UNSAFE | Move to environment variables |
-| API Keys | UNSAFE | Move to config files |
-| IDOR Protection | UNSAFE | Add authorization checks |
-| Mass Assignment | UNSAFE | Add field allowlisting |
-| LDAP Injection | UNSAFE | Add proper escaping |
-| NoSQL Injection | UNSAFE | Parameterized queries |
-| SSRF Protection | UNSAFE | URL validation |
-| Open Redirect | UNSAFE | URL validation |
-| File Operations | UNSAFE | Path validation |
-| JWT Leakage | UNSAFE | Token sanitization |
-| Global Variables | UNSAFE | Refactoring suggestions |
-
-**Safety Classification:**
-- **SAFE**: Won't change behavior, only improves code
-- **UNSAFE**: May require testing, could affect functionality
-- **MANUAL**: Too complex for automation, provides guidance
-
-### Fix Safety System
-
-**Module**: `fix_safety.py` (403 lines)
-
-Automatic classification of all fixes:
-
-```python
-class SafetyLevel:
-    SAFE = "safe"           # Always safe to apply (107+ fixes)
-    UNSAFE = "unsafe"       # May require testing (72+ fixes)
-    MANUAL = "manual"       # Human review required (rare)
-```
-
-**Features:**
-- Automatic backup before fixes
-- Rollback capability if tests fail
-- Detailed fix explanations
-- Impact assessment for each fix
-- Multi-level safety classification
-
----
-
-## ML-Powered Features
-
-PyGuard uses machine learning for advanced detection and risk scoring.
-
-**Module**: `ml_detection.py` (389 lines)
-
-### ML Capabilities
-
-| Feature | Algorithm | Purpose |
-|---------|-----------|---------|
-| **Pattern Recognition** | Logistic Regression | Identify vulnerability patterns |
-| **Anomaly Detection** | Isolation Forest | Detect unusual code patterns |
-| **Risk Scoring** | Random Forest | Calculate vulnerability risk |
-| **Code Similarity** | TF-IDF + Cosine | Find duplicate/similar code |
-| **Complexity Prediction** | Neural Network | Predict maintainability |
-
-### ML-Enhanced Detections
-
-1. **Security Pattern Learning**
-   - Learns from known vulnerability patterns
-   - Generalizes to detect similar issues
-   - Reduces false positives
-
-2. **Anomaly Detection**
-   - Identifies unusual code structures
-   - Detects obfuscated malicious code
-   - Flags suspicious patterns
-
-3. **Risk Scoring**
-   - Multi-factor risk calculation
-   - Context-aware severity adjustment
-   - Prioritized issue ranking
-
-4. **Code Quality Prediction**
-   - Maintainability scores
-   - Complexity predictions
-   - Technical debt estimation
-
-### ML Model Features
-
-- **Lightweight**: No deep learning (fast, low memory)
-- **Privacy-Preserving**: 100% local (no data sent externally)
-- **Incremental Learning**: Improves over time
-- **Explainable**: Provides reasoning for decisions
-
----
-
-## Supply Chain Security
-
-Comprehensive dependency analysis and SBOM generation.
-
-**Module**: `supply_chain.py` (488 lines)
-
-### Features
-
-| Feature | Description | Output Format |
-|---------|-------------|---------------|
-| **Dependency Scanning** | Detect known vulnerabilities | JSON, SARIF |
-| **SBOM Generation** | Software Bill of Materials | CycloneDX, SPDX |
-| **License Detection** | Identify package licenses | JSON report |
-| **Risk Scoring** | Calculate supply chain risk | Numeric score |
-| **Update Recommendations** | Suggest safer versions | JSON |
-
-### Checks Performed
-
-1. **Vulnerability Detection**
-   - Check against National Vulnerability Database (NVD)
-   - OSV (Open Source Vulnerabilities) database
-   - GitHub Advisory Database
-   - PyPI security advisories
-
-2. **License Compliance**
-   - Identify all package licenses
-   - Flag incompatible licenses
-   - GPL/AGPL warnings for proprietary code
-
-3. **Package Integrity**
-   - Hash verification
-   - Signature validation
-   - Detect typosquatting
-
-4. **Dependency Risk**
-   - Unmaintained packages
-   - Deprecated packages
-   - Too many dependencies
-   - Outdated versions
-
-### SBOM Formats
-
-- **CycloneDX** (JSON/XML)
-- **SPDX** (JSON/YAML)
-- Custom JSON format
-
----
-
-## Analysis Engines
-
-PyGuard uses multiple analysis techniques for comprehensive detection.
-
-### AST-Based Analysis
-
-**Module**: `ast_analyzer.py` (978 lines)
-
-| Engine | Description | Speed | Accuracy |
-|--------|-------------|-------|----------|
-| **AST Walker** | Python AST traversal | Very Fast | 100% |
-| **Control Flow Graph** | Execution path analysis | Fast | 95% |
-| **Data Flow Analysis** | Variable tracking | Medium | 90% |
-| **Type Inference** | Static type analysis | Fast | 85% |
-
-**Benefits:**
-- 10-100x faster than regex
-- Zero false positives from comments/strings
-- Context-aware detection
-- Semantic understanding
-
-### Additional Analysis
-
-**Type Checker** (`type_checker.py` - 381 lines):
-- Static type analysis
-- Type hint validation
-- Incompatible type detection
-- Missing annotation warnings
-
-**Complexity Analysis** (`ast_analyzer.py`):
-- Cyclomatic complexity
-- Cognitive complexity
-- Halstead metrics
-- Maintainability index
-
-**Code Patterns**:
-- Import analysis (`import_manager.py` - 507 lines)
-- Comprehension optimization (`comprehensions.py` - 441 lines)
-- String operations (`string_operations.py` - 384 lines)
-- Exception handling (`exception_handling.py` - 446 lines)
-- Async patterns (`async_patterns.py` - 274 lines)
-- DateTime usage (`datetime_patterns.py` - 226 lines)
-- Logging best practices (`logging_patterns.py` - 232 lines)
-- Return patterns (`return_patterns.py` - 381 lines)
-- Pathlib usage (`pathlib_patterns.py` - 229 lines)
-
----
-
-## Reporting & Integration
-
-### Report Formats
-
-**Module**: `reporting.py` (401 lines), `ui.py` (1,413 lines), `sarif_reporter.py` (480 lines)
-
-| Format | Use Case | Features |
-|--------|----------|----------|
-| **Console** | Interactive CLI | Color-coded, grouped by severity |
-| **HTML** | Human-readable reports | Charts, graphs, interactive |
-| **JSON** | CI/CD integration | Machine-readable, structured |
-| **SARIF** | GitHub Code Scanning | Native GitHub integration |
-| **Markdown** | Documentation | Easy to read/share |
-
-### HTML Reports
-
-**Module**: `ui.py` (Enhanced with Rich library)
-
-Features:
-- Beautiful, modern UI
-- Severity-based color coding
-- Expandable issue details
-- Fix suggestions with code examples
-- Summary statistics
-- Trend analysis
-- Export to PDF
-
-### SARIF Integration
-
-**Module**: `sarif_reporter.py`
-
-SARIF 2.1.0 compliant reports for:
-- GitHub Code Scanning
-- Azure DevOps
-- GitLab Security Dashboard
-- Jenkins Security Scanning
-
-Features:
-- CWE/OWASP mapping
-- Fix suggestions
-- Code snippets
-- Severity levels
-- Multiple runs support
-
-### CI/CD Integration
-
-```yaml
-# GitHub Actions example
-- name: PyGuard Security Scan
-  run: |
-    pip install pyguard
-    pyguard . --scan-only --sarif --no-html
-    
-- name: Upload SARIF
-  uses: github/codeql-action/upload-sarif@v3
-  with:
-    sarif_file: pyguard-report.sarif
-```
-
-### Watch Mode
-
-**Module**: `watch.py` (150 lines) ✅ COMPLETE
-
-Real-time file monitoring for development:
-- Monitors Python files for changes
-- Automatic re-analysis on save
-- Configurable file patterns
-- Excludes backup/hidden files
-- Clean interrupt handling (Ctrl+C)
-
-### Git Hooks Integration
-
-**Module**: `git_hooks.py` (390 lines) ✅ NEW
-**CLI**: `pyguard-hooks` command ✅ NEW
-**Coverage**: 84% (33 tests)
-
-Comprehensive Git hooks management for automatic code quality checks:
-
-**Installation & Management:**
-- Install pre-commit and pre-push hooks
-- Automatic hook script generation
-- Force overwrite existing hooks
-- Uninstall PyGuard hooks safely
-- List all installed hooks
-- Validate hook installation
-- Test hooks before use
-
-**Hook Features:**
-- Pre-commit: Scans only staged files
-- Pre-push: Comprehensive codebase scan
-- Executable permission handling
-- Git worktree support
-- Non-git repository detection
-- PyGuard hook identification
-
-**CLI Commands:**
-```bash
-pyguard-hooks install              # Install pre-commit hook
-pyguard-hooks install --type pre-push  # Install pre-push hook
-pyguard-hooks uninstall            # Remove hook
-pyguard-hooks list                 # List all hooks
-pyguard-hooks validate             # Check installation
-pyguard-hooks test                 # Test hook execution
-```
-
-**Integration Support:**
-- Native git hooks
-- Pre-commit framework compatibility
-- CI/CD complementary checks
-- Team workflow integration
-- Emergency bypass mechanism (`--no-verify`)
-
-**Documentation:**
-- Complete usage guide (`docs/git-hooks-guide.md`)
-- Troubleshooting section
-- Best practices
-- Performance optimization tips
-- Security considerations
-
-**Usage:**
-```bash
-# Watch current directory
-pyguard . --watch
-
-# Watch specific directories
-pyguard src/ tests/ --watch
-
-# Watch with security-only mode
-pyguard src/ --watch --security-only
-```
-
-**Features:**
-- Uses watchdog library for efficient file system monitoring
-- Debounces rapid changes to prevent duplicate analysis
-- Logs all file modifications
-- Works with all PyGuard CLI flags
-- IDE integration ready
-
----
-
-## Additional Modules
-
-### Performance & Optimization
-
-**Module**: `performance_checks.py` (347 lines)
-
-- Inefficient loop detection
-- Unnecessary iterations
-- Memory usage patterns
-- CPU-intensive operations
-- Database query optimization
-
-### Code Simplification
-
-**Module**: `code_simplification.py` (760 lines)
-
-- Redundant code removal
-- Complex condition simplification
-- Nested loop flattening
-- Boolean expression optimization
-- Control flow simplification
-
-### Import Management
-
-**Module**: `import_manager.py` (507 lines)
-
-- Unused import removal (74% coverage)
-- Import organization
-- Circular import detection
-- Missing import suggestions
-- Import optimization
-
-### Naming Conventions
-
-**Module**: `naming_conventions.py` (421 lines)
-
-- PEP 8 naming rules
-- Class/function/variable names
-- Constant naming
-- Private/protected members
-- Module naming
-
-### Unused Code Detection
-
-**Module**: `unused_code.py` (374 lines)
-
-- Unused variables
-- Unused functions
-- Unused classes
-- Dead code removal
-- Unreachable code detection
-
-### Caching & Performance
-
-**Module**: `cache.py` (330 lines)
-
-- Analysis result caching
-- File content hashing
-- Incremental analysis
-- Cache invalidation
-- Performance metrics
-
-### Parallel Processing
-
-**Module**: `parallel.py` (225 lines)
-
-- Multi-file parallel scanning
-- Process pool management
-- Thread-safe operations
-- Progress tracking
-- Resource optimization
-
----
-
-## Test Coverage: Roadmap to 100%
-
-**Current Status: 83% coverage (1082 tests)**
-
-PyGuard maintains exceptional test coverage with 83% of code tested. The roadmap to achieve 100% coverage involves systematically testing all edge cases, error paths, and framework-specific code.
-
-### Coverage Analysis
-
-**Overall Statistics:**
-- Total Statements: 8,495
-- Covered Statements: 7,086
-- Missing Lines: 1,409
-- Current Coverage: 83.41%
-- Target Coverage: 100%
-
-### Modules by Coverage Level
-
-**✅ Perfect Coverage (100%):**
-- `__init__.py` - Package initialization
-- `comprehensions.py` - List/dict comprehension optimizations
-- `enhanced_detections.py` - Enhanced security detection patterns
-- `fix_safety.py` - Fix safety classification system
-- `git_hooks_cli.py` - Git hooks CLI (16 tests added)
-- `standards_integration.py` - Compliance framework mapping
-
-**🎯 Excellent Coverage (90-99%):**
-- `advanced_security.py` - 93% (taint tracking, race conditions)
-- `parallel.py` - 94% (14 tests added)
-- `async_patterns.py` - 91% (async/await best practices)
-- `pep8_comprehensive.py` - 90% (PEP 8 style rules)
-- `import_manager.py` - 93% (import optimization)
-- `framework_flask.py` - 95% (Flask security rules)
-- `return_patterns.py` - 95% (return statement patterns)
-- `enhanced_security_fixes.py` - 98% (automated security fixes)
-- `sarif_reporter.py` - 97% (SARIF 2.1.0 reporting)
-- `formatting.py` - 97% (Black/isort integration)
-- `knowledge_integration.py` - 99% (security knowledge base)
-- `debugging_patterns.py` - 92% (debug code detection)
-- `datetime_patterns.py` - 88% (datetime best practices)
-- `xss_detection.py` - 89% (XSS vulnerability detection)
-
-**⚠️ Good Coverage (80-89%):**
-- `ast_analyzer.py` - 84% (46 lines remaining)
-- `bugbear.py` - 84% (30 lines)
-- `cache.py` - 83% (24 lines)
-- `code_simplification.py` - 85% (40 lines)
-- `core.py` - 80% (32 lines)
-- `exception_handling.py` - 80% (21 lines)
-- `ml_detection.py` - 84% (23 lines)
-- `modern_python.py` - 84% (36 lines)
-- `naming_conventions.py` - 84% (20 lines)
-- `pathlib_patterns.py` - 84% (12 lines)
-- `performance_checks.py` - 84% (22 lines)
-- `reporting.py` - 83% (18 lines)
-- `rule_engine.py` - 82% (32 lines)
-- `string_operations.py` - 85% (25 lines)
-- `supply_chain.py` - 86% (29 lines)
-- `ultra_advanced_fixes.py` - 87% (27 lines)
-- `ultra_advanced_security.py` - 84% (36 lines)
-- `git_hooks.py` - 83% (24 lines)
-- `logging_patterns.py` - 80% (19 lines)
-- `mcp_integration.py` - 85% (14 lines)
-
-**🔴 Needs Improvement (60-79%):**
-- `best_practices.py` - 78% (42 lines)
-- `cli.py` - 61% (82 lines)
-- `framework_django.py` - 69% (30 lines)
-- `framework_pandas.py` - 73% (20 lines)
-- `framework_pytest.py` - 78% (18 lines)
-- `import_rules.py` - 70% (35 lines)
-- `pie_patterns.py` - 72% (51 lines)
-- `pylint_rules.py` - 70% (40 lines)
-- `refurb_patterns.py` - 63% (112 lines)
-- `ruff_security.py` - 78% (49 lines)
-- `security.py` - 77% (32 lines)
-- `type_checker.py` - 76% (33 lines)
-- `unused_code.py` - 76% (46 lines)
-- `watch.py` - 71% (21 lines)
-
-**❌ Critical Priority (<60%):**
-- `ui.py` - 25% (109 lines) - Rich-based UI components
-
-### Strategy to Reach 100%
-
-**Phase 1: High-Impact Modules (Target: 90% overall)**
-1. **ui.py (25% → 100%)** - Add tests for Rich console UI
-   - Test banner and welcome messages
-   - Test progress bars and spinners
-   - Test table and panel generation
-   - Test HTML report generation
-2. **cli.py (61% → 100%)** - Add CLI integration tests
-   - Test argument parsing for all commands
-   - Test scan-only mode
-   - Test fix mode with various options
-   - Test output format options
-   - Test error handling
-3. **refurb_patterns.py (63% → 100%)** - Modern Python patterns
-   - Test all 35+ refactoring patterns
-   - Test Python 3.8+ specific features
-   - Test Python 3.10+ union syntax
-
-**Phase 2: Medium-Impact Modules (Target: 95% overall)**
-4. **Framework-Specific Modules** - Complete framework coverage
-   - Django (69% → 100%): 30 lines
-   - Pandas (73% → 100%): 20 lines
-   - Pytest (78% → 100%): 18 lines
-5. **Code Quality Modules** - Complete rule coverage
-   - pie_patterns.py (72% → 100%): 51 lines
-   - pylint_rules.py (70% → 100%): 40 lines
-   - import_rules.py (70% → 100%): 35 lines
-
-**Phase 3: Final Coverage (Target: 100%)**
-6. **Security Modules** - Complete security testing
-   - security.py (77% → 100%): 32 lines
-   - ruff_security.py (78% → 100%): 49 lines
-7. **Edge Cases & Error Paths** - Cover all remaining lines
-   - Test exception handling
-   - Test malformed input
-   - Test configuration variations
-   - Test unsupported Python versions
-
-### Implementation Plan
-
-**1. Test Creation Strategy:**
-- Focus on uncovered lines identified by coverage report
-- Prioritize error handling and edge cases
-- Add parameterized tests for multiple scenarios
-- Use mocking for external dependencies
-
-**2. Test Categories Needed:**
-```python
-# Unit Tests
-- Error handling paths
-- Edge case validation
-- Configuration variations
-- Framework-specific code paths
-
-# Integration Tests
-- CLI command combinations
-- Multi-file processing
-- Report generation
-- Git hooks integration
-
-# Property-Based Tests
-- Input validation
-- AST parsing edge cases
-- Pattern matching robustness
-```
-
-**3. Coverage Gaps by Type:**
-- **Error Handling:** ~400 lines (exception paths, validation)
-- **CLI Features:** ~82 lines (command-line argument handling)
-- **UI Components:** ~109 lines (Rich console, HTML generation)
-- **Framework Rules:** ~68 lines (Django, Pandas, Pytest specifics)
-- **Code Quality:** ~250 lines (refactoring patterns, style rules)
-- **Security Rules:** ~81 lines (edge cases in detection logic)
-- **Utilities:** ~419 lines (misc helper functions, edge cases)
-
-**4. Timeline Estimate:**
-- Phase 1 (High-Impact): 2-3 days, +300 lines → 87% coverage
-- Phase 2 (Medium-Impact): 2-3 days, +200 lines → 95% coverage
-- Phase 3 (Final Coverage): 3-4 days, +909 lines → 100% coverage
-- **Total: 1-2 weeks for 100% coverage**
-
-### Current Test Infrastructure
-
-**Test Organization:**
-- `tests/unit/` - 52 test modules (1,082 tests)
-- `tests/integration/` - 5 test modules
-- `tests/fixtures/` - Sample code and expected outputs
-
-**Test Tools:**
-- pytest (test runner)
-- pytest-cov (coverage analysis)
-- pytest-mock (mocking utilities)
-- unittest.mock (standard mocking)
-
-**Coverage Measurement:**
-```bash
-# Run tests with coverage
-pytest --cov=pyguard --cov-report=term-missing --cov-report=html
-
-# Generate detailed coverage report
-coverage report -m
-coverage html  # Interactive HTML report in htmlcov/
-```
-
-### Benefits of 100% Coverage
-
-**1. Quality Assurance:**
-- All code paths tested and verified
-- Edge cases and error conditions handled
-- Regressions caught immediately
-
-**2. Confidence in Changes:**
-- Safe refactoring with comprehensive test suite
-- New features can be added with confidence
-- Breaking changes detected automatically
-
-**3. Documentation:**
-- Tests serve as executable documentation
-- Usage examples for every feature
-- Expected behavior clearly defined
-
-**4. Production Readiness:**
-- Enterprise-grade reliability
-- Professional quality standards
-- Proven stability and robustness
-
-**5. Competitive Advantage:**
-- Highest quality Python security tool
-- Most thoroughly tested analysis engine
-- Industry-leading reliability standards
-
-### Continuous Improvement
-
-**Maintaining 100% Coverage:**
-1. **Pre-commit Hooks:** Reject commits that decrease coverage
-2. **CI/CD Integration:** Coverage checks on every PR
-3. **Code Review:** Require tests for new features
-4. **Quarterly Audits:** Review and improve test quality
-5. **Performance Testing:** Ensure tests run efficiently
-
-**Coverage Targets:**
-- **Minimum:** 80% (current standard)
-- **Target:** 95% (near-perfect)
-- **Goal:** 100% (absolute perfection)
-
----
-
-## Planned Features (Roadmap)
-
-From `docs/UPDATEv2.md` and `README.md`:
-
-### v0.4.0 (In Progress)
-
-**Watch Mode:** ✅ COMPLETE
-- Real-time file monitoring with watchdog
-- Automatic re-analysis on file save
-- Configurable file patterns
-- Integration ready for IDEs
-
-**Pre-commit Hooks:** ✅ COMPLETE
-- Git hook installation and management
-- Pre-commit and pre-push hook support
-- Automatic scanning before commit/push
-- Hook validation and testing
-- CLI tool: `pyguard-hooks`
-- Integration with pre-commit framework
-- Comprehensive documentation
-
-**VS Code Extension:**
-- Inline error display
-- Quick fix suggestions
-- Real-time analysis
-- Settings integration
-
-### v0.5.0
-
-**Language Server Protocol (LSP):**
-- IDE-agnostic integration
-- Real-time diagnostics
-- Auto-complete for fixes
-- Hover documentation
-
-**Git Diff Analysis:**
-- Scan only changed files
-- PR diff analysis
-- Blame integration
-- Historical trend analysis
-
-**Enhanced ML Features:**
-- Deep learning models
-- Better pattern recognition
-- Custom model training
-- Vulnerability prediction
-
-### v1.0.0 (Production Stable)
-
-**Goals:**
-- 100% test coverage (currently 83%, target: 100%)
-- Signed releases (GPG)
-- Performance optimizations
-- Comprehensive documentation
-- Enterprise features
-
-**Enterprise Features (Planned):**
-- Team collaboration
-- Central policy management
-- Custom rule definitions
-- API access
-- Cloud integration (optional)
-
-### Future Considerations
-
-**Language Support:**
-- JavaScript/TypeScript analysis
-- Go security scanning
-- Rust best practices
-- Multi-language projects
-
-**Advanced Features:**
-- AI-powered fix suggestions
-- Custom rule DSL
-- Plugin system
-- Web dashboard
-- Team analytics
-
----
-
-## Statistics Summary
-
-### Current Capabilities (v0.3.0)
-
-| Category | Count | Status |
-|----------|-------|--------|
-| **Total Modules** | 53 | ✅ Implemented |
-| **Security Checks** | 55+ | ✅ Active |
-| **Code Quality Rules** | 150+ | ✅ Active |
-| **Auto-Fixes** | 179+ | ✅ All Detections Covered |
-| **Framework Rules** | 75+ | ✅ 4 frameworks |
-| **Compliance Frameworks** | 10+ | ✅ Full mapping |
-| **Test Coverage** | 83% | 🎯 Target: 100% |
-| **Total Tests** | 1115 | ✅ Comprehensive |
-| **Lines of Code** | 27,380+ (lib) | ✅ Production-ready |
-
-### Comparison to Other Tools
-
-**PyGuard vs. Leading Security & Code Quality Tools**
-
-| Feature | PyGuard | Bandit | Ruff Security | Semgrep | Snyk Code | SonarQube |
-|---------|---------|--------|---------------|---------|-----------|-----------|
-| **Security Checks** | 55+ | 40+ | 73 (S-rules) | 100+ | 200+ | 100+ |
-| **Code Quality Rules** | 150+ | 0 | 800+ | 50+ | 100+ | 500+ |
-| **Auto-Fixes** | **179+** | ❌ No | ~80 | ❌ No | ❌ No | ❌ No |
+## Competitive Comparison
+
+### PyGuard vs Leading Tools
+
+| Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
+|---------|---------|--------|------|---------|------|-----------|
+| Security Checks | 55+ | 40+ | 73 | 100+ | 200+ | 100+ |
+| Code Quality Rules | 150+ | 0 | 800+ | 50+ | 100+ | 500+ |
+| **Auto-Fixes** | **179+** | ❌ | ~80 | ❌ | ❌ | ❌ |
 | **Auto-Fix Coverage** | **100%** | 0% | ~10% | 0% | 0% | 0% |
-| **ML-Powered Detection** | ✅ Yes | ❌ No | ❌ No | ❌ No | ✅ Yes | ⚠️ Limited |
-| **Compliance Frameworks** | 10+ | 0 | 0 | 0 | ⚠️ Limited | ✅ Yes |
-| **Local-Only/No Telemetry** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |
-| **Framework Support** | 4 | 2 | 3 | 4+ | 5+ | 6+ |
-| **SARIF Output** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
-| **GitHub Actions** | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native | ✅ Native |
-| **CWE Mappings** | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
-| **OWASP Top 10 2021** | ✅ Full | ⚠️ Partial | ⚠️ Partial | ✅ Full | ✅ Full | ✅ Full |
-| **Cost** | Free | Free | Free | Free/Paid | Paid | Free/Paid |
+| ML Detection | ✅ | ❌ | ❌ | ❌ | ✅ | ⚠️ Limited |
+| Compliance Frameworks | 10+ | 0 | 0 | 0 | ⚠️ Limited | ✅ |
+| **Local/No Telemetry** | **✅** | ✅ | ✅ | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |
+| Framework Support | 4 | 2 | 3 | 4+ | 5+ | 6+ |
+| SARIF Output | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GitHub Actions | ✅ Native | ⚠️ Manual | ⚠️ Manual | ✅ Native | ✅ Native | ✅ Native |
+| Notebook Support | ✅ Native | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Cost | **Free** | Free | Free | Free/Paid | Paid | Free/Paid |
 
-#### Detailed Feature Comparison
+### Unique Advantages
 
-**Security Detection Coverage by Category**
+1. **All-in-One Solution**: Replaces 7+ tools with single installation
+2. **Auto-Fix Leader**: Only tool with 100% auto-fix coverage (179+ fixes)
+3. **Privacy-First**: 100% local operation, zero telemetry
+4. **Notebook Support**: Industry-leading Jupyter notebook security
+5. **Educational**: AI-powered explanations for learning
+6. **Compliance Ready**: 10+ frameworks out of the box
+7. **Advanced Integrations**: CI/CD, performance, dependency analysis, custom rules
 
-| Vulnerability Type | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
-|-------------------|---------|--------|------|---------|------|-----------|
-| SQL Injection | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Command Injection | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| XSS | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
-| Hardcoded Secrets | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Insecure Deserialization | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Path Traversal | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| SSRF | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
-| Weak Cryptography | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Authentication Issues | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ |
-| Authorization Issues | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Insecure Config | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Logging/Monitoring Issues | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ |
-| Taint Tracking | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| ReDoS | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Race Conditions | ✅ | ✅ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Integer Overflow | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| GraphQL Injection | ✅ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ |
-| SSTI | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
-| JWT Security | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Container Security | ✅ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ |
+### Tool Replacement Matrix
 
-**Legend**: ✅ Full Support | ⚠️ Partial/Limited | ❌ Not Supported
-
-**PyGuard Unique Advantages:**
-
-1. **All-in-One Solution**: Replaces 7+ tools (Bandit + Semgrep + Ruff + Pylint + Black + isort + mypy)
-2. **Auto-Fix Capability**: 150+ automated fixes (safe + unsafe options)
-3. **ML-Powered**: Risk scoring, anomaly detection, vulnerability prediction
-4. **100% Local**: No telemetry, no cloud dependencies, complete privacy
-5. **Multi-Framework Compliance**: 10+ frameworks (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
-6. **Advanced Detection**: Taint tracking, race conditions, ReDoS, integer overflow
-7. **Framework-Specific**: Django, Flask, FastAPI, Pandas custom rules
-8. **GitHub Actions Native**: Built-in action with SARIF upload
-
-**Tool Replacement Matrix:**
-
-PyGuard replaces these specialized tools:
-
-| Tool | Purpose | PyGuard Module |
-|------|---------|---------------|
-| **Bandit** | Security scanning | `security.py`, `advanced_security.py` |
-| **Semgrep** | Pattern matching | `ast_analyzer.py`, `rule_engine.py` |
-| **Ruff** | Linting & formatting | `ruff_security.py`, `pep8_comprehensive.py` |
-| **Pylint** | Code quality | `pylint_rules.py`, `best_practices.py` |
-| **Black** | Code formatting | `formatting.py` |
-| **isort** | Import sorting | `import_rules.py`, `import_manager.py` |
-| **mypy** | Type checking | `type_checker.py` |
-| **Safety** | Dependency checking | `supply_chain.py` |
-
-**Coverage Statistics:**
-
-- **Total Security Checks**: 55+ unique vulnerability types
-- **CWE Coverage**: 100+ CWE IDs mapped
-- **OWASP Coverage**: OWASP Top 10 2021 + OWASP ASVS 4.0
-- **Code Quality Rules**: 150+ rules across 10+ categories
-- **Auto-Fixes**: 179+ automated fixes with backup/rollback (100% detection coverage)
-- **Test Coverage**: 83% (1115 tests passing, target: 100%)
+| Tool | Purpose | Replaced By |
+|------|---------|-------------|
+| Bandit | Security scanning | `security.py`, `ruff_security.py` |
+| Semgrep | Pattern matching | `ast_analyzer.py`, `rule_engine.py` |
+| Ruff | Linting | `pep8_comprehensive.py`, `ruff_security.py` |
+| Pylint | Code quality | `pylint_rules.py`, `best_practices.py` |
+| Black | Formatting | `formatting.py` |
+| isort | Import sorting | `import_manager.py`, `import_rules.py` |
+| mypy | Type checking | `type_checker.py` |
+| Safety | Dependencies | `supply_chain.py` |
+| Flake8 | Style checking | `pep8_comprehensive.py` |
 
 ---
 
 ## Usage Examples
 
-### Comprehensive Scan
+### Basic Scan
 ```bash
-# Full analysis with all checks
-pyguard src/ --format html --output report.html
-```
-
-### Security-Only Scan
-```bash
-# Only security vulnerabilities
-pyguard src/ --security-only --severity HIGH
-```
-
-### Compliance Report
-```bash
-# PCI DSS compliance
-pyguard src/ --framework pci-dss --format json
-```
-
-### Auto-Fix Mode
-```bash
-# Safe fixes only
+# Scan and fix entire project
 pyguard src/
 
-# Include unsafe fixes
-pyguard src/ --unsafe-fixes
+# Security checks only
+pyguard src/ --security-only --severity HIGH
+
+# Scan without fixing
+pyguard src/ --scan-only
+```
+
+### Compliance Reports
+```bash
+# OWASP ASVS report
+pyguard src/ --framework owasp --format html
+
+# PCI DSS compliance
+pyguard src/ --framework pci-dss --format json
+
+# All frameworks
+pyguard src/ --framework all
 ```
 
 ### CI/CD Integration
@@ -1564,205 +930,76 @@ pyguard src/ --unsafe-fixes
 # Generate SARIF for GitHub Code Scanning
 pyguard . --scan-only --sarif --no-html
 
-# SARIF output location
-# Creates: pyguard-report.sarif
+# Output: pyguard-report.sarif
 ```
 
-### Framework-Specific
+### Advanced Usage
 ```bash
-# Django project
+# Include unsafe fixes
+pyguard src/ --unsafe-fixes
+
+# Framework-specific
 pyguard . --framework django
 
-# Flask project  
-pyguard . --framework flask
+# Watch mode (real-time)
+pyguard src/ --watch
+
+# Jupyter notebooks
+pyguard analysis.ipynb
 ```
 
 ---
 
-## GitHub Actions Integration
+## Summary
 
-### Using PyGuard as a GitHub Action
+PyGuard is the **most comprehensive Python security and code quality platform available**.
 
-PyGuard provides a reusable GitHub Action for easy workflow integration:
+### Complete Feature Set
 
-```yaml
-name: Security Scan
+| Category | Features | Status |
+|----------|----------|--------|
+| **Modules** | 59 library modules, 30,500+ lines | ✅ Production |
+| **Security** | 55+ vulnerability checks, 8 specialized modules | ✅ Complete |
+| **Code Quality** | 150+ rules across 14 modules | ✅ Complete |
+| **Auto-Fix** | 179+ fixes (107 safe, 72 unsafe), **100% coverage** | ✅ Complete |
+| **Frameworks** | Django, Flask, FastAPI, Pandas, Pytest | ✅ Complete |
+| **Compliance** | 10+ frameworks (OWASP, PCI-DSS, HIPAA, etc.) | ✅ Complete |
+| **Advanced** | Notebooks, AI explanations, ML detection | ✅ Complete |
+| **Integration** | CI/CD (5 platforms), performance, dependencies | ✅ Complete |
+| **Custom Rules** | User-defined regex/AST rules | ✅ Complete |
+| **Testing** | 62 test files, 84% coverage (target: 100%) | 🎯 In Progress |
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+### Key Differentiators
 
-permissions:
-  contents: read
-  security-events: write  # Required for uploading SARIF results
+1. **Only tool with 100% auto-fix coverage** — All 179+ fixes available
+2. **Native Jupyter notebook support** — Cell analysis, magic commands, execution order
+3. **Educational AI explanations** — Learn while you scan
+4. **100% local, zero telemetry** — Complete privacy
+5. **Comprehensive compliance** — 10+ frameworks out of the box
+6. **Advanced integrations** — CI/CD, performance profiling, dependency analysis, custom rules
+7. **All-in-one solution** — Replaces 7+ tools with single installation
 
-jobs:
-  pyguard-scan:
-    name: PyGuard Security Analysis
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run PyGuard Security Scan
-      uses: cboyd0319/PyGuard@main
-      with:
-        paths: '.'
-        python-version: '3.13'
-        scan-only: 'true'
-        security-only: 'false'
-        severity: 'LOW'
-        exclude: 'tests/* venv/* .venv/* build/* dist/*'
-        sarif-file: 'pyguard-report.sarif'
-        upload-sarif: 'true'
-        fail-on-issues: 'false'
-```
+### Production Ready
 
-### Action Inputs
+- ✅ 59 production-ready modules
+- ✅ 30,500+ lines of analysis code
+- ✅ 62 comprehensive test files
+- ✅ 84% test coverage (target: 100%)
+- ✅ Zero linting errors
+- ✅ Type hints on all APIs
+- ✅ Comprehensive documentation
+- ✅ GitHub Actions native integration
+- ✅ SARIF 2.1.0 compliant
+- ✅ Active maintenance and development
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `paths` | Paths to scan (space-separated) | `.` |
-| `python-version` | Python version to use | `3.13` |
-| `scan-only` | Only scan without fixing issues | `true` |
-| `security-only` | Only run security checks | `false` |
-| `severity` | Minimum severity level (LOW, MEDIUM, HIGH, CRITICAL) | `LOW` |
-| `exclude` | Patterns to exclude (space-separated) | `tests/* venv/* .venv/*...` |
-| `sarif-file` | Output SARIF file path | `pyguard-report.sarif` |
-| `upload-sarif` | Upload SARIF results to GitHub Security tab | `true` |
-| `fail-on-issues` | Fail the action if security issues are found | `false` |
-| `unsafe-fixes` | Enable unsafe auto-fixes | `false` |
-
-### Action Outputs
-
-| Output | Description |
-|--------|-------------|
-| `issues-found` | Number of security issues found |
-| `sarif-file` | Path to generated SARIF report |
-
-### SARIF Output for GitHub Code Scanning
-
-PyGuard generates SARIF 2.1.0 compliant reports with:
-
-- **CWE/OWASP Mappings**: All security issues mapped to CWE IDs and OWASP categories
-- **Severity Levels**: CRITICAL, HIGH, MEDIUM, LOW mapped to SARIF error/warning/note levels
-- **Fix Suggestions**: Automated fix suggestions included in SARIF format
-- **Code Snippets**: Vulnerable code snippets included in results
-- **GitHub Integration**: Full compatibility with GitHub Code Scanning Security tab
-- **Compliance Metadata**: Multi-framework compliance tags (OWASP, PCI-DSS, HIPAA, etc.)
-
-#### SARIF Report Structure
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
-  "runs": [{
-    "tool": {
-      "driver": {
-        "name": "PyGuard",
-        "version": "0.3.0",
-        "informationUri": "https://github.com/cboyd0319/PyGuard",
-        "organization": "PyGuard",
-        "downloadUri": "https://github.com/cboyd0319/PyGuard/releases",
-        "rules": [/* 55+ security rules */]
-      }
-    },
-    "results": [/* Security findings */],
-    "columnKind": "utf16CodeUnits",  // GitHub compatibility
-    "automationDetails": {
-      "id": "pyguard/0.3.0",
-      "guid": "pyguard-security-scan"
-    }
-  }]
-}
-```
-
-#### SARIF Features
-
-| Feature | Support | Description |
-|---------|---------|-------------|
-| **CWE Mappings** | ✅ Full | All security issues mapped to CWE IDs |
-| **OWASP Top 10** | ✅ Full | OWASP Top 10 2021 coverage |
-| **OWASP ASVS** | ✅ Full | OWASP ASVS compliance mappings |
-| **Severity Scores** | ✅ Full | Security-severity scores (1.0-9.0) |
-| **Fix Suggestions** | ✅ Full | Automated remediation suggestions |
-| **Code Snippets** | ✅ Full | Vulnerable code context included |
-| **Multi-framework** | ✅ Full | 10+ compliance frameworks supported |
-| **GitHub Security Tab** | ✅ Full | Direct integration with Code Scanning |
-
-### Viewing Results in GitHub
-
-After running PyGuard with SARIF output, results appear in:
-
-1. **Security Tab**: `https://github.com/OWNER/REPO/security/code-scanning`
-2. **Pull Request Annotations**: Issues shown inline on PR diffs
-3. **Status Checks**: Pass/fail status based on configuration
+**PyGuard doesn't just detect issues — it fixes them automatically, teaches you why they matter, and helps you maintain secure, high-quality Python code.**
 
 ---
 
-## Configuration
-
-Complete configuration options in `pyguard.toml`:
-
-```toml
-[general]
-log_level = "INFO"
-backup_dir = ".pyguard_backups"
-max_backups = 10
-exclude_patterns = ["*/migrations/*", "*/tests/*"]
-
-[security]
-enabled = true
-severity_levels = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
-frameworks = ["owasp", "pci-dss", "hipaa"]
-
-[code_quality]
-enabled = true
-max_complexity = 10
-max_line_length = 100
-max_function_length = 50
-
-[formatting]
-use_black = true
-use_isort = true
-line_length = 100
-
-[ml]
-enabled = true
-risk_threshold = 0.7
-
-[supply_chain]
-check_vulnerabilities = true
-generate_sbom = true
-sbom_format = "cyclonedx"
-```
-
----
-
-## Conclusion
-
-PyGuard is the **most comprehensive Python analysis tool available**, combining:
-
-✅ **55+ security vulnerability checks** (more than any competitor)  
-✅ **150+ code quality rules** (comprehensive coverage)  
-✅ **179+ auto-fixes** (only tool with 100% auto-fix coverage)  
-✅ **10+ compliance frameworks** (enterprise-ready)  
-✅ **ML-powered detection** (advanced analysis)  
-✅ **Framework-specific rules** (Django, Flask, Pandas, Pytest)  
-✅ **Supply chain security** (SBOM, vulnerability scanning)  
-✅ **100% local operation** (no telemetry, complete privacy)  
-✅ **1115 tests, 83% coverage** (target: 100% coverage)
-
-**PyGuard doesn't just detect issues — it fixes them automatically while maintaining the highest quality and security standards.**
-
-**⭐ NEW in v0.3.1:** 100% auto-fix coverage! All 55+ security detections now have automated fixes (29 new fixes added).
-
----
-
+**Version**: 0.3.0+  
 **Last Updated**: 2025-10-14  
-**Version**: 0.3.1  
 **Repository**: https://github.com/cboyd0319/PyGuard  
-**Documentation**: https://github.com/cboyd0319/PyGuard/tree/main/docs
+**Documentation**: https://github.com/cboyd0319/PyGuard/tree/main/docs  
+**Issues**: https://github.com/cboyd0319/PyGuard/issues  
+**Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)  
+**License**: MIT

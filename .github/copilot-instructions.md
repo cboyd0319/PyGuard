@@ -9,22 +9,23 @@ make dev                    # Install with dev dependencies
 pip install -e ".[dev]"     # Alternative install
 
 # Running PyGuard
-pyguard scan .                          # Scan current directory
-pyguard scan --fix .                    # Scan and auto-fix issues
-pyguard scan --framework owasp .        # Scan with OWASP compliance
-pyguard scan --severity HIGH .          # Only HIGH severity issues
-pyguard scan --format json --output report.json .  # JSON report
+pyguard .                                           # Scan current directory
+pyguard . --scan-only                               # Scan without fixing
+pyguard . --security-only                           # Security checks only
+pyguard . --severity HIGH                           # Only HIGH severity issues
+pyguard . --format json --output report.json        # JSON report
 
 # Quality checks (run before every commit)
 make test          # Run all tests with coverage (70% min)
-make lint          # Run all linters (ruff, pylint, mypy, flake8)
 make format        # Format with Black and isort
-make security      # Bandit security scan
+pyguard pyguard/   # Use PyGuard to scan itself (replaces external linters)
 make clean         # Remove build artifacts
 
 # Quick test cycle
-make format && make lint && make test
+make format && pyguard pyguard/ --scan-only && make test
 ```
+
+> **Important**: When writing unit tests or working on PyGuard code, **use PyGuard to scan itself** (`pyguard pyguard/`) instead of external tools like ruff, pylint, or flake8. PyGuard should be capable of scanning itself to find issues. If it cannot, that's a feature gap to fix.
 
 ## Project Overview
 
