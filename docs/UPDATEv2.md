@@ -7,14 +7,54 @@
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
 >
-> **Current State (VERIFIED 2025-10-14):**
-> - ✅ 856 tests passing, 78% coverage, 0 linting errors, 0 type errors
+> **Current State (UPDATED 2025-10-14 - CLI Integration COMPLETE):**
+> - ✅ 861 tests passing (+5 new), 78% coverage, 0 linting errors, 0 type errors
 > - ✅ Phase 1 (Critical Security) - 100% COMPLETE ✅
 > - ✅ Phase 2A (Type Safety) - 100% COMPLETE ✅
-> - 🔄 Phase 2B (Auto-Fix) - 80% COMPLETE (Safety + Enhanced Fixes done, CLI pending)
+> - ✅ Phase 2B (Auto-Fix) - 90% COMPLETE (Safety + Enhanced Fixes + CLI done)
 > - 🎯 Python Version: 3.12.3 (Supports 3.11, 3.12, 3.13)
 >
-> **Your IMMEDIATE task:** Continue Phase 2B - CLI Integration for --unsafe-fixes flag
+> **Latest Achievement:** ✅ CLI Integration for --unsafe-fixes flag COMPLETE
+>
+> **Your IMMEDIATE task:** Continue Phase 2B - Expand Code Quality Auto-Fixes (50+ Pylint, 30+ Ruff rules)
+
+---
+
+## 🎉 LATEST COMPLETION: CLI Integration for --unsafe-fixes Flag (2025-10-14)
+
+### What Was Implemented
+**Feature:** `--unsafe-fixes` command-line flag to enable unsafe auto-fixes with explicit user consent
+
+**Files Modified:**
+1. `pyguard/cli.py` - Integrated EnhancedSecurityFixer and added CLI argument
+2. `tests/integration/test_cli.py` - Added 5 comprehensive integration tests
+
+**Key Capabilities:**
+- ✅ Safe fixes ALWAYS applied (yaml.safe_load, is None, mkstemp, etc.)
+- ✅ Unsafe fixes ONLY with `--unsafe-fixes` flag (SQL parameterization, command injection fixes)
+- ✅ Clear WARNING in help text about potential behavior changes
+- ✅ Full test coverage with 5 new integration tests
+- ✅ Manual testing verified correct behavior
+
+**Usage Examples:**
+```bash
+# Apply only SAFE fixes (default)
+pyguard scan.py
+
+# Apply BOTH safe and unsafe fixes (explicit opt-in)
+pyguard scan.py --unsafe-fixes
+
+# See help text with warnings
+pyguard --help
+```
+
+**Testing Results:**
+- 861 tests passing (+5 new tests)
+- 78% coverage maintained
+- 0 linting errors
+- 0 type errors
+
+**What's Next:** Expand Code Quality Auto-Fixes (50+ Pylint rules, 30+ Ruff rules)
 
 ---
 
@@ -38,9 +78,9 @@ python -m ruff check pyguard/
 python -m mypy pyguard/ --ignore-missing-imports
 ```
 
-### 3. Current Status Snapshot (VERIFIED 2025-10-14)
+### 3. Current Status Snapshot (UPDATED 2025-10-14 - CLI Integration Complete)
 ```
-✅ Tests:    856 passing    (Target: >800)      Status: EXCELLENT ✅
+✅ Tests:    861 passing    (Target: >800)      Status: EXCELLENT ✅ (+5 new)
 ✅ Coverage: 78%            (Target: >70%)      Status: EXCEEDS TARGET ✅
 ✅ Ruff:     0 errors       (Target: 0)         Status: PERFECT ✅
 ✅ Pylint:   8.82/10        (Target: >8.0)      Status: EXCELLENT ✅
@@ -61,24 +101,23 @@ python -m mypy pyguard/ --ignore-missing-imports
 
 **What's Next (In Priority Order):**
 
-#### 1. CLI Integration for --unsafe-fixes Flag ⏳ HIGH PRIORITY
+#### 1. CLI Integration for --unsafe-fixes Flag ✅ COMPLETE
 **Goal:** Add command-line flag to enable unsafe transformations
 
-**Files to Modify:**
-- `pyguard/cli.py` - Add --unsafe-fixes argument
-- `pyguard/lib/enhanced_security_fixes.py` - Update to check flag
-- `tests/integration/test_cli.py` - Add tests for new flag
+**Files Modified:**
+- ✅ `pyguard/cli.py` - Added --unsafe-fixes argument and EnhancedSecurityFixer integration
+- ✅ `tests/integration/test_cli.py` - Added 5 tests for flag behavior
 
-**Implementation Steps:**
-1. Add `--unsafe-fixes` boolean flag to argparse in cli.py
-2. Pass flag value to EnhancedSecurityFixer
-3. Update EnhancedSecurityFixer to respect the flag (skip UNSAFE fixes by default)
-4. Add integration tests for flag behavior
-5. Update CLI help text with clear warnings about unsafe fixes
+**Implementation Completed:**
+1. ✅ Added `--unsafe-fixes` boolean flag to argparse in cli.py
+2. ✅ Pass flag value to EnhancedSecurityFixer via allow_unsafe parameter
+3. ✅ EnhancedSecurityFixer respects the flag (skips UNSAFE fixes by default)
+4. ✅ Added 5 integration tests for flag behavior
+5. ✅ Updated CLI help text with clear warnings about unsafe fixes
 
-**Expected Time:** 2-3 hours
+**Actual Time:** 2 hours
 
-**Test Coverage:** Add 5-10 integration tests
+**Test Coverage:** Added 5 integration tests (861 total tests now)
 
 #### 2. Expand Code Quality Auto-Fixes ⏳ MEDIUM PRIORITY
 **Goal:** Implement 50+ Pylint rules and 30+ Ruff rules with auto-fix
@@ -311,19 +350,19 @@ def test_safe_fixes_applied_regardless_of_flag():
 ### Phase 2B Progress
 ```
 Total Tasks: 4
-Completed: 2 (50%)
-In Progress: 1 (25%)
+Completed: 3 (75%)
+In Progress: 0 (0%)
 TODO: 1 (25%)
 
-Current Completion: 80%
+Current Completion: 90%
 ```
 
 ### Test Growth Tracking
 ```
 Baseline (Phase 1): 770 tests
 Phase 2A: 805 tests (+35)
-Phase 2B (current): 856 tests (+51)
-Phase 2B (target): 886 tests (+30 more)
+Phase 2B (current): 861 tests (+56)
+Phase 2B (target): 886 tests (+25 more)
 ```
 
 ### Coverage Tracking
@@ -341,13 +380,13 @@ Created:
 - tests/unit/test_fix_safety.py (23 tests)
 - tests/unit/test_enhanced_security_fixes.py (28 tests)
 
+Modified:
+- ✅ pyguard/cli.py (added --unsafe-fixes flag and EnhancedSecurityFixer integration)
+- ✅ tests/integration/test_cli.py (added 5 integration tests for flag behavior)
+
 To Create:
 - pyguard/lib/quality_auto_fixes.py (TBD)
 - tests/unit/test_quality_auto_fixes.py (TBD)
-
-To Modify:
-- pyguard/cli.py (add --unsafe-fixes flag)
-- tests/integration/test_cli.py (add flag tests)
 ```
 
 ---
@@ -401,6 +440,33 @@ To Modify:
 
 ## 🔄 SESSION LOG (Most Recent First)
 
+### Session 2025-10-14 - CLI Integration for --unsafe-fixes Flag COMPLETE ✅
+**Goal:** Add --unsafe-fixes CLI flag to enable unsafe auto-fixes with explicit user consent
+
+**Actions:**
+- ✅ Added EnhancedSecurityFixer import to CLI
+- ✅ Modified PyGuardCLI.__init__() to accept allow_unsafe_fixes parameter
+- ✅ Integrated EnhancedSecurityFixer into security fixes workflow
+- ✅ Added --unsafe-fixes CLI argument with clear warning text
+- ✅ Created 5 new integration tests for flag behavior
+- ✅ Manual testing confirmed both safe and unsafe fixes work correctly
+- ✅ All 861 tests passing (up from 856)
+- ✅ 78% coverage maintained
+- ✅ 0 linting errors, 0 type errors
+
+**Manual Testing Verified:**
+- Without flag: Only SAFE fixes applied (yaml.safe_load, is None)
+- With flag: Both SAFE and UNSAFE fixes applied (SQL parameterization)
+- Help text shows clear warning about unsafe fixes
+- EnhancedSecurityFixer properly respects allow_unsafe flag
+
+**Next Steps:**
+1. ✅ CLI integration COMPLETE
+2. Expand code quality auto-fixes (50+ Pylint rules, 30+ Ruff rules)
+3. Update Phase 2B completion metrics
+
+**Status:** Phase 2B CLI Integration - COMPLETE ✅
+
 ### Session 2025-10-14 - UPDATEv2.md Creation
 **Goal:** Create new progress tracker to replace growing UPDATE.md
 
@@ -412,11 +478,11 @@ To Modify:
 - ✅ Organized information for fast AI onboarding
 
 **Next Steps:**
-1. Implement --unsafe-fixes CLI flag
-2. Add integration tests for flag behavior
+1. ✅ Implement --unsafe-fixes CLI flag (COMPLETE)
+2. ✅ Add integration tests for flag behavior (COMPLETE)
 3. Expand code quality auto-fixes
 
-**Status:** Ready for CLI integration work
+**Status:** Ready for code quality auto-fixes expansion
 
 ---
 
@@ -457,12 +523,12 @@ pyguard --unsafe-fixes examples/sample.py
 ### Phase 2B Complete When:
 - [x] Fix Safety Classification System implemented (✅ DONE)
 - [x] Enhanced Security Auto-Fixes implemented (✅ DONE)
-- [ ] CLI --unsafe-fixes flag integrated (⏳ TODO)
-- [ ] Integration tests for flag behavior (⏳ TODO)
+- [x] CLI --unsafe-fixes flag integrated (✅ DONE)
+- [x] Integration tests for flag behavior (✅ DONE)
 - [ ] Code quality auto-fixes expanded (⏳ TODO)
-- [ ] Test count >= 886 (current: 856, need +30)
+- [ ] Test count >= 886 (current: 861, need +25)
 - [ ] Coverage >= 80% (current: 78%, need +2%)
-- [ ] Zero errors in all linters (currently: ✅)
+- [x] Zero errors in all linters (✅ MAINTAINED)
 
 ### Definition of Done:
 - All tasks marked complete
@@ -886,15 +952,14 @@ MyPy:         0 errors / Target: <20    ✅ PERFECT
 Pylint:       8.82/10 / Target: >8.0    ✅ EXCELLENT
 ```
 
-### Phase 2B Goals (80% Complete)
+### Phase 2B Goals (90% Complete)
 ```
 [x] Fix Safety Classification    ✅ 100% Complete
 [x] Enhanced Security Auto-Fixes  ✅ 100% Complete
-[ ] CLI Integration               ⏳ 0% Complete (NEXT!)
-[ ] Code Quality Auto-Fixes       ⏳ 0% Complete
+[x] CLI Integration               ✅ 100% Complete
+[ ] Code Quality Auto-Fixes       ⏳ 0% Complete (NEXT!)
 
-Estimated Time Remaining: 5-6 days
-- CLI Integration: 2-3 hours
+Estimated Time Remaining: 4-5 days
 - Code Quality Auto-Fixes: 4-5 days
 ```
 
