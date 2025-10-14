@@ -510,4 +510,475 @@ pyguard file.py                         # Single file
 
 ---
 
+## 🔍 TROUBLESHOOTING GUIDE
+
+### Common Issues and Solutions
+
+#### Issue: Tests Failing After Changes
+```bash
+# Solution 1: Check if imports are correct
+python -c "import pyguard; print(pyguard.__file__)"
+
+# Solution 2: Reinstall in development mode
+pip install -e ".[dev]" --force-reinstall
+
+# Solution 3: Check for syntax errors
+python -m py_compile pyguard/lib/*.py
+```
+
+#### Issue: Coverage Decreased
+```bash
+# Find uncovered lines
+python -m pytest tests/ --cov=pyguard --cov-report=html
+# Open htmlcov/index.html to see which lines need tests
+
+# Run coverage for specific module
+python -m pytest tests/ --cov=pyguard.lib.enhanced_security_fixes --cov-report=term-missing
+```
+
+#### Issue: MyPy Type Errors
+```bash
+# Check specific file
+python -m mypy pyguard/lib/cli.py --ignore-missing-imports
+
+# Common fixes:
+# 1. Add type hints: def func(x: int) -> str:
+# 2. Add None checks: if x is not None:
+# 3. Cast types: str(x) or cast(str, x)
+# 4. Use Optional: from typing import Optional; def func(x: Optional[int]):
+```
+
+#### Issue: Ruff Linting Errors
+```bash
+# Auto-fix many issues
+python -m ruff check pyguard/ --fix
+
+# Ignore specific rules (last resort)
+# Add to pyproject.toml:
+# [tool.ruff]
+# ignore = ["E501"]  # Line too long
+```
+
+---
+
+## 📝 IMPLEMENTATION PATTERNS
+
+### Pattern 1: Adding a New Auto-Fix
+
+**Step-by-step guide:**
+
+1. **Classify the fix safety level**
+   ```python
+   # In pyguard/lib/fix_safety.py
+   # Add to appropriate list:
+   SAFE = ["your_new_fix"]  # or
+   UNSAFE = ["your_new_fix"]  # or
+   WARNING_ONLY = ["your_new_fix"]
+   ```
+
+2. **Implement the fix logic**
+   ```python
+   # In pyguard/lib/enhanced_security_fixes.py (or appropriate file)
+   def _fix_your_issue(self, code: str) -> str:
+       """Fix your specific issue.
+       
+       Args:
+           code: Source code to fix
+           
+       Returns:
+           Fixed code
+       """
+       # Check if in comment or string (skip if so)
+       if self._is_in_comment_or_string(code, position):
+           return code
+       
+       # Apply transformation
+       fixed_code = code.replace("bad_pattern", "good_pattern")
+       
+       return fixed_code
+   ```
+
+3. **Add tests (minimum 3)**
+   ```python
+   # In tests/unit/test_enhanced_security_fixes.py
+   def test_your_fix_positive_case(self):
+       """Test that the fix is applied correctly."""
+       code = "bad_pattern"
+       fixer = EnhancedSecurityFixer()
+       result = fixer.fix_code(code)
+       assert "good_pattern" in result
+       
+   def test_your_fix_negative_case(self):
+       """Test that the fix doesn't break valid code."""
+       code = "already_good_pattern"
+       fixer = EnhancedSecurityFixer()
+       result = fixer.fix_code(code)
+       assert result == code  # No change
+       
+   def test_your_fix_in_comment(self):
+       """Test that fix is not applied in comments."""
+       code = "# bad_pattern in comment"
+       fixer = EnhancedSecurityFixer()
+       result = fixer.fix_code(code)
+       assert "bad_pattern" in result  # Should remain unchanged
+   ```
+
+4. **Test idempotency**
+   ```python
+   def test_your_fix_idempotent(self):
+       """Test that running fix twice produces same result."""
+       code = "bad_pattern"
+       fixer = EnhancedSecurityFixer()
+       result1 = fixer.fix_code(code)
+       result2 = fixer.fix_code(result1)
+       assert result1 == result2
+   ```
+
+5. **Update documentation**
+   - Add to fix_safety.py classification
+   - Add example to this file
+   - Update count in metrics
+
+### Pattern 2: Adding a New CLI Argument
+
+**Step-by-step guide:**
+
+1. **Add argument to parser**
+   ```python
+   # In pyguard/cli.py
+   parser.add_argument(
+       "--your-flag",
+       action="store_true",
+       help="Description of what flag does"
+   )
+   ```
+
+2. **Use argument in code**
+   ```python
+   # In main() function
+   if args.your_flag:
+       # Do something
+       pass
+   ```
+
+3. **Add integration test**
+   ```python
+   # In tests/integration/test_cli.py
+   def test_your_flag(self):
+       """Test that your flag works."""
+       result = run_cli(['pyguard', '--your-flag', 'test_file.py'])
+       assert result.returncode == 0
+       # Assert expected behavior
+   ```
+
+4. **Update help documentation**
+   - Update CLI help text
+   - Update README.md if user-facing
+   - Update this file's quick reference
+
+### Pattern 3: Adding a New Security Rule
+
+**Step-by-step guide:**
+
+1. **Identify the vulnerability**
+   - CWE ID (e.g., CWE-89 for SQL injection)
+   - OWASP ID (e.g., ASVS-5.3.4)
+   - Severity level (CRITICAL, HIGH, MEDIUM, LOW)
+
+2. **Implement detection**
+   ```python
+   # In appropriate file (e.g., pyguard/lib/security.py)
+   def detect_your_vulnerability(self, code: str) -> List[SecurityIssue]:
+       """Detect your specific vulnerability.
+       
+       Returns:
+           List of security issues found
+       """
+       issues = []
+       
+       # AST-based detection (preferred)
+       tree = ast.parse(code)
+       for node in ast.walk(tree):
+           if isinstance(node, ast.Call):
+               if self._is_vulnerable_pattern(node):
+                   issues.append(SecurityIssue(
+                       severity="HIGH",
+                       category="Your Vulnerability",
+                       message="Description of the issue",
+                       cwe_id="CWE-XXX",
+                       owasp_id="ASVS-X.X.X",
+                       line_number=node.lineno,
+                       fix_suggestion="How to fix it"
+                   ))
+       
+       return issues
+   ```
+
+3. **Add tests (minimum 4)**
+   ```python
+   # In tests/unit/test_security.py
+   def test_detect_your_vulnerability(self):
+       """Test detection of vulnerability."""
+       vulnerable_code = "..."
+       detector = SecurityDetector()
+       issues = detector.analyze(vulnerable_code)
+       assert len(issues) > 0
+       assert issues[0].severity == "HIGH"
+       
+   def test_no_false_positive(self):
+       """Test that safe code is not flagged."""
+       safe_code = "..."
+       detector = SecurityDetector()
+       issues = detector.analyze(safe_code)
+       assert len(issues) == 0
+   ```
+
+4. **Document the rule**
+   - Add to security_rules.md
+   - Add CWE/OWASP mapping
+   - Include example code (vulnerable and safe)
+
+---
+
+## 🎓 LEARNING RESOURCES
+
+### Understanding the Codebase
+
+**Core Modules (Study These First):**
+1. `pyguard/lib/core.py` - Logging, backup, file operations
+2. `pyguard/lib/fix_safety.py` - Fix safety classification
+3. `pyguard/cli.py` - Command-line interface
+4. `pyguard/lib/enhanced_security_fixes.py` - Security auto-fixes
+
+**Key Concepts:**
+
+**Fix Safety Levels:**
+- **SAFE**: Always applied, no behavior change (formatting, imports)
+- **UNSAFE**: May change behavior, requires explicit consent (SQL fixes, command fixes)
+- **WARNING_ONLY**: No auto-fix, just suggestions (hardcoded secrets, architecture issues)
+
+**AST Analysis:**
+- PyGuard uses Python's `ast` module for code analysis
+- More reliable than regex for complex patterns
+- Can understand code structure and context
+
+**Test Organization:**
+- Unit tests: `tests/unit/` - Test individual functions/classes
+- Integration tests: `tests/integration/` - Test CLI and multi-file operations
+- Fixtures: `tests/fixtures/` - Sample code for testing
+
+### External Documentation
+
+**Python AST:**
+- Official docs: https://docs.python.org/3/library/ast.html
+- AST explorer: https://astexplorer.net/ (select Python)
+- Green Tree Snakes: https://greentreesnakes.readthedocs.io/
+
+**Security Standards:**
+- CWE: https://cwe.mitre.org/
+- OWASP ASVS: https://owasp.org/www-project-application-security-verification-standard/
+- OWASP Top 10: https://owasp.org/www-project-top-ten/
+
+**Python Tools:**
+- Ruff: https://docs.astral.sh/ruff/
+- Bandit: https://bandit.readthedocs.io/
+- Semgrep: https://semgrep.dev/docs/
+
+---
+
+## 🚦 DEVELOPMENT WORKFLOW
+
+### Before Starting Work
+
+1. **Update from main branch**
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Verify clean state**
+   ```bash
+   python -m pytest tests/ -v
+   python -m ruff check pyguard/
+   python -m mypy pyguard/ --ignore-missing-imports
+   ```
+
+3. **Review this file and UPDATE.md**
+   - Check what's already implemented
+   - Understand current priority
+   - Look for similar implementations
+
+### During Development
+
+1. **Make small, focused changes**
+   - One feature or fix per commit
+   - Test frequently (after each logical change)
+   - Run linters after each change
+
+2. **Write tests as you go**
+   - Test-driven development when possible
+   - Add tests before or with implementation
+   - Never commit untested code
+
+3. **Keep documentation updated**
+   - Update this file with progress
+   - Add comments for complex logic
+   - Update docstrings
+
+### Before Committing
+
+1. **Run full test suite**
+   ```bash
+   python -m pytest tests/ -v --cov=pyguard
+   # Must pass with 78%+ coverage
+   ```
+
+2. **Run all linters**
+   ```bash
+   make lint
+   # or manually:
+   python -m ruff check pyguard/
+   python -m mypy pyguard/ --ignore-missing-imports
+   ```
+
+3. **Manual testing (if applicable)**
+   ```bash
+   # Test CLI changes manually
+   pyguard --help
+   pyguard examples/sample.py
+   ```
+
+4. **Update documentation**
+   - Update UPDATEv2.md (this file)
+   - Mark completed items
+   - Add implementation notes
+
+### After Committing
+
+1. **Push to GitHub**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+2. **Create Pull Request**
+   - Use descriptive title
+   - Link to issue if applicable
+   - Add checklist of changes
+
+3. **Respond to review feedback**
+   - Make requested changes
+   - Update tests if needed
+   - Keep PR focused and small
+
+---
+
+## 📊 METRICS & GOALS
+
+### Current Metrics (VERIFIED 2025-10-14)
+```
+Tests:        856 / Target: >800        ✅ EXCEEDS
+Coverage:     78% / Target: >70%        ✅ EXCEEDS (+8%)
+Rules:        378 / Target: 1000        ⚠️ 38% (need +622)
+Auto-fixes:   150+ / Target: 500+      ⚠️ 30% (need +350)
+Ruff:         0 errors / Target: 0      ✅ PERFECT
+MyPy:         0 errors / Target: <20    ✅ PERFECT
+Pylint:       8.82/10 / Target: >8.0    ✅ EXCELLENT
+```
+
+### Phase 2B Goals (80% Complete)
+```
+[x] Fix Safety Classification    ✅ 100% Complete
+[x] Enhanced Security Auto-Fixes  ✅ 100% Complete
+[ ] CLI Integration               ⏳ 0% Complete (NEXT!)
+[ ] Code Quality Auto-Fixes       ⏳ 0% Complete
+
+Estimated Time Remaining: 5-6 days
+- CLI Integration: 2-3 hours
+- Code Quality Auto-Fixes: 4-5 days
+```
+
+### Long-term Goals (Phase 3+)
+```
+Phase 3: Advanced Detection       ⏳ 0% (3-4 weeks)
+Phase 4: Ruff Complete Parity    ⏳ 0% (4-5 weeks)
+Phase 5: Polish & Optimization   ⏳ 0% (2-3 weeks)
+
+Total to v1.0.0: ~15 weeks
+```
+
+---
+
+## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
+
+### 1. CLI Integration for --unsafe-fixes Flag ⭐ HIGHEST PRIORITY
+**Estimated Time:** 2-3 hours  
+**Files to Modify:** cli.py, enhanced_security_fixes.py, test_cli.py  
+**Impact:** Enables all unsafe auto-fixes to be used safely  
+**Blocker:** None - ready to implement
+
+### 2. CLI Integration Testing
+**Estimated Time:** 1 hour  
+**Files to Modify:** test_cli.py  
+**Impact:** Ensures flag works correctly  
+**Blocker:** Requires #1 complete
+
+### 3. Code Quality Auto-Fixes - Pylint Rules
+**Estimated Time:** 3-4 days  
+**Files to Create:** quality_auto_fixes.py, test_quality_auto_fixes.py  
+**Impact:** Adds 50+ new auto-fix capabilities  
+**Blocker:** None - can work in parallel with #1-2
+
+### 4. Code Quality Auto-Fixes - Ruff Rules
+**Estimated Time:** 1-2 days  
+**Files to Modify:** quality_auto_fixes.py, test_quality_auto_fixes.py  
+**Impact:** Adds 30+ new auto-fix capabilities  
+**Blocker:** Can work in parallel with #3
+
+### 5. Documentation Update
+**Estimated Time:** 30 minutes  
+**Files to Modify:** README.md, UPDATEv2.md  
+**Impact:** Keeps documentation current  
+**Blocker:** Requires #1-4 complete
+
+---
+
+## ✅ DEFINITION OF DONE
+
+### For Each Task:
+- [ ] Implementation complete
+- [ ] Unit tests added (minimum 3 per feature)
+- [ ] Integration tests added (if CLI/multi-file)
+- [ ] All tests passing (856+ tests)
+- [ ] Coverage maintained or improved (78%+)
+- [ ] Ruff linting passes (0 errors)
+- [ ] MyPy type checking passes (0 errors)
+- [ ] Manual testing completed (if applicable)
+- [ ] Documentation updated (this file + relevant docs)
+- [ ] Code reviewed (if working with team)
+- [ ] Committed with descriptive message
+- [ ] Pushed to GitHub
+
+### For Phase 2B Complete:
+- [ ] All 4 tasks complete (currently 2/4)
+- [ ] Test count >= 886 (currently 856, need +30)
+- [ ] Coverage >= 80% (currently 78%, need +2%)
+- [ ] All auto-fixes classified by safety
+- [ ] CLI flag implemented and tested
+- [ ] Documentation complete and current
+- [ ] Zero errors in all quality checks
+- [ ] Manual testing of all features
+
+---
+
 **Remember:** This file is your single source of truth. Update it after every significant change!
+
+**Pro Tips:**
+- Run tests frequently (after each logical change)
+- Use `git diff` to review changes before committing
+- Keep commits small and focused (one logical change per commit)
+- Update this file BEFORE making changes (plan first!)
+- Test idempotency for all auto-fixes (run twice = same result)
+- Never skip manual testing for CLI changes
+- Document complex logic with comments
+- Ask for clarification if requirements are unclear
