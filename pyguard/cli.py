@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any
 
-from pyguard.lib.ast_analyzer import SecurityIssue, CodeQualityIssue
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
