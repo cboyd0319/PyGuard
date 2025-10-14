@@ -57,6 +57,12 @@ from pyguard.lib.string_operations import (
 from pyguard.lib.type_checker import TypeChecker, TypeInferenceEngine
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 from pyguard.lib.unused_code import UnusedCodeFixer, UnusedCodeIssue
+from pyguard.lib.xss_detection import (
+    XSS_RULES,
+    XSSDetector,
+    check_xss_vulnerabilities,
+    detect_xss_patterns,
+)
 
 __all__ = [
     "PyGuardLogger",
@@ -122,4 +128,9 @@ __all__ = [
     "DebuggingPatternChecker",
     "DebuggingPatternVisitor",
     "DEBUGGING_RULES",
+    # XSS Detection
+    "XSSDetector",
+    "XSS_RULES",
+    "check_xss_vulnerabilities",
+    "detect_xss_patterns",
 ]
