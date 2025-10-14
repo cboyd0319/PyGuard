@@ -44,7 +44,8 @@ class NamingConventionVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            line = self.source_lines[node.lineno - 1]
+            return str(line).strip()
         return ""
 
     def _is_snake_case(self, name: str) -> bool:

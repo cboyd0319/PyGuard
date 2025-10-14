@@ -93,7 +93,7 @@ class EnhancedConsole:
         self.console.print(panel)
         self.console.print()
 
-    def create_progress_bar(self, description: str = "Processing") -> tuple:
+    def create_progress_bar(self, description: str = "Processing") -> Progress:
         """
         Create a beautiful progress bar.
 
@@ -101,7 +101,7 @@ class EnhancedConsole:
             description: Progress bar description
 
         Returns:
-            Tuple of (Progress, TaskID)
+            Progress object for displaying progress
         """
         progress = Progress(
             SpinnerColumn(),

@@ -135,7 +135,7 @@ class PEP8Checker:
 
     def _check_indentation(self, lines: List[str]) -> None:
         """Check indentation issues (E1xx codes)."""
-        bracket_stack = []  # Track open brackets: [(char, line_num, col, indent)]
+        bracket_stack: List[tuple] = []  # Track open brackets: [(char, line_num, col, indent)]
 
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
@@ -173,7 +173,7 @@ class PEP8Checker:
         lines = content.splitlines(keepends=True)
         fixed_lines = []
         fixes = 0
-        bracket_stack = []
+        bracket_stack: List[tuple] = []
 
         for line_num, line in enumerate(lines, 1):
             if not line.strip():
