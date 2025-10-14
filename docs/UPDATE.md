@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-10-14  
 **Current Version:** 0.3.0  
-**Status:** 44% Complete (355/800 target rules) - Phase 9 In Progress
+**Status:** 44.5% Complete (360/800 target rules) - Phase 9 In Progress
 
 ---
 
@@ -12,7 +12,7 @@ PyGuard is a comprehensive Python security and code quality tool designed to **R
 
 ### Current State ✅
 
-- **Rules Implemented:** 355 unique detection rules (44% of 800 target) - **+21 new rules!**
+- **Rules Implemented:** 360 unique detection rules (45% of 800 target) - **+26 new rules!**
 - **Tests:** 729 passing, 2 skipped
 - **Coverage:** 77% (exceeds 70% target)
 - **Python Version:** 3.12.3 (target: 3.11+ for production)
@@ -23,7 +23,7 @@ PyGuard is a comprehensive Python security and code quality tool designed to **R
 
 **PRIMARY GOAL:** Replace ALL of these tools for BOTH detection AND auto-fix:
 - ✅ **Bandit** - 90% replaced (security)
-- 🟡 **Ruff** - 44% replaced (355/800 rules) - **Improved from 42%!**
+- 🟡 **Ruff** - 45% replaced (360/800 rules) - **Improved from 42%!**
 - 🟡 **Pylint** - 35% replaced (need design metrics)
 - ✅ **Flake8** - 70% replaced (PEP 8)
 - 🟡 **Black** - 50% replaced (using as dependency)
@@ -147,7 +147,7 @@ PyGuard has **46 modules** in `pyguard/lib/`:
 
 ### 1. Ruff Rules Gap (466 rules needed for 800 target)
 
-#### ✅ Implemented Categories (355 rules) - **+21 New Rules!**
+#### ✅ Implemented Categories (360 rules) - **+26 New Rules!**
 
 | Category | Implemented | Coverage | Status |
 |----------|------------|----------|--------|
@@ -158,8 +158,8 @@ PyGuard has **46 modules** in `pyguard/lib/`:
 | **Pylint (PL*)** | 25 | 28% | 🟡 Partial |
 | **SIM (simplify)** | 23 | 23% | 🟡 Partial |
 | **PTH (pathlib)** | 18 | 90% | 🟢 Excellent |
+| **UP (pyupgrade)** | 17 | 34% | 🟡 Good | **+5 rules!**
 | **PG (PyGuard custom)** | 14 | 70% | 🟡 Good |
-| **UP (pyupgrade)** | 12 | 24% | 🟡 Partial |
 | **TRY (tryceratops)** | 11 | 92% | 🟢 Excellent |
 | **PT (pytest-style)** | 11 | 22% | 🟡 Partial |
 | **RET (return)** | 8 | 80% | 🟢 Good |
@@ -872,12 +872,13 @@ make security    # Security scan
 
 ## 📝 Changelog
 
-### 2025-10-14 - Phase 9 Week 1 Started: +21 New Rules!
-- ✅ **NEW RULES IMPLEMENTED:** 21 new detection rules (+6% progress!)
+### 2025-10-14 - Phase 9 Week 1 In Progress: +26 New Rules!
+- ✅ **NEW RULES IMPLEMENTED:** 26 new detection rules (+3% progress!)
   - **FURB Rules (13 new):** FURB125-127, FURB130-131, FURB135, FURB137-139, FURB141, FURB143, FURB146-147
   - **PIE Rules (8 new):** PIE812-819 - **PIE category now 100% complete!**
+  - **UP Rules (5 new):** UP011, UP015, UP017, UP019, improved decorator handling
   - **Coverage:** 77% maintained, all 729 tests passing
-  - **Impact:** PyGuard now at 44% of target (355/800 rules)
+  - **Impact:** PyGuard now at 45% of target (360/800 rules)
 - ✅ **New Detection Capabilities:**
   - Unnecessary lambda in sorted/map/filter (FURB125)
   - isinstance() vs type() comparison (FURB126)
@@ -891,6 +892,10 @@ make security    # Security scan
   - any()/all() over multiple or/and (PIE817)
   - Unnecessary list() before subscript (PIE818)
   - List comprehension optimization (PIE819)
+  - @lru_cache without empty parentheses (UP011)
+  - Redundant open modes 'r'/'rt' (UP015)
+  - Use datetime.timezone.utc instead of pytz (UP017)
+  - typing.Text deprecation (UP019)
 
 ### 2025-10-14 - Critical Bug Fixes & Version Updates
 - ✅ **CRITICAL FIX:** scan-only mode now scans ALL rule types (security + quality + patterns)
