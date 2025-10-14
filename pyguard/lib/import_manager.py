@@ -34,7 +34,7 @@ class ImportAnalyzer:
         Returns:
             Dict with keys: 'stdlib', 'third_party', 'local', 'future'
         """
-        imports = {
+        imports: Dict[str, List[ast.AST]] = {
             "future": [],
             "stdlib": [],
             "third_party": [],
