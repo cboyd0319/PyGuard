@@ -1,0 +1,230 @@
+# Example PyGuard Custom Rules Configuration
+#
+# This file demonstrates how to define custom security and code quality rules
+# for your project. Load with: create_rule_engine_from_config("custom_rules_example.toml")
+#
+# Rule Fields:
+#   - rule_id: Unique identifier (required)
+#   - name: Human-readable name (required)
+#   - severity: HIGH, MEDIUM, or LOW (required)
+#   - category: Rule category (required)
+#   - description: What the rule checks (required)
+#   - pattern: Regex pattern to match (optional, for regex rules)
+#   - suggestion: How to fix the issue (optional but recommended)
+#   - enabled: true or false (optional, default: true)
+
+# Security Rules
+
+[[rules]]
+rule_id = "SEC001"
+name = "No print statements in production"
+severity = "MEDIUM"
+category = "Security"
+description = "Print statements may expose sensitive information in logs"
+pattern = "\\bprint\\s*\\("
+suggestion = "Use logging.info() or logging.debug() instead"
+enabled = true
+
+[[rules]]
+rule_id = "SEC002"
+name = "No hardcoded credentials"
+severity = "HIGH"
+category = "Security"
+description = "Credentials should never be hardcoded in source code"
+pattern = "(password|passwd|pwd|secret|token|api_key)\\s*=\\s*['\"][^'\"]{8,}['\"]"
+suggestion = "Use environment variables or secure credential storage"
+enabled = true
+
+[[rules]]
+rule_id = "SEC003"
+name = "No hardcoded IP addresses"
+severity = "MEDIUM"
+category = "Security"
+description = "IP addresses should be configurable, not hardcoded"
+pattern = "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b"
+suggestion = "Use configuration files or environment variables"
+enabled = true
+
+[[rules]]
+rule_id = "SEC004"
+name = "No hardcoded ports"
+severity = "MEDIUM"
+category = "Security"
+description = "Port numbers should be configurable"
+pattern = "\\b(port|PORT)\\s*=\\s*\\d{4,5}\\b"
+suggestion = "Use environment variables or config files"
+enabled = true
+
+[[rules]]
+rule_id = "SEC005"
+name = "No shell=True in subprocess"
+severity = "HIGH"
+category = "Security"
+description = "Using shell=True can lead to command injection vulnerabilities"
+pattern = "subprocess\\.(run|call|Popen)\\([^)]*shell\\s*=\\s*True"
+suggestion = "Use shell=False and pass command as a list"
+enabled = true
+
+# Code Quality Rules
+
+[[rules]]
+rule_id = "QUAL001"
+name = "No TODO comments"
+severity = "LOW"
+category = "Code Quality"
+description = "TODO comments should be converted to issues/tickets"
+pattern = "#\\s*TODO"
+suggestion = "Create a GitHub issue or JIRA ticket instead"
+enabled = false  # Often too noisy, enable if needed
+
+[[rules]]
+rule_id = "QUAL002"
+name = "No FIXME comments"
+severity = "LOW"
+category = "Code Quality"
+description = "FIXME comments indicate technical debt"
+pattern = "#\\s*FIXME"
+suggestion = "Fix the issue or create a ticket"
+enabled = false
+
+[[rules]]
+rule_id = "QUAL003"
+name = "No magic numbers"
+severity = "LOW"
+category = "Code Quality"
+description = "Numeric literals should be named constants"
+pattern = "\\b[0-9]{3,}\\b"
+suggestion = "Define as a named constant at module level"
+enabled = false  # Very noisy, enable carefully
+
+[[rules]]
+rule_id = "QUAL004"
+name = "No bare except clauses"
+severity = "MEDIUM"
+category = "Code Quality"
+description = "Bare except clauses catch too many exceptions"
+pattern = "except\\s*:"
+suggestion = "Catch specific exception types"
+enabled = true
+
+# Framework-Specific Rules (Django)
+
+[[rules]]
+rule_id = "DJANGO001"
+name = "No direct use of settings.SECRET_KEY"
+severity = "HIGH"
+category = "Django Security"
+description = "SECRET_KEY should not be accessed directly in code"
+pattern = "settings\\.SECRET_KEY"
+suggestion = "Use django.core.signing or session framework"
+enabled = true
+
+[[rules]]
+rule_id = "DJANGO002"
+name = "No DEBUG=True in production"
+severity = "HIGH"
+category = "Django Security"
+description = "DEBUG should never be True in production"
+pattern = "DEBUG\\s*=\\s*True"
+suggestion = "Use environment variables: DEBUG = os.getenv('DEBUG', 'False') == 'True'"
+enabled = true
+
+# Framework-Specific Rules (Flask)
+
+[[rules]]
+rule_id = "FLASK001"
+name = "No app.run(debug=True) in production"
+severity = "HIGH"
+category = "Flask Security"
+description = "Debug mode should not be enabled in production"
+pattern = "app\\.run\\([^)]*debug\\s*=\\s*True"
+suggestion = "Remove debug=True or use environment variable"
+enabled = true
+
+[[rules]]
+rule_id = "FLASK002"
+name = "No secret_key in source code"
+severity = "HIGH"
+category = "Flask Security"
+description = "Flask secret key should not be in source code"
+pattern = "app\\.config\\['SECRET_KEY'\\]\\s*=\\s*['\"][^'\"]+['\"]"
+suggestion = "Use environment variables: app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')"
+enabled = true
+
+# Testing Rules
+
+[[rules]]
+rule_id = "TEST001"
+name = "No sleep in tests"
+severity = "LOW"
+category = "Testing"
+description = "Using time.sleep() in tests makes them slow"
+pattern = "time\\.sleep\\("
+suggestion = "Use proper async/await or mocking instead"
+enabled = false
+
+[[rules]]
+rule_id = "TEST002"
+name = "No skipped tests"
+severity = "LOW"
+category = "Testing"
+description = "Skipped tests should be fixed or removed"
+pattern = "@pytest\\.mark\\.skip"
+suggestion = "Fix the test or remove it"
+enabled = false
+
+# Documentation Rules
+
+[[rules]]
+rule_id = "DOC001"
+name = "No missing docstrings"
+severity = "LOW"
+category = "Documentation"
+description = "Public functions should have docstrings"
+pattern = "^def [a-zA-Z_][a-zA-Z0-9_]*\\([^)]*\\):\\s*$"
+suggestion = "Add a docstring explaining the function"
+enabled = false  # Very noisy, use sparingly
+
+# Performance Rules
+
+[[rules]]
+rule_id = "PERF001"
+name = "No repeated regex compilation"
+severity = "MEDIUM"
+category = "Performance"
+description = "Regex patterns should be compiled once at module level"
+pattern = "re\\.(match|search|findall)\\(r['\"]"
+suggestion = "Compile regex once: PATTERN = re.compile(r'...')"
+enabled = false
+
+[[rules]]
+rule_id = "PERF002"
+name = "No string concatenation in loops"
+severity = "MEDIUM"
+category = "Performance"
+description = "String concatenation in loops is inefficient"
+pattern = "\\+\\s*=[\\s'\"]+.*in\\s+"
+suggestion = "Use ''.join() or list.append() instead"
+enabled = false  # Noisy, many false positives
+
+# Custom Organization Rules
+
+[[rules]]
+rule_id = "ORG001"
+name = "No direct database queries"
+severity = "MEDIUM"
+category = "Organization Policy"
+description = "Direct database queries should go through the data layer"
+pattern = "cursor\\.execute\\(|conn\\.execute\\("
+suggestion = "Use the data access layer/ORM instead"
+enabled = false
+
+[[rules]]
+rule_id = "ORG002"
+name = "No requests without timeout"
+severity = "MEDIUM"
+category = "Organization Policy"
+description = "HTTP requests should have timeouts"
+pattern = "requests\\.(get|post|put|delete|patch)\\([^)]*(?<!timeout=)[^)]*\\)"
+suggestion = "Add timeout parameter: requests.get(url, timeout=30)"
+enabled = false  # Regex may have false positives

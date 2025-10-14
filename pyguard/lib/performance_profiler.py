@@ -8,7 +8,7 @@ Detects inefficient patterns and suggests improvements.
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional
 
 
 @dataclass

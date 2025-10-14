@@ -9,7 +9,7 @@ import ast
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set
 
 
 @dataclass

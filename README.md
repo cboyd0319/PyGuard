@@ -185,9 +185,20 @@ jobs:
 - Fix suggestions for each issue
 - Security trend tracking
 
-See [docs/README.md](docs/README.md) for complete documentation.
+See [docs/index.md](docs/index.md) for complete documentation hub.
 
 **📖 [COMPLETE CAPABILITIES REFERENCE](docs/capabilities-reference.md) — Detailed catalog of ALL 55+ security checks, 150+ code quality rules, auto-fixes, and features**
+
+## Advanced Features (NEW!)
+
+PyGuard now includes powerful development workflow integrations:
+
+- **🔄 CI/CD Integration** — Auto-generate configs for GitHub Actions, GitLab CI, CircleCI, Azure Pipelines
+- **⚡ Performance Profiler** — Detect performance bottlenecks and optimization opportunities  
+- **🔗 Dependency Analyzer** — Visualize dependencies, detect circular imports and god modules
+- **📋 Custom Rules Engine** — Define your own security/quality rules via TOML or Python API
+
+[Learn more →](docs/guides/ADVANCED_FEATURES.md)
 
 **Core vulnerabilities** — OWASP ASVS v5.0, CWE Top 25 aligned
 - Code injection (eval, exec, compile) — CWE-95

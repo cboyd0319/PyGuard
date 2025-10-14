@@ -9,7 +9,7 @@ import ast
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
 try:
     import tomli as tomllib  # Python < 3.11

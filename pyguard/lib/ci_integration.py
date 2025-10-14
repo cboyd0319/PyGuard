@@ -5,7 +5,6 @@ Generates configuration files for various CI/CD platforms and pre-commit hooks.
 Helps teams integrate PyGuard into their development workflow.
 """
 
-import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -218,7 +217,7 @@ steps:
         }
 
         for platform, file_path in file_mappings.items():
-            config = self.generate_config(platform, file_path)
+            self.generate_config(platform, file_path)
             generated_files[platform] = file_path
 
         return generated_files

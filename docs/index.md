@@ -11,6 +11,7 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### User Guides
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
+- [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules ✨ NEW
 - [Auto-Fix Guide](auto-fix-guide.md) - Automated code fixes
 - [Git Hooks Guide](git-hooks-guide.md) - Pre-commit integration
 - [Notebook Security Guide](notebook-security-guide.md) - Jupyter notebook scanning
