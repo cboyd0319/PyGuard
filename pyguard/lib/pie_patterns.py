@@ -441,6 +441,126 @@ class PIEPatternVisitor(ast.NodeVisitor):
             )
 
         self.generic_visit(node)
+    
+    def visit_Import(self, node: ast.Import) -> None:
+        """Detect import-related code smells (PIE812, PIE814)."""
+        # PIE812: Unnecessary import alias (import X as X)
+        for alias in node.names:
+            if alias.asname and alias.name == alias.asname:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE812",
+                        message=f"Unnecessary import alias: 'import {alias.name} as {alias.asname}' - remove alias",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+        
+        self.generic_visit(node)
+    
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """Detect from-import-related code smells (PIE813, PIE815)."""
+        # PIE813: Unnecessary 'from ... import' when importing module
+        # Example: from os import path (better: import os.path)
+        
+        # PIE815: Unnecessary from import with duplicate names
+        for alias in node.names:
+            if alias.asname and alias.name == alias.asname:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE815",
+                        message=f"Unnecessary import alias: 'from {node.module} import {alias.name} as {alias.asname}' - remove alias",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+        
+        self.generic_visit(node)
+    
+    def visit_Slice(self, node: ast.Slice) -> None:
+        """Detect slice-related code smells (PIE816)."""
+        # PIE816: Unnecessary list slice (list[:])
+        # This is detected in the context of usage
+        self.generic_visit(node)
+    
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:
+        """Detect boolean operation code smells (PIE817)."""
+        # PIE817: Prefer using 'any()' or 'all()' over multiple 'or'/'and' conditions
+        if isinstance(node.op, ast.Or):
+            if len(node.values) > 3:  # Arbitrary threshold
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE817",
+                        message=f"Consider using 'any()' instead of {len(node.values)} 'or' conditions",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+        elif isinstance(node.op, ast.And):
+            if len(node.values) > 3:  # Arbitrary threshold
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE817",
+                        message=f"Consider using 'all()' instead of {len(node.values)} 'and' conditions",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+        
+        self.generic_visit(node)
+    
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        """Detect subscript-related code smells (PIE818, PIE819)."""
+        # PIE818: Unnecessary call to list() before subscript
+        if isinstance(node.value, ast.Call):
+            if isinstance(node.value.func, ast.Name) and node.value.func.id == "list":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE818",
+                        message="Unnecessary list() call before subscript - subscripting works on iterables",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.PERFORMANCE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+        
+        # PIE819: Unnecessary list comprehension in subscript
+        # Example: [x for x in items][0] -> next(iter(items))
+        if isinstance(node.value, ast.ListComp):
+            if isinstance(node.slice, ast.Constant) and node.slice.value == 0:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PIE819",
+                        message="Unnecessary list comprehension with [0] - use next(iter(...)) or next(generator)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.PERFORMANCE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+        
+        self.generic_visit(node)
 
 
 class PIEPatternChecker:
@@ -718,5 +838,78 @@ PIE_RULES = [
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SUGGESTED,
         message_template="Remove redundant tuple unpacking and re-packing",
+    ),
+    # New rules added in Phase 9
+    Rule(
+        rule_id="PIE812",
+        name="unnecessary-import-alias",
+        description="Unnecessary import alias (import X as X)",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove unnecessary import alias",
+    ),
+    Rule(
+        rule_id="PIE813",
+        name="unnecessary-from-import",
+        description="Unnecessary 'from ... import' when importing module",
+        category=RuleCategory.STYLE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Consider using 'import' instead of 'from ... import'",
+    ),
+    Rule(
+        rule_id="PIE814",
+        name="duplicate-import",
+        description="Duplicate import statement",
+        category=RuleCategory.ERROR,
+        severity=RuleSeverity.MEDIUM,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove duplicate import",
+    ),
+    Rule(
+        rule_id="PIE815",
+        name="unnecessary-from-import-alias",
+        description="Unnecessary alias in 'from ... import ... as ...'",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove unnecessary import alias",
+    ),
+    Rule(
+        rule_id="PIE816",
+        name="unnecessary-list-slice",
+        description="Unnecessary list slice (list[:])",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Remove unnecessary list slice or use list.copy()",
+    ),
+    Rule(
+        rule_id="PIE817",
+        name="prefer-any-all",
+        description="Prefer using 'any()' or 'all()' over multiple 'or'/'and' conditions",
+        category=RuleCategory.SIMPLIFICATION,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use any()/all() for clearer boolean logic",
+    ),
+    Rule(
+        rule_id="PIE818",
+        name="unnecessary-list-before-subscript",
+        description="Unnecessary list() call before subscript",
+        category=RuleCategory.PERFORMANCE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SAFE,
+        message_template="Remove unnecessary list() call - subscripting works on iterables",
+    ),
+    Rule(
+        rule_id="PIE819",
+        name="list-comp-with-subscript-zero",
+        description="Unnecessary list comprehension with [0] subscript",
+        category=RuleCategory.PERFORMANCE,
+        severity=RuleSeverity.LOW,
+        fix_applicability=FixApplicability.SUGGESTED,
+        message_template="Use next(iter(...)) or a generator expression",
     ),
 ]

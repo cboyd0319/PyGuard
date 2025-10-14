@@ -239,6 +239,114 @@ class ModernPythonVisitor(ast.NodeVisitor):
                 )
 
         self.generic_visit(node)
+    
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        """Visit subscript nodes for typing modernization."""
+        # UP009: UTF-8 encoding declaration (handled via comment scanning)
+        # UP010: Unnecessary __future__ imports (handled in visit_ImportFrom)
+        
+        # UP011: Use functools.lru_cache without call
+        # Detect @lru_cache() → should be @lru_cache
+        # This would be detected in visit_FunctionDef
+        
+        # UP033: Use @functools.lru_cache instead of @functools.lru_cache()
+        # UP034: Avoid extraneous parentheses on @decorator() calls
+        
+        self.generic_visit(node)
+    
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Visit function definitions for decorator modernization."""
+        for decorator in node.decorator_list:
+            # UP011/UP033: lru_cache without parentheses
+            if isinstance(decorator, ast.Call):
+                if isinstance(decorator.func, ast.Attribute):
+                    if decorator.func.attr == "lru_cache" and len(decorator.args) == 0 and len(decorator.keywords) == 0:
+                        self.issues.append(
+                            ModernizationIssue(
+                                severity="LOW",
+                                category="Modern Python",
+                                message="Use @functools.lru_cache instead of @functools.lru_cache()",
+                                line_number=decorator.lineno,
+                                column=decorator.col_offset,
+                                code_snippet=self._get_code_snippet(decorator),
+                                fix_suggestion="Remove empty parentheses from @lru_cache",
+                                rule_id="UP011",
+                            )
+                        )
+        
+        # UP020: Use builtin open() instead of pathlib.Path.open() when appropriate
+        # UP021: Replace universal newlines with text=True
+        
+        self.generic_visit(node)
+    
+    def visit_With(self, node: ast.With) -> None:
+        """Visit with statements for context manager modernization."""
+        for item in node.items:
+            if isinstance(item.context_expr, ast.Call):
+                func_name = self._get_call_name(item.context_expr)
+                
+                # UP015: Redundant open modes (e.g., 'r' is default)
+                if func_name == "open":
+                    for arg in item.context_expr.args:
+                        if isinstance(arg, ast.Constant):
+                            if arg.value in ["r", "rt"]:
+                                self.issues.append(
+                                    ModernizationIssue(
+                                        severity="LOW",
+                                        category="Modern Python",
+                                        message="Redundant open mode 'r' or 'rt' - this is the default",
+                                        line_number=arg.lineno,
+                                        column=arg.col_offset,
+                                        code_snippet=self._get_code_snippet(arg),
+                                        fix_suggestion="Remove redundant 'r' or 'rt' mode argument",
+                                        rule_id="UP015",
+                                    )
+                                )
+                
+                # UP017: Use datetime.timezone.utc instead of datetime.timezone(datetime.timedelta(0))
+                # UP018: Native literals instead of str(), int(), etc.
+        
+        self.generic_visit(node)
+    
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        """Visit attribute access for timezone modernization."""
+        # UP017: datetime.timezone.utc instead of pytz
+        if isinstance(node.value, ast.Name):
+            if node.value.id == "pytz" and node.attr == "UTC":
+                self.issues.append(
+                    ModernizationIssue(
+                        severity="MEDIUM",
+                        category="Modern Python",
+                        message="Use datetime.timezone.utc instead of pytz.UTC",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Replace pytz.UTC with datetime.timezone.utc",
+                        rule_id="UP017",
+                    )
+                )
+        
+        self.generic_visit(node)
+    
+    def visit_Expr(self, node: ast.Expr) -> None:
+        """Visit expression statements."""
+        # UP019: typing.Text is deprecated
+        if isinstance(node.value, ast.Name):
+            if node.value.id == "Text":
+                self.issues.append(
+                    ModernizationIssue(
+                        severity="LOW",
+                        category="Modern Python",
+                        message="typing.Text is deprecated in Python 3.11+, use str instead",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Replace typing.Text with str",
+                        rule_id="UP019",
+                    )
+                )
+        
+        self.generic_visit(node)
 
     def _get_call_name(self, node: ast.Call) -> str:
         """Get the full name of a function call."""

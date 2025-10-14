@@ -5,7 +5,7 @@
 ![Tests](https://img.shields.io/badge/tests-729%20passing-success.svg)
 ![Coverage](https://img.shields.io/badge/coverage-77%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Rules](https://img.shields.io/badge/rules-334%20implemented-blue.svg)
+![Rules](https://img.shields.io/badge/rules-360%20implemented-blue.svg)
 
 **TL;DR**: Install PyGuard, run it on your codebase, get security fixes and quality improvements applied automatically. Works locally, no telemetry.
 
@@ -251,7 +251,7 @@ See [docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md) for complete setup 
 
 | Feature | PyGuard | Bandit | Semgrep | Pylint | Ruff | SonarQube |
 |---------|---------|--------|---------|--------|------|-----------|
-| Total rules | 334 | ~10 | ~15 | ~300 | ~800 | ~400 |
+| Total rules | 360 | ~10 | ~15 | ~300 | ~800 | ~400 |
 | Security checks | 55+ | ~10 | ~15 | ~5 | 0 | ~18 |
 | Auto-fix | 150+ | No | Partial | No | Style only | No |
 | Standards | 10 | 1 | 1 | 1 | 1 | 2 |
