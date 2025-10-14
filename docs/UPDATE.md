@@ -1,5 +1,19 @@
 # PyGuard Development Update & Roadmap
 
+> **⚠️ THIS FILE IS NOW TOO LARGE - USE UPDATEv2.md INSTEAD!**
+> 
+> **📖 For current work, see:** [`docs/UPDATEv2.md`](./UPDATEv2.md)
+> 
+> This file (UPDATE.md) contains historical context and detailed implementation history.
+> For day-to-day development, use UPDATEv2.md which has:
+> - Quick start instructions
+> - Current priorities
+> - Implementation guides
+> - Troubleshooting tips
+> - Development workflows
+
+---
+
 > **🚀 INSTANT AI ONBOARDING (READ THIS FIRST!):**
 > 
 > **This file is your single source of truth.** It prevents re-testing and speeds up development.
