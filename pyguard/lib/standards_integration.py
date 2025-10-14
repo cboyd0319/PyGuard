@@ -265,7 +265,7 @@ class StandardsMapper:
         Returns:
             Dictionary mapping standards to their requirements
         """
-        report: Dict[str, List[str]] = {
+        report: Dict[str, List[Dict[str, Any]]] = {
             "NIST-CSF": [],
             "ISO-27001": [],
             "SOC-2": [],
@@ -527,7 +527,7 @@ class SANSTop25Mapper:
         Returns:
             Report showing coverage of SANS Top 25
         """
-        top25_found: Dict[int, List[str]] = {}
+        top25_found: Dict[int, List[Dict[Any, Any]]] = {}
 
         for issue in issues:
             cwe_id = issue.get("cwe_id", "")
@@ -610,7 +610,7 @@ class CERTSecureCodingMapper:
         Returns:
             Report showing CERT rule violations
         """
-        violations_by_rule: Dict[str, List[str]] = {}
+        violations_by_rule: Dict[str, List[Dict[Any, Any]]] = {}
 
         for issue in issues:
             issue_type = issue.get("type", "unknown")
@@ -687,7 +687,7 @@ class IEEE12207Mapper:
         Returns:
             Report showing lifecycle process compliance
         """
-        process_violations: Dict[str, List[str]] = {}
+        process_violations: Dict[str, List[Dict[Any, Any]]] = {}
 
         for issue in issues:
             category = issue.get("category", "quality")

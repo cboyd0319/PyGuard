@@ -80,7 +80,7 @@ class TaintAnalyzer(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_Assign(self, node: ast.Assign):
@@ -135,7 +135,7 @@ class TaintAnalyzer(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
@@ -209,7 +209,7 @@ class RaceConditionDetector(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_Call(self, node: ast.Call):
@@ -250,7 +250,7 @@ class RaceConditionDetector(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
@@ -284,7 +284,7 @@ class IntegerSecurityAnalyzer(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_BinOp(self, node: ast.BinOp):
@@ -398,7 +398,7 @@ class AdvancedSecurityAnalyzer:
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value

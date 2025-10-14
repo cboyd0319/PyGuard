@@ -127,7 +127,7 @@ class SSTIDetector(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ''
 
     def visit_Import(self, node: ast.Import):
@@ -192,7 +192,7 @@ class SSTIDetector(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
@@ -285,7 +285,7 @@ class APIRateLimitDetector(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ''
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -328,7 +328,7 @@ class APIRateLimitDetector(ast.NodeVisitor):
         elif isinstance(decorator, ast.Call):
             if isinstance(decorator.func, ast.Attribute):
                 parts = []
-                current = decorator.func
+                current: ast.expr = decorator.func
                 while isinstance(current, ast.Attribute):
                     parts.append(current.attr)
                     current = current.value
@@ -338,14 +338,14 @@ class APIRateLimitDetector(ast.NodeVisitor):
             elif isinstance(decorator.func, ast.Name):
                 return f'@{decorator.func.id}'
         elif isinstance(decorator, ast.Attribute):
-            parts = []
-            current = decorator
-            while isinstance(current, ast.Attribute):
-                parts.append(current.attr)
-                current = current.value
-            if isinstance(current, ast.Name):
-                parts.append(current.id)
-            return '@' + '.'.join(reversed(parts))
+            parts2 = []
+            current2: ast.expr = decorator
+            while isinstance(current2, ast.Attribute):
+                parts2.append(current2.attr)
+                current2 = current2.value
+            if isinstance(current2, ast.Name):
+                parts2.append(current2.id)
+            return '@' + '.'.join(reversed(parts2))
         return ''
 
 
@@ -390,7 +390,7 @@ class ContainerEscapeDetector:
         Returns:
             List of security issues found
         """
-        issues = []
+        issues: List[SecurityIssue] = []
 
         # Only scan relevant files
         if not any(name in file_path.lower() for name in ['dockerfile', 'docker-compose', '.yml', '.yaml']):
@@ -438,7 +438,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ''
 
     def visit_Call(self, node: ast.Call):
@@ -580,7 +580,7 @@ class BusinessLogicDetector(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ''
 
     def visit_FunctionDef(self, node: ast.FunctionDef):

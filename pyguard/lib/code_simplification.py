@@ -42,7 +42,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
     def visit_If(self, node: ast.If):
@@ -323,11 +323,11 @@ class SimplificationVisitor(ast.NodeVisitor):
                             SimplificationIssue(
                                 severity="LOW",
                                 category="Code Simplification",
-                                message=f"Use 'is {comparator.value}' instead of '== {comparator.value}'",
+                                message=f"Use 'is {comparator.value!r}' instead of '== {comparator.value!r}'",
                                 line_number=node.lineno,
                                 column=node.col_offset,
                                 code_snippet=self._get_code_snippet(node),
-                                fix_suggestion=f"Replace '== {comparator.value}' with 'is {comparator.value}'",
+                                fix_suggestion=f"Replace '== {comparator.value!r}' with 'is {comparator.value!r}'",
                                 rule_id="SIM201" if comparator.value is True else "SIM202",
                             )
                         )
@@ -336,11 +336,11 @@ class SimplificationVisitor(ast.NodeVisitor):
                             SimplificationIssue(
                                 severity="LOW",
                                 category="Code Simplification",
-                                message=f"Use 'is not {comparator.value}' instead of '!= {comparator.value}'",
+                                message=f"Use 'is not {comparator.value!r}' instead of '!= {comparator.value!r}'",
                                 line_number=node.lineno,
                                 column=node.col_offset,
                                 code_snippet=self._get_code_snippet(node),
-                                fix_suggestion=f"Replace '!= {comparator.value}' with 'is not {comparator.value}'",
+                                fix_suggestion=f"Replace '!= {comparator.value!r}' with 'is not {comparator.value!r}'",
                                 rule_id="SIM201" if comparator.value is True else "SIM202",
                             )
                         )
@@ -671,7 +671,7 @@ class SimplificationVisitor(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
