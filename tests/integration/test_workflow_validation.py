@@ -228,11 +228,23 @@ class TestWorkflowValidation:
         with open(workflow_file) as f:
             workflow = yaml.safe_load(f)
 
-        # Should have security-events write permission
-        perms = workflow.get("permissions", {})
-        assert (
-            perms.get("security-events") == "write"
-        ), "PyGuard workflow needs security-events: write permission"
+        # Should have security-events write permission at workflow or job level
+        workflow_perms = workflow.get("permissions", {})
+        has_workflow_permission = workflow_perms.get("security-events") == "write"
+
+        # Check job-level permissions if not at workflow level
+        has_job_permission = False
+        if not has_workflow_permission and "jobs" in workflow:
+            for job_config in workflow["jobs"].values():
+                if isinstance(job_config, dict):
+                    job_perms = job_config.get("permissions", {})
+                    if job_perms.get("security-events") == "write":
+                        has_job_permission = True
+                        break
+
+        assert has_workflow_permission or has_job_permission, (
+            "PyGuard workflow needs security-events: write permission at workflow or job level"
+        )
 
         # Should run on appropriate triggers (YAML 'on' can be parsed as True)
         triggers = workflow.get("on", workflow.get(True, {}))
