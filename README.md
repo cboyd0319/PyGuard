@@ -58,7 +58,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 
 | Item | Version | Why |
 |------|---------|-----|
-| Python | 3.11+ | Runtime (3.13.8 recommended for dev) |
+| Python | 3.11+ | Runtime (3.13.9 recommended for dev) |
 | pip | latest | Package manager |
 
 Optional: Black, isort (auto-installed with PyGuard).

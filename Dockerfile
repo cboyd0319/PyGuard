@@ -1,7 +1,7 @@
 # PyGuard Docker Image
 # Provides a containerized environment for running PyGuard
 
-FROM python:3.13-slim
+FROM python:3.13.9-slim
 
 LABEL maintainer="Chad Boyd <your.email@example.com>"
 LABEL description="PyGuard - Python QA and Auto-Fix Tool"
