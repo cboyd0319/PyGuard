@@ -11,30 +11,40 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # For future SARIF upload
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   pyguard-self-check:
     name: PyGuard Self-Dogfooding 🐶
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
 
-    - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+    - name: Setup Python and dependencies
+      uses: ./.github/actions/setup-python
       with:
         python-version: '3.13'
-        cache: 'pip'
-
-    - name: Install PyGuard (itself!)
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+        install-dev: 'true'
 
     - name: Run PyGuard Self-Analysis
+      shell: bash
       run: |
+        set -euo pipefail
         # Only scan production code (pyguard/), exclude tests and examples
         # Tests contain intentionally vulnerable code for testing PyGuard
         pyguard pyguard/ \
@@ -53,6 +63,23 @@ jobs:
         sarif_file: pyguard-report.sarif
         category: pyguard-self-check
       if: always()
+
+    - name: Add dogfooding summary
+      if: always()
+      shell: bash
+      run: |
+        {
+          echo "## 🐶 PyGuard Self-Analysis (Dogfooding)"
+          echo ""
+          echo "PyGuard analyzed its own codebase to prove it works!"
+          echo ""
+          echo "- **Scope:** Production code only (pyguard/)"
+          echo "- **Mode:** Scan-only (advisory)"
+          echo "- **SARIF:** Uploaded to Security tab"
+          echo ""
+          echo "_PyGuard includes Black, isort, flake8, mypy internally_"
+          echo "_Single unified tool replacing traditional linters_"
+        } >> "${GITHUB_STEP_SUMMARY}"
 
   # Backup linters removed - PyGuard self-dogfooding proves it works!
   # PyGuard includes Black, isort, flake8, mypy internally

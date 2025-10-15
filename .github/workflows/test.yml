@@ -9,9 +9,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -27,23 +39,38 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+    - name: Setup Python and dependencies
+      uses: ./.github/actions/setup-python
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -e ".[dev]"
+        install-dev: 'true'
 
     - name: Run tests
+      shell: bash
       run: |
-        pytest -v --tb=short
+        set -euo pipefail
+        pytest -v --tb=short --maxfail=3
 
     - name: Test CLI
+      shell: bash
       run: |
+        set -euo pipefail
         pyguard --help
         pyguard --version
+
+    - name: Add test summary
+      if: always()
+      shell: bash
+      run: |
+        {
+          echo "## Test Results: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
+          echo ""
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ All tests passed"
+          else
+            echo "❌ Tests failed"
+          fi
+        } >> "${GITHUB_STEP_SUMMARY}"

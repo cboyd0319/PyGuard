@@ -9,10 +9,22 @@ on:
     - cron: '0 0 * * 1'  # Weekly on Monday at 00:00 UTC
   workflow_dispatch:  # Allow manual trigger
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
@@ -21,20 +33,36 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
       with:
         languages: python
         queries: security-extended
-        # Exclude test files and examples - they contain intentionally vulnerable code
-        paths-ignore:
-          - 'tests/**'
-          - 'examples/**'
-          - 'benchmarks/**'
-          - 'docs/**'
+        config: |
+          paths-ignore:
+            - tests/**
+            - examples/**
+            - benchmarks/**
+            - docs/**
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
       with:
         category: "/language:python"
+
+    - name: Add security summary
+      if: always()
+      shell: bash
+      run: |
+        {
+          echo "## 🔒 CodeQL Security Analysis Complete"
+          echo ""
+          echo "- **Language:** Python"
+          echo "- **Queries:** security-extended"
+          echo "- **Scope:** Production code (excluding tests/examples/benchmarks/docs)"
+          echo ""
+          echo "View results in the Security tab."
+        } >> "${GITHUB_STEP_SUMMARY}"
