@@ -1,10 +1,7 @@
 name: PyGuard Security Scan
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  # Only run on scheduled basis or manual trigger - covered by lint.yml on push/PR
   schedule:
     # Run daily at 00:00 UTC
     - cron: '0 0 * * *'
@@ -12,30 +9,41 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # Required for uploading SARIF results
-  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   pyguard-scan:
-    name: PyGuard Security Analysis
+    name: PyGuard Security Analysis (Scheduled)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
       
-    - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+    - name: Setup Python and dependencies
+      uses: ./.github/actions/setup-python
       with:
         python-version: '3.13'
-        
-    - name: Install PyGuard
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
+        install-dev: 'false'
         
     - name: Run PyGuard Security Scan
+      shell: bash
       run: |
+        set -euo pipefail
         # Scan only production code in pyguard/ directory
         # Exclude tests, benchmarks, examples, docs (they contain intentionally vulnerable code for testing)
         pyguard pyguard/ \
@@ -49,13 +57,29 @@ jobs:
       uses: github/codeql-action/upload-sarif@9887d98ae49f1f598651b556d8c8f02f3ea065cb # v3.27.0
       with:
         sarif_file: pyguard-report.sarif
-        category: pyguard
+        category: pyguard-scheduled
       if: always()
       
     - name: Upload SARIF report as artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: pyguard-sarif-report
+        name: pyguard-sarif-report-${{ github.run_number }}
         path: pyguard-report.sarif
         retention-days: 30
       if: always()
+
+    - name: Add scan summary
+      if: always()
+      shell: bash
+      run: |
+        {
+          echo "## 🔍 PyGuard Security Scan (Scheduled)"
+          echo ""
+          echo "Daily security scan with HIGH severity filter"
+          echo ""
+          echo "- **Scope:** Production code (pyguard/)"
+          echo "- **Filter:** HIGH severity and above"
+          echo "- **SARIF:** Uploaded to Security tab"
+          echo ""
+          echo "_This is a scheduled scan. PR/push scans run in lint.yml_"
+        } >> "${GITHUB_STEP_SUMMARY}"

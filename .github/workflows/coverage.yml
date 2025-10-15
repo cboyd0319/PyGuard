@@ -9,33 +9,44 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   coverage:
+    name: Code Coverage Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
 
-    - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+    - name: Setup Python and dependencies
+      uses: ./.github/actions/setup-python
       with:
         python-version: '3.13'
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+        install-dev: 'true'
 
     - name: Run tests with coverage
+      shell: bash
       run: |
-        pytest --cov=pyguard --cov-report=xml --cov-report=html --cov-report=term
+        set -euo pipefail
+        pytest --cov=pyguard --cov-report=xml --cov-report=html --cov-report=term | tee coverage-output.txt
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.6.0
       with:
-        files: ./coverage.xml  # Changed from 'file' to 'files' for v5 compatibility
+        files: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
@@ -44,14 +55,21 @@ jobs:
     - name: Upload HTML coverage report
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: coverage-report
+        name: coverage-report-html
         path: htmlcov/
+        retention-days: 30
       if: always()
 
     - name: Coverage summary
+      if: always()
+      shell: bash
       run: |
-        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        pytest --cov=pyguard --cov-report=term | tail -20 >> $GITHUB_STEP_SUMMARY || true
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 📊 Coverage Report"
+          echo ""
+          echo '```'
+          tail -20 coverage-output.txt || echo "No coverage data available"
+          echo '```'
+          echo ""
+          echo "Full HTML report available in artifacts."
+        } >> "${GITHUB_STEP_SUMMARY}"

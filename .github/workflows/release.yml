@@ -8,72 +8,109 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write  # Required for OIDC attestations
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel release builds
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write  # Required for build provenance
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        fetch-depth: 1
+
+    - name: Extract version from tag
+      id: get_version
+      shell: bash
+      run: |
+        set -euo pipefail
+        VERSION="${GITHUB_REF#refs/tags/v}"
+        echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
+        echo "Releasing version: ${VERSION}"
 
     - name: Set up Python
       uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: '3.13'
+        cache: 'pip'
 
     - name: Install dependencies
+      shell: bash
       run: |
+        set -euo pipefail
         python -m pip install --upgrade pip
         pip install build twine
 
     - name: Build package
+      shell: bash
       run: |
+        set -euo pipefail
         python -m build
 
     - name: Check package
+      shell: bash
       run: |
+        set -euo pipefail
         twine check dist/*
 
     - name: Generate SBOM
-      uses: anchore/sbom-action@v0
+      uses: anchore/sbom-action@d94f46e13c6c62f59525ac9a1e147a99dc0b9bf5 # v0.17.0
       with:
         artifact-name: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         output-file: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         format: spdx-json
 
     - name: Attest Build Provenance
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@8e2ba4e3b3279bbd08e1fd5b5e7b779f3e64b80d # v2.2.0
       with:
         subject-path: dist/*
 
     - name: Create Checksums
+      shell: bash
       run: |
+        set -euo pipefail
         cd dist
-        sha256sum * > checksums.sha256
+        sha256sum ./* > checksums.sha256
         cd ..
 
     - name: Publish to Test PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+      shell: bash
       run: |
+        set -euo pipefail
         twine upload --repository testpypi dist/* --skip-existing || true
 
     - name: Publish to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      shell: bash
       run: |
+        set -euo pipefail
         twine upload dist/*
-
-    - name: Extract version from tag
-      id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
     - name: Extract changelog
       id: changelog
+      shell: bash
       run: |
+        set -euo pipefail
         VERSION="${{ steps.get_version.outputs.VERSION }}"
         # Extract the relevant section from CHANGELOG.md
         awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md || echo "See CHANGELOG.md for details" > release_notes.md
@@ -90,3 +127,23 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Add release summary
+      if: success()
+      shell: bash
+      run: |
+        {
+          echo "## 🎉 Release ${{ steps.get_version.outputs.VERSION }} Published"
+          echo ""
+          echo "### Package Information"
+          echo "- **Version:** ${{ steps.get_version.outputs.VERSION }}"
+          echo "- **PyPI:** https://pypi.org/project/pyguard/${{ steps.get_version.outputs.VERSION }}/"
+          echo "- **GitHub Release:** ${{ github.server_url }}/${{ github.repository }}/releases/tag/${GITHUB_REF#refs/tags/}"
+          echo ""
+          echo "### Artifacts"
+          echo "- ✅ Source distribution"
+          echo "- ✅ Wheel package"
+          echo "- ✅ SBOM (SPDX format)"
+          echo "- ✅ Build provenance attestation"
+          echo "- ✅ SHA256 checksums"
+        } >> "${GITHUB_STEP_SUMMARY}"
