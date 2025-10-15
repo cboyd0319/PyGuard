@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         fetch-depth: 1
 
@@ -44,7 +44,7 @@ jobs:
         echo "Releasing version: ${VERSION}"
 
     - name: Set up Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
         python-version: '3.13'
         cache: 'pip'
@@ -69,14 +69,14 @@ jobs:
         twine check dist/*
 
     - name: Generate SBOM
-      uses: anchore/sbom-action@d94f46e13c6c62f59525ac9a1e147a99dc0b9bf5 # v0.17.0
+      uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c # v0.20.5
       with:
         artifact-name: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         output-file: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         format: spdx-json
 
     - name: Attest Build Provenance
-      uses: actions/attest-build-provenance@8e2ba4e3b3279bbd08e1fd5b5e7b779f3e64b80d # v2.2.0
+      uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
       with:
         subject-path: dist/*
 
