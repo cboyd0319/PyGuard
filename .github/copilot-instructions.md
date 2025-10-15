@@ -624,7 +624,7 @@ line_length = 100
 
 ## Python Version Pinning
 
-**Recommended development version:** Python 3.13.8
+**Recommended development version:** Python 3.13.9
 **Minimum supported version:** Python 3.11
 **Maximum tested version:** Python 3.13
 
@@ -633,7 +633,7 @@ Ensure consistency across:
 - `pyproject.toml` (requires-python)
 - `Dockerfile` (FROM python:3.13-slim)
 - `.github/workflows/*.yml` (python-version: '3.13')
-- `.python-version` and `.tool-versions` (3.13.8)
+- `.python-version` and `.tool-versions` (3.13.9)
 - Documentation examples
 
 ---
