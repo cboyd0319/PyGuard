@@ -191,9 +191,7 @@ class TestNotebookSecurityAnalyzer:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        pickle_issues = [
-            i for i in issues if i.category == "Unsafe Deserialization"
-        ]
+        pickle_issues = [i for i in issues if i.category == "Unsafe Deserialization"]
         assert len(pickle_issues) >= 1
         assert pickle_issues[0].severity == "HIGH"
         assert "pickle" in pickle_issues[0].message.lower()
@@ -225,9 +223,7 @@ class TestNotebookSecurityAnalyzer:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        cmd_injection_issues = [
-            i for i in issues if i.category == "Command Injection"
-        ]
+        cmd_injection_issues = [i for i in issues if i.category == "Command Injection"]
         assert len(cmd_injection_issues) >= 1
         assert cmd_injection_issues[0].severity == "CRITICAL"
         assert "shell=True" in cmd_injection_issues[0].message
@@ -264,9 +260,7 @@ class TestNotebookSecurityAnalyzer:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        disclosure_issues = [
-            i for i in issues if i.category == "Information Disclosure"
-        ]
+        disclosure_issues = [i for i in issues if i.category == "Information Disclosure"]
         assert len(disclosure_issues) >= 1
         assert disclosure_issues[0].severity == "MEDIUM"
         assert "path" in disclosure_issues[0].message.lower()
@@ -532,9 +526,7 @@ class TestEdgeCases:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        aws_issues = [
-            i for i in issues if "AWS" in i.message or "aws" in i.message.lower()
-        ]
+        aws_issues = [i for i in issues if "AWS" in i.message or "aws" in i.message.lower()]
         assert len(aws_issues) >= 1
 
         temp_notebook.unlink()

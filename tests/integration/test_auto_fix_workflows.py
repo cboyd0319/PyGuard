@@ -25,38 +25,44 @@ class TestMultiFileAutoFix:
 
         # Create multiple files with different security issues
         files = []
-        
+
         # File 1: SQL injection
         file1 = temp_dir / "database.py"
-        file1.write_text('''
+        file1.write_text(
+            """
 import sqlite3
 
 def get_user(user_id):
     cursor = sqlite3.cursor()
     cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
     return cursor.fetchone()
-''')
+"""
+        )
         files.append(file1)
 
         # File 2: yaml.load issue
         file2 = temp_dir / "config.py"
-        file2.write_text('''
+        file2.write_text(
+            """
 import yaml
 
 def load_config(file_path):
     with open(file_path) as f:
         return yaml.load(f)
-''')
+"""
+        )
         files.append(file2)
 
         # File 3: None comparison
         file3 = temp_dir / "utils.py"
-        file3.write_text('''
+        file3.write_text(
+            """
 def validate(value):
     if value == None:
         return False
     return True
-''')
+"""
+        )
         files.append(file3)
 
         # Run security fixes on all files
@@ -93,22 +99,26 @@ def validate(value):
 
         # File 1: Mutable default argument
         file1 = temp_dir / "defaults.py"
-        file1.write_text('''
+        file1.write_text(
+            """
 def append_to_list(item, items=[]):
     items.append(item)
     return items
-''')
+"""
+        )
         files.append(file1)
 
         # File 2: Bare except
         file2 = temp_dir / "errors.py"
-        file2.write_text('''
+        file2.write_text(
+            """
 def risky_operation():
     try:
         dangerous_call()
     except:
         pass
-''')
+"""
+        )
         files.append(file2)
 
         # Run best practices fixes
@@ -126,7 +136,8 @@ def risky_operation():
 
         # Create file with both security and quality issues
         test_file = temp_dir / "combined.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 
 def process_user(user_id, items=[]):
@@ -143,7 +154,8 @@ def process_user(user_id, items=[]):
     
     items.append(user_id)
     return items
-''')
+"""
+        )
 
         # Run full analysis
         cli = PyGuardCLI(allow_unsafe_fixes=False)
@@ -171,7 +183,8 @@ class TestSafeVsUnsafeFixWorkflows:
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "mixed_issues.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 import sqlite3
 
@@ -190,7 +203,8 @@ def load_and_query(config_file, user_id):
         return None
     
     return cursor.fetchone()
-''')
+"""
+        )
 
         original_content = test_file.read_text()
 
@@ -215,7 +229,8 @@ def load_and_query(config_file, user_id):
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "sql_injection.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import sqlite3
 
 def get_user(user_id):
@@ -223,7 +238,8 @@ def get_user(user_id):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
     return cursor.fetchone()
-''')
+"""
+        )
 
         # Run with allow_unsafe_fixes=True
         cli = PyGuardCLI(allow_unsafe_fixes=True)
@@ -247,12 +263,12 @@ class TestBackupAndRollback:
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "test.py"
-        original_content = '''
+        original_content = """
 import yaml
 
 def load(file):
     return yaml.load(file)
-'''
+"""
         test_file.write_text(original_content)
 
         # Run with backup enabled
@@ -268,12 +284,14 @@ def load(file):
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 
 def load(file):
     return yaml.load(file)
-''')
+"""
+        )
 
         # Run with backup disabled
         cli = PyGuardCLI()
@@ -301,7 +319,7 @@ def load(file):
         # Restore from backup
         if backup_path and backup_path.exists():
             success = backup_mgr.restore_backup(backup_path, test_file)
-            
+
             if success:
                 # Verify restoration
                 assert test_file.read_text() == original_content
@@ -316,7 +334,8 @@ class TestReportGeneration:
 
         # Create file with various issues
         test_file = temp_dir / "issues.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 
 def bad_function(items=[]):
@@ -325,7 +344,8 @@ def bad_function(items=[]):
         return None
     items.append(1)
     return items
-''')
+"""
+        )
 
         # Run scan-only mode
         cli = PyGuardCLI()
@@ -338,7 +358,7 @@ def bad_function(items=[]):
         assert "security_issues" in results
         assert "quality_issues" in results
         assert "total_issues" in results
-        
+
         # Should have found some issues
         assert results["total_issues"] > 0
 
@@ -347,12 +367,14 @@ def bad_function(items=[]):
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 
 def load_config():
     return yaml.load("config.yml")
-''')
+"""
+        )
 
         # Run full analysis
         cli = PyGuardCLI()
@@ -362,7 +384,7 @@ def load_config():
         assert isinstance(results, dict)
         assert "total_files" in results
         assert results["total_files"] == 1
-        
+
         # Should have timing information
         assert "analysis_time_seconds" in results
         assert isinstance(results["analysis_time_seconds"], float)
@@ -375,10 +397,12 @@ class TestCLICommandLine:
     def test_cli_scan_only_flag(self, temp_dir):
         """Test --scan-only flag via subprocess."""
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 config = yaml.load("file")
-''')
+"""
+        )
 
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--scan-only", str(test_file)],
@@ -393,10 +417,12 @@ config = yaml.load("file")
     def test_cli_no_backup_flag(self, temp_dir):
         """Test --no-backup flag via subprocess."""
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 config = yaml.load("file")
-''')
+"""
+        )
 
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--no-backup", str(test_file)],
@@ -411,10 +437,12 @@ config = yaml.load("file")
     def test_cli_unsafe_fixes_flag(self, temp_dir):
         """Test --unsafe-fixes flag via subprocess."""
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 config = yaml.load("file")
-''')
+"""
+        )
 
         result = subprocess.run(
             [
@@ -436,10 +464,12 @@ config = yaml.load("file")
     def test_cli_security_only_flag(self, temp_dir):
         """Test --security-only flag via subprocess."""
         test_file = temp_dir / "test.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 import yaml
 config = yaml.load("file")
-''')
+"""
+        )
 
         result = subprocess.run(
             [
@@ -473,16 +503,19 @@ class TestDirectoryProcessing:
         # Create multiple files
         for i in range(5):
             file = subdir / f"module{i}.py"
-            file.write_text(f'''
+            file.write_text(
+                f"""
 import yaml
 
 def function{i}():
     if None == None:
         return yaml.load("file")
-''')
+"""
+            )
 
         # Collect all files
         from pyguard.lib.core import FileOperations
+
         file_ops = FileOperations()
         files = file_ops.find_python_files(subdir, exclude_patterns=[])
 
@@ -532,10 +565,12 @@ class TestErrorHandling:
         from pyguard.cli import PyGuardCLI
 
         test_file = temp_dir / "syntax_error.py"
-        test_file.write_text('''
+        test_file.write_text(
+            """
 def incomplete_function(
     # Missing closing parenthesis and body
-''')
+"""
+        )
 
         # Should handle gracefully without crashing
         cli = PyGuardCLI()
@@ -552,7 +587,7 @@ def incomplete_function(
         from pyguard.cli import PyGuardCLI
 
         non_existent = temp_dir / "does_not_exist.py"
-        
+
         cli = PyGuardCLI()
         try:
             # May raise exception or handle gracefully
@@ -574,7 +609,7 @@ def incomplete_function(
         # Should handle empty files without errors
         cli = PyGuardCLI()
         results = cli.run_security_fixes([empty_file], create_backup=False)
-        
+
         assert isinstance(results, dict)
         assert "total" in results
 
@@ -614,13 +649,15 @@ class TestPerformance:
         files = []
         for i in range(10):
             file = temp_dir / f"file_{i}.py"
-            file.write_text(f'''
+            file.write_text(
+                f"""
 import yaml
 
 def func_{i}():
     if None == None:
         return yaml.load("file")
-''')
+"""
+            )
             files.append(file)
 
         # Measure processing time

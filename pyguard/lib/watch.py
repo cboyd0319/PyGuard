@@ -106,17 +106,25 @@ class WatchMode:
 
         for path in self.paths:
             if not path.exists():
-                self.logger.warning("Path does not exist, skipping", category="Watch", file_path=str(path))
+                self.logger.warning(
+                    "Path does not exist, skipping", category="Watch", file_path=str(path)
+                )
                 continue
 
             if path.is_file():
                 # Watch the parent directory for file changes
                 watch_path = path.parent
-                self.logger.info("Watching file", category="Watch", details={"file": str(path), "dir": str(watch_path)})
+                self.logger.info(
+                    "Watching file",
+                    category="Watch",
+                    details={"file": str(path), "dir": str(watch_path)},
+                )
             else:
                 # Watch the directory
                 watch_path = path
-                self.logger.info("Watching directory", category="Watch", details={"dir": str(watch_path)})
+                self.logger.info(
+                    "Watching directory", category="Watch", details={"dir": str(watch_path)}
+                )
 
             self.observer.schedule(event_handler, str(watch_path), recursive=True)
 

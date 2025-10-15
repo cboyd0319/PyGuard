@@ -17,7 +17,7 @@ now = datetime.now()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ001" for issue in issues)
         assert any("timezone" in issue.message.lower() for issue in issues)
@@ -30,7 +30,7 @@ now = datetime.utcnow()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ003" for issue in issues)
         assert any("deprecated" in issue.message.lower() for issue in issues)
@@ -43,7 +43,7 @@ dt = datetime.fromtimestamp(1234567890)
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ005" for issue in issues)
 
@@ -55,7 +55,7 @@ dt = datetime.utcfromtimestamp(1234567890)
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ004" for issue in issues)
 
@@ -71,7 +71,7 @@ today = datetime.date.today()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ002" for issue in issues)
 
@@ -83,7 +83,7 @@ today = datetime.today()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ002" for issue in issues)
 
@@ -99,7 +99,7 @@ dt = datetime.strptime("2024-01-01", "%Y-%m-%d")
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ007" for issue in issues)
 
@@ -115,7 +115,7 @@ now = datetime.now(tz=timezone.utc)
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         # Should not detect DTZ001 when tz parameter is provided
         assert not any(issue.rule_id == "DTZ001" for issue in issues)
 
@@ -127,7 +127,7 @@ dt = datetime.fromtimestamp(1234567890, tz=timezone.utc)
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         # Should not detect DTZ005 when tz is provided
         assert not any(issue.rule_id == "DTZ005" for issue in issues)
 
@@ -143,7 +143,7 @@ result = obj.now()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         # Should not detect datetime issues in non-datetime code
         assert len(issues) == 0
 
@@ -155,7 +155,7 @@ dt = datetime.now(
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0  # Should not crash
 
 
@@ -170,7 +170,7 @@ now = datetime.datetime.now()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ001" for issue in issues)
 
@@ -182,7 +182,7 @@ now = datetime.now()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "DTZ001" for issue in issues)
 
@@ -201,7 +201,7 @@ ts = datetime.fromtimestamp(123)  # DTZ005
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect multiple issues
         assert len(issues) >= 3
         rule_ids = {issue.rule_id for issue in issues}
@@ -217,7 +217,7 @@ dt = datetime.now()
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         issue = issues[0]
         assert issue.rule_id.startswith("DTZ")
@@ -238,13 +238,13 @@ dt3 = datetime.utcfromtimestamp(123)  # HIGH
 """
         checker = DatetimeChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) >= 3
-        
+
         # utcnow and utcfromtimestamp should be HIGH (deprecated)
         high_issues = [i for i in issues if i.severity == "HIGH"]
         assert len(high_issues) >= 2
-        
+
         # now() without tz should be MEDIUM
         medium_issues = [i for i in issues if i.severity == "MEDIUM"]
         assert len(medium_issues) >= 1

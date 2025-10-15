@@ -241,7 +241,9 @@ class ComprehensionVisitor(ast.NodeVisitor):
                         # Avoid duplicate C411 (list(sorted())) and C413 (sorted(list/reversed()))
                         if inner_func in ("list", "reversed", "sorted", "tuple"):
                             if not (func_name == "list" and inner_func == "sorted"):  # Skip C411
-                                if not (func_name == "sorted" and inner_func in ("list", "reversed")):  # Skip C413
+                                if not (
+                                    func_name == "sorted" and inner_func in ("list", "reversed")
+                                ):  # Skip C413
                                     self.violations.append(
                                         RuleViolation(
                                             rule_id="C414",

@@ -18,7 +18,7 @@ logging.info(f"Processing {name}")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG001" for issue in issues)
         assert any("f-string" in issue.message.lower() for issue in issues)
@@ -32,7 +32,7 @@ logging.info("Processing {}".format(name))
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG002" for issue in issues)
         assert any(".format()" in issue.message for issue in issues)
@@ -45,7 +45,7 @@ logging.warn("This is deprecated")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG003" for issue in issues)
         assert any("warning()" in issue.suggested_fix for issue in issues)
@@ -61,7 +61,7 @@ except Exception:
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG004" for issue in issues)
 
@@ -78,7 +78,7 @@ logging.info("Processing " + name)
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG005" for issue in issues)
 
@@ -91,7 +91,7 @@ logging.info("Processing %s", name)
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         # Lazy formatting is correct, should not trigger issues
         assert len(issues) == 0
 
@@ -109,7 +109,7 @@ logger.info(f"Processing {name}")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG001" for issue in issues)
 
@@ -122,7 +122,7 @@ log.info(f"Message {var}")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "LOG001" for issue in issues)
 
@@ -141,7 +141,7 @@ logger.error("Error: %s", "problem")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0
 
     def test_no_issues_with_non_logging_calls(self):
@@ -154,7 +154,7 @@ info("test")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         # Should not detect issues in non-logging functions
         assert len(issues) == 0
 
@@ -166,7 +166,7 @@ logging.info(f"broken
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0  # Should not crash
 
 
@@ -186,7 +186,7 @@ logging.critical(f"Critical {var}")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect f-strings in all methods
         assert len(issues) >= 5
         assert all(issue.rule_id == "LOG001" for issue in issues)
@@ -209,7 +209,7 @@ def process(data):
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect multiple types of issues
         assert len(issues) >= 4
         rule_ids = {issue.rule_id for issue in issues}
@@ -224,7 +224,7 @@ logging.info(f"Message {var}")
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         issue = issues[0]
         assert issue.rule_id.startswith("LOG")
@@ -243,12 +243,12 @@ logging.warn("Deprecation")  # LOW
 """
         checker = LoggingChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) >= 2
         # Check severity assignments
         f_string_issues = [i for i in issues if i.rule_id == "LOG001"]
         warn_issues = [i for i in issues if i.rule_id == "LOG003"]
-        
+
         if f_string_issues:
             assert f_string_issues[0].severity == "MEDIUM"
         if warn_issues:

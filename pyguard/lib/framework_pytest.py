@@ -35,11 +35,13 @@ class PytestVisitor(ast.NodeVisitor):
         self.code = code
         self.lines = code.splitlines()
         self.violations: List[RuleViolation] = []
-        self.is_test_file = self._detect_pytest(code) or 'test_' in str(file_path.name)
+        self.is_test_file = self._detect_pytest(code) or "test_" in str(file_path.name)
 
     def _detect_pytest(self, code: str) -> bool:
         """Check if file uses pytest."""
-        return 'import pytest' in code or 'from pytest' in code  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
+        return (
+            "import pytest" in code or "from pytest" in code
+        )  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Detect test function issues (PT001-PT027)."""
@@ -47,20 +49,27 @@ class PytestVisitor(ast.NodeVisitor):
             self.generic_visit(node)
             return
 
-        is_test_func = node.name.startswith('test_')
+        is_test_func = node.name.startswith("test_")
         is_fixture = any(
-            isinstance(dec, ast.Name) and dec.id == 'fixture' or
-            (isinstance(dec, ast.Attribute) and dec.attr == 'fixture') or
-            (isinstance(dec, ast.Call) and
-             (isinstance(dec.func, ast.Name) and dec.func.id == 'fixture' or
-              isinstance(dec.func, ast.Attribute) and dec.func.attr == 'fixture'))
+            isinstance(dec, ast.Name)
+            and dec.id == "fixture"
+            or (isinstance(dec, ast.Attribute) and dec.attr == "fixture")
+            or (
+                isinstance(dec, ast.Call)
+                and (
+                    isinstance(dec.func, ast.Name)
+                    and dec.func.id == "fixture"
+                    or isinstance(dec.func, ast.Attribute)
+                    and dec.func.attr == "fixture"
+                )
+            )
             for dec in node.decorator_list
         )
 
         if is_test_func:
             # PT001: Use @pytest.fixture() instead of fixture without call
             for dec in node.decorator_list:
-                if isinstance(dec, ast.Name) and dec.id == 'fixture':
+                if isinstance(dec, ast.Name) and dec.id == "fixture":
                     self.violations.append(
                         RuleViolation(
                             rule_id="PT001",
@@ -93,8 +102,7 @@ class PytestVisitor(ast.NodeVisitor):
             # PT004: Fixture does not return/yield anything
             if is_fixture:
                 has_return = any(
-                    isinstance(n, ast.Return) and n.value is not None
-                    for n in ast.walk(node)
+                    isinstance(n, ast.Return) and n.value is not None for n in ast.walk(node)
                 )
                 has_yield = any(isinstance(n, (ast.Yield, ast.YieldFrom)) for n in ast.walk(node))
 
@@ -115,11 +123,13 @@ class PytestVisitor(ast.NodeVisitor):
             # PT006: Wrong name(s) for pytest parametrize values
             for dec in node.decorator_list:
                 if isinstance(dec, ast.Call):
-                    if isinstance(dec.func, ast.Attribute) and dec.func.attr == 'parametrize':
+                    if isinstance(dec.func, ast.Attribute) and dec.func.attr == "parametrize":
                         # Check if first argument is argnames
                         if len(dec.args) >= 2:
                             argnames = dec.args[0]
-                            if isinstance(argnames, ast.Constant) and isinstance(argnames.value, str):
+                            if isinstance(argnames, ast.Constant) and isinstance(
+                                argnames.value, str
+                            ):
                                 # Check if argvalues is properly structured
                                 pass
 
@@ -132,7 +142,7 @@ class PytestVisitor(ast.NodeVisitor):
                     for item in stmt.items:
                         if isinstance(item.context_expr, ast.Call):
                             func = item.context_expr.func
-                            if isinstance(func, ast.Attribute) and func.attr == 'raises':
+                            if isinstance(func, ast.Attribute) and func.attr == "raises":
                                 if len(item.context_expr.args) == 0:
                                     self.violations.append(
                                         RuleViolation(
@@ -215,7 +225,7 @@ class PytestRulesChecker:
                 code = f.read()
 
             # Only check test files
-            if 'test_' not in str(file_path.name) and 'pytest' not in code:
+            if "test_" not in str(file_path.name) and "pytest" not in code:
                 return []
 
             tree = ast.parse(code)

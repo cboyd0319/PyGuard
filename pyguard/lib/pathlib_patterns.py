@@ -30,7 +30,7 @@ class PathlibIssue:
 class PathlibPatternVisitor(ast.NodeVisitor):
     """
     AST visitor to detect os.path usage that should be replaced with pathlib.
-    
+
     Detects patterns like:
     - os.path.exists() → Path.exists()
     - os.path.join() → Path / operator

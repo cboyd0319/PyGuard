@@ -331,9 +331,7 @@ class TypeChecker:
 
         return violations
 
-    def add_type_hints(
-        self, file_path: Path, violations: List[RuleViolation]
-    ) -> Tuple[bool, int]:
+    def add_type_hints(self, file_path: Path, violations: List[RuleViolation]) -> Tuple[bool, int]:
         """
         Add type hints based on violations.
 

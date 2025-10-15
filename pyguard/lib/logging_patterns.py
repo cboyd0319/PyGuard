@@ -28,7 +28,7 @@ class LoggingIssue:
 class LoggingPatternVisitor(ast.NodeVisitor):
     """
     AST visitor to detect logging anti-patterns and issues.
-    
+
     Detects patterns like:
     - String formatting in logging calls (use lazy %)
     - Exception info not captured properly
@@ -55,7 +55,16 @@ class LoggingPatternVisitor(ast.NodeVisitor):
 
         # Check if it's a logging method
         method_name = node.func.attr
-        if method_name not in {"debug", "info", "warning", "error", "critical", "log", "exception", "warn"}:
+        if method_name not in {
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical",
+            "log",
+            "exception",
+            "warn",
+        }:
             return
 
         # Check if it's called on a logger object

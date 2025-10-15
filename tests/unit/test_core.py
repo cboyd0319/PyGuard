@@ -130,12 +130,12 @@ class TestBackupManager:
             # Create a test file
             test_file = Path(tmpdir) / "test.py"
             test_file.write_text("print('hello')")
-            
+
             # Create backup
             backup_dir = Path(tmpdir) / "backups"
             manager = BackupManager(backup_dir=str(backup_dir))
             backup_path = manager.create_backup(test_file)
-            
+
             assert backup_path is not None
             assert backup_path.exists()
             assert backup_path.read_text() == "print('hello')"
@@ -153,15 +153,15 @@ class TestBackupManager:
             # Create a test file
             test_file = Path(tmpdir) / "test.py"
             test_file.write_text("print('original')")
-            
+
             # Create backup
             backup_dir = Path(tmpdir) / "backups"
             manager = BackupManager(backup_dir=str(backup_dir))
             backup_path = manager.create_backup(test_file)
-            
+
             # Modify original
             test_file.write_text("print('modified')")
-            
+
             # Restore
             success = manager.restore_backup(backup_path, test_file)
             assert success
@@ -172,8 +172,7 @@ class TestBackupManager:
         with tempfile.TemporaryDirectory() as tmpdir:
             manager = BackupManager(backup_dir=str(Path(tmpdir) / "backups"))
             success = manager.restore_backup(
-                Path(tmpdir) / "nonexistent.bak",
-                Path(tmpdir) / "test.py"
+                Path(tmpdir) / "nonexistent.bak", Path(tmpdir) / "test.py"
             )
             assert not success
 
@@ -227,7 +226,7 @@ class TestFileOperations:
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "test.py"
             test_file.write_text("print('test')")
-            
+
             ops = FileOperations()
             content = ops.read_file(test_file)
             assert content == "print('test')"
@@ -242,7 +241,7 @@ class TestFileOperations:
         """Test writing to a file."""
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "test.py"
-            
+
             ops = FileOperations()
             success = ops.write_file(test_file, "print('hello')")
             assert success
@@ -255,8 +254,8 @@ class TestFileOperations:
             (Path(tmpdir) / "test1.py").write_text("print('test1')")
             (Path(tmpdir) / "test2.py").write_text("print('test2')")
             (Path(tmpdir) / "data.json").write_text("{}")
-            
+
             ops = FileOperations()
             python_files = ops.find_python_files(Path(tmpdir))
             assert len(python_files) == 2
-            assert all(str(f).endswith('.py') for f in python_files)
+            assert all(str(f).endswith(".py") for f in python_files)

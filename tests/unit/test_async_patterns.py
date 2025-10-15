@@ -18,7 +18,7 @@ async def read_file():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "ASYNC105" for issue in issues)
 
@@ -33,7 +33,7 @@ async def slow_function():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "ASYNC101" for issue in issues)
         assert any("asyncio.sleep()" in issue.suggested_fix for issue in issues)
@@ -47,7 +47,7 @@ async def not_really_async():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "ASYNC102" for issue in issues)
 
@@ -62,7 +62,7 @@ async def fetch_data():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "ASYNC106" for issue in issues)
         assert any("aiohttp" in issue.suggested_fix for issue in issues)
@@ -81,7 +81,7 @@ async def process():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect both open() call and sync with
         assert len(issues) >= 1
         assert any(issue.rule_id in ["ASYNC105", "ASYNC107"] for issue in issues)
@@ -98,7 +98,7 @@ async def read_async():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should not trigger context manager issues
         assert not any(issue.rule_id == "ASYNC107" for issue in issues)
 
@@ -120,7 +120,7 @@ def fetch_items():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should suggest async for when iterating over fetch call
         assert any(issue.rule_id == "ASYNC108" for issue in issues)
 
@@ -140,7 +140,7 @@ def sync_function():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Sync functions should not trigger async-specific issues
         assert len(issues) == 0
 
@@ -160,7 +160,7 @@ async def fetch_data():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Proper async should not trigger issues
         assert len(issues) == 0
 
@@ -171,7 +171,7 @@ async def broken(
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0  # Should not crash
 
 
@@ -193,7 +193,7 @@ async def bad_async():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect multiple issues
         assert len(issues) >= 3
         rule_ids = {issue.rule_id for issue in issues}
@@ -213,7 +213,7 @@ async def outer():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect time.sleep in inner function
         assert len(issues) > 0
         assert any(issue.rule_id == "ASYNC101" for issue in issues)
@@ -232,7 +232,7 @@ async def test_func():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         issue = issues[0]
         assert issue.rule_id.startswith("ASYNC")
@@ -256,7 +256,7 @@ async def test_func():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         # High severity for blocking I/O
         assert any(
@@ -282,7 +282,7 @@ async def test_http():
 """
         checker = AsyncChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect all HTTP method calls (at least get, post, put, delete, patch)
         # Plus one for async function with no await
         assert len(issues) >= 5

@@ -36,7 +36,6 @@ class TestBestPracticesFixer:
         result = self.fixer._fix_type_comparison(code)
         assert "isinstance" in result
 
-
     def test_fix_comparison_to_bool(self):
         """Test fixing boolean comparisons."""
         code = "if x == True:\n    pass"
@@ -85,9 +84,10 @@ class TestComplexityAnalysis:
         """Test complexity report generation."""
         import tempfile
         from pathlib import Path
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 def simple_func():
     return 42
 
@@ -99,10 +99,11 @@ def complex_func(x):
             return "small"
     else:
         return "negative"
-""")
+"""
+            )
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             report = self.fixer.get_complexity_report(temp_path)
             # Should return a dictionary with function names and complexity scores
@@ -122,17 +123,19 @@ class TestFileOperations:
         """Test scanning file for quality issues."""
         import tempfile
         from pathlib import Path
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 def test():  # Missing docstring
     x = None
     if x == None:  # Bad comparison
         pass
-""")
+"""
+            )
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             issues = self.fixer.scan_file_for_issues(temp_path)
             # Should find some issues
@@ -144,12 +147,12 @@ def test():  # Missing docstring
         """Test fixing a file that needs changes."""
         import tempfile
         from pathlib import Path
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("if x == None:\n    pass")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             success, fixes = self.fixer.fix_file(temp_path)
             assert success
@@ -163,18 +166,20 @@ def test():  # Missing docstring
         """Test fixing a file that doesn't need changes."""
         import tempfile
         from pathlib import Path
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(
+                """
 def good_function():
     '''This function is well-written.'''
     if x is None:
         pass
     return True
-""")
+"""
+            )
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             success, fixes = self.fixer.fix_file(temp_path)
             assert success

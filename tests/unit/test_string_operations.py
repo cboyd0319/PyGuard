@@ -20,10 +20,10 @@ class TestStringOperationsVisitor:
 
     def test_detect_format_call(self):
         """Test detection of .format() calls."""
-        code = '''
+        code = """
 message = "Hello {}".format(name)
 result = "Value: {}".format(value)
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -35,10 +35,10 @@ result = "Value: {}".format(value)
 
     def test_detect_percent_formatting(self):
         """Test detection of % formatting."""
-        code = '''
+        code = """
 message = "Hello %s" % name
 result = "Value: %d" % 42
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -50,10 +50,10 @@ result = "Value: %d" % 42
 
     def test_detect_unnecessary_fstring(self):
         """Test detection of unnecessary f-strings."""
-        code = '''
+        code = """
 message = f"Hello world"
 result = f"Static text"
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -65,11 +65,11 @@ result = f"Static text"
 
     def test_necessary_fstring_not_flagged(self):
         """Test that necessary f-strings are not flagged."""
-        code = '''
+        code = """
 name = "Alice"
 message = f"Hello {name}"
 result = f"Value: {42}"
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -80,10 +80,10 @@ result = f"Value: {42}"
 
     def test_detect_string_concatenation(self):
         """Test detection of string concatenation."""
-        code = '''
+        code = """
 result = "Hello" + " " + "World"
 message = first + " " + last
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -94,11 +94,11 @@ message = first + " " + last
 
     def test_detect_string_concat_in_loop(self):
         """Test detection of string concatenation in loops."""
-        code = '''
+        code = """
 result = ""
 for item in items:
     result += str(item)
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -110,15 +110,15 @@ for item in items:
 
     def test_quote_style_detection_double(self):
         """Test dominant quote style detection - double quotes."""
-        code = '''
+        code = """
 message = "Hello"
 result = "World"
 name = "Alice"
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
-        
+
         assert visitor.quote_style == "double"
 
     def test_quote_style_detection_single(self):
@@ -131,16 +131,16 @@ name = 'Alice'
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
-        
+
         assert visitor.quote_style == "single"
 
     def test_no_issues_for_clean_code(self):
         """Test that clean code produces no issues."""
-        code = '''
+        code = """
 name = "Alice"
 message = f"Hello {name}"
 result = " ".join(items)
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -151,9 +151,9 @@ result = " ".join(items)
 
     def test_complex_format_string(self):
         """Test detection of complex format strings."""
-        code = '''
+        code = """
 result = "Name: {}, Age: {}".format(name, age)
-'''
+"""
         tree = ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
@@ -168,12 +168,12 @@ class TestStringOperationsFixer:
 
     def test_analyze_file_with_issues(self):
         """Test analyzing a file with string issues."""
-        code = '''
+        code = """
 message = "Hello {}".format(name)
 result = "Value: %s" % value
 text = f"Static"
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 
@@ -189,13 +189,13 @@ text = f"Static"
 
     def test_analyze_file_clean_code(self):
         """Test analyzing a file with no issues."""
-        code = '''
+        code = """
 name = "Alice"
 message = f"Hello {name}"
 items = ["a", "b", "c"]
 result = ", ".join(items)
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 
@@ -210,11 +210,11 @@ result = ", ".join(items)
 
     def test_analyze_file_syntax_error(self):
         """Test analyzing a file with syntax errors."""
-        code = '''
+        code = """
 def broken(
     pass
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 
@@ -229,13 +229,13 @@ def broken(
 
     def test_fix_unnecessary_fstring(self):
         """Test fixing unnecessary f-strings."""
-        code = '''
+        code = """
 message = f"Hello world"
 result = f"Static text"
 name = "Alice"
 greeting = f"Hi {name}"
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 
@@ -247,7 +247,7 @@ greeting = f"Hi {name}"
             assert success
             # Should have fixed some issues
             assert len(applied_fixes) >= 1
-            
+
             # Check that file was modified
             modified_content = temp_path.read_text()
             # Necessary f-string should remain
@@ -257,11 +257,11 @@ greeting = f"Hi {name}"
 
     def test_fix_file_no_issues(self):
         """Test fixing a file with no issues."""
-        code = '''
+        code = """
 name = "Alice"
 message = f"Hello {name}"
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 
@@ -279,23 +279,23 @@ message = f"Hello {name}"
         """Test scanning a directory for issues."""
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_dir = Path(tmpdir)
-            
+
             # Create test files
             file1 = temp_dir / "test1.py"
             file1.write_text('message = "Hello {}".format(name)')
-            
+
             file2 = temp_dir / "test2.py"
             file2.write_text('result = f"Static text"')
-            
+
             file3 = temp_dir / "clean.py"
             file3.write_text('name = "Alice"\ngreeting = f"Hi {name}"')
-            
+
             fixer = StringOperationsFixer()
             results = fixer.scan_directory(temp_dir)
-            
+
             # Should find issues in at least 2 files
             assert len(results) >= 2
-            
+
             # Check that each result is a tuple of (Path, List[StringIssue])
             for file_path, issues in results:
                 assert isinstance(file_path, Path)
@@ -306,35 +306,35 @@ message = f"Hello {name}"
         """Test scanning a directory with exclusion patterns."""
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_dir = Path(tmpdir)
-            
+
             # Create test files
             file1 = temp_dir / "test1.py"
             file1.write_text('message = "Hello {}".format(name)')
-            
+
             # Create excluded file
             excluded_dir = temp_dir / "migrations"
             excluded_dir.mkdir()
             file2 = excluded_dir / "test2.py"
             file2.write_text('result = "Value: %s" % value')
-            
+
             fixer = StringOperationsFixer()
             results = fixer.scan_directory(temp_dir, exclude_patterns=["migrations"])
-            
+
             # Should only find issues in non-excluded files
             found_paths = [str(path) for path, _ in results]
             assert not any("migrations" in path for path in found_paths)
 
     def test_multiple_issues_same_file(self):
         """Test handling multiple issues in the same file."""
-        code = '''
+        code = """
 msg1 = "Hello {}".format(name)
 msg2 = "Value: %s" % value
 msg3 = f"Static"
 result = ""
 for x in range(10):
     result += str(x)
-'''
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = Path(f.name)
 

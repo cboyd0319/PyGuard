@@ -24,7 +24,9 @@ class snake_case_class:
         visitor.visit(tree)
 
         assert len(visitor.issues) >= 2
-        assert any("CamelCase" in issue.message and issue.name == "my_class" for issue in visitor.issues)
+        assert any(
+            "CamelCase" in issue.message and issue.name == "my_class" for issue in visitor.issues
+        )
         assert any(issue.rule_id == "N801" for issue in visitor.issues)
 
     def test_detect_function_name_violation(self):
@@ -41,7 +43,9 @@ def camelCaseFunction():
         visitor.visit(tree)
 
         assert len(visitor.issues) >= 2
-        assert any("snake_case" in issue.message and issue.name == "MyFunction" for issue in visitor.issues)
+        assert any(
+            "snake_case" in issue.message and issue.name == "MyFunction" for issue in visitor.issues
+        )
         assert any(issue.rule_id == "N802" for issue in visitor.issues)
 
     def test_detect_argument_name_violation(self):
@@ -55,7 +59,10 @@ def process(camelCaseArg, AnotherArg):
         visitor.visit(tree)
 
         assert len(visitor.issues) >= 2
-        assert any("snake_case" in issue.message and issue.name == "camelCaseArg" for issue in visitor.issues)
+        assert any(
+            "snake_case" in issue.message and issue.name == "camelCaseArg"
+            for issue in visitor.issues
+        )
         assert any(issue.rule_id == "N803" for issue in visitor.issues)
 
     def test_detect_variable_name_violation(self):
@@ -211,7 +218,9 @@ class my_class:
         issues = fixer.scan_file_for_issues(path)
 
         assert len(issues) > 0
-        assert any("CamelCase" in issue.message or "snake_case" in issue.message for issue in issues)
+        assert any(
+            "CamelCase" in issue.message or "snake_case" in issue.message for issue in issues
+        )
 
         # Clean up
         path.unlink()

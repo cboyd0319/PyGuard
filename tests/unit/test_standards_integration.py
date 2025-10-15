@@ -230,7 +230,7 @@ class TestSANSTop25Mapper:
         """Test getting SANS ranking for CWE."""
         rank = self.mapper.get_sans_ranking("CWE-89")  # SQL Injection
         assert rank == 3
-        
+
         rank = self.mapper.get_sans_ranking("CWE-78")  # OS Command Injection
         assert rank == 6
 
@@ -246,9 +246,9 @@ class TestSANSTop25Mapper:
             {"type": "command_injection", "cwe_id": "CWE-78"},  # Rank 6
             {"type": "other", "cwe_id": "CWE-9999"},  # Not in Top 25
         ]
-        
+
         prioritized = self.mapper.prioritize_issues(issues)
-        
+
         # Should be ordered by SANS rank
         assert prioritized[0]["cwe_id"] == "CWE-89"  # Rank 3 first
         assert prioritized[1]["cwe_id"] == "CWE-78"  # Rank 6 second
@@ -260,9 +260,9 @@ class TestSANSTop25Mapper:
             {"type": "sql_injection", "cwe_id": "CWE-89"},
             {"type": "command_injection", "cwe_id": "CWE-78"},
         ]
-        
+
         report = self.mapper.generate_sans_report(issues)
-        
+
         assert "total_top25_weaknesses_found" in report
         assert report["total_top25_weaknesses_found"] == 2
         assert "coverage_percentage" in report
@@ -284,7 +284,7 @@ class TestCERTSecureCodingMapper:
         """Test mapping issues to CERT rules."""
         rules = self.mapper.map_to_cert_rules("code_injection")
         assert "IDS08-PY" in rules
-        
+
         rules = self.mapper.map_to_cert_rules("insecure_random")
         assert "SEC02-PY" in rules
 
@@ -299,9 +299,9 @@ class TestCERTSecureCodingMapper:
             {"type": "code_injection", "severity": "HIGH"},
             {"type": "insecure_random", "severity": "MEDIUM"},
         ]
-        
+
         report = self.mapper.generate_cert_report(issues)
-        
+
         assert "total_cert_violations" in report
         assert report["total_cert_violations"] > 0
         assert "violations_by_rule" in report
@@ -336,9 +336,9 @@ class TestIEEE12207Mapper:
             {"category": "security", "severity": "HIGH"},
             {"category": "quality", "severity": "MEDIUM"},
         ]
-        
+
         report = self.mapper.generate_lifecycle_report(issues)
-        
+
         assert "lifecycle_compliance" in report
         assert report["lifecycle_compliance"] in ["FULL", "PARTIAL"]
 
@@ -372,9 +372,9 @@ class TestMitreATTACKMapper:
             {"type": "code_injection", "severity": "HIGH"},
             {"type": "hardcoded_credentials", "severity": "HIGH"},
         ]
-        
+
         model = self.mapper.generate_threat_model(issues)
-        
+
         assert "threat_exposure" in model
         assert model["threat_exposure"] in ["LOW", "MEDIUM", "HIGH"]
         assert "techniques_enabled" in model

@@ -12,12 +12,12 @@ class TestPandasRulesDetection:
 
     def test_detect_inplace_usage(self, tmp_path):
         """Test detection of inplace=True."""
-        code = '''
+        code = """
 import pandas as pd
 
 df = pd.DataFrame()
 df.sort_values(by='col', inplace=True)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -29,13 +29,13 @@ df.sort_values(by='col', inplace=True)
 
     def test_detect_deprecated_append(self, tmp_path):
         """Test detection of deprecated .append() method."""
-        code = '''
+        code = """
 import pandas as pd
 
 df1 = pd.DataFrame()
 df2 = pd.DataFrame()
 result = df1.append(df2)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -47,13 +47,13 @@ result = df1.append(df2)
 
     def test_detect_iterrows_usage(self, tmp_path):
         """Test detection of .iterrows() usage."""
-        code = '''
+        code = """
 import pandas as pd
 
 df = pd.DataFrame()
 for idx, row in df.iterrows():
     process(row)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -65,12 +65,12 @@ for idx, row in df.iterrows():
 
     def test_detect_chained_indexing(self, tmp_path):
         """Test detection of chained indexing."""
-        code = '''
+        code = """
 import pandas as pd
 
 df = pd.DataFrame()
 value = df['col1']['col2']
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -82,13 +82,13 @@ value = df['col1']['col2']
 
     def test_detect_values_usage(self, tmp_path):
         """Test detection of .values instead of .to_numpy()."""
-        code = '''
+        code = """
 import pandas as pd
 
 df = pd.DataFrame()
 # Direct attribute access, not a call - PD010 checks Call nodes
 array = df.to_numpy()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 

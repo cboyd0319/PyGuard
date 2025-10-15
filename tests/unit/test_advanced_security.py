@@ -22,11 +22,12 @@ result = eval(user_input)
 """
         source_lines = code.strip().split("\n")
         analyzer = TaintAnalyzer(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         analyzer.visit(tree)
-        
+
         assert len(analyzer.issues) == 1
         assert analyzer.issues[0].category == "Taint Flow Violation"
         assert analyzer.issues[0].severity == "CRITICAL"
@@ -40,11 +41,12 @@ result = len(safe_value)
 """
         source_lines = code.strip().split("\n")
         analyzer = TaintAnalyzer(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         analyzer.visit(tree)
-        
+
         assert len(analyzer.issues) == 0
 
 
@@ -54,14 +56,10 @@ class TestReDoSDetector:
     def test_detect_nested_quantifiers(self):
         """Test detection of nested quantifiers in regex."""
         detector = ReDoSDetector()
-        
+
         # Vulnerable pattern with nested quantifiers
-        issue = detector.analyze_regex(
-            r"(a+)+",
-            line_number=1,
-            code_snippet='re.compile(r"(a+)+")'
-        )
-        
+        issue = detector.analyze_regex(r"(a+)+", line_number=1, code_snippet='re.compile(r"(a+)+")')
+
         assert issue is not None
         assert issue.category == "Regular Expression DoS"
         assert issue.severity == "HIGH"
@@ -69,14 +67,12 @@ class TestReDoSDetector:
     def test_safe_regex_pattern(self):
         """Test that safe regex patterns don't trigger ReDoS detection."""
         detector = ReDoSDetector()
-        
+
         # Safe pattern
         issue = detector.analyze_regex(
-            r"[a-zA-Z0-9]+",
-            line_number=1,
-            code_snippet='re.compile(r"[a-zA-Z0-9]+")'
+            r"[a-zA-Z0-9]+", line_number=1, code_snippet='re.compile(r"[a-zA-Z0-9]+")'
         )
-        
+
         assert issue is None
 
 
@@ -95,11 +91,12 @@ if os.path.exists(file_path):
 """
         source_lines = code.strip().split("\n")
         detector = RaceConditionDetector(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         detector.visit(tree)
-        
+
         assert len(detector.issues) == 1
         assert detector.issues[0].category == "Race Condition (TOCTOU)"
         assert "TOCTOU" in detector.issues[0].category
@@ -115,11 +112,12 @@ except FileNotFoundError:
 """
         source_lines = code.strip().split("\n")
         detector = RaceConditionDetector(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         detector.visit(tree)
-        
+
         assert len(detector.issues) == 0
 
 
@@ -134,17 +132,18 @@ buffer = bytearray(size)
 """
         source_lines = code.strip().split("\n")
         analyzer = IntegerSecurityAnalyzer(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
-        
+
         # Add parent references
         for node in ast.walk(tree):
             for child in ast.iter_child_nodes(node):
                 child.parent = node
-        
+
         analyzer.visit(tree)
-        
+
         # May or may not detect depending on context
         # This test ensures the analyzer runs without errors
         assert isinstance(analyzer.issues, list)
@@ -173,9 +172,9 @@ if os.path.exists(file_path):
 """
         analyzer = AdvancedSecurityAnalyzer()
         issues = analyzer.analyze_code(code)
-        
+
         assert len(issues) >= 2  # At least taint flow and ReDoS
-        
+
         # Check for variety of issue types
         categories = {issue.category for issue in issues}
         assert len(categories) >= 2
@@ -191,7 +190,7 @@ result = json.loads(json_str)
 """
         analyzer = AdvancedSecurityAnalyzer()
         issues = analyzer.analyze_code(code)
-        
+
         assert len(issues) == 0
 
     def test_analyze_code_with_syntax_error(self):
@@ -202,7 +201,7 @@ def broken_function(
 """
         analyzer = AdvancedSecurityAnalyzer()
         issues = analyzer.analyze_code(code)
-        
+
         # Should return empty list, not crash
         assert issues == []
 
@@ -217,7 +216,9 @@ result = pattern.match(user_input)
 """
         analyzer = AdvancedSecurityAnalyzer()
         issues = analyzer.analyze_code(code)
-        
+
         # Should detect ReDoS vulnerability
-        redos_issues = [i for i in issues if "ReDoS" in i.category or "Regular Expression" in i.category]
+        redos_issues = [
+            i for i in issues if "ReDoS" in i.category or "Regular Expression" in i.category
+        ]
         assert len(redos_issues) >= 1

@@ -140,9 +140,7 @@ class MCPIntegration:
         Returns:
             MCPResponse with analysis results or None if unavailable
         """
-        query = MCPQuery(
-            query_type="security_check", code_snippet=code_snippet, context=context
-        )
+        query = MCPQuery(query_type="security_check", code_snippet=code_snippet, context=context)
 
         # Try enabled servers in priority order
         for server_name in ["context7", "local"]:
@@ -235,16 +233,18 @@ class MCPIntegration:
         )
 
         for server in self.servers.values():
-            if server.enabled and server.capabilities and "vulnerability_detection" in server.capabilities:
+            if (
+                server.enabled
+                and server.capabilities
+                and "vulnerability_detection" in server.capabilities
+            ):
                 response = self._query_server(server, query)
                 if response and response.success:
                     return response.data
 
         return None
 
-    def get_code_recommendations(
-        self, code_snippet: str, issue_type: str
-    ) -> List[str]:
+    def get_code_recommendations(self, code_snippet: str, issue_type: str) -> List[str]:
         """
         Get AI-powered code improvement recommendations.
 

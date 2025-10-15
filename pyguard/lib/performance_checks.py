@@ -198,11 +198,7 @@ class PerformanceVisitor(ast.NodeVisitor):
         """Visit subscript nodes."""
         # PERF405: Using list copy with [:] when list.copy() is clearer
         if isinstance(node.slice, ast.Slice):
-            if (
-                node.slice.lower is None
-                and node.slice.upper is None
-                and node.slice.step is None
-            ):
+            if node.slice.lower is None and node.slice.upper is None and node.slice.step is None:
                 self.issues.append(
                     PerformanceIssue(
                         severity="LOW",

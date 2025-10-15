@@ -110,9 +110,7 @@ class BugbearVisitor(ast.NodeVisitor):
         # B002: Python does not support the unary prefix increment
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.UnaryOp) and isinstance(stmt.op, ast.UAdd):
-                if isinstance(stmt.operand, ast.UnaryOp) and isinstance(
-                    stmt.operand.op, ast.UAdd
-                ):
+                if isinstance(stmt.operand, ast.UnaryOp) and isinstance(stmt.operand.op, ast.UAdd):
                     self.violations.append(
                         RuleViolation(
                             rule_id="B002",
@@ -291,8 +289,6 @@ class BugbearVisitor(ast.NodeVisitor):
                             )
                         )
 
-
-
         # B012: return/break/continue inside finally blocks
         # (handled in visit_Try)
 
@@ -437,9 +433,7 @@ class BugbearVisitor(ast.NodeVisitor):
         # B010: Do not call setattr with constant attribute names
         if isinstance(node.value, ast.Call):
             if isinstance(node.value.func, ast.Name) and node.value.func.id == "setattr":
-                if len(node.value.args) >= 2 and isinstance(
-                    node.value.args[1], ast.Constant
-                ):
+                if len(node.value.args) >= 2 and isinstance(node.value.args[1], ast.Constant):
                     attr_name = node.value.args[1].value
                     self.violations.append(
                         RuleViolation(

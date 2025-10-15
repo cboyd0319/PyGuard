@@ -175,8 +175,16 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                             RuleViolation(
                                 rule_id="RET505",
                                 message="Unnecessary else after return statement",
-                                line_number=first_else.lineno if hasattr(first_else, 'lineno') else stmt.lineno,
-                                column=first_else.col_offset if hasattr(first_else, 'col_offset') else stmt.col_offset,
+                                line_number=(
+                                    first_else.lineno
+                                    if hasattr(first_else, "lineno")
+                                    else stmt.lineno
+                                ),
+                                column=(
+                                    first_else.col_offset
+                                    if hasattr(first_else, "col_offset")
+                                    else stmt.col_offset
+                                ),
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 file_path=self.file_path,
@@ -219,8 +227,16 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                             RuleViolation(
                                 rule_id="RET507",
                                 message="Unnecessary else after continue statement",
-                                line_number=first_else.lineno if hasattr(first_else, 'lineno') else stmt.lineno,
-                                column=first_else.col_offset if hasattr(first_else, 'col_offset') else stmt.col_offset,
+                                line_number=(
+                                    first_else.lineno
+                                    if hasattr(first_else, "lineno")
+                                    else stmt.lineno
+                                ),
+                                column=(
+                                    first_else.col_offset
+                                    if hasattr(first_else, "col_offset")
+                                    else stmt.col_offset
+                                ),
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 file_path=self.file_path,
@@ -241,8 +257,16 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                             RuleViolation(
                                 rule_id="RET508",
                                 message="Unnecessary else after break statement",
-                                line_number=first_else.lineno if hasattr(first_else, 'lineno') else stmt.lineno,
-                                column=first_else.col_offset if hasattr(first_else, 'col_offset') else stmt.col_offset,
+                                line_number=(
+                                    first_else.lineno
+                                    if hasattr(first_else, "lineno")
+                                    else stmt.lineno
+                                ),
+                                column=(
+                                    first_else.col_offset
+                                    if hasattr(first_else, "col_offset")
+                                    else stmt.col_offset
+                                ),
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.REFACTOR,
                                 file_path=self.file_path,

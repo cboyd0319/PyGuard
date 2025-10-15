@@ -253,9 +253,7 @@ class StandardsMapper:
 
         return mappings
 
-    def generate_compliance_report(
-        self, issues: List[Dict]
-    ) -> Dict[str, List[Dict]]:
+    def generate_compliance_report(self, issues: List[Dict]) -> Dict[str, List[Dict]]:
         """
         Generate a compliance report showing how issues map to standards.
 
@@ -288,9 +286,7 @@ class StandardsMapper:
 
         return report
 
-    def check_standard_compliance(
-        self, standard: str, issues: List[Dict]
-    ) -> Dict[str, Any]:
+    def check_standard_compliance(self, standard: str, issues: List[Dict]) -> Dict[str, Any]:
         """
         Check compliance with a specific standard.
 
@@ -343,9 +339,7 @@ class GDPRTechnicalControls:
         """Initialize GDPR mapper."""
         self.logger = PyGuardLogger()
 
-    def check_gdpr_technical_requirements(
-        self, issues: List[Dict]
-    ) -> Dict[str, Any]:
+    def check_gdpr_technical_requirements(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Check GDPR technical requirements.
 
@@ -357,17 +351,14 @@ class GDPRTechnicalControls:
         """
         # Article 32: Security of processing
         security_issues = [
-            issue
-            for issue in issues
-            if issue.get("severity") in ["HIGH", "CRITICAL"]
+            issue for issue in issues if issue.get("severity") in ["HIGH", "CRITICAL"]
         ]
 
         # Article 25: Data protection by design and by default
         privacy_issues = [
             issue
             for issue in issues
-            if "logging" in issue.get("type", "").lower()
-            or "data" in issue.get("type", "").lower()
+            if "logging" in issue.get("type", "").lower() or "data" in issue.get("type", "").lower()
         ]
 
         return {
@@ -419,11 +410,7 @@ class HIPAASecurityRule:
             or "encryption" in issue.get("type", "").lower()
         ]
 
-        audit_issues = [
-            issue
-            for issue in issues
-            if "logging" in issue.get("type", "").lower()
-        ]
+        audit_issues = [issue for issue in issues if "logging" in issue.get("type", "").lower()]
 
         return {
             "access_control_violations": len(access_control_issues),
@@ -445,9 +432,9 @@ class HIPAASecurityRule:
 class SANSTop25Mapper:
     """
     SANS CWE Top 25 Most Dangerous Software Weaknesses Mapper (2024).
-    
+
     Maps PyGuard detections to SANS Top 25 rankings for prioritization.
-    
+
     Reference: SANS Top 25 | https://sans.org/top25-software-errors | High
     """
 
@@ -487,10 +474,10 @@ class SANSTop25Mapper:
     def get_sans_ranking(self, cwe_id: str) -> Optional[int]:
         """
         Get SANS Top 25 ranking for a CWE ID.
-        
+
         Args:
             cwe_id: CWE identifier (e.g., "CWE-89")
-            
+
         Returns:
             Ranking (1-25) or None if not in Top 25
         """
@@ -502,13 +489,14 @@ class SANSTop25Mapper:
     def prioritize_issues(self, issues: List[Dict]) -> List[Dict]:
         """
         Prioritize issues based on SANS Top 25 rankings.
-        
+
         Args:
             issues: List of security issues
-            
+
         Returns:
             Issues sorted by SANS ranking (most critical first)
         """
+
         def get_priority(issue):
             cwe_id = issue.get("cwe_id", "")
             rank = self.get_sans_ranking(cwe_id)
@@ -520,10 +508,10 @@ class SANSTop25Mapper:
     def generate_sans_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate SANS Top 25 compliance report.
-        
+
         Args:
             issues: List of security issues
-            
+
         Returns:
             Report showing coverage of SANS Top 25
         """
@@ -555,9 +543,9 @@ class SANSTop25Mapper:
 class CERTSecureCodingMapper:
     """
     CERT Secure Coding Standards Mapper.
-    
+
     Maps PyGuard detections to SEI CERT secure coding recommendations.
-    
+
     Reference: CERT Secure Coding | https://sei.cmu.edu/publications/ | High
     """
 
@@ -582,10 +570,10 @@ class CERTSecureCodingMapper:
     def map_to_cert_rules(self, issue_type: str) -> List[str]:
         """
         Map PyGuard issue type to CERT rules.
-        
+
         Args:
             issue_type: Type of security issue
-            
+
         Returns:
             List of applicable CERT rule IDs
         """
@@ -603,10 +591,10 @@ class CERTSecureCodingMapper:
     def generate_cert_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate CERT Secure Coding compliance report.
-        
+
         Args:
             issues: List of security issues
-            
+
         Returns:
             Report showing CERT rule violations
         """
@@ -636,9 +624,9 @@ class CERTSecureCodingMapper:
 class IEEE12207Mapper:
     """
     IEEE 12207:2017 Software Lifecycle Processes Mapper.
-    
+
     Maps PyGuard quality checks to IEEE 12207 lifecycle requirements.
-    
+
     Reference: IEEE 12207 | https://iso.org/standard/63712.html | High
     """
 
@@ -661,10 +649,10 @@ class IEEE12207Mapper:
     def map_to_lifecycle_processes(self, issue_category: str) -> List[str]:
         """
         Map issue category to IEEE 12207 lifecycle processes.
-        
+
         Args:
             issue_category: Category of issue (security, quality, etc.)
-            
+
         Returns:
             List of applicable IEEE process IDs
         """
@@ -680,10 +668,10 @@ class IEEE12207Mapper:
     def generate_lifecycle_report(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate IEEE 12207 lifecycle compliance report.
-        
+
         Args:
             issues: List of security and quality issues
-            
+
         Returns:
             Report showing lifecycle process compliance
         """
@@ -713,9 +701,9 @@ class IEEE12207Mapper:
 class MitreATTACKMapper:
     """
     Mitre ATT&CK Framework Mapper.
-    
+
     Maps detected vulnerabilities to ATT&CK techniques for threat modeling.
-    
+
     Reference: Mitre ATT&CK | https://attack.mitre.org | High
     """
 
@@ -740,10 +728,10 @@ class MitreATTACKMapper:
     def map_to_attack_techniques(self, issue_type: str) -> List[str]:
         """
         Map security issue to ATT&CK techniques.
-        
+
         Args:
             issue_type: Type of security vulnerability
-            
+
         Returns:
             List of applicable ATT&CK technique IDs
         """
@@ -761,10 +749,10 @@ class MitreATTACKMapper:
     def generate_threat_model(self, issues: List[Dict]) -> Dict[str, Any]:
         """
         Generate ATT&CK-based threat model.
-        
+
         Args:
             issues: List of security issues
-            
+
         Returns:
             Threat model showing potential ATT&CK techniques enabled
         """
@@ -783,7 +771,11 @@ class MitreATTACKMapper:
                 techniques_enabled[technique_id]["issues"].append(issue)
 
         return {
-            "threat_exposure": "HIGH" if len(techniques_enabled) > 5 else "MEDIUM" if len(techniques_enabled) > 2 else "LOW",
+            "threat_exposure": (
+                "HIGH"
+                if len(techniques_enabled) > 5
+                else "MEDIUM" if len(techniques_enabled) > 2 else "LOW"
+            ),
             "techniques_enabled": len(techniques_enabled),
             "attack_surface": techniques_enabled,
             "recommendations": [

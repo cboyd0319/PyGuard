@@ -18,7 +18,7 @@ if os.path.exists("/tmp/file"):
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH100" for issue in issues)
         assert any("Path.exists()" in issue.message for issue in issues)
@@ -31,7 +31,7 @@ path = os.path.join("/tmp", "file.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH105" for issue in issues)
         assert any("Path / operator" in issue.message for issue in issues)
@@ -44,7 +44,7 @@ name = os.path.basename("/tmp/file.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH106" for issue in issues)
         assert any("Path.name" in issue.suggested_fix for issue in issues)
@@ -57,7 +57,7 @@ parent = os.path.dirname("/tmp/file.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH107" for issue in issues)
         assert any("Path.parent" in issue.suggested_fix for issue in issues)
@@ -74,7 +74,7 @@ files = glob.glob("*.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH124" for issue in issues)
 
@@ -90,7 +90,7 @@ size = os.path.getsize("/tmp/file")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH113" for issue in issues)
 
@@ -102,7 +102,7 @@ mtime = os.path.getmtime("/tmp/file")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH114" for issue in issues)
 
@@ -119,7 +119,7 @@ if os.path.isfile("/tmp/file"):
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH101" for issue in issues)
 
@@ -132,7 +132,7 @@ if os.path.isdir("/tmp"):
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH102" for issue in issues)
 
@@ -145,7 +145,7 @@ if os.path.islink("/tmp/link"):
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH103" for issue in issues)
 
@@ -163,7 +163,7 @@ if p.exists():
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         # Should not detect issues when already using pathlib
         assert len(issues) == 0
 
@@ -175,7 +175,7 @@ def my_function():
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0
 
     def test_handle_syntax_error(self):
@@ -186,7 +186,7 @@ if os.path.exists(
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) == 0  # Should not crash
 
 
@@ -201,7 +201,7 @@ name, ext = os.path.splitext("/tmp/file.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH108" for issue in issues)
 
@@ -213,7 +213,7 @@ abs_path = os.path.abspath("./file")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH110" for issue in issues)
 
@@ -225,7 +225,7 @@ real_path = os.path.realpath("/tmp/link")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH111" for issue in issues)
 
@@ -237,7 +237,7 @@ files = glob.glob("*.txt")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         assert any(issue.rule_id == "PTH124" for issue in issues)
 
@@ -261,7 +261,7 @@ def process_files(directory):
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         # Should detect multiple issues
         assert len(issues) >= 4
         rule_ids = {issue.rule_id for issue in issues}
@@ -278,7 +278,7 @@ os.path.exists("/tmp/file")
 """
         checker = PathlibChecker()
         issues = checker.check_code(code)
-        
+
         assert len(issues) > 0
         issue = issues[0]
         assert issue.rule_id.startswith("PTH")

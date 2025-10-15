@@ -405,7 +405,9 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call):
             if isinstance(node.value.func, ast.Name) and node.value.func.id == "sorted":
                 if isinstance(node.slice, ast.UnaryOp):
-                    if isinstance(node.slice.op, ast.USub) and isinstance(node.slice.operand, ast.Constant):
+                    if isinstance(node.slice.op, ast.USub) and isinstance(
+                        node.slice.operand, ast.Constant
+                    ):
                         if node.slice.operand.value == 1:
                             self.violations.append(
                                 RuleViolation(
@@ -510,8 +512,6 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                         )
 
         self.generic_visit(node)
-
-
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Detect binary operation patterns (FURB116, 118-119)."""
@@ -662,13 +662,11 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-
-    
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Detect function definition patterns (FURB112, FURB125-127, FURB131)."""
         # FURB112: Use contextlib.suppress() instead of delete-except-pass
         # This is partially covered by FURB124 in visit_Try
-        
+
         # FURB125: Do not use unnecessary lambda in sorted/map/filter
         # Check function body for lambda usage
         for stmt in ast.walk(node):
@@ -693,7 +691,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                             fix_applicability=FixApplicability.SAFE,
                                         )
                                     )
-        
+
         # FURB126: Use isinstance() check instead of type() == check
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.Compare):
@@ -712,7 +710,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SAFE,
                                 )
                             )
-        
+
         # FURB127: Use dict.fromkeys() instead of dict comprehension with constant value
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.DictComp):
@@ -729,7 +727,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         # FURB131: Delete exception and re-raise instead of using raise
         for stmt in ast.walk(node):
             if isinstance(stmt, ast.Try):
@@ -754,9 +752,9 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                             fix_applicability=FixApplicability.SAFE,
                                         )
                                     )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Assign(self, node: ast.Assign) -> None:
         """Detect assignment patterns (FURB130, FURB134-135, FURB137-139)."""
         # FURB130: Use Path.read_text()/write_text() instead of open+read/write
@@ -778,15 +776,17 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SUGGESTED,
                             )
                         )
-        
+
         # FURB134: Use Path.exists() instead of try-except FileNotFoundError
         # This is complex - needs context from try-except block
-        
+
         # FURB135: Use datetime.now() instead of datetime.fromtimestamp(time.time())
         if isinstance(node.value, ast.Call):
             func = node.value.func
             if isinstance(func, ast.Attribute):
-                if func.attr == "fromtimestamp":  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
+                if (
+                    func.attr == "fromtimestamp"
+                ):  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
                     # Check if argument is time.time()
                     if len(node.value.args) > 0:
                         arg = node.value.args[0]
@@ -804,12 +804,14 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                         fix_applicability=FixApplicability.SAFE,
                                     )
                                 )
-        
+
         # FURB137: Use min/max with default instead of try-except ValueError
         # FURB138: Use list.sort(key=str.lower) instead of list.sort(key=lambda x: x.lower())
         # FURB139: Use math.ceil(x/y) instead of -(-x//y)
         if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub):
-            if isinstance(node.value.operand, ast.UnaryOp) and isinstance(node.value.operand.op, ast.USub):
+            if isinstance(node.value.operand, ast.UnaryOp) and isinstance(
+                node.value.operand.op, ast.USub
+            ):
                 if isinstance(node.value.operand.operand, ast.BinOp):
                     if isinstance(node.value.operand.operand.op, ast.FloorDiv):
                         self.violations.append(
@@ -824,20 +826,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SAFE,
                             )
                         )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Expr(self, node: ast.Expr) -> None:
         """Detect expression patterns (FURB141-144, FURB146-149)."""
         if isinstance(node.value, ast.Call):
             func = node.value.func
-            
+
             # FURB141: Use list.extend() instead of list += [item]
             # Covered in visit_AugAssign
-            
+
             # FURB142: Use str.format() or f-string instead of %
             # Covered in string_operations.py
-            
+
             # FURB143: Use enumerate() instead of range(len())
             # Check for pattern: for i in range(len(seq)): ... seq[i] ...
             if isinstance(func, ast.Name) and func.id == "range":
@@ -857,10 +859,10 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SUGGESTED,
                                 )
                             )
-            
+
             # FURB144: Use any()/all() instead of for-loop with flag
             # This requires more complex analysis
-            
+
             # FURB146: Use open() with encoding parameter
             if isinstance(func, ast.Name) and func.id == "open":
                 # Check if encoding parameter is missing
@@ -882,7 +884,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-            
+
             # FURB147: Use Path.glob() instead of glob.glob() with pathlib
             if isinstance(func, ast.Attribute) and func.attr == "glob":
                 if isinstance(func.value, ast.Name) and func.value.id == "glob":
@@ -898,18 +900,18 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-            
+
             # FURB148: Use enumerate() with start parameter
             if isinstance(func, ast.Name) and func.id == "enumerate":
                 # Check for pattern: for i, x in enumerate(seq): but using i+1
                 # This requires analysis of the loop body
                 pass
-            
+
             # FURB149: Use itertools.chain() instead of nested loops
             # This requires more complex analysis
-        
+
         self.generic_visit(node)
-    
+
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Detect augmented assignment patterns (FURB141)."""
         # FURB141: Use list.extend() instead of list += [item]
@@ -928,7 +930,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-        
+
         self.generic_visit(node)
 
 

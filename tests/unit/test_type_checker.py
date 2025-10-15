@@ -58,10 +58,10 @@ class TestMissingTypeHints:
 
     def test_detect_missing_return_type(self, tmp_path):
         """Test detection of missing return type."""
-        code = '''
+        code = """
 def calculate_sum(a, b):
     return a + b
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -73,10 +73,10 @@ def calculate_sum(a, b):
 
     def test_detect_missing_param_type(self, tmp_path):
         """Test detection of missing parameter type."""
-        code = '''
+        code = """
 def greet(name):
     print(f"Hello, {name}")
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -88,10 +88,10 @@ def greet(name):
 
     def test_no_violation_with_full_types(self, tmp_path):
         """Test no violations when types are present."""
-        code = '''
+        code = """
 def calculate_sum(a: int, b: int) -> int:
     return a + b
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -102,17 +102,16 @@ def calculate_sum(a: int, b: int) -> int:
         type_violations = [
             v
             for v in violations
-            if v.rule_id
-            in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
+            if v.rule_id in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
         ]
         assert len(type_violations) == 0
 
     def test_skip_private_functions(self, tmp_path):
         """Test that private functions are skipped."""
-        code = '''
+        code = """
 def _internal_helper(x):
     return x * 2
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -124,11 +123,11 @@ def _internal_helper(x):
 
     def test_skip_init_method(self, tmp_path):
         """Test that __init__ doesn't need return type."""
-        code = '''
+        code = """
 class MyClass:
     def __init__(self, value):
         self.value = value
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -136,9 +135,7 @@ class MyClass:
         violations = checker.analyze_file(test_file)
 
         # Should not flag __init__ for missing return type
-        return_violations = [
-            v for v in violations if v.rule_id == MISSING_RETURN_TYPE_RULE.rule_id
-        ]
+        return_violations = [v for v in violations if v.rule_id == MISSING_RETURN_TYPE_RULE.rule_id]
         assert len(return_violations) == 0
 
 
@@ -147,12 +144,12 @@ class TestTypeComparison:
 
     def test_detect_type_comparison_eq(self, tmp_path):
         """Test detection of type() == comparison."""
-        code = '''
+        code = """
 def check_type(obj):
     if type(obj) == str:
         return True
     return False
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -164,12 +161,12 @@ def check_type(obj):
 
     def test_detect_type_comparison_is(self, tmp_path):
         """Test detection of type() is comparison."""
-        code = '''
+        code = """
 def check_type(obj):
     if type(obj) is str:
         return True
     return False
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -181,12 +178,12 @@ def check_type(obj):
 
     def test_no_violation_with_isinstance(self, tmp_path):
         """Test no violation with isinstance."""
-        code = '''
+        code = """
 def check_type(obj):
     if isinstance(obj, str):
         return True
     return False
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -194,9 +191,7 @@ def check_type(obj):
         violations = checker.analyze_file(test_file)
 
         # Should not flag isinstance
-        type_comp_violations = [
-            v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id
-        ]
+        type_comp_violations = [v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id]
         assert len(type_comp_violations) == 0
 
 
@@ -205,12 +200,12 @@ class TestTypeChecker:
 
     def test_analyze_file_with_multiple_issues(self, tmp_path):
         """Test analyzing file with multiple type issues."""
-        code = '''
+        code = """
 def process_data(data):
     if type(data) == list:
         return len(data)
     return 0
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -222,10 +217,10 @@ def process_data(data):
 
     def test_analyze_file_syntax_error(self, tmp_path):
         """Test analyzing file with syntax error."""
-        code = '''
+        code = """
 def broken_function(
     # Missing closing parenthesis
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 

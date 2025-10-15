@@ -13,10 +13,10 @@ class TestRefurbPatternDetection:
 
     def test_detect_while_read_loop(self, tmp_path):
         """Test detection of while loop with file read."""
-        code = '''
+        code = """
 while line := f.read():
     process(line)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -28,9 +28,9 @@ while line := f.read():
 
     def test_detect_sorted_list_comp(self, tmp_path):
         """Test detection of sorted() with list comprehension."""
-        code = '''
+        code = """
 result = sorted([x * 2 for x in range(10)])
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -42,9 +42,9 @@ result = sorted([x * 2 for x in range(10)])
 
     def test_detect_unnecessary_list_sorted(self, tmp_path):
         """Test detection of unnecessary list() around sorted()."""
-        code = '''
+        code = """
 result = list(sorted(items))
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -56,9 +56,9 @@ result = list(sorted(items))
 
     def test_detect_print_sep_empty(self, tmp_path):
         """Test detection of print() with sep=''."""
-        code = '''
+        code = """
 print("hello", "world", sep="")
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -70,10 +70,10 @@ print("hello", "world", sep="")
 
     def test_detect_string_paths_with_open(self, tmp_path):
         """Test detection of string paths with open()."""
-        code = '''
+        code = """
 with open("/path/to/file.txt") as f:
     content = f.read()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -85,11 +85,11 @@ with open("/path/to/file.txt") as f:
 
     def test_detect_os_path_usage(self, tmp_path):
         """Test detection of os.path usage."""
-        code = '''
+        code = """
 import os
 path = os.path.join("dir", "file.txt")
 exists = os.path.exists(path)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -101,11 +101,11 @@ exists = os.path.exists(path)
 
     def test_detect_math_floor_for_int(self, tmp_path):
         """Test detection of math.floor() used for int conversion."""
-        code = '''
+        code = """
 import math
 value = math.floor(3.7)
 another = math.ceil(2.3)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -117,12 +117,12 @@ another = math.ceil(2.3)
 
     def test_detect_if_else_expression(self, tmp_path):
         """Test detection of if-else that should use conditional expression."""
-        code = '''
+        code = """
 if condition:
     result = "yes"
 else:
     result = "no"
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -134,10 +134,10 @@ else:
 
     def test_detect_os_listdir(self, tmp_path):
         """Test detection of os.listdir() instead of Path.iterdir()."""
-        code = '''
+        code = """
 import os
 files = os.listdir("/some/path")
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -149,10 +149,10 @@ files = os.listdir("/some/path")
 
     def test_detect_repeated_append(self, tmp_path):
         """Test detection of repeated append() in loop."""
-        code = '''
+        code = """
 for item in items:
     result.append(item * 2)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -164,10 +164,10 @@ for item in items:
 
     def test_detect_dict_setdefault(self, tmp_path):
         """Test detection of if-not-in pattern instead of setdefault()."""
-        code = '''
+        code = """
 if key not in mydict:
     mydict[key] = []
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -179,9 +179,9 @@ if key not in mydict:
 
     def test_detect_max_instead_of_sorted_last(self, tmp_path):
         """Test detection of sorted()[-1] instead of max()."""
-        code = '''
+        code = """
 largest = sorted(numbers)[-1]
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -193,9 +193,9 @@ largest = sorted(numbers)[-1]
 
     def test_detect_min_instead_of_sorted_first(self, tmp_path):
         """Test detection of sorted()[0] instead of min()."""
-        code = '''
+        code = """
 smallest = sorted(numbers)[0]
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -207,7 +207,7 @@ smallest = sorted(numbers)[0]
 
     def test_no_violations_for_clean_code(self, tmp_path):
         """Test that clean code produces no violations."""
-        code = '''
+        code = """
 from pathlib import Path
 
 def process_file(path: Path):
@@ -217,7 +217,7 @@ def process_file(path: Path):
 result = sorted(x * 2 for x in range(10))
 largest = max(numbers)
 smallest = min(numbers)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -225,7 +225,9 @@ smallest = min(numbers)
         violations = checker.check_file(file_path)
 
         # Should have no FURB102, FURB104, FURB132, FURB133 violations
-        assert not any(v.rule_id in ("FURB102", "FURB104", "FURB132", "FURB133") for v in violations)
+        assert not any(
+            v.rule_id in ("FURB102", "FURB104", "FURB132", "FURB133") for v in violations
+        )
 
 
 class TestAutoFix:
@@ -233,10 +235,10 @@ class TestAutoFix:
 
     def test_fix_unnecessary_list_sorted(self, tmp_path):
         """Test fixing unnecessary list() around sorted()."""
-        code = '''
+        code = """
 result = list(sorted(items))
 another = list(sorted(data, key=lambda x: x.value))
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -259,9 +261,24 @@ class TestRuleRegistration:
         assert len(REFURB_RULES) >= 18
         rule_ids = {rule.rule_id for rule in REFURB_RULES}
         expected_ids = {
-            "FURB101", "FURB102", "FURB104", "FURB105", "FURB106", "FURB107", "FURB108",
-            "FURB109", "FURB110", "FURB111", "FURB113", "FURB114", "FURB115",
-            "FURB120", "FURB121", "FURB122", "FURB132", "FURB133"
+            "FURB101",
+            "FURB102",
+            "FURB104",
+            "FURB105",
+            "FURB106",
+            "FURB107",
+            "FURB108",
+            "FURB109",
+            "FURB110",
+            "FURB111",
+            "FURB113",
+            "FURB114",
+            "FURB115",
+            "FURB120",
+            "FURB121",
+            "FURB122",
+            "FURB132",
+            "FURB133",
         }
         assert expected_ids.issubset(rule_ids)
 

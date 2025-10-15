@@ -81,9 +81,9 @@ class SBOM:
                     "name": dep.name,
                     "version": dep.version,
                     "purl": f"pkg:pypi/{dep.name}@{dep.version}",
-                    "hashes": [{"alg": "SHA-256", "content": dep.hash_sha256}]
-                    if dep.hash_sha256
-                    else [],
+                    "hashes": (
+                        [{"alg": "SHA-256", "content": dep.hash_sha256}] if dep.hash_sha256 else []
+                    ),
                     "licenses": [{"license": {"id": dep.license}}] if dep.license else [],
                 }
                 for dep in self.dependencies

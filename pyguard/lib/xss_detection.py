@@ -42,7 +42,7 @@ logger = PyGuardLogger()
 class XSSDetector(ast.NodeVisitor):
     """
     AST visitor for detecting XSS vulnerabilities in Python web applications.
-    
+
     Detects various XSS patterns across multiple frameworks and contexts.
     """
 
@@ -107,13 +107,13 @@ class XSSDetector(ast.NodeVisitor):
         if func_name in ["Environment", "jinja2.Environment"]:
             has_autoescape = False
             autoescape_disabled = False
-            
+
             for kw in node.keywords:
                 if kw.arg == "autoescape":
                     has_autoescape = True
                     if isinstance(kw.value, ast.Constant) and kw.value.value is False:
                         autoescape_disabled = True
-            
+
             if autoescape_disabled:
                 self.violations.append(
                     RuleViolation(
@@ -225,9 +225,13 @@ class XSSDetector(ast.NodeVisitor):
             if node.args:
                 # Check if first argument is user input or a variable that could be user input
                 arg = node.args[0]
-                if self._is_user_input(arg) or (isinstance(arg, ast.Name) and any(
-                    keyword in arg.id.lower() for keyword in ["html", "data", "content", "user", "input"]
-                )):
+                if self._is_user_input(arg) or (
+                    isinstance(arg, ast.Name)
+                    and any(
+                        keyword in arg.id.lower()
+                        for keyword in ["html", "data", "content", "user", "input"]
+                    )
+                ):
                     self.violations.append(
                         RuleViolation(
                             rule_id="XSS007",
@@ -248,7 +252,9 @@ class XSSDetector(ast.NodeVisitor):
             # Check if it's string formatting
             if isinstance(node.func.value, ast.Constant):
                 format_str = node.func.value.value
-                if isinstance(format_str, str) and any(tag in format_str for tag in ["<", ">", "href", "src"]):
+                if isinstance(format_str, str) and any(
+                    tag in format_str for tag in ["<", ">", "href", "src"]
+                ):
                     # HTML-like content in format string
                     if node.args and any(self._is_user_input(arg) for arg in node.args):
                         self.violations.append(
@@ -342,7 +348,7 @@ class XSSDetector(ast.NodeVisitor):
 def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
     """
     Detect XSS patterns using regex (complement to AST analysis).
-    
+
     Returns list of (pattern_name, line_number, line_content).
     """
     patterns = []
@@ -350,26 +356,26 @@ def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
 
     for i, line in enumerate(lines, 1):
         # Pattern: innerHTML or outerHTML usage
-        if re.search(r'\.(innerHTML|outerHTML)\s*=', line):
+        if re.search(r"\.(innerHTML|outerHTML)\s*=", line):
             patterns.append(("innerHTML_usage", i, line.strip()))
 
         # Pattern: document.write usage
-        if re.search(r'document\.write\(', line):
+        if re.search(r"document\.write\(", line):
             patterns.append(("document_write", i, line.strip()))
 
         # Pattern: eval with potential user input
-        if re.search(r'eval\s*\([^)]*(?:request|input|user|param)', line, re.IGNORECASE):
+        if re.search(r"eval\s*\([^)]*(?:request|input|user|param)", line, re.IGNORECASE):
             patterns.append(("eval_user_input", i, line.strip()))
 
         # Pattern: Missing CSP headers in Flask/Django
-        if re.search(r'@app\.route|def.*view.*\(request', line):
+        if re.search(r"@app\.route|def.*view.*\(request", line):
             # Check if CSP header is set in next few lines
-            context_lines = lines[max(0, i-1):min(len(lines), i+10)]
+            context_lines = lines[max(0, i - 1) : min(len(lines), i + 10)]
             if not any("Content-Security-Policy" in context_line for context_line in context_lines):
                 patterns.append(("missing_csp", i, line.strip()))
 
         # Pattern: Dangerous Jinja2 filters (safe, bypass escaping)
-        if re.search(r'\|\s*safe\b', line):
+        if re.search(r"\|\s*safe\b", line):
             patterns.append(("jinja2_safe_filter", i, line.strip()))
 
     return patterns
@@ -378,17 +384,17 @@ def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
 def check_xss_vulnerabilities(file_path: Path) -> List[RuleViolation]:
     """
     Check Python file for XSS vulnerabilities.
-    
+
     Args:
         file_path: Path to Python file
-        
+
     Returns:
         List of XSS rule violations
     """
     violations: List[RuleViolation] = []
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # AST-based detection

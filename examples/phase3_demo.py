@@ -96,23 +96,23 @@ def complex_example(data, config):
             mode = config["mode"]
         else:
             mode = "default"
-        
+
         # SIM118: Redundant .keys()
         if "enabled" in data.keys():
             enabled = data["enabled"]
         else:
             enabled = True
-        
+
         # SIM300: Negated comparison
         if not (mode != "advanced"):
             print("Advanced mode")
-        
+
         # SIM110: all() pattern
         valid = True
         for item in data.get("items", []):
             if not item:
                 valid = False
-        
+
         return mode, enabled, valid
     else:
         return None, None, None
@@ -120,11 +120,11 @@ def complex_example(data, config):
 
 class DemoClass:
     """Class demonstrating Phase 3 rules in context."""
-    
+
     def __init__(self, options):
         """Initialize with options dict."""
         self.options = options
-    
+
     def validate(self):
         """Validate all required options."""
         # SIM111: any() pattern
@@ -132,13 +132,13 @@ class DemoClass:
         for key in ["name", "value", "type"]:
             if key not in self.options:
                 has_error = True
-        
+
         # SIM301: Negated equality
         if not (has_error == False):
             return False
-        
+
         return True
-    
+
     def process(self, items):
         """Process items with guard clause pattern."""
         # SIM106: Guard clause
@@ -157,7 +157,7 @@ def main():
     """Run demo examples."""
     print("Phase 3 Code Simplification Demo")
     print("=" * 50)
-    
+
     # Run examples
     example_sim300(1, 1)
     example_sim301(1, 2)
@@ -165,7 +165,7 @@ def main():
     example_sim223(True, True)
     example_sim106({"step1": 1, "step2": 2, "step3": 3})
     example_sim116({"timeout": 60})
-    
+
     print("\nTo scan this file for simplification opportunities:")
     print("  pyguard scan examples/phase3_demo.py")
     print("\nExpected detections: 10+ simplification opportunities")

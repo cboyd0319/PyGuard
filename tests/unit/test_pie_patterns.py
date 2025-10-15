@@ -12,10 +12,10 @@ class TestPIEPatternDetection:
 
     def test_detect_unnecessary_pass(self, tmp_path):
         """Test detection of unnecessary pass."""
-        code = '''
+        code = """
 def empty_func():
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -27,10 +27,10 @@ def empty_func():
 
     def test_detect_is_false_comparison(self, tmp_path):
         """Test detection of == False."""
-        code = '''
+        code = """
 if value == False:
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -42,10 +42,10 @@ if value == False:
 
     def test_detect_is_true_comparison(self, tmp_path):
         """Test detection of == True."""
-        code = '''
+        code = """
 if value == True:
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -57,11 +57,11 @@ if value == True:
 
     def test_detect_class_with_only_init(self, tmp_path):
         """Test detection of class with only __init__."""
-        code = '''
+        code = """
 class DataHolder:
     def __init__(self, value):
         self.value = value
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -73,9 +73,9 @@ class DataHolder:
 
     def test_detect_unnecessary_list_comp(self, tmp_path):
         """Test detection of unnecessary list comprehension."""
-        code = '''
+        code = """
 result = list([x for x in range(10)])
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -87,13 +87,13 @@ result = list([x for x in range(10)])
 
     def test_detect_unnecessary_else_after_return(self, tmp_path):
         """Test detection of unnecessary else after return."""
-        code = '''
+        code = """
 def func(x):
     if x > 0:
         return True
     else:
         return False
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -105,7 +105,7 @@ def func(x):
 
     def test_no_violations_for_clean_code(self, tmp_path):
         """Test that clean code produces no violations."""
-        code = '''
+        code = """
 def func(value):
     if value is True:
         return "yes"
@@ -117,7 +117,7 @@ class ProperClass:
     
     def method(self):
         return self.val * 2
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -133,10 +133,10 @@ class TestAutoFix:
 
     def test_fix_is_false_comparison(self, tmp_path):
         """Test fixing == False to is False."""
-        code = '''
+        code = """
 if value == False:
     print("no")
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -152,10 +152,10 @@ if value == False:
 
     def test_fix_is_true_comparison(self, tmp_path):
         """Test fixing == True to is True."""
-        code = '''
+        code = """
 if value == True:
     print("yes")
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -171,12 +171,12 @@ if value == True:
 
     def test_fix_multiple_issues(self, tmp_path):
         """Test fixing multiple issues at once."""
-        code = '''
+        code = """
 def check(a, b):
     if a == True and b == False:
         return True
     return False
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -192,13 +192,12 @@ def check(a, b):
         assert "== True" not in fixed_code
         assert "== False" not in fixed_code
 
-
     def test_detect_unnecessary_list_call(self, tmp_path):
         """Test detection of unnecessary list() call around iterable."""
-        code = '''
+        code = """
 result = list(range(10))
 items = list(enumerate([1, 2, 3]))
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -210,12 +209,12 @@ items = list(enumerate([1, 2, 3]))
 
     def test_detect_is_for_literals(self, tmp_path):
         """Test detection of 'is' used with literals."""
-        code = '''
+        code = """
 if value is "string":
     pass
 if num is 42:
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -227,11 +226,11 @@ if num is 42:
 
     def test_detect_single_iteration_loop(self, tmp_path):
         """Test detection of loop that only iterates once."""
-        code = '''
+        code = """
 for item in items:
     result = process(item)
     break
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -243,12 +242,12 @@ for item in items:
 
     def test_detect_unnecessary_elif_pass(self, tmp_path):
         """Test detection of unnecessary elif with only pass."""
-        code = '''
+        code = """
 if x > 0:
     print("positive")
 elif x < 0:
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -260,9 +259,9 @@ elif x < 0:
 
     def test_detect_empty_list_call(self, tmp_path):
         """Test detection of list() instead of []."""
-        code = '''
+        code = """
 empty = list()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -274,14 +273,14 @@ empty = list()
 
     def test_detect_multiple_calls_in_except(self, tmp_path):
         """Test detection of multiple calls in exception handler."""
-        code = '''
+        code = """
 try:
     risky_operation()
 except Exception:
     log_error()
     notify_admin()
     cleanup()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -293,10 +292,10 @@ except Exception:
 
     def test_detect_redundant_tuple_unpacking(self, tmp_path):
         """Test detection of redundant tuple unpacking."""
-        code = '''
+        code = """
 for a, b in items:
     result = (a, b)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -315,10 +314,27 @@ class TestRuleRegistration:
         assert len(PIE_RULES) >= 21
         rule_ids = {rule.rule_id for rule in PIE_RULES}
         expected_ids = {
-            "PIE790", "PIE791", "PIE792", "PIE793", "PIE794",
-            "PIE795", "PIE796", "PIE797", "PIE799", "PIE800",
-            "PIE801", "PIE802", "PIE803", "PIE804", "PIE805",
-            "PIE806", "PIE807", "PIE808", "PIE809", "PIE810", "PIE811"
+            "PIE790",
+            "PIE791",
+            "PIE792",
+            "PIE793",
+            "PIE794",
+            "PIE795",
+            "PIE796",
+            "PIE797",
+            "PIE799",
+            "PIE800",
+            "PIE801",
+            "PIE802",
+            "PIE803",
+            "PIE804",
+            "PIE805",
+            "PIE806",
+            "PIE807",
+            "PIE808",
+            "PIE809",
+            "PIE810",
+            "PIE811",
         }
         assert expected_ids.issubset(rule_ids)
 

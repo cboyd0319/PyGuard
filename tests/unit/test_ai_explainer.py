@@ -292,7 +292,9 @@ class TestAIExplainer:
         """Test text simplification for beginners."""
         explainer = AIExplainer()
 
-        text = "parameterization prevents exploitation through sanitization and arbitrary compromise"
+        text = (
+            "parameterization prevents exploitation through sanitization and arbitrary compromise"
+        )
         simplified = explainer._simplify_text(text)
 
         # Check that terms were replaced

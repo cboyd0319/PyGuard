@@ -12,14 +12,14 @@ class TestPytestRulesDetection:
 
     def test_detect_fixture_no_call(self, tmp_path):
         """Test detection of fixture without call."""
-        code = '''
+        code = """
 import pytest
 from pytest import fixture
 
 @fixture
 def test_my_fixture():
     return "value"
-'''
+"""
         file_path = tmp_path / "test_something.py"
         file_path.write_text(code)
 
@@ -32,13 +32,13 @@ def test_my_fixture():
 
     def test_detect_raises_without_exception(self, tmp_path):
         """Test detection of pytest.raises() without exception type."""
-        code = '''
+        code = """
 import pytest
 
 def test_something():
     with pytest.raises():
         do_something()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -50,12 +50,12 @@ def test_something():
 
     def test_detect_assert_false(self, tmp_path):
         """Test detection of assert False."""
-        code = '''
+        code = """
 import pytest
 
 def test_feature():
     assert False, "Not implemented yet"
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -67,12 +67,12 @@ def test_feature():
 
     def test_detect_composite_assertion(self, tmp_path):
         """Test detection of composite assertions."""
-        code = '''
+        code = """
 def test_values():
     x = 5
     y = 3
     assert x > 0 and y < 10
-'''
+"""
         file_path = tmp_path / "test_something.py"
         file_path.write_text(code)
 

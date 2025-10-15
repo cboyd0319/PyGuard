@@ -3,7 +3,7 @@ Pylint Rules (PLR/PLC/PLW/PLE) - Comprehensive code quality checks.
 
 This module implements Pylint's rule categories:
 - PLR (Refactor): Code refactoring opportunities
-- PLC (Convention): Coding standard violations  
+- PLC (Convention): Coding standard violations
 - PLW (Warning): Code issues that may lead to bugs
 - PLE (Error): Code that will likely cause errors
 
@@ -75,12 +75,8 @@ class PylintVisitor(ast.NodeVisitor):
             )
 
         # PLR0913: Too many arguments
-        total_args = (
-            len(node.args.posonlyargs) +
-            len(node.args.args) +
-            len(node.args.kwonlyargs)
-        )
-        if (node.args.vararg or node.args.kwarg):
+        total_args = len(node.args.posonlyargs) + len(node.args.args) + len(node.args.kwonlyargs)
+        if node.args.vararg or node.args.kwarg:
             total_args += 1
 
         if total_args > 5:
@@ -146,12 +142,15 @@ class PylintVisitor(ast.NodeVisitor):
         instance_attrs = set()
         for child in ast.walk(node):
             if isinstance(child, ast.FunctionDef):
-                if child.name == '__init__':
+                if child.name == "__init__":
                     for stmt in ast.walk(child):
                         if isinstance(stmt, ast.Assign):
                             for target in stmt.targets:
                                 if isinstance(target, ast.Attribute):
-                                    if isinstance(target.value, ast.Name) and target.value.id == 'self':
+                                    if (
+                                        isinstance(target.value, ast.Name)
+                                        and target.value.id == "self"
+                                    ):
                                         instance_attrs.add(target.attr)
 
         if len(instance_attrs) > 7:
@@ -172,13 +171,13 @@ class PylintVisitor(ast.NodeVisitor):
         public_methods = 0
         for child in node.body:
             if isinstance(child, ast.FunctionDef):
-                if not child.name.startswith('_'):
+                if not child.name.startswith("_"):
                     public_methods += 1
 
         if public_methods < 2 and len(node.body) > 1:
             # Only flag if class has more than just __init__
             methods = [m for m in node.body if isinstance(m, ast.FunctionDef)]
-            if len(methods) > 1 or (len(methods) == 1 and methods[0].name != '__init__'):
+            if len(methods) > 1 or (len(methods) == 1 and methods[0].name != "__init__"):
                 self.violations.append(
                     RuleViolation(
                         rule_id="PLR0903",
@@ -235,16 +234,16 @@ class PylintVisitor(ast.NodeVisitor):
             isinstance_calls = []
             for value in node.test.values:
                 if isinstance(value, ast.Call):
-                    if isinstance(value.func, ast.Name) and value.func.id == 'isinstance':
+                    if isinstance(value.func, ast.Name) and value.func.id == "isinstance":
                         isinstance_calls.append(value)
 
             if len(isinstance_calls) >= 2:
                 # Check if they all check the same variable
                 first_arg = isinstance_calls[0].args[0]
                 if all(
-                    isinstance(call.args[0], ast.Name) and
-                    isinstance(first_arg, ast.Name) and
-                    call.args[0].id == first_arg.id
+                    isinstance(call.args[0], ast.Name)
+                    and isinstance(first_arg, ast.Name)
+                    and call.args[0].id == first_arg.id
                     for call in isinstance_calls
                 ):
                     self.violations.append(
@@ -263,7 +262,7 @@ class PylintVisitor(ast.NodeVisitor):
         # PLW0125: Using type() instead of isinstance()
         if isinstance(node.test, ast.Compare):
             if isinstance(node.test.left, ast.Call):
-                if isinstance(node.test.left.func, ast.Name) and node.test.left.func.id == 'type':
+                if isinstance(node.test.left.func, ast.Name) and node.test.left.func.id == "type":
                     self.violations.append(
                         RuleViolation(
                             rule_id="PLW0125",
@@ -286,7 +285,7 @@ class PylintVisitor(ast.NodeVisitor):
 
         # PLE0711: NotImplemented raised instead of NotImplementedError
         if isinstance(node.exc, ast.Name):
-            if node.exc.id == 'NotImplemented':
+            if node.exc.id == "NotImplemented":
                 self.violations.append(
                     RuleViolation(
                         rule_id="PLE0711",
@@ -309,7 +308,7 @@ class PylintVisitor(ast.NodeVisitor):
             if isinstance(node.ops[0], (ast.Eq, ast.NotEq)):
                 for comparator in node.comparators:
                     if isinstance(comparator, ast.Constant):
-                        if comparator.value == '':
+                        if comparator.value == "":
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="PLC1901",

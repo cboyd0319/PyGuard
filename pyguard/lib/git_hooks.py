@@ -34,7 +34,7 @@ class GitHooksManager:
             Path to .git directory or None if not found
         """
         current = self.repo_path.resolve()
-        
+
         # Check current directory and parents
         while current != current.parent:
             git_dir = current / ".git"
@@ -49,7 +49,7 @@ class GitHooksManager:
                         gitdir_path = content[8:]  # Remove "gitdir: " prefix
                         return Path(gitdir_path)
             current = current.parent
-        
+
         return None
 
     def is_git_repository(self) -> bool:
@@ -80,13 +80,13 @@ class GitHooksManager:
             raise ValueError("Git hooks directory not found")
 
         hook_path = self.hooks_dir / hook_type
-        
+
         # Check if hook already exists
         if hook_path.exists() and not force:
             self.logger.warning(
                 f"Hook already exists: {hook_path}",
                 category="GitHooks",
-                details={"action": "Use --force to overwrite"}
+                details={"action": "Use --force to overwrite"},
             )
             return False
 
@@ -95,19 +95,19 @@ class GitHooksManager:
 
         # Generate hook script
         hook_content = self._generate_hook_script(hook_type)
-        
+
         # Write hook file
         hook_path.write_text(hook_content)
-        
+
         # Make hook executable
         hook_path.chmod(0o755)
-        
+
         self.logger.info(
             f"Installed PyGuard {hook_type} hook",
             category="GitHooks",
-            details={"path": str(hook_path)}
+            details={"path": str(hook_path)},
         )
-        
+
         return True
 
     def _generate_hook_script(self, hook_type: str) -> str:
@@ -182,22 +182,16 @@ exit 0
             True if uninstallation successful
         """
         if not self.is_git_repository():
-            self.logger.warning(
-                "Not in a git repository",
-                category="GitHooks"
-            )
+            self.logger.warning("Not in a git repository", category="GitHooks")
             return False
 
         if not self.hooks_dir:
             return False
 
         hook_path = self.hooks_dir / hook_type
-        
+
         if not hook_path.exists():
-            self.logger.warning(
-                f"Hook not found: {hook_path}",
-                category="GitHooks"
-            )
+            self.logger.warning(f"Hook not found: {hook_path}", category="GitHooks")
             return False
 
         # Verify it's a PyGuard hook before removing
@@ -206,18 +200,15 @@ exit 0
             self.logger.warning(
                 f"Hook at {hook_path} is not a PyGuard hook",
                 category="GitHooks",
-                details={"action": "Skipping removal for safety"}
+                details={"action": "Skipping removal for safety"},
             )
             return False
 
         # Remove hook
         hook_path.unlink()
-        
-        self.logger.info(
-            f"Uninstalled PyGuard {hook_type} hook",
-            category="GitHooks"
-        )
-        
+
+        self.logger.info(f"Uninstalled PyGuard {hook_type} hook", category="GitHooks")
+
         return True
 
     def list_hooks(self) -> list[dict[str, str | bool]]:
@@ -234,13 +225,15 @@ exit 0
             if hook_file.is_file() and not hook_file.name.endswith(".sample"):
                 content = hook_file.read_text()
                 is_pyguard = "PyGuard" in content
-                hooks.append({
-                    "name": hook_file.name,
-                    "path": str(hook_file),
-                    "pyguard": is_pyguard,
-                    "executable": os.access(hook_file, os.X_OK)
-                })
-        
+                hooks.append(
+                    {
+                        "name": hook_file.name,
+                        "path": str(hook_file),
+                        "pyguard": is_pyguard,
+                        "executable": os.access(hook_file, os.X_OK),
+                    }
+                )
+
         return hooks
 
     def validate_hook(self, hook_type: str = "pre-commit") -> dict[str, bool | str | list[str]]:
@@ -258,7 +251,7 @@ exit 0
             "is_pyguard": False,
             "valid": False,
             "path": "",
-            "issues": []
+            "issues": [],
         }
         issues: list[str] = []
 
@@ -300,13 +293,10 @@ exit 0
             issues.append("pyguard command not found in PATH")
 
         result["issues"] = issues
-        
+
         # Overall validation
         result["valid"] = (
-            result["exists"] and 
-            result["executable"] and 
-            result["is_pyguard"] and
-            len(issues) == 0
+            result["exists"] and result["executable"] and result["is_pyguard"] and len(issues) == 0
         )
 
         return result
@@ -321,73 +311,52 @@ exit 0
             True if hook executes successfully
         """
         if not self.is_git_repository():
-            self.logger.error(
-                "Not in a git repository",
-                category="GitHooks"
-            )
+            self.logger.error("Not in a git repository", category="GitHooks")
             return False
 
         validation = self.validate_hook(hook_type)
         if not validation["valid"]:
             self.logger.error(
-                f"Hook validation failed: {validation['issues']}",
-                category="GitHooks"
+                f"Hook validation failed: {validation['issues']}", category="GitHooks"
             )
             return False
 
         if not self.hooks_dir:
             return False
-            
+
         hook_path = self.hooks_dir / hook_type
-        
-        self.logger.info(
-            f"Testing {hook_type} hook...",
-            category="GitHooks"
-        )
+
+        self.logger.info(f"Testing {hook_type} hook...", category="GitHooks")
 
         try:
             # Run hook in test mode (dry run)
             result = subprocess.run(
-                [str(hook_path)],
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True,
-                timeout=60
+                [str(hook_path)], cwd=self.repo_path, capture_output=True, text=True, timeout=60
             )
-            
+
             if result.returncode == 0:
                 self.logger.info(
-                    "Hook test passed",
-                    category="GitHooks",
-                    details={"output": result.stdout}
+                    "Hook test passed", category="GitHooks", details={"output": result.stdout}
                 )
                 return True
             else:
                 self.logger.warning(
                     "Hook test failed",
                     category="GitHooks",
-                    details={"returncode": result.returncode, "stderr": result.stderr}
+                    details={"returncode": result.returncode, "stderr": result.stderr},
                 )
                 return False
-                
+
         except subprocess.TimeoutExpired:
-            self.logger.error(
-                "Hook test timed out",
-                category="GitHooks"
-            )
+            self.logger.error("Hook test timed out", category="GitHooks")
             return False
         except Exception as e:
-            self.logger.error(
-                f"Hook test error: {e}",
-                category="GitHooks"
-            )
+            self.logger.error(f"Hook test error: {e}", category="GitHooks")
             return False
 
 
 def install_git_hooks(
-    repo_path: Optional[Path] = None,
-    hook_type: str = "pre-commit",
-    force: bool = False
+    repo_path: Optional[Path] = None, hook_type: str = "pre-commit", force: bool = False
 ) -> bool:
     """Install PyGuard git hooks.
 
@@ -403,10 +372,7 @@ def install_git_hooks(
     return manager.install_hook(hook_type, force)
 
 
-def uninstall_git_hooks(
-    repo_path: Optional[Path] = None,
-    hook_type: str = "pre-commit"
-) -> bool:
+def uninstall_git_hooks(repo_path: Optional[Path] = None, hook_type: str = "pre-commit") -> bool:
     """Uninstall PyGuard git hooks.
 
     Args:
@@ -421,8 +387,7 @@ def uninstall_git_hooks(
 
 
 def validate_git_hooks(
-    repo_path: Optional[Path] = None,
-    hook_type: str = "pre-commit"
+    repo_path: Optional[Path] = None, hook_type: str = "pre-commit"
 ) -> dict[str, bool | str | list[str]]:
     """Validate PyGuard git hooks installation.
 

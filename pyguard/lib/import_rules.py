@@ -45,7 +45,7 @@ class ImportVisitor(ast.NodeVisitor):
         self.imports.append(node)
 
         # TID001: Banned imports (configurable)
-        banned_modules = ['os.path']  # Should use pathlib
+        banned_modules = ["os.path"]  # Should use pathlib
         for alias in node.names:
             if alias.name in banned_modules:
                 self.violations.append(
@@ -90,7 +90,7 @@ class ImportVisitor(ast.NodeVisitor):
             )
 
         # TID004: Import from future should be at top
-        if node.module == '__future__':
+        if node.module == "__future__":
             # Check if it's not at the top (allowing docstring)
             if node.lineno > 10:  # Heuristic: should be in first 10 lines
                 self.violations.append(
@@ -107,13 +107,13 @@ class ImportVisitor(ast.NodeVisitor):
                 )
 
         # TID005: Banned from imports
-        if node.module and node.module.startswith('typing'):
+        if node.module and node.module.startswith("typing"):
             # Check if we're in TYPE_CHECKING block
             if not self.type_checking_block:
                 # TCH001: Type checking imports should be in TYPE_CHECKING block
-                type_only_imports = {'TYPE_CHECKING', 'Protocol', 'TypedDict', 'TypeAlias'}
+                type_only_imports = {"TYPE_CHECKING", "Protocol", "TypedDict", "TypeAlias"}
                 for alias in node.names:
-                    if alias.name in type_only_imports and alias.name != 'TYPE_CHECKING':
+                    if alias.name in type_only_imports and alias.name != "TYPE_CHECKING":
                         self.violations.append(
                             RuleViolation(
                                 rule_id="TCH001",
@@ -128,7 +128,7 @@ class ImportVisitor(ast.NodeVisitor):
                         )
 
         # TCH002: Type-checking imports for third-party types
-        if node.module in ['numpy', 'pandas', 'django', 'flask']:
+        if node.module in ["numpy", "pandas", "django", "flask"]:
             # Check if imported for type hints only
             # This requires flow analysis to determine if used at runtime
             pass
@@ -143,11 +143,11 @@ class ImportVisitor(ast.NodeVisitor):
     def visit_If(self, node: ast.If) -> None:
         """Detect TYPE_CHECKING blocks."""
         # Check if this is a TYPE_CHECKING block
-        if isinstance(node.test, ast.Name) and node.test.id == 'TYPE_CHECKING':
+        if isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING":
             self.type_checking_block = True
             self.in_type_checking_block_line = node.lineno
         elif isinstance(node.test, ast.Attribute):
-            if node.test.attr == 'TYPE_CHECKING':
+            if node.test.attr == "TYPE_CHECKING":
                 self.type_checking_block = True
                 self.in_type_checking_block_line = node.lineno
 
@@ -164,12 +164,12 @@ class ImportOrderChecker:
     def check_import_order(self, file_path: Path, code: str) -> List[RuleViolation]:
         """
         Check if imports are properly ordered according to PEP 8.
-        
+
         Import order should be:
         1. Standard library
         2. Third-party
         3. Local/first-party
-        
+
         Within each group, imports should be alphabetically sorted.
         """
         violations: List[RuleViolation] = []
@@ -185,18 +185,34 @@ class ImportOrderChecker:
             # I001: Import block not sorted
             # Check if imports are grouped correctly
             stdlib_modules = {
-                'os', 'sys', 're', 'json', 'pathlib', 'typing', 'collections',
-                'datetime', 'itertools', 'functools', 'io', 'abc', 'contextlib',
-                'ast', 'unittest', 'logging', 'warnings', 'traceback', 'time',
+                "os",
+                "sys",
+                "re",
+                "json",
+                "pathlib",
+                "typing",
+                "collections",
+                "datetime",
+                "itertools",
+                "functools",
+                "io",
+                "abc",
+                "contextlib",
+                "ast",
+                "unittest",
+                "logging",
+                "warnings",
+                "traceback",
+                "time",
             }
 
             prev_group = -1
             for node in imports:
                 if isinstance(node, ast.Import):
-                    module = node.names[0].name.split('.')[0]
+                    module = node.names[0].name.split(".")[0]
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
-                        module = node.module.split('.')[0]
+                        module = node.module.split(".")[0]
                     else:
                         continue  # Relative import
                 # No else needed - only Import and ImportFrom are added to imports list
@@ -204,7 +220,7 @@ class ImportOrderChecker:
                 # Determine group: 0=stdlib, 1=third-party, 2=local
                 if module in stdlib_modules:
                     curr_group = 0
-                elif module.startswith('.'):
+                elif module.startswith("."):
                     curr_group = 2
                 else:
                     curr_group = 1

@@ -18,11 +18,11 @@ class TestPrintStatementDetection:
 
     def test_detect_simple_print(self, tmp_path):
         """Test detection of simple print statement."""
-        code = '''
+        code = """
 x = 10
 print(x)
 y = 20
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -36,12 +36,12 @@ y = 20
 
     def test_detect_multiple_prints(self, tmp_path):
         """Test detection of multiple print statements."""
-        code = '''
+        code = """
 print("Starting")
 x = compute()
 print(f"Result: {x}")
 print("Done")
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -53,14 +53,14 @@ print("Done")
 
     def test_no_false_positive_on_custom_print(self, tmp_path):
         """Test that custom print functions don't trigger false positives."""
-        code = '''
+        code = """
 class Printer:
     def print(self, msg):
         self.messages.append(msg)
 
 printer = Printer()
 printer.print("test")  # This should not trigger
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -76,11 +76,11 @@ class TestBreakpointDetection:
 
     def test_detect_breakpoint(self, tmp_path):
         """Test detection of breakpoint() call."""
-        code = '''
+        code = """
 def process(data):
     breakpoint()
     return data * 2
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -94,10 +94,10 @@ def process(data):
 
     def test_breakpoint_with_condition(self, tmp_path):
         """Test detection of conditional breakpoint."""
-        code = '''
+        code = """
 if debug_mode:
     breakpoint()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -113,14 +113,14 @@ class TestPdbDetection:
 
     def test_detect_pdb_set_trace(self, tmp_path):
         """Test detection of pdb.set_trace()."""
-        code = '''
+        code = """
 import pdb
 
 def buggy_function():
     pdb.set_trace()
     result = complex_calculation()
     return result
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -137,11 +137,11 @@ def buggy_function():
 
     def test_detect_ipdb_set_trace(self, tmp_path):
         """Test detection of ipdb.set_trace()."""
-        code = '''
+        code = """
 import ipdb
 
 ipdb.set_trace()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -154,12 +154,12 @@ ipdb.set_trace()
 
     def test_detect_pudb_set_trace(self, tmp_path):
         """Test detection of pudb.set_trace()."""
-        code = '''
+        code = """
 import pudb
 
 def debug_here():
     pudb.set_trace()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -176,10 +176,10 @@ class TestDebugImportDetection:
 
     def test_detect_pdb_import(self, tmp_path):
         """Test detection of pdb import."""
-        code = '''
+        code = """
 import pdb
 import sys
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -192,9 +192,9 @@ import sys
 
     def test_detect_from_pdb_import(self, tmp_path):
         """Test detection of from pdb import."""
-        code = '''
+        code = """
 from pdb import set_trace
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -206,12 +206,12 @@ from pdb import set_trace
 
     def test_detect_all_debug_imports(self, tmp_path):
         """Test detection of all debug library imports."""
-        code = '''
+        code = """
 import pdb
 import ipdb
 import pudb
 import pdbpp
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -227,11 +227,11 @@ class TestAutoFix:
 
     def test_fix_breakpoint(self, tmp_path):
         """Test fixing breakpoint() calls."""
-        code = '''
+        code = """
 def process(data):
     breakpoint()
     return data * 2
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -247,13 +247,13 @@ def process(data):
 
     def test_fix_pdb_set_trace(self, tmp_path):
         """Test fixing pdb.set_trace() calls."""
-        code = '''
+        code = """
 import pdb
 
 def buggy():
     pdb.set_trace()
     return 42
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -269,10 +269,10 @@ def buggy():
 
     def test_fix_print_adds_comment(self, tmp_path):
         """Test that fixing print() adds a TODO comment."""
-        code = '''
+        code = """
 x = 10
 print(x)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -287,7 +287,7 @@ print(x)
 
     def test_fix_multiple_issues(self, tmp_path):
         """Test fixing multiple debugging patterns at once."""
-        code = '''
+        code = """
 import pdb
 import sys
 
@@ -296,7 +296,7 @@ def process(data):
     breakpoint()
     pdb.set_trace()
     return data
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -340,10 +340,10 @@ class TestEdgeCases:
 
     def test_syntax_error_handling(self, tmp_path):
         """Test graceful handling of syntax errors."""
-        code = '''
+        code = """
 def broken(
     # Missing closing parenthesis
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -365,12 +365,12 @@ def broken(
 
     def test_no_debugging_patterns(self, tmp_path):
         """Test file with no debugging patterns."""
-        code = '''
+        code = """
 def calculate(x, y):
     return x + y
 
 result = calculate(10, 20)
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -381,9 +381,9 @@ result = calculate(10, 20)
 
     def test_fix_idempotency(self, tmp_path):
         """Test that fixing is idempotent."""
-        code = '''
+        code = """
 breakpoint()
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 

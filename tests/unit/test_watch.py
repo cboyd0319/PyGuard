@@ -73,10 +73,10 @@ class TestPyGuardWatcher(unittest.TestCase):
             event.src_path = str(test_file)
 
             self.watcher.on_modified(event)
-            
+
             # Wait a bit for processing
             time.sleep(0.2)
-            
+
             self.callback.assert_called_once()
             call_args = self.callback.call_args[0]
             self.assertEqual(str(call_args[0]), str(test_file))
@@ -112,7 +112,7 @@ class TestWatchMode(unittest.TestCase):
         """Test WatchMode initialization."""
         paths = [self.test_file]
         watcher = WatchMode(paths, self.callback)
-        
+
         self.assertEqual(watcher.paths, paths)
         self.assertEqual(watcher.callback, self.callback)
         self.assertIsNotNone(watcher.observer)
@@ -121,18 +121,18 @@ class TestWatchMode(unittest.TestCase):
         """Test that nonexistent paths are handled."""
         nonexistent = Path("/nonexistent/path.py")
         watcher = WatchMode([nonexistent], self.callback)
-        
+
         # Just verify it initializes without error
         self.assertIsNotNone(watcher.observer)
 
-    @patch('pyguard.lib.watch.Observer')
+    @patch("pyguard.lib.watch.Observer")
     def test_start_and_stop(self, mock_observer_class):
         """Test starting and stopping watch mode."""
         mock_observer = Mock()
         mock_observer_class.return_value = mock_observer
 
         watcher = WatchMode([self.test_dir], self.callback)
-        
+
         # Test that we can call stop without starting
         watcher.stop()
         mock_observer.stop.assert_called_once()
@@ -142,7 +142,7 @@ class TestWatchMode(unittest.TestCase):
 class TestRunWatchMode(unittest.TestCase):
     """Test cases for run_watch_mode function."""
 
-    @patch('pyguard.lib.watch.WatchMode')
+    @patch("pyguard.lib.watch.WatchMode")
     def test_run_watch_mode(self, mock_watch_mode_class):
         """Test run_watch_mode function."""
         mock_watcher = Mock()

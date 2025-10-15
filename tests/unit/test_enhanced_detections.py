@@ -286,7 +286,7 @@ class TestBackupFileDetector:
             (tmp_path / "test.py.bak").touch()
             (tmp_path / "config.old").touch()
             (tmp_path / "data.backup").touch()
-            
+
             issues = self.detector.scan_directory(tmp_path)
             assert len(issues) == 3
             assert all(issue.severity == "MEDIUM" for issue in issues)
@@ -300,7 +300,7 @@ class TestBackupFileDetector:
             (tmp_path / ".env").touch()
             (tmp_path / "id_rsa").touch()
             (tmp_path / "secrets.json").touch()
-            
+
             issues = self.detector.scan_directory(tmp_path)
             assert len(issues) == 3
             assert all(issue.severity == "HIGH" for issue in issues)
@@ -315,7 +315,7 @@ class TestBackupFileDetector:
             (tmp_path / ".git" / "config.bak").touch()
             (tmp_path / ".venv").mkdir()
             (tmp_path / ".venv" / ".env").touch()
-            
+
             issues = self.detector.scan_directory(tmp_path)
             assert len(issues) == 0
 
@@ -431,12 +431,14 @@ class TestDependencyConfusionDetector:
         """Test detection of private package without index URL."""
         with tempfile.TemporaryDirectory() as tmpdir:
             req_file = Path(tmpdir) / "requirements.txt"
-            req_file.write_text("""
+            req_file.write_text(
+                """
 internal-api-client==1.0.0
 requests==2.28.0
 private-auth==0.5.0
-""")
-            
+"""
+            )
+
             issues = self.detector.scan_requirements(req_file)
             assert len(issues) == 2  # internal- and private- prefixes
             assert all(issue.severity == "HIGH" for issue in issues)
@@ -446,14 +448,16 @@ private-auth==0.5.0
         """Test no issue when index URL is specified."""
         with tempfile.TemporaryDirectory() as tmpdir:
             req_file = Path(tmpdir) / "requirements.txt"
-            req_file.write_text("""
+            req_file.write_text(
+                """
 --index-url https://pypi.org/simple
 --extra-index-url https://private.company.com/pypi
 
 internal-api-client==1.0.0
 requests==2.28.0
-""")
-            
+"""
+            )
+
             issues = self.detector.scan_requirements(req_file)
             assert len(issues) == 0
 

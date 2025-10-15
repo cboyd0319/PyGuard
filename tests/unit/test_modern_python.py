@@ -38,7 +38,9 @@ def func() -> List[int]:
         visitor.visit(tree)
 
         assert len(visitor.issues) > 0
-        assert any("List" in issue.message and "PEP 585" in issue.message for issue in visitor.issues)
+        assert any(
+            "List" in issue.message and "PEP 585" in issue.message for issue in visitor.issues
+        )
         assert any(issue.rule_id == "UP006" for issue in visitor.issues)
 
     def test_detect_optional(self):
@@ -54,7 +56,9 @@ def func(x: Optional[str]) -> None:
         visitor.visit(tree)
 
         assert len(visitor.issues) > 0
-        assert any("Optional" in issue.message and "PEP 604" in issue.message for issue in visitor.issues)
+        assert any(
+            "Optional" in issue.message and "PEP 604" in issue.message for issue in visitor.issues
+        )
         assert any(issue.rule_id == "UP007" for issue in visitor.issues)
 
     def test_detect_union(self):
@@ -70,7 +74,9 @@ def func(x: Union[str, int]) -> None:
         visitor.visit(tree)
 
         assert len(visitor.issues) > 0
-        assert any("Union" in issue.message and "PEP 604" in issue.message for issue in visitor.issues)
+        assert any(
+            "Union" in issue.message and "PEP 604" in issue.message for issue in visitor.issues
+        )
 
     def test_detect_six_usage(self):
         """Test detection of six library usage."""
@@ -240,7 +246,9 @@ def check_type(x):
 
         assert len(visitor.issues) > 0
         assert any(issue.rule_id == "UP038" for issue in visitor.issues)
-        assert any("isinstance" in issue.message and "|" in issue.message for issue in visitor.issues)
+        assert any(
+            "isinstance" in issue.message and "|" in issue.message for issue in visitor.issues
+        )
 
     def test_detect_type_alias(self):
         """Test detection of TypeAlias that should use type statement (UP040)."""
@@ -255,7 +263,10 @@ MyType: TypeAlias = int
 
         assert len(visitor.issues) > 0
         assert any(issue.rule_id == "UP040" for issue in visitor.issues)
-        assert any("TypeAlias" in issue.message or "type" in issue.message.lower() for issue in visitor.issues)
+        assert any(
+            "TypeAlias" in issue.message or "type" in issue.message.lower()
+            for issue in visitor.issues
+        )
 
     def test_detect_asyncio_timeout_error(self):
         """Test detection of asyncio.TimeoutError (UP041)."""

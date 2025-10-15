@@ -40,13 +40,22 @@ class FileSecurityIssue:
 class BackupFileDetector:
     """
     Detect backup files and sensitive files in repository.
-    
+
     CWE-530: Exposure of Backup File to an Unauthorized Control Sphere
     """
 
     BACKUP_EXTENSIONS = {
-        ".bak", ".backup", ".old", ".orig", ".tmp", ".temp",
-        ".swp", ".swo", ".save", "~", ".copy"
+        ".bak",
+        ".backup",
+        ".old",
+        ".orig",
+        ".tmp",
+        ".temp",
+        ".swp",
+        ".swo",
+        ".save",
+        "~",
+        ".copy",
     }
 
     SENSITIVE_PATTERNS = {
@@ -76,10 +85,10 @@ class BackupFileDetector:
     def scan_directory(self, directory: Path) -> List[FileSecurityIssue]:
         """
         Scan directory for backup files and sensitive files.
-        
+
         Args:
             directory: Directory to scan
-            
+
         Returns:
             List of file security issues found
         """
@@ -87,7 +96,9 @@ class BackupFileDetector:
 
         for root, dirs, files in os.walk(directory):
             # Skip common ignore directories
-            dirs[:] = [d for d in dirs if d not in {".git", ".venv", "node_modules", "__pycache__", ".tox"}]
+            dirs[:] = [
+                d for d in dirs if d not in {".git", ".venv", "node_modules", "__pycache__", ".tox"}
+            ]
 
             for filename in files:
                 file_path = Path(root) / filename
@@ -128,7 +139,7 @@ class BackupFileDetector:
 class MassAssignmentDetector:
     """
     Detect potential mass assignment vulnerabilities.
-    
+
     CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes
     """
 
@@ -147,11 +158,11 @@ class MassAssignmentDetector:
     def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
         """
         Scan code for mass assignment vulnerabilities.
-        
+
         Args:
             code: Source code to scan
             file_path: Path to file being scanned
-            
+
         Returns:
             List of security issues found
         """
@@ -182,7 +193,7 @@ class MassAssignmentDetector:
 class ClickjackingDetector:
     """
     Detect missing clickjacking protection.
-    
+
     CWE-1021: Improper Restriction of Rendered UI Layers or Frames
     """
 
@@ -208,11 +219,11 @@ class ClickjackingDetector:
     def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
         """
         Scan code for missing clickjacking protection.
-        
+
         Args:
             code: Source code to scan
             file_path: Path to file being scanned
-            
+
         Returns:
             List of security issues found
         """
@@ -231,10 +242,10 @@ class ClickjackingDetector:
         if framework:
             # Check for X-Frame-Options or Content-Security-Policy
             has_protection = (
-                re.search(r"X-Frame-Options", code, re.IGNORECASE) or
-                re.search(r"frame-ancestors", code, re.IGNORECASE) or
-                re.search(r"ClickjackingMiddleware", code) or
-                re.search(r"clickjacking", code, re.IGNORECASE)
+                re.search(r"X-Frame-Options", code, re.IGNORECASE)
+                or re.search(r"frame-ancestors", code, re.IGNORECASE)
+                or re.search(r"ClickjackingMiddleware", code)
+                or re.search(r"clickjacking", code, re.IGNORECASE)
             )
 
             if not has_protection:
@@ -258,7 +269,7 @@ class ClickjackingDetector:
 class DependencyConfusionDetector:
     """
     Detect potential dependency confusion vulnerabilities.
-    
+
     References:
     - https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610
     - CWE-494: Download of Code Without Integrity Check
@@ -279,10 +290,10 @@ class DependencyConfusionDetector:
     def scan_requirements(self, requirements_file: Path) -> List[FileSecurityIssue]:
         """
         Scan requirements file for dependency confusion risks.
-        
+
         Args:
             requirements_file: Path to requirements.txt or similar
-            
+
         Returns:
             List of file security issues found
         """
@@ -328,7 +339,7 @@ class DependencyConfusionDetector:
 class MemoryDisclosureDetector:
     """
     Detect potential memory disclosure issues.
-    
+
     CWE-212: Improper Removal of Sensitive Information Before Storage or Transfer
     """
 
@@ -349,11 +360,11 @@ class MemoryDisclosureDetector:
     def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
         """
         Scan code for memory disclosure vulnerabilities.
-        
+
         Args:
             code: Source code to scan
             file_path: Path to file being scanned
-            
+
         Returns:
             List of security issues found
         """
@@ -384,10 +395,10 @@ class MemoryDisclosureDetector:
 class AuthenticationBypassDetector:
     """
     Detect authentication bypass vulnerabilities.
-    
+
     CWE-287: Improper Authentication
     CWE-306: Missing Authentication for Critical Function
-    
+
     References:
     - OWASP ASVS v5.0 Section 2: Authentication
     - SANS CWE Top 25 #14: CWE-287
@@ -409,10 +420,10 @@ class AuthenticationBypassDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for authentication bypass patterns.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -443,10 +454,10 @@ class AuthenticationBypassDetector:
 class AuthorizationBypassDetector:
     """
     Detect authorization bypass vulnerabilities.
-    
+
     CWE-285: Improper Authorization
     CWE-639: Insecure Direct Object Reference (IDOR)
-    
+
     References:
     - OWASP Top 10 2021 A01: Broken Access Control
     - SANS CWE Top 25 #25: CWE-863
@@ -466,10 +477,10 @@ class AuthorizationBypassDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for authorization bypass patterns.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -485,7 +496,9 @@ class AuthorizationBypassDetector:
                     context = "\n".join(lines[context_start:context_end])
 
                     # Look for authorization patterns
-                    if not re.search(r"(check_permission|authorize|owner|current_user)", context, re.IGNORECASE):
+                    if not re.search(
+                        r"(check_permission|authorize|owner|current_user)", context, re.IGNORECASE
+                    ):
                         issues.append(
                             SecurityIssue(
                                 severity="HIGH",
@@ -507,10 +520,10 @@ class AuthorizationBypassDetector:
 class InsecureSessionManagementDetector:
     """
     Detect insecure session management issues.
-    
+
     CWE-384: Session Fixation
     CWE-613: Insufficient Session Expiration
-    
+
     References:
     - OWASP ASVS v5.0 Section 3: Session Management
     - OWASP Top 10 2021 A07: Identification and Authentication Failures
@@ -531,10 +544,10 @@ class InsecureSessionManagementDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for insecure session management.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -565,10 +578,10 @@ class InsecureSessionManagementDetector:
 class ResourceLeakDetector:
     """
     Detect resource leak vulnerabilities.
-    
+
     CWE-404: Improper Resource Shutdown or Release
     CWE-772: Missing Release of Resource after Effective Lifetime
-    
+
     References:
     - CERT Secure Coding FIO51-PY
     """
@@ -587,10 +600,10 @@ class ResourceLeakDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for resource leaks.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -626,10 +639,10 @@ class ResourceLeakDetector:
 class UncontrolledResourceConsumptionDetector:
     """
     Detect uncontrolled resource consumption (DoS) vulnerabilities.
-    
+
     CWE-400: Uncontrolled Resource Consumption
     CWE-770: Allocation of Resources Without Limits
-    
+
     References:
     - OWASP ASVS v5.0 Section 5.1.5: Input Validation
     """
@@ -649,10 +662,10 @@ class UncontrolledResourceConsumptionDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for uncontrolled resource consumption.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -683,9 +696,9 @@ class UncontrolledResourceConsumptionDetector:
 class ImproperCertificateValidationDetector:
     """
     Detect improper SSL/TLS certificate validation.
-    
+
     CWE-295: Improper Certificate Validation
-    
+
     References:
     - OWASP ASVS v5.0 Section 9: Communications
     - SANS CWE Top 25 (emerging)
@@ -705,10 +718,10 @@ class ImproperCertificateValidationDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for improper certificate validation.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """
@@ -739,10 +752,10 @@ class ImproperCertificateValidationDetector:
 class CryptographicNonceMisuseDetector:
     """
     Detect cryptographic nonce/IV misuse.
-    
+
     CWE-323: Reusing a Nonce, Key Pair in Encryption
     CWE-329: Not Using a Random IV with CBC Mode
-    
+
     References:
     - OWASP ASVS v5.0 Section 6.2: Cryptography
     """
@@ -761,10 +774,10 @@ class CryptographicNonceMisuseDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for nonce/IV misuse.
-        
+
         Args:
             code: Source code to scan
-            
+
         Returns:
             List of security issues found
         """

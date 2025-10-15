@@ -40,7 +40,7 @@ class DjangoVisitor(ast.NodeVisitor):
     def _detect_django_imports(self, code: str) -> bool:
         """Check if file uses Django."""
         # String literal check for import detection, not SQL injection
-        return 'from django' in code or 'import django' in code  # pyguard: disable=CWE-89
+        return "from django" in code or "import django" in code  # pyguard: disable=CWE-89
 
     def visit_Call(self, node: ast.Call) -> None:
         """Detect Django-specific call issues (DJ001-DJ013)."""
@@ -50,7 +50,7 @@ class DjangoVisitor(ast.NodeVisitor):
 
         # DJ001: Django ORM .raw() SQL query - potential SQL injection
         if isinstance(node.func, ast.Attribute):
-            if node.func.attr == 'raw':
+            if node.func.attr == "raw":
                 # Check if SQL is using string formatting
                 if len(node.args) > 0:
                     sql_arg = node.args[0]
@@ -75,15 +75,15 @@ class DjangoVisitor(ast.NodeVisitor):
             # This is checked in visit_ClassDef
 
             # DJ012: Model .objects.get() without exception handling
-            if node.func.attr == 'get':
+            if node.func.attr == "get":
                 if isinstance(node.func.value, ast.Attribute):
-                    if node.func.value.attr == 'objects':
+                    if node.func.value.attr == "objects":
                         # Check if wrapped in try-except
                         # This requires parent context, handled in checker
                         pass
 
         # DJ003: Django render() without csrf_token
-        if isinstance(node.func, ast.Name) and node.func.id == 'render':
+        if isinstance(node.func, ast.Name) and node.func.id == "render":
             # Check if template context has csrf_token
             # This is complex and requires template analysis
             pass
@@ -105,16 +105,15 @@ class DjangoVisitor(ast.NodeVisitor):
 
         for base in node.bases:
             if isinstance(base, ast.Attribute):
-                if base.attr in ('Model', 'AbstractModel'):
+                if base.attr in ("Model", "AbstractModel"):
                     is_model = True
-                elif base.attr in ('Form', 'ModelForm'):
+                elif base.attr in ("Form", "ModelForm"):
                     is_form = True
 
         if is_model:
             # DJ006: Model without __str__ method
             has_str = any(
-                isinstance(item, ast.FunctionDef) and item.name == '__str__'
-                for item in node.body
+                isinstance(item, ast.FunctionDef) and item.name == "__str__" for item in node.body
             )
             if not has_str:
                 self.violations.append(
@@ -134,12 +133,12 @@ class DjangoVisitor(ast.NodeVisitor):
             has_meta = False
             has_ordering = False
             for item in node.body:
-                if isinstance(item, ast.ClassDef) and item.name == 'Meta':
+                if isinstance(item, ast.ClassDef) and item.name == "Meta":
                     has_meta = True
                     for meta_item in item.body:
                         if isinstance(meta_item, ast.Assign):
                             for target in meta_item.targets:
-                                if isinstance(target, ast.Name) and target.id == 'ordering':
+                                if isinstance(target, ast.Name) and target.id == "ordering":
                                     has_ordering = True
 
             if has_meta and not has_ordering:
@@ -159,15 +158,13 @@ class DjangoVisitor(ast.NodeVisitor):
         if is_form:
             # DJ007: Forms should have clean methods for validation
             clean_methods = [
-                item.name for item in node.body
-                if isinstance(item, ast.FunctionDef) and item.name.startswith('clean')
+                item.name
+                for item in node.body
+                if isinstance(item, ast.FunctionDef) and item.name.startswith("clean")
             ]
 
             # Check if form has fields but no clean methods
-            has_fields = any(
-                isinstance(item, ast.Assign)
-                for item in node.body
-            )
+            has_fields = any(isinstance(item, ast.Assign) for item in node.body)
 
             if has_fields and not clean_methods:
                 self.violations.append(
@@ -194,7 +191,7 @@ class DjangoVisitor(ast.NodeVisitor):
         # DJ013: Django settings - DEBUG = True in production
         for target in node.targets:
             if isinstance(target, ast.Name):
-                if target.id == 'DEBUG':
+                if target.id == "DEBUG":
                     if isinstance(node.value, ast.Constant) and node.value.value is True:
                         self.violations.append(
                             RuleViolation(
@@ -210,7 +207,7 @@ class DjangoVisitor(ast.NodeVisitor):
                         )
 
                 # DJ010: SECRET_KEY hardcoded
-                if target.id == 'SECRET_KEY':
+                if target.id == "SECRET_KEY":
                     if isinstance(node.value, ast.Constant):
                         self.violations.append(
                             RuleViolation(
@@ -249,7 +246,7 @@ class DjangoRulesChecker:
                 code = f.read()
 
             # Only check files that appear to be Django-related
-            if 'django' not in code.lower():
+            if "django" not in code.lower():
                 return []
 
             tree = ast.parse(code)

@@ -27,7 +27,7 @@ for i in range(10):
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("concatenation" in issue.message.lower() for issue in issues)
 
@@ -40,7 +40,7 @@ for i in range(10):
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("nested" in issue.message.lower() for issue in issues)
 
@@ -54,7 +54,7 @@ for text in texts:
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("regex" in issue.message.lower() for issue in issues)
 
@@ -66,7 +66,7 @@ for key in my_dict.keys():
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("keys" in issue.message.lower() for issue in issues)
 
@@ -77,7 +77,7 @@ total = sum([x * 2 for x in range(1000)])
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("sum" in issue.message.lower() for issue in issues)
 
@@ -88,7 +88,7 @@ result = [x * y * z for x in range(10) for y in range(10) for z in range(10) if 
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         assert len(issues) > 0
         assert any("complex" in issue.message.lower() for issue in issues)
 
@@ -100,32 +100,34 @@ my_dict = {k: v for k, v in items}
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         # Should have minimal or no issues
         assert len(issues) == 0
 
     def test_analyze_file(self, tmp_path):
         """Test analyzing a file."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 for i in range(10):
     for j in range(10):
         print(i, j)
-""")
-        
+"""
+        )
+
         profiler = PerformanceProfiler()
         issues = profiler.analyze_file(test_file)
-        
+
         assert len(issues) > 0
 
     def test_analyze_file_with_syntax_error(self, tmp_path):
         """Test analyzing file with syntax error."""
         test_file = tmp_path / "test.py"
         test_file.write_text("def broken(")
-        
+
         profiler = PerformanceProfiler()
         issues = profiler.analyze_file(test_file)
-        
+
         assert len(issues) == 0  # Should handle gracefully
 
     def test_issue_has_all_fields(self):
@@ -136,7 +138,7 @@ for i in range(10):
 """
         profiler = PerformanceProfiler()
         issues = profiler.analyze_code(code)
-        
+
         if len(issues) > 0:
             issue = issues[0]
             assert issue.severity in ["HIGH", "MEDIUM", "LOW"]
@@ -160,7 +162,7 @@ class TestPerformanceOptimizationSuggester:
         """Test listing optimization patterns."""
         suggester = PerformanceOptimizationSuggester()
         patterns = suggester.list_patterns()
-        
+
         assert len(patterns) > 0
         assert "list_comprehension" in patterns
         assert "dict_comprehension" in patterns
@@ -171,7 +173,7 @@ class TestPerformanceOptimizationSuggester:
         """Test getting list comprehension suggestion."""
         suggester = PerformanceOptimizationSuggester()
         suggestion = suggester.get_suggestion("list_comprehension")
-        
+
         assert suggestion is not None
         assert "pattern" in suggestion
         assert "optimized" in suggestion
@@ -181,7 +183,7 @@ class TestPerformanceOptimizationSuggester:
         """Test getting dict comprehension suggestion."""
         suggester = PerformanceOptimizationSuggester()
         suggestion = suggester.get_suggestion("dict_comprehension")
-        
+
         assert suggestion is not None
         assert "for key, value" in suggestion["pattern"]
 
@@ -189,7 +191,7 @@ class TestPerformanceOptimizationSuggester:
         """Test getting set membership suggestion."""
         suggester = PerformanceOptimizationSuggester()
         suggestion = suggester.get_suggestion("set_membership")
-        
+
         assert suggestion is not None
         assert "O(n)" in suggestion["speedup"]
         assert "O(1)" in suggestion["speedup"]
@@ -198,7 +200,7 @@ class TestPerformanceOptimizationSuggester:
         """Test getting string concatenation suggestion."""
         suggester = PerformanceOptimizationSuggester()
         suggestion = suggester.get_suggestion("string_concat")
-        
+
         assert suggestion is not None
         assert "join" in suggestion["optimized"]
 
@@ -206,7 +208,7 @@ class TestPerformanceOptimizationSuggester:
         """Test getting non-existent pattern."""
         suggester = PerformanceOptimizationSuggester()
         suggestion = suggester.get_suggestion("nonexistent_pattern")
-        
+
         assert suggestion is None
 
 
@@ -216,11 +218,13 @@ class TestConvenienceFunctions:
     def test_analyze_performance_function(self, tmp_path):
         """Test analyze_performance convenience function."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 for i in range(10):
     for j in range(10):
         pass
-""")
-        
+"""
+        )
+
         issues = analyze_performance(str(test_file))
         assert isinstance(issues, list)

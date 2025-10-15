@@ -165,9 +165,7 @@ steps:
   condition: always()
 """
 
-    def generate_config(
-        self, ci_platform: str, output_path: Optional[Path] = None
-    ) -> str:
+    def generate_config(self, ci_platform: str, output_path: Optional[Path] = None) -> str:
         """
         Generate CI/CD configuration for specified platform.
 
@@ -281,7 +279,7 @@ exit 0
             True if successful, False otherwise
         """
         git_hooks_dir = repo_path / ".git" / "hooks"
-        
+
         if not git_hooks_dir.exists():
             return False
 

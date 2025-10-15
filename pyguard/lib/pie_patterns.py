@@ -242,7 +242,13 @@ class PIEPatternVisitor(ast.NodeVisitor):
                 arg = node.args[0]
                 # Check if already an iterable that doesn't need list()
                 if isinstance(arg, ast.Call):
-                    if isinstance(arg.func, ast.Name) and arg.func.id in ("range", "enumerate", "zip", "map", "filter"):
+                    if isinstance(arg.func, ast.Name) and arg.func.id in (
+                        "range",
+                        "enumerate",
+                        "zip",
+                        "map",
+                        "filter",
+                    ):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="PIE802",
@@ -260,7 +266,9 @@ class PIEPatternVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name) and node.func.id in ("list", "tuple", "set"):
             if len(node.args) == 1 and isinstance(node.args[0], ast.Call):
                 inner = node.args[0]
-                if isinstance(inner.func, ast.Attribute) and inner.func.attr == "keys":  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                if (
+                    isinstance(inner.func, ast.Attribute) and inner.func.attr == "keys"
+                ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     self.violations.append(
                         RuleViolation(
                             rule_id="PIE804",
@@ -425,7 +433,11 @@ class PIEPatternVisitor(ast.NodeVisitor):
         """Detect exception handler code smells (PIE810)."""
         # PIE810: Multiple calls in exception handler
         # Check if there are multiple function calls in the exception handler
-        calls = [stmt for stmt in node.body if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call)]
+        calls = [
+            stmt
+            for stmt in node.body
+            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call)
+        ]
         if len(calls) > 1:
             self.violations.append(
                 RuleViolation(
@@ -441,7 +453,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
             )
 
         self.generic_visit(node)
-    
+
     def visit_Import(self, node: ast.Import) -> None:
         """Detect import-related code smells (PIE812, PIE814)."""
         # PIE812: Unnecessary import alias (import X as X)
@@ -459,14 +471,14 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Detect from-import-related code smells (PIE813, PIE815)."""
         # PIE813: Unnecessary 'from ... import' when importing module
         # Example: from os import path (better: import os.path)
-        
+
         # PIE815: Unnecessary from import with duplicate names
         for alias in node.names:
             if alias.asname and alias.name == alias.asname:
@@ -482,15 +494,15 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Slice(self, node: ast.Slice) -> None:
         """Detect slice-related code smells (PIE816)."""
         # PIE816: Unnecessary list slice (list[:])
         # This is detected in the context of usage
         self.generic_visit(node)
-    
+
     def visit_BoolOp(self, node: ast.BoolOp) -> None:
         """Detect boolean operation code smells (PIE817)."""
         # PIE817: Prefer using 'any()' or 'all()' over multiple 'or'/'and' conditions
@@ -522,9 +534,9 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Detect subscript-related code smells (PIE818, PIE819)."""
         # PIE818: Unnecessary call to list() before subscript
@@ -542,7 +554,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         # PIE819: Unnecessary list comprehension in subscript
         # Example: [x for x in items][0] -> next(iter(items))
         if isinstance(node.value, ast.ListComp):
@@ -559,7 +571,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
-        
+
         self.generic_visit(node)
 
 
@@ -616,14 +628,14 @@ class PIEPatternChecker:
             pattern = r"==\s*False"
             matches = list(re.finditer(pattern, code))
             for match in reversed(matches):  # Reverse to maintain positions
-                code = code[:match.start()] + "is False" + code[match.end():]
+                code = code[: match.start()] + "is False" + code[match.end() :]
                 fixes_applied += 1
 
             # Fix PIE793: == True -> is True
             pattern = r"==\s*True"
             matches = list(re.finditer(pattern, code))
             for match in reversed(matches):
-                code = code[:match.start()] + "is True" + code[match.end():]
+                code = code[: match.start()] + "is True" + code[match.end() :]
                 fixes_applied += 1
 
             # Fix PIE796: dict(...) -> {...}

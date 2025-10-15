@@ -24,8 +24,12 @@ print("hello")
         visitor.finalize()
 
         assert len(visitor.issues) >= 2
-        assert any("import" in issue.message.lower() and issue.name == "os" for issue in visitor.issues)
-        assert any("import" in issue.message.lower() and issue.name == "sys" for issue in visitor.issues)
+        assert any(
+            "import" in issue.message.lower() and issue.name == "os" for issue in visitor.issues
+        )
+        assert any(
+            "import" in issue.message.lower() and issue.name == "sys" for issue in visitor.issues
+        )
         assert any(issue.rule_id == "F401" for issue in visitor.issues)
 
     def test_detect_unused_from_import(self):
@@ -57,8 +61,14 @@ def process(data, config, verbose):
         visitor.finalize()
 
         assert len(visitor.issues) >= 2
-        assert any("argument" in issue.message.lower() and issue.name == "config" for issue in visitor.issues)
-        assert any("argument" in issue.message.lower() and issue.name == "verbose" for issue in visitor.issues)
+        assert any(
+            "argument" in issue.message.lower() and issue.name == "config"
+            for issue in visitor.issues
+        )
+        assert any(
+            "argument" in issue.message.lower() and issue.name == "verbose"
+            for issue in visitor.issues
+        )
         assert any(issue.rule_id == "ARG001" for issue in visitor.issues)
 
     def test_ignore_self_cls(self):

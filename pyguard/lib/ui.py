@@ -397,10 +397,10 @@ class ModernHTMLReporter:
                 "LOW": "Low severity",
             }.get(severity, "Unknown severity")
 
-            file_name = Path(issue.get('file', '')).name
-            category = issue.get('category', 'Unknown')
-            line_num = issue.get('line', 0)
-            message = issue.get('message', '')
+            file_name = Path(issue.get("file", "")).name
+            category = issue.get("category", "Unknown")
+            line_num = issue.get("line", 0)
+            message = issue.get("message", "")
 
             issue_rows_html += f"""
                 <tr class="severity-{severity_class}" role="row">
@@ -418,12 +418,12 @@ class ModernHTMLReporter:
             """
 
         if not issue_rows_html:
-            issue_rows_html = '''<tr role="row">
+            issue_rows_html = """<tr role="row">
                 <td colspan="5" class="no-issues" role="cell">
                     <span class="icon" aria-hidden="true">🎉</span>
                     <div>No issues found! Your code is clean and secure.</div>
                 </td>
-            </tr>'''
+            </tr>"""
 
         html = f"""
 <!DOCTYPE html>

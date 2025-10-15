@@ -29,7 +29,7 @@ class AsyncIssue:
 class AsyncPatternVisitor(ast.NodeVisitor):
     """
     AST visitor to detect async anti-patterns and issues.
-    
+
     Detects patterns like:
     - Blocking I/O calls in async functions
     - Missing await on async functions
@@ -209,8 +209,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
             if isinstance(node.iter, ast.Call):
                 call_name = self._get_call_name(node.iter)
                 if any(
-                    keyword in call_name.lower()
-                    for keyword in ["fetch", "query", "read", "get"]
+                    keyword in call_name.lower() for keyword in ["fetch", "query", "read", "get"]
                 ):
                     self.issues.append(
                         AsyncIssue(

@@ -69,7 +69,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
         """Track imports for later analysis."""
         for alias in node.names:
             self.imports.add(alias.name)
-            
+
             # S401: suspicious-telnetlib-import
             if alias.name == "telnetlib":
                 self.violations.append(
@@ -86,7 +86,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S402: suspicious-ftplib-import
             elif alias.name == "ftplib":
                 self.violations.append(
@@ -103,7 +103,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S403: suspicious-pickle-import
             elif alias.name in ("pickle", "cPickle", "_pickle"):
                 self.violations.append(
@@ -120,13 +120,13 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S404: suspicious-subprocess-import
             elif alias.name == "subprocess":
                 # Note: subprocess itself is not bad, but we flag it for awareness
                 # The real issues are caught when shell=True is used
                 pass
-            
+
             # S405-S411: XML-related suspicious imports
             elif alias.name in ("xml.etree.ElementTree", "xml.etree.cElementTree"):
                 self.violations.append(
@@ -143,7 +143,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "xml.sax":
                 self.violations.append(
                     RuleViolation(
@@ -159,7 +159,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "xml.dom.expatbuilder":
                 self.violations.append(
                     RuleViolation(
@@ -175,7 +175,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "xml.dom.minidom":
                 self.violations.append(
                     RuleViolation(
@@ -191,7 +191,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "xml.dom.pulldom":
                 self.violations.append(
                     RuleViolation(
@@ -207,7 +207,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "lxml":
                 self.violations.append(
                     RuleViolation(
@@ -223,7 +223,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             elif alias.name == "xmlrpc":
                 self.violations.append(
                     RuleViolation(
@@ -239,7 +239,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S413: suspicious-pycrypto-import
             elif alias.name == "Crypto" or alias.name.startswith("Crypto."):
                 self.violations.append(
@@ -256,7 +256,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -266,7 +266,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                 if node.module not in self.from_imports:
                     self.from_imports[node.module] = set()
                 self.from_imports[node.module].add(alias.name)
-        
+
         self.generic_visit(node)
 
     def visit_Assert(self, node: ast.Assert) -> None:
@@ -291,7 +291,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         """Check function calls for security issues."""
         func_name = self._get_call_name(node)
-        
+
         # S102: exec-builtin
         if func_name == "exec":
             self.violations.append(
@@ -308,7 +308,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S307: suspicious-eval-usage
         elif func_name == "eval":
             self.violations.append(
@@ -325,7 +325,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S301: suspicious-pickle-usage
         elif func_name in ("pickle.loads", "pickle.load", "cPickle.loads", "cPickle.load"):
             self.violations.append(
@@ -342,7 +342,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S302: suspicious-marshal-usage
         elif func_name in ("marshal.loads", "marshal.load"):
             self.violations.append(
@@ -359,14 +359,16 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S506: unsafe-yaml-load
         elif func_name in ("yaml.load", "yaml.unsafe_load"):
             # Check if safe_loader is used
             has_safe_loader = any(
-                isinstance(kw.value, ast.Attribute) and 
-                kw.value.attr in ("SafeLoader", "CSafeLoader")
-                for kw in node.keywords if kw.arg == "Loader"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                isinstance(kw.value, ast.Attribute)
+                and kw.value.attr in ("SafeLoader", "CSafeLoader")
+                for kw in node.keywords
+                if kw.arg
+                == "Loader"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
             )
             if not has_safe_loader:
                 self.violations.append(
@@ -383,7 +385,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S311: suspicious-non-cryptographic-random-usage
         elif func_name.startswith("random."):
             # Check context - only flag if likely being used for security
@@ -401,7 +403,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S306: suspicious-mktemp-usage
         elif func_name in ("tempfile.mktemp", "os.tmpnam", "os.tempnam"):
             self.violations.append(
@@ -418,14 +420,26 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S113: request-without-timeout and S501: request-with-no-cert-validation
         # Note: These are checked together since they apply to the same functions
-        if func_name in ("requests.get", "requests.post", "requests.put", "requests.delete", 
-                          "requests.patch", "requests.head", "requests.request", "httpx.get",
-                          "httpx.post", "httpx.Client", "httpx.AsyncClient"):
+        if func_name in (
+            "requests.get",
+            "requests.post",
+            "requests.put",
+            "requests.delete",
+            "requests.patch",
+            "requests.head",
+            "requests.request",
+            "httpx.get",
+            "httpx.post",
+            "httpx.Client",
+            "httpx.AsyncClient",
+        ):
             # S113: request-without-timeout
-            has_timeout = any(kw.arg == "timeout" for kw in node.keywords)  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+            has_timeout = any(
+                kw.arg == "timeout" for kw in node.keywords
+            )  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
             if not has_timeout:
                 self.violations.append(
                     RuleViolation(
@@ -441,12 +455,12 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S501: request-with-no-cert-validation
             verify_false = any(
-                kw.arg == "verify" and 
-                isinstance(kw.value, ast.Constant) and 
-                kw.value.value is False
+                kw.arg == "verify"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is False
                 for kw in node.keywords
             )
             if verify_false:
@@ -464,13 +478,17 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S303: suspicious-insecure-hash-usage (similar to S324 but covers more cases)
         # S324: hashlib-insecure-hash-function
         elif func_name == "hashlib.new" or func_name in ("hashlib.md5", "hashlib.sha1"):
             # Check if it's md5, sha1, or other weak hashes
             if func_name == "hashlib.new" and node.args:
-                if isinstance(node.args[0], ast.Constant) and node.args[0].value in ("md5", "sha1", "sha"):
+                if isinstance(node.args[0], ast.Constant) and node.args[0].value in (
+                    "md5",
+                    "sha1",
+                    "sha",
+                ):
                     algorithm = node.args[0].value
                     rule_id = "S303" if algorithm in ("md5", "sha") else "S324"
                     self.violations.append(
@@ -504,9 +522,15 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S304: suspicious-insecure-cipher-usage
-        elif func_name in ("Crypto.Cipher.ARC2", "Crypto.Cipher.ARC4", "Crypto.Cipher.Blowfish", "Crypto.Cipher.DES", "Crypto.Cipher.XOR"):
+        elif func_name in (
+            "Crypto.Cipher.ARC2",
+            "Crypto.Cipher.ARC4",
+            "Crypto.Cipher.Blowfish",
+            "Crypto.Cipher.DES",
+            "Crypto.Cipher.XOR",
+        ):
             cipher = func_name.split(".")[-1]
             self.violations.append(
                 RuleViolation(
@@ -522,9 +546,11 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S305: suspicious-insecure-cipher-mode-usage
-        elif "Crypto.Cipher" in func_name and any(mode in str(node.keywords) for mode in ["MODE_ECB"]):
+        elif "Crypto.Cipher" in func_name and any(
+            mode in str(node.keywords) for mode in ["MODE_ECB"]
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="S305",
@@ -539,7 +565,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S308: suspicious-mark-safe-usage (Django)
         elif func_name in ("django.utils.safestring.mark_safe", "mark_safe"):
             self.violations.append(
@@ -556,7 +582,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S310: suspicious-url-open-usage
         elif func_name in ("urllib.request.urlopen", "urllib.urlopen", "urllib2.urlopen"):
             self.violations.append(
@@ -573,7 +599,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S312: suspicious-telnet-usage
         elif func_name.startswith("telnetlib."):
             self.violations.append(
@@ -590,10 +616,13 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S313-S320: XML-related function calls
-        elif func_name in ("xml.etree.ElementTree.parse", "xml.etree.ElementTree.fromstring",
-                          "xml.etree.ElementTree.XMLParser"):
+        elif func_name in (
+            "xml.etree.ElementTree.parse",
+            "xml.etree.ElementTree.fromstring",
+            "xml.etree.ElementTree.XMLParser",
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="S313",
@@ -608,7 +637,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         elif func_name.startswith("xml.sax"):
             self.violations.append(
                 RuleViolation(
@@ -624,7 +653,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         elif func_name.startswith("xml.dom.minidom"):
             self.violations.append(
                 RuleViolation(
@@ -640,7 +669,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         elif func_name.startswith("xml.dom.pulldom"):
             self.violations.append(
                 RuleViolation(
@@ -656,7 +685,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S321: suspicious-ftp-lib-usage
         elif func_name.startswith("ftplib."):
             self.violations.append(
@@ -673,7 +702,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S323: suspicious-unverified-context-usage
         elif func_name == "ssl._create_unverified_context":
             self.violations.append(
@@ -690,19 +719,25 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S602-S612: subprocess and related security issues
-        elif func_name in ("subprocess.Popen", "subprocess.call", "subprocess.check_call",
-                          "subprocess.check_output", "subprocess.run", "os.system", 
-                          "os.popen", "os.spawn", "commands.getstatusoutput"):
+        elif func_name in (
+            "subprocess.Popen",
+            "subprocess.call",
+            "subprocess.check_call",
+            "subprocess.check_output",
+            "subprocess.run",
+            "os.system",
+            "os.popen",
+            "os.spawn",
+            "commands.getstatusoutput",
+        ):
             # S602: subprocess-popen-with-shell-equals-true
             has_shell_true = any(
-                kw.arg == "shell" and 
-                isinstance(kw.value, ast.Constant) and 
-                kw.value.value is True
+                kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True
                 for kw in node.keywords
             )
-            
+
             if has_shell_true:
                 self.violations.append(
                     RuleViolation(
@@ -719,7 +754,11 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     )
                 )
             # S603: subprocess-without-shell-equals-true (check for string instead of list)
-            elif node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+            elif (
+                node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
                 self.violations.append(
                     RuleViolation(
                         rule_id="S603",
@@ -734,10 +773,13 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S604-S607: Additional subprocess checks
             # S604: call-with-shell-equals-true
-            if func_name in ("subprocess.call", "subprocess.check_call", "subprocess.check_output") and has_shell_true:
+            if (
+                func_name in ("subprocess.call", "subprocess.check_call", "subprocess.check_output")
+                and has_shell_true
+            ):
                 self.violations.append(
                     RuleViolation(
                         rule_id="S604",
@@ -752,7 +794,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S605: start-process-with-a-shell
             if func_name == "os.system":
                 self.violations.append(
@@ -769,7 +811,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S606: start-process-with-no-shell
             if func_name == "os.popen":
                 self.violations.append(
@@ -786,7 +828,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S608: hardcoded-sql-expression
         elif func_name in ("cursor.execute", "connection.execute") or "execute" in func_name:
             # Check if SQL query is built with string formatting
@@ -805,7 +847,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S502-S509: SSL/TLS security
         elif func_name.startswith("ssl."):
             # S502: ssl-insecure-version
@@ -824,9 +866,11 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-            
+
             # S504: ssl-with-no-version
-            if func_name == "ssl.wrap_socket" and not any(kw.arg == "ssl_version" for kw in node.keywords):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+            if func_name == "ssl.wrap_socket" and not any(
+                kw.arg == "ssl_version" for kw in node.keywords
+            ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                 self.violations.append(
                     RuleViolation(
                         rule_id="S504",
@@ -841,7 +885,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         # S505: weak-cryptographic-key
         elif func_name in ("Crypto.PublicKey.RSA.generate", "Crypto.PublicKey.DSA.generate"):
             # Check key size
@@ -862,14 +906,14 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                             source_tool="ruff",
                         )
                     )
-        
+
         # S701-S704: Template security (Jinja2, Mako)
         if "jinja2" in func_name.lower() or func_name == "Environment":
             # S701: jinja2-autoescape-false
             autoescape_false = any(
-                kw.arg == "autoescape" and 
-                isinstance(kw.value, ast.Constant) and 
-                kw.value.value is False
+                kw.arg == "autoescape"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is False
                 for kw in node.keywords
             )
             if autoescape_false:
@@ -887,7 +931,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         source_tool="ruff",
                     )
                 )
-        
+
         elif "mako" in func_name.lower():
             # S702: mako-templates
             self.violations.append(
@@ -904,7 +948,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -912,9 +956,12 @@ class RuffSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 # S105: hardcoded-password-string
-                if any(keyword in var_name for keyword in ("password", "passwd", "pwd", "secret", "token")):
+                if any(
+                    keyword in var_name
+                    for keyword in ("password", "passwd", "pwd", "secret", "token")
+                ):
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         if len(node.value.value) > 3:  # Ignore empty or very short strings
                             self.violations.append(
@@ -931,11 +978,13 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                                     source_tool="ruff",
                                 )
                             )
-                
+
                 # S108: hardcoded-temp-file
                 if any(keyword in var_name for keyword in ("tmp", "temp")):
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        if node.value.value.startswith("/tmp/") or node.value.value.startswith("C:\\temp\\"):
+                        if node.value.value.startswith("/tmp/") or node.value.value.startswith(
+                            "C:\\temp\\"
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="S108",
@@ -950,7 +999,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                                     source_tool="ruff",
                                 )
                             )
-                
+
                 # S104: hardcoded-bind-all-interfaces
                 if isinstance(node.value, ast.Constant) and node.value.value in ("0.0.0.0", "::"):
                     self.violations.append(
@@ -967,16 +1016,19 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                             source_tool="ruff",
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check function definitions for hardcoded passwords in defaults."""
         # S107: hardcoded-password-default
-        for default, arg in zip(node.args.defaults, node.args.args[-len(node.args.defaults):]):
+        for default, arg in zip(node.args.defaults, node.args.args[-len(node.args.defaults) :]):
             if isinstance(default, ast.Constant) and isinstance(default.value, str):
                 arg_name = arg.arg.lower()
-                if any(keyword in arg_name for keyword in ("password", "passwd", "pwd", "secret", "token")):
+                if any(
+                    keyword in arg_name
+                    for keyword in ("password", "passwd", "pwd", "secret", "token")
+                ):
                     if len(default.value) > 3:
                         self.violations.append(
                             RuleViolation(
@@ -992,7 +1044,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                                 source_tool="ruff",
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
@@ -1013,7 +1065,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         # S112: try-except-continue
         elif len(node.body) == 1 and isinstance(node.body[0], ast.Continue):
             self.violations.append(
@@ -1030,20 +1082,24 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     source_tool="ruff",
                 )
             )
-        
+
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Check attribute access for security issues."""
         # S103: bad-file-permissions - check for overly permissive chmod
         if isinstance(node.value, ast.Name):
-            parent = getattr(node, '_parent', None)
+            parent = getattr(node, "_parent", None)
             if isinstance(parent, ast.Call):
                 func_name = self._get_call_name(parent)
                 if func_name in ("os.chmod", "pathlib.Path.chmod"):
                     # Check if mode argument is overly permissive
                     if parent.args:
-                        mode_arg = parent.args[0] if func_name == "os.chmod" and len(parent.args) > 1 else parent.args[0]
+                        mode_arg = (
+                            parent.args[0]
+                            if func_name == "os.chmod" and len(parent.args) > 1
+                            else parent.args[0]
+                        )
                         if isinstance(mode_arg, ast.Constant):
                             # Check for overly permissive modes like 0o777, 0o666
                             mode_value = mode_arg.value
@@ -1064,28 +1120,28 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                                             source_tool="ruff",
                                         )
                                     )
-        
+
         self.generic_visit(node)
 
 
 def check_ruff_security(file_path: Path) -> List[RuleViolation]:
     """
     Check a Python file for Ruff S (Security) rule violations.
-    
+
     Args:
         file_path: Path to Python file to check
-        
+
     Returns:
         List of rule violations found
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             source_code = f.read()
-        
+
         tree = ast.parse(source_code, filename=str(file_path))
         visitor = RuffSecurityVisitor(file_path, source_code)
         visitor.visit(tree)
-        
+
         return visitor.violations
     except SyntaxError as e:
         logger.warning(f"Syntax error in {file_path}: {e}")

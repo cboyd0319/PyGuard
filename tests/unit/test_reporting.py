@@ -61,7 +61,7 @@ class TestConsoleReporter:
         """Test printing header."""
         reporter = ConsoleReporter(use_color=False)
         reporter.print_header("Test Header")
-        
+
         captured = capsys.readouterr()
         assert "Test Header" in captured.out
         assert "=" in captured.out
@@ -70,7 +70,7 @@ class TestConsoleReporter:
         """Test printing section."""
         reporter = ConsoleReporter(use_color=False)
         reporter.print_section("Test Section")
-        
+
         captured = capsys.readouterr()
         assert "Test Section" in captured.out
         assert "-" in captured.out
@@ -79,7 +79,7 @@ class TestConsoleReporter:
         """Test printing metric."""
         reporter = ConsoleReporter(use_color=False)
         reporter.print_metric("Test Label", "Test Value", "GREEN")
-        
+
         captured = capsys.readouterr()
         assert "Test Label" in captured.out
         assert "Test Value" in captured.out
@@ -99,9 +99,9 @@ class TestConsoleReporter:
             analysis_time_seconds=5.5,
             avg_time_per_file_ms=611.1,
         )
-        
+
         reporter.print_summary(metrics)
-        
+
         captured = capsys.readouterr()
         assert "PyGuard Analysis Summary" in captured.out
         assert "Total files" in captured.out
@@ -133,7 +133,7 @@ class TestJSONReporter:
             analysis_time_seconds=2.5,
             avg_time_per_file_ms=500.0,
         )
-        
+
         issues = [
             {
                 "file": "test.py",
@@ -143,7 +143,7 @@ class TestJSONReporter:
                 "message": "Test issue",
             }
         ]
-        
+
         fixes = [
             {
                 "file": "test.py",
@@ -151,9 +151,9 @@ class TestJSONReporter:
                 "description": "Changed to parameterized query",
             }
         ]
-        
+
         report = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert "summary" in report
         assert "issues" in report
         assert "fixes" in report
@@ -178,14 +178,14 @@ class TestJSONReporter:
             analysis_time_seconds=1.0,
             avg_time_per_file_ms=1000.0,
         )
-        
+
         report = reporter.generate_report(metrics, [], [])
         output_file = tmp_path / "report.json"
-        
+
         reporter.save_report(report, output_file)
-        
+
         assert output_file.exists()
-        
+
         # Verify file content
         with open(output_file, "r", encoding="utf-8") as f:
             loaded = json.load(f)
@@ -217,7 +217,7 @@ class TestHTMLReporter:
             analysis_time_seconds=2.5,
             avg_time_per_file_ms=500.0,
         )
-        
+
         issues = [
             {
                 "file": "test.py",
@@ -228,7 +228,7 @@ class TestHTMLReporter:
                 "fix_suggestion": "Use parameterized queries",
             }
         ]
-        
+
         fixes = [
             {
                 "file": "test.py",
@@ -236,9 +236,9 @@ class TestHTMLReporter:
                 "description": "Changed to parameterized query",
             }
         ]
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert "<html" in html.lower()
         assert "PyGuard" in html
         assert "SQL Injection" in html
@@ -260,14 +260,14 @@ class TestHTMLReporter:
             analysis_time_seconds=1.0,
             avg_time_per_file_ms=1000.0,
         )
-        
+
         html = reporter.generate_report(metrics, [], [])
         output_file = tmp_path / "report.html"
-        
+
         reporter.save_report(html, output_file)
-        
+
         assert output_file.exists()
-        
+
         # Verify file content
         with open(output_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -289,15 +289,33 @@ class TestHTMLReporter:
             analysis_time_seconds=1.0,
             avg_time_per_file_ms=333.0,
         )
-        
+
         issues = [
-            {"file": "test1.py", "line": 1, "severity": "HIGH", "category": "Test", "message": "High issue"},
-            {"file": "test2.py", "line": 2, "severity": "MEDIUM", "category": "Test", "message": "Medium issue"},
-            {"file": "test3.py", "line": 3, "severity": "LOW", "category": "Test", "message": "Low issue"},
+            {
+                "file": "test1.py",
+                "line": 1,
+                "severity": "HIGH",
+                "category": "Test",
+                "message": "High issue",
+            },
+            {
+                "file": "test2.py",
+                "line": 2,
+                "severity": "MEDIUM",
+                "category": "Test",
+                "message": "Medium issue",
+            },
+            {
+                "file": "test3.py",
+                "line": 3,
+                "severity": "LOW",
+                "category": "Test",
+                "message": "Low issue",
+            },
         ]
-        
+
         html = reporter.generate_report(metrics, issues, [])
-        
+
         # Should contain all three issues
         assert "High issue" in html
         assert "Medium issue" in html
@@ -321,9 +339,9 @@ class TestHTMLReporter:
             analysis_time_seconds=1.0,
             avg_time_per_file_ms=200.0,
         )
-        
+
         html = reporter.generate_report(metrics, [], [])
-        
+
         assert "<html" in html.lower()
         assert "PyGuard" in html
         # Should indicate no issues found

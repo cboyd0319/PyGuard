@@ -19,9 +19,9 @@ class TestProcessingResult(unittest.TestCase):
             success=True,
             fixes_applied=["fix1", "fix2"],
             error=None,
-            processing_time_ms=123.45
+            processing_time_ms=123.45,
         )
-        
+
         self.assertEqual(result.file_path, Path("test.py"))
         self.assertTrue(result.success)
         self.assertEqual(result.fixes_applied, ["fix1", "fix2"])
@@ -31,12 +31,9 @@ class TestProcessingResult(unittest.TestCase):
     def test_processing_result_with_error(self):
         """Test ProcessingResult with error."""
         result = ProcessingResult(
-            file_path=Path("test.py"),
-            success=False,
-            fixes_applied=[],
-            error="Test error message"
+            file_path=Path("test.py"), success=False, fixes_applied=[], error="Test error message"
         )
-        
+
         self.assertFalse(result.success)
         self.assertEqual(result.error, "Test error message")
         self.assertEqual(result.fixes_applied, [])
@@ -116,7 +113,7 @@ class TestParallelProcessor(unittest.TestCase):
 
             # Should have 2 results (one error, one success)
             self.assertEqual(len(results), 2)
-            
+
             # Find the error result
             error_results = [r for r in results if not r.success]
             self.assertEqual(len(error_results), 1)
@@ -157,6 +154,7 @@ class TestParallelProcessor(unittest.TestCase):
 
     def test_process_empty_file_list(self):
         """Test processing empty file list."""
+
         def mock_processor(path):
             return (True, [])
 
@@ -237,16 +235,17 @@ class TestBatchProcessor(unittest.TestCase):
             results = self.processor.process_in_batches(test_files, mock_processor)
 
             self.assertEqual(len(results), 8)
-            
+
             # Count successful and failed
             successful = sum(1 for r in results if r.success)
             failed = sum(1 for r in results if not r.success)
-            
+
             self.assertEqual(successful, 4)
             self.assertEqual(failed, 4)
 
     def test_process_in_batches_empty_list(self):
         """Test batch processing with empty file list."""
+
         def mock_processor(path):
             return (True, [])
 
@@ -272,5 +271,5 @@ class TestBatchProcessor(unittest.TestCase):
                 self.assertTrue(result.success)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
