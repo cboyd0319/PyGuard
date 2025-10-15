@@ -25,7 +25,7 @@ class TestDependency:
             source="pypi",
             license="Apache-2.0",
         )
-        
+
         assert dep.name == "requests"
         assert dep.version == "2.28.0"
         assert dep.source == "pypi"
@@ -43,7 +43,7 @@ class TestSBOM:
             Dependency(name="flask", version="2.0.0", source="pypi"),
             Dependency(name="requests", version="2.28.0", source="pypi"),
         ]
-        
+
         sbom = SBOM(
             project_name="test-project",
             project_version="1.0.0",
@@ -51,7 +51,7 @@ class TestSBOM:
             dependencies=deps,
             total_dependencies=2,
         )
-        
+
         assert sbom.project_name == "test-project"
         assert sbom.total_dependencies == 2
         assert len(sbom.dependencies) == 2
@@ -65,9 +65,9 @@ class TestSBOM:
             dependencies=[],
             total_dependencies=0,
         )
-        
+
         sbom_dict = sbom.to_dict()
-        
+
         assert isinstance(sbom_dict, dict)
         assert sbom_dict["project_name"] == "test"
         assert sbom_dict["total_dependencies"] == 0
@@ -81,9 +81,9 @@ class TestSBOM:
             dependencies=[],
             total_dependencies=0,
         )
-        
+
         json_str = sbom.to_json()
-        
+
         assert isinstance(json_str, str)
         assert "test" in json_str
         assert "project_name" in json_str
@@ -91,7 +91,7 @@ class TestSBOM:
     def test_sbom_to_cyclonedx(self):
         """Test converting SBOM to CycloneDX format."""
         deps = [Dependency(name="requests", version="2.28.0", source="pypi")]
-        
+
         sbom = SBOM(
             project_name="test",
             project_version="1.0",
@@ -99,9 +99,9 @@ class TestSBOM:
             dependencies=deps,
             total_dependencies=1,
         )
-        
+
         cyclonedx = sbom.to_cyclonedx()
-        
+
         assert cyclonedx["bomFormat"] == "CycloneDX"
         assert cyclonedx["specVersion"] == "1.4"
         assert len(cyclonedx["components"]) == 1
@@ -113,7 +113,7 @@ class TestDependencyParser:
 
     def test_parse_requirements_txt(self):
         """Test parsing requirements.txt."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("requests==2.28.0\n")
             f.write("flask>=2.0.0\n")
             f.write("django~=3.2.0\n")
@@ -121,18 +121,18 @@ class TestDependencyParser:
             f.write("\n")
             f.write("pytest\n")
             temp_path = Path(f.name)
-        
+
         try:
             parser = DependencyParser()
             deps = parser.parse_requirements_txt(temp_path)
-            
+
             assert len(deps) == 4
-            
+
             # Check requests
             req = next(d for d in deps if d.name == "requests")
             assert req.version == "2.28.0"
             assert req.source == "pypi"
-            
+
             # Check flask
             flask = next(d for d in deps if d.name == "flask")
             assert flask.version == "2.0.0"
@@ -141,20 +141,20 @@ class TestDependencyParser:
 
     def test_parse_pyproject_toml(self):
         """Test parsing pyproject.toml."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.toml', delete=False) as f:
-            f.write('[project]\n')
-            f.write('dependencies = [\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+            f.write("[project]\n")
+            f.write("dependencies = [\n")
             f.write('    "requests>=2.28.0",\n')
             f.write('    "flask>=2.0.0",\n')
-            f.write(']\n')
+            f.write("]\n")
             temp_path = Path(f.name)
-        
+
         try:
             parser = DependencyParser()
             deps = parser.parse_pyproject_toml(temp_path)
-            
+
             assert len(deps) == 2
-            
+
             req = next(d for d in deps if d.name == "requests")
             assert req.version == "2.28.0"
         finally:
@@ -162,21 +162,21 @@ class TestDependencyParser:
 
     def test_parse_pipfile(self):
         """Test parsing Pipfile."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-            f.write('[packages]\n')
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+            f.write("[packages]\n")
             f.write('requests = "==2.28.0"\n')
             f.write('flask = ">=2.0.0"\n')
-            f.write('\n')
-            f.write('[dev-packages]\n')
+            f.write("\n")
+            f.write("[dev-packages]\n")
             f.write('pytest = "*"\n')
             temp_path = Path(f.name)
-        
+
         try:
             parser = DependencyParser()
             deps = parser.parse_pipfile(temp_path)
-            
+
             assert len(deps) == 2
-            
+
             req = next(d for d in deps if d.name == "requests")
             assert req.version == "2.28.0"
         finally:
@@ -189,10 +189,10 @@ class TestVulnerabilityChecker:
     def test_check_vulnerable_package(self):
         """Test checking a package with known vulnerabilities."""
         checker = VulnerabilityChecker()
-        
+
         dep = Dependency(name="requests", version="2.19.0", source="pypi")
         updated_dep = checker.check_dependency(dep)
-        
+
         # Should detect CVE in old version
         assert len(updated_dep.vulnerabilities) > 0
         assert updated_dep.risk_level in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
@@ -200,20 +200,20 @@ class TestVulnerabilityChecker:
     def test_check_safe_package(self):
         """Test checking a safe package version."""
         checker = VulnerabilityChecker()
-        
+
         dep = Dependency(name="requests", version="2.31.0", source="pypi")
         updated_dep = checker.check_dependency(dep)
-        
+
         # Latest version should be safe (or have minimal issues)
         assert updated_dep.risk_level in ["UNKNOWN", "LOW"]
 
     def test_check_risky_package_name(self):
         """Test detection of inherently risky packages."""
         checker = VulnerabilityChecker()
-        
+
         dep = Dependency(name="pickle5", version="1.0.0", source="pypi")
         updated_dep = checker.check_dependency(dep)
-        
+
         # Should flag pickle5 as risky
         assert len(updated_dep.vulnerabilities) > 0
         assert updated_dep.risk_level == "HIGH"
@@ -221,7 +221,7 @@ class TestVulnerabilityChecker:
     def test_version_comparison(self):
         """Test version comparison logic."""
         checker = VulnerabilityChecker()
-        
+
         # Test various version comparisons
         assert checker._version_matches("2.19.0", "<2.20.0") is True
         assert checker._version_matches("2.20.0", "<2.20.0") is False
@@ -235,14 +235,14 @@ class TestSupplyChainAnalyzer:
         """Test analyzing a project with requirements.txt."""
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
-            
+
             # Create requirements.txt
             req_file = project_dir / "requirements.txt"
             req_file.write_text("requests==2.28.0\nflask>=2.0.0\n")
-            
+
             analyzer = SupplyChainAnalyzer()
             sbom = analyzer.analyze_project(project_dir)
-            
+
             assert sbom.project_name == project_dir.name
             assert sbom.total_dependencies == 2
             assert len(sbom.dependencies) == 2
@@ -251,17 +251,17 @@ class TestSupplyChainAnalyzer:
         """Test analyzing project with multiple dependency files."""
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
-            
+
             # Create multiple dependency files
             req_file = project_dir / "requirements.txt"
             req_file.write_text("requests==2.28.0\n")
-            
+
             pyproject = project_dir / "pyproject.toml"
             pyproject.write_text('[project]\ndependencies = [\n    "flask>=2.0.0",\n]\n')
-            
+
             analyzer = SupplyChainAnalyzer()
             sbom = analyzer.analyze_project(project_dir)
-            
+
             # Should have at least 1 dependency (may deduplicate)
             assert sbom.total_dependencies >= 1
 
@@ -270,16 +270,16 @@ class TestSupplyChainAnalyzer:
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
             output_path = Path(temp_dir) / "sbom.json"
-            
+
             # Create requirements.txt
             req_file = project_dir / "requirements.txt"
             req_file.write_text("requests==2.28.0\n")
-            
+
             analyzer = SupplyChainAnalyzer()
             analyzer.generate_sbom_file(project_dir, output_path, format="json")
-            
+
             assert output_path.exists()
-            
+
             # Verify JSON content
             content = output_path.read_text()
             assert "requests" in content
@@ -289,19 +289,19 @@ class TestSupplyChainAnalyzer:
         """Test that vulnerabilities are counted correctly in SBOM."""
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir)
-            
+
             # Create requirements with vulnerable package
             req_file = project_dir / "requirements.txt"
             req_file.write_text("requests==2.19.0\n")  # Old vulnerable version
-            
+
             analyzer = SupplyChainAnalyzer()
             sbom = analyzer.analyze_project(project_dir)
-            
+
             # Should detect vulnerabilities
             total_vulns = (
-                sbom.critical_vulnerabilities +
-                sbom.high_vulnerabilities +
-                sbom.medium_vulnerabilities +
-                sbom.low_vulnerabilities
+                sbom.critical_vulnerabilities
+                + sbom.high_vulnerabilities
+                + sbom.medium_vulnerabilities
+                + sbom.low_vulnerabilities
             )
             assert total_vulns >= 0  # At least records the analysis

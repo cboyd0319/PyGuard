@@ -28,7 +28,7 @@ class DatetimeIssue:
 class DatetimePatternVisitor(ast.NodeVisitor):
     """
     AST visitor to detect datetime timezone issues.
-    
+
     Detects patterns like:
     - datetime.now() without timezone
     - datetime.utcnow() (deprecated)
@@ -141,7 +141,9 @@ class DatetimePatternVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_datetime_class_method(self, node: ast.Call, class_name: str, method_name: str) -> None:
+    def _check_datetime_class_method(
+        self, node: ast.Call, class_name: str, method_name: str
+    ) -> None:
         """Check datetime class methods like datetime.datetime.now()."""
         if class_name == "datetime":
             self._check_datetime_method(node, method_name)

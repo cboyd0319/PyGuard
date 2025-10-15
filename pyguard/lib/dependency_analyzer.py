@@ -75,10 +75,10 @@ class DependencyGraphAnalyzer:
             # Calculate module name
             relative_path = py_file.relative_to(directory)
             module_parts = list(relative_path.parts[:-1]) + [py_file.stem]
-            
+
             if module_parts[-1] == "__init__":
                 module_parts = module_parts[:-1]
-            
+
             if package_name:
                 module_name = f"{package_name}.{'.'.join(module_parts)}"
             else:
@@ -130,7 +130,7 @@ class DependencyGraphAnalyzer:
             Dictionary of modules with excessive dependencies
         """
         complex_modules = {}
-        
+
         for module, deps in self.dependencies.items():
             if len(deps) > threshold:
                 complex_modules[module] = len(deps)
@@ -148,7 +148,7 @@ class DependencyGraphAnalyzer:
             Dictionary of modules with excessive reverse dependencies
         """
         god_modules = {}
-        
+
         for module, reverse_deps in self.reverse_dependencies.items():
             if len(reverse_deps) > threshold:
                 god_modules[module] = len(reverse_deps)
@@ -216,9 +216,7 @@ class DependencyGraphAnalyzer:
         edges = []
 
         # Create nodes
-        all_modules = set(self.dependencies.keys()) | set(
-            self.reverse_dependencies.keys()
-        )
+        all_modules = set(self.dependencies.keys()) | set(self.reverse_dependencies.keys())
         for i, module in enumerate(all_modules):
             nodes.append({"id": i, "label": module, "module": module})
 
@@ -227,9 +225,7 @@ class DependencyGraphAnalyzer:
         for module, deps in self.dependencies.items():
             for dep in deps:
                 if dep in module_to_id:
-                    edges.append(
-                        {"from": module_to_id[module], "to": module_to_id[dep]}
-                    )
+                    edges.append({"from": module_to_id[module], "to": module_to_id[dep]})
 
         return {"nodes": nodes, "edges": edges}
 
@@ -267,9 +263,7 @@ class DependencyGraphAnalyzer:
             "total_modules": total_modules,
             "total_dependencies": total_dependencies,
             "average_dependencies_per_module": round(avg_dependencies, 2),
-            "max_dependencies": max(
-                (len(deps) for deps in self.dependencies.values()), default=0
-            ),
+            "max_dependencies": max((len(deps) for deps in self.dependencies.values()), default=0),
             "modules_with_no_dependencies": len(
                 [m for m, deps in self.dependencies.items() if not deps]
             ),

@@ -93,7 +93,7 @@ class AIExplainer:
             example_secure=(
                 "# SECURE\n"
                 "user_id = request.GET['id']\n"
-                "query = \"SELECT * FROM users WHERE id = %s\"\n"
+                'query = "SELECT * FROM users WHERE id = %s"\n'
                 "cursor.execute(query, (user_id,))"
             ),
             references=[
@@ -130,9 +130,7 @@ class AIExplainer:
                 "5. Run with minimal privileges"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n"
-                "filename = request.GET['file']\n"
-                "os.system(f'cat {filename}')"
+                "# VULNERABLE\n" "filename = request.GET['file']\n" "os.system(f'cat {filename}')"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -172,9 +170,7 @@ class AIExplainer:
                 "4. If unavoidable, use sandboxed environments"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n"
-                "user_code = request.GET['code']\n"
-                "result = eval(user_code)"
+                "# VULNERABLE\n" "user_code = request.GET['code']\n" "result = eval(user_code)"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -216,9 +212,7 @@ class AIExplainer:
                 "4. Rotate any exposed credentials immediately"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n"
-                "API_KEY = 'sk-1234567890abcdef'\n"
-                "password = 'SuperSecret123'"
+                "# VULNERABLE\n" "API_KEY = 'sk-1234567890abcdef'\n" "password = 'SuperSecret123'"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -544,9 +538,7 @@ class AIExplainer:
             performance_impact=template["performance_impact"],
         )
 
-    def generate_learning_content(
-        self, vulnerability_type: str
-    ) -> Dict[str, str]:
+    def generate_learning_content(self, vulnerability_type: str) -> Dict[str, str]:
         """
         Generate educational content for a vulnerability type.
 
@@ -577,9 +569,7 @@ class AIExplainer:
             "further_reading": explanation.references,
         }
 
-    def _generate_quiz_question(
-        self, explanation: SecurityExplanation
-    ) -> Dict[str, any]:
+    def _generate_quiz_question(self, explanation: SecurityExplanation) -> Dict[str, any]:
         """Generate a quiz question for learning."""
         questions = {
             "SQL Injection": {

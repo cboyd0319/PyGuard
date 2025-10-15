@@ -45,7 +45,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
-    
+
     def _get_full_name(self, node: ast.expr) -> str:
         """Get full name of an expression (for attributes)."""
         if isinstance(node, ast.Name):
@@ -64,7 +64,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call):
         """Visit function call nodes."""
         func_name = self._get_call_name(node)
-        
+
         # UP038: Use X | Y for isinstance() instead of (X, Y) in Python 3.10+
         if func_name == "isinstance" and len(node.args) == 2:
             second_arg = node.args[1]
@@ -293,28 +293,32 @@ class ModernPythonVisitor(ast.NodeVisitor):
                 )
 
         self.generic_visit(node)
-    
+
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes for typing modernization."""
         # UP009: UTF-8 encoding declaration (handled via comment scanning)
         # UP010: Unnecessary __future__ imports (handled in visit_ImportFrom)
-        
+
         # UP011: Use functools.lru_cache without call
         # Detect @lru_cache() → should be @lru_cache
         # This would be detected in visit_FunctionDef
-        
+
         # UP033: Use @functools.lru_cache instead of @functools.lru_cache()
         # UP034: Avoid extraneous parentheses on @decorator() calls
-        
+
         self.generic_visit(node)
-    
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Visit function definitions for decorator modernization."""
         for decorator in node.decorator_list:
             # UP011/UP033: lru_cache without parentheses
             if isinstance(decorator, ast.Call):
                 if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr == "lru_cache" and len(decorator.args) == 0 and len(decorator.keywords) == 0:  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                    if (
+                        decorator.func.attr == "lru_cache"
+                        and len(decorator.args) == 0
+                        and len(decorator.keywords) == 0
+                    ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                         self.issues.append(
                             ModernizationIssue(
                                 severity="LOW",
@@ -327,18 +331,18 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                 rule_id="UP011",
                             )
                         )
-        
+
         # UP020: Use builtin open() instead of pathlib.Path.open() when appropriate
         # UP021: Replace universal newlines with text=True
-        
+
         self.generic_visit(node)
-    
+
     def visit_With(self, node: ast.With) -> None:
         """Visit with statements for context manager modernization."""
         for item in node.items:
             if isinstance(item.context_expr, ast.Call):
                 func_name = self._get_call_name(item.context_expr)
-                
+
                 # UP015: Redundant open modes (e.g., 'r' is default)
                 if func_name == "open":
                     for arg in item.context_expr.args:
@@ -356,12 +360,12 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                         rule_id="UP015",
                                     )
                                 )
-                
+
                 # UP017: Use datetime.timezone.utc instead of datetime.timezone(datetime.timedelta(0))
                 # UP018: Native literals instead of str(), int(), etc.
-        
+
         self.generic_visit(node)
-    
+
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit class definitions for enum modernization."""
         # UP042: Use StrEnum instead of str + Enum (Python 3.11+)
@@ -371,7 +375,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
             for base in node.bases:
                 if isinstance(base, ast.Name):
                     base_names.append(base.id)
-            
+
             if "str" in base_names and "Enum" in base_names:
                 self.issues.append(
                     ModernizationIssue(
@@ -385,9 +389,9 @@ class ModernPythonVisitor(ast.NodeVisitor):
                         rule_id="UP042",
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def visit_If(self, node: ast.If) -> None:
         """Visit if statements for version check modernization."""
         # UP036: Outdated version blocks - check for sys.version_info comparisons
@@ -404,7 +408,12 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                     major_version = comparator.elts[0].value
                                     if isinstance(comparator.elts[1], ast.Constant):
                                         minor_version = comparator.elts[1].value
-                                        if isinstance(major_version, int) and isinstance(minor_version, int) and major_version == 3 and minor_version < 8:
+                                        if (
+                                            isinstance(major_version, int)
+                                            and isinstance(minor_version, int)
+                                            and major_version == 3
+                                            and minor_version < 8
+                                        ):
                                             self.issues.append(
                                                 ModernizationIssue(
                                                     severity="MEDIUM",
@@ -417,9 +426,9 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                                     rule_id="UP036",
                                                 )
                                             )
-        
+
         self.generic_visit(node)
-    
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Visit annotated assignments for type alias modernization."""
         # UP037: Quoted annotations - check for string annotations that should be unquoted
@@ -437,7 +446,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                     rule_id="UP037",
                 )
             )
-        
+
         # UP040: Use 'type' statement for type aliases (Python 3.12+)
         # Example: MyType: TypeAlias = int → type MyType = int
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
@@ -453,9 +462,9 @@ class ModernPythonVisitor(ast.NodeVisitor):
                     rule_id="UP040",
                 )
             )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Visit attribute access for timezone modernization."""
         # UP017: datetime.timezone.utc instead of pytz
@@ -473,9 +482,9 @@ class ModernPythonVisitor(ast.NodeVisitor):
                         rule_id="UP017",
                     )
                 )
-        
+
         self.generic_visit(node)
-    
+
     def visit_Expr(self, node: ast.Expr) -> None:
         """Visit expression statements."""
         # UP019: typing.Text is deprecated
@@ -493,7 +502,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                         rule_id="UP019",
                     )
                 )
-        
+
         self.generic_visit(node)
 
     def _get_call_name(self, node: ast.Call) -> str:
@@ -636,7 +645,9 @@ class ModernPythonFixer:
             pattern = rf"from __future__ import {future_import}\n"
             if re.search(pattern, content):
                 content = re.sub(pattern, "", content)
-                self.fixes_applied.append(f"UP005: Removed unnecessary __future__ import {future_import}")
+                self.fixes_applied.append(
+                    f"UP005: Removed unnecessary __future__ import {future_import}"
+                )
 
         return content
 

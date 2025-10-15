@@ -91,7 +91,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
         # PG-S002: Detect % formatting that should be f-string
         if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Constant):
             left_value = node.left.value
-            if isinstance(left_value, str) and '%' in left_value:
+            if isinstance(left_value, str) and "%" in left_value:
                 self.issues.append(
                     StringIssue(
                         severity="MEDIUM",
@@ -218,7 +218,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
         # Simple heuristic: if the variable name suggests it's a string
         if isinstance(node.target, ast.Name):
             name = node.target.id.lower()
-            string_indicators = ['str', 'text', 'msg', 'message', 'result', 'output']
+            string_indicators = ["str", "text", "msg", "message", "result", "output"]
             return any(indicator in name for indicator in string_indicators)
         return False
 
@@ -293,7 +293,9 @@ class StringOperationsFixer:
             )
             return []
 
-    def fix_file(self, file_path: Path, issues: Optional[List[StringIssue]] = None) -> Tuple[bool, List[str]]:
+    def fix_file(
+        self, file_path: Path, issues: Optional[List[StringIssue]] = None
+    ) -> Tuple[bool, List[str]]:
         """
         Fix string operation issues in a file.
 
@@ -323,13 +325,17 @@ class StringOperationsFixer:
             for issue in sorted_issues:
                 if issue.rule_id in ["PG-S001", "PG-S002"]:
                     # These require complex AST transformation, mark for manual review
-                    applied_fixes.append(f"Line {issue.line_number}: {issue.message} (manual review suggested)")
+                    applied_fixes.append(
+                        f"Line {issue.line_number}: {issue.message} (manual review suggested)"
+                    )
                 elif issue.rule_id == "PG-S003":
                     # Remove f prefix from unnecessary f-strings
                     modified_content = self._fix_unnecessary_fstring(
                         modified_content, issue.line_number
                     )
-                    applied_fixes.append(f"Line {issue.line_number}: Removed unnecessary f-string prefix")
+                    applied_fixes.append(
+                        f"Line {issue.line_number}: Removed unnecessary f-string prefix"
+                    )
                 elif issue.rule_id == "PG-S004":
                     # Fix quote consistency (simple cases only)
                     applied_fixes.append(f"Line {issue.line_number}: Quote consistency issue noted")
@@ -354,12 +360,14 @@ class StringOperationsFixer:
         if 0 < line_number <= len(lines):
             line = lines[line_number - 1]
             # Simple regex to remove f prefix
-            modified_line = re.sub(r'\bf(["\'])', r'\1', line)
+            modified_line = re.sub(r'\bf(["\'])', r"\1", line)
             lines[line_number - 1] = modified_line
-            return '\n'.join(lines)
+            return "\n".join(lines)
         return content
 
-    def scan_directory(self, directory: Path, exclude_patterns: Optional[List[str]] = None) -> List[Tuple[Path, List[StringIssue]]]:
+    def scan_directory(
+        self, directory: Path, exclude_patterns: Optional[List[str]] = None
+    ) -> List[Tuple[Path, List[StringIssue]]]:
         """
         Scan a directory for string operation issues.
 

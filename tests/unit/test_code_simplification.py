@@ -24,7 +24,10 @@ def check(x):
         visitor.visit(tree)
 
         assert len(visitor.issues) > 0
-        assert any("return" in issue.message.lower() and "condition" in issue.message.lower() for issue in visitor.issues)
+        assert any(
+            "return" in issue.message.lower() and "condition" in issue.message.lower()
+            for issue in visitor.issues
+        )
         assert any(issue.rule_id == "SIM103" for issue in visitor.issues)
 
     def test_detect_nested_if(self):
@@ -115,7 +118,9 @@ if value == False:
         visitor.visit(tree)
 
         assert len(visitor.issues) >= 2
-        assert any("is True" in issue.message or "is False" in issue.message for issue in visitor.issues)
+        assert any(
+            "is True" in issue.message or "is False" in issue.message for issue in visitor.issues
+        )
 
     def test_no_issues_with_simple_code(self):
         """Test that simple code has no issues."""

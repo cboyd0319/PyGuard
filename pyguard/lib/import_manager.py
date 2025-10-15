@@ -155,9 +155,7 @@ class ImportAnalyzer:
             sorted_imports.pop()
 
         # Reconstruct code
-        new_lines = (
-            lines[: first_import_line - 1] + sorted_imports + lines[last_import_line:]
-        )
+        new_lines = lines[: first_import_line - 1] + sorted_imports + lines[last_import_line:]
 
         return "\n".join(new_lines)
 
@@ -476,9 +474,7 @@ class ImportManager:
 
                 # Remove marked lines
                 if lines_to_remove:
-                    new_lines = [
-                        line for i, line in enumerate(lines) if i not in lines_to_remove
-                    ]
+                    new_lines = [line for i, line in enumerate(lines) if i not in lines_to_remove]
                     content = "\n".join(new_lines)
                     fixes.append(f"Removed {len(lines_to_remove)} unused imports")
 

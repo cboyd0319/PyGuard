@@ -25,7 +25,7 @@ class PyGuardCLI:
     def __init__(self, allow_unsafe_fixes: bool = False):
         """
         Initialize PyGuard CLI.
-        
+
         Args:
             allow_unsafe_fixes: Whether to allow unsafe auto-fixes
         """
@@ -69,7 +69,7 @@ class PyGuardCLI:
             # Apply fixes from both fixers
             # Original security fixer
             success1, fixes1 = self.security_fixer.fix_file(file_path)
-            
+
             # Enhanced security fixer with safety classifications
             success2, fixes2 = self.enhanced_security_fixer.fix_file(file_path)
 
@@ -82,7 +82,9 @@ class PyGuardCLI:
 
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
-    def run_best_practices_fixes(self, files: List[Path], create_backup: bool = True) -> Dict[str, Any]:
+    def run_best_practices_fixes(
+        self, files: List[Path], create_backup: bool = True
+    ) -> Dict[str, Any]:
         """
         Run best practices fixes on files.
 
@@ -209,7 +211,7 @@ class PyGuardCLI:
                 fixes_count = len(security_result["fixes"])
                 results["fixes_applied"] = results["fixes_applied"] + fixes_count  # type: ignore
                 results["security_issues"] = results["security_issues"] + fixes_count  # type: ignore
-            
+
             bp_result = results["best_practices"]
             if isinstance(bp_result, dict) and "fixes" in bp_result:
                 fixes_count = len(bp_result["fixes"])
@@ -223,7 +225,7 @@ class PyGuardCLI:
             all_issues = []
             security_issues = []
             quality_issues = []
-            
+
             progress = self.ui.create_progress_bar()
             with progress:
                 task = progress.add_task("🔍 Scanning for issues...", total=len(files))
@@ -238,7 +240,7 @@ class PyGuardCLI:
                             issue_dict["line"] = issue_dict.pop("line_number")
                         security_issues.append(issue_dict)
                         all_issues.append(issue_dict)
-                    
+
                     # Quality issues (best practices, naming, etc.)
                     qual_issues = self.best_practices_fixer.scan_file_for_issues(file_path)
                     for qual_issue in qual_issues:
@@ -248,11 +250,14 @@ class PyGuardCLI:
                             issue_dict["line"] = issue_dict.pop("line_number")
                         quality_issues.append(issue_dict)
                         all_issues.append(issue_dict)
-                    
+
                     progress.update(task, advance=1)
 
             results["security"] = {"issues_found": len(security_issues), "issues": security_issues}
-            results["best_practices"] = {"issues_found": len(quality_issues), "issues": quality_issues}
+            results["best_practices"] = {
+                "issues_found": len(quality_issues),
+                "issues": quality_issues,
+            }
             results["all_issues"] = all_issues
             results["total_issues"] = len(all_issues)
             results["security_issues"] = len(security_issues)
@@ -317,9 +322,7 @@ class PyGuardCLI:
                 self.ui.console.print(
                     f"[bold green]✅ SARIF report saved:[/bold green] [cyan]{sarif_path}[/cyan]"
                 )
-                self.ui.console.print(
-                    "   Use this report for GitHub Code Scanning integration"
-                )
+                self.ui.console.print("   Use this report for GitHub Code Scanning integration")
                 self.ui.console.print()
 
         # Print next steps
@@ -415,15 +418,15 @@ def main():
         "--unsafe-fixes",
         action="store_true",
         help="Enable unsafe auto-fixes that may change code behavior. "
-             "WARNING: These fixes include SQL parameterization, command injection "
-             "refactoring, and path traversal validation. Review changes carefully!",
+        "WARNING: These fixes include SQL parameterization, command injection "
+        "refactoring, and path traversal validation. Review changes carefully!",
     )
 
     parser.add_argument(
         "--watch",
         action="store_true",
         help="Watch mode: monitor files for changes and re-analyze automatically. "
-             "Press Ctrl+C to stop.",
+        "Press Ctrl+C to stop.",
     )
 
     args = parser.parse_args()
@@ -447,7 +450,7 @@ def main():
     if not all_files:
         cli.ui.print_error(
             "No Python files found to analyze.",
-            "Make sure you specified the correct path and that Python files exist in that location."
+            "Make sure you specified the correct path and that Python files exist in that location.",
         )
         sys.exit(1)
 
@@ -462,24 +465,30 @@ def main():
     # Watch mode
     if args.watch:
         from pyguard.lib.watch import run_watch_mode
-        
+
         def analyze_file(file_path: Path):
             """Analyze a single file in watch mode."""
             from rich.console import Console
+
             console = Console()
             console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
-            
+
             if args.security_only:
                 cli.run_security_fixes([file_path], create_backup)
             elif args.formatting_only:
-                cli.run_formatting([file_path], create_backup, use_black=not args.no_black, use_isort=not args.no_isort)
+                cli.run_formatting(
+                    [file_path],
+                    create_backup,
+                    use_black=not args.no_black,
+                    use_isort=not args.no_isort,
+                )
             elif args.best_practices_only:
                 cli.run_best_practices_fixes([file_path], create_backup)
             else:
                 cli.run_full_analysis([file_path], create_backup, fix)
-            
+
             console.print("[green]✓ Analysis complete[/green]")
-        
+
         # Convert paths back to Path objects for watch mode
         watch_paths = [Path(p) for p in args.paths]
         run_watch_mode(watch_paths, analyze_file)

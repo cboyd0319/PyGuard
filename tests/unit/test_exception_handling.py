@@ -67,10 +67,10 @@ class TestLongExceptionMessage:
     def test_detect_long_message(self):
         """Test detection of long exception messages."""
         long_msg = "x" * 201
-        code = f'''
+        code = f"""
 def process():
     raise ValueError("{long_msg}")
-'''
+"""
         checker = ExceptionHandlingChecker()
         violations = checker.check_code(code)
         try003_violations = [v for v in violations if v.rule_id == "TRY003"]

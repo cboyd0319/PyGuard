@@ -34,9 +34,7 @@ class TestSARIFReporter:
     def test_generate_empty_report(self):
         """Test generating report with no issues."""
         reporter = SARIFReporter()
-        report = reporter.generate_report(
-            issues=[], tool_name="PyGuard", tool_version="0.3.0"
-        )
+        report = reporter.generate_report(issues=[], tool_name="PyGuard", tool_version="0.3.0")
 
         assert report["version"] == "2.1.0"
         assert "$schema" in report
@@ -393,22 +391,22 @@ class TestSARIFReporter:
         )
 
         run = report["runs"][0]
-        
+
         # Check columnKind for GitHub compatibility
         assert run["columnKind"] == "utf16CodeUnits"
-        
+
         # Check automation details
         assert "automationDetails" in run
         assert "id" in run["automationDetails"]
         assert "guid" in run["automationDetails"]
-        
+
         # Check tool organization and download URI
         driver = run["tool"]["driver"]
         assert "organization" in driver
         assert driver["organization"] == "PyGuard"
         assert "downloadUri" in driver
         assert "releases" in driver["downloadUri"]
-        
+
         # Check enhanced tags
         assert "sarif" in driver["properties"]["tags"]
         assert "owasp" in driver["properties"]["tags"]

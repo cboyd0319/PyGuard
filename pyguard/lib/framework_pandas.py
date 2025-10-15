@@ -39,7 +39,9 @@ class PandasVisitor(ast.NodeVisitor):
 
     def _detect_pandas(self, code: str) -> bool:
         """Check if file uses pandas."""
-        return 'import pandas' in code or 'from pandas' in code  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
+        return (
+            "import pandas" in code or "from pandas" in code
+        )  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
 
     def visit_Call(self, node: ast.Call) -> None:
         """Detect pandas call issues (PD001-PD015)."""
@@ -49,7 +51,7 @@ class PandasVisitor(ast.NodeVisitor):
 
         # PD002: inplace=True usage
         for keyword in node.keywords:
-            if keyword.arg == 'inplace':
+            if keyword.arg == "inplace":
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     self.violations.append(
                         RuleViolation(
@@ -67,8 +69,8 @@ class PandasVisitor(ast.NodeVisitor):
         # PD003: Use of deprecated pandas methods
         if isinstance(node.func, ast.Attribute):
             deprecated_methods = {
-                'append': 'Use pd.concat() instead',
-                'ix': 'Use .loc[] or .iloc[] instead',
+                "append": "Use pd.concat() instead",
+                "ix": "Use .loc[] or .iloc[] instead",
             }
 
             if node.func.attr in deprecated_methods:
@@ -89,7 +91,7 @@ class PandasVisitor(ast.NodeVisitor):
             # This is detected in visit_Assign
 
             # PD010: Use .to_numpy() instead of .values
-            if node.func.attr == 'values':
+            if node.func.attr == "values":
                 self.violations.append(
                     RuleViolation(
                         rule_id="PD010",
@@ -104,8 +106,8 @@ class PandasVisitor(ast.NodeVisitor):
                 )
 
             # PD011: Use .to_numpy() instead of np.asarray() on DataFrame/Series
-            if isinstance(node.func.value, ast.Name) and node.func.value.id == 'np':
-                if node.func.attr in ('asarray', 'array'):
+            if isinstance(node.func.value, ast.Name) and node.func.value.id == "np":
+                if node.func.attr in ("asarray", "array"):
                     if len(node.args) > 0:
                         self.violations.append(
                             RuleViolation(
@@ -121,7 +123,7 @@ class PandasVisitor(ast.NodeVisitor):
                         )
 
             # PD013: Use .melt() instead of .stack()
-            if node.func.attr == 'stack':
+            if node.func.attr == "stack":
                 # Context-dependent, but generally melt is preferred
                 pass
 
@@ -136,7 +138,7 @@ class PandasVisitor(ast.NodeVisitor):
         # PD007: Iterating over DataFrame with .iterrows()
         if isinstance(node.iter, ast.Call):
             if isinstance(node.iter.func, ast.Attribute):
-                if node.iter.func.attr == 'iterrows':
+                if node.iter.func.attr == "iterrows":
                     self.violations.append(
                         RuleViolation(
                             rule_id="PD007",
@@ -151,7 +153,7 @@ class PandasVisitor(ast.NodeVisitor):
                     )
 
                 # PD009: Using .apply() when a vectorized alternative exists
-                elif node.iter.func.attr == 'apply':
+                elif node.iter.func.attr == "apply":
                     # This requires semantic analysis to determine if vectorization is possible
                     pass
 
@@ -203,7 +205,7 @@ class PandasRulesChecker:
                 code = f.read()
 
             # Only check files that use pandas
-            if 'pandas' not in code and 'pd.' not in code:
+            if "pandas" not in code and "pd." not in code:
                 return []
 
             tree = ast.parse(code)

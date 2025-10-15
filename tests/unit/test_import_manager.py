@@ -17,11 +17,11 @@ class TestImportAnalyzer:
         """Test extracting stdlib imports."""
         import ast
 
-        code = '''
+        code = """
 import os
 import sys
 from pathlib import Path
-'''
+"""
         tree = ast.parse(code)
         analyzer = ImportAnalyzer()
         imports = analyzer.extract_imports(tree)
@@ -32,10 +32,10 @@ from pathlib import Path
         """Test extracting third-party imports."""
         import ast
 
-        code = '''
+        code = """
 import requests
 from flask import Flask
-'''
+"""
         tree = ast.parse(code)
         analyzer = ImportAnalyzer()
         imports = analyzer.extract_imports(tree)
@@ -46,9 +46,9 @@ from flask import Flask
         """Test extracting __future__ imports."""
         import ast
 
-        code = '''
+        code = """
 from __future__ import annotations
-'''
+"""
         tree = ast.parse(code)
         analyzer = ImportAnalyzer()
         imports = analyzer.extract_imports(tree)
@@ -59,14 +59,14 @@ from __future__ import annotations
         """Test finding unused imports."""
         import ast
 
-        code = '''
+        code = """
 import os
 import sys
 from pathlib import Path
 
 def main():
     print(os.path.exists("/tmp"))
-'''
+"""
         tree = ast.parse(code)
         analyzer = ImportAnalyzer()
         unused = analyzer.find_unused_imports(tree, code)
@@ -80,13 +80,13 @@ def main():
         """Test finding unused imports with aliases."""
         import ast
 
-        code = '''
+        code = """
 import numpy as np
 import pandas as pd
 
 def process():
     return np.array([1, 2, 3])
-'''
+"""
         tree = ast.parse(code)
         analyzer = ImportAnalyzer()
         unused = analyzer.find_unused_imports(tree, code)
@@ -97,12 +97,12 @@ def process():
 
     def test_sort_imports(self):
         """Test import sorting."""
-        code = '''
+        code = """
 import requests
 import os
 from pathlib import Path
 import sys
-'''
+"""
         analyzer = ImportAnalyzer()
         sorted_code = analyzer.sort_imports(code)
 
@@ -120,13 +120,13 @@ class TestUnusedImportDetection:
 
     def test_detect_unused_import(self, tmp_path):
         """Test detection of unused import."""
-        code = '''
+        code = """
 import os
 import sys
 
 def main():
     print(os.getcwd())
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -134,22 +134,20 @@ def main():
         violations = manager.analyze_file(test_file)
 
         # Should detect unused sys import
-        unused_violations = [
-            v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id
-        ]
+        unused_violations = [v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id]
         assert len(unused_violations) > 0
         assert any("sys" in v.message for v in unused_violations)
 
     def test_no_violation_for_used_imports(self, tmp_path):
         """Test no violation when imports are used."""
-        code = '''
+        code = """
 import os
 from pathlib import Path
 
 def main():
     path = Path(os.getcwd())
     return path
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -157,19 +155,17 @@ def main():
         violations = manager.analyze_file(test_file)
 
         # Should not detect any unused imports
-        unused_violations = [
-            v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id
-        ]
+        unused_violations = [v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id]
         assert len(unused_violations) == 0
 
     def test_detect_unused_from_import(self, tmp_path):
         """Test detection of unused from import."""
-        code = '''
+        code = """
 from typing import List, Dict, Optional
 
 def get_items() -> List[str]:
     return ["a", "b", "c"]
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -177,9 +173,7 @@ def get_items() -> List[str]:
         violations = manager.analyze_file(test_file)
 
         # Should detect unused Dict and Optional
-        unused_violations = [
-            v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id
-        ]
+        unused_violations = [v for v in violations if v.rule_id == UNUSED_IMPORT_RULE.rule_id]
         assert len(unused_violations) >= 2
 
 
@@ -188,12 +182,12 @@ class TestStarImportDetection:
 
     def test_detect_star_import(self, tmp_path):
         """Test detection of star import."""
-        code = '''
+        code = """
 from os.path import *
 
 def main():
     return exists("/tmp")
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -201,19 +195,17 @@ def main():
         violations = manager.analyze_file(test_file)
 
         # Should detect star import
-        star_violations = [
-            v for v in violations if v.rule_id == STAR_IMPORT_RULE.rule_id
-        ]
+        star_violations = [v for v in violations if v.rule_id == STAR_IMPORT_RULE.rule_id]
         assert len(star_violations) == 1
 
     def test_no_violation_for_specific_imports(self, tmp_path):
         """Test no violation for specific imports."""
-        code = '''
+        code = """
 from os.path import exists, join
 
 def main():
     return exists("/tmp")
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -221,9 +213,7 @@ def main():
         violations = manager.analyze_file(test_file)
 
         # Should not detect star imports
-        star_violations = [
-            v for v in violations if v.rule_id == STAR_IMPORT_RULE.rule_id
-        ]
+        star_violations = [v for v in violations if v.rule_id == STAR_IMPORT_RULE.rule_id]
         assert len(star_violations) == 0
 
 
@@ -232,7 +222,7 @@ class TestImportManager:
 
     def test_analyze_file_with_multiple_issues(self, tmp_path):
         """Test analyzing file with multiple import issues."""
-        code = '''
+        code = """
 from typing import *
 import os
 import sys
@@ -241,7 +231,7 @@ import json
 def process():
     data = json.loads('{}')
     return data
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -253,11 +243,11 @@ def process():
 
     def test_analyze_file_syntax_error(self, tmp_path):
         """Test analyzing file with syntax error."""
-        code = '''
+        code = """
 import os
 from typing import (
     # Missing closing parenthesis
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -277,14 +267,14 @@ from typing import (
 
     def test_fix_imports(self, tmp_path):
         """Test fixing imports."""
-        code = '''
+        code = """
 import sys
 import os
 from pathlib import Path
 
 def main():
     return os.getcwd()
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -302,12 +292,12 @@ class TestImportSorting:
 
     def test_sort_imports_basic(self):
         """Test basic import sorting."""
-        code = '''
+        code = """
 import requests
 import os
 import sys
 from pathlib import Path
-'''
+"""
         analyzer = ImportAnalyzer()
         sorted_code = analyzer.sort_imports(code)
 
@@ -352,13 +342,13 @@ class TestUnusedImportRemoval:
 
     def test_remove_unused_imports(self, tmp_path):
         """Test removing unused imports."""
-        code = '''import os
+        code = """import os
 import sys
 from pathlib import Path
 
 def main():
     return os.getcwd()
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -376,11 +366,11 @@ def main():
 
     def test_remove_unused_from_imports(self, tmp_path):
         """Test removing unused from imports."""
-        code = '''from typing import Dict, List, Optional
+        code = """from typing import Dict, List, Optional
 
 def get_items() -> List[str]:
     return ["a", "b", "c"]
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -396,12 +386,12 @@ def get_items() -> List[str]:
 
     def test_preserve_used_imports(self, tmp_path):
         """Test that used imports are preserved."""
-        code = '''import os
+        code = """import os
 from pathlib import Path
 
 def main():
     return os.path.join(str(Path.cwd()), "file.txt")
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -417,12 +407,12 @@ def main():
 
     def test_handle_aliased_imports(self, tmp_path):
         """Test handling of aliased imports."""
-        code = '''import pandas as pd
+        code = """import pandas as pd
 import numpy as np
 
 def process_data():
     return np.array([1, 2, 3])
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 
@@ -438,10 +428,10 @@ def process_data():
 
     def test_handle_syntax_error_gracefully(self, tmp_path):
         """Test that syntax errors are handled gracefully."""
-        code = '''import os
+        code = """import os
 from typing import (
     # Missing closing parenthesis
-'''
+"""
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
 

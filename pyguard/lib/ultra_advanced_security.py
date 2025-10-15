@@ -46,20 +46,20 @@ class AdvancedSecurityPattern:
 class GraphQLInjectionDetector:
     """
     Detect GraphQL injection vulnerabilities.
-    
+
     CWE-943: Improper Neutralization of Special Elements in Data Query Logic
     OWASP API Security: API8:2023 - Security Misconfiguration
-    
+
     GraphQL queries can be vulnerable to injection if user input is directly
     concatenated into queries without proper sanitization.
     """
 
     GRAPHQL_PATTERNS = [
-        (r'query\s*=\s*["\'][^"\']*["\'].*?\+', 'String concatenation in GraphQL query'),
-        (r'query\s*=\s*f["\']', 'F-string formatting in GraphQL query'),
-        (r'["\'][^"\']*["\']\.format\(', 'Format method in GraphQL query'),
-        (r'graphql\.execute\([^,)]*\+', 'Concatenated user input in execute'),
-        (r'graphql_sync\([^,)]*\+', 'Concatenated user input in graphql_sync'),
+        (r'query\s*=\s*["\'][^"\']*["\'].*?\+', "String concatenation in GraphQL query"),
+        (r'query\s*=\s*f["\']', "F-string formatting in GraphQL query"),
+        (r'["\'][^"\']*["\']\.format\(', "Format method in GraphQL query"),
+        (r"graphql\.execute\([^,)]*\+", "Concatenated user input in execute"),
+        (r"graphql_sync\([^,)]*\+", "Concatenated user input in graphql_sync"),
     ]
 
     def __init__(self):
@@ -69,30 +69,30 @@ class GraphQLInjectionDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for GraphQL injection vulnerabilities.
-        
+
         Args:
             code: Python source code to analyze
-            
+
         Returns:
             List of security issues found
         """
         issues = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.GRAPHQL_PATTERNS:
                 if re.search(pattern, line):
                     issues.append(
                         SecurityIssue(
-                            severity='HIGH',
-                            category='GraphQL Injection',
-                            message=f'{description} - Use parameterized queries',
+                            severity="HIGH",
+                            category="GraphQL Injection",
+                            message=f"{description} - Use parameterized queries",
                             line_number=line_num,
                             column=0,
                             code_snippet=line.strip(),
-                            fix_suggestion='Use GraphQL variables and parameterized queries instead of string concatenation',
-                            owasp_id='API8:2023',
-                            cwe_id='CWE-943'
+                            fix_suggestion="Use GraphQL variables and parameterized queries instead of string concatenation",
+                            owasp_id="API8:2023",
+                            cwe_id="CWE-943",
                         )
                     )
 
@@ -102,19 +102,19 @@ class GraphQLInjectionDetector:
 class SSTIDetector(ast.NodeVisitor):
     """
     Detect Server-Side Template Injection (SSTI) vulnerabilities.
-    
+
     CWE-94: Improper Control of Generation of Code
     OWASP Top 10 2021: A03:2021 - Injection
-    
+
     Template engines like Jinja2, Mako, and Django templates can execute arbitrary
     code if user input is directly rendered in templates.
     """
 
     TEMPLATE_ENGINES = {
-        'jinja2': ['Template', 'Environment'],
-        'mako': ['Template'],
-        'django': ['Template'],
-        'flask': ['render_template_string'],
+        "jinja2": ["Template", "Environment"],
+        "mako": ["Template"],
+        "django": ["Template"],
+        "flask": ["render_template_string"],
     }
 
     def __init__(self, source_lines: List[str]):
@@ -126,9 +126,9 @@ class SSTIDetector(ast.NodeVisitor):
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
-        if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
+        if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
-        return ''
+        return ""
 
     def visit_Import(self, node: ast.Import):
         """Track template engine imports."""
@@ -148,39 +148,39 @@ class SSTIDetector(ast.NodeVisitor):
         call_name = self._get_call_name(node)
 
         # Check for render_template_string with user input
-        if 'render_template_string' in call_name:
+        if "render_template_string" in call_name:
             # Check if any argument might be user-controlled
             for arg in node.args:
                 if isinstance(arg, ast.Name) or isinstance(arg, ast.BinOp):
                     self.issues.append(
                         SecurityIssue(
-                            severity='CRITICAL',
-                            category='Server-Side Template Injection',
-                            message='Rendering user-controlled template string enables code execution',
+                            severity="CRITICAL",
+                            category="Server-Side Template Injection",
+                            message="Rendering user-controlled template string enables code execution",
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
-                            fix_suggestion='Use predefined templates or sanitize input with autoescape=True',
-                            owasp_id='ASVS-5.2.2',
-                            cwe_id='CWE-94'
+                            fix_suggestion="Use predefined templates or sanitize input with autoescape=True",
+                            owasp_id="ASVS-5.2.2",
+                            cwe_id="CWE-94",
                         )
                     )
 
         # Check for Template() with string concatenation
-        if 'Template' in call_name:
+        if "Template" in call_name:
             for arg in node.args:
                 if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add):
                     self.issues.append(
                         SecurityIssue(
-                            severity='HIGH',
-                            category='Server-Side Template Injection',
-                            message='Template created with concatenated user input',
+                            severity="HIGH",
+                            category="Server-Side Template Injection",
+                            message="Template created with concatenated user input",
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
-                            fix_suggestion='Use template variables instead of string concatenation',
-                            owasp_id='ASVS-5.2.2',
-                            cwe_id='CWE-94'
+                            fix_suggestion="Use template variables instead of string concatenation",
+                            owasp_id="ASVS-5.2.2",
+                            cwe_id="CWE-94",
                         )
                     )
 
@@ -198,18 +198,18 @@ class SSTIDetector(ast.NodeVisitor):
                 current = current.value
             if isinstance(current, ast.Name):
                 parts.append(current.id)
-            return '.'.join(reversed(parts))
-        return ''
+            return ".".join(reversed(parts))
+        return ""
 
 
 class JWTSecurityDetector:
     """
     Detect JWT (JSON Web Token) security vulnerabilities.
-    
+
     CWE-347: Improper Verification of Cryptographic Signature
     CWE-326: Inadequate Encryption Strength
     OWASP Top 10 2021: A02:2021 - Cryptographic Failures
-    
+
     Common JWT vulnerabilities:
     - Using 'none' algorithm
     - Weak signing algorithms (HS256 with short keys)
@@ -219,10 +219,10 @@ class JWTSecurityDetector:
 
     JWT_ISSUES = [
         (r'algorithm\s*=\s*["\']none["\']', 'JWT with "none" algorithm is insecure'),
-        (r'verify_signature\s*=\s*False', 'JWT signature verification disabled'),
-        (r'verify\s*=\s*False', 'JWT verification disabled'),
-        (r'jwt\.decode\([^,]+,\s*verify=False', 'JWT decoded without verification'),
-        (r'key\s*=\s*["\'][^"\']{1,8}["\']', 'JWT with short key (< 8 chars)'),
+        (r"verify_signature\s*=\s*False", "JWT signature verification disabled"),
+        (r"verify\s*=\s*False", "JWT verification disabled"),
+        (r"jwt\.decode\([^,]+,\s*verify=False", "JWT decoded without verification"),
+        (r'key\s*=\s*["\'][^"\']{1,8}["\']', "JWT with short key (< 8 chars)"),
     ]
 
     def __init__(self):
@@ -232,31 +232,31 @@ class JWTSecurityDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for JWT security issues.
-        
+
         Args:
             code: Python source code to analyze
-            
+
         Returns:
             List of security issues found
         """
         issues = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.JWT_ISSUES:
                 if re.search(pattern, line, re.IGNORECASE):
-                    severity = 'CRITICAL' if 'none' in pattern or 'False' in pattern else 'HIGH'
+                    severity = "CRITICAL" if "none" in pattern or "False" in pattern else "HIGH"
                     issues.append(
                         SecurityIssue(
                             severity=severity,
-                            category='JWT Security',
+                            category="JWT Security",
                             message=description,
                             line_number=line_num,
                             column=0,
                             code_snippet=line.strip(),
-                            fix_suggestion='Use RS256 algorithm, enable signature verification, and use strong keys',
-                            owasp_id='ASVS-6.2.1',
-                            cwe_id='CWE-347'
+                            fix_suggestion="Use RS256 algorithm, enable signature verification, and use strong keys",
+                            owasp_id="ASVS-6.2.1",
+                            cwe_id="CWE-347",
                         )
                     )
 
@@ -266,15 +266,15 @@ class JWTSecurityDetector:
 class APIRateLimitDetector(ast.NodeVisitor):
     """
     Detect missing API rate limiting and abuse prevention.
-    
+
     CWE-770: Allocation of Resources Without Limits or Throttling
     OWASP API Security: API4:2023 - Unrestricted Resource Consumption
-    
+
     APIs without rate limiting can be abused for DoS attacks or resource exhaustion.
     """
 
-    API_DECORATORS = {'@app.route', '@api.route', '@router.get', '@router.post', '@endpoint'}
-    RATE_LIMIT_DECORATORS = {'@limiter', '@rate_limit', '@throttle', '@limit'}
+    API_DECORATORS = {"@app.route", "@api.route", "@router.get", "@router.post", "@endpoint"}
+    RATE_LIMIT_DECORATORS = {"@limiter", "@rate_limit", "@throttle", "@limit"}
 
     def __init__(self, source_lines: List[str]):
         """Initialize API rate limit detector."""
@@ -284,9 +284,9 @@ class APIRateLimitDetector(ast.NodeVisitor):
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
-        if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
+        if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
-        return ''
+        return ""
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Check API endpoints for rate limiting."""
@@ -307,15 +307,15 @@ class APIRateLimitDetector(ast.NodeVisitor):
         if has_api_decorator and not has_rate_limit:
             self.issues.append(
                 SecurityIssue(
-                    severity='MEDIUM',
-                    category='API Security',
+                    severity="MEDIUM",
+                    category="API Security",
                     message=f'API endpoint "{node.name}" lacks rate limiting',
                     line_number=node.lineno,
                     column=node.col_offset,
                     code_snippet=self._get_code_snippet(node),
-                    fix_suggestion='Add @limiter or @rate_limit decorator to prevent abuse',
-                    owasp_id='API4:2023',
-                    cwe_id='CWE-770'
+                    fix_suggestion="Add @limiter or @rate_limit decorator to prevent abuse",
+                    owasp_id="API4:2023",
+                    cwe_id="CWE-770",
                 )
             )
 
@@ -324,7 +324,7 @@ class APIRateLimitDetector(ast.NodeVisitor):
     def _get_decorator_name(self, decorator) -> str:
         """Extract decorator name as string."""
         if isinstance(decorator, ast.Name):
-            return f'@{decorator.id}'
+            return f"@{decorator.id}"
         elif isinstance(decorator, ast.Call):
             if isinstance(decorator.func, ast.Attribute):
                 parts = []
@@ -334,9 +334,9 @@ class APIRateLimitDetector(ast.NodeVisitor):
                     current = current.value
                 if isinstance(current, ast.Name):
                     parts.append(current.id)
-                return '@' + '.'.join(reversed(parts))
+                return "@" + ".".join(reversed(parts))
             elif isinstance(decorator.func, ast.Name):
-                return f'@{decorator.func.id}'
+                return f"@{decorator.func.id}"
         elif isinstance(decorator, ast.Attribute):
             parts2 = []
             current2: ast.expr = decorator
@@ -345,17 +345,17 @@ class APIRateLimitDetector(ast.NodeVisitor):
                 current2 = current2.value
             if isinstance(current2, ast.Name):
                 parts2.append(current2.id)
-            return '@' + '.'.join(reversed(parts2))
-        return ''
+            return "@" + ".".join(reversed(parts2))
+        return ""
 
 
 class ContainerEscapeDetector:
     """
     Detect container escape vulnerabilities in Docker/containerized environments.
-    
+
     CWE-250: Execution with Unnecessary Privileges
     CWE-653: Insufficient Compartmentalization
-    
+
     Container security issues that could lead to escape:
     - Running as root user
     - Privileged mode enabled
@@ -364,15 +364,15 @@ class ContainerEscapeDetector:
     """
 
     CONTAINER_RISKS = [
-        (r'--privileged', 'Privileged container mode enables escape'),
-        (r'privileged:\s*true', 'Privileged mode in docker-compose'),
-        (r'user:\s*root', 'Container running as root user'),
-        (r'USER\s+root', 'Dockerfile uses root user'),
-        (r'/var/run/docker\.sock', 'Docker socket mounted - container escape risk'),
-        (r'--pid=host', 'Host PID namespace sharing is dangerous'),
-        (r'--net=host', 'Host network namespace sharing reduces isolation'),
-        (r'--ipc=host', 'Host IPC namespace sharing reduces isolation'),
-        (r'cap_add:\s*-\s*SYS_ADMIN', 'SYS_ADMIN capability enables escape'),
+        (r"--privileged", "Privileged container mode enables escape"),
+        (r"privileged:\s*true", "Privileged mode in docker-compose"),
+        (r"user:\s*root", "Container running as root user"),
+        (r"USER\s+root", "Dockerfile uses root user"),
+        (r"/var/run/docker\.sock", "Docker socket mounted - container escape risk"),
+        (r"--pid=host", "Host PID namespace sharing is dangerous"),
+        (r"--net=host", "Host network namespace sharing reduces isolation"),
+        (r"--ipc=host", "Host IPC namespace sharing reduces isolation"),
+        (r"cap_add:\s*-\s*SYS_ADMIN", "SYS_ADMIN capability enables escape"),
     ]
 
     def __init__(self):
@@ -382,36 +382,38 @@ class ContainerEscapeDetector:
     def scan_file(self, file_path: str, content: str) -> List[SecurityIssue]:
         """
         Scan Docker/container configuration files for escape vulnerabilities.
-        
+
         Args:
             file_path: Path to file being scanned
             content: File content
-            
+
         Returns:
             List of security issues found
         """
         issues: List[SecurityIssue] = []
 
         # Only scan relevant files
-        if not any(name in file_path.lower() for name in ['dockerfile', 'docker-compose', '.yml', '.yaml']):
+        if not any(
+            name in file_path.lower() for name in ["dockerfile", "docker-compose", ".yml", ".yaml"]
+        ):
             return issues
 
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.CONTAINER_RISKS:
                 if re.search(pattern, line, re.IGNORECASE):
                     issues.append(
                         SecurityIssue(
-                            severity='HIGH',
-                            category='Container Security',
+                            severity="HIGH",
+                            category="Container Security",
                             message=description,
                             line_number=line_num,
                             column=0,
                             code_snippet=line.strip(),
-                            fix_suggestion='Use unprivileged containers, non-root users, and minimal capabilities',
-                            owasp_id='ASVS-14.4.3',
-                            cwe_id='CWE-250'
+                            fix_suggestion="Use unprivileged containers, non-root users, and minimal capabilities",
+                            owasp_id="ASVS-14.4.3",
+                            cwe_id="CWE-250",
                         )
                     )
 
@@ -421,10 +423,10 @@ class ContainerEscapeDetector:
 class PrototypePollutionDetector(ast.NodeVisitor):
     """
     Detect prototype pollution vulnerabilities in Python (object attribute injection).
-    
+
     CWE-1321: Improperly Controlled Modification of Object Prototype Attributes
     OWASP Top 10 2021: A03:2021 - Injection
-    
+
     While more common in JavaScript, Python objects can also be polluted through
     __dict__, __class__, and dynamic attribute assignment.
     """
@@ -437,30 +439,30 @@ class PrototypePollutionDetector(ast.NodeVisitor):
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
-        if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
+        if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
-        return ''
+        return ""
 
     def visit_Call(self, node: ast.Call):
         """Check for dangerous dynamic attribute operations."""
         call_name = self._get_call_name(node)
 
         # setattr with user input
-        if call_name == 'setattr':
+        if call_name == "setattr":
             if len(node.args) >= 2:
                 # Check if attribute name comes from variable (potential user input)
                 if isinstance(node.args[1], (ast.Name, ast.Subscript)):
                     self.issues.append(
                         SecurityIssue(
-                            severity='HIGH',
-                            category='Prototype Pollution',
-                            message='Dynamic setattr() with user-controlled attribute name',
+                            severity="HIGH",
+                            category="Prototype Pollution",
+                            message="Dynamic setattr() with user-controlled attribute name",
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
-                            fix_suggestion='Allowlist allowed attributes or use a data class with fixed attributes',
-                            owasp_id='ASVS-5.1.3',
-                            cwe_id='CWE-1321'
+                            fix_suggestion="Allowlist allowed attributes or use a data class with fixed attributes",
+                            owasp_id="ASVS-5.1.3",
+                            cwe_id="CWE-1321",
                         )
                     )
 
@@ -472,18 +474,18 @@ class PrototypePollutionDetector(ast.NodeVisitor):
         if isinstance(node.value, ast.Subscript):
             if self._is_dict_access(node.value):
                 for target in node.targets:
-                    if isinstance(target, ast.Attribute) and target.attr == '__dict__':
+                    if isinstance(target, ast.Attribute) and target.attr == "__dict__":
                         self.issues.append(
                             SecurityIssue(
-                                severity='MEDIUM',
-                                category='Prototype Pollution',
-                                message='Direct __dict__ manipulation with external data',
+                                severity="MEDIUM",
+                                category="Prototype Pollution",
+                                message="Direct __dict__ manipulation with external data",
                                 line_number=node.lineno,
                                 column=node.col_offset,
                                 code_snippet=self._get_code_snippet(node),
-                                fix_suggestion='Use controlled attribute assignment instead of __dict__ manipulation',
-                                owasp_id='ASVS-5.1.3',
-                                cwe_id='CWE-1321'
+                                fix_suggestion="Use controlled attribute assignment instead of __dict__ manipulation",
+                                owasp_id="ASVS-5.1.3",
+                                cwe_id="CWE-1321",
                             )
                         )
 
@@ -495,7 +497,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             return node.func.attr
-        return ''
+        return ""
 
     def _is_dict_access(self, node: ast.Subscript) -> bool:
         """Check if node accesses a dictionary."""
@@ -505,19 +507,19 @@ class PrototypePollutionDetector(ast.NodeVisitor):
 class CachePoisoningDetector:
     """
     Detect cache poisoning vulnerabilities.
-    
+
     CWE-444: Inconsistent Interpretation of HTTP Requests
     OWASP Top 10 2021: A05:2021 - Security Misconfiguration
-    
+
     Cache poisoning can occur when user-controlled input is used in cache keys
     without proper sanitization.
     """
 
     CACHE_PATTERNS = [
-        (r'@cache.*\(.*request\.', 'Caching with request data in key'),
-        (r'cache\.set\([^,]*request\.', 'Cache key includes request data'),
-        (r'cache_key\s*=\s*.*\+.*request\.', 'Concatenating request data into cache key'),
-        (r'memcache.*set.*user', 'User-controlled cache key'),
+        (r"@cache.*\(.*request\.", "Caching with request data in key"),
+        (r"cache\.set\([^,]*request\.", "Cache key includes request data"),
+        (r"cache_key\s*=\s*.*\+.*request\.", "Concatenating request data into cache key"),
+        (r"memcache.*set.*user", "User-controlled cache key"),
     ]
 
     def __init__(self):
@@ -527,30 +529,30 @@ class CachePoisoningDetector:
     def scan_code(self, code: str) -> List[SecurityIssue]:
         """
         Scan code for cache poisoning vulnerabilities.
-        
+
         Args:
             code: Python source code to analyze
-            
+
         Returns:
             List of security issues found
         """
         issues = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
             for pattern, description in self.CACHE_PATTERNS:
                 if re.search(pattern, line):
                     issues.append(
                         SecurityIssue(
-                            severity='MEDIUM',
-                            category='Cache Poisoning',
+                            severity="MEDIUM",
+                            category="Cache Poisoning",
                             message=description,
                             line_number=line_num,
                             column=0,
                             code_snippet=line.strip(),
-                            fix_suggestion='Sanitize and validate user input before using in cache keys',
-                            owasp_id='ASVS-5.1.5',
-                            cwe_id='CWE-444'
+                            fix_suggestion="Sanitize and validate user input before using in cache keys",
+                            owasp_id="ASVS-5.1.5",
+                            cwe_id="CWE-444",
                         )
                     )
 
@@ -560,10 +562,10 @@ class CachePoisoningDetector:
 class BusinessLogicDetector(ast.NodeVisitor):
     """
     Detect business logic vulnerabilities and anti-patterns.
-    
+
     CWE-840: Business Logic Errors
     OWASP Top 10 2021: A04:2021 - Insecure Design
-    
+
     Business logic flaws that can't be detected by traditional security scanners:
     - Missing transaction rollback handling
     - Race conditions in financial operations
@@ -579,16 +581,19 @@ class BusinessLogicDetector(ast.NodeVisitor):
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
-        if hasattr(node, 'lineno') and 0 < node.lineno <= len(self.source_lines):
+        if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
             return str(self.source_lines[node.lineno - 1].strip())
-        return ''
+        return ""
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Check functions for business logic issues."""
-        func_body_str = ast.unparse(node) if hasattr(ast, 'unparse') else ''
+        func_body_str = ast.unparse(node) if hasattr(ast, "unparse") else ""
 
         # Check for financial operations without proper validation
-        if any(keyword in node.name.lower() for keyword in ['payment', 'transfer', 'withdraw', 'charge', 'refund']):
+        if any(
+            keyword in node.name.lower()
+            for keyword in ["payment", "transfer", "withdraw", "charge", "refund"]
+        ):
             has_balance_check = False
             has_rollback = False
 
@@ -600,36 +605,36 @@ class BusinessLogicDetector(ast.NodeVisitor):
                 # Check for transaction rollback
                 if isinstance(child, ast.Call):
                     call_name = self._get_call_name(child)
-                    if 'rollback' in call_name or 'rollback' in func_body_str:
+                    if "rollback" in call_name or "rollback" in func_body_str:
                         has_rollback = True
 
             if not has_balance_check:
                 self.issues.append(
                     SecurityIssue(
-                        severity='HIGH',
-                        category='Business Logic',
+                        severity="HIGH",
+                        category="Business Logic",
                         message=f'Financial function "{node.name}" lacks balance/amount validation',
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
-                        fix_suggestion='Add validation to check balance, amount limits, and negative values',
-                        owasp_id='ASVS-11.1.4',
-                        cwe_id='CWE-840'
+                        fix_suggestion="Add validation to check balance, amount limits, and negative values",
+                        owasp_id="ASVS-11.1.4",
+                        cwe_id="CWE-840",
                     )
                 )
 
             if not has_rollback:
                 self.issues.append(
                     SecurityIssue(
-                        severity='MEDIUM',
-                        category='Business Logic',
+                        severity="MEDIUM",
+                        category="Business Logic",
                         message=f'Financial function "{node.name}" lacks transaction rollback handling',
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
-                        fix_suggestion='Implement try/except with rollback for database transactions',
-                        owasp_id='ASVS-11.1.4',
-                        cwe_id='CWE-840'
+                        fix_suggestion="Implement try/except with rollback for database transactions",
+                        owasp_id="ASVS-11.1.4",
+                        cwe_id="CWE-840",
                     )
                 )
 
@@ -641,17 +646,17 @@ class BusinessLogicDetector(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             return node.func.attr
-        return ''
+        return ""
 
 
 # Export all detectors for easy access
 __all__ = [
-    'GraphQLInjectionDetector',
-    'SSTIDetector',
-    'JWTSecurityDetector',
-    'APIRateLimitDetector',
-    'ContainerEscapeDetector',
-    'PrototypePollutionDetector',
-    'CachePoisoningDetector',
-    'BusinessLogicDetector',
+    "GraphQLInjectionDetector",
+    "SSTIDetector",
+    "JWTSecurityDetector",
+    "APIRateLimitDetector",
+    "ContainerEscapeDetector",
+    "PrototypePollutionDetector",
+    "CachePoisoningDetector",
+    "BusinessLogicDetector",
 ]

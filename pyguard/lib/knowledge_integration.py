@@ -440,7 +440,9 @@ class SecurityIntelligence:
                 "✓ Isolate deserialization in sandboxes",
             ],
         }
-        return checklists.get(cwe_id, ["✓ Review security best practices for this vulnerability type"])
+        return checklists.get(
+            cwe_id, ["✓ Review security best practices for this vulnerability type"]
+        )
 
 
 class KnowledgeIntegration:

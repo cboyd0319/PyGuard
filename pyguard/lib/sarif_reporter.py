@@ -116,10 +116,8 @@ class SARIFReporter:
             "invocations": [
                 {
                     "executionSuccessful": True,
-                    "endTimeUtc": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-                    "workingDirectory": {
-                        "uri": "file:///"
-                    },
+                    "endTimeUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "workingDirectory": {"uri": "file:///"},
                 }
             ],
             "automationDetails": {
@@ -130,9 +128,7 @@ class SARIFReporter:
 
         # Add repository information if provided
         if repository_uri:
-            run["versionControlProvenance"] = [
-                {"repositoryUri": repository_uri}
-            ]
+            run["versionControlProvenance"] = [{"repositoryUri": repository_uri}]
 
         sarif_report = {
             "$schema": self.SARIF_SCHEMA,
@@ -298,9 +294,7 @@ class SARIFReporter:
 
         # Add snippet if available
         if issue.get("code_snippet"):
-            location["physicalLocation"]["region"]["snippet"] = {
-                "text": issue["code_snippet"]
-            }
+            location["physicalLocation"]["region"]["snippet"] = {"text": issue["code_snippet"]}
 
         return location
 

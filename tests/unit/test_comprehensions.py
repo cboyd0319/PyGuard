@@ -267,8 +267,20 @@ class TestComprehensionRules:
         rules = checker.get_rules()
         rule_ids = {rule.rule_id for rule in rules}
         expected = {
-            "C400", "C401", "C402", "C403", "C404", "C405", "C406",
-            "C408", "C409", "C410", "C411", "C413", "C414", "C416"
+            "C400",
+            "C401",
+            "C402",
+            "C403",
+            "C404",
+            "C405",
+            "C406",
+            "C408",
+            "C409",
+            "C410",
+            "C411",
+            "C413",
+            "C414",
+            "C416",
         }
         assert rule_ids == expected
 

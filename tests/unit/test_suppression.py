@@ -12,12 +12,12 @@ def test_security_visitor_suppression_generic():
 exec("pass")   # noqa
 compile("pass", "<string>", "exec")
 """
-    
+
     source_lines = code.split("\n")
     tree = ast.parse(code)
     visitor = SecurityVisitor(source_lines)
     visitor.visit(tree)
-    
+
     # First two should be suppressed, third should be detected
     assert len(visitor.issues) == 1
     assert "compile" in visitor.issues[0].message.lower()
@@ -29,12 +29,12 @@ def test_security_visitor_suppression_specific():
 exec("pass")   # noqa: CWE-95
 compile("pass", "<string>", "exec")
 """
-    
+
     source_lines = code.split("\n")
     tree = ast.parse(code)
     visitor = SecurityVisitor(source_lines)
     visitor.visit(tree)
-    
+
     # First two should be suppressed, third should be detected
     assert len(visitor.issues) == 1
     assert "compile" in visitor.issues[0].message.lower()
@@ -45,12 +45,12 @@ def test_security_visitor_no_suppression():
     code = """eval("1 + 1")
 exec("pass")
 """
-    
+
     source_lines = code.split("\n")
     tree = ast.parse(code)
     visitor = SecurityVisitor(source_lines)
     visitor.visit(tree)
-    
+
     # Both should be detected
     assert len(visitor.issues) == 2
 
@@ -66,12 +66,12 @@ def another_function():  # noqa
 def third_function():
     pass
 """
-    
+
     source_lines = code.split("\n")
     tree = ast.parse(code)
     visitor = CodeQualityVisitor(source_lines)
     visitor.visit(tree)
-    
+
     # Only third function should have documentation issue
     doc_issues = [i for i in visitor.issues if i.category == "Documentation"]
     assert len(doc_issues) == 1
@@ -82,12 +82,12 @@ def test_suppression_wrong_rule():
     """Test that suppressing wrong rule doesn't suppress the actual issue."""
     code = """eval("1 + 1")  # pyguard: disable=CWE-89
 """
-    
+
     source_lines = code.split("\n")
     tree = ast.parse(code)
     visitor = SecurityVisitor(source_lines)
     visitor.visit(tree)
-    
+
     # Should still be detected (CWE-95, not CWE-89)
     assert len(visitor.issues) == 1
     assert visitor.issues[0].cwe_id == "CWE-95"

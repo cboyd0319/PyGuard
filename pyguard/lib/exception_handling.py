@@ -62,7 +62,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                         source_tool="exception_handling",
                     )
                 )
-        
+
         # TRY002: Raise vanilla Exception
         if node.exc and isinstance(node.exc, ast.Call):
             if isinstance(node.exc.func, ast.Name) and node.exc.func.id == "Exception":
@@ -134,9 +134,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
         # TRY300: Consider else clause
         if not node.orelse and len(node.body) > 1:
             # Check if there's code after try that could go in else
-            has_return_in_try = any(
-                isinstance(stmt, ast.Return) for stmt in node.body
-            )
+            has_return_in_try = any(isinstance(stmt, ast.Return) for stmt in node.body)
             if not has_return_in_try:
                 # Consider suggesting else clause
                 pass  # Simplified for now

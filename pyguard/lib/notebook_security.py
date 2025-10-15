@@ -156,9 +156,7 @@ class NotebookSecurityAnalyzer:
 
         return cells
 
-    def _analyze_code_cell(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _analyze_code_cell(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Analyze a single code cell for security issues."""
         issues: List[NotebookIssue] = []
 
@@ -179,9 +177,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_magic_commands(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _check_magic_commands(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Check for dangerous Jupyter magic commands."""
         issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
@@ -209,9 +205,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_secrets(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _check_secrets(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Check for hardcoded secrets in cell code."""
         issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
@@ -242,9 +236,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_unsafe_operations(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _check_unsafe_operations(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Check for unsafe Python operations in cell."""
         issues: List[NotebookIssue] = []
 
@@ -298,9 +290,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_command_injection(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _check_command_injection(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Check for command injection vulnerabilities."""
         issues: List[NotebookIssue] = []
 
@@ -313,15 +303,13 @@ class NotebookSecurityAnalyzer:
             # Check subprocess calls with shell=True
             if isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Attribute):
-                    if (
-                        isinstance(node.func.value, ast.Name)
-                        and node.func.value.id in ["subprocess", "os"]
-                    ):
+                    if isinstance(node.func.value, ast.Name) and node.func.value.id in [
+                        "subprocess",
+                        "os",
+                    ]:
                         # Check for shell=True
                         for keyword in node.keywords:
-                            if keyword.arg == "shell" and isinstance(
-                                keyword.value, ast.Constant
-                            ):
+                            if keyword.arg == "shell" and isinstance(keyword.value, ast.Constant):
                                 if keyword.value.value is True:
                                     issues.append(
                                         NotebookIssue(
@@ -330,7 +318,9 @@ class NotebookSecurityAnalyzer:
                                             message="subprocess call with shell=True enables command injection",
                                             cell_index=cell_index,
                                             line_number=getattr(node, "lineno", 0),
-                                            code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                            code_snippet=(
+                                                ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                            ),
                                             fix_suggestion="Use shell=False and pass command as list of arguments",
                                             cwe_id="CWE-78",
                                             owasp_id="ASVS-5.3.3",
@@ -339,9 +329,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_output_security(
-        self, cell: NotebookCell, cell_index: int
-    ) -> List[NotebookIssue]:
+    def _check_output_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Check cell outputs for security issues."""
         issues: List[NotebookIssue] = []
 
@@ -368,9 +356,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _analyze_cell_dependencies(
-        self, cells: List[NotebookCell]
-    ) -> List[NotebookIssue]:
+    def _analyze_cell_dependencies(self, cells: List[NotebookCell]) -> List[NotebookIssue]:
         """Analyze dependencies and data flow between cells."""
         issues: List[NotebookIssue] = []
 
@@ -461,9 +447,7 @@ class NotebookFixer:
                 lines = source.split("\n")
                 if issue.line_number <= len(lines):
                     line = lines[issue.line_number - 1]
-                    lines[issue.line_number - 1] = (
-                        f"# SECURITY: Removed hardcoded secret - {line}"
-                    )
+                    lines[issue.line_number - 1] = f"# SECURITY: Removed hardcoded secret - {line}"
                     cell["source"] = "\n".join(lines)
                     fixes_applied.append(
                         f"Commented out hardcoded secret in cell {issue.cell_index}"

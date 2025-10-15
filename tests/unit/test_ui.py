@@ -32,7 +32,7 @@ class TestUITheme:
     def test_uitheme_default_values(self):
         """Test UITheme with default color values."""
         theme = UITheme()
-        
+
         assert theme.primary_color == "cyan"
         assert theme.success_color == "green"
         assert theme.warning_color == "yellow"
@@ -50,9 +50,9 @@ class TestUITheme:
             error_color="bright_red",
             info_color="cyan",
             accent_color="purple",
-            muted_color="grey"
+            muted_color="grey",
         )
-        
+
         assert theme.primary_color == "blue"
         assert theme.success_color == "bright_green"
         assert theme.warning_color == "orange"
@@ -64,11 +64,11 @@ class TestUITheme:
     def test_uitheme_partial_customization(self):
         """Test UITheme with partial customization."""
         theme = UITheme(primary_color="magenta", error_color="bright_red")
-        
+
         # Check customized values
         assert theme.primary_color == "magenta"
         assert theme.error_color == "bright_red"
-        
+
         # Check default values still present
         assert theme.success_color == "green"
         assert theme.warning_color == "yellow"
@@ -80,7 +80,7 @@ class TestEnhancedConsole:
     def test_enhanced_console_initialization(self):
         """Test EnhancedConsole initialization with default theme."""
         console = EnhancedConsole()
-        
+
         assert console.console is not None
         assert console.theme is not None
         assert isinstance(console.theme, UITheme)
@@ -89,19 +89,19 @@ class TestEnhancedConsole:
         """Test EnhancedConsole initialization with custom theme."""
         custom_theme = UITheme(primary_color="magenta")
         console = EnhancedConsole(theme=custom_theme)
-        
+
         assert console.theme.primary_color == "magenta"
 
     def test_print_banner(self, capsys):
         """Test print_banner displays PyGuard banner."""
         console = EnhancedConsole()
         console.print_banner()
-        
+
         # Rich output goes to stderr or stdout depending on console setup
         # We'll capture and verify it contains key elements
         captured = capsys.readouterr()
         output = captured.out + captured.err
-        
+
         # Banner should contain PyGuard branding elements
         assert "PyGuard" in output or len(output) >= 0  # At least something was printed
 
@@ -109,10 +109,10 @@ class TestEnhancedConsole:
         """Test print_welcome displays welcome message with file count."""
         console = EnhancedConsole()
         console.print_welcome(files_count=42)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
-        
+
         # Should contain file count or at least print something
         assert len(output) >= 0  # Output was generated
 
@@ -121,7 +121,7 @@ class TestEnhancedConsole:
         """Test print_welcome with various file counts."""
         console = EnhancedConsole()
         console.print_welcome(files_count=files_count)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -130,16 +130,16 @@ class TestEnhancedConsole:
         """Test create_progress_bar returns Progress object."""
         console = EnhancedConsole()
         progress = console.create_progress_bar("Testing")
-        
+
         assert progress is not None
         # Progress object should be from Rich library
-        assert hasattr(progress, 'add_task') or hasattr(progress, 'tasks')
+        assert hasattr(progress, "add_task") or hasattr(progress, "tasks")
 
     def test_create_progress_bar_custom_description(self):
         """Test create_progress_bar with custom description."""
         console = EnhancedConsole()
         progress = console.create_progress_bar("Custom Processing")
-        
+
         assert progress is not None
 
     def test_print_summary_table(self, capsys):
@@ -154,11 +154,11 @@ class TestEnhancedConsole:
             "quality_issues": 19,
             "fixes_applied": 20,
             "analysis_time_seconds": 12.5,
-            "avg_time_per_file_ms": 250.0
+            "avg_time_per_file_ms": 250.0,
         }
-        
+
         console.print_summary_table(metrics)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -167,7 +167,7 @@ class TestEnhancedConsole:
         """Test print_summary_table with empty metrics."""
         console = EnhancedConsole()
         console.print_summary_table({})
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -176,9 +176,9 @@ class TestEnhancedConsole:
         """Test print_summary_table with partial metrics."""
         console = EnhancedConsole()
         metrics = {"total_files": 10, "security_issues": 2}
-        
+
         console.print_summary_table(metrics)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -187,7 +187,7 @@ class TestEnhancedConsole:
         """Test print_issue_details with no issues."""
         console = EnhancedConsole()
         console.print_issue_details([])
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -201,19 +201,19 @@ class TestEnhancedConsole:
                 "category": "SQL Injection",
                 "file": "/path/to/file.py",
                 "line": 42,
-                "message": "Potential SQL injection vulnerability"
+                "message": "Potential SQL injection vulnerability",
             },
             {
                 "severity": "MEDIUM",
                 "category": "Hardcoded Secret",
                 "file": "/path/to/config.py",
                 "line": 15,
-                "message": "API key found in code"
-            }
+                "message": "API key found in code",
+            },
         ]
-        
+
         console.print_issue_details(issues)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -221,11 +221,12 @@ class TestEnhancedConsole:
     def test_print_issue_details_max_display(self, capsys):
         """Test print_issue_details respects max_display parameter."""
         console = EnhancedConsole()
-        issues = [{"severity": "LOW", "category": "Test", "message": f"Issue {i}"} 
-                  for i in range(20)]
-        
+        issues = [
+            {"severity": "LOW", "category": "Test", "message": f"Issue {i}"} for i in range(20)
+        ]
+
         console.print_issue_details(issues, max_display=5)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -235,7 +236,7 @@ class TestEnhancedConsole:
         """Test print_success_message with various fix counts."""
         console = EnhancedConsole()
         console.print_success_message(fixes_applied=fixes_count)
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -244,7 +245,7 @@ class TestEnhancedConsole:
         """Test print_next_steps without report path."""
         console = EnhancedConsole()
         console.print_next_steps()
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -253,7 +254,7 @@ class TestEnhancedConsole:
         """Test print_next_steps with report path."""
         console = EnhancedConsole()
         console.print_next_steps(report_path=Path("/tmp/report.html"))
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -262,7 +263,7 @@ class TestEnhancedConsole:
         """Test print_help_message displays help information."""
         console = EnhancedConsole()
         console.print_help_message()
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -271,7 +272,7 @@ class TestEnhancedConsole:
         """Test print_error with basic error message."""
         console = EnhancedConsole()
         console.print_error("Something went wrong")
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -280,10 +281,9 @@ class TestEnhancedConsole:
         """Test print_error with error and suggestion."""
         console = EnhancedConsole()
         console.print_error(
-            error="File not found",
-            suggestion="Please check the file path and try again"
+            error="File not found", suggestion="Please check the file path and try again"
         )
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -292,7 +292,7 @@ class TestEnhancedConsole:
         """Test print_error with empty error string."""
         console = EnhancedConsole()
         console.print_error("")
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         assert len(output) >= 0
@@ -304,16 +304,12 @@ class TestModernHTMLReporter:
     def test_generate_report_basic(self):
         """Test generate_report with basic data."""
         reporter = ModernHTMLReporter()
-        metrics = {
-            "total_files": 10,
-            "files_with_issues": 2,
-            "total_issues": 5
-        }
+        metrics = {"total_files": 10, "files_with_issues": 2, "total_issues": 5}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert html is not None
         assert isinstance(html, str)
         assert len(html) > 0
@@ -331,20 +327,20 @@ class TestModernHTMLReporter:
                 "category": "SQL Injection",
                 "file": "/path/to/file.py",
                 "line": 42,
-                "message": "SQL injection vulnerability"
+                "message": "SQL injection vulnerability",
             },
             {
                 "severity": "MEDIUM",
                 "category": "Hardcoded Secret",
                 "file": "/path/to/config.py",
                 "line": 15,
-                "message": "API key in code"
-            }
+                "message": "API key in code",
+            },
         ]
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert "SQL Injection" in html
         assert "Hardcoded Secret" in html
         assert "HIGH" in html or "high" in html.lower()
@@ -356,9 +352,9 @@ class TestModernHTMLReporter:
         metrics = {"total_files": 10}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Should show success/perfect message
         assert "<!DOCTYPE html>" in html
         assert len(html) > 1000  # Should have full HTML structure
@@ -370,12 +366,12 @@ class TestModernHTMLReporter:
         issues = [
             {"severity": "HIGH", "category": "Security", "message": "High issue"},
             {"severity": "MEDIUM", "category": "Quality", "message": "Medium issue"},
-            {"severity": "LOW", "category": "Style", "message": "Low issue"}
+            {"severity": "LOW", "category": "Style", "message": "Low issue"},
         ]
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Check for severity indicators
         assert "HIGH" in html or "high" in html.lower()
         assert "MEDIUM" in html or "medium" in html.lower()
@@ -385,13 +381,11 @@ class TestModernHTMLReporter:
         """Test generate_report includes WCAG accessibility attributes."""
         reporter = ModernHTMLReporter()
         metrics = {}
-        issues = [
-            {"severity": "HIGH", "category": "Security", "message": "Test issue"}
-        ]
+        issues = [{"severity": "HIGH", "category": "Security", "message": "Test issue"}]
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Check for accessibility attributes
         assert 'role="' in html  # ARIA roles
         assert 'aria-label="' in html  # ARIA labels for screen readers
@@ -403,12 +397,12 @@ class TestModernHTMLReporter:
         metrics = {}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Check for responsive meta tags
         assert 'name="viewport"' in html
-        assert 'width=device-width' in html
+        assert "width=device-width" in html
 
     def test_generate_report_with_fixes(self):
         """Test generate_report with fixes applied."""
@@ -417,11 +411,11 @@ class TestModernHTMLReporter:
         issues = []
         fixes = [
             {"file": "test.py", "line": 10, "fix": "Applied security fix"},
-            {"file": "main.py", "line": 20, "fix": "Fixed formatting"}
+            {"file": "main.py", "line": 20, "fix": "Fixed formatting"},
         ]
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert html is not None
         assert len(html) > 0
 
@@ -431,9 +425,9 @@ class TestModernHTMLReporter:
         metrics = {}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Should include a date/time reference
         current_year = datetime.now().year
         assert str(current_year) in html
@@ -444,9 +438,9 @@ class TestModernHTMLReporter:
         metrics = {}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert "<style>" in html or "<link" in html
         assert "color" in html.lower()  # CSS color properties
 
@@ -456,26 +450,24 @@ class TestModernHTMLReporter:
         metrics = {}
         issues = []
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         assert '<meta charset="UTF-8">' in html
         assert "PyGuard" in html
 
-    @pytest.mark.parametrize("severity,expected_class", [
-        ("HIGH", "high"),
-        ("MEDIUM", "medium"),
-        ("LOW", "low")
-    ])
+    @pytest.mark.parametrize(
+        "severity,expected_class", [("HIGH", "high"), ("MEDIUM", "medium"), ("LOW", "low")]
+    )
     def test_generate_report_severity_classes(self, severity, expected_class):
         """Test generate_report applies correct severity CSS classes."""
         reporter = ModernHTMLReporter()
         metrics = {}
         issues = [{"severity": severity, "category": "Test", "message": "Test"}]
         fixes = []
-        
+
         html = reporter.generate_report(metrics, issues, fixes)
-        
+
         # Should contain severity-specific class
         assert expected_class in html.lower()
 
@@ -484,9 +476,9 @@ class TestModernHTMLReporter:
         reporter = ModernHTMLReporter()
         html_content = "<html><body>Test Report</body></html>"
         output_path = tmp_path / "report.html"
-        
+
         reporter.save_report(html_content, output_path)
-        
+
         assert output_path.exists()
         content = output_path.read_text()
         assert content == html_content
@@ -496,9 +488,9 @@ class TestModernHTMLReporter:
         reporter = ModernHTMLReporter()
         html_content = "<html><body>Test</body></html>"
         output_path = tmp_path / "nested" / "dir" / "report.html"
-        
+
         reporter.save_report(html_content, output_path)
-        
+
         assert output_path.exists()
         assert output_path.read_text() == html_content
 
@@ -506,14 +498,14 @@ class TestModernHTMLReporter:
         """Test save_report overwrites existing file."""
         reporter = ModernHTMLReporter()
         output_path = tmp_path / "report.html"
-        
+
         # Create initial file
         output_path.write_text("Old content")
-        
+
         # Save new content
         new_content = "<html><body>New Report</body></html>"
         reporter.save_report(new_content, output_path)
-        
+
         assert output_path.read_text() == new_content
 
 
@@ -525,11 +517,11 @@ class TestIntegration:
         # Setup
         console = EnhancedConsole()
         reporter = ModernHTMLReporter()
-        
+
         # Console output
         console.print_banner()
         console.print_welcome(files_count=25)
-        
+
         # Simulate analysis
         metrics = {
             "total_files": 25,
@@ -540,33 +532,33 @@ class TestIntegration:
             "quality_issues": 8,
             "fixes_applied": 7,
             "analysis_time_seconds": 5.2,
-            "avg_time_per_file_ms": 208.0
+            "avg_time_per_file_ms": 208.0,
         }
-        
+
         issues = [
             {
                 "severity": "HIGH",
                 "category": "SQL Injection",
                 "file": "app.py",
                 "line": 42,
-                "message": "Potential SQL injection"
+                "message": "Potential SQL injection",
             }
         ]
-        
+
         console.print_summary_table(metrics)
         console.print_issue_details(issues)
         console.print_success_message(fixes_applied=7)
-        
+
         # Generate HTML report
         html = reporter.generate_report(metrics, issues, [])
         output_path = tmp_path / "report.html"
         reporter.save_report(html, output_path)
-        
+
         # Verify
         captured = capsys.readouterr()
         assert len(captured.out + captured.err) >= 0
         assert output_path.exists()
-        
+
         report_content = output_path.read_text()
         assert "SQL Injection" in report_content
         assert "HIGH" in report_content or "high" in report_content.lower()
@@ -574,27 +566,25 @@ class TestIntegration:
     def test_error_handling_workflow(self, capsys):
         """Test error handling throughout UI workflow."""
         console = EnhancedConsole()
-        
+
         # Test various error scenarios
         console.print_error("File not found")
         console.print_error("Permission denied", "Try running with sudo")
         console.print_error("")  # Empty error
-        
+
         captured = capsys.readouterr()
         assert len(captured.out + captured.err) >= 0
 
     def test_theme_customization_workflow(self, capsys):
         """Test using custom theme throughout workflow."""
         custom_theme = UITheme(
-            primary_color="magenta",
-            success_color="bright_green",
-            error_color="bright_red"
+            primary_color="magenta", success_color="bright_green", error_color="bright_red"
         )
         console = EnhancedConsole(theme=custom_theme)
-        
+
         console.print_banner()
         console.print_welcome(files_count=10)
         console.print_help_message()
-        
+
         captured = capsys.readouterr()
         assert len(captured.out + captured.err) >= 0

@@ -30,7 +30,7 @@ env = Environment(autoescape=False)  # XSS001
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS001"]
         assert len(violations) == 1
         assert "autoescape=False" in violations[0].message
@@ -46,7 +46,7 @@ env = Environment()  # XSS002 - missing autoescape
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS002"]
         assert len(violations) == 1
         assert "without explicit autoescape" in violations[0].message
@@ -61,7 +61,7 @@ env = Environment(autoescape=True)  # OK
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         # Should have no violations
         violations = [v for v in detector.violations if v.rule_id.startswith("XSS00")]
         assert len(violations) == 0
@@ -79,7 +79,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS003"]
         assert len(violations) == 1
         assert "mark_safe" in violations[0].message
@@ -98,7 +98,7 @@ def view():
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS004"]
         assert len(violations) == 1
         assert "Markup" in violations[0].message
@@ -115,7 +115,7 @@ def view():
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS005"]
         assert len(violations) == 1
         assert "render_template_string" in violations[0].message
@@ -131,7 +131,7 @@ template = Template('Hello ${name}')  # XSS006 - no auto-escape
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS006"]
         assert len(violations) == 1
         assert "Mako" in violations[0].message
@@ -148,7 +148,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS007"]
         assert len(violations) == 1
         assert "HttpResponse" in violations[0].message
@@ -164,7 +164,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS008"]
         assert len(violations) == 1
         assert "format" in violations[0].message
@@ -180,7 +180,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS009"]
         assert len(violations) == 1
         assert "concatenation" in violations[0].message
@@ -196,7 +196,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id == "XSS010"]
         assert len(violations) == 1
         assert "f-string" in violations[0].message
@@ -211,7 +211,7 @@ def view():
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         # Should have no XSS violations for static content
         violations = [v for v in detector.violations if v.rule_id.startswith("XSS")]
         assert len(violations) == 0
@@ -303,24 +303,24 @@ def xss():
     name = request.args.get('name')
     return f'<h1>Hello {name}</h1>'
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             file_path = Path(f.name)
 
         try:
             violations = check_xss_vulnerabilities(file_path)
-            
+
             # Should detect multiple XSS issues
             assert len(violations) >= 3
-            
+
             # Check for specific rule violations
             rule_ids = {v.rule_id for v in violations}
             assert "XSS001" in rule_ids  # autoescape=False
             assert "XSS005" in rule_ids  # render_template_string
             # XSS010 (f-string) may or may not be detected depending on how obvious the user input is
             # The test should pass as long as the critical issues are caught
-            
+
         finally:
             file_path.unlink()
 
@@ -338,18 +338,18 @@ def view(request):
     # XSS007: HttpResponse with user input
     return HttpResponse(safe_html)
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             file_path = Path(f.name)
 
         try:
             violations = check_xss_vulnerabilities(file_path)
-            
+
             rule_ids = {v.rule_id for v in violations}
             assert "XSS003" in rule_ids  # mark_safe
             assert "XSS007" in rule_ids  # HttpResponse
-            
+
         finally:
             file_path.unlink()
 
@@ -365,18 +365,20 @@ def view():
     # Safe: static HTML
     return '<div>Hello World</div>'
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             file_path = Path(f.name)
 
         try:
             violations = check_xss_vulnerabilities(file_path)
-            
+
             # Should have no violations (or only XSS002 for static HTML which is acceptable)
-            xss_violations = [v for v in violations if v.rule_id.startswith("XSS") and v.rule_id != "XSS002"]
+            xss_violations = [
+                v for v in violations if v.rule_id.startswith("XSS") and v.rule_id != "XSS002"
+            ]
             assert len(xss_violations) == 0
-            
+
         finally:
             file_path.unlink()
 
@@ -386,7 +388,7 @@ def view():
 def broken(
     # Syntax error - missing closing paren
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             file_path = Path(f.name)
@@ -395,7 +397,7 @@ def broken(
             violations = check_xss_vulnerabilities(file_path)
             # Should not crash, may return empty list
             assert isinstance(violations, list)
-            
+
         finally:
             file_path.unlink()
 
@@ -411,7 +413,7 @@ def view(request):
 """
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
-        
+
         # Find the assignment node
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
@@ -425,7 +427,7 @@ user_data = input('Enter data: ')
 """
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
-        
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Name) and node.id == "user_data":
                 # Variable named with "user" should be flagged
@@ -438,7 +440,7 @@ config = {'title': 'Safe Value'}
 """
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
-        
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Name) and node.id == "config":
                 assert not detector._is_user_input(node)
@@ -463,7 +465,7 @@ def test():
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if "Markup" in v.message]
         assert len(violations) >= 1
 
@@ -484,7 +486,7 @@ def view(request):
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = [v for v in detector.violations if v.rule_id in ["XSS003", "XSS007"]]
         assert len(violations) >= 2
 
@@ -505,10 +507,10 @@ env3 = Environment(autoescape=True)
         tree = ast.parse(code)
         detector = XSSDetector(Path("test.py"), code)
         detector.visit(tree)
-        
+
         violations = detector.violations
         assert len(violations) >= 2
-        
+
         # Should have XSS001 and XSS002
         rule_ids = {v.rule_id for v in violations}
         assert "XSS001" in rule_ids

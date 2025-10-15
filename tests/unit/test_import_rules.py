@@ -12,9 +12,9 @@ class TestImportRulesDetection:
 
     def test_detect_banned_imports(self, tmp_path):
         """Test detection of banned imports."""
-        code = '''
+        code = """
 import os.path
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -26,7 +26,7 @@ import os.path
 
     def test_detect_future_imports_position(self, tmp_path):
         """Test detection of __future__ imports not at top."""
-        code = '''
+        code = """
 import sys
 import os
 # Some comment
@@ -37,7 +37,7 @@ import os
 # Line 10
 # Line 11
 from __future__ import annotations
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -49,10 +49,10 @@ from __future__ import annotations
 
     def test_detect_unsorted_imports(self, tmp_path):
         """Test detection of unsorted imports."""
-        code = '''
+        code = """
 import third_party
 import sys
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -64,12 +64,12 @@ import sys
 
     def test_detect_type_checking_imports(self, tmp_path):
         """Test detection of type-only imports."""
-        code = '''
+        code = """
 from typing import Protocol
 
 class MyClass:
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 

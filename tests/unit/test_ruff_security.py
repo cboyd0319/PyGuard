@@ -21,7 +21,7 @@ assert condition
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) == 2
         assert all(v.rule_id == "S101" for v in violations)
         assert "assert" in violations[0].message.lower()
@@ -36,7 +36,7 @@ exec(user_input)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) == 2
         assert all(v.rule_id == "S102" for v in violations)
         assert "exec" in violations[0].message.lower()
@@ -51,7 +51,7 @@ server_host = "::"
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) == 2
         assert all(v.rule_id == "S104" for v in violations)
 
@@ -66,7 +66,7 @@ api_token = "abc123def456"
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) == 3
         assert all(v.rule_id == "S105" for v in violations)
         assert "hardcoded password" in violations[0].message.lower()
@@ -81,7 +81,7 @@ token = "x"
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         # Should not flag short/empty strings
         s105_violations = [v for v in violations if v.rule_id == "S105"]
         assert len(s105_violations) == 0
@@ -99,7 +99,7 @@ def authenticate(token="secret_token_123"):
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) == 2
         assert all(v.rule_id == "S107" for v in violations)
 
@@ -113,7 +113,7 @@ temp_dir = "C:\\\\temp\\\\data.tmp"
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         assert len(violations) >= 2
         s108_violations = [v for v in violations if v.rule_id == "S108"]
         assert len(s108_violations) == 2
@@ -130,7 +130,7 @@ except:
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s110_violations = [v for v in violations if v.rule_id == "S110"]
         assert len(s110_violations) == 1
         assert "pass" in s110_violations[0].message.lower()
@@ -148,7 +148,7 @@ for item in items:
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s112_violations = [v for v in violations if v.rule_id == "S112"]
         assert len(s112_violations) == 1
         assert "continue" in s112_violations[0].message.lower()
@@ -164,7 +164,7 @@ response = requests.post("https://api.example.com", data={})
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s113_violations = [v for v in violations if v.rule_id == "S113"]
         assert len(s113_violations) == 2
         assert "timeout" in s113_violations[0].message.lower()
@@ -179,7 +179,7 @@ response = requests.get("https://example.com", timeout=30)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s113_violations = [v for v in violations if v.rule_id == "S113"]
         assert len(s113_violations) == 0
 
@@ -194,7 +194,7 @@ obj = pickle.load(file)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s301_violations = [v for v in violations if v.rule_id == "S301"]
         assert len(s301_violations) == 2
         assert "pickle" in s301_violations[0].message.lower()
@@ -209,7 +209,7 @@ data = marshal.loads(untrusted_data)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s302_violations = [v for v in violations if v.rule_id == "S302"]
         assert len(s302_violations) == 1
 
@@ -223,7 +223,7 @@ tmp = tempfile.mktemp()
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s306_violations = [v for v in violations if v.rule_id == "S306"]
         assert len(s306_violations) == 1
         assert "mktemp" in s306_violations[0].message.lower()
@@ -238,7 +238,7 @@ value = eval("2 + 2")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s307_violations = [v for v in violations if v.rule_id == "S307"]
         assert len(s307_violations) == 2
         assert "eval" in s307_violations[0].message.lower()
@@ -254,7 +254,7 @@ secret = random.random()
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s311_violations = [v for v in violations if v.rule_id == "S311"]
         assert len(s311_violations) == 2
 
@@ -270,7 +270,7 @@ hash3 = hashlib.new('md5', data)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s324_violations = [v for v in violations if v.rule_id == "S324"]
         # MD5 and SHA1 should be detected
         assert len(s324_violations) >= 2
@@ -285,7 +285,7 @@ conn = telnetlib.Telnet(host, port)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s401_violations = [v for v in violations if v.rule_id == "S401"]
         assert len(s401_violations) == 1
         assert "telnetlib" in s401_violations[0].message.lower()
@@ -300,7 +300,7 @@ ftp = ftplib.FTP(host)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s402_violations = [v for v in violations if v.rule_id == "S402"]
         assert len(s402_violations) == 1
 
@@ -314,7 +314,7 @@ import cPickle
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s403_violations = [v for v in violations if v.rule_id == "S403"]
         assert len(s403_violations) == 2
 
@@ -327,7 +327,7 @@ import xml.etree.ElementTree
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s405_violations = [v for v in violations if v.rule_id == "S405"]
         assert len(s405_violations) == 1
 
@@ -341,7 +341,7 @@ from Crypto.Cipher import AES
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s413_violations = [v for v in violations if v.rule_id == "S413"]
         assert len(s413_violations) == 1
 
@@ -355,7 +355,7 @@ response = requests.get("https://example.com", verify=False)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s501_violations = [v for v in violations if v.rule_id == "S501"]
         assert len(s501_violations) == 1
         assert "certificate" in s501_violations[0].message.lower()
@@ -371,7 +371,7 @@ data2 = yaml.unsafe_load(content)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s506_violations = [v for v in violations if v.rule_id == "S506"]
         assert len(s506_violations) == 2
 
@@ -385,7 +385,7 @@ data = yaml.safe_load(content)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s506_violations = [v for v in violations if v.rule_id == "S506"]
         assert len(s506_violations) == 0
 
@@ -400,7 +400,7 @@ subprocess.Popen(cmd, shell=True)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s602_violations = [v for v in violations if v.rule_id == "S602"]
         assert len(s602_violations) == 2
         assert "shell=True" in s602_violations[0].message
@@ -415,7 +415,7 @@ subprocess.run("ls -la")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s603_violations = [v for v in violations if v.rule_id == "S603"]
         assert len(s603_violations) == 1
 
@@ -430,7 +430,7 @@ hash2 = hashlib.new('sha', data)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s303_violations = [v for v in violations if v.rule_id == "S303"]
         assert len(s303_violations) >= 1  # Should detect at least one
 
@@ -444,7 +444,7 @@ html = mark_safe(user_input)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s308_violations = [v for v in violations if v.rule_id == "S308"]
         assert len(s308_violations) == 1
 
@@ -458,7 +458,7 @@ response = urllib.request.urlopen("http://example.com")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s310_violations = [v for v in violations if v.rule_id == "S310"]
         assert len(s310_violations) == 1
 
@@ -473,7 +473,7 @@ tn.read_until(b"login: ")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s312_violations = [v for v in violations if v.rule_id == "S312"]
         # Should detect telnetlib.Telnet and telnetlib.read_until
         assert len(s312_violations) >= 1
@@ -489,7 +489,7 @@ root = xml.etree.ElementTree.fromstring(xml_string)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s313_violations = [v for v in violations if v.rule_id == "S313"]
         assert len(s313_violations) >= 1
 
@@ -503,7 +503,7 @@ context = ssl._create_unverified_context()
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s323_violations = [v for v in violations if v.rule_id == "S323"]
         assert len(s323_violations) == 1
 
@@ -518,7 +518,7 @@ subprocess.check_call(cmd, shell=True)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s604_violations = [v for v in violations if v.rule_id == "S604"]
         assert len(s604_violations) >= 1
 
@@ -532,7 +532,7 @@ os.system("ls -la")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s605_violations = [v for v in violations if v.rule_id == "S605"]
         assert len(s605_violations) == 1
 
@@ -546,7 +546,7 @@ output = os.popen("ls -la").read()
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s606_violations = [v for v in violations if v.rule_id == "S606"]
         assert len(s606_violations) == 1
 
@@ -560,7 +560,7 @@ cursor.execute("SELECT * FROM users WHERE name = '" + name + "'")
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s608_violations = [v for v in violations if v.rule_id == "S608"]
         assert len(s608_violations) >= 1
 
@@ -574,7 +574,7 @@ env = jinja2.Environment(autoescape=False)
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         s701_violations = [v for v in violations if v.rule_id == "S701"]
         assert len(s701_violations) == 1
 
@@ -599,6 +599,6 @@ def process_data(data_file: Path):
             f.write(code)
             f.flush()
             violations = check_ruff_security(Path(f.name))
-        
+
         # Should have no S-code violations
         assert len(violations) == 0

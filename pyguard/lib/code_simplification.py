@@ -349,7 +349,8 @@ class SimplificationVisitor(ast.NodeVisitor):
             if isinstance(op, ast.In) and isinstance(comparator, ast.Call):
                 if (
                     isinstance(comparator.func, ast.Attribute)
-                    and comparator.func.attr == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                    and comparator.func.attr
+                    == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     and len(comparator.args) == 0
                 ):
                     self.issues.append(
@@ -512,9 +513,8 @@ class SimplificationVisitor(ast.NodeVisitor):
             else_stmt = node.orelse[0]
 
             if isinstance(body_stmt, ast.Return) and isinstance(else_stmt, ast.Return):
-                if (
-                    isinstance(body_stmt.value, ast.Constant)
-                    and isinstance(else_stmt.value, ast.Constant)
+                if isinstance(body_stmt.value, ast.Constant) and isinstance(
+                    else_stmt.value, ast.Constant
                 ):
                     if body_stmt.value.value is True and else_stmt.value.value is False:
                         return True
@@ -564,7 +564,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def _is_all_loop_pattern(self, node: ast.For) -> bool:
         """
         Check if loop follows pattern: flag = True; for x in items: if not cond: flag = False.
-        
+
         This is a simplified detection - a full implementation would need flow analysis.
         We check for loops that:
         1. Have an if statement that sets a variable to False
@@ -584,7 +584,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def _is_any_loop_pattern(self, node: ast.For) -> bool:
         """
         Check if loop follows pattern: flag = False; for x in items: if cond: flag = True.
-        
+
         This is a simplified detection - a full implementation would need flow analysis.
         We check for loops that:
         1. Have an if statement that sets a variable to True
@@ -604,7 +604,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def _should_use_guard_clause(self, node: ast.FunctionDef) -> bool:
         """
         Check if function has pattern that could use guard clauses.
-        
+
         Pattern: if condition: [large body] else: [small error handling]
         Should be: if error_condition: return/raise; [large body]
         """
@@ -629,7 +629,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def _is_dict_get_pattern(self, node: ast.If) -> bool:
         """
         Check if pattern: if key in dict: x = dict[key] else: x = default.
-        
+
         This can be replaced with: x = dict.get(key, default)
         """
         # Pattern: if key in dict_var:

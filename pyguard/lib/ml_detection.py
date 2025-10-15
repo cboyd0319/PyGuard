@@ -74,47 +74,49 @@ class CodeFeatureExtractor:
             tree = ast.parse(code)
 
             # Complexity features
-            features["num_functions"] = float(len(
-                [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
-            ))
-            features["num_classes"] = float(len(
-                [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
-            ))
-            features["num_imports"] = float(len(
-                [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
-            ))
+            features["num_functions"] = float(
+                len([n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)])
+            )
+            features["num_classes"] = float(
+                len([n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)])
+            )
+            features["num_imports"] = float(
+                len([n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))])
+            )
 
             # Depth and nesting
             features["max_nesting"] = float(self._calculate_max_nesting(tree))
 
             # API usage patterns (security-relevant)
-            features["eval_count"] = float(len(
-                [
-                    n
-                    for n in ast.walk(tree)
-                    if isinstance(n, ast.Call)
-                    and isinstance(n.func, ast.Name)
-                    and n.func.id in ["eval", "exec", "compile"]
-                ]
-            ))
+            features["eval_count"] = float(
+                len(
+                    [
+                        n
+                        for n in ast.walk(tree)
+                        if isinstance(n, ast.Call)
+                        and isinstance(n.func, ast.Name)
+                        and n.func.id in ["eval", "exec", "compile"]
+                    ]
+                )
+            )
 
-            features["subprocess_count"] = float(code.count("subprocess.") + code.count(
-                "os.system"
-            ))
+            features["subprocess_count"] = float(
+                code.count("subprocess.") + code.count("os.system")
+            )
             features["network_count"] = float(code.count("socket.") + code.count("requests."))
             features["file_ops_count"] = float(code.count("open(") + code.count("file("))
 
             # String patterns
-            features["hardcoded_strings"] = float(len(
-                re.findall(r'["\'](?:password|api_key|secret|token)["\']', code.lower())
-            ))
-            features["sql_patterns"] = float(len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code)))
+            features["hardcoded_strings"] = float(
+                len(re.findall(r'["\'](?:password|api_key|secret|token)["\']', code.lower()))
+            )
+            features["sql_patterns"] = float(
+                len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code))
+            )
 
             # Exception handling
             features["bare_except"] = float(code.count("except:"))
-            features["try_except_ratio"] = (
-                code.count("try:") / max(1.0, features["num_functions"])
-            )
+            features["try_except_ratio"] = code.count("try:") / max(1.0, features["num_functions"])
 
         except SyntaxError:
             # Return zeros for invalid syntax
@@ -140,6 +142,7 @@ class CodeFeatureExtractor:
 
     def _calculate_max_nesting(self, tree: ast.AST) -> int:
         """Calculate maximum nesting level in AST."""
+
         class DepthVisitor(ast.NodeVisitor):
             def __init__(self):
                 self.depth = 0
@@ -194,7 +197,9 @@ class MLRiskScorer:
 
         if features.get("subprocess_count", 0) > 2:
             score += 0.2
-            factors.append(f"Command injection risk: {int(features['subprocess_count'])} subprocess calls")
+            factors.append(
+                f"Command injection risk: {int(features['subprocess_count'])} subprocess calls"
+            )
 
         if features.get("hardcoded_strings", 0) > 0:
             score += 0.25
@@ -204,11 +209,15 @@ class MLRiskScorer:
 
         if features.get("sql_patterns", 0) > 2:
             score += 0.15
-            factors.append(f"SQL injection risk: {int(features['sql_patterns'])} SQL patterns detected")
+            factors.append(
+                f"SQL injection risk: {int(features['sql_patterns'])} SQL patterns detected"
+            )
 
         if features.get("bare_except", 0) > 0:
             score += 0.1
-            factors.append(f"Error handling issue: {int(features['bare_except'])} bare except clauses")
+            factors.append(
+                f"Error handling issue: {int(features['bare_except'])} bare except clauses"
+            )
 
         if features.get("max_nesting", 0) > 10:
             score += 0.1
@@ -235,13 +244,9 @@ class MLRiskScorer:
         # Confidence based on number of factors
         confidence = min(1.0, 0.5 + (len(factors) * 0.1))
 
-        return RiskScore(
-            score=score, confidence=confidence, factors=factors, severity=severity
-        )
+        return RiskScore(score=score, confidence=confidence, factors=factors, severity=severity)
 
-    def predict_vulnerability_type(
-        self, code_snippet: str
-    ) -> Optional[Tuple[str, float]]:
+    def predict_vulnerability_type(self, code_snippet: str) -> Optional[Tuple[str, float]]:
         """
         Predict most likely vulnerability type.
 
@@ -363,7 +368,7 @@ class AnomalyDetector:
             return True
 
         # Hex encoded strings
-        hex_pattern = r'\\x[0-9a-fA-F]{2}'
+        hex_pattern = r"\\x[0-9a-fA-F]{2}"
         if len(re.findall(hex_pattern, code)) > 10:
             return True
 

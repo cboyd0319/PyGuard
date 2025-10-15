@@ -137,7 +137,9 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
         # app.secret_key = "hardcoded"
         for target in node.targets:
             if isinstance(target, ast.Attribute):
-                if target.attr == "secret_key":  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                if (
+                    target.attr == "secret_key"
+                ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         # Check if it's a weak/default secret key
                         secret_key = node.value.value

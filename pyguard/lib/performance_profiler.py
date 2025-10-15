@@ -39,7 +39,7 @@ class PerformanceProfiler(ast.NodeVisitor):
         if self._has_list_append_in_loop(node):
             # This is actually fine
             pass
-        
+
         # Check for list concatenation with +=
         if self._has_list_concat_in_loop(node):
             self.issues.append(
@@ -188,7 +188,9 @@ class PerformanceProfiler(ast.NodeVisitor):
 
     def _is_dict_keys_iteration(self, node: ast.Call) -> bool:
         """Check if iterating dict.keys()."""
-        if isinstance(node.func, ast.Attribute) and node.func.attr == "keys":  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+        if (
+            isinstance(node.func, ast.Attribute) and node.func.attr == "keys"
+        ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
             return True
         return False
 

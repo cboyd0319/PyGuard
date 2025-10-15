@@ -12,7 +12,7 @@ class TestPylintRulesDetection:
 
     def test_detect_too_many_return_statements(self, tmp_path):
         """Test detection of too many returns."""
-        code = '''
+        code = """
 def complex_function(x):
     if x == 1: return 1
     if x == 2: return 2
@@ -22,7 +22,7 @@ def complex_function(x):
     if x == 6: return 6
     if x == 7: return 7
     return 0
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -34,10 +34,10 @@ def complex_function(x):
 
     def test_detect_too_many_arguments(self, tmp_path):
         """Test detection of too many arguments."""
-        code = '''
+        code = """
 def many_args(a, b, c, d, e, f, g):
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -49,7 +49,7 @@ def many_args(a, b, c, d, e, f, g):
 
     def test_detect_too_many_instance_attributes(self, tmp_path):
         """Test detection of too many instance attributes."""
-        code = '''
+        code = """
 class DataClass:
     def __init__(self):
         self.a = 1
@@ -60,7 +60,7 @@ class DataClass:
         self.f = 6
         self.g = 7
         self.h = 8
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -72,10 +72,10 @@ class DataClass:
 
     def test_detect_compare_to_empty_string(self, tmp_path):
         """Test detection of comparison to empty string."""
-        code = '''
+        code = """
 if text == "":
     pass
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -87,13 +87,13 @@ if text == "":
 
     def test_detect_global_statement(self, tmp_path):
         """Test detection of global statement."""
-        code = '''
+        code = """
 count = 0
 
 def increment():
     global count
     count += 1
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 
@@ -105,9 +105,9 @@ def increment():
 
     def test_detect_assert_on_tuple(self, tmp_path):
         """Test detection of assert on tuple."""
-        code = '''
+        code = """
 assert (1, 2), "This is a tuple assertion"
-'''
+"""
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
 

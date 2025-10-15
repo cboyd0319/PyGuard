@@ -206,8 +206,7 @@ class RuleRegistry:
         return [
             rule
             for rule in self.rules.values()
-            if rule.fix_applicability
-            in (FixApplicability.AUTOMATIC, FixApplicability.SUGGESTED)
+            if rule.fix_applicability in (FixApplicability.AUTOMATIC, FixApplicability.SUGGESTED)
         ]
 
     def enable_rule(self, rule_id: str) -> bool:
@@ -240,9 +239,7 @@ class RuleRegistry:
             rule.enabled = False
         return len(rules)
 
-    def filter_by_severity(
-        self, rules: List[Rule], min_severity: RuleSeverity
-    ) -> List[Rule]:
+    def filter_by_severity(self, rules: List[Rule], min_severity: RuleSeverity) -> List[Rule]:
         """Filter rules by minimum severity level."""
         severity_order = {
             RuleSeverity.INFO: 0,
