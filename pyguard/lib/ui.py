@@ -134,7 +134,7 @@ class EnhancedConsole:
 
     def print_welcome(self, files_count: int):
         """Print welcome message."""
-        ready_text = self._safe_text(f"[bold green]✨ Ready to analyze {files_count} Python files![/bold green]\n\n")
+        ready_text = self._safe_text(f"[bold green]Ready to analyze {files_count} Python files![/bold green]\n\n")
         title_text = self._safe_text("[bold cyan] Getting Started[/bold cyan]")
         
         panel = Panel(
