@@ -172,6 +172,12 @@ runs:
         set +f  # Re-enable glob expansion
         echo "::endgroup::"
 
+        # PyGuard always writes to pyguard-report.sarif, rename if custom name requested
+        if [ "${{ inputs.sarif-file }}" != "pyguard-report.sarif" ] && [ -f "pyguard-report.sarif" ]; then
+          mv pyguard-report.sarif "${{ inputs.sarif-file }}"
+          echo "Renamed SARIF file to ${{ inputs.sarif-file }}"
+        fi
+
         # Validate SARIF file exists
         if [ ! -f "${{ inputs.sarif-file }}" ]; then
           echo "::warning::SARIF file not generated at ${{ inputs.sarif-file }}"

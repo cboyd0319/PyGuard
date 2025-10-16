@@ -91,7 +91,6 @@ class EnhancedConsole:
         # Replace common emoji with text equivalents for Windows
         replacements = {
             "🛡️": "[Shield]",
-            "": "[Start]",
             "✨": "*",
             "🎉": "!",
             "⚡": "[Fast]",

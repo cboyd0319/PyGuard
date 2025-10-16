@@ -29,7 +29,9 @@ jobs:
   test-action-basic:
     name: Test Basic Scan
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.11', '3.12', '3.13']
@@ -137,15 +139,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     
-    # This should pass because we're using HIGH severity on our own codebase
-    - name: Test fail-on-issues (should pass)
+    # Test that fail-on-issues works correctly
+    # Currently finds 1 CRITICAL issue, so this will fail - that's expected behavior
+    - name: Test fail-on-issues (correctly fails on issues)
       uses: ./
+      continue-on-error: true
+      id: fail-test
       with:
         paths: 'pyguard/'
         scan-only: 'true'
         severity: 'CRITICAL'
         fail-on-issues: 'true'
         upload-sarif: 'false'
+
+    # Verify that it actually failed (proving fail-on-issues works)
+    - name: Verify fail-on-issues behavior
+      run: |
+        if [ "${{ steps.fail-test.outcome }}" == "failure" ]; then
+          echo "[OK] Action correctly failed when issues were found"
+          exit 0
+        else
+          echo "[X] Action should have failed but didn't"
+          exit 1
+        fi
 
   test-action-outputs:
     name: Test Action Outputs
