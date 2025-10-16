@@ -412,5 +412,5 @@ Potential test improvements:
 - [SARIF 2.1.0 Specification](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
 - [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
 - [GitHub Actions Best Practices](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
-- [PyGuard GitHub Action Guide](github-action-guide.md)
-- [PyGuard Workflows README](../.github/workflows/README.md)
+- [PyGuard GitHub Action Guide](../guides/github-action-guide.md)
+- [PyGuard Workflows README](../../.github/workflows/README.md)

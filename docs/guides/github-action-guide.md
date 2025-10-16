@@ -547,7 +547,7 @@ jobs:
 
 ## Support and Resources
 
-- **Documentation:** [docs/README.md](README.md)
+- **Documentation:** [docs/README.md](../README.md)
 - **Security Policy:** [SECURITY.md](../SECURITY.md)
 - **Contributing:** [CONTRIBUTING.md](../CONTRIBUTING.md)
 - **Issues:** https://github.com/cboyd0319/PyGuard/issues

@@ -595,9 +595,9 @@ Auto-fixing performance on typical projects:
 
 ## Related Documentation
 
-- [Capabilities Reference](capabilities-reference.md) - Complete feature list
-- [Security Rules](security-rules.md) - All security checks
-- [README](../README.md) - Getting started guide
+- [Capabilities Reference](../reference/capabilities-reference.md) - Complete feature list
+- [Security Rules](../reference/security-rules.md) - All security checks
+- [README](../../README.md) - Getting started guide
 - [Contributing](../CONTRIBUTING.md) - Development guide
 
 ---

@@ -12,17 +12,17 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 ### User Guides
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
 - [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules ✨ NEW
-- [Auto-Fix Guide](auto-fix-guide.md) - Automated code fixes
-- [Git Hooks Guide](git-hooks-guide.md) - Pre-commit integration
-- [Notebook Security Guide](notebook-security-guide.md) - Jupyter notebook scanning
-- [Capabilities Reference](capabilities-reference.md) - Complete feature catalog
-- [Security Rules Reference](security-rules.md) - All security checks
+- [Auto-Fix Guide](guides/auto-fix-guide.md) - Automated code fixes
+- [Git Hooks Guide](guides/git-hooks-guide.md) - Pre-commit integration
+- [Notebook Security Guide](guides/notebook-security-guide.md) - Jupyter notebook scanning
+- [Capabilities Reference](reference/capabilities-reference.md) - Complete feature catalog
+- [Security Rules Reference](reference/security-rules.md) - All security checks
 
 ### Architecture & Implementation
-- [Implementation Summary](architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
-- [Auto-Fix Analysis](architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
-- [Development Updates](UPDATEv2.md) - Roadmap and progress tracker
-- [Competing Products Analysis](COMPETING_PRODUCTS_COVERAGE.md) - Feature comparison
+- [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
+- [Auto-Fix Analysis](reference/architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
+- [Development Updates](development/UPDATEv2.md) - Roadmap and progress tracker
+- [Competing Products Analysis](reference/COMPETING_PRODUCTS_COVERAGE.md) - Feature comparison
 
 ### Project Information
 - [Changelog](CHANGELOG.md) - Version history
@@ -36,17 +36,17 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 ### For Users
 - **First time?** Start with [Main README](../README.md)
 - **Want examples?** Check [examples/](examples/)
-- **Need help?** See [Capabilities Reference](capabilities-reference.md)
+- **Need help?** See [Capabilities Reference](reference/capabilities-reference.md)
 
 ### For Developers
 - **Contributing?** Read [Contributing Guide](../CONTRIBUTING.md)
-- **Understanding code?** See [Architecture docs](architecture/)
-- **Adding features?** Check [Development Updates](UPDATEv2.md)
+- **Understanding code?** See [Architecture docs](reference/architecture/)
+- **Adding features?** Check [Development Updates](development/UPDATEv2.md)
 
 ### For Security Teams
-- **Compliance?** Review [Capabilities Reference](capabilities-reference.md)
-- **Integration?** See [Git Hooks Guide](git-hooks-guide.md)
-- **Custom rules?** Check [Security Rules Reference](security-rules.md)
+- **Compliance?** Review [Capabilities Reference](reference/capabilities-reference.md)
+- **Integration?** See [Git Hooks Guide](guides/git-hooks-guide.md)
+- **Custom rules?** Check [Security Rules Reference](reference/security-rules.md)
 
 ## 📖 Documentation Templates
 

@@ -92,4 +92,4 @@ print(f"Found {len(violations)} violations")
 
 ## Need Help?
 
-See the main [README](../README.md) or [documentation](../docs/) for more information.
+See the main [README](../README.md) or [documentation](../) for more information.

@@ -304,6 +304,6 @@ PyGuard git hooks provide:
 - ✅ Team-wide consistency
 
 For more information, see:
-- [Git Hooks Guide](../docs/guides/git-hooks-guide.md)
-- [PyGuard Documentation](../docs/README.md)
-- [Security Rules Reference](../docs/reference/security-rules.md)
+- [Git Hooks Guide](../guides/git-hooks-guide.md)
+- [PyGuard Documentation](../README.md)
+- [Security Rules Reference](../reference/security-rules.md)

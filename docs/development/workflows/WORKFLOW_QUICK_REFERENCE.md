@@ -206,8 +206,8 @@ jobs:
 ## 📚 Additional Resources
 
 ### Documentation
-- [Workflow README](.github/workflows/README.md) - Comprehensive guide
-- [Optimization Summary](.github/WORKFLOW_OPTIMIZATION_SUMMARY.md) - Before/after analysis
+- [Workflow README](../../../.github/workflows/README.md) - Comprehensive guide
+- [Optimization Summary](WORKFLOW_OPTIMIZATION_SUMMARY.md) - Before/after analysis
 - [GitHub Actions Docs](https://docs.github.com/en/actions) - Official documentation
 
 ### Tools

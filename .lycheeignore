@@ -4,3 +4,26 @@ localhost
 hooks.slack.com
 mailto:
 
+# External URLs that may be temporarily down or require authentication
+https://studio.vale.sh/
+https://www.contributor-covenant.org/translations
+https://www.contributor-covenant.org/faq
+https://appwrite.io/oss-fund
+
+# GitHub URLs that don't exist yet (pre-release)
+https://github.com/cboyd0319/PyGuard/docs
+https://github.com/cboyd0319/PyGuard/discussions
+https://github.com/cboyd0319/PyGuard/releases/tag/v0.1.0
+https://github.com/cboyd0319/PyGuard/compare/v0.1.0...HEAD
+
+# OWASP URLs that may have moved or don't exist
+https://owasp.org/www-community/False_Positives
+https://owasp.org/www-community/vulnerabilities/Jupyter_Notebook
+
+# Jupyter docs that may have moved
+https://jupyter-notebook.readthedocs.io/en/stable/security.html
+
+# Template files with placeholder paths
+file:///home/runner/work/PyGuard/PyGuard/docs/doc_templates/LICENSE
+file:///home/runner/work/PyGuard/PyGuard/docs/doc_templates/docs/diagrams/arch.png
+
