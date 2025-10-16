@@ -124,8 +124,10 @@ runs:
         # Disable glob expansion to prevent pattern expansion
         set -f
 
-        # Build PyGuard command arguments array
-        ARGS=("--sarif" "--no-html")
+        # Build PyGuard command - paths MUST come before --exclude due to nargs="+"
+        # Add paths first
+        IFS=' ' read -ra PATH_ARGS <<< "${{ inputs.paths }}"
+        ARGS=("${PATH_ARGS[@]}")
 
         # Add flags based on inputs
         if [ "${{ inputs.scan-only }}" == "true" ]; then
@@ -144,17 +146,17 @@ runs:
           ARGS+=("--unsafe-fixes")
         fi
 
-        # Add exclude patterns (glob expansion disabled)
+        # Add output format flags
+        ARGS+=("--sarif" "--no-html")
+
+        # Add exclude patterns last (glob expansion disabled)
+        # IMPORTANT: --exclude must come AFTER paths due to nargs="+"
         IFS=' ' read -ra EXCLUDE_PATTERNS <<< "${{ inputs.exclude }}"
         for pattern in "${EXCLUDE_PATTERNS[@]}"; do
           if [ -n "$pattern" ]; then
             ARGS+=("--exclude" "$pattern")
           fi
         done
-
-        # Add paths
-        IFS=' ' read -ra PATH_ARGS <<< "${{ inputs.paths }}"
-        ARGS+=("${PATH_ARGS[@]}")
 
         # Run PyGuard and capture exit code
         echo "::group::Running PyGuard"
