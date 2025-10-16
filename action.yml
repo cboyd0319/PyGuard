@@ -121,16 +121,16 @@ runs:
         pyguard --version
         echo "::endgroup::"
 
-        # Build PyGuard command
-        CMD="pyguard"
+        # Build PyGuard command arguments array
+        ARGS=("--sarif" "--no-html")
 
         # Add flags based on inputs
         if [ "${{ inputs.scan-only }}" == "true" ]; then
-          CMD="$CMD --scan-only"
+          ARGS+=("--scan-only")
         fi
 
         if [ "${{ inputs.security-only }}" == "true" ]; then
-          CMD="$CMD --security-only"
+          ARGS+=("--security-only")
         fi
 
         if [ "${{ inputs.unsafe-fixes }}" == "true" ]; then
@@ -138,27 +138,24 @@ runs:
             echo "::warning::unsafe-fixes is enabled but scan-only is true."
             echo "::warning::Auto-fixes will not be applied."
           fi
-          CMD="$CMD --unsafe-fixes"
+          ARGS+=("--unsafe-fixes")
         fi
-
-        # Add SARIF output
-        CMD="$CMD --sarif --no-html"
 
         # Add exclude patterns
         if [ -n "${{ inputs.exclude }}" ]; then
           for pattern in ${{ inputs.exclude }}; do
-            CMD="$CMD --exclude \"$pattern\""
+            ARGS+=("--exclude" "$pattern")
           done
         fi
 
         # Add paths
-        CMD="$CMD ${{ inputs.paths }}"
+        ARGS+=(${{ inputs.paths }})
 
         # Run PyGuard and capture exit code
         echo "::group::Running PyGuard"
-        echo "Command: $CMD"
+        echo "Command: pyguard ${ARGS[@]}"
         set +e  # Don't exit on error
-        eval $CMD
+        pyguard "${ARGS[@]}"
         EXIT_CODE=$?
         set -e
         echo "::endgroup::"
