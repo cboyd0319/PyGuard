@@ -174,7 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Links
 - [Homepage](https://github.com/cboyd0319/PyGuard)
-- [Documentation](https://github.com/cboyd0319/PyGuard/docs)
+- [Documentation](https://github.com/cboyd0319/PyGuard/tree/main/docs)
 - [Issue Tracker](https://github.com/cboyd0319/PyGuard/issues)
 - [PyPI Package](https://pypi.org/project/pyguard/) (coming soon)
 
