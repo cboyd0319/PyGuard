@@ -1,6 +1,0 @@
-# Ignore local or private URLs
-localhost
-127.0.0.1
-hooks.slack.com
-mailto:
-
