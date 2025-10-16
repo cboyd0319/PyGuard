@@ -62,13 +62,3 @@ jobs:
               echo "❌ Workflow validation failed. Review actionlint output above."
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
-
-      - name: Add summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Workflow Lint Results"
-            echo ""
-            echo "✅ All GitHub Actions workflows validated"
-          } >> "${GITHUB_STEP_SUMMARY}"

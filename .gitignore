@@ -129,3 +129,6 @@ pip-wheel-metadata/
 # pyenv
 .python-version.local
 
+# Build tools and binaries
+bin/
+
