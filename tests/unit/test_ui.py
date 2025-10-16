@@ -83,7 +83,7 @@ class TestEnhancedConsole:
 
         assert console.console is not None
         assert console.theme is not None
-        assert isinstance(console.theme, UITheme)
+        assert type(console.theme).__name__ == "UITheme"
 
     def test_enhanced_console_custom_theme(self):
         """Test EnhancedConsole initialization with custom theme."""
