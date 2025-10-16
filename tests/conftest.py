@@ -180,3 +180,84 @@ def sample_code_patterns():
         "shell_true": "subprocess.call(cmd, shell=True)",
         "path_traversal": "path = os.path.join(base, user_input)",
     }
+
+
+@pytest.fixture
+def freeze_2025_01_01():
+    """Freeze time to 2025-01-01 00:00:00 UTC for deterministic time testing."""
+    try:
+        from freezegun import freeze_time
+        with freeze_time("2025-01-01 00:00:00"):
+            yield
+    except ImportError:
+        # If freezegun not installed, just yield without freezing
+        yield
+
+
+@pytest.fixture
+def env(monkeypatch):
+    """Fixture to set environment variables safely."""
+    def _set(**kwargs):
+        for key, value in kwargs.items():
+            monkeypatch.setenv(key, str(value))
+    return _set
+
+
+@pytest.fixture
+def ast_tree_factory():
+    """Factory to create AST trees from code strings."""
+    import ast
+    
+    def _create(code: str):
+        """Parse code and return AST tree."""
+        try:
+            return ast.parse(code)
+        except SyntaxError:
+            return None
+    
+    return _create
+
+
+@pytest.fixture
+def code_fixer_factory():
+    """Factory to create various code fixer instances for testing."""
+    def _create(fixer_type: str):
+        """Create a fixer instance based on type."""
+        from pyguard.lib import security, best_practices, formatting
+        
+        fixers = {
+            "security": security.SecurityFixer,
+            "best_practices": best_practices.BestPracticesFixer,
+            "formatting": formatting.FormattingFixer,
+        }
+        
+        fixer_class = fixers.get(fixer_type)
+        if fixer_class:
+            return fixer_class()
+        raise ValueError(f"Unknown fixer type: {fixer_type}")
+    
+    return _create
+
+
+@pytest.fixture(autouse=True)
+def reset_singleton_state():
+    """Reset any singleton state between tests to ensure isolation."""
+    yield
+    # Add any singleton reset logic here if needed
+
+
+@pytest.fixture
+def sample_edge_cases():
+    """Edge case inputs for testing."""
+    return {
+        "empty_string": "",
+        "none_value": None,
+        "zero": 0,
+        "negative": -1,
+        "large_number": 10**6,
+        "unicode": "Hello 世界 🌍",
+        "special_chars": "!@#$%^&*()",
+        "whitespace": "   \t\n   ",
+        "single_char": "a",
+        "long_string": "a" * 10000,
+    }
