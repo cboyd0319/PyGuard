@@ -63,21 +63,42 @@ class EnhancedConsole:
         Args:
             theme: UI theme configuration
         """
-        self.console = Console(record=True)
+        # Configure console with proper encoding for Windows compatibility
+        import sys
+        self.console = Console(
+            record=True,
+            force_terminal=True,
+            legacy_windows=False,  # Disable legacy Windows rendering to avoid encoding issues
+            safe_box=sys.platform == "win32"  # Use ASCII box chars on Windows
+        )
         self.theme = theme or UITheme()
 
     def print_banner(self):
         """Print PyGuard banner with style."""
-        banner_text = """
-        ╔═══════════════════════════════════════════════════════════════╗
-        ║                                                                 ║
-        ║   🛡️  PyGuard - World's Best Python Security Tool 🛡️         ║
-        ║                                                                 ║
-        ║   Security • Quality • Formatting • Compliance                  ║
-        ║   Zero Technical Knowledge Required - Just Run and Fix!        ║
-        ║                                                                 ║
-        ╚═══════════════════════════════════════════════════════════════╝
-        """
+        import sys
+        # Use simpler banner on Windows to avoid encoding issues
+        if sys.platform == "win32":
+            banner_text = """
+            ================================================================
+                                                                     
+               PyGuard - World's Best Python Security Tool         
+                                                                     
+               Security | Quality | Formatting | Compliance                  
+               Zero Technical Knowledge Required - Just Run and Fix!        
+                                                                     
+            ================================================================
+            """
+        else:
+            banner_text = """
+            ╔═══════════════════════════════════════════════════════════════╗
+            ║                                                                 ║
+            ║   🛡️  PyGuard - World's Best Python Security Tool 🛡️         ║
+            ║                                                                 ║
+            ║   Security • Quality • Formatting • Compliance                  ║
+            ║   Zero Technical Knowledge Required - Just Run and Fix!        ║
+            ║                                                                 ║
+            ╚═══════════════════════════════════════════════════════════════╝
+            """
         self.console.print(banner_text, style="bold cyan", justify="center")
 
     def print_welcome(self, files_count: int):
