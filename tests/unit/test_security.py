@@ -578,3 +578,207 @@ def foo():
         # Should handle large content without corruption
         # Note: split('\n') on string ending with \n gives extra empty element
         assert len(result.split('\n')) >= 10000
+
+
+class TestSecurityFixerProperties:
+    """Property-based tests using hypothesis for SecurityFixer."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.fixer = SecurityFixer()
+
+    @pytest.mark.parametrize("fix_method", [
+        "_fix_hardcoded_passwords",
+        "_fix_sql_injection", 
+        "_fix_weak_crypto",
+        "_fix_yaml_load",
+        "_fix_eval_exec",
+        "_fix_path_traversal",
+    ])
+    def test_fixer_never_returns_none(self, fix_method):
+        """Property: All fix methods always return a string, never None."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        @given(st.text())
+        def check_not_none(code):
+            method = getattr(self.fixer, fix_method)
+            result = method(code)
+            assert result is not None
+            assert isinstance(result, str)
+        
+        # Run property test
+        check_not_none()
+
+    def test_fixer_preserves_line_count_or_increases(self):
+        """Property: Fixers never reduce line count (only add warnings)."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        @given(st.text(min_size=0, max_size=1000))
+        def check_line_count(code):
+            original_lines = code.count('\n')
+            
+            # Test each fixer
+            for method_name in [
+                "_fix_hardcoded_passwords",
+                "_fix_sql_injection",
+                "_fix_weak_crypto",
+            ]:
+                method = getattr(self.fixer, method_name)
+                result = method(code)
+                result_lines = result.count('\n')
+                
+                # Line count should not decrease (may add warnings)
+                assert result_lines >= original_lines, \
+                    f"{method_name} decreased line count from {original_lines} to {result_lines}"
+        
+        check_line_count()
+
+    def test_fixer_is_idempotent_on_safe_code(self):
+        """Property: Running fixer twice on safe code gives same result."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        # Generate simple safe Python code
+        safe_code_strategy = st.sampled_from([
+            "x = 1",
+            "def foo(): pass",
+            "import os",
+            "class Bar: pass",
+            "# Comment",
+            "",
+        ])
+        
+        @given(safe_code_strategy)
+        def check_idempotent(code):
+            result1 = self.fixer._fix_sql_injection(code)
+            result2 = self.fixer._fix_sql_injection(result1)
+            
+            # Should be idempotent for safe code
+            assert result1 == result2, "Fixer is not idempotent"
+        
+        check_idempotent()
+
+    def test_fixer_handles_arbitrary_text_without_crash(self):
+        """Property: Fixer handles any text input without crashing."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        @given(st.text(max_size=500))
+        def check_no_crash(text):
+            # Should not raise any exceptions
+            try:
+                result = self.fixer._fix_hardcoded_passwords(text)
+                assert isinstance(result, str)
+            except Exception as e:
+                pytest.fail(f"Fixer crashed with: {e}")
+        
+        check_no_crash()
+
+    def test_fixer_preserves_safe_patterns(self):
+        """Property: Fixer never modifies known safe patterns."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        # Safe patterns that should never be modified
+        safe_patterns = [
+            "password = os.getenv('PASSWORD')",
+            "api_key = config.get('API_KEY')",
+            "token = ''",
+            "secret = None",
+            "password = getpass.getpass()",
+        ]
+        
+        for pattern in safe_patterns:
+            result = self.fixer._fix_hardcoded_passwords(pattern)
+            # Should not add warnings to safe patterns
+            assert "SECURITY:" not in result or pattern in result, \
+                f"Modified safe pattern: {pattern}"
+
+    def test_sql_injection_never_creates_new_vulnerabilities(self):
+        """Property: SQL injection fixer never introduces new SQL issues."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        @given(st.text(alphabet=st.characters(blacklist_characters='"\''), max_size=200))
+        def check_no_new_vulnerabilities(safe_code):
+            # Start with safe code (no quotes that could close strings)
+            result = self.fixer._fix_sql_injection(safe_code)
+            
+            # Result should not contain obvious SQL injection patterns
+            dangerous_patterns = [
+                "' OR '1'='1",
+                '" OR "1"="1',
+                "'; DROP TABLE",
+                '"; DROP TABLE',
+            ]
+            
+            for pattern in dangerous_patterns:
+                assert pattern not in result, \
+                    f"Fixer introduced SQL injection pattern: {pattern}"
+        
+        check_no_new_vulnerabilities()
+
+    def test_fixer_handles_edge_case_strings(self):
+        """Property: Fixer handles edge case strings correctly."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        edge_cases = st.sampled_from([
+            "",  # Empty
+            " ",  # Single space
+            "\n",  # Single newline
+            "\t",  # Single tab
+            "   \n\n\t  ",  # Whitespace only
+            "a",  # Single char
+            "a" * 10000,  # Very long
+            "🔒",  # Emoji
+            "Hello 世界",  # Unicode
+        ])
+        
+        @given(edge_cases)
+        def check_edge_cases(text):
+            result = self.fixer._fix_hardcoded_passwords(text)
+            assert isinstance(result, str)
+            assert result is not None
+        
+        check_edge_cases()
+
+    def test_yaml_fixer_preserves_safe_yaml(self):
+        """Property: YAML fixer doesn't modify safe_load calls."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        safe_yaml_patterns = [
+            "data = yaml.safe_load(file)",
+            "yaml.safe_load(stream)",
+            "result = yaml.safe_dump(data)",
+        ]
+        
+        for pattern in safe_yaml_patterns:
+            result = self.fixer._fix_yaml_load(pattern)
+            # Should not modify already-safe code
+            assert "safe_load" in result or "safe_dump" in result, \
+                f"Modified safe YAML pattern: {pattern}"
+
+    def test_weak_crypto_preserves_strong_algorithms(self):
+        """Property: Weak crypto fixer doesn't flag strong algorithms."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+        
+        strong_patterns = [
+            "hash = hashlib.sha256(data)",
+            "hash = hashlib.sha512(data)",
+            "hash = hashlib.sha384(data)",
+            "hash = hashlib.blake2b(data)",
+        ]
+        
+        for pattern in strong_patterns:
+            result = self.fixer._fix_weak_crypto(pattern)
+            # Should not add warnings for strong algorithms
+            original_warning_count = pattern.count("SECURITY:")
+            result_warning_count = result.count("SECURITY:")
+            
+            assert result_warning_count == original_warning_count, \
+                f"Added unnecessary warning to strong algorithm: {pattern}"

@@ -56,6 +56,10 @@ dev = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
+    "pytest-randomly>=3.15.0",
+    "pytest-benchmark>=4.0.0",
+    "freezegun>=1.5.0",
+    "hypothesis>=6.100.0",
     "tox>=4.31.0",
 ]
 
@@ -113,25 +117,48 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --cov=pyguard --cov-report=term-missing --cov-report=html"
+addopts = [
+    "-ra",
+    "-q", 
+    "--strict-config",
+    "--strict-markers",
+    "--maxfail=1",
+    "--disable-warnings",
+    "--cov=pyguard",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-branch",
+]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+xfail_strict = true
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
+]
 
 [tool.coverage.run]
+branch = true
 source = ["pyguard"]
 omit = ["*/tests/*", "*/test_*.py"]
 
 [tool.coverage.report]
+fail_under = 90
+skip_covered = true
+show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "def __str__",
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "@abstractmethod",
+    "@abc.abstractmethod",
 ]
 
 [tool.pylint.messages_control]

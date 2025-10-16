@@ -542,3 +542,363 @@ class TestIntegration:
         assert "all_issues" in results
         assert "security_issues" in results
         assert "quality_issues" in results
+
+
+class TestMainFunction:
+    """Tests for the main() CLI entry point function."""
+
+    def test_main_version_flag(self, monkeypatch, capsys):
+        """Test main() with --version flag."""
+        from pyguard.cli import main
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", "--version"])
+        
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+        
+        assert excinfo.value.code == 0
+        captured = capsys.readouterr()
+        assert "PyGuard" in captured.out
+
+    def test_main_no_files_found(self, monkeypatch, capsys, tmp_path):
+        """Test main() when no Python files are found."""
+        from pyguard.cli import main
+        
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(empty_dir)])
+        
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+        
+        assert excinfo.value.code == 1
+
+    def test_main_single_file(self, monkeypatch, tmp_path):
+        """Test main() with a single Python file."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file)])
+        
+        # Should not raise
+        main()
+
+    def test_main_directory(self, monkeypatch, tmp_path):
+        """Test main() with a directory containing Python files."""
+        from pyguard.cli import main
+        
+        # Create test files
+        (tmp_path / "file1.py").write_text("x = 1\n")
+        (tmp_path / "file2.py").write_text("y = 2\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(tmp_path)])
+        
+        main()
+
+    def test_main_no_backup_flag(self, monkeypatch, tmp_path):
+        """Test main() with --no-backup flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--no-backup"])
+        
+        main()
+
+    def test_main_scan_only_flag(self, monkeypatch, tmp_path):
+        """Test main() with --scan-only flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--scan-only"])
+        
+        main()
+
+    def test_main_security_only_flag(self, monkeypatch, tmp_path):
+        """Test main() with --security-only flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--security-only"])
+        
+        main()
+
+    def test_main_formatting_only_flag(self, monkeypatch, tmp_path):
+        """Test main() with --formatting-only flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--formatting-only"])
+        
+        main()
+
+    def test_main_best_practices_only_flag(self, monkeypatch, tmp_path):
+        """Test main() with --best-practices-only flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--best-practices-only"])
+        
+        main()
+
+    def test_main_unsafe_fixes_flag(self, monkeypatch, tmp_path):
+        """Test main() with --unsafe-fixes flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--unsafe-fixes"])
+        
+        main()
+
+    def test_main_no_black_flag(self, monkeypatch, tmp_path):
+        """Test main() with --no-black flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--formatting-only", "--no-black"])
+        
+        main()
+
+    def test_main_no_isort_flag(self, monkeypatch, tmp_path):
+        """Test main() with --no-isort flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--formatting-only", "--no-isort"])
+        
+        main()
+
+    def test_main_exclude_patterns(self, monkeypatch, tmp_path):
+        """Test main() with --exclude patterns."""
+        from pyguard.cli import main
+        
+        # Create files
+        (tmp_path / "include.py").write_text("x = 1\n")
+        exclude_dir = tmp_path / "exclude"
+        exclude_dir.mkdir()
+        (exclude_dir / "exclude.py").write_text("y = 2\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(tmp_path), "--exclude", "exclude/*"])
+        
+        main()
+
+    def test_main_sarif_flag(self, monkeypatch, tmp_path):
+        """Test main() with --sarif flag for SARIF report generation."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--sarif"])
+        
+        main()
+
+    def test_main_no_html_flag(self, monkeypatch, tmp_path):
+        """Test main() with --no-html flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), "--no-html"])
+        
+        main()
+
+    def test_main_multiple_files(self, monkeypatch, tmp_path):
+        """Test main() with multiple file arguments."""
+        from pyguard.cli import main
+        
+        file1 = tmp_path / "file1.py"
+        file2 = tmp_path / "file2.py"
+        file1.write_text("x = 1\n")
+        file2.write_text("y = 2\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(file1), str(file2)])
+        
+        main()
+
+    def test_main_invalid_path_warning(self, monkeypatch, tmp_path, capsys):
+        """Test main() warns about invalid paths."""
+        from pyguard.cli import main
+        
+        valid_file = tmp_path / "valid.py"
+        valid_file.write_text("x = 1\n")
+        
+        invalid_path = tmp_path / "nonexistent.txt"
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(valid_file), str(invalid_path)])
+        
+        main()
+        
+        captured = capsys.readouterr()
+        # Should have a warning about the invalid path
+        assert "Warning:" in captured.out or "warning" in captured.out.lower()
+
+    def test_main_combined_flags(self, monkeypatch, tmp_path):
+        """Test main() with multiple flags combined."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", [
+            "pyguard",
+            str(test_file),
+            "--no-backup",
+            "--scan-only",
+            "--no-html"
+        ])
+        
+        main()
+
+    @pytest.mark.parametrize("flag", [
+        "--security-only",
+        "--formatting-only",
+        "--best-practices-only"
+    ])
+    def test_main_exclusive_mode_flags(self, flag, monkeypatch, tmp_path):
+        """Test main() with each exclusive mode flag."""
+        from pyguard.cli import main
+        
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(test_file), flag])
+        
+        main()
+
+
+class TestMainFunctionEdgeCases:
+    """Edge case tests for main() function."""
+
+    def test_main_empty_file(self, monkeypatch, tmp_path):
+        """Test main() with an empty Python file."""
+        from pyguard.cli import main
+        
+        empty_file = tmp_path / "empty.py"
+        empty_file.write_text("")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(empty_file)])
+        
+        main()
+
+    def test_main_file_with_syntax_error(self, monkeypatch, tmp_path):
+        """Test main() with a file containing syntax errors."""
+        from pyguard.cli import main
+        
+        bad_file = tmp_path / "syntax_error.py"
+        bad_file.write_text("def foo(\n  # Invalid syntax")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(bad_file)])
+        
+        # Should not crash
+        main()
+
+    def test_main_large_file(self, monkeypatch, tmp_path):
+        """Test main() with a large Python file."""
+        from pyguard.cli import main
+        
+        large_file = tmp_path / "large.py"
+        # Create a file with 1000 lines
+        content = "\n".join([f"x{i} = {i}" for i in range(1000)])
+        large_file.write_text(content)
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(large_file)])
+        
+        main()
+
+    def test_main_unicode_content(self, monkeypatch, tmp_path):
+        """Test main() with Unicode content in file."""
+        from pyguard.cli import main
+        
+        unicode_file = tmp_path / "unicode.py"
+        unicode_file.write_text("# -*- coding: utf-8 -*-\n# Comment: 世界 🌍\nx = 'Hello 世界'\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(unicode_file)])
+        
+        main()
+
+    def test_main_nested_directory_structure(self, monkeypatch, tmp_path):
+        """Test main() with nested directory structure."""
+        from pyguard.cli import main
+        
+        # Create nested structure
+        nested = tmp_path / "level1" / "level2" / "level3"
+        nested.mkdir(parents=True)
+        (nested / "deep.py").write_text("x = 1\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(tmp_path)])
+        
+        main()
+
+    def test_main_mixed_python_non_python_files(self, monkeypatch, tmp_path):
+        """Test main() in directory with mixed file types."""
+        from pyguard.cli import main
+        
+        (tmp_path / "script.py").write_text("x = 1\n")
+        (tmp_path / "readme.md").write_text("# README\n")
+        (tmp_path / "config.json").write_text("{}\n")
+        
+        monkeypatch.setattr("sys.argv", ["pyguard", str(tmp_path)])
+        
+        main()
+
+
+class TestRunBestPracticesEdgeCases:
+    """Additional edge case tests for best practices fixes."""
+
+    def test_run_best_practices_fixes_failure_tracking(self, tmp_path):
+        """Test that failed fixes are properly counted."""
+        cli = PyGuardCLI()
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def foo(): pass")
+        
+        # Mock to return failure
+        cli.best_practices_fixer.fix_file = Mock(return_value=(False, []))
+        
+        result = cli.run_best_practices_fixes([test_file], create_backup=False)
+        
+        assert result["failed"] == 1
+        assert result["fixed"] == 0
+
+
+class TestCLICombinations:
+    """Tests for various CLI flag combinations and workflows."""
+
+    def test_security_fixes_with_backup(self, tmp_path):
+        """Test security fixes with backup enabled."""
+        cli = PyGuardCLI()
+        test_file = tmp_path / "test.py"
+        test_file.write_text("password = 'secret'\n")
+        
+        result = cli.run_security_fixes([test_file], create_backup=True)
+        
+        assert result["total"] == 1
+
+    def test_formatting_with_both_formatters_disabled(self, tmp_path):
+        """Test formatting with both Black and isort disabled."""
+        cli = PyGuardCLI()
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x=1\n")
+        
+        result = cli.run_formatting([test_file], use_black=False, use_isort=False)
+        
+        assert result["total"] == 1
