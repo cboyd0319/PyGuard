@@ -42,27 +42,23 @@ Created `.vale.ini` with minimal but functional configuration:
 - Configured for Markdown files
 - Loads TechDocs and Spelling styles
 - Ignores code blocks and inline code
+- Removed `.vale.ini` from `.gitignore` so it can be committed
 
-**File:** `.vale.ini` (created)
+**File:** `.vale.ini` (created), `.gitignore` (modified)
 
-### 3. ❌ Missing CHANGELOG.md File
+### 3. ❌ Incorrect CHANGELOG.md Location
 **Severity:** High  
-**Impact:** release.yml workflow would fail during changelog extraction
+**Impact:** Path guard workflow fails, release workflow references wrong location
 
 **Issue:**
-- `release.yml` (line 116) attempts to extract changelog section
-- CHANGELOG.md file was missing from repository
-- Release workflow would fail with "No such file" error
+- `release.yml` attempts to extract changelog from root `CHANGELOG.md`
+- Project uses `docs/CHANGELOG.md` as the actual changelog location
+- Path guard enforces no markdown files in root except `README.md`
 
 **Fix:**
-Created `CHANGELOG.md` with proper structure:
-- Follows Keep a Changelog format
-- Includes Semantic Versioning references
-- Contains Unreleased section for ongoing work
-- Includes instructions for maintainers
-- Provides example format
+Updated release workflow to reference `docs/CHANGELOG.md` instead of root location. The existing `docs/CHANGELOG.md` already exists with proper content.
 
-**File:** `CHANGELOG.md` (created)
+**File:** `.github/workflows/release.yml`
 
 ### 4. ⚠️ Missing defaults.run.shell in docs-ci.yml
 **Severity:** Low  
@@ -206,18 +202,18 @@ All workflows validated successfully:
 
 ## Files Changed
 
-### Created (3 files)
+### Created (2 files)
 1. `.vale.ini` - Vale prose linter configuration
-2. `CHANGELOG.md` - Release changelog template
-3. `WORKFLOW_FIXES_SUMMARY.md` - This document
+2. `docs/WORKFLOW_FIXES_SUMMARY.md` - This document
 
-### Modified (3 files)
+### Modified (4 files)
 1. `.github/workflows/workflow-lint.yml` - Removed duplicate summary
 2. `.github/workflows/docs-ci.yml` - Added defaults section
-3. `.github/actions/setup-python/action.yml` - Removed redundant cache
+3. `.github/workflows/release.yml` - Updated CHANGELOG.md path to docs/
+4. `.github/actions/setup-python/action.yml` - Removed redundant cache
 
 ### Updated (1 file)
-1. `.gitignore` - Added bin/ directory
+1. `.gitignore` - Removed .vale.ini from ignore list, added bin/ directory
 
 ### Removed (1 file)
 1. `bin/actionlint` - Build artifact (should not be committed)

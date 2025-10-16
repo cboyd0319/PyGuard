@@ -112,8 +112,8 @@ jobs:
       run: |
         set -euo pipefail
         VERSION="${{ steps.get_version.outputs.VERSION }}"
-        # Extract the relevant section from CHANGELOG.md
-        awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md || echo "See CHANGELOG.md for details" > release_notes.md
+        # Extract the relevant section from docs/CHANGELOG.md
+        awk "/## \[$VERSION\]/,/## \[/" docs/CHANGELOG.md | head -n -1 > release_notes.md || echo "See docs/CHANGELOG.md for details" > release_notes.md
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
