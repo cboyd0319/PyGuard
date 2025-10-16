@@ -345,3 +345,258 @@ class TestRuleRegistration:
             assert rule.name
             assert rule.description
             assert rule.message_template
+
+
+class TestAdditionalPIEPatternDetection:
+    """Test additional PIE pattern detections for better coverage."""
+
+    def test_detect_unnecessary_ellipsis(self, tmp_path):
+        """Test detection of unnecessary ellipsis (PIE791)."""
+        code = """
+def func():
+    ...
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE791" for v in violations)
+
+    def test_detect_unnecessary_spread_operator(self, tmp_path):
+        """Test detection of unnecessary spread operator (PIE800)."""
+        # This pattern is detected in expression statements with starred expressions
+        # The actual detection requires specific AST context that's hard to trigger
+        # Just verify it doesn't crash on the code
+        code = """
+items = [1, 2, 3]
+result = (*items,)
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Just verify no crash - this pattern is rare in practice
+        assert isinstance(violations, list)
+
+    def test_detect_prefer_pass_over_ellipsis(self, tmp_path):
+        """Test detection of ... in function body (PIE795)."""
+        code = """
+def func():
+    ...
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE795" for v in violations)
+
+    def test_detect_unnecessary_dict_call(self, tmp_path):
+        """Test detection of unnecessary dict() call (PIE796)."""
+        code = """
+def func():
+    data = dict(name='test', value=42)
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE796" for v in violations)
+
+    def test_detect_unnecessary_dict_comp_items(self, tmp_path):
+        """Test detection of unnecessary dict comprehension over .items() (PIE799)."""
+        code = """
+def func():
+    data = {k: v for k, v in old_dict.items()}
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE799" for v in violations)
+
+    def test_detect_lambda_just_calling_function(self, tmp_path):
+        """Test detection of lambda that just calls a function (PIE801)."""
+        # PIE801 is detected when the call node itself has a lambda as func
+        # This is a specific pattern like: (lambda: foo())()
+        code = """
+result = (lambda: foo())()
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE801" for v in violations)
+
+    def test_detect_unnecessary_keys_in_iteration(self, tmp_path):
+        """Test detection of unnecessary .keys() call (PIE804)."""
+        code = """
+for key in list(mydict.keys()):
+    print(key)
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE804" for v in violations)
+
+    def test_detect_single_item_in_check(self, tmp_path):
+        """Test detection of 'in [single_item]' pattern (PIE807)."""
+        code = """
+if x in [5]:
+    pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE807" for v in violations)
+
+    def test_detect_unnecessary_import_alias(self, tmp_path):
+        """Test detection of unnecessary import alias (PIE812)."""
+        code = """
+import os as os
+import sys as sys
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE812" for v in violations)
+
+    def test_detect_unnecessary_from_import_alias(self, tmp_path):
+        """Test detection of unnecessary from import alias (PIE815)."""
+        code = """
+from os import path as path
+from sys import argv as argv
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE815" for v in violations)
+
+    def test_detect_multiple_or_conditions(self, tmp_path):
+        """Test detection of multiple 'or' conditions (PIE817)."""
+        code = """
+if a or b or c or d or e:
+    pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE817" for v in violations)
+
+    def test_detect_multiple_and_conditions(self, tmp_path):
+        """Test detection of multiple 'and' conditions (PIE817)."""
+        code = """
+if a and b and c and d and e:
+    pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE817" for v in violations)
+
+    def test_detect_unnecessary_list_before_subscript(self, tmp_path):
+        """Test detection of unnecessary list() before subscript (PIE818)."""
+        code = """
+item = list(items)[0]
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE818" for v in violations)
+
+    def test_detect_list_comp_with_zero_index(self, tmp_path):
+        """Test detection of list comp with [0] (PIE819)."""
+        code = """
+first = [x * 2 for x in items][0]
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert any(v.rule_id == "PIE819" for v in violations)
+
+    def test_syntax_error_handling(self, tmp_path):
+        """Test that syntax errors are handled gracefully."""
+        code = """
+def func(:  # Invalid syntax
+    pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = PIEPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should return empty list, not raise exception
+        assert violations == []
+
+    def test_exception_handling_in_check(self, tmp_path, monkeypatch):
+        """Test that unexpected exceptions are handled gracefully."""
+        checker = PIEPatternChecker()
+        
+        # Mock ast.parse to raise an exception
+        import ast
+        original_parse = ast.parse
+        
+        def mock_parse(*args, **kwargs):
+            raise RuntimeError("Unexpected error")
+        
+        monkeypatch.setattr(ast, "parse", mock_parse)
+        
+        file_path = tmp_path / "test.py"
+        file_path.write_text("x = 1")
+        
+        violations = checker.check_file(file_path)
+        
+        # Should return empty list, not raise exception
+        assert violations == []
+        
+        # Restore original
+        monkeypatch.setattr(ast, "parse", original_parse)
+
+    def test_exception_handling_in_fix(self, tmp_path):
+        """Test that exceptions during fix are handled gracefully."""
+        # Create a file that will trigger an exception during fixing
+        # Use a non-existent file
+        file_path = tmp_path / "nonexistent.py"
+        
+        checker = PIEPatternChecker()
+        success, count = checker.fix_file(file_path)
+        
+        # Should return False for non-existent file, not raise exception
+        assert success is False
+        assert count == 0

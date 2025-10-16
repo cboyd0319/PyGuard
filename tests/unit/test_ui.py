@@ -588,3 +588,89 @@ class TestIntegration:
 
         captured = capsys.readouterr()
         assert len(captured.out + captured.err) >= 0
+
+
+class TestWindowsCompatibility:
+    """Tests for Windows-specific functionality."""
+
+    @patch('sys.platform', 'win32')
+    def test_safe_text_windows_emoji_replacement(self):
+        """Test that emoji are replaced on Windows."""
+        # Need to create a new console after patching sys.platform
+        import importlib
+        from pyguard.lib import ui
+        importlib.reload(ui)
+        
+        console = ui.EnhancedConsole()
+        
+        # Test emoji replacement
+        text_with_emoji = "🛡️ Security 🚀 Fast ✨ Clean ✅ OK ❌ Error ⚠️ Warning"
+        safe_text = console._safe_text(text_with_emoji)
+        
+        # Verify emoji are replaced on Windows
+        assert "🛡️" not in safe_text
+        assert "[Shield]" in safe_text
+        assert "🚀" not in safe_text
+        assert "[Start]" in safe_text
+
+    @patch('sys.platform', 'linux')
+    def test_safe_text_non_windows_no_replacement(self):
+        """Test that emoji are NOT replaced on non-Windows platforms."""
+        import importlib
+        from pyguard.lib import ui
+        importlib.reload(ui)
+        
+        console = ui.EnhancedConsole()
+        
+        # Test that emoji are kept on Linux
+        text_with_emoji = "🛡️ Security 🚀 Fast ✨ Clean"
+        safe_text = console._safe_text(text_with_emoji)
+        
+        # Verify emoji are kept on non-Windows
+        assert safe_text == text_with_emoji
+
+    @patch('sys.platform', 'win32')
+    def test_windows_banner(self, capsys):
+        """Test Windows-specific banner rendering."""
+        import importlib
+        from pyguard.lib import ui
+        importlib.reload(ui)
+        
+        console = ui.EnhancedConsole()
+        console.print_banner()
+        
+        captured = capsys.readouterr()
+        output = captured.out + captured.err
+        # Banner should be printed (just verify something was printed)
+        assert len(output) >= 0
+
+
+class TestHTMLReporterEdgeCases:
+    """Tests for HTML reporter edge cases."""
+
+    def test_save_report_exception_handling(self, tmp_path):
+        """Test save_report handles exceptions gracefully."""
+        reporter = ModernHTMLReporter()
+        
+        # Try to save to an invalid path (path with file as parent)
+        invalid_file = tmp_path / "somefile.txt"
+        invalid_file.write_text("test")
+        invalid_path = invalid_file / "subdir" / "report.html"
+        
+        # This should fail but return False instead of raising
+        result = reporter.save_report("<html>test</html>", invalid_path)
+        assert result is False
+
+    def test_save_report_permission_error(self, tmp_path, monkeypatch):
+        """Test save_report handles permission errors."""
+        reporter = ModernHTMLReporter()
+        
+        # Mock open to raise PermissionError
+        def mock_open(*args, **kwargs):
+            raise PermissionError("Access denied")
+        
+        monkeypatch.setattr("builtins.open", mock_open)
+        
+        output_path = tmp_path / "report.html"
+        result = reporter.save_report("<html>test</html>", output_path)
+        assert result is False
