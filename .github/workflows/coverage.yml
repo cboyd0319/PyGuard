@@ -3,8 +3,22 @@ name: Coverage
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'pytest.ini'
+      - '.github/workflows/coverage.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'pytest.ini'
+      - '.github/workflows/coverage.yml'
 
 permissions:
   contents: read

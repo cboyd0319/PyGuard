@@ -6,8 +6,26 @@ name: PyGuard Self-Analysis
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'config/**'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - '.github/workflows/lint.yml'
+      - '.github/actions/setup-python/**'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'config/**'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - '.github/workflows/lint.yml'
+      - '.github/actions/setup-python/**'
+  schedule:
+    # Run daily to catch any issues in production code
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
 
 permissions:
   contents: read

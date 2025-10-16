@@ -1,0 +1,65 @@
+# Configuration for PR auto-labeling
+# Labels are applied based on changed files
+
+'📝 documentation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**/*'
+      - '*.md'
+      - '.github/**/*.md'
+
+'⚙️ workflows':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+
+'🧪 tests':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**/*'
+      - '**/test_*.py'
+      - 'pytest.ini'
+      - 'tox.ini'
+
+'💻 code':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyguard/**/*.py'
+      - '!pyguard/**/__init__.py'
+
+'🔧 config':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'config/**'
+      - '.github/dependabot.yml'
+
+'🐳 docker':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.dockerignore'
+
+'🔒 security':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'SECURITY.md'
+      - 'pyguard/lib/security.py'
+      - 'pyguard/lib/*security*.py'
+      - 'config/security_rules.toml'
+
+'📦 dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements*.txt'
+
+'🚀 release':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'CHANGELOG.md'
+      - '.github/workflows/release.yml'
