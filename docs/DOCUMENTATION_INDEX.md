@@ -7,7 +7,9 @@ Start here for a quick overview and navigation. The canonical hub is `docs/index
 - Quick Start & Examples: see `README.md`
 
 ## Guides
-- GitHub Action Guide: [guides/github-action-guide.md](guides/github-action-guide.md)
+- **GitHub Action Guide**: [guides/github-action-guide.md](guides/github-action-guide.md) - Complete guide for using PyGuard as a GitHub Action
+- **GitHub Action Quick Reference**: [GITHUB_ACTION_QUICK_REFERENCE.md](GITHUB_ACTION_QUICK_REFERENCE.md) - One-page cheat sheet
+- **GitHub Action Publishing**: [GITHUB_ACTION_PUBLISHING.md](GITHUB_ACTION_PUBLISHING.md) - How to publish to Marketplace
 - Git Hooks Guide: [guides/git-hooks-guide.md](guides/git-hooks-guide.md)
 - Notebook Security Guide: [guides/notebook-security-guide.md](guides/notebook-security-guide.md)
 

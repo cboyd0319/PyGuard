@@ -6,23 +6,32 @@ build-backend = "setuptools.build_meta"
 name = "pyguard"
 version = "0.3.0"
 description = "The World's Best Python Security & Compliance Tool - ML-powered detection, MCP integration, 6+ compliance frameworks"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "Chad Boyd"}
 ]
-keywords = ["qa", "linting", "formatting", "security", "autofix", "code-quality"]
+keywords = ["security", "code-quality", "static-analysis", "linting", "github-actions", "sarif", "python", "vulnerability-scanner", "autofix"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.12", 
     "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Security :: Cryptography",
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Environment :: Console",
+    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -52,9 +61,12 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/cboyd0319/PyGuard"
-Documentation = "https://github.com/cboyd0319/PyGuard/docs"
+Documentation = "https://github.com/cboyd0319/PyGuard/tree/main/docs"
 Repository = "https://github.com/cboyd0319/PyGuard"
 "Bug Tracker" = "https://github.com/cboyd0319/PyGuard/issues"
+"Security Policy" = "https://github.com/cboyd0319/PyGuard/security/policy"
+"Changelog" = "https://github.com/cboyd0319/PyGuard/blob/main/docs/CHANGELOG.md"
+"GitHub Action" = "https://github.com/marketplace/actions/pyguard-security-scanner"
 
 [project.scripts]
 pyguard = "pyguard.cli:main"

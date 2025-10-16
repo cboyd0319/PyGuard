@@ -7,19 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned for v0.2.0
-- AST-based fixing for 10-100x performance improvement
-- Fix applicability system (Safe/Unsafe/Display)
-- Parallel processing for multi-file analysis
-- Watch mode for continuous monitoring
-- Incremental analysis (only changed files)
-
-### Planned for v0.3.0
+### Planned for v0.4.0
 - VS Code extension
 - Language Server Protocol (LSP) support
 - Pre-commit hooks integration
-- HTML/JSON report generation
+- Watch mode for continuous monitoring
+- Git diff analysis
+
+### Planned for v0.5.0
 - Configuration inheritance (project → user → system)
+- Advanced performance profiling
+- Custom rules API enhancements
+
+---
+
+## [0.3.0] - 2025-10-16
+
+### Added
+- **GitHub Action** - Complete marketplace-ready GitHub Action for CI/CD integration
+  - Native SARIF output for GitHub Code Scanning
+  - Auto-upload to Security tab
+  - Support for security-only, fail-on-issues, and unsafe-fixes modes
+  - Cross-platform support (Ubuntu, macOS, Windows)
+  - Python 3.11-3.13 compatibility
+- **Advanced Features**
+  - CI/CD integration generator for GitHub Actions, GitLab CI, CircleCI, Azure Pipelines
+  - Performance profiler for detecting bottlenecks
+  - Dependency analyzer with circular import detection
+  - Custom rules engine (TOML and Python API)
+- **Expanded Security Coverage**
+  - GraphQL injection detection and fixes
+  - JWT security checks (weak algorithms)
+  - API rate limiter detection
+  - Container security (privileged mode)
+  - SSTI (Server-Side Template Injection) checks
+- **Documentation**
+  - Complete GitHub Action documentation
+  - Marketplace listing (MARKETPLACE.md)
+  - GitHub Action Quick Reference
+  - Publishing guide for maintainers
+  - Action setup summary
+- **Quality Improvements**
+  - 1002 tests with 82% coverage
+  - Complete CI/CD pipeline with multiple workflows
+  - Comprehensive example workflows
+  - Validation script for action publishing
+
+### Changed
+- Updated to Python 3.13 as default version
+- Improved SARIF validation and error handling
+- Enhanced Windows Unicode encoding support
+- Optimized workflow path filtering
+
+### Fixed
+- SARIF validation issues in CI/CD
+- Pre-existing lint violations handling
+- Windows Unicode encoding errors
+- Missing config files in workflows
 
 ---
 
@@ -136,5 +180,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cboyd0319/PyGuard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cboyd0319/PyGuard/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/cboyd0319/PyGuard/releases/tag/v0.3.0
 [0.1.0]: https://github.com/cboyd0319/PyGuard/releases/tag/v0.1.0

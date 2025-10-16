@@ -128,6 +128,27 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Update major version tag
+      shell: bash
+      run: |
+        set -euo pipefail
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        MAJOR_VERSION=$(echo "$VERSION" | cut -d. -f1)
+        
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Delete old major version tag if it exists
+        git push origin :refs/tags/v${MAJOR_VERSION} || true
+        
+        # Create and push new major version tag
+        git tag -fa v${MAJOR_VERSION} -m "Update v${MAJOR_VERSION} to ${VERSION}"
+        git push origin v${MAJOR_VERSION}
+        
+        echo "✅ Updated v${MAJOR_VERSION} tag to point to v${VERSION}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Add release summary
       if: success()
       shell: bash

@@ -3,8 +3,10 @@
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Ready-brightgreen.svg)](https://github.com/marketplace/actions/pyguard-security-scanner)
 
 [![Tests](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml)
+[![Test Action](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml)
 [![Coverage](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml)
 [![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 [![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
@@ -18,6 +20,33 @@
 pip install pyguard
 pyguard src/
 ```
+
+## 🚀 GitHub Action Quick Start
+
+Add PyGuard security scanning to your repository in 30 seconds:
+
+```yaml
+# .github/workflows/pyguard.yml
+name: Security Scan
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cboyd0319/PyGuard@main
+        with:
+          paths: '.'
+          scan-only: 'true'
+          upload-sarif: 'true'
+```
+
+**Done!** PyGuard will automatically scan your code and upload results to GitHub Security tab. [Full GitHub Action Guide →](docs/guides/github-action-guide.md)
 
 ## Quickstart
 

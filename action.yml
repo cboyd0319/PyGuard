@@ -1,5 +1,9 @@
+---
 name: 'PyGuard Security Scanner'
-description: 'Comprehensive Python security and code quality analysis with ML-powered detection, auto-fix capabilities, and SARIF output for GitHub Code Scanning. Detects 55+ vulnerability types with CWE/OWASP mappings.'
+description: >-
+  Comprehensive Python security and code quality analysis with ML-powered detection,
+  auto-fix capabilities, and SARIF output for GitHub Code Scanning.
+  Detects 55+ vulnerability types with CWE/OWASP mappings.
 author: 'cboyd0319'
 
 branding:
@@ -8,43 +12,64 @@ branding:
 
 inputs:
   paths:
-    description: 'Paths to scan (space-separated). Supports files and directories. Example: "src/ app.py lib/"'
+    description: >-
+      Paths to scan (space-separated). Supports files and directories.
+      Example: "src/ app.py lib/"
     required: false
     default: '.'
   python-version:
-    description: 'Python version to use for scanning. Should match your project version. Supports 3.11, 3.12, 3.13.'
+    description: >-
+      Python version to use for scanning. Should match your project version.
+      Supports 3.11, 3.12, 3.13.
     required: false
     default: '3.13'
   scan-only:
-    description: 'Only scan without fixing issues. Recommended for CI/CD to avoid code changes. Set to "false" to enable auto-fix.'
+    description: >-
+      Only scan without fixing issues. Recommended for CI/CD to avoid code changes.
+      Set to "false" to enable auto-fix.
     required: false
     default: 'true'
   security-only:
-    description: 'Only run security checks, skipping code quality analysis. Faster scans focused on vulnerabilities.'
+    description: >-
+      Only run security checks, skipping code quality analysis.
+      Faster scans focused on vulnerabilities.
     required: false
     default: 'false'
   severity:
-    description: 'Minimum severity level to report (LOW, MEDIUM, HIGH, CRITICAL). Higher levels filter out lower severity issues.'
+    description: >-
+      Minimum severity level to report (LOW, MEDIUM, HIGH, CRITICAL).
+      Higher levels filter out lower severity issues.
     required: false
     default: 'LOW'
   exclude:
-    description: 'File patterns to exclude from scanning (space-separated). Supports glob patterns. Example: "tests/* *.pyc __pycache__/*"'
+    description: >-
+      File patterns to exclude from scanning (space-separated).
+      Supports glob patterns. Example: "tests/* *.pyc __pycache__/*"
     required: false
-    default: 'tests/* venv/* .venv/* build/* dist/* .git/* .github/* node_modules/*'
+    default: >-
+      tests/* venv/* .venv/* build/* dist/* .git/* .github/* node_modules/*
   sarif-file:
-    description: 'Output SARIF file path for GitHub Code Scanning integration. Must end in .sarif'
+    description: >-
+      Output SARIF file path for GitHub Code Scanning integration.
+      Must end in .sarif
     required: false
     default: 'pyguard-report.sarif'
   upload-sarif:
-    description: 'Upload SARIF results to GitHub Security tab. Requires security-events: write permission.'
+    description: >-
+      Upload SARIF results to GitHub Security tab.
+      Requires security-events: write permission.
     required: false
     default: 'true'
   fail-on-issues:
-    description: 'Fail the workflow if security issues are found. Useful for security gates on pull requests.'
+    description: >-
+      Fail the workflow if security issues are found.
+      Useful for security gates on pull requests.
     required: false
     default: 'false'
   unsafe-fixes:
-    description: 'Enable unsafe auto-fixes that may change code behavior. WARNING: Only use with scan-only=false. Review changes carefully!'
+    description: >-
+      Enable unsafe auto-fixes that may change code behavior.
+      WARNING: Only use with scan-only=false. Review changes carefully!
     required: false
     default: 'false'
 
@@ -60,22 +85,21 @@ runs:
   using: 'composite'
   steps:
     - name: Set up Python
-      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c  # v6.0.0
       with:
         python-version: ${{ inputs.python-version }}
-        
+
     - name: Install PyGuard
       shell: bash
       run: |
         python -m pip install --upgrade pip
         pip install pyguard
-        
     - name: Run PyGuard Security Scan
       id: scan
       shell: bash
       run: |
         set -euo pipefail  # Exit on error, undefined vars, pipe failures
-        
+
         echo "::group::PyGuard Configuration"
         echo "Paths: ${{ inputs.paths }}"
         echo "Python Version: ${{ inputs.python-version }}"
@@ -86,50 +110,51 @@ runs:
         echo "Upload SARIF: ${{ inputs.upload-sarif }}"
         echo "Fail on Issues: ${{ inputs.fail-on-issues }}"
         echo "::endgroup::"
-        
+
         # Verify PyGuard is installed
         if ! command -v pyguard &> /dev/null; then
           echo "::error::PyGuard is not installed or not in PATH"
           exit 1
         fi
-        
+
         # Show PyGuard version
         echo "::group::PyGuard Version"
         pyguard --version
         echo "::endgroup::"
-        
+
         # Build PyGuard command
         CMD="pyguard"
-        
+
         # Add flags based on inputs
         if [ "${{ inputs.scan-only }}" == "true" ]; then
           CMD="$CMD --scan-only"
         fi
-        
+
         if [ "${{ inputs.security-only }}" == "true" ]; then
           CMD="$CMD --security-only"
         fi
-        
+
         if [ "${{ inputs.unsafe-fixes }}" == "true" ]; then
           if [ "${{ inputs.scan-only }}" == "true" ]; then
-            echo "::warning::unsafe-fixes is enabled but scan-only is true. Auto-fixes will not be applied."
+            echo "::warning::unsafe-fixes is enabled but scan-only is true."
+            echo "::warning::Auto-fixes will not be applied."
           fi
           CMD="$CMD --unsafe-fixes"
         fi
-        
+
         # Add SARIF output
         CMD="$CMD --sarif --no-html"
-        
+
         # Add exclude patterns
         if [ -n "${{ inputs.exclude }}" ]; then
           for pattern in ${{ inputs.exclude }}; do
             CMD="$CMD --exclude \"$pattern\""
           done
         fi
-        
+
         # Add paths
         CMD="$CMD ${{ inputs.paths }}"
-        
+
         # Run PyGuard and capture exit code
         echo "::group::Running PyGuard"
         echo "Command: $CMD"
@@ -138,7 +163,7 @@ runs:
         EXIT_CODE=$?
         set -e
         echo "::endgroup::"
-        
+
         # Validate SARIF file exists
         if [ ! -f "${{ inputs.sarif-file }}" ]; then
           echo "::warning::SARIF file not generated at ${{ inputs.sarif-file }}"
@@ -146,29 +171,30 @@ runs:
           echo "sarif-file=" >> $GITHUB_OUTPUT
           exit ${EXIT_CODE}
         fi
-        
+
         # Validate SARIF is valid JSON
         if ! jq empty "${{ inputs.sarif-file }}" 2>/dev/null; then
           echo "::error::Generated SARIF file is not valid JSON"
           exit 1
         fi
-        
+
         # Count issues from SARIF file
-        ISSUES=$(jq '[.runs[0].results // []] | length' "${{ inputs.sarif-file }}" 2>/dev/null || echo "0")
+        SARIF_FILE="${{ inputs.sarif-file }}"
+        ISSUES=$(jq '[.runs[0].results // []] | length' "$SARIF_FILE" 2>/dev/null || echo "0")
         echo "issues-found=$ISSUES" >> $GITHUB_OUTPUT
         echo "sarif-file=${{ inputs.sarif-file }}" >> $GITHUB_OUTPUT
-        
+
         # Create summary
         echo "::group::Scan Summary"
         echo "✅ Scan completed"
         echo "📊 Issues found: $ISSUES"
         echo "📄 SARIF report: ${{ inputs.sarif-file }}"
-        
+
         if [ "${{ inputs.upload-sarif }}" == "true" ]; then
           echo "📤 SARIF will be uploaded to GitHub Security tab"
         fi
         echo "::endgroup::"
-        
+
         # Add to GitHub Actions summary
         {
           echo "## PyGuard Security Scan Results"
@@ -176,26 +202,30 @@ runs:
           echo "- **Issues Found:** $ISSUES"
           echo "- **SARIF Report:** \`${{ inputs.sarif-file }}\`"
           echo "- **Severity Filter:** ${{ inputs.severity }}"
-          echo "- **Scan Type:** ${{ inputs.security-only == 'true' && 'Security Only' || 'Security + Quality' }}"
+          SCAN_TYPE="${{ inputs.security-only == 'true' && 'Security Only' || 'Security + Quality' }}"
+          echo "- **Scan Type:** $SCAN_TYPE"
           if [ "${{ inputs.upload-sarif }}" == "true" ]; then
-            echo "- **Results uploaded to [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)**"
+            SECURITY_URL="https://github.com/${{ github.repository }}/security/code-scanning"
+            echo "- **Results uploaded to [Security tab]($SECURITY_URL)**"
           fi
         } >> $GITHUB_STEP_SUMMARY
-        
+
         # Fail if requested and issues found
         if [ "${{ inputs.fail-on-issues }}" == "true" ] && [ "$ISSUES" != "0" ]; then
           echo "::error::Found $ISSUES security issues (severity: ${{ inputs.severity }}+), failing as requested"
-          echo "::error::Review issues in the Security tab: https://github.com/${{ github.repository }}/security/code-scanning"
+          SECURITY_URL="https://github.com/${{ github.repository }}/security/code-scanning"
+          echo "::error::Review issues in the Security tab: $SECURITY_URL"
           exit 1
         fi
-        
+
         # Exit with original code if not failing on issues
         exit ${EXIT_CODE}
       continue-on-error: ${{ inputs.fail-on-issues != 'true' }}
-      
+
     - name: Upload SARIF results to GitHub Security tab
       if: ${{ inputs.upload-sarif == 'true' && always() }}
-      uses: github/codeql-action/upload-sarif@d02a7766a1131f2a16daab6a31d328a0b2a47444 # v4.30.8
+      uses: >-
+        github/codeql-action/upload-sarif@d02a7766a1131f2a16daab6a31d328a0b2a47444
       with:
         sarif_file: ${{ inputs.sarif-file }}
         category: pyguard
