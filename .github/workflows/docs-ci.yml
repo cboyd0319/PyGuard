@@ -58,7 +58,7 @@ jobs:
           persist-credentials: false
 
       - name: Link Checker
-        uses: lycheeverse/lychee-action@v1.10.1
+        uses: lycheeverse/lychee-action@v2.6.1
         with:
           args: >-
             --no-progress --exclude-file .lycheeignore --accept 200,206,403,429
