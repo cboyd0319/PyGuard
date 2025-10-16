@@ -8,15 +8,31 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   guard:
+    name: Validate File Organization
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
+
       - name: Validate Markdown file placement
+        shell: bash
         run: |
           set -euo pipefail
           base="origin/${{ github.base_ref || 'main' }}"
@@ -27,3 +43,19 @@ jobs:
             echo "❌ Markdown files outside docs/:"; echo "$md_outside"; exit 1
           fi
           echo "✅ No misplaced Markdown files"
+
+      - name: Add guard summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## 🛡️ Path Guard Validation"
+            echo ""
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "✅ All files are correctly organized"
+              echo ""
+              echo "- Markdown files: ✓ docs/ or root README.md only"
+            else
+              echo "❌ File organization violations detected"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"

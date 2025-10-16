@@ -69,14 +69,14 @@ jobs:
         twine check dist/*
 
     - name: Generate SBOM
-      uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c # v0.20.5
+      uses: anchore/sbom-action@d8a2c0130026bf585de5c176ab8f7ce62d75bf04 # v0.20.7
       with:
         artifact-name: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         output-file: pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
         format: spdx-json
 
     - name: Attest Build Provenance
-      uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+      uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
       with:
         subject-path: dist/*
 

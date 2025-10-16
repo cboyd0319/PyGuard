@@ -34,15 +34,18 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Enable auto-merge for patch and minor updates
-        # Auto-merge for patch and minor updates only
-        # Note: Approval will happen automatically via branch protection or repository settings
+      - name: Auto-approve and enable auto-merge for safe updates
+        # Auto-approve and auto-merge patch/minor updates
+        # Security updates are auto-merged regardless of semver
         if: |
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+          contains(steps.metadata.outputs.dependency-names, 'security') ||
+          steps.metadata.outputs.alert-state != ''
         shell: bash
         run: |
           set -euo pipefail
+          gh pr review --approve "${PR_URL}" --body "✅ Auto-approved: Safe ${{ steps.metadata.outputs.update-type }} update"
           gh pr merge --auto --squash "${PR_URL}"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -50,7 +53,9 @@ jobs:
 
       - name: Comment on major updates
         # Comment on major updates that require manual review
-        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-major' &&
+          steps.metadata.outputs.alert-state == ''
         shell: bash
         run: |
           set -euo pipefail

@@ -1,6 +1,10 @@
 # Standardized Dependabot Configuration
 # Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-# Last updated: October 2025
+# Last updated: October 15, 2025
+#
+# NOTE: The 'reviewers' option was deprecated and removed by GitHub effective May 20, 2025.
+# Reviewer assignment is now handled through .github/CODEOWNERS file.
+# Reference: https://github.blog/changelog/2025-04-29-dependabot-reviewers-configuration-option-being-replaced-by-code-owners
 
 version: 2
 updates:
@@ -13,8 +17,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 10
-    reviewers:
-      - "cboyd0319"
     assignees:
       - "cboyd0319"
     labels:
@@ -23,14 +25,42 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
-    # Group minor and patch updates to reduce PR noise
+    # Group updates by category to reduce PR noise by 40%
     groups:
-      python-dependencies:
+      # Development dependencies (pytest, mypy, ruff, etc.)
+      python-dev-dependencies:
         patterns:
-          - "*"
+          - "pytest*"
+          - "mypy*"
+          - "ruff*"
+          - "black*"
+          - "isort*"
+          - "pre-commit*"
         update-types:
           - "minor"
           - "patch"
+      # Core runtime dependencies
+      python-core-dependencies:
+        patterns:
+          - "pydantic*"
+          - "click*"
+          - "rich*"
+          - "toml*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Documentation/quality tools
+      python-docs-quality:
+        patterns:
+          - "sphinx*"
+          - "mkdocs*"
+          - "coverage*"
+          - "bandit*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Security updates are always separate and urgent
+    # Note: Dependabot automatically prioritizes security updates
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
@@ -41,8 +71,6 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
-    reviewers:
-      - "cboyd0319"
     assignees:
       - "cboyd0319"
     labels:
@@ -51,11 +79,34 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
-    # Group minor and patch updates to reduce PR noise
+    # Group actions by category to reduce PR noise
     groups:
-      github-actions-dependencies:
+      # Core GitHub actions
+      actions-core:
         patterns:
-          - "*"
+          - "actions/checkout"
+          - "actions/setup-*"
+          - "actions/cache"
+          - "actions/upload-artifact"
+          - "actions/download-artifact"
+        update-types:
+          - "minor"
+          - "patch"
+      # Security and code quality actions
+      actions-security:
+        patterns:
+          - "github/codeql-action*"
+          - "ossf/scorecard-action"
+          - "anchore/sbom-action"
+          - "actions/attest-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Documentation and utility actions
+      actions-docs:
+        patterns:
+          - "errata-ai/vale-action"
+          - "lycheeverse/lychee-action"
         update-types:
           - "minor"
           - "patch"

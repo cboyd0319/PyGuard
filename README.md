@@ -2,9 +2,15 @@
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Tests](https://img.shields.io/badge/tests-1002%20passing-success.svg)
-[![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+[![Tests](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml)
+[![Coverage](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml)
+[![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
+[![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml)
+[![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
+[![Docs](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml)
 
 **TL;DR**: Replace 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with one. Finds 55+ security issues, enforces 150+ quality rules, fixes 179+ problems automatically. Runs locally, no telemetry.
 

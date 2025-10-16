@@ -45,7 +45,7 @@ jobs:
         fetch-depth: 1
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@d02a7766a1131f2a16daab6a31d328a0b2a47444 # v4.30.8
+      uses: github/codeql-action/init@f443b600d91635bebf5b0d9ebc620189c0d6fba5 # v4.30.8
       with:
         languages: python
         queries: security-extended
@@ -57,7 +57,7 @@ jobs:
             - docs/**
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@d02a7766a1131f2a16daab6a31d328a0b2a47444 # v4.30.8
+      uses: github/codeql-action/analyze@f443b600d91635bebf5b0d9ebc620189c0d6fba5 # v4.30.8
       with:
         category: "/language:python"
 
