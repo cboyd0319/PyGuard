@@ -408,7 +408,7 @@ jobs:
       
       - name: Run PyGuard (Safe Fixes)
         run: |
-          pip install pyguard
+          # PyGuard is not yet on PyPI - install from source
           pyguard scan .
       
       - name: Run PyGuard (All Fixes)

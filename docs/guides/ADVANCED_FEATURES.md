@@ -268,7 +268,7 @@ print(content["quiz_question"])
 ### Install
 
 ```bash
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 ```
 
 ### Scan a Notebook

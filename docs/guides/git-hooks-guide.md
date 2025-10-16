@@ -120,7 +120,7 @@ git clone https://github.com/your/project.git
 cd project
 
 # Install PyGuard
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 
 # Install pre-commit hook
 pyguard-hooks install
@@ -233,7 +233,7 @@ jobs:
           python-version: '3.11'
       
       - name: Install PyGuard
-        run: pip install pyguard
+        run: # PyGuard is not yet on PyPI - install from source
       
       - name: Run PyGuard
         run: pyguard --scan-only .
@@ -252,7 +252,7 @@ pyguard:
   stage: test
   image: python:3.11
   script:
-    - pip install pyguard
+    - # PyGuard is not yet on PyPI - install from source
     - pyguard --scan-only .
   only:
     - merge_requests
@@ -315,7 +315,7 @@ pyguard-hooks test
 **Problem:** Hook fails with "pyguard: command not found"
 
 **Solutions:**
-1. Ensure PyGuard is installed: `pip install pyguard`
+1. Ensure PyGuard is installed: `# PyGuard is not yet on PyPI - install from source`
 2. Check PATH includes Python scripts: `which pyguard`
 3. Use absolute path in hook (edit `.git/hooks/pre-commit`)
 4. Activate virtual environment before committing

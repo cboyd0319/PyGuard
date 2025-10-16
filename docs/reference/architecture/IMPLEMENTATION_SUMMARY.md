@@ -216,7 +216,7 @@ echo "PyGuard checks passed ✓"
 ### Basic Setup
 ```bash
 # Install PyGuard
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 
 # Install pre-commit hook
 pyguard-hooks install

@@ -18,7 +18,7 @@
 **TL;DR**: Replace 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with one. Finds 55+ security issues, enforces 150+ quality rules, fixes 179+ problems automatically. Runs locally, no telemetry.
 
 ```bash
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 pyguard src/
 ```
 
@@ -61,7 +61,7 @@ jobs:
 
 ```bash
 # Install
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 
 # Scan and fix entire project
 pyguard src/
@@ -111,7 +111,7 @@ Optional: Black, isort (auto-installed with PyGuard).
 
 ```bash
 # From PyPI (when published)
-pip install pyguard
+# PyGuard is not yet on PyPI - install from source
 
 # From source
 git clone https://github.com/cboyd0319/PyGuard.git
@@ -239,7 +239,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install pyguard
+      - run: # PyGuard is not yet on PyPI - install from source
       - run: pyguard . --scan-only --sarif --no-html
       - uses: github/codeql-action/upload-sarif@v3
         with:

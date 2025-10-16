@@ -474,7 +474,7 @@ Add to GitHub Actions:
 ```yaml
 - name: Scan Notebooks
   run: |
-    pip install pyguard
+    # PyGuard is not yet on PyPI - install from source
     python -c "
     from pathlib import Path
     from pyguard.lib.notebook_security import scan_notebook
