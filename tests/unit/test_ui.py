@@ -559,7 +559,7 @@ class TestIntegration:
         assert len(captured.out + captured.err) >= 0
         assert output_path.exists()
 
-        report_content = output_path.read_text()
+        report_content = output_path.read_text(encoding='utf-8')
         assert "SQL Injection" in report_content
         assert "HIGH" in report_content or "high" in report_content.lower()
 

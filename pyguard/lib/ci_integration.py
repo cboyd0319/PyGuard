@@ -258,11 +258,11 @@ if [ -n "$STAGED_FILES" ]; then
     EXIT_CODE=$?
     
     if [ $EXIT_CODE -ne 0 ]; then
-        echo "❌ PyGuard found security issues. Please fix them before committing."
+        echo "[X] PyGuard found security issues. Please fix them before committing."
         exit 1
     fi
-    
-    echo "✅ PyGuard scan passed!"
+
+    echo "[OK] PyGuard scan passed!"
 fi
 
 exit 0

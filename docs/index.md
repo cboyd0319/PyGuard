@@ -19,10 +19,10 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Security Rules Reference](security-rules.md) - All security checks
 
 ### Architecture & Implementation
-- [Implementation Summary](architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
-- [Auto-Fix Analysis](architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
-- [Development Updates](UPDATEv2.md) - Roadmap and progress tracker
-- [Competing Products Analysis](COMPETING_PRODUCTS_COVERAGE.md) - Feature comparison
+- [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
+- [Auto-Fix Analysis](reference/architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
+- [Development Updates](development/UPDATEv2.md) - Roadmap and progress tracker
+- [Competing Products Analysis](reference/COMPETING_PRODUCTS_COVERAGE.md) - Feature comparison
 
 ### Project Information
 - [Changelog](CHANGELOG.md) - Version history
@@ -40,8 +40,8 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### For Developers
 - **Contributing?** Read [Contributing Guide](../CONTRIBUTING.md)
-- **Understanding code?** See [Architecture docs](architecture/)
-- **Adding features?** Check [Development Updates](UPDATEv2.md)
+- **Understanding code?** See [Architecture docs](reference/architecture/)
+- **Adding features?** Check [Development Updates](development/UPDATEv2.md)
 
 ### For Security Teams
 - **Compliance?** Review [Capabilities Reference](capabilities-reference.md)

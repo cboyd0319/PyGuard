@@ -145,7 +145,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "PyGuard checks passed ✓"
+echo "PyGuard checks passed [OK]"
 exit 0
 """
         elif hook_type == "pre-push":
@@ -166,7 +166,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "PyGuard checks passed ✓"
+echo "PyGuard checks passed [OK]"
 exit 0
 """
         else:
