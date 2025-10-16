@@ -424,7 +424,7 @@ class TestWorkflowDocumentation:
     def test_github_action_guide_exists(self):
         """Test GitHub Action guide documentation exists."""
         repo_root = Path(__file__).parent.parent.parent
-        guide = repo_root / "docs" / "github-action-guide.md"
+        guide = repo_root / "docs" / "guides" / "github-action-guide.md"
 
         assert guide.exists()
 
