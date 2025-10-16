@@ -121,6 +121,9 @@ runs:
         pyguard --version
         echo "::endgroup::"
 
+        # Disable glob expansion to prevent pattern expansion
+        set -f
+
         # Build PyGuard command arguments array
         ARGS=("--sarif" "--no-html")
 
@@ -141,7 +144,7 @@ runs:
           ARGS+=("--unsafe-fixes")
         fi
 
-        # Add exclude patterns (quoted to prevent glob expansion)
+        # Add exclude patterns (glob expansion disabled)
         IFS=' ' read -ra EXCLUDE_PATTERNS <<< "${{ inputs.exclude }}"
         for pattern in "${EXCLUDE_PATTERNS[@]}"; do
           if [ -n "$pattern" ]; then
@@ -155,11 +158,12 @@ runs:
 
         # Run PyGuard and capture exit code
         echo "::group::Running PyGuard"
-        echo "Command: pyguard ${ARGS[@]}"
+        echo "Command: pyguard ${ARGS[*]}"
         set +e  # Don't exit on error
         pyguard "${ARGS[@]}"
         EXIT_CODE=$?
         set -e
+        set +f  # Re-enable glob expansion
         echo "::endgroup::"
 
         # Validate SARIF file exists
