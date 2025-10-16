@@ -23,6 +23,7 @@ on:
       - 'tox.ini'
       - '.github/workflows/test.yml'
       - '.github/actions/setup-python/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
