@@ -224,8 +224,8 @@ This directory contains the CI/CD workflows for PyGuard. All workflows follow se
 - GITHUB_STEP_SUMMARY shows benchmark results
 
 ### 12. **release.yml** - Automated Release Pipeline
-**Triggers:** Git tags matching `v*.*.*`  
-**Timeout:** 30 minutes  
+**Triggers:** Git tags matching `v*.*.*`
+**Timeout:** 30 minutes
 **Concurrency:** No cancellation (releases must complete)
 
 **What it does:**
@@ -249,6 +249,76 @@ This directory contains the CI/CD workflows for PyGuard. All workflows follow se
 - Strict shell mode on all steps
 - Comprehensive GITHUB_STEP_SUMMARY with release info
 - Artifact retention: permanent (in GitHub Releases)
+
+### 13. **comprehensive-tests.yml** - Extended Test Suite
+**Triggers:** Push/PR to main/develop (path filtered), manual
+**Timeout:** 30 minutes
+**Concurrency:** Cancellable per ref
+
+**What it does:**
+- Runs complete test suite across Python 3.11-3.13
+- Unit tests with branch coverage reporting
+- Integration tests with failure isolation
+- Coverage threshold enforcement (88%)
+- Uploads coverage to Codecov
+- Generates HTML coverage reports
+
+**Optimizations:**
+- Pip caching for faster dependency installation
+- Fail-fast disabled for full test visibility
+- Coverage artifacts retained for 7 days
+- Comprehensive GITHUB_STEP_SUMMARY with test results
+
+### 14. **docs-ci.yml** - Documentation Quality Checks
+**Triggers:** Push/PR to main
+**Timeout:** 10 minutes
+**Concurrency:** Cancellable per ref
+
+**What it does:**
+- Markdown linting (markdownlint)
+- Prose quality checking (Vale)
+- Link validation (lychee)
+- Python script syntax validation
+
+**Optimizations:**
+- Runs checks in parallel jobs
+- Allows pre-existing markdown violations
+- Comprehensive error reporting in GITHUB_STEP_SUMMARY
+
+### 15. **path-guard.yml** - Sensitive File Monitoring
+**Triggers:** Push/PR to main
+**Timeout:** 5 minutes
+
+**What it does:**
+- Monitors changes to sensitive files (workflows, security configs)
+- Validates workflow YAML syntax
+- Alerts on security-critical file modifications
+
+**Security features:**
+- Prevents accidental workflow corruption
+- Validates YAML before merge
+- Read-only permissions
+
+### 16. **test-action.yml** - GitHub Action Validation
+**Triggers:** Push/PR to main (path filtered), manual
+**Timeout:** Per job
+**Concurrency:** Cancellable per ref
+
+**What it does:**
+- Tests PyGuard GitHub Action across platforms (Ubuntu, macOS, Windows)
+- Validates action with different input combinations
+- Tests SARIF generation and upload
+- Verifies action outputs
+- Tests vulnerability detection capabilities
+
+**Platform matrix:**
+- Operating systems: ubuntu-latest, macos-latest, windows-latest
+- Python versions: 3.11, 3.12, 3.13
+
+**Optimizations:**
+- Comprehensive test coverage of action functionality
+- Cross-platform validation ensures marketplace readiness
+- Tests fail-on-issues, security-only, and other modes
 
 ## 🎯 Design Principles
 
@@ -297,14 +367,19 @@ This directory contains the CI/CD workflows for PyGuard. All workflows follow se
 | stale.yml ✨ | 1 | 10 min | Daily, Manual | ❌ No cancel | N/A |
 | benchmarks.yml | 1 | 30 min | Weekly, Manual | ❌ No cancel | N/A |
 | release.yml | 1 | 30 min | Tags (v*.*.*) | ❌ No cancel | N/A |
+| comprehensive-tests.yml | 3 | 30 min | Push, PR (main/develop), Manual | ✅ Cancel | ✅ Code/tests |
+| docs-ci.yml | 4 | 10 min | Push, PR (main) | ✅ Cancel | N/A |
+| path-guard.yml | 1 | 5 min | Push, PR (main) | ❌ No cancel | N/A |
+| test-action.yml | 11 | Per-job | Push, PR (main), Manual | ✅ Cancel | ✅ Action/code |
 
-**Total:** 16 jobs across 12 workflows (was 13 jobs across 9 workflows in v1.0)
+**Total:** 35 jobs across 16 workflows (was 13 jobs across 9 workflows in v1.0)
 
-**Changes in v2.0:**
-- ✨ Added 4 new workflows (dependency-review, scorecard, pr-labeler, stale)
+**Changes in v2.0+:**
+- ✨ Added 8 new workflows (dependency-review, scorecard, pr-labeler, stale, comprehensive-tests, docs-ci, path-guard, test-action)
 - ❌ Removed 1 duplicate (pyguard-security-scan, consolidated into lint.yml)
-- 🎯 Added path filtering to 5 workflows (40% of workflows)
+- 🎯 Added path filtering to 8 workflows (50% of workflows)
 - 📅 Added scheduling to lint.yml for daily scans
+- 🧪 Added comprehensive test suite and GitHub Action validation
 
 ### Performance Metrics (v2.0)
 - **PR validation time:** ~3-8 minutes (25% faster with path filtering)
