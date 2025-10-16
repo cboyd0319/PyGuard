@@ -159,6 +159,10 @@ runs:
         # Run PyGuard and capture exit code
         echo "::group::Running PyGuard"
         echo "Command: pyguard ${ARGS[*]}"
+        echo "Number of args: ${#ARGS[@]}"
+        for i in "${!ARGS[@]}"; do
+          echo "  ARG[$i]: ${ARGS[$i]}"
+        done
         set +e  # Don't exit on error
         pyguard "${ARGS[@]}"
         EXIT_CODE=$?
