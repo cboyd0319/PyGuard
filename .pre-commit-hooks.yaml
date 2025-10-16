@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/cboyd0319/PyGuard
-    rev: v0.1.0
+    rev: v0.3.0
     hooks:
       - id: pyguard
         name: PyGuard Security & Quality Analysis
