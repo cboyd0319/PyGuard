@@ -3,8 +3,16 @@ name: CodeQL Security Analysis
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'config/**'
+      - '.github/workflows/codeql.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'config/**'
+      - '.github/workflows/codeql.yml'
   schedule:
     - cron: '0 0 * * 1'  # Weekly on Monday at 00:00 UTC
   workflow_dispatch:  # Allow manual trigger

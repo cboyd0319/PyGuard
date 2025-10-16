@@ -3,8 +3,26 @@ name: Tests
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'pytest.ini'
+      - 'tox.ini'
+      - '.github/workflows/test.yml'
+      - '.github/actions/setup-python/**'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'pyguard/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'pytest.ini'
+      - 'tox.ini'
+      - '.github/workflows/test.yml'
+      - '.github/actions/setup-python/**'
 
 permissions:
   contents: read
