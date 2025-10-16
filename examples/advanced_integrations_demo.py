@@ -24,7 +24,7 @@ def demo_ci_integration():
 
     # List supported platforms
     platforms = generator.list_supported_platforms()
-    print(f"\n✓ Supported CI/CD platforms: {', '.join(platforms)}")
+    print(f"\n[OK] Supported CI/CD platforms: {', '.join(platforms)}")
 
     # Generate GitHub Actions config
     print("\n📝 Generating GitHub Actions workflow...")
@@ -79,15 +79,15 @@ def process_data(items):
     print("\n🔍 Analyzing code for performance issues...")
     issues = profiler.analyze_code(code)
 
-    print(f"\n✓ Found {len(issues)} performance issues:")
+    print(f"\n[OK] Found {len(issues)} performance issues:")
     for i, issue in enumerate(issues, 1):
         print(f"\n   {i}. {issue.severity}: {issue.category}")
         print(f"      Line {issue.line_number}: {issue.message}")
         print(f"      💡 {issue.suggestion}")
-        print(f"      📊 {issue.estimated_impact}")
+        print(f"       {issue.estimated_impact}")
 
     # Show optimization suggestions
-    print("\n📚 Optimization suggestions:")
+    print("\n Optimization suggestions:")
     suggester = PerformanceOptimizationSuggester()
     patterns = suggester.list_patterns()
 
@@ -120,7 +120,7 @@ def demo_dependency_analyzer():
 
     # Get statistics
     stats = analyzer.get_dependency_stats()
-    print(f"\n✓ Dependency statistics:")
+    print(f"\n[OK] Dependency statistics:")
     print(f"   Total modules: {stats['total_modules']}")
     print(f"   Total dependencies: {stats['total_dependencies']}")
     print(f"   Average dependencies per module: {stats['average_dependencies_per_module']}")
@@ -130,11 +130,11 @@ def demo_dependency_analyzer():
     print("\n🔍 Checking for circular dependencies...")
     cycles = analyzer.find_circular_dependencies()
     if cycles:
-        print(f"   ⚠️ Found {len(cycles)} circular dependencies!")
+        print(f"   [WARN] Found {len(cycles)} circular dependencies!")
         for cycle in cycles:
             print(f"      {' → '.join(cycle)}")
     else:
-        print("   ✓ No circular dependencies found")
+        print("   [OK] No circular dependencies found")
 
     # Find complex modules
     print("\n🔍 Finding complex modules (>2 dependencies)...")
@@ -145,7 +145,7 @@ def demo_dependency_analyzer():
             print(f"      {mod}: {count} dependencies")
 
     # Generate Mermaid diagram
-    print("\n📊 Generating Mermaid diagram...")
+    print("\n Generating Mermaid diagram...")
     diagram = analyzer.generate_mermaid_diagram()
     lines = diagram.split("\n")
     print(f"   Generated diagram with {len(lines)} nodes/edges")
@@ -189,7 +189,7 @@ def demo_custom_rules():
 
     # List rules
     rules = engine.list_rules()
-    print(f"\n✓ Added {len(rules)} custom rules:")
+    print(f"\n[OK] Added {len(rules)} custom rules:")
     for rule in rules:
         print(f"   {rule.rule_id}: {rule.name} ({rule.severity})")
 
@@ -204,7 +204,7 @@ def start_server():
 """
 
     violations = engine.check_code(code)
-    print(f"\n✓ Found {len(violations)} violations:")
+    print(f"\n[OK] Found {len(violations)} violations:")
     for v in violations:
         print(f"\n   {v.severity}: {v.rule_name}")
         print(f"   Line {v.line_number}: {v.message}")
@@ -254,13 +254,13 @@ def complex_function(arg1, arg2, arg3, arg4, arg5, arg6):
     violations = engine.check_code(code)
 
     if violations:
-        print(f"\n✓ Found {len(violations)} violations:")
+        print(f"\n[OK] Found {len(violations)} violations:")
         for v in violations:
             print(f"\n   {v.severity}: {v.rule_name}")
             print(f"   Line {v.line_number}: {v.message}")
             print(f"   💡 {v.suggestion}")
     else:
-        print("\n✓ No violations found")
+        print("\n[OK] No violations found")
 
 
 def main():
@@ -285,12 +285,12 @@ def main():
         print("DEMO COMPLETE!")
         print("=" * 60)
         print("\n✨ All features demonstrated successfully!")
-        print("\n📚 Learn more:")
+        print("\n Learn more:")
         print("   docs/guides/advanced-integrations.md")
         print("   docs/reference/capabilities-reference.md")
 
     except Exception as e:
-        print(f"\n❌ Error during demo: {e}")
+        print(f"\n[X] Error during demo: {e}")
         import traceback
 
         traceback.print_exc()

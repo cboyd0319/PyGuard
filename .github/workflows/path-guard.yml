@@ -40,9 +40,9 @@ jobs:
           changed=$(git diff --name-only "$base"... || true)
           md_outside=$(echo "$changed" | grep -E '\.md$' | grep -vE '^(docs/|README\.md$|CODE_OF_CONDUCT\.md$|CONTRIBUTING\.md$|SECURITY\.md$)' || true)
           if [ -n "$md_outside" ]; then
-            echo "❌ Markdown files outside docs/:"; echo "$md_outside"; exit 1
+            echo "[X] Markdown files outside docs/:"; echo "$md_outside"; exit 1
           fi
-          echo "✅ No misplaced Markdown files"
+          echo "[OK] No misplaced Markdown files"
 
       - name: Add guard summary
         if: always()
@@ -52,10 +52,10 @@ jobs:
             echo "## 🛡️ Path Guard Validation"
             echo ""
             if [ "${{ job.status }}" = "success" ]; then
-              echo "✅ All files are correctly organized"
+              echo "[OK] All files are correctly organized"
               echo ""
-              echo "- Markdown files: ✓ docs/ or root README.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md"
+              echo "- Markdown files: [OK] docs/ or root README.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md"
             else
-              echo "❌ File organization violations detected"
+              echo "[X] File organization violations detected"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

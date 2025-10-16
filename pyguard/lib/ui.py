@@ -91,13 +91,13 @@ class EnhancedConsole:
         # Replace common emoji with text equivalents for Windows
         replacements = {
             "🛡️": "[Shield]",
-            "🚀": "[Start]",
+            "": "[Start]",
             "✨": "*",
             "🎉": "!",
             "⚡": "[Fast]",
-            "✅": "[OK]",
-            "❌": "[X]",
-            "⚠️": "[!]",
+            "[OK]": "[OK]",
+            "[X]": "[X]",
+            "[WARN]": "[!]",
             "🔴": "[!]",
             "🟡": "[i]",
         }
@@ -135,7 +135,7 @@ class EnhancedConsole:
     def print_welcome(self, files_count: int):
         """Print welcome message."""
         ready_text = self._safe_text(f"[bold green]✨ Ready to analyze {files_count} Python files![/bold green]\n\n")
-        title_text = self._safe_text("[bold cyan]🚀 Getting Started[/bold cyan]")
+        title_text = self._safe_text("[bold cyan] Getting Started[/bold cyan]")
         
         panel = Panel(
             ready_text +
@@ -171,7 +171,7 @@ class EnhancedConsole:
     def print_summary_table(self, metrics: Dict[str, Any]):
         """Print beautiful summary table."""
         table = Table(
-            title="[bold cyan]📊 Analysis Summary[/bold cyan]",
+            title="[bold cyan] Analysis Summary[/bold cyan]",
             box=box.ROUNDED,
             show_header=True,
             header_style="bold magenta",
@@ -223,7 +223,7 @@ class EnhancedConsole:
         )
         table.add_row(
             "",
-            "✅ Fixes applied",
+            "[OK] Fixes applied",
             str(metrics.get("fixes_applied", 0)),
             style="green bold",
         )
@@ -317,7 +317,7 @@ class EnhancedConsole:
                 f"Great job taking the time to improve your code quality![/dim]"
             )
             border_style = "green"
-            title = "[bold green]✅ Analysis Complete[/bold green]"
+            title = "[bold green][OK] Analysis Complete[/bold green]"
         else:
             message = (
                 "[bold green]🎉 Perfect! Your code is already clean![/bold green]\n\n"
@@ -335,15 +335,15 @@ class EnhancedConsole:
     def print_next_steps(self, report_path: Optional[Path] = None):
         """Print helpful next steps."""
         steps = [
-            "✅ Review the changes PyGuard made to your files",
-            "✅ Test your code to ensure everything works correctly",
-            "✅ Commit your improved code to version control",
+            "[OK] Review the changes PyGuard made to your files",
+            "[OK] Test your code to ensure everything works correctly",
+            "[OK] Commit your improved code to version control",
         ]
 
         if report_path:
-            steps.append(f"✅ Open the HTML report: [bold cyan]{report_path}[/bold cyan]")
+            steps.append(f"[OK] Open the HTML report: [bold cyan]{report_path}[/bold cyan]")
 
-        steps.append("✅ Run PyGuard regularly to keep your code quality high")
+        steps.append("[OK] Run PyGuard regularly to keep your code quality high")
 
         tree = Tree("[bold cyan]📋 What's Next?[/bold cyan]")
         for step in steps:
@@ -368,7 +368,7 @@ class EnhancedConsole:
 
     def print_error(self, error: str, suggestion: Optional[str] = None):
         """Print beginner-friendly error message."""
-        message = f"[bold red]❌ Oops! Something went wrong:[/bold red]\n\n{error}"
+        message = f"[bold red][X] Oops! Something went wrong:[/bold red]\n\n{error}"
 
         if suggestion:
             message += f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}"
@@ -424,7 +424,7 @@ class ModernHTMLReporter:
         # Status message
         if total_issues == 0:
             status_class = "success"
-            status_icon = "✅"
+            status_icon = "[OK]"
             status_text = "Perfect! No issues found"
         elif high_issues > 0:
             status_class = "critical"
@@ -432,7 +432,7 @@ class ModernHTMLReporter:
             status_text = f"{high_issues} critical issues require immediate attention"
         else:
             status_class = "warning"
-            status_icon = "⚠️"
+            status_icon = "[WARN]"
             status_text = f"{total_issues} issues found - review and fix when possible"
 
         # Generate issue rows HTML with proper accessibility
@@ -498,19 +498,19 @@ class ModernHTMLReporter:
             --primary-darker: #4c51bf;
             
             /* Semantic Colors - WCAG 2.2 AA Compliant */
-            --success: #38a169;        /* 5.1:1 contrast ratio ✓ */
+            --success: #38a169;        /* 5.1:1 contrast ratio [OK] */
             --success-bg: #c6f6d5;
             --success-border: #2f855a;
             
-            --warning: #d69e2e;        /* 5.2:1 contrast ratio ✓ */
+            --warning: #d69e2e;        /* 5.2:1 contrast ratio [OK] */
             --warning-bg: #feebc8;
             --warning-border: #b7791f;
             
-            --danger: #e53e3e;         /* 5.3:1 contrast ratio ✓ */
+            --danger: #e53e3e;         /* 5.3:1 contrast ratio [OK] */
             --danger-bg: #fed7d7;
             --danger-border: #c53030;
             
-            --info: #3182ce;           /* 5.4:1 contrast ratio ✓ */
+            --info: #3182ce;           /* 5.4:1 contrast ratio [OK] */
             --info-bg: #bee3f8;
             --info-border: #2c5282;
             

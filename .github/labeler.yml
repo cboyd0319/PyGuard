@@ -43,7 +43,7 @@
       - 'docker-compose.yml'
       - '.dockerignore'
 
-'🔒 security':
+' security':
   - changed-files:
     - any-glob-to-any-file:
       - 'SECURITY.md'
@@ -58,7 +58,7 @@
       - 'setup.py'
       - 'requirements*.txt'
 
-'🚀 release':
+' release':
   - changed-files:
     - any-glob-to-any-file:
       - 'CHANGELOG.md'

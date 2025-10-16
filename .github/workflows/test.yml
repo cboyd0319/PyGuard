@@ -88,8 +88,8 @@ jobs:
           echo "## Test Results: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
           echo ""
           if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ All tests passed"
+            echo "[PASS] All tests passed"
           else
-            echo "❌ Tests failed"
+            echo "[FAIL] Tests failed"
           fi
         } >> "${GITHUB_STEP_SUMMARY}"

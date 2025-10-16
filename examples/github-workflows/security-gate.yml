@@ -43,5 +43,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '⚠️ **Security Gate Failed**\n\nHigh or critical security issues were detected. Please review the security findings in the workflow logs and fix the issues before merging.'
+            body: '[WARN] **Security Gate Failed**\n\nHigh or critical security issues were detected. Please review the security findings in the workflow logs and fix the issues before merging.'
           })

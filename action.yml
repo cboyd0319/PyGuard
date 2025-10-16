@@ -185,8 +185,8 @@ runs:
 
         # Create summary
         echo "::group::Scan Summary"
-        echo "✅ Scan completed"
-        echo "📊 Issues found: $ISSUES"
+        echo "[OK] Scan completed"
+        echo " Issues found: $ISSUES"
         echo "📄 SARIF report: ${{ inputs.sarif-file }}"
 
         if [ "${{ inputs.upload-sarif }}" == "true" ]; then

@@ -191,7 +191,7 @@ class PyGuardCLI:
             progress = self.ui.create_progress_bar()
             with progress:
                 # Security fixes
-                task = progress.add_task("🔒 Security Analysis...", total=len(files))
+                task = progress.add_task(" Security Analysis...", total=len(files))
                 results["security"] = self.run_security_fixes(files, create_backup)
                 progress.update(task, completed=len(files))
 
@@ -304,7 +304,7 @@ class PyGuardCLI:
             )
             if self.html_reporter.save_report(html_content, html_path):
                 self.ui.console.print(
-                    f"[bold green]✅ HTML report saved:[/bold green] [cyan]{html_path}[/cyan]"
+                    f"[bold green][OK] HTML report saved:[/bold green] [cyan]{html_path}[/cyan]"
                 )
                 self.ui.console.print()
 
@@ -320,7 +320,7 @@ class PyGuardCLI:
             )
             if self.sarif_reporter.save_report(sarif_report, sarif_path):
                 self.ui.console.print(
-                    f"[bold green]✅ SARIF report saved:[/bold green] [cyan]{sarif_path}[/cyan]"
+                    f"[bold green][OK] SARIF report saved:[/bold green] [cyan]{sarif_path}[/cyan]"
                 )
                 self.ui.console.print("   Use this report for GitHub Code Scanning integration")
                 self.ui.console.print()
@@ -487,7 +487,7 @@ def main():
             else:
                 cli.run_full_analysis([file_path], create_backup, fix)
 
-            console.print("[green]✓ Analysis complete[/green]")
+            console.print("[green][OK] Analysis complete[/green]")
 
         # Convert paths back to Path objects for watch mode
         watch_paths = [Path(p) for p in args.paths]

@@ -107,15 +107,15 @@ class ConsoleReporter:
         print()
         if metrics.total_issues == 0:
             print(
-                f"{self.COLORS['GREEN']}{self.COLORS['BOLD']}✅ No issues found! Code is clean.{self.COLORS['RESET']}"
+                f"{self.COLORS['GREEN']}{self.COLORS['BOLD']}[OK] No issues found! Code is clean.{self.COLORS['RESET']}"
             )
         elif metrics.fixes_applied > 0:
             print(
-                f"{self.COLORS['YELLOW']}{self.COLORS['BOLD']}⚠️  Issues found and {metrics.fixes_applied} fixes applied.{self.COLORS['RESET']}"
+                f"{self.COLORS['YELLOW']}{self.COLORS['BOLD']}[WARN]  Issues found and {metrics.fixes_applied} fixes applied.{self.COLORS['RESET']}"
             )
         else:
             print(
-                f"{self.COLORS['RED']}{self.COLORS['BOLD']}❌ Issues found but not fixed. Run with --fix to apply fixes.{self.COLORS['RESET']}"
+                f"{self.COLORS['RED']}{self.COLORS['BOLD']}[X] Issues found but not fixed. Run with --fix to apply fixes.{self.COLORS['RESET']}"
             )
 
         print()
@@ -360,7 +360,7 @@ class HTMLReporter:
     </div>
     
     <div class="status {'passed' if metrics.total_issues == 0 else 'failed'}">
-        {'✅ No issues found!' if metrics.total_issues == 0 else f'⚠️ {metrics.total_issues} issues detected'}
+        {'[OK] No issues found!' if metrics.total_issues == 0 else f'[WARN] {metrics.total_issues} issues detected'}
     </div>
     
     <div class="issues-table">

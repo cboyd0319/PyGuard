@@ -56,7 +56,7 @@ def main():
     )
 
     logger.info("Analysis complete!")
-    print("\n✅ PyGuard analysis completed successfully!")
+    print("\n[OK] PyGuard analysis completed successfully!")
     print(f"   Security fixes: {len(security_result)}")
     print(f"   Best practice fixes: {len(bp_result)}")
     print(f"   Formatting: {'applied' if format_result['success'] else 'skipped'}")

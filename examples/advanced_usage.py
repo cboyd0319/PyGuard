@@ -63,7 +63,7 @@ def public_function(a, b, c, d, e, f):
     security_issues, quality_issues = analyzer.analyze_code(sample_code)
 
     # Display security issues
-    print(f"\n🔒 Found {len(security_issues)} security issues:")
+    print(f"\n Found {len(security_issues)} security issues:")
     for issue in security_issues:
         print(f"\n  [{issue.severity}] {issue.category}")
         print(f"  Line {issue.line_number}: {issue.message}")
@@ -82,9 +82,9 @@ def public_function(a, b, c, d, e, f):
 
     # Get complexity report
     complexity = analyzer.get_complexity_report(sample_code)
-    print(f"\n🎯 Complexity Report:")
+    print(f"\n Complexity Report:")
     for func_name, score in complexity.items():
-        status = "⚠️ HIGH" if score > 10 else "✓ OK"
+        status = "[WARN] HIGH" if score > 10 else "[OK] OK"
         print(f"  {func_name}: {score} {status}")
 
 
@@ -107,7 +107,7 @@ def example_with_caching():
     analyzer = ASTAnalyzer()
 
     # First analysis (no cache)
-    print("\n📊 First analysis (no cache):")
+    print("\n First analysis (no cache):")
     start = time.time()
 
     if not cache.is_cached(test_file):
@@ -120,7 +120,7 @@ def example_with_caching():
         print(f"  Analyzed and cached in {(time.time() - start)*1000:.2f}ms")
 
     # Second analysis (with cache)
-    print("\n📊 Second analysis (with cache):")
+    print("\n Second analysis (with cache):")
     start = time.time()
 
     if cache.is_cached(test_file):
@@ -162,7 +162,7 @@ def example_with_correlation():
 
     # Get metrics
     metrics = logger.get_metrics()
-    print(f"\n📊 Metrics:")
+    print(f"\n Metrics:")
     print(f"  Files processed: {metrics['files_processed']}")
     print(f"  Issues found: {metrics['issues_found']}")
     print(f"  Fixes applied: {metrics['fixes_applied']}")
@@ -273,10 +273,10 @@ def complex_logic(a, b, c, d, e, f):
 
     # Check cache
     if cache.is_cached(test_file):
-        print("✓ Using cached results")
+        print("[OK] Using cached results")
         results = cache.get(test_file)
     else:
-        print("📊 Analyzing file...")
+        print(" Analyzing file...")
 
         # Scan for issues
         security_issues = security_fixer.scan_file_for_issues(test_file)
@@ -317,7 +317,7 @@ def complex_logic(a, b, c, d, e, f):
     import shutil
 
     shutil.rmtree(temp_dir)
-    print("\n✅ Workflow complete!")
+    print("\n[OK] Workflow complete!")
 
 
 if __name__ == "__main__":

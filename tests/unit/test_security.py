@@ -733,7 +733,7 @@ class TestSecurityFixerProperties:
             "   \n\n\t  ",  # Whitespace only
             "a",  # Single char
             "a" * 10000,  # Very long
-            "🔒",  # Emoji
+            "",  # Emoji
             "Hello 世界",  # Unicode
         ])
         

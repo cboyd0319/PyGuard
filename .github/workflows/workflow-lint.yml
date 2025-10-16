@@ -55,11 +55,11 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## ✅ Workflow Lint (actionlint) Complete"
+            echo "## [OK] Workflow Lint (actionlint) Complete"
             echo ""
             if [ "${{ job.status }}" = "success" ]; then
               echo "All GitHub Actions workflows are valid and follow best practices."
             else
-              echo "❌ Workflow validation failed. Review actionlint output above."
+              echo "[X] Workflow validation failed. Review actionlint output above."
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

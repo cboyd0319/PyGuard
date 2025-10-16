@@ -162,7 +162,7 @@ class TestSecurityIntelligence:
         # SQL Injection checklist
         checklist = intel.get_mitigation_checklist("CWE-89")
         assert len(checklist) > 0
-        assert all(item.startswith("✓") for item in checklist)
+        assert all(item.startswith("[OK]") for item in checklist)
         assert any("parameterized" in item.lower() for item in checklist)
 
         # Unknown CWE returns default

@@ -604,13 +604,13 @@ class TestWindowsCompatibility:
         console = ui.EnhancedConsole()
         
         # Test emoji replacement
-        text_with_emoji = "🛡️ Security 🚀 Fast ✨ Clean ✅ OK ❌ Error ⚠️ Warning"
+        text_with_emoji = "🛡️ Security  Fast ✨ Clean [OK] OK [X] Error [WARN] Warning"
         safe_text = console._safe_text(text_with_emoji)
         
         # Verify emoji are replaced on Windows
         assert "🛡️" not in safe_text
         assert "[Shield]" in safe_text
-        assert "🚀" not in safe_text
+        assert "" not in safe_text
         assert "[Start]" in safe_text
 
     @patch('sys.platform', 'linux')
@@ -623,7 +623,7 @@ class TestWindowsCompatibility:
         console = ui.EnhancedConsole()
         
         # Test that emoji are kept on Linux
-        text_with_emoji = "🛡️ Security 🚀 Fast ✨ Clean"
+        text_with_emoji = "🛡️ Security  Fast ✨ Clean"
         safe_text = console._safe_text(text_with_emoji)
         
         # Verify emoji are kept on non-Windows

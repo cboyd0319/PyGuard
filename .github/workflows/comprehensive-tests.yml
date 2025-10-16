@@ -103,9 +103,9 @@ jobs:
             echo "### Python ${{ matrix.python-version }}"
             echo ""
             if [ "${{ job.status }}" = "success" ]; then
-              echo "✅ All tests passed with adequate coverage"
+              echo "[OK] All tests passed with adequate coverage"
             else
-              echo "❌ Tests failed or coverage below threshold"
+              echo "[X] Tests failed or coverage below threshold"
             fi
             echo ""
             echo "### Coverage Summary"
@@ -167,7 +167,7 @@ jobs:
             echo "## Test Quality Report"
             echo ""
             echo "### Test Isolation Check"
-            echo "✅ Tests passed with multiple random seeds"
+            echo "[OK] Tests passed with multiple random seeds"
             echo ""
             echo "### Performance"
             echo "Top 10 slowest tests:"
@@ -218,9 +218,9 @@ jobs:
             echo "Property-based tests verify code invariants across many generated inputs"
             echo ""
             if [ "${{ job.status }}" = "success" ]; then
-              echo "✅ All property tests passed"
+              echo "[OK] All property tests passed"
             else
-              echo "❌ Property test failures detected"
+              echo "[X] Property test failures detected"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -294,19 +294,19 @@ jobs:
             echo "- **Current Coverage**: 88% overall"
             echo ""
             echo "## Test Categories"
-            echo "- ✅ Unit Tests: Isolated component testing"
-            echo "- ✅ Integration Tests: Multi-component workflows"
-            echo "- ✅ Property Tests: Invariant verification"
-            echo "- ✅ Quality Gates: Isolation and performance"
+            echo "- [OK] Unit Tests: Isolated component testing"
+            echo "- [OK] Integration Tests: Multi-component workflows"
+            echo "- [OK] Property Tests: Invariant verification"
+            echo "- [OK] Quality Gates: Isolation and performance"
             echo ""
             if [ "${{ needs.comprehensive-test.result }}" = "success" ] && \
                [ "${{ needs.test-quality-gates.result }}" = "success" ] && \
                [ "${{ needs.property-based-tests.result }}" = "success" ]; then
-              echo "## ✅ All Tests Passed!"
+              echo "## [OK] All Tests Passed!"
               echo ""
               echo "The test suite is comprehensive and all tests are passing."
             else
-              echo "## ⚠️ Some Tests Failed"
+              echo "## [WARN] Some Tests Failed"
               echo ""
               echo "Please review the failed jobs above."
             fi

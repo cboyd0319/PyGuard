@@ -79,7 +79,7 @@ jobs:
       shell: bash
       run: |
         {
-          echo "## 📊 Coverage Report"
+          echo "##  Coverage Report"
           echo ""
           echo '```'
           tail -20 coverage-output.txt || echo "No coverage data available"

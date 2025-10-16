@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh pr review --approve "${PR_URL}" --body "✅ Auto-approved: Safe ${{ steps.metadata.outputs.update-type }} update"
+          gh pr review --approve "${PR_URL}" --body "[OK] Auto-approved: Safe ${{ steps.metadata.outputs.update-type }} update"
           gh pr merge --auto --squash "${PR_URL}"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh pr comment "${PR_URL}" --body "⚠️ This is a **major version update** and requires manual review before merging."
+          gh pr comment "${PR_URL}" --body "[WARN] This is a **major version update** and requires manual review before merging."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,14 +69,14 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## 🤖 Dependabot Auto-Merge"
+            echo "##  Dependabot Auto-Merge"
             echo ""
             echo "- **Update Type:** ${{ steps.metadata.outputs.update-type }}"
             echo "- **Package:** ${{ steps.metadata.outputs.dependency-names }}"
             echo ""
             if [[ "${{ steps.metadata.outputs.update-type }}" == "version-update:semver-major" ]]; then
-              echo "⚠️ **Major update** - requires manual review"
+              echo "[WARN] **Major update** - requires manual review"
             else
-              echo "✅ **Auto-merge enabled** for patch/minor update"
+              echo "[OK] **Auto-merge enabled** for patch/minor update"
             fi
           } >> "${GITHUB_STEP_SUMMARY}"

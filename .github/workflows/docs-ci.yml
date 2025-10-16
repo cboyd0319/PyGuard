@@ -96,13 +96,13 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## 📚 Documentation CI Complete"
+            echo "##  Documentation CI Complete"
             echo ""
             echo "Checks performed:"
-            echo "- ✓ Markdown linting (markdownlint)"
-            echo "- ✓ Prose quality (Vale)"
-            echo "- ✓ Link validation (lychee)"
-            echo "- ✓ Python script validation"
+            echo "- [OK] Markdown linting (markdownlint)"
+            echo "- [OK] Prose quality (Vale)"
+            echo "- [OK] Link validation (lychee)"
+            echo "- [OK] Python script validation"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   validate-python-scripts:
@@ -141,7 +141,7 @@ jobs:
               echo "Checking: $script"
               if python -m py_compile "$script" 2>/dev/null; then
                 ((SCRIPTS_VALID++))
-                echo "  ✓ Valid syntax"
+                echo "  [OK] Valid syntax"
               else
                 ((SCRIPTS_INVALID++))
                 echo "  ✗ Invalid syntax"
@@ -151,17 +151,17 @@ jobs:
           done || true
           
           echo ""
-          echo "📊 Validation Summary:"
+          echo " Validation Summary:"
           echo "  Total scripts: $SCRIPTS_FOUND"
           echo "  Valid: $SCRIPTS_VALID"
           echo "  Invalid: $SCRIPTS_INVALID"
           
           if [ "$SCRIPTS_INVALID" -gt 0 ]; then
-            echo "❌ Some scripts have syntax errors"
+            echo "[X] Some scripts have syntax errors"
             exit 1
           fi
           
-          echo "✓ All Python scripts have valid syntax"
+          echo "[OK] All Python scripts have valid syntax"
 
       - name: Validate PyGuard module syntax
         shell: bash
@@ -172,11 +172,11 @@ jobs:
           
           # Compile all Python files in pyguard directory
           python -m compileall -q pyguard/ || {
-            echo "❌ PyGuard module has syntax errors"
+            echo "[X] PyGuard module has syntax errors"
             exit 1
           }
           
-          echo "✓ All PyGuard module files have valid syntax"
+          echo "[OK] All PyGuard module files have valid syntax"
 
       - name: Check for common issues in example code
         shell: bash
@@ -187,13 +187,13 @@ jobs:
           
           # Check for hardcoded paths
           if grep -r "/home/user" examples/ 2>/dev/null; then
-            echo "⚠️  Warning: Hardcoded paths found in examples"
+            echo "[WARN]  Warning: Hardcoded paths found in examples"
           fi
           
           # Check for TODO/FIXME in examples
           if grep -r "TODO\|FIXME" examples/ 2>/dev/null; then
-            echo "⚠️  Warning: Unfinished examples found (TODO/FIXME)"
+            echo "[WARN]  Warning: Unfinished examples found (TODO/FIXME)"
           fi
           
-          echo "✓ Example code quality checks complete"
+          echo "[OK] Example code quality checks complete"
 

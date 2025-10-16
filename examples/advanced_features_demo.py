@@ -36,7 +36,7 @@ def demo_notebook_analysis():
     notebook_path = Path(__file__).parent / "notebook_security_demo.ipynb"
 
     if not notebook_path.exists():
-        print(f"⚠️  Demo notebook not found: {notebook_path}")
+        print(f"[WARN]  Demo notebook not found: {notebook_path}")
         return
 
     print(f"Analyzing: {notebook_path.name}\n")
@@ -45,7 +45,7 @@ def demo_notebook_analysis():
     issues = scan_notebook(str(notebook_path))
 
     if not issues:
-        print("✅ No security issues found!")
+        print("[OK] No security issues found!")
         return
 
     print(f"Found {len(issues)} security issues:\n")
@@ -81,7 +81,7 @@ def demo_notebook_analysis():
 
 def demo_ai_explanations():
     """Demonstrate AI-powered vulnerability explanations."""
-    print_section("🤖 AI-Powered Vulnerability Explanations")
+    print_section(" AI-Powered Vulnerability Explanations")
 
     explainer = AIExplainer()
 
@@ -91,11 +91,11 @@ def demo_ai_explanations():
     explanation = explainer.explain_vulnerability("SQL_INJECTION")
 
     if explanation:
-        print(f"📚 {explanation.vulnerability_name} ({explanation.severity})")
+        print(f" {explanation.vulnerability_name} ({explanation.severity})")
         print(f"\n🔍 What is it?")
         print(f"   {explanation.description[:150]}...")
 
-        print(f"\n⚠️  Why is it dangerous?")
+        print(f"\n[WARN]  Why is it dangerous?")
         print(f"   {explanation.why_dangerous[:150]}...")
 
         print(f"\n🛠️  How to fix:")
@@ -106,7 +106,7 @@ def demo_ai_explanations():
         for line in explanation.example_vulnerable.split("\n")[:3]:
             print(f"   {line}")
 
-        print(f"\n✅ Secure Code:")
+        print(f"\n[OK] Secure Code:")
         for line in explanation.example_secure.split("\n")[:3]:
             print(f"   {line}")
 
@@ -126,7 +126,7 @@ def demo_ai_explanations():
     print(f"🔴 Original Code:")
     print(f"   {original}")
 
-    print(f"\n✅ Fixed Code:")
+    print(f"\n[OK] Fixed Code:")
     for line in fixed.split("\n"):
         print(f"   {line}")
 
@@ -153,11 +153,11 @@ def demo_educational_mode():
     # Generate learning content
     content = explainer.generate_learning_content("COMMAND_INJECTION")
 
-    print(f"📚 Learning Module: {content['title']}\n")
+    print(f" Learning Module: {content['title']}\n")
 
-    print(f"📊 Risk Level: {content['risk_level']}\n")
+    print(f" Risk Level: {content['risk_level']}\n")
 
-    print(f"🎯 Learning Objectives:")
+    print(f" Learning Objectives:")
     for obj in content["learning_objectives"]:
         print(f"   • {obj}")
 
@@ -165,7 +165,7 @@ def demo_educational_mode():
     for line in content["vulnerable_pattern"].split("\n")[:4]:
         print(f"   {line}")
 
-    print(f"\n✅ Secure Pattern:")
+    print(f"\n[OK] Secure Pattern:")
     for line in content["secure_pattern"].split("\n")[:4]:
         print(f"   {line}")
 
@@ -174,7 +174,7 @@ def demo_educational_mode():
     print(f"   {quiz['question']}\n")
 
     for i, option in enumerate(quiz["options"], 1):
-        marker = "✓" if i - 1 == quiz["correct"] else " "
+        marker = "[OK]" if i - 1 == quiz["correct"] else " "
         print(f"   {marker} {i}. {option}")
 
     print(f"\n💡 Explanation: {quiz['explanation']}")
@@ -189,7 +189,7 @@ def demo_beginner_vs_advanced():
     beginner_exp = explain("CODE_INJECTION", "beginner")
 
     if beginner_exp:
-        print(f"📚 {beginner_exp.vulnerability_name}")
+        print(f" {beginner_exp.vulnerability_name}")
         print(f"\n🔍 Description (Simplified):")
         print(f"   {beginner_exp.description[:150]}...")
 
@@ -203,7 +203,7 @@ def demo_beginner_vs_advanced():
     advanced_exp = explain("CODE_INJECTION", "advanced")
 
     if advanced_exp:
-        print(f"📚 {advanced_exp.vulnerability_name}")
+        print(f" {advanced_exp.vulnerability_name}")
         print(f"\n🔍 How to exploit:")
         print(f"   {advanced_exp.how_to_exploit[:150]}...")
 
@@ -226,7 +226,7 @@ def main():
     demo_beginner_vs_advanced()
 
     # Summary
-    print_section("🎯 Summary: What Makes PyGuard Different")
+    print_section(" Summary: What Makes PyGuard Different")
 
     print("✨ Unique Features:\n")
 
@@ -241,16 +241,16 @@ def main():
     ]
 
     for feature, note in features:
-        print(f"   ✓ {feature}")
+        print(f"   [OK] {feature}")
         print(f"     → {note}\n")
 
-    print("🚀 These features make PyGuard ideal for:")
+    print(" These features make PyGuard ideal for:")
     print("   • Data Scientists using Jupyter notebooks")
     print("   • Development teams wanting educational security tools")
     print("   • Security teams teaching secure coding practices")
     print("   • Organizations with notebook-heavy workflows\n")
 
-    print("📚 Learn more: https://github.com/cboyd0319/PyGuard")
+    print(" Learn more: https://github.com/cboyd0319/PyGuard")
     print()
 
 

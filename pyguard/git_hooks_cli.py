@@ -113,10 +113,10 @@ def main():
         try:
             success = manager.install_hook(args.type, args.force)
             if success:
-                logger.info(f"✅ Successfully installed {args.type} hook", category="GitHooks")
+                logger.info(f"[OK] Successfully installed {args.type} hook", category="GitHooks")
                 sys.exit(0)
             else:
-                logger.error(f"❌ Failed to install {args.type} hook", category="GitHooks")
+                logger.error(f"[X] Failed to install {args.type} hook", category="GitHooks")
                 sys.exit(1)
         except ValueError as e:
             logger.error(str(e), category="GitHooks")
@@ -125,10 +125,10 @@ def main():
     elif args.command == "uninstall":
         success = manager.uninstall_hook(args.type)
         if success:
-            logger.info(f"✅ Successfully uninstalled {args.type} hook", category="GitHooks")
+            logger.info(f"[OK] Successfully uninstalled {args.type} hook", category="GitHooks")
             sys.exit(0)
         else:
-            logger.error(f"❌ Failed to uninstall {args.type} hook", category="GitHooks")
+            logger.error(f"[X] Failed to uninstall {args.type} hook", category="GitHooks")
             sys.exit(1)
 
     elif args.command == "list":
@@ -138,7 +138,7 @@ def main():
         else:
             logger.info(f"Found {len(hooks)} installed hooks:", category="GitHooks")
             for hook in hooks:
-                status = "✓" if hook["pyguard"] else "○"
+                status = "[OK]" if hook["pyguard"] else "○"
                 exec_status = "executable" if hook["executable"] else "not executable"
                 logger.info(
                     f"  {status} {hook['name']} ({exec_status})",
@@ -150,11 +150,11 @@ def main():
     elif args.command == "validate":
         result = manager.validate_hook(args.type)
         if result["valid"]:
-            logger.info(f"✅ {args.type} hook is valid and ready to use", category="GitHooks")
+            logger.info(f"[OK] {args.type} hook is valid and ready to use", category="GitHooks")
             sys.exit(0)
         else:
             logger.error(
-                f"❌ {args.type} hook validation failed",
+                f"[X] {args.type} hook validation failed",
                 category="GitHooks",
                 details={"issues": result["issues"]},
             )
@@ -163,10 +163,10 @@ def main():
     elif args.command == "test":
         success = manager.test_hook(args.type)
         if success:
-            logger.info(f"✅ {args.type} hook test passed", category="GitHooks")
+            logger.info(f"[OK] {args.type} hook test passed", category="GitHooks")
             sys.exit(0)
         else:
-            logger.error(f"❌ {args.type} hook test failed", category="GitHooks")
+            logger.error(f"[X] {args.type} hook test failed", category="GitHooks")
             sys.exit(1)
 
 

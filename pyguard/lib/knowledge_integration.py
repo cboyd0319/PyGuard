@@ -419,29 +419,29 @@ class SecurityIntelligence:
         """Get actionable mitigation checklist for a CWE."""
         checklists = {
             "CWE-89": [
-                "✓ Use parameterized queries or prepared statements",
-                "✓ Use ORM with automatic escaping",
-                "✓ Validate and sanitize all user input",
-                "✓ Use least privilege database accounts",
-                "✓ Enable SQL injection detection in WAF",
+                "[OK] Use parameterized queries or prepared statements",
+                "[OK] Use ORM with automatic escaping",
+                "[OK] Validate and sanitize all user input",
+                "[OK] Use least privilege database accounts",
+                "[OK] Enable SQL injection detection in WAF",
             ],
             "CWE-78": [
-                "✓ Avoid system calls when possible",
-                "✓ Use subprocess with shell=False",
-                "✓ Allowlist permitted commands",
-                "✓ Sanitize all input passed to system calls",
-                "✓ Use language-native APIs instead of shell commands",
+                "[OK] Avoid system calls when possible",
+                "[OK] Use subprocess with shell=False",
+                "[OK] Allowlist permitted commands",
+                "[OK] Sanitize all input passed to system calls",
+                "[OK] Use language-native APIs instead of shell commands",
             ],
             "CWE-502": [
-                "✓ Never deserialize untrusted data",
-                "✓ Use safe serialization formats (JSON, not pickle)",
-                "✓ Implement integrity checks (HMAC)",
-                "✓ Use allowlists for deserialization",
-                "✓ Isolate deserialization in sandboxes",
+                "[OK] Never deserialize untrusted data",
+                "[OK] Use safe serialization formats (JSON, not pickle)",
+                "[OK] Implement integrity checks (HMAC)",
+                "[OK] Use allowlists for deserialization",
+                "[OK] Isolate deserialization in sandboxes",
             ],
         }
         return checklists.get(
-            cwe_id, ["✓ Review security best practices for this vulnerability type"]
+            cwe_id, ["[OK] Review security best practices for this vulnerability type"]
         )
 
 

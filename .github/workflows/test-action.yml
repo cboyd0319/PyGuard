@@ -52,7 +52,7 @@ jobs:
           echo "::error::SARIF report not created"
           exit 1
         fi
-        echo "✅ SARIF report created successfully"
+        echo "[OK] SARIF report created successfully"
 
   test-action-security-only:
     name: Test Security-Only Mode
@@ -179,7 +179,7 @@ jobs:
           exit 1
         fi
         
-        echo "✅ All outputs are valid"
+        echo "[OK] All outputs are valid"
 
   test-action-python-versions:
     name: Test Python Version Matrix
@@ -250,7 +250,7 @@ jobs:
           exit 1
         fi
         
-        echo "✅ Successfully detected vulnerabilities"
+        echo "[OK] Successfully detected vulnerabilities"
 
   test-summary:
     name: Test Summary
@@ -269,14 +269,14 @@ jobs:
     steps:
     - name: Summary
       run: |
-        echo "## ✅ All Action Tests Passed" >> $GITHUB_STEP_SUMMARY
+        echo "## [OK] All Action Tests Passed" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "The PyGuard GitHub Action is working correctly and ready for:" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Basic scanning" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Security-only mode" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Multiple paths and exclusions" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ SARIF upload" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Fail on issues" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Output validation" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Python version compatibility" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Vulnerability detection" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Basic scanning" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Security-only mode" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Multiple paths and exclusions" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] SARIF upload" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Fail on issues" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Output validation" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Python version compatibility" >> $GITHUB_STEP_SUMMARY
+        echo "- [OK] Vulnerability detection" >> $GITHUB_STEP_SUMMARY
