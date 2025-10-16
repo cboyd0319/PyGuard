@@ -1,8 +1,8 @@
 ---
 name: 'PyGuard Security Scanner'
 description: >-
-  Comprehensive Python security and code quality analysis with ML-powered detection,
-  auto-fix capabilities, and SARIF output for GitHub Code Scanning.
+  Comprehensive Python security and code quality analysis with
+  auto-fix capabilities.
 author: 'cboyd0319'
 
 branding:
