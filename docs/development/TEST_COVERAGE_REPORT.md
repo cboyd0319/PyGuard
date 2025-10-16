@@ -163,7 +163,7 @@ This report documents the comprehensive test coverage enhancement effort for PyG
 2. **Mutation Testing**
    - Implement `mutmut` for critical security modules
    - Target 85%+ mutation kill rate for security code
-   - Ensure tests actually verify behavior, not just coverage
+   - Ensure tests actually verify behavior, not coverage
 
 3. **Performance Testing**
    - Add `pytest-benchmark` for performance-critical paths

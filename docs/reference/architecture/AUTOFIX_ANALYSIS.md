@@ -334,7 +334,7 @@ class MissingAutoFixes:
 
 1. **Always Create Backups**
    - Before any code modification
-   - Timestamped for easy identification
+   - Timestamped for straightforward identification
    - Metadata for rollback information
 
 2. **Incremental Approach**

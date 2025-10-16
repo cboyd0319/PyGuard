@@ -1,0 +1,29 @@
+name: Path Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate Markdown file placement
+        run: |
+          set -euo pipefail
+          base="origin/${{ github.base_ref || 'main' }}"
+          git fetch origin "${{ github.base_ref || 'main' }}"
+          changed=$(git diff --name-only "$base"... || true)
+          md_outside=$(echo "$changed" | grep -E '\.md$' | grep -vE '^(docs/|README\.md$)' || true)
+          if [ -n "$md_outside" ]; then
+            echo "❌ Markdown files outside docs/:"; echo "$md_outside"; exit 1
+          fi
+          echo "✅ No misplaced Markdown files"

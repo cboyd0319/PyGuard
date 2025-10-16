@@ -56,7 +56,7 @@
 > - **FOCUS** on areas with TODOs/FIXMEs for quick wins
 >
 > **🔍 KEY FILES TO REVIEW:**
-> 1. `docs/UPDATEv2.md` (this file) - Complete progress tracker
+> 1. `docs/development/UPDATEv2.md` (this file) - Complete progress tracker
 > 2. `.github/copilot-instructions.md` - Coding standards and patterns
 > 3. `pyguard/cli.py` - Main entry point and CLI interface
 > 4. `pyguard/lib/*.py` - 50+ modules with security and quality checks
@@ -237,7 +237,7 @@
 - `reporting.py` (33%): HTMLReporter is 300+ lines of HTML generation, requires browser-based validation
 - **Better ROI:** Focus on integration tests and real-world usage patterns instead
 
-**Why this matters:** Adding MORE detection/fix code without tests just creates technical debt. 
+**Why this matters:** Adding MORE detection/fix code without tests creates technical debt. 
 We need to SOLIDIFY what exists first before adding new capabilities.
 
 ---
@@ -669,7 +669,7 @@ To Create:
 
 ### Related Documentation
 - See `docs/README.md` for complete documentation (architecture, usage, API)
-- See `docs/security-rules.md` for security detection rules reference
+- See `docs/reference/security-rules.md` for security detection rules reference
 
 ### External Resources
 - Ruff rules: https://docs.astral.sh/ruff/rules/
@@ -1331,7 +1331,7 @@ python -m ruff check pyguard/ --fix
 **Fix Safety Levels:**
 - **SAFE**: Always applied, no behavior change (formatting, imports)
 - **UNSAFE**: May change behavior, requires explicit consent (SQL fixes, command fixes)
-- **WARNING_ONLY**: No auto-fix, just suggestions (hardcoded secrets, architecture issues)
+- **WARNING_ONLY**: No auto-fix, suggestions (hardcoded secrets, architecture issues)
 
 **AST Analysis:**
 - PyGuard uses Python's `ast` module for code analysis
@@ -1582,7 +1582,7 @@ Total to v1.0.0: ~15 weeks
 2. **docs/UPDATEv2.md** - Updated with:
    - Better onboarding instructions at the top
    - Instant start checklist for new sessions
-   - Low-coverage module targets clearly listed
+   - Low-coverage module targets listed
    - Session 7 log entry
 
 ### Test Coverage Details
@@ -1697,7 +1697,7 @@ Based on coverage analysis, recommended next targets:
 
 ### Lessons Learned
 - **Strategy**: Targeting modules at 65-70% coverage provides best ROI
-- **Approach**: Focus on uncovered code paths, not just adding tests
+- **Approach**: Focus on uncovered code paths, not adding tests
 - **Impact**: Even modest coverage gains (8-9%) have significant value
 - **Quality**: All new tests are comprehensive and validate real behavior
 

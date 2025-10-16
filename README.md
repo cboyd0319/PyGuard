@@ -210,13 +210,13 @@ jobs:
 - ✅ Security trend tracking
 - ✅ Pull request annotations
 
-**📖 See [GitHub Action Guide](docs/github-action-guide.md) for complete setup instructions and examples**
+**📖 See [GitHub Action Guide](docs/guides/github-action-guide.md) for complete setup instructions and examples**
 
-See [docs/index.md](docs/index.md) for complete documentation hub.
+See [docs/index.md](docs/index.md) for the documentation hub.
 
-**📖 [COMPLETE CAPABILITIES REFERENCE](docs/capabilities-reference.md) — Detailed catalog of ALL 55+ security checks, 150+ code quality rules, auto-fixes, and features**
+**📖 [COMPLETE CAPABILITIES REFERENCE](docs/reference/capabilities-reference.md) — Detailed catalog of features**
 
-**🎯 [GITHUB ACTION GUIDE](docs/github-action-guide.md) — Complete guide for using PyGuard in GitHub Actions workflows with examples and best practices**
+**🎯 [GITHUB ACTION GUIDE](docs/guides/github-action-guide.md) — Using PyGuard in GitHub Actions with examples and best practices**
 
 ## Advanced Features (NEW!)
 
@@ -315,7 +315,7 @@ PyGuard now includes powerful development workflow integrations:
 
 - **AST-based analysis** — 10-100x faster than regex, eliminates false positives from comments/strings
 - **ML-powered detection** — pattern recognition, anomaly detection, risk scoring
-- **Context-aware** — understands Python semantics, not just text patterns
+- **Context-aware** — understands Python semantics, not text patterns
 - **Supply chain security** — dependency scanning, SBOM generation (CycloneDX/SPDX), license detection
 
 ### Production Quality
@@ -399,11 +399,11 @@ Planned:
 - [ ] v0.5.0 — LSP support, git diff analysis
 - [ ] v1.0.0 — Production stable, >90% coverage, signed releases
 
-See [docs/UPDATEv2.md](docs/UPDATEv2.md) for detailed development status.
+See [docs/development/UPDATEv2.md](docs/development/UPDATEv2.md) for development status.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
 - How to run tests, lint, format code
 - Branch naming and commit conventions
 - PR process and review requirements

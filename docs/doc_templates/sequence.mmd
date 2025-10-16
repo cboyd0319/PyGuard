@@ -1,0 +1,8 @@
+sequenceDiagram
+  participant U as User
+  participant A as App
+  participant S as Service
+  U->>A: Start request
+  A->>S: Fetch data
+  S-->>A: Return data
+  A-->>U: Render response

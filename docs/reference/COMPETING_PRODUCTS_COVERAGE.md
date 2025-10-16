@@ -191,7 +191,7 @@ PyGuard achieves **100% detection parity** with all major competing tools while 
 
 **Recommended For:**
 - Organizations requiring privacy and on-premise deployment
-- Teams wanting automated fixes, not just detection
+- Teams wanting automated fixes, not detection
 - Compliance-focused environments (HIPAA, PCI-DSS, SOC 2, etc.)
 - Projects seeking to consolidate multiple tools
 - Development teams valuing ML-powered security

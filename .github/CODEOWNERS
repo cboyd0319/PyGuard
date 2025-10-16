@@ -9,3 +9,6 @@
 # Security-critical files
 /SECURITY.md @cboyd0319
 /.github/dependabot.yml @cboyd0319
+
+# Documentation
+/docs/ @cboyd0319

@@ -102,7 +102,7 @@ pyguard-hooks test                 # Test hook execution
 
 ### 5. Updated Capabilities Document
 
-Updated `docs/capabilities-reference.md` to:
+Updated `docs/reference/capabilities-reference.md` to:
 - Mark Pre-commit Hooks as COMPLETE ✅
 - Document all features and CLI commands
 - Update statistics (modules, tests, coverage)
@@ -200,13 +200,13 @@ echo "PyGuard checks passed ✓"
 1. `pyguard/lib/git_hooks.py` - Core functionality (390 lines)
 2. `pyguard/git_hooks_cli.py` - CLI interface (210 lines)
 3. `tests/unit/test_git_hooks.py` - Test suite (370 lines, 33 tests)
-4. `docs/git-hooks-guide.md` - User guide (450 lines)
+4. `docs/guides/git-hooks-guide.md` - User guide (450 lines)
 5. `examples/git-hooks-demo.md` - Demo example (250 lines)
 
 ### Files Modified (3)
 1. `pyproject.toml` - Added `pyguard-hooks` script entry
 2. `pyguard/lib/__init__.py` - Exported git hooks functions
-3. `docs/capabilities-reference.md` - Updated feature status
+3. `docs/reference/capabilities-reference.md` - Updated feature status
 
 ### Lines Added
 - **Total**: ~1,670 lines of production code, tests, and documentation

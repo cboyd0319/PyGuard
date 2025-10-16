@@ -50,7 +50,7 @@ if "eval(" in code:  # Triggers CWE-95 alert!
 **Files:**
 - `pyguard/lib/ast_analyzer.py` - Core implementation
 - `tests/unit/test_suppression.py` - Test suite (5/5 passing)
-- `docs/SUPPRESSIONS.md` - Complete documentation
+- `SUPPRESSIONS.md` - Complete documentation
 - `scripts/add_suppressions.py` - Automated tool
 
 ### 2. Automated Suppression Tool ✅
@@ -212,8 +212,8 @@ python scripts/add_suppressions.py --file pyguard/lib/security.py
 ## Tools & Resources
 
 ### Documentation
-- `docs/SUPPRESSIONS.md` - How to use suppressions
-- `docs/CODE-SCANNING-ALERTS.md` - This document
+- `SUPPRESSIONS.md` - How to use suppressions
+- `CODE-SCANNING-ALERTS.md` - This document
 - `docs/README.md` - General PyGuard documentation
 
 ### Scripts

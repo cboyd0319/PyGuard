@@ -15,7 +15,7 @@
 ---
 
 ## Minimum Viable README (MVR) — exact section order
-Keep this order unless you have a very good reason to change it (you probably don’t).
+Keep this order unless you have a good reason to change it (you probably don’t).
 
 1) **Title + one-liner**  
 2) **Badges (optional but recommended)** — build, tests, coverage, license, release, SBOM. Use shields.io.  

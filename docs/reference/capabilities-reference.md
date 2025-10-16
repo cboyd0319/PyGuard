@@ -527,7 +527,7 @@ PyGuard includes specialized rules for popular Python frameworks.
 - Cross-cell dependency analysis
 - Automated fixes
 
-**See**: `docs/notebook-security-guide.md` for complete guide.
+**See**: `docs/guides/notebook-security-guide.md` for complete guide.
 
 ### AI-Powered Explanations
 
@@ -992,7 +992,7 @@ PyGuard is the **most comprehensive Python security and code quality platform av
 - ✅ SARIF 2.1.0 compliant
 - ✅ Active maintenance and development
 
-**PyGuard doesn't just detect issues — it fixes them automatically, teaches you why they matter, and helps you maintain secure, high-quality Python code.**
+**PyGuard doesn't detect issues — it fixes them automatically, teaches you why they matter, and helps you maintain secure, high-quality Python code.**
 
 ---
 

@@ -527,7 +527,7 @@ for module in god_modules:
 
 1. **Start with scan-only mode** in CI to avoid breaking builds
 2. **Use SARIF** for GitHub integration with Security tab
-3. **Generate HTML reports** as artifacts for easy review
+3. **Generate HTML reports** as artifacts for straightforward review
 4. **Use security-only scans** in pre-commit hooks for speed
 
 ### Performance Profiler

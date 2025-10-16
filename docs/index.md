@@ -7,7 +7,7 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 ### Getting Started
 - [Main README](../README.md) - Quick start and overview
 - [Installation & Setup](README.md#installation) - Detailed installation guide
-- [Basic Usage Examples](../examples/README.md) - Code examples
+- [Examples](examples/README.md) - Code examples
 
 ### User Guides
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
@@ -35,7 +35,7 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### For Users
 - **First time?** Start with [Main README](../README.md)
-- **Want examples?** Check [examples/](../examples/)
+- **Want examples?** Check [examples/](examples/)
 - **Need help?** See [Capabilities Reference](capabilities-reference.md)
 
 ### For Developers

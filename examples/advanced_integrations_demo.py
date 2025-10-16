@@ -287,7 +287,7 @@ def main():
         print("\n✨ All features demonstrated successfully!")
         print("\n📚 Learn more:")
         print("   docs/guides/advanced-integrations.md")
-        print("   docs/capabilities-reference.md")
+        print("   docs/reference/capabilities-reference.md")
 
     except Exception as e:
         print(f"\n❌ Error during demo: {e}")

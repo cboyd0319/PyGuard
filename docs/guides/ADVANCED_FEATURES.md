@@ -4,7 +4,7 @@
 
 ## 🚀 What Makes PyGuard Different?
 
-PyGuard is no longer just a security scanner — it's an **educational security platform** that helps developers learn secure coding while protecting their code.
+PyGuard is no longer a security scanner — it's an **educational security platform** that helps developers learn secure coding while protecting their code.
 
 ### Two Revolutionary Features
 
@@ -221,7 +221,7 @@ print(content["quiz_question"])
 
 ### Development Teams
 - Understand **why** fixes are necessary
-- Learn from security scans instead of just fixing
+- Learn from security scans instead of fixing
 - Multiple difficulty levels for different skill levels
 
 ### Educational Institutions
@@ -308,8 +308,8 @@ python examples/advanced_features_demo.py
 
 ## 📚 Documentation
 
-- **Notebook Security Guide**: `docs/notebook-security-guide.md`
-- **Capabilities Reference**: `docs/capabilities-reference.md`
+- **Notebook Security Guide**: `docs/guides/notebook-security-guide.md`
+- **Capabilities Reference**: `docs/reference/capabilities-reference.md`
 - **Demo Notebook**: `examples/notebook_security_demo.ipynb`
 - **Demo Script**: `examples/advanced_features_demo.py`
 
@@ -325,7 +325,7 @@ PyGuard v0.3.0 introduces **two revolutionary features**:
 These features make PyGuard:
 - **#1 tool for data science security** (notebook support)
 - **Most educational security tool** (learning modules)
-- **Best developer experience** (explains why, not just what)
+- **Best developer experience** (explains why, not what)
 - **Privacy-first** (no external AI APIs)
 
 ### Market Differentiation
