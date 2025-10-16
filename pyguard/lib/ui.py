@@ -65,19 +65,50 @@ class EnhancedConsole:
         """
         # Configure console with proper encoding for Windows compatibility
         import sys
+        self.is_windows = sys.platform == "win32"
         self.console = Console(
             record=True,
             force_terminal=True,
             legacy_windows=False,  # Disable legacy Windows rendering to avoid encoding issues
-            safe_box=sys.platform == "win32"  # Use ASCII box chars on Windows
+            safe_box=self.is_windows,  # Use ASCII box chars on Windows
+            emoji=not self.is_windows  # Disable emoji on Windows to avoid encoding issues
         )
         self.theme = theme or UITheme()
+    
+    def _safe_text(self, text: str) -> str:
+        """
+        Make text safe for Windows console by removing/replacing emoji.
+        
+        Args:
+            text: Text that may contain emoji
+            
+        Returns:
+            Text safe for Windows console
+        """
+        if not self.is_windows:
+            return text
+        
+        # Replace common emoji with text equivalents for Windows
+        replacements = {
+            "🛡️": "[Shield]",
+            "🚀": "[Start]",
+            "✨": "*",
+            "🎉": "!",
+            "⚡": "[Fast]",
+            "✅": "[OK]",
+            "❌": "[X]",
+            "⚠️": "[!]",
+            "🔴": "[!]",
+            "🟡": "[i]",
+        }
+        for emoji, replacement in replacements.items():
+            text = text.replace(emoji, replacement)
+        return text
 
     def print_banner(self):
         """Print PyGuard banner with style."""
-        import sys
         # Use simpler banner on Windows to avoid encoding issues
-        if sys.platform == "win32":
+        if self.is_windows:
             banner_text = """
             ================================================================
                                                                      
@@ -103,11 +134,14 @@ class EnhancedConsole:
 
     def print_welcome(self, files_count: int):
         """Print welcome message."""
+        ready_text = self._safe_text(f"[bold green]✨ Ready to analyze {files_count} Python files![/bold green]\n\n")
+        title_text = self._safe_text("[bold cyan]🚀 Getting Started[/bold cyan]")
+        
         panel = Panel(
-            f"[bold green]✨ Ready to analyze {files_count} Python files![/bold green]\n\n"
+            ready_text +
             f"[dim]PyGuard will find security issues, improve code quality, and format your code.\n"
             f"Sit back and relax - this will only take a moment...[/dim]",
-            title="[bold cyan]🚀 Getting Started[/bold cyan]",
+            title=title_text,
             border_style="cyan",
             box=box.DOUBLE,
         )
