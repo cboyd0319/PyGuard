@@ -2,7 +2,7 @@
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![Tests](https://img.shields.io/badge/tests-✓-brightgreen)](#)
-[![License](https://img.shields.io/badge/license-<MIT>-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-<MIT>-blue)](../../LICENSE)
 [![SBOM](https://img.shields.io/badge/SBOM-SPDX-9cf)](#)
 [![Sigstore](https://img.shields.io/badge/release-signed-9cf)](#)
 
@@ -63,7 +63,7 @@
 - [ ] Provider Y
 
 ## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## License
-See [LICENSE](LICENSE).
+See [LICENSE](../../LICENSE).

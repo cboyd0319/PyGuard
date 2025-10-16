@@ -546,6 +546,6 @@ Results appear in:
 ## 🔗 Related Documentation
 
 - [Contributing Guide](../../CONTRIBUTING.md)
-- [Capabilities Reference](../../docs/capabilities-reference.md)
+- [Capabilities Reference](../../docs/reference/capabilities-reference.md)
 - [Security Policy](../../SECURITY.md)
-- [Release Process](../../CHANGELOG.md#release-process)
+- [Release Process](../../docs/CHANGELOG.md#release-process)

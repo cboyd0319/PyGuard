@@ -1001,5 +1001,5 @@ PyGuard is the **most comprehensive Python security and code quality platform av
 **Repository**: https://github.com/cboyd0319/PyGuard  
 **Documentation**: https://github.com/cboyd0319/PyGuard/tree/main/docs  
 **Issues**: https://github.com/cboyd0319/PyGuard/issues  
-**Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)  
+**Contributing**: See [CONTRIBUTING.md](../../CONTRIBUTING.md)  
 **License**: MIT

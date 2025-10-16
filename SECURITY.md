@@ -59,4 +59,4 @@ PyGuard helps you find:
 4. **Sandbox untrusted code** — PyGuard analyzes but doesn't execute code
 5. **Review logs** regularly — `logs/pyguard.jsonl`
 
-Full details: [docs/SECURITY.md](docs/SECURITY.md)
+ 

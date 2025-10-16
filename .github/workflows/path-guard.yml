@@ -38,7 +38,7 @@ jobs:
           base="origin/${{ github.base_ref || 'main' }}"
           git fetch origin "${{ github.base_ref || 'main' }}"
           changed=$(git diff --name-only "$base"... || true)
-          md_outside=$(echo "$changed" | grep -E '\.md$' | grep -vE '^(docs/|README\.md$)' || true)
+          md_outside=$(echo "$changed" | grep -E '\.md$' | grep -vE '^(docs/|README\.md$|CODE_OF_CONDUCT\.md$|CONTRIBUTING\.md$|SECURITY\.md$)' || true)
           if [ -n "$md_outside" ]; then
             echo "❌ Markdown files outside docs/:"; echo "$md_outside"; exit 1
           fi
@@ -54,7 +54,7 @@ jobs:
             if [ "${{ job.status }}" = "success" ]; then
               echo "✅ All files are correctly organized"
               echo ""
-              echo "- Markdown files: ✓ docs/ or root README.md only"
+              echo "- Markdown files: ✓ docs/ or root README.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md"
             else
               echo "❌ File organization violations detected"
             fi

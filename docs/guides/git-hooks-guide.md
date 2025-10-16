@@ -460,7 +460,7 @@ For issues or questions:
 
 ## See Also
 
-- [PyGuard Main Documentation](README.md)
+- [PyGuard Main Documentation](../../README.md)
 - [Security Rules Reference](security-rules.md)
 - [Capabilities Reference](capabilities-reference.md)
-- [CI/CD Integration Examples](examples/)
+- [CI/CD Integration Examples](../../examples/)

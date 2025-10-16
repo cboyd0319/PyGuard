@@ -391,7 +391,7 @@ runs-on: ${{ matrix.os }}
 - **GitHub Action Guide**: [Action Guide](https://github.com/cboyd0319/PyGuard/blob/main/docs/guides/github-action-guide.md)
 - **Examples**: [Workflow Examples](https://github.com/cboyd0319/PyGuard/tree/main/examples/github-workflows)
 - **Issues**: [Report Issues](https://github.com/cboyd0319/PyGuard/issues)
-- **Security**: [Security Policy](https://github.com/cboyd0319/PyGuard/blob/main/docs/SECURITY.md)
+- **Security**: [Security Policy](https://github.com/cboyd0319/PyGuard/blob/main/SECURITY.md)
 
 ## License
 

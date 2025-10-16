@@ -5,14 +5,15 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Ready-brightgreen.svg)](https://github.com/marketplace/actions/pyguard-security-scanner)
 
-[![Tests](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml)
-[![Test Action](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml)
+[![CI](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml)
 [![Coverage](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml)
-[![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
-[![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
-[![CodeQL](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml)
-[![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
 [![Docs](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml)
+[![Code Scanning](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml)
+
+[![Test Action](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml)
+[![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
+[![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
+[![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 
 **TL;DR**: Replace 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with one. Finds 55+ security issues, enforces 150+ quality rules, fixes 179+ problems automatically. Runs locally, no telemetry.
 
@@ -21,7 +22,9 @@ pip install pyguard
 pyguard src/
 ```
 
-## 🚀 GitHub Action Quick Start
+GitHub Marketplace Action: https://github.com/marketplace/actions/pyguard-security-scanner
+
+## 🚀 GitHub Action
 
 Add PyGuard security scanning to your repository in 30 seconds:
 
@@ -48,7 +51,13 @@ jobs:
 
 **Done!** PyGuard will automatically scan your code and upload results to GitHub Security tab. [Full GitHub Action Guide →](docs/guides/github-action-guide.md)
 
-## Quickstart
+## Docs
+
+- Start here: docs/index.md
+- Action usage: docs/guides/github-action-guide.md
+- All guides live under docs/
+
+## Install & Use
 
 ```bash
 # Install
@@ -438,7 +447,7 @@ See [docs/development/UPDATEv2.md](docs/development/UPDATEv2.md) for development
 
 ## Contributing
 
-See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - How to run tests, lint, format code
 - Branch naming and commit conventions
 - PR process and review requirements

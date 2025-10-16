@@ -305,5 +305,5 @@ PyGuard git hooks provide:
 
 For more information, see:
 - [Git Hooks Guide](../docs/guides/git-hooks-guide.md)
-- [PyGuard Documentation](../docs/README.md)
+- [PyGuard Documentation](../README.md)
 - [Security Rules Reference](../docs/reference/security-rules.md)

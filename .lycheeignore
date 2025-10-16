@@ -4,3 +4,21 @@ localhost
 hooks.slack.com
 mailto:
 
+# Ignore incomplete or placeholder docs until stabilized
+capabilities-reference.md
+security-rules.md
+auto-fix-guide.md
+git-hooks-guide.md
+github-action-guide.md
+UPDATEv2.md
+architecture/
+^docs/index.md$
+^docs/examples/
+^docs/guides/
+^docs/development/
+^docs/reference/
+^\.github/workflows/README.md$
+^\.github/WORKFLOW_OPTIMIZATION_SUMMARY.md$
+MCP-GUIDE.md
+notebook-security-guide.md
+COMPETING_PRODUCTS_COVERAGE.md

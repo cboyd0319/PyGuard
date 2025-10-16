@@ -26,7 +26,7 @@ To add yourself to this list:
 
 ## How to Contribute
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 ### Types of Contributions
 
@@ -52,4 +52,4 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-Want to be listed here? [Contribute to PyGuard!](CONTRIBUTING.md)
+Want to be listed here? [Contribute to PyGuard!](../CONTRIBUTING.md)

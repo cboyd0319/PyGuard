@@ -52,4 +52,4 @@ Keep PRs narrowly scoped. Include before/after evidence (logs, screenshots).
 - Sign release (Sigstore/cosign)
 - Attach provenance/SLSA
 
-Full guide: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+ 
