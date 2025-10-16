@@ -9,6 +9,7 @@ GitHub Integration: https://docs.github.com/en/code-security/code-scanning
 """
 
 import json
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -122,7 +123,7 @@ class SARIFReporter:
             ],
             "automationDetails": {
                 "id": f"pyguard/{tool_version}",
-                "guid": "pyguard-security-scan",
+                "guid": str(uuid.uuid5(uuid.NAMESPACE_DNS, "pyguard-security-scan")),
             },
         }
 

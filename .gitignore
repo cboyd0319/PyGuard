@@ -88,6 +88,7 @@ docs/_build/
 docs/_static/
 docs/_templates/
 site/
+.vale/
 node_modules/
 package-lock.json
 
@@ -126,4 +127,7 @@ pip-wheel-metadata/
 
 # pyenv
 .python-version.local
+
+# Build tools and binaries
+bin/
 

@@ -40,6 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p ./bin
           curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- latest ./bin
           echo "${PWD}/bin" >> "${GITHUB_PATH}"
 
@@ -61,14 +62,4 @@ jobs:
             else
               echo "❌ Workflow validation failed. Review actionlint output above."
             fi
-          } >> "${GITHUB_STEP_SUMMARY}"
-
-      - name: Add summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Workflow Lint Results"
-            echo ""
-            echo "✅ All GitHub Actions workflows validated"
           } >> "${GITHUB_STEP_SUMMARY}"
