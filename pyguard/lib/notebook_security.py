@@ -2056,7 +2056,12 @@ class NotebookFixer:
     
     def _fix_torch_load(self, source: str) -> str:
         """
-        Fix torch.load() calls to include weights_only=True.
+        Fix torch.load() calls to include weights_only=True and checksum verification.
+        
+        Implements the world-class standard from the vision document:
+        - Adds weights_only=True parameter
+        - Adds checksum verification before loading
+        - Includes educational comments with security rationale
         
         Performs AST-based transformation to safely add the parameter.
         
@@ -2064,67 +2069,207 @@ class NotebookFixer:
             source: Source code to fix
             
         Returns:
-            Fixed source code
+            Fixed source code with safe model loading and verification
         """
-        try:
-            tree = ast.parse(source)
-            modified = False
-            
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call):
-                    # Check if this is a torch.load call
-                    if isinstance(node.func, ast.Attribute):
-                        if (isinstance(node.func.value, ast.Name) and 
-                            node.func.value.id == "torch" and 
-                            node.func.attr == "load"):
-                            
-                            # Check if weights_only is already present
-                            has_weights_only = any(
-                                kw.arg == "weights_only" for kw in node.keywords
-                            )
-                            
-                            if not has_weights_only:
-                                # Add weights_only=True keyword argument
-                                node.keywords.append(
-                                    ast.keyword(
-                                        arg="weights_only",
-                                        value=ast.Constant(value=True)
-                                    )
-                                )
-                                modified = True
-            
-            if modified and hasattr(ast, "unparse"):
-                # Unparse to get fixed source
-                return ast.unparse(tree)
-            
-        except SyntaxError:
-            pass
-        
-        # Fallback: regex-based replacement if AST fails
+        # Add comprehensive model loading security
         if "torch.load(" in source and "weights_only" not in source:
-            # Simple regex replacement
-            source = re.sub(
-                r"torch\.load\(([^)]+)\)",
-                r"torch.load(\1, weights_only=True)",
-                source
-            )
-            # Clean up potential double comma
-            source = source.replace(", , weights_only", ", weights_only")
-            return source
+            # Build secure loading block
+            secure_block = []
+            secure_block.append("# PYGUARD AUTO-FIX: Secure model loading with verification")
+            secure_block.append("# CWE-502: Deserialization of Untrusted Data")
+            secure_block.append("# PyTorch Security Advisory: Always use weights_only=True")
+            secure_block.append("import hashlib")
+            secure_block.append("")
+            secure_block.append("# TODO: Replace with actual model checksum")
+            secure_block.append("MODEL_CHECKSUM = 'abcdef1234567890...'  # Get this from trusted source")
+            secure_block.append("")
+            secure_block.append("# Step 1: Verify model checksum before loading")
+            secure_block.append("model_path = 'model.pth'  # TODO: Update with actual path")
+            secure_block.append("with open(model_path, 'rb') as f:")
+            secure_block.append("    file_hash = hashlib.sha256(f.read()).hexdigest()")
+            secure_block.append("    if file_hash != MODEL_CHECKSUM:")
+            secure_block.append("        raise ValueError(f'Model checksum mismatch! Expected {MODEL_CHECKSUM}, got {file_hash}')")
+            secure_block.append("")
+            secure_block.append("# Step 2: Load with weights_only=True (prevents arbitrary code execution)")
+            secure_block.append("# Original unsafe torch.load() call replaced:")
+            secure_block.append("")
+            
+            # Try AST-based transformation first
+            try:
+                tree = ast.parse(source)
+                modified = False
+                
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Call):
+                        # Check if this is a torch.load call
+                        if isinstance(node.func, ast.Attribute):
+                            if (isinstance(node.func.value, ast.Name) and 
+                                node.func.value.id == "torch" and 
+                                node.func.attr == "load"):
+                                
+                                # Check if weights_only is already present
+                                has_weights_only = any(
+                                    kw.arg == "weights_only" for kw in node.keywords
+                                )
+                                
+                                if not has_weights_only:
+                                    # Add weights_only=True keyword argument
+                                    node.keywords.append(
+                                        ast.keyword(
+                                            arg="weights_only",
+                                            value=ast.Constant(value=True)
+                                        )
+                                    )
+                                    
+                                    # Add map_location for safety
+                                    has_map_location = any(
+                                        kw.arg == "map_location" for kw in node.keywords
+                                    )
+                                    if not has_map_location:
+                                        node.keywords.append(
+                                            ast.keyword(
+                                                arg="map_location",
+                                                value=ast.Constant(value="cpu")
+                                            )
+                                        )
+                                    
+                                    modified = True
+                
+                if modified and hasattr(ast, "unparse"):
+                    # Unparse to get fixed source
+                    fixed_source = ast.unparse(tree)
+                    # Add secure block before the fixed source
+                    return "\n".join(secure_block) + fixed_source
+                
+            except SyntaxError:
+                pass
+            
+            # Fallback: regex-based replacement if AST fails
+            lines = source.split("\n")
+            fixed_lines = []
+            
+            for line in lines:
+                if "torch.load(" in line and "weights_only" not in line:
+                    # Add secure block before torch.load line
+                    fixed_lines.extend(secure_block)
+                    # Fix the torch.load call
+                    fixed_line = re.sub(
+                        r"torch\.load\(([^)]+)\)",
+                        r"torch.load(\1, weights_only=True, map_location='cpu')",
+                        line
+                    )
+                    # Clean up potential double comma
+                    fixed_line = fixed_line.replace(", , weights_only", ", weights_only")
+                    fixed_lines.append(fixed_line)
+                else:
+                    fixed_lines.append(line)
+            
+            return "\n".join(fixed_lines)
         
         return source
     
     def _add_seed_setting(self, source: str, message: str) -> str:
         """
-        Add random seed setting for ML frameworks.
+        Add comprehensive random seed setting for ML frameworks.
+        
+        Implements the world-class standard from the vision document:
+        - Sets seeds for all major ML frameworks (random, numpy, torch, tf, jax)
+        - Configures deterministic backends
+        - Documents environment for reproducibility
         
         Args:
             source: Source code to fix
             message: Issue message describing which framework needs seeding
             
         Returns:
-            Fixed source code with seed setting
+            Fixed source code with comprehensive seed setting
         """
+        # Detect which frameworks are imported
+        has_torch = "import torch" in source or "from torch" in source
+        has_tf = "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
+        has_numpy = "import numpy" in source or "from numpy" in source or "import np" in source
+        has_random = "import random" in source
+        has_jax = "import jax" in source or "from jax" in source
+        
+        # Build comprehensive seed setting function
+        if has_torch or has_numpy or has_tf or has_random or "import" in source:
+            # Create comprehensive reproducibility setup
+            seed_block = []
+            seed_block.append("# PYGUARD AUTO-FIX: Comprehensive reproducibility setup")
+            seed_block.append("# Added for deterministic ML experiments")
+            seed_block.append("def set_global_seed(seed=42):")
+            seed_block.append("    \"\"\"Set seeds for reproducible ML experiments.\"\"\"")
+            
+            # Python random
+            if has_random or "random" in message.lower():
+                seed_block.append("    import random")
+                seed_block.append("    random.seed(seed)")
+            
+            # NumPy
+            if has_numpy or "numpy" in message.lower():
+                seed_block.append("    import numpy as np")
+                seed_block.append("    np.random.seed(seed)")
+            
+            # PyTorch
+            if has_torch or "torch" in message.lower():
+                seed_block.append("    import torch")
+                seed_block.append("    torch.manual_seed(seed)")
+                seed_block.append("    torch.cuda.manual_seed_all(seed)")
+                seed_block.append("    # PyTorch deterministic mode (may reduce performance)")
+                seed_block.append("    torch.backends.cudnn.deterministic = True")
+                seed_block.append("    torch.backends.cudnn.benchmark = False")
+                seed_block.append("    try:")
+                seed_block.append("        torch.use_deterministic_algorithms(True, warn_only=True)")
+                seed_block.append("    except AttributeError:")
+                seed_block.append("        pass  # PyTorch < 1.8")
+            
+            # TensorFlow
+            if has_tf or "tensorflow" in message.lower():
+                seed_block.append("    import tensorflow as tf")
+                seed_block.append("    tf.random.set_seed(seed)")
+                seed_block.append("    try:")
+                seed_block.append("        tf.config.experimental.enable_op_determinism()")
+                seed_block.append("    except AttributeError:")
+                seed_block.append("        pass  # TensorFlow < 2.9")
+            
+            # JAX
+            if has_jax:
+                seed_block.append("    import jax")
+                seed_block.append("    # JAX uses explicit PRNG keys, set environment for consistency")
+            
+            # Environment variables for additional determinism
+            if has_torch or has_tf:
+                seed_block.append("    import os")
+                seed_block.append("    os.environ['PYTHONHASHSEED'] = str(seed)")
+                if has_torch:
+                    seed_block.append("    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'")
+            
+            seed_block.append("    print(f'✓ Global seed set to {seed} for reproducibility')")
+            seed_block.append("")
+            seed_block.append("# Call seed setting function")
+            seed_block.append("set_global_seed(42)")
+            seed_block.append("")
+            
+            # Add the seed block at the beginning after imports
+            lines = source.split("\n")
+            insert_pos = 0
+            
+            # Find position after all import statements
+            last_import_line = -1
+            for i, line in enumerate(lines):
+                if line.strip().startswith("import ") or line.strip().startswith("from "):
+                    last_import_line = i
+            
+            if last_import_line >= 0:
+                insert_pos = last_import_line + 1
+            
+            # Insert seed block
+            for line in reversed(seed_block):
+                lines.insert(insert_pos, line)
+            
+            return "\n".join(lines)
+        
+        # Fallback to simple seed additions if comprehensive setup not appropriate
         seed_additions = []
         
         if "PyTorch" in message or "torch" in message.lower():
