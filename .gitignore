@@ -97,6 +97,7 @@ package-lock.json
 *.ipynb
 # Allow example notebooks
 !examples/*.ipynb
+!examples/**/*.ipynb
 
 # Package
 *.whl

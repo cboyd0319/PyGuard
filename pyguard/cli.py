@@ -44,6 +44,24 @@ class PyGuardCLI:
         self.formatting_fixer = FormattingFixer()
         self.whitespace_fixer = WhitespaceFixer()
         self.naming_fixer = NamingConventionFixer()
+        
+        # Initialize notebook analyzer (lazy load)
+        self._notebook_analyzer = None
+    
+    @property
+    def notebook_analyzer(self):
+        """Lazy load notebook analyzer."""
+        if self._notebook_analyzer is None:
+            try:
+                from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
+                self._notebook_analyzer = NotebookSecurityAnalyzer()
+            except ImportError:
+                self.ui.console.print(
+                    "[yellow]Warning: nbformat not installed. "
+                    "Notebook analysis unavailable.[/yellow]"
+                )
+                self._notebook_analyzer = None
+        return self._notebook_analyzer
 
     def run_security_fixes(self, files: List[Path], create_backup: bool = True) -> Dict[str, Any]:
         """
@@ -115,6 +133,48 @@ class PyGuardCLI:
                 failed += 1
 
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
+
+    def analyze_notebooks(self, notebooks: List[Path]) -> Dict[str, Any]:
+        """
+        Analyze Jupyter notebooks for security issues.
+        
+        Args:
+            notebooks: List of .ipynb files to analyze
+            
+        Returns:
+            Dictionary with results
+        """
+        if not self.notebook_analyzer:
+            return {
+                "total": len(notebooks),
+                "analyzed": 0,
+                "findings": [],
+                "error": "Notebook analyzer not available (nbformat not installed)"
+            }
+        
+        all_results = []
+        total_findings = 0
+        critical_count = 0
+        high_count = 0
+        
+        for nb_path in notebooks:
+            try:
+                result = self.notebook_analyzer.analyze_notebook(nb_path)
+                all_results.append(result)
+                total_findings += result.total_count()
+                critical_count += result.critical_count()
+                high_count += result.high_count()
+            except Exception as e:
+                self.logger.error(f"Failed to analyze {nb_path}: {e}")
+        
+        return {
+            "total": len(notebooks),
+            "analyzed": len(all_results),
+            "total_findings": total_findings,
+            "critical_count": critical_count,
+            "high_count": high_count,
+            "results": all_results,
+        }
 
     def run_formatting(
         self,
@@ -436,27 +496,50 @@ def main():
 
     # Collect files
     all_files = []
+    notebook_files = []
     for path_str in args.paths:
         path = Path(path_str)
 
-        if path.is_file() and path.suffix == ".py":
-            all_files.append(path)
+        if path.is_file():
+            if path.suffix == ".py":
+                all_files.append(path)
+            elif path.suffix == ".ipynb":
+                notebook_files.append(path)
         elif path.is_dir():
+            # Find Python files
             files = cli.file_ops.find_python_files(path, args.exclude)
             all_files.extend(files)
+            
+            # Find Jupyter notebooks
+            for nb_file in path.rglob("*.ipynb"):
+                # Skip files in exclude patterns
+                skip = False
+                for pattern in args.exclude:
+                    if nb_file.match(pattern):
+                        skip = True
+                        break
+                if not skip and '.ipynb_checkpoints' not in str(nb_file):
+                    notebook_files.append(nb_file)
         else:
-            print(f"Warning: {path} is not a Python file or directory, skipping...")
+            print(f"Warning: {path} is not a Python file, notebook, or directory, skipping...")
 
-    if not all_files:
+    if not all_files and not notebook_files:
         cli.ui.print_error(
-            "No Python files found to analyze.",
-            "Make sure you specified the correct path and that Python files exist in that location.",
+            "No Python files or Jupyter notebooks found to analyze.",
+            "Make sure you specified the correct path and that files exist in that location.",
         )
         sys.exit(1)
 
     # Print banner and welcome
     cli.ui.print_banner()
-    cli.ui.print_welcome(len(all_files))
+    total_files = len(all_files) + len(notebook_files)
+    cli.ui.print_welcome(total_files)
+    
+    if notebook_files:
+        cli.ui.console.print(
+            f"[cyan]Found {len(all_files)} Python files and {len(notebook_files)} Jupyter notebooks[/cyan]"
+        )
+        cli.ui.console.print()
 
     # Run analysis based on flags
     create_backup = not args.no_backup
@@ -510,6 +593,48 @@ def main():
     else:
         # Run full analysis
         results = cli.run_full_analysis(all_files, create_backup, fix)
+        
+        # Analyze notebooks if any
+        if notebook_files:
+            cli.ui.console.print()
+            cli.ui.console.print("[bold cyan]Analyzing Jupyter Notebooks...[/bold cyan]")
+            cli.ui.console.print()
+            
+            notebook_results = cli.analyze_notebooks(notebook_files)
+            results["notebooks"] = notebook_results
+            
+            # Add notebook findings to all_issues for reporting
+            if "results" in notebook_results:
+                for nb_result in notebook_results["results"]:
+                    for finding in nb_result.findings:
+                        # Convert finding to issue format
+                        issue = {
+                            "file": str(nb_result.notebook_path),
+                            "line": finding.line_number or 0,
+                            "severity": finding.severity,
+                            "rule_id": finding.rule_id,
+                            "message": finding.message,
+                            "description": finding.description,
+                            "cell_index": finding.cell_index,
+                            "cell_type": finding.cell_type,
+                        }
+                        if "all_issues" not in results:
+                            results["all_issues"] = []
+                        results["all_issues"].append(issue)
+                        
+                        # Update counters
+                        if finding.severity == "CRITICAL" or finding.severity == "HIGH":
+                            results["security_issues"] = results.get("security_issues", 0) + 1
+            
+            # Print notebook summary
+            cli.ui.console.print()
+            cli.ui.console.print("[bold]Notebook Analysis Summary:[/bold]")
+            cli.ui.console.print(f"  Total notebooks: {notebook_results['total']}")
+            cli.ui.console.print(f"  Analyzed: {notebook_results['analyzed']}")
+            cli.ui.console.print(f"  Total findings: {notebook_results.get('total_findings', 0)}")
+            cli.ui.console.print(f"    CRITICAL: {notebook_results.get('critical_count', 0)}")
+            cli.ui.console.print(f"    HIGH: {notebook_results.get('high_count', 0)}")
+            cli.ui.console.print()
 
     # Print results
     cli.print_results(results, generate_html=not args.no_html, generate_sarif=args.sarif)
