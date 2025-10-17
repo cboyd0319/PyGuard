@@ -22,13 +22,15 @@ Example:
 
 # Re-export the main notebook security classes for convenience
 from pyguard.lib.notebook_security import (
-    NotebookSecurityAnalyzer,
+    NotebookSecurityAnalyzer as _BaseNotebookSecurityAnalyzer,
     NotebookFixer,
     NotebookIssue,
     NotebookCell,
     scan_notebook,
     generate_notebook_sarif,
 )
+from pathlib import Path
+from typing import List
 
 # Type aliases for backward compatibility
 NotebookFinding = NotebookIssue
@@ -67,6 +69,39 @@ class NotebookAnalysisResult:
     def low_count(self) -> int:
         """Return number of low severity findings."""
         return len([f for f in self.findings if f.severity == 'LOW'])
+
+# Wrapper class for NotebookSecurityAnalyzer to return NotebookAnalysisResult
+class NotebookSecurityAnalyzer(_BaseNotebookSecurityAnalyzer):
+    """
+    Extended NotebookSecurityAnalyzer that returns NotebookAnalysisResult objects.
+    
+    This wrapper provides backward compatibility with tests that expect
+    NotebookAnalysisResult instead of plain lists.
+    """
+    
+    @property
+    def secret_patterns(self):
+        """Expose SECRET_PATTERNS as secret_patterns for compatibility."""
+        return self.SECRET_PATTERNS
+    
+    @property
+    def dangerous_functions(self):
+        """Return list of dangerous functions for compatibility."""
+        # List common dangerous functions
+        return ['eval', 'exec', 'compile', 'pickle.load', 'torch.load', 'yaml.load']
+    
+    def analyze_notebook(self, notebook_path: Path):
+        """
+        Analyze a Jupyter notebook for security issues.
+        
+        Args:
+            notebook_path: Path to .ipynb file
+            
+        Returns:
+            NotebookAnalysisResult containing the list of issues found
+        """
+        issues = super().analyze_notebook(notebook_path)
+        return NotebookAnalysisResult(issues)
 
 __all__ = [
     'NotebookSecurityAnalyzer',
