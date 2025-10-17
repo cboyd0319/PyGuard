@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-10-17 10:34:15",
+  "results": [
+    {
+      "num_cells": 5,
+      "complexity": "simple",
+      "elapsed_ms": 2.5610079999864865,
+      "ms_per_cell": 0.5122015999972973,
+      "issues_found": 4
+    },
+    {
+      "num_cells": 10,
+      "complexity": "simple",
+      "elapsed_ms": 4.786815999977989,
+      "ms_per_cell": 0.4786815999977989,
+      "issues_found": 9
+    },
+    {
+      "num_cells": 25,
+      "complexity": "simple",
+      "elapsed_ms": 11.18094700001393,
+      "ms_per_cell": 0.4472378800005572,
+      "issues_found": 24
+    },
+    {
+      "num_cells": 50,
+      "complexity": "medium",
+      "elapsed_ms": 41.88376300004393,
+      "ms_per_cell": 0.8376752600008786,
+      "issues_found": 148
+    },
+    {
+      "num_cells": 100,
+      "complexity": "medium",
+      "elapsed_ms": 83.41827700002113,
+      "ms_per_cell": 0.8341827700002113,
+      "issues_found": 298
+    },
+    {
+      "num_cells": 10,
+      "complexity": "complex",
+      "elapsed_ms": 13.690447999977096,
+      "ms_per_cell": 1.3690447999977096,
+      "issues_found": 47
+    }
+  ]
+}
