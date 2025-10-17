@@ -1872,3 +1872,274 @@ def scan_notebook(notebook_path: str) -> List[NotebookIssue]:
     """
     analyzer = NotebookSecurityAnalyzer()
     return analyzer.analyze_notebook(Path(notebook_path))
+
+
+def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> Dict[str, Any]:
+    """
+    Generate SARIF 2.1.0 report for notebook security issues.
+    
+    This is a convenience function that creates a SARIF report compatible with
+    GitHub Security, VS Code, and other security platforms.
+    
+    Args:
+        notebook_path: Path to the notebook file
+        issues: List of security issues found by scan_notebook()
+        
+    Returns:
+        SARIF report as dictionary
+        
+    Example:
+        >>> issues = scan_notebook('notebook.ipynb')
+        >>> sarif = generate_notebook_sarif('notebook.ipynb', issues)
+        >>> with open('notebook-security.sarif', 'w') as f:
+        ...     json.dump(sarif, f, indent=2)
+    """
+    import hashlib
+    
+    notebook_pathobj = Path(notebook_path)
+    
+    # Build rules dictionary from unique categories
+    rules_dict = {}
+    for issue in issues:
+        rule_id = _get_rule_id_from_issue(issue)
+        
+        if rule_id not in rules_dict:
+            rules_dict[rule_id] = {
+                "id": rule_id,
+                "name": issue.message,
+                "shortDescription": {
+                    "text": issue.message
+                },
+                "fullDescription": {
+                    "text": f"{issue.message}. {issue.fix_suggestion or 'No automated fix available.'}"
+                },
+                "defaultConfiguration": {
+                    "level": _severity_to_sarif_level(issue.severity)
+                },
+                "properties": {
+                    "security-severity": str(_severity_to_score(issue.severity)),
+                    "precision": "high" if issue.confidence >= 0.9 else "medium" if issue.confidence >= 0.7 else "low",
+                    "tags": _get_tags_for_issue(issue)
+                },
+                "help": {
+                    "text": issue.fix_suggestion or "Review the finding and apply appropriate security measures.",
+                    "markdown": _format_help_markdown(issue)
+                }
+            }
+    
+    # Build SARIF results
+    sarif_results = []
+    for issue in issues:
+        rule_id = _get_rule_id_from_issue(issue)
+        
+        sarif_result = {
+            "ruleId": rule_id,
+            "level": _severity_to_sarif_level(issue.severity),
+            "message": {
+                "text": f"{issue.message} in cell {issue.cell_index}",
+                "markdown": _format_message_markdown(issue)
+            },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": {
+                        "uri": str(notebook_pathobj),
+                        "uriBaseId": "%SRCROOT%"
+                    },
+                    "region": {
+                        "startLine": issue.line_number if issue.line_number else 1,
+                        "endLine": issue.line_number if issue.line_number else 1,
+                        "snippet": {
+                            "text": issue.code_snippet if issue.code_snippet else f"Cell {issue.cell_index}"
+                        }
+                    },
+                    "contextRegion": {
+                        "startLine": 1,
+                        "snippet": {
+                            "text": f"Notebook Cell {issue.cell_index} ({issue.category})"
+                        }
+                    }
+                }
+            }],
+            "partialFingerprints": {
+                "primaryLocationLineHash": hashlib.md5(
+                    f"{notebook_path}:{issue.cell_index}:{issue.line_number}:{issue.code_snippet}".encode()
+                ).hexdigest()[:16]
+            },
+            "properties": {
+                "cell_index": issue.cell_index,
+                "cell_line_number": issue.line_number,
+                "category": issue.category,
+                "confidence": issue.confidence,
+                "auto_fixable": issue.auto_fixable
+            }
+        }
+        
+        # Add fix information if available
+        if issue.fix_suggestion and issue.auto_fixable:
+            sarif_result["fixes"] = [{
+                "description": {
+                    "text": issue.fix_suggestion,
+                    "markdown": f"**Auto-fix available**\\n\\n{issue.fix_suggestion}"
+                }
+            }]
+        
+        sarif_results.append(sarif_result)
+    
+    # Build complete SARIF report
+    sarif_report = {
+        "version": "2.1.0",
+        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "PyGuard Notebook Security Analyzer",
+                    "version": "0.3.0",
+                    "informationUri": "https://github.com/cboyd0319/PyGuard",
+                    "semanticVersion": "0.3.0",
+                    "organization": "PyGuard",
+                    "shortDescription": {
+                        "text": "World-class Jupyter notebook security analyzer with ML/AI-aware detection"
+                    },
+                    "fullDescription": {
+                        "text": "Comprehensive security analysis for Jupyter notebooks with 76+ vulnerability patterns across 13 categories including code injection, unsafe deserialization, hardcoded secrets, and ML-specific risks."
+                    },
+                    "rules": list(rules_dict.values())
+                }
+            },
+            "results": sarif_results,
+            "columnKind": "utf16CodeUnits",
+            "properties": {
+                "notebook_analyzed": str(notebook_pathobj),
+                "total_issues": len(issues),
+                "critical_issues": sum(1 for i in issues if i.severity == "CRITICAL"),
+                "high_issues": sum(1 for i in issues if i.severity == "HIGH"),
+                "medium_issues": sum(1 for i in issues if i.severity == "MEDIUM"),
+                "low_issues": sum(1 for i in issues if i.severity == "LOW")
+            }
+        }]
+    }
+    
+    return sarif_report
+
+
+def _get_rule_id_from_issue(issue: NotebookIssue) -> str:
+    """Generate a rule ID from issue category and severity."""
+    # Convert category to rule ID format
+    category_abbrev = {
+        "Code Injection": "CI",
+        "Unsafe Deserialization": "UD",
+        "Command Injection": "CMD",
+        "Hardcoded Secret": "SEC",
+        "High-Entropy Secret": "ENT",
+        "PII Exposure": "PII",
+        "PII in Output": "PII-OUT",
+        "Unsafe Magic Command": "MAG",
+        "XSS Vulnerability": "XSS",
+        "ML Pipeline Security": "ML",
+        "Data Validation": "DVAL",
+        "Reproducibility Issue": "REPRO",
+        "Unpinned Dependency": "DEP",
+        "Information Disclosure": "INFO",
+        "Execution Order Issue": "EXEC",
+        "Filesystem Security": "FS",
+        "Network & Data Exfiltration": "NET",
+        "Resource Exhaustion": "RES",
+        "Advanced Code Injection": "ACI",
+        "Advanced ML/AI Security": "AML",
+        "Untrusted Notebook": "TRUST",
+        "Non-Standard Kernel": "KERN"
+    }
+    
+    abbrev = category_abbrev.get(issue.category, "GEN")
+    # Create unique rule ID
+    rule_id = f"PYGUARD-NB-{abbrev}-{issue.severity[:3]}"
+    return rule_id
+
+
+def _get_tags_for_issue(issue: NotebookIssue) -> List[str]:
+    """Get SARIF tags for an issue."""
+    tags = ["security", "notebook"]
+    
+    if issue.cwe_id:
+        tags.append(issue.cwe_id)
+    if issue.owasp_id:
+        tags.append(issue.owasp_id)
+    
+    # Add category-specific tags
+    category_tags = {
+        "Code Injection": ["injection", "code-execution"],
+        "Unsafe Deserialization": ["deserialization", "arbitrary-code-execution"],
+        "Command Injection": ["injection", "command-injection"],
+        "Hardcoded Secret": ["secrets", "credentials"],
+        "High-Entropy Secret": ["secrets", "cryptography"],
+        "PII Exposure": ["privacy", "pii"],
+        "XSS Vulnerability": ["xss", "injection"],
+        "ML Pipeline Security": ["ml", "ai", "model-security"],
+        "Filesystem Security": ["path-traversal", "filesystem"],
+        "Network & Data Exfiltration": ["network", "exfiltration"],
+        "Resource Exhaustion": ["dos", "resource-exhaustion"]
+    }
+    
+    if issue.category in category_tags:
+        tags.extend(category_tags[issue.category])
+    
+    return tags
+
+
+def _severity_to_sarif_level(severity: str) -> str:
+    """Convert PyGuard severity to SARIF level."""
+    mapping = {
+        'CRITICAL': 'error',
+        'HIGH': 'error',
+        'MEDIUM': 'warning',
+        'LOW': 'note',
+        'INFO': 'note',
+    }
+    return mapping.get(severity, 'warning')
+
+
+def _severity_to_score(severity: str) -> float:
+    """Convert severity to numeric score (CVSS-like)."""
+    mapping = {
+        'CRITICAL': 9.0,
+        'HIGH': 7.0,
+        'MEDIUM': 5.0,
+        'LOW': 3.0,
+        'INFO': 1.0,
+    }
+    return mapping.get(severity, 5.0)
+
+
+def _format_help_markdown(issue: NotebookIssue) -> str:
+    """Format detailed help text in markdown."""
+    help_text = f"## {issue.message}\\n\\n"
+    help_text += f"**Category:** {issue.category}\\n"
+    help_text += f"**Severity:** {issue.severity}\\n"
+    help_text += f"**Confidence:** {issue.confidence:.0%}\\n\\n"
+    
+    if issue.cwe_id:
+        help_text += f"**{issue.cwe_id}:** Common Weakness Enumeration\\n"
+    if issue.owasp_id:
+        help_text += f"**OWASP:** {issue.owasp_id}\\n"
+    
+    help_text += f"\\n### Fix Suggestion\\n\\n"
+    help_text += issue.fix_suggestion or "No automated fix available. Manual review required."
+    
+    if issue.auto_fixable:
+        help_text += "\\n\\n✅ **Auto-fix available** - Run PyGuard with auto-fix enabled."
+    
+    return help_text
+
+
+def _format_message_markdown(issue: NotebookIssue) -> str:
+    """Format issue message in markdown."""
+    msg = f"**{issue.message}**\\n\\n"
+    msg += f"Found in notebook cell {issue.cell_index}"
+    if issue.line_number:
+        msg += f", line {issue.line_number}"
+    msg += f"\\n\\nConfidence: {issue.confidence:.0%}"
+    
+    if issue.code_snippet:
+        msg += f"\\n\\n```python\\n{issue.code_snippet}\\n```"
+    
+    return msg
