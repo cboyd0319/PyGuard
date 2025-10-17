@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@aa66c85c3989e209eb3db8cf5a40ba14e5dd5bc8 # v3.1.7
+        uses: codecov/codecov-action@7f8b4b4bde536c465e797be725a37496a2c0e024 # v5.1.2
         with:
           files: ./coverage.xml
           flags: unittests
