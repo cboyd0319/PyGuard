@@ -99,7 +99,7 @@ with open('data.pkl', 'rb') as f:
         pickle_findings = [f for f in result.findings if f.rule_id == 'NB-DESERIAL-001']
         assert len(pickle_findings) == 1
         assert pickle_findings[0].severity == 'CRITICAL'
-        assert 'CWE-502' in pickle_findings[0].cwe
+        assert 'CWE-502' in pickle_findings[0].cwe_id
     
     def test_detect_torch_load_unsafe(self, analyzer, temp_notebook):
         """Test detection of torch.load() without weights_only."""
