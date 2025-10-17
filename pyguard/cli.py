@@ -196,12 +196,12 @@ class PyGuardCLI:
                 progress.update(task, completed=len(files))
 
                 # Best practices
-                task = progress.add_task("✨ Best Practices...", total=len(files))
+                task = progress.add_task(self.ui._safe_text("✨ Best Practices..."), total=len(files))
                 results["best_practices"] = self.run_best_practices_fixes(files, create_backup)
                 progress.update(task, completed=len(files))
 
                 # Formatting
-                task = progress.add_task("🎨 Formatting...", total=len(files))
+                task = progress.add_task(self.ui._safe_text("🎨 Formatting..."), total=len(files))
                 results["formatting"] = self.run_formatting(files, create_backup)
                 progress.update(task, completed=len(files))
 
@@ -228,7 +228,7 @@ class PyGuardCLI:
 
             progress = self.ui.create_progress_bar()
             with progress:
-                task = progress.add_task("🔍 Scanning for issues...", total=len(files))
+                task = progress.add_task(self.ui._safe_text("🔍 Scanning for issues..."), total=len(files))
                 for i, file_path in enumerate(files):
                     # Security issues
                     sec_issues = self.security_fixer.scan_file_for_issues(file_path)

@@ -62,7 +62,7 @@ class AnalysisCache:
         """Load cache from disk."""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file) as f:
+                with open(self.cache_file, encoding="utf-8") as f:
                     data = json.load(f)
                     for file_path, entry_dict in data.items():
                         # Extract data if it exists
@@ -91,7 +91,7 @@ class AnalysisCache:
                     entry_dict["data"] = entry.data
                 data[file_path] = entry_dict
 
-            with open(self.cache_file, "w") as f:
+            with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
             self.logger.debug(f"Saved {len(self.cache)} cache entries", category="Cache")

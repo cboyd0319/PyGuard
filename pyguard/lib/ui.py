@@ -96,6 +96,16 @@ class EnhancedConsole:
             "⚡": "[Fast]",
             "🔴": "[!]",
             "🟡": "[i]",
+            "🔍": "[Search]",
+            "🎨": "[Format]",
+            "📁": "[Files]",
+            "📋": "[List]",
+            "📖": "[Docs]",
+            "💬": "[Chat]",
+            "🐛": "[Bug]",
+            "💡": "[Tip]",
+            "⭐": "[Star]",
+            "❤️": "<3",
         }
         for emoji, replacement in replacements.items():
             text = text.replace(emoji, replacement)
@@ -154,8 +164,14 @@ class EnhancedConsole:
         Returns:
             Progress object for displaying progress
         """
+        # Use ASCII-safe spinner on Windows to avoid encoding issues
+        if self.is_windows:
+            spinner_column = SpinnerColumn(spinner_name="dots")
+        else:
+            spinner_column = SpinnerColumn()
+        
         progress = Progress(
-            SpinnerColumn(),
+            spinner_column,
             TextColumn("[bold blue]{task.description}"),
             BarColumn(complete_style="green", finished_style="bold green"),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
@@ -181,7 +197,7 @@ class EnhancedConsole:
 
         # Files section
         table.add_row(
-            "📁 Files",
+            self._safe_text("📁 Files"),
             "Total files scanned",
             str(metrics.get("total_files", 0)),
         )
@@ -200,20 +216,20 @@ class EnhancedConsole:
 
         # Issues section
         table.add_row(
-            "🔍 Issues",
+            self._safe_text("🔍 Issues"),
             "Total issues found",
             str(metrics.get("total_issues", 0)),
             style="bold",
         )
         table.add_row(
             "",
-            "🔴 Security issues (HIGH)",
+            self._safe_text("🔴 Security issues (HIGH)"),
             str(metrics.get("security_issues", 0)),
             style="red bold",
         )
         table.add_row(
             "",
-            "🟡 Quality issues (MEDIUM)",
+            self._safe_text("🟡 Quality issues (MEDIUM)"),
             str(metrics.get("quality_issues", 0)),
             style="yellow",
         )
@@ -226,7 +242,7 @@ class EnhancedConsole:
 
         # Performance section
         table.add_row(
-            "⚡ Performance",
+            self._safe_text("⚡ Performance"),
             "Total time",
             f"{metrics.get('analysis_time_seconds', 0):.2f}s",
         )
@@ -245,9 +261,9 @@ class EnhancedConsole:
         if not issues:
             self.console.print(
                 Panel(
-                    "[bold green]🎉 Excellent! No issues found!\n\n"
-                    "Your code is clean, secure, and follows best practices.[/bold green]",
-                    title="[bold green]✨ Perfect Score[/bold green]",
+                    self._safe_text("[bold green]🎉 Excellent! No issues found!\n\n"
+                    "Your code is clean, secure, and follows best practices.[/bold green]"),
+                    title=self._safe_text("[bold green]✨ Perfect Score[/bold green]"),
                     border_style="green",
                     box=box.DOUBLE,
                 )
@@ -261,7 +277,7 @@ class EnhancedConsole:
         # Print high severity issues
         if high_issues:
             table = Table(
-                title="[bold red]🔴 HIGH Severity Issues (Fix Immediately!)[/bold red]",
+                title=self._safe_text("[bold red]🔴 HIGH Severity Issues (Fix Immediately!)[/bold red]"),
                 box=box.HEAVY,
                 show_header=True,
                 header_style="bold red",
@@ -284,7 +300,7 @@ class EnhancedConsole:
         # Print medium severity issues
         if medium_issues:
             table = Table(
-                title="[bold yellow]🟡 MEDIUM Severity Issues (Fix Soon)[/bold yellow]",
+                title=self._safe_text("[bold yellow]🟡 MEDIUM Severity Issues (Fix Soon)[/bold yellow]"),
                 box=box.ROUNDED,
                 show_header=True,
                 header_style="bold yellow",
@@ -307,7 +323,7 @@ class EnhancedConsole:
     def print_success_message(self, fixes_applied: int):
         """Print celebratory success message."""
         if fixes_applied > 0:
-            message = (
+            message = self._safe_text(
                 f"[bold green]🎉 Success! Applied {fixes_applied} fixes to your code![/bold green]\n\n"
                 f"[dim]Your code is now more secure, cleaner, and follows best practices.\n"
                 f"Great job taking the time to improve your code quality![/dim]"
@@ -315,13 +331,13 @@ class EnhancedConsole:
             border_style = "green"
             title = "[bold green][OK] Analysis Complete[/bold green]"
         else:
-            message = (
+            message = self._safe_text(
                 "[bold green]🎉 Perfect! Your code is already clean![/bold green]\n\n"
                 "[dim]No issues found. Your code follows security best practices\n"
                 "and coding standards. Keep up the excellent work![/dim]"
             )
             border_style = "green"
-            title = "[bold green]✨ Excellent Work[/bold green]"
+            title = self._safe_text("[bold green]✨ Excellent Work[/bold green]")
 
         panel = Panel(message, title=title, border_style=border_style, box=box.DOUBLE)
         self.console.print()
@@ -341,7 +357,7 @@ class EnhancedConsole:
 
         steps.append("[OK] Run PyGuard regularly to keep your code quality high")
 
-        tree = Tree("[bold cyan]📋 What's Next?[/bold cyan]")
+        tree = Tree(self._safe_text("[bold cyan]📋 What's Next?[/bold cyan]"))
         for step in steps:
             tree.add(step)
 
@@ -351,13 +367,15 @@ class EnhancedConsole:
     def print_help_message(self):
         """Print helpful getting started message for beginners."""
         panel = Panel(
-            "[bold cyan]Need Help?[/bold cyan]\n\n"
-            "📖 [bold]Documentation:[/bold] Check docs/BEGINNER-GUIDE.md\n"
-            "💬 [bold]Questions:[/bold] Open a discussion on GitHub\n"
-            "🐛 [bold]Issues:[/bold] Report bugs on GitHub Issues\n"
-            "⭐ [bold]Like PyGuard?:[/bold] Give us a star on GitHub!\n\n"
-            "[dim]PyGuard is free and open-source. Built with ❤️ for developers.[/dim]",
-            title="[bold cyan]💡 Help & Support[/bold cyan]",
+            self._safe_text(
+                "[bold cyan]Need Help?[/bold cyan]\n\n"
+                "📖 [bold]Documentation:[/bold] Check docs/BEGINNER-GUIDE.md\n"
+                "💬 [bold]Questions:[/bold] Open a discussion on GitHub\n"
+                "🐛 [bold]Issues:[/bold] Report bugs on GitHub Issues\n"
+                "⭐ [bold]Like PyGuard?:[/bold] Give us a star on GitHub!\n\n"
+                "[dim]PyGuard is free and open-source. Built with ❤️ for developers.[/dim]"
+            ),
+            title=self._safe_text("[bold cyan]💡 Help & Support[/bold cyan]"),
             border_style="cyan",
         )
         self.console.print(panel)
@@ -367,7 +385,7 @@ class EnhancedConsole:
         message = f"[bold red][X] Oops! Something went wrong:[/bold red]\n\n{error}"
 
         if suggestion:
-            message += f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}"
+            message += self._safe_text(f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}")
 
         panel = Panel(
             message,
