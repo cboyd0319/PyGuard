@@ -286,14 +286,16 @@ jobs:
     steps:
     - name: Summary
       run: |
-        echo "## [OK] All Action Tests Passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "The PyGuard GitHub Action is working correctly and ready for:" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Basic scanning" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Security-only mode" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Multiple paths and exclusions" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] SARIF upload" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Fail on issues" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Output validation" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Python version compatibility" >> $GITHUB_STEP_SUMMARY
-        echo "- [OK] Vulnerability detection" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## [OK] All Action Tests Passed"
+          echo ""
+          echo "The PyGuard GitHub Action is working correctly and ready for:"
+          echo "- [OK] Basic scanning"
+          echo "- [OK] Security-only mode"
+          echo "- [OK] Multiple paths and exclusions"
+          echo "- [OK] SARIF upload"
+          echo "- [OK] Fail on issues"
+          echo "- [OK] Output validation"
+          echo "- [OK] Python version compatibility"
+          echo "- [OK] Vulnerability detection"
+        } >> "$GITHUB_STEP_SUMMARY"

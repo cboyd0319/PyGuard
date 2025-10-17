@@ -139,11 +139,11 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         
         # Delete old major version tag if it exists
-        git push origin :refs/tags/v${MAJOR_VERSION} || true
-        
+        git push origin ":refs/tags/v${MAJOR_VERSION}" || true
+
         # Create and push new major version tag
-        git tag -fa v${MAJOR_VERSION} -m "Update v${MAJOR_VERSION} to ${VERSION}"
-        git push origin v${MAJOR_VERSION}
+        git tag -fa "v${MAJOR_VERSION}" -m "Update v${MAJOR_VERSION} to ${VERSION}"
+        git push origin "v${MAJOR_VERSION}"
         
         echo "[OK] Updated v${MAJOR_VERSION} tag to point to v${VERSION}"
       env:
