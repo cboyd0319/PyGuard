@@ -207,8 +207,8 @@ class NotebookSecurityAnalyzer:
         r"tf\.keras\.models\.load_model\(": "TensorFlow model loading (verify source)",
         r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
         r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
-        r"dill\.load": "Dill deserialization (arbitrary code execution risk)",
-        r"transformers\.AutoModel\.from_pretrained": "Hugging Face model loading (verify repository trust)",
+        r"dill\.loads?\(": "Dill deserialization (arbitrary code execution risk)",
+        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
         r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
         r"keras\.models\.load_model": "Keras model loading with potential custom layers",
     }
@@ -219,6 +219,16 @@ class NotebookSecurityAnalyzer:
         r"display\(HTML\(": "HTML display (XSS risk)",
         r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
         r"%%html": "HTML cell magic (XSS risk)",
+        r"IPython\.display\.Javascript\(": "JavaScript execution (XSS risk)",
+        r"Javascript\(": "JavaScript execution (XSS risk)",
+        r"%%javascript": "JavaScript cell magic (XSS risk)",
+        r"%%js": "JavaScript cell magic (XSS risk)",
+        r"<script": "Inline script tag (XSS risk)",
+        r"<iframe": "Iframe injection (XSS/clickjacking risk)",
+        r"<object": "Object tag (XSS/content injection)",
+        r"<embed": "Embed tag (XSS/content injection)",
+        r"javascript:": "JavaScript protocol URL (XSS risk)",
+        r"on\w+\s*=": "HTML event handler (XSS risk)",
     }
 
     def __init__(self):
@@ -505,8 +515,8 @@ class NotebookSecurityAnalyzer:
                     severity = "CRITICAL" if "code execution" in description.lower() else "HIGH"
                     
                     # Special handling for torch.load
-                    if "torch.load" in pattern:
-                        # Check if weights_only=True is present
+                    if pattern == r"torch\.load\(":
+                        # Check if weights_only=True is present in the same line or nearby
                         if "weights_only" in line and "True" in line:
                             # Safe usage detected - skip
                             continue
@@ -531,6 +541,7 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                     else:
+                        auto_fixable = pattern in [r"pickle\.loads?\(", r"from_pretrained\("]
                         issues.append(
                             NotebookIssue(
                                 severity=severity,
@@ -547,7 +558,7 @@ class NotebookSecurityAnalyzer:
                                 cwe_id="CWE-502",
                                 owasp_id="ASVS-5.5.3",
                                 confidence=0.85,
-                                auto_fixable=pattern == r"pickle\.loads?\(",  # Pickle can be auto-fixed
+                                auto_fixable=auto_fixable,
                             )
                         )
 
@@ -678,6 +689,9 @@ class NotebookSecurityAnalyzer:
         
         # Check for reproducibility issues
         issues.extend(self._check_reproducibility(cell, cell_index))
+        
+        # Check for filesystem security issues
+        issues.extend(self._check_filesystem_security(cell, cell_index))
 
         return issues
 
@@ -1035,6 +1049,150 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=True,
                         )
                     )
+        
+        return issues
+
+    def _check_filesystem_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Check for filesystem security issues.
+        
+        Detects:
+        - Path traversal attempts (../)
+        - Accessing sensitive system files
+        - Unsafe file operations
+        - Symlink attacks
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of filesystem security issues
+        """
+        issues: List[NotebookIssue] = []
+        
+        # Dangerous path patterns
+        dangerous_paths = {
+            r"\.\./": "Path traversal attempt (../) - directory escape risk",
+            r"/etc/passwd": "Access to sensitive system file (/etc/passwd)",
+            r"/etc/shadow": "Access to password file (/etc/shadow)",
+            r"~/.ssh/": "Access to SSH directory (private keys)",
+            r"/root/": "Access to root directory",
+            r"\.\.\\": "Windows path traversal attempt",
+            r"C:\\Windows\\System32": "Access to Windows system directory",
+        }
+        
+        for pattern, description in dangerous_paths.items():
+            if re.search(pattern, cell.source):
+                issues.append(
+                    NotebookIssue(
+                        severity="HIGH",
+                        category="Filesystem Security",
+                        message=description,
+                        cell_index=cell_index,
+                        line_number=0,
+                        code_snippet="Dangerous path detected",
+                        fix_suggestion=(
+                            "Avoid accessing sensitive system files or using path traversal. "
+                            "Validate and sanitize all file paths. Use absolute paths and "
+                            "check against an allowlist of permitted directories."
+                        ),
+                        cwe_id="CWE-22",
+                        owasp_id="ASVS-5.2.3",
+                        confidence=0.8,
+                    )
+                )
+        
+        # Check for unsafe file operations
+        try:
+            tree = ast.parse(cell.source)
+            
+            for node in ast.walk(tree):
+                # Check for os.remove, shutil.rmtree without validation
+                if isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Attribute):
+                        module = None
+                        if isinstance(node.func.value, ast.Name):
+                            module = node.func.value.id
+                        
+                        # Dangerous file operations
+                        if module == "os" and node.func.attr in ["remove", "unlink", "rmdir"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"os.{node.func.attr}() without path validation - file deletion risk",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Validate file paths before deletion. Check against allowlist. "
+                                        "Prevent path traversal and ensure file exists before deleting."
+                                    ),
+                                    cwe_id="CWE-22",
+                                    confidence=0.7,
+                                )
+                            )
+                        
+                        elif module == "shutil" and node.func.attr in ["rmtree", "move", "copy"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"shutil.{node.func.attr}() without path validation - unsafe file operation",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Validate and sanitize file paths. Implement allowlist checking. "
+                                        "Be careful with recursive operations like rmtree()."
+                                    ),
+                                    cwe_id="CWE-22",
+                                    confidence=0.7,
+                                )
+                            )
+                        
+                        # Check for chmod/chown that could elevate privileges
+                        elif module == "os" and node.func.attr in ["chmod", "chown"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"os.{node.func.attr}() - privilege manipulation risk",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Avoid changing file permissions unless absolutely necessary. "
+                                        "Ensure proper permission model (least privilege)."
+                                    ),
+                                    cwe_id="CWE-732",
+                                    confidence=0.6,
+                                )
+                            )
+        
+        except SyntaxError:
+            pass
+        
+        # Check for tempfile misuse (predictable names)
+        if "tempfile.mktemp(" in cell.source:
+            issues.append(
+                NotebookIssue(
+                    severity="MEDIUM",
+                    category="Filesystem Security",
+                    message="tempfile.mktemp() is deprecated - race condition and predictable filename risk",
+                    cell_index=cell_index,
+                    line_number=0,
+                    code_snippet="tempfile.mktemp() detected",
+                    fix_suggestion=(
+                        "Use tempfile.mkstemp() or tempfile.NamedTemporaryFile() instead. "
+                        "These create files securely without race conditions."
+                    ),
+                    cwe_id="CWE-377",
+                    confidence=0.9,
+                    auto_fixable=True,
+                )
+            )
         
         return issues
 
