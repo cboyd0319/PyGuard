@@ -1870,3 +1870,229 @@ class TestAdvancedMLSecurity:
         assert len(ml_issues) >= 1 or len(input_issues) >= 1
 
         temp_notebook.unlink()
+
+
+class TestSARIFGeneration:
+    """Tests for SARIF report generation."""
+
+    def test_generate_sarif_basic(self, temp_notebook):
+        """Test basic SARIF generation."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "password = 'secret123'",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issues = scan_notebook(str(temp_notebook))
+        sarif = generate_notebook_sarif(str(temp_notebook), issues)
+
+        # Verify SARIF structure
+        assert sarif["version"] == "2.1.0"
+        assert "$schema" in sarif
+        assert "runs" in sarif
+        assert len(sarif["runs"]) == 1
+
+        run = sarif["runs"][0]
+        assert "tool" in run
+        assert "results" in run
+        assert run["tool"]["driver"]["name"] == "PyGuard Notebook Security Analyzer"
+
+        # Verify results
+        assert len(run["results"]) > 0
+        result = run["results"][0]
+        assert "ruleId" in result
+        assert "level" in result
+        assert "message" in result
+        assert "locations" in result
+
+        temp_notebook.unlink()
+
+    def test_sarif_includes_fixes(self, temp_notebook):
+        """Test that SARIF includes fix suggestions."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "import torch\nmodel = torch.load('model.pth')",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issues = scan_notebook(str(temp_notebook))
+        sarif = generate_notebook_sarif(str(temp_notebook), issues)
+
+        run = sarif["runs"][0]
+        # Find auto-fixable issues
+        fixable_results = [r for r in run["results"] if "fixes" in r]
+        assert len(fixable_results) > 0
+
+        # Verify fix structure
+        fix = fixable_results[0]["fixes"][0]
+        assert "description" in fix
+        assert "text" in fix["description"]
+
+        temp_notebook.unlink()
+
+    def test_sarif_severity_mapping(self, temp_notebook):
+        """Test SARIF severity level mapping."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# Critical: eval\n",
+                        "eval('test')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                },
+                {
+                    "cell_type": "code",
+                    "execution_count": 2,
+                    "source": [
+                        "# Medium: unpinned\n",
+                        "%pip install numpy\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issues = scan_notebook(str(temp_notebook))
+        sarif = generate_notebook_sarif(str(temp_notebook), issues)
+
+        run = sarif["runs"][0]
+        levels = [r["level"] for r in run["results"]]
+
+        # Should have both error (CRITICAL/HIGH) and warning (MEDIUM)
+        # Test that we have multiple different severity levels
+        assert len(set(levels)) >= 2, f"Expected multiple severity levels, got: {set(levels)}"
+        # Check that at least one of the expected levels exists
+        assert "error" in levels or "warning" in levels or "note" in levels
+
+        temp_notebook.unlink()
+
+    def test_sarif_rules_metadata(self, temp_notebook):
+        """Test that SARIF includes proper rule metadata."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "password = 'supersecret123'",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issues = scan_notebook(str(temp_notebook))
+        sarif = generate_notebook_sarif(str(temp_notebook), issues)
+
+        run = sarif["runs"][0]
+        rules = run["tool"]["driver"]["rules"]
+
+        assert len(rules) > 0
+        rule = rules[0]
+
+        # Verify rule structure
+        assert "id" in rule
+        assert "name" in rule
+        assert "shortDescription" in rule
+        assert "fullDescription" in rule
+        assert "properties" in rule
+        assert "help" in rule
+
+        # Verify properties
+        props = rule["properties"]
+        assert "security-severity" in props
+        assert "precision" in props
+        assert "tags" in props
+        assert "security" in props["tags"]
+        assert "notebook" in props["tags"]
+
+        temp_notebook.unlink()
+
+    def test_sarif_cell_location_info(self, temp_notebook):
+        """Test that SARIF includes notebook cell location info."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "api_key = 'sk-1234567890'",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issues = scan_notebook(str(temp_notebook))
+        sarif = generate_notebook_sarif(str(temp_notebook), issues)
+
+        run = sarif["runs"][0]
+        result = run["results"][0]
+
+        # Verify cell-specific properties
+        assert "properties" in result
+        assert "cell_index" in result["properties"]
+        assert result["properties"]["cell_index"] == 0
+
+        # Verify location includes cell info
+        location = result["locations"][0]
+        assert "physicalLocation" in location
+        assert "region" in location["physicalLocation"]
+
+        temp_notebook.unlink()
+
+    def test_sarif_empty_issues(self):
+        """Test SARIF generation with no issues."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif
+
+        sarif = generate_notebook_sarif("test.ipynb", [])
+
+        assert sarif["version"] == "2.1.0"
+        run = sarif["runs"][0]
+        assert len(run["results"]) == 0
+        assert run["properties"]["total_issues"] == 0
