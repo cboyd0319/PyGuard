@@ -1021,29 +1021,87 @@ class NotebookSecurityAnalyzer:
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
-            line = line.strip()
+            line_stripped = line.strip()
+            
+            # Check for extremely dangerous curl|bash patterns first (highest priority)
+            if line_stripped.startswith("!") or line_stripped.startswith("%system"):
+                # Detect curl|bash, wget|bash, or similar remote code execution
+                if re.search(r"(curl|wget)\s+.*\|\s*(bash|sh|python|ruby|perl)", line_stripped):
+                    issues.append(
+                        NotebookIssue(
+                            severity="CRITICAL",
+                            category="Remote Code Execution",
+                            message="Remote code execution via curl|bash or similar - CRITICAL security risk",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line_stripped,
+                            rule_id="NB-SHELL-002",
+                            fix_suggestion=(
+                                "Never pipe remote scripts directly to interpreters. "
+                                "Download, verify checksum, review content, then execute if safe. "
+                                "Use subprocess with explicit validation instead."
+                            ),
+                            cwe_id="CWE-494",  # Download of Code Without Integrity Check
+                            owasp_id="ASVS-5.3.3",
+                            confidence=1.0,
+                            auto_fixable=False,  # Too dangerous to auto-fix
+                        )
+                    )
+                    continue  # Don't also flag as generic shell command
+            
+            # Check for %run with remote URLs
+            if line_stripped.startswith("%run"):
+                # Detect http:// or https:// URLs
+                if re.search(r"%run\s+(https?://|ftp://)", line_stripped):
+                    issues.append(
+                        NotebookIssue(
+                            severity="CRITICAL",
+                            category="Remote Code Execution",
+                            message="%run with remote URL - downloading and executing untrusted code",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line_stripped,
+                            rule_id="NB-SHELL-003",
+                            fix_suggestion=(
+                                "Do not use %run with remote URLs. "
+                                "Download file, verify integrity (checksum), review code, then run locally."
+                            ),
+                            cwe_id="CWE-494",
+                            owasp_id="ASVS-5.3.3",
+                            confidence=1.0,
+                            auto_fixable=False,
+                        )
+                    )
+                    continue
+            
+            # Check for generic dangerous magics
             for magic, description in self.DANGEROUS_MAGICS.items():
-                if line.startswith(magic):
+                if line_stripped.startswith(magic):
                     # Assign rule_id based on magic type
                     if magic in ["%%bash", "%%sh", "%%script"]:
                         rule_id = "NB-SHELL-002"
+                        severity = "HIGH"
                     elif magic == "%run":
                         rule_id = "NB-SHELL-003"
+                        severity = "HIGH"
                     elif magic in ["!", "%system"]:
                         rule_id = "NB-SHELL-001"
+                        severity = "HIGH"
                     elif magic == "%pip":
                         rule_id = "NB-SHELL-004"
+                        severity = "MEDIUM"
                     else:
                         rule_id = "NB-SHELL-005"
+                        severity = "MEDIUM"
                     
                     issues.append(
                         NotebookIssue(
-                            severity="HIGH",
+                            severity=severity,
                             category="Unsafe Magic Command",
                             message=f"Dangerous magic command: {description}",
                             cell_index=cell_index,
                             line_number=line_num,
-                            code_snippet=line,
+                            code_snippet=line_stripped,
                             rule_id=rule_id,
                             fix_suggestion=(
                                 "Avoid using magic commands that execute system commands. "
@@ -1433,6 +1491,7 @@ class NotebookSecurityAnalyzer:
                         cell_index=cell_index,
                         line_number=0,
                         code_snippet=match.group(0),
+                        rule_id="NB-REPRO-001",
                         fix_suggestion=f"Pin package version: {tool} install {package}==X.Y.Z",
                         confidence=0.85,
                         auto_fixable=True,
