@@ -2096,3 +2096,397 @@ class TestSARIFGeneration:
         run = sarif["runs"][0]
         assert len(run["results"]) == 0
         assert run["properties"]["total_issues"] == 0
+
+
+class TestEnhancedMLPatterns:
+    """Test enhanced ML/AI security pattern detection."""
+
+    def test_tensorflow_model_loading_detection(self, temp_notebook):
+        """Test detection of TensorFlow model loading patterns."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import tensorflow as tf\n",
+                        "# Load TensorFlow SavedModel\n",
+                        "model = tf.saved_model.load('my_model')\n",
+                        "# Load Keras model from JSON\n",
+                        "model2 = tf.keras.models.model_from_json(json_config)"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        # Should detect TensorFlow model loading
+        ml_issues = [i for i in issues if i.category == "ML Pipeline Security"]
+        assert len(ml_issues) >= 2, f"Expected at least 2 TensorFlow issues, got {len(ml_issues)}"
+        
+        # Check for SavedModel and model_from_json
+        patterns_found = [i.message for i in ml_issues]
+        assert any("SavedModel" in msg or "saved_model" in msg for msg in patterns_found)
+        assert any("JSON" in msg or "json" in msg for msg in patterns_found)
+
+        temp_notebook.unlink()
+
+    def test_onnx_model_detection(self, temp_notebook):
+        """Test detection of ONNX model loading."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import onnx\n",
+                        "import onnxruntime\n",
+                        "# Load ONNX model\n",
+                        "model = onnx.load('model.onnx')\n",
+                        "session = onnxruntime.InferenceSession('model.onnx')"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        ml_issues = [i for i in issues if i.category == "ML Pipeline Security"]
+        assert len(ml_issues) >= 2
+        assert any("ONNX" in i.message for i in ml_issues)
+
+        temp_notebook.unlink()
+
+    def test_huggingface_automodel_detection(self, temp_notebook):
+        """Test detection of Hugging Face AutoModel loading."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from transformers import AutoModel, pipeline\n",
+                        "# Load AutoModel\n",
+                        "model = AutoModel.from_pretrained('bert-base-uncased')\n",
+                        "# Use pipeline with custom model\n",
+                        "pipe = pipeline('sentiment-analysis', model='untrusted/model')"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        ml_issues = [i for i in issues if i.category == "ML Pipeline Security"]
+        assert len(ml_issues) >= 2
+        assert any("AutoModel" in i.message or "pipeline" in i.message for i in ml_issues)
+
+        temp_notebook.unlink()
+
+
+class TestComplianceLicensing:
+    """Test compliance and licensing pattern detection."""
+
+    def test_gpl_dependency_detection(self, temp_notebook):
+        """Test detection of GPL-licensed dependencies."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# Using GPL-licensed library\n",
+                        "from some_gpl_lib import feature  # GPL\n",
+                        "import another_lib  # GPL-3.0"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        compliance_issues = [i for i in issues if i.category == "Compliance & Licensing"]
+        assert len(compliance_issues) >= 1
+        assert any("GPL" in i.message for i in compliance_issues)
+
+        temp_notebook.unlink()
+
+    def test_cryptography_export_control(self, temp_notebook):
+        """Test detection of cryptographic libraries with export restrictions."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from cryptography import fernet\n",
+                        "import pycrypto\n",
+                        "from nacl import secret"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        compliance_issues = [i for i in issues if i.category == "Compliance & Licensing"]
+        assert len(compliance_issues) >= 1
+        assert any("cryptography" in i.message.lower() or "export" in i.message.lower() for i in compliance_issues)
+
+        temp_notebook.unlink()
+
+
+class TestEnhancedNetworkPatterns:
+    """Test enhanced network exfiltration patterns."""
+
+    def test_graphql_detection(self, temp_notebook):
+        """Test detection of GraphQL operations."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from gql import gql, Client\n",
+                        "import graphql\n",
+                        "query = gql('{ users { id name } }')\n",
+                        "result = client.execute(query)"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        network_issues = [i for i in issues if i.category == "Network & Data Exfiltration"]
+        assert len(network_issues) >= 1
+        assert any("GraphQL" in i.message or "gql" in i.message for i in network_issues)
+
+        temp_notebook.unlink()
+
+    def test_dns_resolver_detection(self, temp_notebook):
+        """Test detection of DNS resolver operations."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import dns.resolver\n",
+                        "import dnspython\n",
+                        "resolver = dns.resolver.Resolver()\n",
+                        "answers = resolver.query('example.com', 'A')"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        network_issues = [i for i in issues if i.category == "Network & Data Exfiltration"]
+        assert len(network_issues) >= 1
+        assert any("DNS" in i.message for i in network_issues)
+
+        temp_notebook.unlink()
+
+
+class TestEnhancedPIIPatterns:
+    """Test enhanced PII detection patterns."""
+
+    def test_iban_swift_detection(self, temp_notebook):
+        """Test detection of IBAN and SWIFT codes."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# Banking information\n",
+                        "iban = 'GB82WEST12345698765432'\n",
+                        "swift = 'DEUTDEFF500'"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        pii_issues = [i for i in issues if i.category == "PII Exposure"]
+        assert len(pii_issues) >= 1
+        assert any("IBAN" in i.message or "SWIFT" in i.message for i in pii_issues)
+
+        temp_notebook.unlink()
+
+    def test_medical_record_detection(self, temp_notebook):
+        """Test detection of medical record numbers."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# Medical data\n",
+                        "patient_mrn = 'MRN: 1234567'\n",
+                        "diagnosis = 'A00.1'  # ICD-10 code"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        pii_issues = [i for i in issues if i.category == "PII Exposure"]
+        assert len(pii_issues) >= 1
+        assert any("Medical" in i.message or "MRN" in i.message or "ICD" in i.message for i in pii_issues)
+
+        temp_notebook.unlink()
+
+
+class TestEnhancedShellMagics:
+    """Test enhanced shell and magic command detection."""
+
+    def test_conda_install_detection(self, temp_notebook):
+        """Test detection of %conda install commands."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "%conda install numpy\n",
+                        "%conda install -c conda-forge pandas"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        magic_issues = [i for i in issues if i.category in ["Unsafe Magic Command", "Unpinned Dependency"]]
+        assert len(magic_issues) >= 1
+        
+        temp_notebook.unlink()
+
+    def test_load_magic_detection(self, temp_notebook):
+        """Test detection of %load and %loadpy magic commands."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "%load https://example.com/script.py\n",
+                        "%loadpy external_script.py"
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+
+        with open(temp_notebook, "w", encoding="utf-8") as f:
+            json.dump(notebook, f)
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        magic_issues = [i for i in issues if i.category == "Unsafe Magic Command"]
+        assert len(magic_issues) >= 1
+        assert any("%load" in i.code_snippet for i in magic_issues)
+
+        temp_notebook.unlink()
+
