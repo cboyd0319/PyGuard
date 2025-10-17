@@ -2096,6 +2096,68 @@ class TestSARIFGeneration:
         run = sarif["runs"][0]
         assert len(run["results"]) == 0
         assert run["properties"]["total_issues"] == 0
+    
+    def test_sarif_enhanced_metadata(self):
+        """Test enhanced SARIF metadata with rollback commands and confidence scores."""
+        from pyguard.lib.notebook_security import generate_notebook_sarif, NotebookIssue
+        
+        issues = [
+            NotebookIssue(
+                severity="CRITICAL",
+                category="Code Injection",
+                message="Use of eval() enables code injection",
+                cell_index=0,
+                line_number=1,
+                code_snippet='eval(user_input)',
+                rule_id="NB-INJECT-001",
+                fix_suggestion="Use ast.literal_eval() for safe evaluation",
+                cwe_id="CWE-95",
+                owasp_id="ASVS-5.2.1",
+                confidence=0.95,
+                auto_fixable=True
+            )
+        ]
+        
+        sarif = generate_notebook_sarif("test.ipynb", issues)
+        
+        # Check run properties include new metadata
+        props = sarif["runs"][0]["properties"]
+        assert "auto_fixable_issues" in props
+        assert props["auto_fixable_issues"] == 1
+        assert "high_confidence_issues" in props
+        assert props["high_confidence_issues"] == 1
+        assert "categories_detected" in props
+        assert "Code Injection" in props["categories_detected"]
+        assert props["sarif_enhanced"] is True
+        assert props["includes_rollback_commands"] is True
+        
+        # Check result properties include enhanced metadata
+        result = sarif["runs"][0]["results"][0]
+        result_props = result["properties"]
+        assert "fix_quality" in result_props
+        assert result_props["fix_quality"] == "excellent"  # confidence >= 0.95
+        assert "semantic_risk" in result_props
+        assert result_props["semantic_risk"] == "low"  # confidence >= 0.9
+        assert "cwe_id" in result_props
+        assert result_props["cwe_id"] == "CWE-95"
+        assert "owasp_id" in result_props
+        assert result_props["owasp_id"] == "ASVS-5.2.1"
+        
+        # Check fix includes rollback commands
+        assert "fixes" in result
+        fix = result["fixes"][0]
+        assert "properties" in fix
+        fix_props = fix["properties"]
+        assert "fix_confidence" in fix_props
+        assert fix_props["fix_confidence"] == 0.95
+        assert "rollback_command" in fix_props
+        assert "backup_location" in fix_props
+        assert "semantic_preservation" in fix_props
+        assert fix_props["semantic_preservation"] == "verified"  # confidence >= 0.95
+        
+        # Check markdown description includes rollback command
+        assert "Rollback Command" in fix["description"]["markdown"]
+        assert "cp " in fix["description"]["markdown"]
 
 
 class TestEnhancedMLPatterns:

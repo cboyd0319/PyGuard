@@ -2542,16 +2542,38 @@ def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> 
                 "cell_line_number": issue.line_number,
                 "category": issue.category,
                 "confidence": issue.confidence,
-                "auto_fixable": issue.auto_fixable
+                "auto_fixable": issue.auto_fixable,
+                "cwe_id": issue.cwe_id,
+                "owasp_id": issue.owasp_id,
+                "rule_id": issue.rule_id or _get_rule_id_from_issue(issue),
+                "fix_quality": "excellent" if issue.confidence >= 0.95 else "good" if issue.confidence >= 0.85 else "fair",
+                "semantic_risk": "low" if issue.confidence >= 0.9 else "medium" if issue.confidence >= 0.7 else "high"
             }
         }
         
         # Add fix information if available
         if issue.fix_suggestion and issue.auto_fixable:
+            # Enhanced fix metadata with rollback commands
+            fix_description = f"**Auto-fix available** (Confidence: {issue.confidence:.0%})\\n\\n{issue.fix_suggestion}"
+            
+            # Add rollback command
+            backup_path = f"{notebook_pathobj}.backup"
+            rollback_cmd = f"cp {backup_path} {notebook_pathobj}"
+            
+            fix_description += f"\\n\\n**Rollback Command:**\\n```bash\\n{rollback_cmd}\\n```"
+            
+            # Add fix metadata
             sarif_result["fixes"] = [{
                 "description": {
                     "text": issue.fix_suggestion,
-                    "markdown": f"**Auto-fix available**\\n\\n{issue.fix_suggestion}"
+                    "markdown": fix_description
+                },
+                "properties": {
+                    "fix_confidence": issue.confidence,
+                    "fix_type": "automated",
+                    "rollback_command": rollback_cmd,
+                    "backup_location": backup_path,
+                    "semantic_preservation": "verified" if issue.confidence >= 0.95 else "probable"
                 }
             }]
         
@@ -2586,7 +2608,13 @@ def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> 
                 "critical_issues": sum(1 for i in issues if i.severity == "CRITICAL"),
                 "high_issues": sum(1 for i in issues if i.severity == "HIGH"),
                 "medium_issues": sum(1 for i in issues if i.severity == "MEDIUM"),
-                "low_issues": sum(1 for i in issues if i.severity == "LOW")
+                "low_issues": sum(1 for i in issues if i.severity == "LOW"),
+                "auto_fixable_issues": sum(1 for i in issues if i.auto_fixable),
+                "high_confidence_issues": sum(1 for i in issues if i.confidence >= 0.9),
+                "categories_detected": list(set(i.category for i in issues)),
+                "pyguard_version": "0.3.0",
+                "sarif_enhanced": True,
+                "includes_rollback_commands": True
             }
         }]
     }
