@@ -194,18 +194,36 @@ class NotebookSecurityAnalyzer:
         >>> print(f"Found {len(critical)} critical issues")
     """
 
-    # Dangerous magic commands
+    # Dangerous magic commands - Enhanced to 14+ patterns (Category 3)
     DANGEROUS_MAGICS = {
+        # System command execution
         "%system": "Direct system command execution",
         "!": "Shell command execution",
         "%%bash": "Bash script execution",
         "%%sh": "Shell script execution",
         "%%script": "Script execution",
+        
+        # Package management
+        "%pip": "Pip package installation (version pinning recommended)",
+        "%conda": "Conda package installation (version pinning recommended)",
+        
+        # Code loading from external sources
         "%load_ext": "Loading external extensions (may be unsafe)",
         "%run": "Running external scripts (path traversal risk)",
+        "%load": "Loading code from external sources (verify integrity)",
+        "%loadpy": "Loading Python code from URL or file (security risk)",
+        
+        # File operations
         "%%writefile": "Writing files (path traversal risk)",
+        
+        # Environment & State manipulation
         "%env": "Environment variable manipulation",
-        "%store": "Cross-notebook variable storage (security risk)",
+        "%set_env": "Setting environment variables (secret exposure risk)",
+        "%store": "Cross-notebook variable storage (state poisoning risk)",
+        
+        # Directory navigation
+        "%cd": "Directory change (filesystem structure exposure)",
+        "%pwd": "Print working directory (filesystem disclosure)",
     }
 
     # Patterns for secrets in notebooks - Comprehensive 50+ patterns
@@ -283,68 +301,156 @@ class NotebookSecurityAnalyzer:
         r"[0-9]{8,10}:[a-zA-Z0-9_-]{35}": "Telegram bot token",
     }
 
-    # PII detection patterns
+    # PII detection patterns - Enhanced to 14+ patterns
     PII_PATTERNS = {
+        # Identity numbers
         r"\b\d{3}-\d{2}-\d{4}\b": "Social Security Number (SSN)",
+        r"\b[A-Z]{1,2}\d{6,8}[A-Z]?\b": "Passport number pattern",
+        
+        # Contact information
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b": "Email address",
-        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
         r"\b(?:\d{3}[-.]?)?\d{3}[-.]?\d{4}\b": "Phone number",
-        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IP address",
+        
+        # Financial data
+        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
+        r"\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b": "IBAN (International Bank Account Number)",
+        r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b": "SWIFT/BIC code",
+        
+        # Network identifiers
+        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IPv4 address",
+        r"\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b": "IPv6 address",
+        r"\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b": "MAC address",
+        
+        # Geographic data
         r"\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b": "UK postal code",
         r"\b\d{5}(-\d{4})?\b": "US ZIP code",
+        
+        # Medical & Health
+        r"\b[A-Z]\d{2}\.\d{1,3}\b": "ICD-10 diagnosis code pattern",
+        r"\bMRN[:\s-]?\d{6,10}\b": "Medical Record Number (MRN)",
     }
 
-    # Risky ML/Data Science operations
+    # Risky ML/Data Science operations - Enhanced with 22+ patterns (Category 2)
     ML_SECURITY_PATTERNS = {
+        # Pickle-based deserialization (CRITICAL)
         r"pickle\.loads?\(": "Unsafe pickle deserialization (model poisoning risk)",
         r"joblib\.load\(": "Joblib model loading (verify source)",
-        r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk)",
-        r"tf\.keras\.models\.load_model\(": "TensorFlow model loading (verify source)",
         r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
         r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
         r"dill\.loads?\(": "Dill deserialization (arbitrary code execution risk)",
-        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
-        r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
+        
+        # PyTorch (CRITICAL)
+        r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk via __reduce__)",
+        r"torch\.jit\.load\(": "PyTorch JIT model loading (verify source and checksum)",
+        
+        # TensorFlow & Keras (HIGH)
+        r"tf\.keras\.models\.load_model\(": "TensorFlow Keras model loading (verify source)",
         r"keras\.models\.load_model": "Keras model loading with potential custom layers",
+        r"tf\.saved_model\.load\(": "TensorFlow SavedModel loading without signature verification",
+        r"tf\.keras\.models\.model_from_json\(": "Keras model from JSON (verify architecture integrity)",
+        r"tf\.keras\.models\.model_from_yaml\(": "Keras model from YAML (architecture injection risk)",
+        
+        # ONNX (HIGH)
+        r"onnx\.load\(": "ONNX model loading without opset validation",
+        r"onnxruntime\.InferenceSession\(": "ONNX Runtime inference (verify model source)",
+        
+        # Hugging Face Transformers (HIGH)
+        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
+        r"AutoModel\.from_pretrained\(": "Hugging Face AutoModel loading (supply chain risk)",
+        r"pipeline\(.*model\s*=": "Hugging Face pipeline with custom model (verify source)",
+        
+        # MLflow (MEDIUM)
+        r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
+        r"mlflow\.pyfunc\.load_model\(": "MLflow PyFunc model loading (arbitrary code risk)",
+        
+        # YAML deserialization (CRITICAL)
         r"yaml\.load\(": "YAML load without safe loader (arbitrary code execution risk)",
         r"yaml\.unsafe_load\(": "Unsafe YAML loading (arbitrary code execution risk)",
+        r"yaml\.full_load\(": "YAML full_load (consider safe_load instead)",
+        
+        # Model training risks (MEDIUM)
+        r"model\.fit\(": "Model training detected (ensure data validation)",
     }
 
-    # XSS-prone output patterns
+    # XSS-prone output patterns - Enhanced to 16+ patterns (Category 7)
     XSS_PATTERNS = {
+        # HTML/JavaScript rendering
         r"IPython\.display\.HTML\(": "Raw HTML display (XSS risk)",
         r"display\(HTML\(": "HTML display (XSS risk)",
         r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
         r"%%html": "HTML cell magic (XSS risk)",
+        
+        # JavaScript execution
         r"IPython\.display\.Javascript\(": "JavaScript execution (XSS risk)",
         r"Javascript\(": "JavaScript execution (XSS risk)",
         r"%%javascript": "JavaScript cell magic (XSS risk)",
         r"%%js": "JavaScript cell magic (XSS risk)",
+        
+        # Inline HTML/JS
         r"<script": "Inline script tag (XSS risk)",
         r"<iframe": "Iframe injection (XSS/clickjacking risk)",
         r"<object": "Object tag (XSS/content injection)",
         r"<embed": "Embed tag (XSS/content injection)",
         r"javascript:": "JavaScript protocol URL (XSS risk)",
         r"on\w+\s*=": "HTML event handler (XSS risk)",
+        
+        # CSS injection & data exfiltration
+        r"<style": "Inline style tag (CSS injection risk)",
+        r"style\s*=\s*['\"].*background.*url\(": "CSS background URL (data exfiltration via CSS)",
+        
+        # SVG & XML
+        r"<svg": "SVG tag (potential XSS if user-controlled)",
+        r"\.to_svg\(\)": "SVG generation (sanitize user input)",
+        
+        # Markdown rendering (if treated as HTML)
+        r"IPython\.display\.Markdown\(": "Markdown display (verify no HTML injection)",
     }
 
-    # Network & Data Exfiltration patterns (Category 4)
+    # Network & Data Exfiltration patterns (Category 4) - Enhanced to 18+ patterns
     NETWORK_EXFILTRATION_PATTERNS = {
+        # HTTP/HTTPS exfiltration
         r"requests\.(post|put|patch)\(": "HTTP POST/PUT/PATCH to external domain (data exfiltration risk)",
         r"urllib\.request\.urlopen\(": "Direct URL access (data exfiltration risk)",
         r"httpx\.(post|put|patch)\(": "HTTPX POST/PUT/PATCH (data exfiltration risk)",
+        r"urllib3\.": "urllib3 direct HTTP access (data exfiltration risk)",
+        
+        # File transfer protocols
         r"ftplib\.FTP\(": "FTP connection (data exfiltration risk)",
         r"smtplib\.SMTP\(": "SMTP connection (email exfiltration risk)",
+        r"imaplib\.IMAP4": "IMAP connection (email data access)",
+        
+        # Raw network access
         r"socket\.socket\(": "Raw socket access (network exfiltration risk)",
+        r"socket\.create_connection\(": "Socket connection (network exfiltration risk)",
+        
+        # Cloud SDKs
         r"boto3\.client\(": "AWS SDK usage (cloud data access risk)",
         r"google\.cloud": "Google Cloud SDK (cloud data access risk)",
         r"azure\.": "Azure SDK (cloud data access risk)",
+        
+        # Telemetry & Monitoring
         r"sentry_sdk\.init\(": "Sentry telemetry (data collection)",
         r"datadog\.": "DataDog telemetry (data collection)",
+        r"newrelic\.": "New Relic telemetry (data collection)",
+        
+        # Real-time communication
         r"websocket\.": "WebSocket connection (real-time data channel)",
+        r"socketio\.": "Socket.IO connection (real-time data channel)",
+        
+        # GraphQL & API
+        r"graphql\.": "GraphQL query/mutation (API data access)",
+        r"gql\(": "GraphQL query (validate endpoint allowlist)",
+        
+        # Database connections
         r"pymongo\.MongoClient\(": "MongoDB connection (database access)",
         r"psycopg2\.connect\(": "PostgreSQL connection (database access)",
         r"sqlalchemy\.create_engine\(": "SQLAlchemy database connection",
+        r"mysql\.connector\.connect\(": "MySQL connection (database access)",
+        r"redis\.Redis\(": "Redis connection (data store access)",
+        
+        # DNS & Covert channels
+        r"dns\.resolver\.": "DNS resolver (potential DNS exfiltration)",
+        r"dnspython\.": "DNS operations (covert channel risk)",
     }
 
     # Resource Exhaustion & DoS patterns (Category 11)
@@ -378,6 +484,25 @@ class NotebookSecurityAnalyzer:
         r"gradio\.Interface\(": "Gradio interface (user input to model risk)",
         r"streamlit\..*input": "Streamlit user input (validation required)",
         r"['\"].*\s*\+\s*(user_input|input\(|user_|request\.)": "String concatenation with user input (prompt injection risk)",
+    }
+    
+    # Compliance & Licensing patterns (Category 12) - NEW
+    COMPLIANCE_LICENSING_PATTERNS = {
+        # GPL licenses (copyleft restrictions)
+        r"from\s+.*\s+import.*#.*GPL": "GPL-licensed dependency (check license compatibility)",
+        r"import\s+.*#.*GPL": "GPL-licensed import (license compliance)",
+        
+        # License file references
+        r"open\(['\"]LICENSE": "License file access (verify compliance)",
+        r"pkg_resources\.get_distribution.*\.license": "License checking code detected",
+        
+        # Export control concerns
+        r"from\s+cryptography\s+import": "Cryptography library (export control considerations)",
+        r"import\s+(pycrypto|cryptography|nacl)": "Cryptographic library (export restrictions may apply)",
+        
+        # Data usage compliance
+        r"pd\.read_csv.*license": "Dataset with license reference",
+        r"dataset.*license": "Dataset licensing concern",
     }
 
     def __init__(self):
@@ -881,6 +1006,9 @@ class NotebookSecurityAnalyzer:
         
         # Check for advanced ML/AI security
         issues.extend(self._check_advanced_ml_security(cell, cell_index))
+        
+        # Check for compliance and licensing issues
+        issues.extend(self._check_compliance_licensing(cell, cell_index))
 
         return issues
 
@@ -1614,6 +1742,59 @@ class NotebookSecurityAnalyzer:
         
         return issues
 
+    def _check_compliance_licensing(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Check for compliance and licensing issues (Category 12).
+        
+        Detects:
+        - GPL dependencies in commercial notebooks
+        - Cryptographic libraries with export restrictions
+        - Dataset licensing concerns
+        - License compatibility issues
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of compliance and licensing issues
+        """
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.COMPLIANCE_LICENSING_PATTERNS.items():
+                if re.search(pattern, line):
+                    # Determine severity based on pattern
+                    severity = "LOW"
+                    if "cryptography" in pattern.lower() or "export" in description.lower():
+                        severity = "MEDIUM"
+                    elif "gpl" in pattern.lower():
+                        severity = "MEDIUM"
+                    
+                    issues.append(
+                        NotebookIssue(
+                            severity=severity,
+                            category="Compliance & Licensing",
+                            message=description,
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line.strip(),
+                            rule_id="NB-COMPLIANCE-001",
+                            fix_suggestion=(
+                                "Review license compatibility and export restrictions. "
+                                "Document all dependencies and their licenses. "
+                                "Ensure compliance with organizational policies and applicable laws. "
+                                "For cryptographic libraries, verify export control requirements."
+                            ),
+                            cwe_id="CWE-1104",
+                            confidence=0.6,
+                            auto_fixable=False,
+                        )
+                    )
+        
+        return issues
+
 
 class NotebookFixer:
     """Provides automated fixes for notebook security issues."""
@@ -1875,7 +2056,12 @@ class NotebookFixer:
     
     def _fix_torch_load(self, source: str) -> str:
         """
-        Fix torch.load() calls to include weights_only=True.
+        Fix torch.load() calls to include weights_only=True and checksum verification.
+        
+        Implements the world-class standard from the vision document:
+        - Adds weights_only=True parameter
+        - Adds checksum verification before loading
+        - Includes educational comments with security rationale
         
         Performs AST-based transformation to safely add the parameter.
         
@@ -1883,67 +2069,207 @@ class NotebookFixer:
             source: Source code to fix
             
         Returns:
-            Fixed source code
+            Fixed source code with safe model loading and verification
         """
-        try:
-            tree = ast.parse(source)
-            modified = False
-            
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call):
-                    # Check if this is a torch.load call
-                    if isinstance(node.func, ast.Attribute):
-                        if (isinstance(node.func.value, ast.Name) and 
-                            node.func.value.id == "torch" and 
-                            node.func.attr == "load"):
-                            
-                            # Check if weights_only is already present
-                            has_weights_only = any(
-                                kw.arg == "weights_only" for kw in node.keywords
-                            )
-                            
-                            if not has_weights_only:
-                                # Add weights_only=True keyword argument
-                                node.keywords.append(
-                                    ast.keyword(
-                                        arg="weights_only",
-                                        value=ast.Constant(value=True)
-                                    )
-                                )
-                                modified = True
-            
-            if modified and hasattr(ast, "unparse"):
-                # Unparse to get fixed source
-                return ast.unparse(tree)
-            
-        except SyntaxError:
-            pass
-        
-        # Fallback: regex-based replacement if AST fails
+        # Add comprehensive model loading security
         if "torch.load(" in source and "weights_only" not in source:
-            # Simple regex replacement
-            source = re.sub(
-                r"torch\.load\(([^)]+)\)",
-                r"torch.load(\1, weights_only=True)",
-                source
-            )
-            # Clean up potential double comma
-            source = source.replace(", , weights_only", ", weights_only")
-            return source
+            # Build secure loading block
+            secure_block = []
+            secure_block.append("# PYGUARD AUTO-FIX: Secure model loading with verification")
+            secure_block.append("# CWE-502: Deserialization of Untrusted Data")
+            secure_block.append("# PyTorch Security Advisory: Always use weights_only=True")
+            secure_block.append("import hashlib")
+            secure_block.append("")
+            secure_block.append("# TODO: Replace with actual model checksum")
+            secure_block.append("MODEL_CHECKSUM = 'abcdef1234567890...'  # Get this from trusted source")
+            secure_block.append("")
+            secure_block.append("# Step 1: Verify model checksum before loading")
+            secure_block.append("model_path = 'model.pth'  # TODO: Update with actual path")
+            secure_block.append("with open(model_path, 'rb') as f:")
+            secure_block.append("    file_hash = hashlib.sha256(f.read()).hexdigest()")
+            secure_block.append("    if file_hash != MODEL_CHECKSUM:")
+            secure_block.append("        raise ValueError(f'Model checksum mismatch! Expected {MODEL_CHECKSUM}, got {file_hash}')")
+            secure_block.append("")
+            secure_block.append("# Step 2: Load with weights_only=True (prevents arbitrary code execution)")
+            secure_block.append("# Original unsafe torch.load() call replaced:")
+            secure_block.append("")
+            
+            # Try AST-based transformation first
+            try:
+                tree = ast.parse(source)
+                modified = False
+                
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Call):
+                        # Check if this is a torch.load call
+                        if isinstance(node.func, ast.Attribute):
+                            if (isinstance(node.func.value, ast.Name) and 
+                                node.func.value.id == "torch" and 
+                                node.func.attr == "load"):
+                                
+                                # Check if weights_only is already present
+                                has_weights_only = any(
+                                    kw.arg == "weights_only" for kw in node.keywords
+                                )
+                                
+                                if not has_weights_only:
+                                    # Add weights_only=True keyword argument
+                                    node.keywords.append(
+                                        ast.keyword(
+                                            arg="weights_only",
+                                            value=ast.Constant(value=True)
+                                        )
+                                    )
+                                    
+                                    # Add map_location for safety
+                                    has_map_location = any(
+                                        kw.arg == "map_location" for kw in node.keywords
+                                    )
+                                    if not has_map_location:
+                                        node.keywords.append(
+                                            ast.keyword(
+                                                arg="map_location",
+                                                value=ast.Constant(value="cpu")
+                                            )
+                                        )
+                                    
+                                    modified = True
+                
+                if modified and hasattr(ast, "unparse"):
+                    # Unparse to get fixed source
+                    fixed_source = ast.unparse(tree)
+                    # Add secure block before the fixed source
+                    return "\n".join(secure_block) + fixed_source
+                
+            except SyntaxError:
+                pass
+            
+            # Fallback: regex-based replacement if AST fails
+            lines = source.split("\n")
+            fixed_lines = []
+            
+            for line in lines:
+                if "torch.load(" in line and "weights_only" not in line:
+                    # Add secure block before torch.load line
+                    fixed_lines.extend(secure_block)
+                    # Fix the torch.load call
+                    fixed_line = re.sub(
+                        r"torch\.load\(([^)]+)\)",
+                        r"torch.load(\1, weights_only=True, map_location='cpu')",
+                        line
+                    )
+                    # Clean up potential double comma
+                    fixed_line = fixed_line.replace(", , weights_only", ", weights_only")
+                    fixed_lines.append(fixed_line)
+                else:
+                    fixed_lines.append(line)
+            
+            return "\n".join(fixed_lines)
         
         return source
     
     def _add_seed_setting(self, source: str, message: str) -> str:
         """
-        Add random seed setting for ML frameworks.
+        Add comprehensive random seed setting for ML frameworks.
+        
+        Implements the world-class standard from the vision document:
+        - Sets seeds for all major ML frameworks (random, numpy, torch, tf, jax)
+        - Configures deterministic backends
+        - Documents environment for reproducibility
         
         Args:
             source: Source code to fix
             message: Issue message describing which framework needs seeding
             
         Returns:
-            Fixed source code with seed setting
+            Fixed source code with comprehensive seed setting
         """
+        # Detect which frameworks are imported
+        has_torch = "import torch" in source or "from torch" in source
+        has_tf = "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
+        has_numpy = "import numpy" in source or "from numpy" in source or "import np" in source
+        has_random = "import random" in source
+        has_jax = "import jax" in source or "from jax" in source
+        
+        # Build comprehensive seed setting function
+        if has_torch or has_numpy or has_tf or has_random or "import" in source:
+            # Create comprehensive reproducibility setup
+            seed_block = []
+            seed_block.append("# PYGUARD AUTO-FIX: Comprehensive reproducibility setup")
+            seed_block.append("# Added for deterministic ML experiments")
+            seed_block.append("def set_global_seed(seed=42):")
+            seed_block.append("    \"\"\"Set seeds for reproducible ML experiments.\"\"\"")
+            
+            # Python random
+            if has_random or "random" in message.lower():
+                seed_block.append("    import random")
+                seed_block.append("    random.seed(seed)")
+            
+            # NumPy
+            if has_numpy or "numpy" in message.lower():
+                seed_block.append("    import numpy as np")
+                seed_block.append("    np.random.seed(seed)")
+            
+            # PyTorch
+            if has_torch or "torch" in message.lower():
+                seed_block.append("    import torch")
+                seed_block.append("    torch.manual_seed(seed)")
+                seed_block.append("    torch.cuda.manual_seed_all(seed)")
+                seed_block.append("    # PyTorch deterministic mode (may reduce performance)")
+                seed_block.append("    torch.backends.cudnn.deterministic = True")
+                seed_block.append("    torch.backends.cudnn.benchmark = False")
+                seed_block.append("    try:")
+                seed_block.append("        torch.use_deterministic_algorithms(True, warn_only=True)")
+                seed_block.append("    except AttributeError:")
+                seed_block.append("        pass  # PyTorch < 1.8")
+            
+            # TensorFlow
+            if has_tf or "tensorflow" in message.lower():
+                seed_block.append("    import tensorflow as tf")
+                seed_block.append("    tf.random.set_seed(seed)")
+                seed_block.append("    try:")
+                seed_block.append("        tf.config.experimental.enable_op_determinism()")
+                seed_block.append("    except AttributeError:")
+                seed_block.append("        pass  # TensorFlow < 2.9")
+            
+            # JAX
+            if has_jax:
+                seed_block.append("    import jax")
+                seed_block.append("    # JAX uses explicit PRNG keys, set environment for consistency")
+            
+            # Environment variables for additional determinism
+            if has_torch or has_tf:
+                seed_block.append("    import os")
+                seed_block.append("    os.environ['PYTHONHASHSEED'] = str(seed)")
+                if has_torch:
+                    seed_block.append("    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'")
+            
+            seed_block.append("    print(f'✓ Global seed set to {seed} for reproducibility')")
+            seed_block.append("")
+            seed_block.append("# Call seed setting function")
+            seed_block.append("set_global_seed(42)")
+            seed_block.append("")
+            
+            # Add the seed block at the beginning after imports
+            lines = source.split("\n")
+            insert_pos = 0
+            
+            # Find position after all import statements
+            last_import_line = -1
+            for i, line in enumerate(lines):
+                if line.strip().startswith("import ") or line.strip().startswith("from "):
+                    last_import_line = i
+            
+            if last_import_line >= 0:
+                insert_pos = last_import_line + 1
+            
+            # Insert seed block
+            for line in reversed(seed_block):
+                lines.insert(insert_pos, line)
+            
+            return "\n".join(lines)
+        
+        # Fallback to simple seed additions if comprehensive setup not appropriate
         seed_additions = []
         
         if "PyTorch" in message or "torch" in message.lower():
