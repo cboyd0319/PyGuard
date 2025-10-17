@@ -1,29 +1,104 @@
 """
 Jupyter Notebook Security Analysis for PyGuard.
 
-Provides comprehensive security analysis for .ipynb files including:
-- Cell-by-cell vulnerability detection
-- Execution order analysis
-- Magic command security checks
-- Secrets detection in notebooks
-- Dependency tracking across cells
-- Output sanitization checks
-- Kernel security analysis
-- PII (Personally Identifiable Information) detection
-- Dependency vulnerability scanning
-- License compliance checking
-- XSS vulnerability detection in outputs
-- ML pipeline security (data poisoning, model manipulation)
-- Notebook metadata security analysis
-- Cell trust and execution history validation
+This module implements world-class security analysis for .ipynb files, aligned with
+the PyGuard Jupyter Security Engineer vision. It provides comprehensive detection
+across 13 security categories with 76+ vulnerability patterns.
 
-References:
+**Detection Categories:**
+1. Code Injection & Dynamic Execution (CRITICAL)
+   - eval/exec/compile with untrusted input
+   - Dynamic imports and attribute access
+   - IPython kernel message injection
+   
+2. Unsafe Deserialization & ML Model Risks (CRITICAL)
+   - pickle.load() arbitrary code execution
+   - PyTorch torch.load() without weights_only
+   - Hugging Face model poisoning
+   
+3. Shell & Magic Command Abuse (HIGH/CRITICAL)
+   - System command execution via ! and %%bash
+   - Unpinned package installations
+   - Remote code loading
+   
+4. Network & Data Exfiltration (HIGH)
+   - HTTP POST/PUT to external domains
+   - Database connections without validation
+   - Cloud SDK usage (AWS, GCP, Azure)
+   - Raw socket access
+   
+5. Secrets & Credential Exposure (CRITICAL/HIGH)
+   - 50+ secret patterns (AWS, GitHub, Slack, OpenAI, SSH, JWT)
+   - Entropy-based detection for cryptographic keys
+   - Secrets in outputs and metadata
+   
+6. Privacy & PII Leakage (HIGH)
+   - SSN, credit cards, emails, phone numbers
+   - PII in cell outputs and tracebacks
+   
+7. Output Payload Injection (HIGH/CRITICAL)
+   - XSS via HTML/JavaScript rendering
+   - Iframe injection and clickjacking
+   
+8. Filesystem & Path Traversal (HIGH)
+   - Path traversal attempts
+   - Access to sensitive system files
+   - Unsafe file operations
+   
+9. Reproducibility & Environment Integrity (MEDIUM)
+   - Missing random seeds for ML frameworks
+   - Unpinned dependencies
+   - Non-deterministic operations
+   
+10. Execution Order & Notebook Integrity (MEDIUM)
+    - Non-monotonic execution counts
+    - Variables used before definition
+    
+11. Resource Exhaustion & DoS (HIGH/CRITICAL)
+    - Infinite loops
+    - Large memory allocations
+    - Fork bombs
+    
+12. Advanced ML/AI Security (HIGH/CRITICAL)
+    - Prompt injection in LLM applications
+    - Adversarial input acceptance
+    - Model supply chain risks
+    
+13. Advanced Code Injection (CRITICAL)
+    - Sandbox escape via dunder methods
+    - Type manipulation
+    - IPython kernel exploitation
+
+**Auto-Fix Capabilities:**
+- AST-based transformations for safety
+- Minimal, surgical changes
+- Idempotent fixes
+- Educational comments with CWE/CVE references
+- Rollback support via backups
+
+**Compliance & Standards:**
+- CWE (Common Weakness Enumeration) mapping
+- OWASP ASVS alignment
+- Confidence scoring (0.0-1.0)
+- SARIF output support (planned)
+
+**References:**
 - Jupyter Security | https://jupyter-notebook.readthedocs.io/en/stable/security.html | High | Notebook security guide
 - OWASP Jupyter | https://owasp.org/www-community/vulnerabilities/Jupyter_Notebook | Medium | Security considerations
 - CVE-2024-39700 | https://nvd.nist.gov/vuln/detail/CVE-2024-39700 | Critical | JupyterLab RCE vulnerability
 - CVE-2024-28233 | https://nvd.nist.gov/vuln/detail/CVE-2024-28233 | High | JupyterHub XSS vulnerability
 - CVE-2024-22420 | https://nvd.nist.gov/vuln/detail/CVE-2024-22420 | Medium | JupyterLab Markdown preview vulnerability
 - CVE-2025-30167 | https://nvd.nist.gov/vuln/detail/CVE-2025-30167 | High | Jupyter Core Windows configuration vulnerability
+- CWE-502 | https://cwe.mitre.org/data/definitions/502.html | Deserialization of Untrusted Data
+- CWE-95 | https://cwe.mitre.org/data/definitions/95.html | Improper Neutralization of Directives in Dynamically Evaluated Code
+- CWE-798 | https://cwe.mitre.org/data/definitions/798.html | Use of Hard-coded Credentials
+
+**World-Class Standards:**
+This implementation targets:
+- 100% detection rate for CRITICAL issues (eval, exec, pickle, torch.load, hardcoded secrets)
+- < 5% false positive rate on HIGH severity
+- Sub-100ms analysis for notebooks < 10 cells
+- Comprehensive auto-fix with confidence scoring
 """
 
 import ast
@@ -80,23 +155,42 @@ class NotebookMetadata:
 
 class NotebookSecurityAnalyzer:
     """
-    Comprehensive security analyzer for Jupyter notebooks.
+    World-class security analyzer for Jupyter notebooks.
+    
+    This analyzer implements comprehensive security detection across 13 categories
+    with 76+ vulnerability patterns, following the PyGuard Jupyter Security Engineer
+    vision for best-in-class notebook security.
 
-    Detects:
-    - Code injection in cells
-    - Hardcoded secrets and credentials
-    - Unsafe magic commands
-    - Insecure file operations
-    - Unsafe data deserialization
-    - Command execution vulnerabilities
-    - Output sanitization issues
-    - Kernel security problems
-    - PII (Personally Identifiable Information)
-    - Dependency vulnerabilities
-    - License compliance issues
-    - XSS vulnerabilities in outputs
-    - ML pipeline security issues
-    - Notebook metadata security
+    **Detection Capabilities:**
+    - CRITICAL: eval/exec, pickle.load, torch.load, hardcoded secrets, code injection
+    - HIGH: Shell commands, XSS, network exfiltration, filesystem access, PII exposure
+    - MEDIUM: Reproducibility, execution order, resource exhaustion
+    - LOW: Kernel metadata, environment info
+    
+    **Key Features:**
+    - Pattern-based detection (76+ patterns)
+    - Entropy-based secret detection (Shannon entropy > 4.5)
+    - AST analysis for code injection
+    - Cross-cell dataflow tracking
+    - Confidence scoring (0.0-1.0)
+    - CWE/OWASP mapping
+    - Auto-fix suggestions
+    
+    **Performance:**
+    - Target: Sub-100ms for small notebooks (< 10 cells)
+    - Linear scaling to 1000+ cells
+    - Parallel cell processing (planned)
+    
+    **Quality Metrics:**
+    - Target: 100% detection on CRITICAL issues
+    - Target: < 5% false positive rate on HIGH severity
+    - Comprehensive test coverage (64+ test cases)
+    
+    Example:
+        >>> analyzer = NotebookSecurityAnalyzer()
+        >>> issues = analyzer.analyze_notebook(Path("notebook.ipynb"))
+        >>> critical = [i for i in issues if i.severity == "CRITICAL"]
+        >>> print(f"Found {len(critical)} critical issues")
     """
 
     # Dangerous magic commands
