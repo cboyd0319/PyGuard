@@ -1069,46 +1069,62 @@ class NotebookSecurityAnalyzer:
                     # Exclude common test/placeholder values
                     value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
                     if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
-                        # Determine rule_id, severity, and priority based on secret type
+                        # Determine rule_id, severity, priority, and specific message based on secret type
                         rule_id = "NB-SECRET-001"  # default
                         severity = "HIGH"
-                        priority = 0  # Lower number = higher priority
+                        priority = 100  # Lower number = higher priority, generic patterns get 100
+                        specific_message = description  # Default to pattern description
                         
                         # AWS credentials (CRITICAL) - highest priority
                         if "AWS" in description or "AKIA" in value:
                             rule_id = "NB-SECRET-AWS-001"
                             severity = "CRITICAL"
                             priority = 1
+                            specific_message = "AWS access key detected in notebook"
                         # GitHub tokens (CRITICAL) - specific patterns take precedence
                         elif "GitHub" in description or value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
                             rule_id = "NB-SECRET-GITHUB-001"
                             severity = "CRITICAL"
-                            priority = 1 if value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")) else 10
+                            if value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                                priority = 1
+                                specific_message = "GitHub personal access token detected in notebook"
+                            else:
+                                priority = 10
+                                specific_message = "GitHub token detected in notebook"
                         # OpenAI API keys (CRITICAL) - specific patterns take precedence
                         elif "OpenAI" in description or value.startswith("sk-"):
                             rule_id = "NB-SECRET-OPENAI-001"
                             severity = "CRITICAL"
-                            priority = 1 if "OpenAI" in description else 10
+                            if "OpenAI" in description:
+                                priority = 1
+                                specific_message = "OpenAI API key detected in notebook"
+                            else:
+                                priority = 10
+                                specific_message = "API key detected in notebook"
                         # Slack tokens (HIGH)
                         elif "Slack" in description or value.startswith(("xoxb-", "xoxp-", "xoxa-", "xoxr-")):
                             rule_id = "NB-SECRET-SLACK-001"
                             severity = "HIGH"
                             priority = 2
+                            specific_message = "Slack token detected in notebook"
                         # SSH/RSA keys (CRITICAL)
                         elif "PRIVATE KEY" in value or "SSH" in description:
                             rule_id = "NB-SECRET-SSH-001"
                             severity = "CRITICAL"
                             priority = 1
+                            specific_message = "SSH/RSA private key detected in notebook"
                         # Database credentials (CRITICAL)
                         elif any(db in description for db in ["MongoDB", "PostgreSQL", "MySQL", "Redis"]):
                             rule_id = "NB-SECRET-DB-001"
                             severity = "CRITICAL"
                             priority = 1
+                            specific_message = f"Database connection string with credentials detected in notebook"
                         # JWT tokens (HIGH)
                         elif "JWT" in description or (value.startswith("eyJ") and value.count(".") >= 2):
                             rule_id = "NB-SECRET-JWT-001"
                             severity = "HIGH"
                             priority = 2
+                            specific_message = "JWT token detected in notebook"
                         
                         # Create unique key for this secret
                         secret_key = (line_num, value.strip())
@@ -1120,7 +1136,7 @@ class NotebookSecurityAnalyzer:
                                 'issue': NotebookIssue(
                                     severity=severity,
                                     category="Hardcoded Secret",
-                                    message=f"{description} detected in notebook",
+                                    message=specific_message,
                                     cell_index=cell_index,
                                     line_number=line_num,
                                     code_snippet=line[:50] + "..." if len(line) > 50 else line,
