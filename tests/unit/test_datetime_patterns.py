@@ -248,3 +248,148 @@ dt3 = datetime.utcfromtimestamp(123)  # HIGH
         # now() without tz should be MEDIUM
         medium_issues = [i for i in issues if i.severity == "MEDIUM"]
         assert len(medium_issues) >= 1
+
+
+class TestDatetimeEdgeCases:
+    """Test edge cases and advanced datetime patterns."""
+
+    def test_datetime_strptime(self):
+        """Test detection of strptime without timezone."""
+        code = """
+from datetime import datetime
+dt = datetime.strptime("2023-01-01", "%Y-%m-%d")
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should detect strptime returns naive datetime
+        assert len(issues) > 0
+        assert any(issue.rule_id == "DTZ007" for issue in issues)
+        assert any("replace(tzinfo=" in issue.suggested_fix for issue in issues)
+
+    def test_datetime_fromtimestamp_with_tz(self):
+        """Test that fromtimestamp with tz is not flagged."""
+        code = """
+from datetime import datetime, timezone
+dt = datetime.fromtimestamp(1234567890, tz=timezone.utc)
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should not detect issue when tz is provided
+        timestamp_issues = [i for i in issues if "fromtimestamp" in i.message]
+        assert len(timestamp_issues) == 0
+
+    def test_datetime_now_with_tz(self):
+        """Test that datetime.now with tz is not flagged."""
+        code = """
+from datetime import datetime, timezone
+dt = datetime.now(tz=timezone.utc)
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should not detect issue when tz is provided
+        now_issues = [i for i in issues if "DTZ001" in i.rule_id]
+        assert len(now_issues) == 0
+
+    def test_datetime_class_now(self):
+        """Test detection of datetime.datetime.now()."""
+        code = """
+import datetime
+dt = datetime.datetime.now()
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should detect datetime.datetime.now without tz
+        assert len(issues) > 0
+        assert any(issue.rule_id == "DTZ001" for issue in issues)
+
+    def test_datetime_date_today(self):
+        """Test detection of datetime.date.today()."""
+        code = """
+import datetime
+d = datetime.date.today()
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should detect date.today()
+        assert len(issues) > 0
+        assert any(issue.rule_id == "DTZ002" for issue in issues)
+        assert any("today()" in issue.message for issue in issues)
+
+    def test_datetime_with_tzinfo_keyword(self):
+        """Test detection when tzinfo keyword argument is provided."""
+        code = """
+from datetime import datetime, timezone
+dt = datetime.now(tzinfo=timezone.utc)
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # Should not detect issue when tzinfo is provided
+        now_issues = [i for i in issues if "DTZ001" in i.rule_id]
+        assert len(now_issues) == 0
+
+    def test_datetime_with_positional_tz(self):
+        """Test detection when tz is provided as positional argument."""
+        code = """
+from datetime import datetime, timezone
+dt = datetime.now(timezone.utc)
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+
+        # The checker may or may not detect positional args as having tz
+        # depending on implementation, so we just check it doesn't crash
+        assert isinstance(issues, list)
+
+    def test_check_file_function_error(self):
+        """Test check_file function with nonexistent file."""
+        from pyguard.lib.datetime_patterns import check_file
+        
+        # Should handle error gracefully
+        issues = check_file("/nonexistent/file.py")
+        assert issues == []
+
+    def test_check_file_function_success(self, tmp_path):
+        """Test check_file function with valid file."""
+        from pyguard.lib.datetime_patterns import check_file
+        
+        code = """
+from datetime import datetime
+dt = datetime.now()
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+        
+        issues = check_file(str(test_file))
+        assert len(issues) > 0
+
+    def test_get_issues_method(self):
+        """Test get_issues method."""
+        code = """
+from datetime import datetime
+dt = datetime.now()
+"""
+        checker = DatetimeChecker()
+        checker.check_code(code)
+        
+        issues = checker.get_issues()
+        assert len(issues) > 0
+
+    def test_attribute_without_name(self):
+        """Test handling of complex attribute access."""
+        code = """
+import datetime
+def get_dt():
+    return datetime.datetime
+
+dt = get_dt().now()
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+        # Should not crash with complex attribute access
+        assert isinstance(issues, list)

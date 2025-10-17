@@ -124,6 +124,7 @@ addopts = [
     "--strict-markers",
     "--maxfail=1",
     "--disable-warnings",
+    "--randomly-seed=1337",
     "--cov=pyguard",
     "--cov-report=term-missing:skip-covered",
     "--cov-report=html",
@@ -146,7 +147,7 @@ source = ["pyguard"]
 omit = ["*/tests/*", "*/test_*.py"]
 
 [tool.coverage.report]
-fail_under = 84
+fail_under = 87
 skip_covered = true
 show_missing = true
 exclude_lines = [

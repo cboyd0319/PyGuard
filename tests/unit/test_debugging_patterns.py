@@ -398,3 +398,62 @@ breakpoint()
         success2, count2 = checker.fix_file(file_path)
         assert success2
         assert count2 == 0
+
+    def test_check_file_with_read_error(self, tmp_path, monkeypatch):
+        """Test graceful handling of file read errors."""
+        file_path = tmp_path / "test.py"
+        file_path.write_text("print('test')")
+        
+        # Make file unreadable
+        import os
+        os.chmod(file_path, 0o000)
+        
+        try:
+            checker = DebuggingPatternChecker()
+            violations = checker.check_file(file_path)
+            # Should return empty list on error
+            assert violations == []
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(file_path, 0o644)
+
+    def test_fix_file_with_write_error(self, tmp_path, monkeypatch):
+        """Test graceful handling of file write errors."""
+        code = """
+breakpoint()
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+        
+        # Make file read-only after creation
+        import os
+        os.chmod(file_path, 0o444)
+        
+        try:
+            checker = DebuggingPatternChecker()
+            success, count = checker.fix_file(file_path)
+            # Should return False on error
+            assert not success
+            assert count == 0
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(file_path, 0o644)
+
+    def test_fix_print_with_existing_todo(self, tmp_path):
+        """Test that print with existing TODO comment is not modified again."""
+        code = """
+print("test")  # TODO: Replace with logging
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DebuggingPatternChecker()
+        success, count = checker.fix_file(file_path)
+
+        # Should not add another TODO comment
+        assert success
+        assert count == 0  # No fixes needed
+        
+        fixed_code = file_path.read_text()
+        # Should have only one TODO comment
+        assert fixed_code.count("# TODO: Replace with logging") == 1
