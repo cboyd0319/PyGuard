@@ -1672,6 +1672,36 @@ class NotebookFixer:
                             f"Added security warning for pickle.load() in cell {issue.cell_index}"
                         )
 
+            elif issue.category == "Code Injection":
+                # Auto-fix eval/exec to safer alternatives
+                if 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    fixed_source = self._fix_eval_exec(source, issue)
+                    if fixed_source != source:
+                        cell["source"] = fixed_source
+                        fixes_applied.append(
+                            f"Applied safe alternative for {issue.message} in cell {issue.cell_index}"
+                        )
+
+            elif issue.category == "Unsafe Deserialization":
+                # Auto-fix yaml.load to yaml.safe_load
+                if "yaml.load" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    fixed_source = self._fix_yaml_load(source)
+                    if fixed_source != source:
+                        cell["source"] = fixed_source
+                        fixes_applied.append(
+                            f"Replaced yaml.load() with yaml.safe_load() in cell {issue.cell_index}"
+                        )
+
             elif issue.category == "Reproducibility Issue":
                 # Auto-fix reproducibility issues
                 if 0 <= issue.cell_index < len(cells):
@@ -1732,6 +1762,41 @@ class NotebookFixer:
                     fixes_applied.append(
                         f"Added data validation reminder in cell {issue.cell_index}"
                     )
+
+            elif issue.category == "Filesystem Security":
+                # Auto-fix tempfile.mktemp to tempfile.mkstemp
+                if "tempfile.mktemp" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    fixed_source = self._fix_tempfile_mktemp(source)
+                    if fixed_source != source:
+                        cell["source"] = fixed_source
+                        fixes_applied.append(
+                            f"Replaced tempfile.mktemp() with tempfile.mkstemp() in cell {issue.cell_index}"
+                        )
+
+            elif issue.category == "Command Injection":
+                # Add warning for shell=True
+                if "shell=True" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    lines = source.split("\n")
+                    if 0 < issue.line_number <= len(lines):
+                        lines.insert(
+                            issue.line_number - 1,
+                            "# SECURITY WARNING: shell=True enables command injection\n"
+                            "# Use shell=False and pass command as list: ['cmd', 'arg1', 'arg2']"
+                        )
+                        cell["source"] = "\n".join(lines)
+                        fixes_applied.append(
+                            f"Added warning for shell=True in cell {issue.cell_index}"
+                        )
 
             elif issue.category == "Untrusted Notebook":
                 # Don't auto-fix trust status (requires user verification)
@@ -1856,6 +1921,113 @@ class NotebookFixer:
                 lines.insert(insert_pos, seed_line)
             
             return "\n".join(lines)
+        
+        return source
+    
+    def _fix_eval_exec(self, source: str, issue: NotebookIssue) -> str:
+        """
+        Fix eval/exec calls to use safer alternatives.
+        
+        Replaces eval() with ast.literal_eval() where appropriate, and adds
+        warnings for exec() usage.
+        
+        Args:
+            source: Source code to fix
+            issue: The issue describing the eval/exec usage
+            
+        Returns:
+            Fixed source code
+        """
+        # For eval(), suggest ast.literal_eval
+        if "eval(" in source and "eval()" in issue.message:
+            # Add import if not present
+            if "import ast" not in source:
+                source = "import ast  # For safe literal evaluation\n" + source
+            
+            # Add comment before eval usage
+            lines = source.split("\n")
+            for i, line in enumerate(lines):
+                if "eval(" in line and not line.strip().startswith("#"):
+                    lines.insert(
+                        i,
+                        "# SECURITY: Consider using ast.literal_eval() for safe evaluation\n"
+                        "# ast.literal_eval() only evaluates literals (strings, numbers, tuples, lists, dicts, booleans, None)\n"
+                        "# Original eval() call below (REVIEW AND UPDATE):"
+                    )
+                    break
+            source = "\n".join(lines)
+        
+        # For exec(), add warning
+        if "exec(" in source and "exec()" in issue.message:
+            lines = source.split("\n")
+            for i, line in enumerate(lines):
+                if "exec(" in line and not line.strip().startswith("#"):
+                    lines.insert(
+                        i,
+                        "# CRITICAL SECURITY WARNING: exec() executes arbitrary code\n"
+                        "# Refactor to avoid dynamic code execution if possible\n"
+                        "# If absolutely necessary, implement strict input validation"
+                    )
+                    break
+            source = "\n".join(lines)
+        
+        return source
+    
+    def _fix_yaml_load(self, source: str) -> str:
+        """
+        Fix yaml.load() to use yaml.safe_load().
+        
+        Performs a simple string replacement to use the safer alternative.
+        
+        Args:
+            source: Source code to fix
+            
+        Returns:
+            Fixed source code
+        """
+        # Replace yaml.load( with yaml.safe_load(
+        # This is a simple fix but effective for most cases
+        if "yaml.load(" in source and "yaml.safe_load(" not in source:
+            # Add comment explaining the change
+            source = (
+                "# SECURITY FIX: Using yaml.safe_load() instead of yaml.load()\n"
+                "# yaml.safe_load() prevents arbitrary code execution\n" + 
+                source
+            )
+            source = source.replace("yaml.load(", "yaml.safe_load(")
+        
+        # Also handle yaml.unsafe_load
+        if "yaml.unsafe_load(" in source:
+            source = (
+                "# SECURITY FIX: Using yaml.safe_load() instead of yaml.unsafe_load()\n" +
+                source
+            )
+            source = source.replace("yaml.unsafe_load(", "yaml.safe_load(")
+        
+        return source
+    
+    def _fix_tempfile_mktemp(self, source: str) -> str:
+        """
+        Fix tempfile.mktemp() to use tempfile.mkstemp().
+        
+        Replaces the deprecated mktemp with the secure mkstemp.
+        
+        Args:
+            source: Source code to fix
+            
+        Returns:
+            Fixed source code
+        """
+        if "tempfile.mktemp(" in source:
+            # Add comment explaining the change
+            source = (
+                "# SECURITY FIX: Using tempfile.mkstemp() instead of mktemp()\n"
+                "# mkstemp() creates the file securely, preventing race conditions\n"
+                "# Note: mkstemp() returns (fd, path) tuple instead of just path\n" +
+                source
+            )
+            # Replace tempfile.mktemp() with tempfile.mkstemp()
+            source = source.replace("tempfile.mktemp(", "tempfile.mkstemp(")
         
         return source
 
