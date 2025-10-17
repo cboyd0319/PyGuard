@@ -288,3 +288,130 @@ async def test_http():
         assert len(issues) >= 5
         http_issues = [issue for issue in issues if issue.rule_id == "ASYNC106"]
         assert len(http_issues) >= 5
+
+
+class TestAsyncEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_async_with_context_manager(self):
+        """Test detection of non-async context managers in async functions."""
+        code = """
+async def process_file():
+    with open("file.txt") as f:
+        data = f.read()
+    return data
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+
+        # Should detect non-async 'with open'
+        assert len(issues) > 0
+        assert any(issue.rule_id == "ASYNC107" for issue in issues)
+        assert any("async with" in issue.message for issue in issues)
+
+    def test_async_with_connection(self):
+        """Test detection of connection context managers."""
+        code = """
+async def query_db():
+    with database.connection() as conn:
+        result = conn.query("SELECT * FROM users")
+    return result
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+
+        # Should detect non-async connection context manager
+        assert len(issues) > 0
+        assert any("async with" in issue.message for issue in issues)
+
+    def test_async_for_iteration(self):
+        """Test detection of non-async for loops with async iterables."""
+        code = """
+async def process_items():
+    for item in fetch_items():
+        process(item)
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+
+        # Should suggest using async for
+        assert len(issues) > 0
+        assert any(issue.rule_id == "ASYNC108" for issue in issues)
+        assert any("async for" in issue.message for issue in issues)
+
+    def test_async_for_with_query(self):
+        """Test detection with query operations."""
+        code = """
+async def get_results():
+    for row in query_database():
+        yield row
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+
+        # Should detect query operation in for loop
+        assert len(issues) > 0
+        assert any("async for" in issue.message for issue in issues)
+
+    def test_async_for_with_read(self):
+        """Test detection with read operations."""
+        code = """
+async def read_lines():
+    for line in read_file():
+        print(line)
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+
+        # Should detect read operation in for loop
+        assert len(issues) > 0
+
+    def test_check_file_function_error(self):
+        """Test check_file function with nonexistent file."""
+        from pyguard.lib.async_patterns import check_file
+        
+        # Should handle error gracefully
+        issues = check_file("/nonexistent/file.py")
+        assert issues == []
+
+    def test_check_file_function_success(self, tmp_path):
+        """Test check_file function with valid file."""
+        from pyguard.lib.async_patterns import check_file
+        
+        code = """
+import time
+
+async def test():
+    time.sleep(1)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+        
+        issues = check_file(str(test_file))
+        assert len(issues) > 0
+
+    def test_get_call_name_attribute(self):
+        """Test _get_call_name with attribute access."""
+        code = """
+async def test():
+    obj.method()
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Just ensure it doesn't crash with attribute access
+        assert isinstance(issues, list)
+
+    def test_get_issues_method(self):
+        """Test get_issues method."""
+        code = """
+import time
+
+async def test():
+    time.sleep(1)
+"""
+        checker = AsyncChecker()
+        checker.check_code(code)
+        
+        issues = checker.get_issues()
+        assert len(issues) > 0
+        assert all(isinstance(issue, checker.visitor.issues[0].__class__) for issue in issues)
