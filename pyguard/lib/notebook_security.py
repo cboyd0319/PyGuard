@@ -194,18 +194,36 @@ class NotebookSecurityAnalyzer:
         >>> print(f"Found {len(critical)} critical issues")
     """
 
-    # Dangerous magic commands
+    # Dangerous magic commands - Enhanced to 14+ patterns (Category 3)
     DANGEROUS_MAGICS = {
+        # System command execution
         "%system": "Direct system command execution",
         "!": "Shell command execution",
         "%%bash": "Bash script execution",
         "%%sh": "Shell script execution",
         "%%script": "Script execution",
+        
+        # Package management
+        "%pip": "Pip package installation (version pinning recommended)",
+        "%conda": "Conda package installation (version pinning recommended)",
+        
+        # Code loading from external sources
         "%load_ext": "Loading external extensions (may be unsafe)",
         "%run": "Running external scripts (path traversal risk)",
+        "%load": "Loading code from external sources (verify integrity)",
+        "%loadpy": "Loading Python code from URL or file (security risk)",
+        
+        # File operations
         "%%writefile": "Writing files (path traversal risk)",
+        
+        # Environment & State manipulation
         "%env": "Environment variable manipulation",
-        "%store": "Cross-notebook variable storage (security risk)",
+        "%set_env": "Setting environment variables (secret exposure risk)",
+        "%store": "Cross-notebook variable storage (state poisoning risk)",
+        
+        # Directory navigation
+        "%cd": "Directory change (filesystem structure exposure)",
+        "%pwd": "Print working directory (filesystem disclosure)",
     }
 
     # Patterns for secrets in notebooks - Comprehensive 50+ patterns
@@ -283,68 +301,156 @@ class NotebookSecurityAnalyzer:
         r"[0-9]{8,10}:[a-zA-Z0-9_-]{35}": "Telegram bot token",
     }
 
-    # PII detection patterns
+    # PII detection patterns - Enhanced to 14+ patterns
     PII_PATTERNS = {
+        # Identity numbers
         r"\b\d{3}-\d{2}-\d{4}\b": "Social Security Number (SSN)",
+        r"\b[A-Z]{1,2}\d{6,8}[A-Z]?\b": "Passport number pattern",
+        
+        # Contact information
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b": "Email address",
-        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
         r"\b(?:\d{3}[-.]?)?\d{3}[-.]?\d{4}\b": "Phone number",
-        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IP address",
+        
+        # Financial data
+        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
+        r"\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b": "IBAN (International Bank Account Number)",
+        r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b": "SWIFT/BIC code",
+        
+        # Network identifiers
+        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IPv4 address",
+        r"\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b": "IPv6 address",
+        r"\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b": "MAC address",
+        
+        # Geographic data
         r"\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b": "UK postal code",
         r"\b\d{5}(-\d{4})?\b": "US ZIP code",
+        
+        # Medical & Health
+        r"\b[A-Z]\d{2}\.\d{1,3}\b": "ICD-10 diagnosis code pattern",
+        r"\bMRN[:\s-]?\d{6,10}\b": "Medical Record Number (MRN)",
     }
 
-    # Risky ML/Data Science operations
+    # Risky ML/Data Science operations - Enhanced with 22+ patterns (Category 2)
     ML_SECURITY_PATTERNS = {
+        # Pickle-based deserialization (CRITICAL)
         r"pickle\.loads?\(": "Unsafe pickle deserialization (model poisoning risk)",
         r"joblib\.load\(": "Joblib model loading (verify source)",
-        r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk)",
-        r"tf\.keras\.models\.load_model\(": "TensorFlow model loading (verify source)",
         r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
         r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
         r"dill\.loads?\(": "Dill deserialization (arbitrary code execution risk)",
-        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
-        r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
+        
+        # PyTorch (CRITICAL)
+        r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk via __reduce__)",
+        r"torch\.jit\.load\(": "PyTorch JIT model loading (verify source and checksum)",
+        
+        # TensorFlow & Keras (HIGH)
+        r"tf\.keras\.models\.load_model\(": "TensorFlow Keras model loading (verify source)",
         r"keras\.models\.load_model": "Keras model loading with potential custom layers",
+        r"tf\.saved_model\.load\(": "TensorFlow SavedModel loading without signature verification",
+        r"tf\.keras\.models\.model_from_json\(": "Keras model from JSON (verify architecture integrity)",
+        r"tf\.keras\.models\.model_from_yaml\(": "Keras model from YAML (architecture injection risk)",
+        
+        # ONNX (HIGH)
+        r"onnx\.load\(": "ONNX model loading without opset validation",
+        r"onnxruntime\.InferenceSession\(": "ONNX Runtime inference (verify model source)",
+        
+        # Hugging Face Transformers (HIGH)
+        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
+        r"AutoModel\.from_pretrained\(": "Hugging Face AutoModel loading (supply chain risk)",
+        r"pipeline\(.*model\s*=": "Hugging Face pipeline with custom model (verify source)",
+        
+        # MLflow (MEDIUM)
+        r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
+        r"mlflow\.pyfunc\.load_model\(": "MLflow PyFunc model loading (arbitrary code risk)",
+        
+        # YAML deserialization (CRITICAL)
         r"yaml\.load\(": "YAML load without safe loader (arbitrary code execution risk)",
         r"yaml\.unsafe_load\(": "Unsafe YAML loading (arbitrary code execution risk)",
+        r"yaml\.full_load\(": "YAML full_load (consider safe_load instead)",
+        
+        # Model training risks (MEDIUM)
+        r"model\.fit\(": "Model training detected (ensure data validation)",
     }
 
-    # XSS-prone output patterns
+    # XSS-prone output patterns - Enhanced to 16+ patterns (Category 7)
     XSS_PATTERNS = {
+        # HTML/JavaScript rendering
         r"IPython\.display\.HTML\(": "Raw HTML display (XSS risk)",
         r"display\(HTML\(": "HTML display (XSS risk)",
         r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
         r"%%html": "HTML cell magic (XSS risk)",
+        
+        # JavaScript execution
         r"IPython\.display\.Javascript\(": "JavaScript execution (XSS risk)",
         r"Javascript\(": "JavaScript execution (XSS risk)",
         r"%%javascript": "JavaScript cell magic (XSS risk)",
         r"%%js": "JavaScript cell magic (XSS risk)",
+        
+        # Inline HTML/JS
         r"<script": "Inline script tag (XSS risk)",
         r"<iframe": "Iframe injection (XSS/clickjacking risk)",
         r"<object": "Object tag (XSS/content injection)",
         r"<embed": "Embed tag (XSS/content injection)",
         r"javascript:": "JavaScript protocol URL (XSS risk)",
         r"on\w+\s*=": "HTML event handler (XSS risk)",
+        
+        # CSS injection & data exfiltration
+        r"<style": "Inline style tag (CSS injection risk)",
+        r"style\s*=\s*['\"].*background.*url\(": "CSS background URL (data exfiltration via CSS)",
+        
+        # SVG & XML
+        r"<svg": "SVG tag (potential XSS if user-controlled)",
+        r"\.to_svg\(\)": "SVG generation (sanitize user input)",
+        
+        # Markdown rendering (if treated as HTML)
+        r"IPython\.display\.Markdown\(": "Markdown display (verify no HTML injection)",
     }
 
-    # Network & Data Exfiltration patterns (Category 4)
+    # Network & Data Exfiltration patterns (Category 4) - Enhanced to 18+ patterns
     NETWORK_EXFILTRATION_PATTERNS = {
+        # HTTP/HTTPS exfiltration
         r"requests\.(post|put|patch)\(": "HTTP POST/PUT/PATCH to external domain (data exfiltration risk)",
         r"urllib\.request\.urlopen\(": "Direct URL access (data exfiltration risk)",
         r"httpx\.(post|put|patch)\(": "HTTPX POST/PUT/PATCH (data exfiltration risk)",
+        r"urllib3\.": "urllib3 direct HTTP access (data exfiltration risk)",
+        
+        # File transfer protocols
         r"ftplib\.FTP\(": "FTP connection (data exfiltration risk)",
         r"smtplib\.SMTP\(": "SMTP connection (email exfiltration risk)",
+        r"imaplib\.IMAP4": "IMAP connection (email data access)",
+        
+        # Raw network access
         r"socket\.socket\(": "Raw socket access (network exfiltration risk)",
+        r"socket\.create_connection\(": "Socket connection (network exfiltration risk)",
+        
+        # Cloud SDKs
         r"boto3\.client\(": "AWS SDK usage (cloud data access risk)",
         r"google\.cloud": "Google Cloud SDK (cloud data access risk)",
         r"azure\.": "Azure SDK (cloud data access risk)",
+        
+        # Telemetry & Monitoring
         r"sentry_sdk\.init\(": "Sentry telemetry (data collection)",
         r"datadog\.": "DataDog telemetry (data collection)",
+        r"newrelic\.": "New Relic telemetry (data collection)",
+        
+        # Real-time communication
         r"websocket\.": "WebSocket connection (real-time data channel)",
+        r"socketio\.": "Socket.IO connection (real-time data channel)",
+        
+        # GraphQL & API
+        r"graphql\.": "GraphQL query/mutation (API data access)",
+        r"gql\(": "GraphQL query (validate endpoint allowlist)",
+        
+        # Database connections
         r"pymongo\.MongoClient\(": "MongoDB connection (database access)",
         r"psycopg2\.connect\(": "PostgreSQL connection (database access)",
         r"sqlalchemy\.create_engine\(": "SQLAlchemy database connection",
+        r"mysql\.connector\.connect\(": "MySQL connection (database access)",
+        r"redis\.Redis\(": "Redis connection (data store access)",
+        
+        # DNS & Covert channels
+        r"dns\.resolver\.": "DNS resolver (potential DNS exfiltration)",
+        r"dnspython\.": "DNS operations (covert channel risk)",
     }
 
     # Resource Exhaustion & DoS patterns (Category 11)
@@ -378,6 +484,25 @@ class NotebookSecurityAnalyzer:
         r"gradio\.Interface\(": "Gradio interface (user input to model risk)",
         r"streamlit\..*input": "Streamlit user input (validation required)",
         r"['\"].*\s*\+\s*(user_input|input\(|user_|request\.)": "String concatenation with user input (prompt injection risk)",
+    }
+    
+    # Compliance & Licensing patterns (Category 12) - NEW
+    COMPLIANCE_LICENSING_PATTERNS = {
+        # GPL licenses (copyleft restrictions)
+        r"from\s+.*\s+import.*#.*GPL": "GPL-licensed dependency (check license compatibility)",
+        r"import\s+.*#.*GPL": "GPL-licensed import (license compliance)",
+        
+        # License file references
+        r"open\(['\"]LICENSE": "License file access (verify compliance)",
+        r"pkg_resources\.get_distribution.*\.license": "License checking code detected",
+        
+        # Export control concerns
+        r"from\s+cryptography\s+import": "Cryptography library (export control considerations)",
+        r"import\s+(pycrypto|cryptography|nacl)": "Cryptographic library (export restrictions may apply)",
+        
+        # Data usage compliance
+        r"pd\.read_csv.*license": "Dataset with license reference",
+        r"dataset.*license": "Dataset licensing concern",
     }
 
     def __init__(self):
@@ -881,6 +1006,9 @@ class NotebookSecurityAnalyzer:
         
         # Check for advanced ML/AI security
         issues.extend(self._check_advanced_ml_security(cell, cell_index))
+        
+        # Check for compliance and licensing issues
+        issues.extend(self._check_compliance_licensing(cell, cell_index))
 
         return issues
 
@@ -1609,6 +1737,59 @@ class NotebookSecurityAnalyzer:
                             owasp_id="ASVS-5.1.1",
                             confidence=0.75,
                             auto_fixable=True,
+                        )
+                    )
+        
+        return issues
+
+    def _check_compliance_licensing(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Check for compliance and licensing issues (Category 12).
+        
+        Detects:
+        - GPL dependencies in commercial notebooks
+        - Cryptographic libraries with export restrictions
+        - Dataset licensing concerns
+        - License compatibility issues
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of compliance and licensing issues
+        """
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+        
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.COMPLIANCE_LICENSING_PATTERNS.items():
+                if re.search(pattern, line):
+                    # Determine severity based on pattern
+                    severity = "LOW"
+                    if "cryptography" in pattern.lower() or "export" in description.lower():
+                        severity = "MEDIUM"
+                    elif "gpl" in pattern.lower():
+                        severity = "MEDIUM"
+                    
+                    issues.append(
+                        NotebookIssue(
+                            severity=severity,
+                            category="Compliance & Licensing",
+                            message=description,
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line.strip(),
+                            rule_id="NB-COMPLIANCE-001",
+                            fix_suggestion=(
+                                "Review license compatibility and export restrictions. "
+                                "Document all dependencies and their licenses. "
+                                "Ensure compliance with organizational policies and applicable laws. "
+                                "For cryptographic libraries, verify export control requirements."
+                            ),
+                            cwe_id="CWE-1104",
+                            confidence=0.6,
+                            auto_fixable=False,
                         )
                     )
         
