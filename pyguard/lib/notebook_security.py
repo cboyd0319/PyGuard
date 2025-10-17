@@ -133,7 +133,8 @@ class NotebookIssue:
     cell_index: int  # Cell where issue was found
     line_number: int  # Line within cell
     code_snippet: str  # Relevant code
-    fix_suggestion: Optional[str]  # How to fix
+    rule_id: str = ""  # Rule identifier (e.g., NB-INJECT-001)
+    fix_suggestion: Optional[str] = None  # How to fix
     cwe_id: Optional[str] = None  # CWE identifier
     owasp_id: Optional[str] = None  # OWASP identifier
     confidence: float = 1.0  # Detection confidence (0.0-1.0)
@@ -305,6 +306,8 @@ class NotebookSecurityAnalyzer:
         r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
         r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
         r"keras\.models\.load_model": "Keras model loading with potential custom layers",
+        r"yaml\.load\(": "YAML load without safe loader (arbitrary code execution risk)",
+        r"yaml\.unsafe_load\(": "Unsafe YAML loading (arbitrary code execution risk)",
     }
 
     # XSS-prone output patterns
@@ -461,6 +464,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=line_num,
                                 code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                rule_id="NB-SECRET-ENTROPY",
                                 fix_suggestion=(
                                     "Replace high-entropy secrets with environment variables. "
                                     "Use secure secret management (AWS Secrets Manager, HashiCorp Vault, etc.)"
@@ -563,6 +567,7 @@ class NotebookSecurityAnalyzer:
                     cell_index=-1,
                     line_number=0,
                     code_snippet="",
+                    rule_id="NB-META-001",
                     fix_suggestion="Review notebook content and mark as trusted if verified safe",
                     confidence=0.8,
                 )
@@ -675,6 +680,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=line_num,
                                 code_snippet=line.strip(),
+                                rule_id="NB-ML-001",
                                 fix_suggestion=(
                                     "Use torch.load() with weights_only=True (PyTorch 1.13+):\n"
                                     "model = torch.load('model.pth', weights_only=True, map_location='cpu')\n"
@@ -687,6 +693,16 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                     else:
+                        # Assign rule_id based on pattern type
+                        if "pickle" in pattern:
+                            rule_id = "NB-DESERIAL-001"  # Already used for AST-based pickle detection
+                        elif "yaml" in description.lower():
+                            rule_id = "NB-DESERIAL-002"
+                        elif pattern == r"from_pretrained\(":
+                            rule_id = "NB-ML-002"
+                        else:
+                            rule_id = "NB-ML-003"
+                        
                         auto_fixable = pattern in [r"pickle\.loads?\(", r"from_pretrained\("]
                         issues.append(
                             NotebookIssue(
@@ -696,6 +712,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=line_num,
                                 code_snippet=line.strip(),
+                                rule_id=rule_id,
                                 fix_suggestion=(
                                     "Verify the source and integrity of loaded models. "
                                     "Use safer serialization formats (ONNX, SavedModel). "
@@ -719,6 +736,7 @@ class NotebookSecurityAnalyzer:
                         cell_index=cell_index,
                         line_number=0,
                         code_snippet="Data loading detected",
+                        rule_id="NB-DATA-001",
                         fix_suggestion=(
                             "Specify dtypes and use converters to validate data types. "
                             "Implement schema validation for input data using pandera or similar."
@@ -738,6 +756,18 @@ class NotebookSecurityAnalyzer:
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.XSS_PATTERNS.items():
                 if re.search(pattern, line):
+                    # Assign rule_id based on pattern type
+                    if "IPython.display.HTML" in pattern or "display(HTML" in pattern:
+                        rule_id = "NB-XSS-001"
+                    elif "Javascript" in pattern or "%%javascript" in pattern or "%%js" in pattern:
+                        rule_id = "NB-XSS-002"
+                    elif "%%html" in pattern:
+                        rule_id = "NB-XSS-003"
+                    elif ".to_html" in pattern:
+                        rule_id = "NB-XSS-004"
+                    else:
+                        rule_id = "NB-XSS-005"
+                    
                     issues.append(
                         NotebookIssue(
                             severity="HIGH",
@@ -746,6 +776,7 @@ class NotebookSecurityAnalyzer:
                             cell_index=cell_index,
                             line_number=line_num,
                             code_snippet=line.strip(),
+                            rule_id=rule_id,
                             fix_suggestion=(
                                 "Sanitize all user input before displaying as HTML. "
                                 "Use IPython.display.Text() instead of HTML() for untrusted content. "
@@ -862,6 +893,18 @@ class NotebookSecurityAnalyzer:
             line = line.strip()
             for magic, description in self.DANGEROUS_MAGICS.items():
                 if line.startswith(magic):
+                    # Assign rule_id based on magic type
+                    if magic in ["%%bash", "%%sh", "%%script"]:
+                        rule_id = "NB-SHELL-002"
+                    elif magic == "%run":
+                        rule_id = "NB-SHELL-003"
+                    elif magic in ["!", "%system"]:
+                        rule_id = "NB-SHELL-001"
+                    elif magic == "%pip":
+                        rule_id = "NB-SHELL-004"
+                    else:
+                        rule_id = "NB-SHELL-005"
+                    
                     issues.append(
                         NotebookIssue(
                             severity="HIGH",
@@ -870,6 +913,7 @@ class NotebookSecurityAnalyzer:
                             cell_index=cell_index,
                             line_number=line_num,
                             code_snippet=line,
+                            rule_id=rule_id,
                             fix_suggestion=(
                                 "Avoid using magic commands that execute system commands. "
                                 "Use subprocess with proper validation instead."
@@ -901,6 +945,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=line_num,
                                 code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                rule_id="NB-SECRET-001",
                                 fix_suggestion=(
                                     "Use environment variables or secure credential storage. "
                                     "Load secrets from .env files or cloud secret managers."
@@ -929,6 +974,14 @@ class NotebookSecurityAnalyzer:
             if isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name):
                     if node.func.id in ["eval", "exec", "compile"]:
+                        # Determine rule_id based on function
+                        if node.func.id == "eval":
+                            rule_id = "NB-INJECT-001"
+                        elif node.func.id == "exec":
+                            rule_id = "NB-INJECT-002"
+                        else:
+                            rule_id = "NB-INJECT-003"
+                        
                         issues.append(
                             NotebookIssue(
                                 severity="CRITICAL",
@@ -937,6 +990,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=getattr(node, "lineno", 0),
                                 code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                rule_id=rule_id,
                                 fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",
                                 cwe_id="CWE-95",
                                 owasp_id="ASVS-5.2.1",
@@ -959,6 +1013,7 @@ class NotebookSecurityAnalyzer:
                                 cell_index=cell_index,
                                 line_number=getattr(node, "lineno", 0),
                                 code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                rule_id="NB-DESERIAL-001",
                                 fix_suggestion="Use JSON or safer serialization formats. If pickle is required, validate source and use signatures.",
                                 cwe_id="CWE-502",
                                 owasp_id="ASVS-5.5.3",
@@ -1150,6 +1205,7 @@ class NotebookSecurityAnalyzer:
                             cell_index=cell_index,
                             line_number=0,
                             code_snippet=f"import {framework}",
+                            rule_id="NB-REPRO-001",
                             fix_suggestion=(
                                 f"Set random seed for {framework_name} to ensure reproducible results. "
                                 f"Add: {pattern.replace('(', '(42)')} or similar seed value."
