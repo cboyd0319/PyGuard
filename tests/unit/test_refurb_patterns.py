@@ -687,3 +687,257 @@ if sys.version_info >= (3, 11, 0):
         # All violations should be LOW severity if any
         for v in violations:
             assert v.severity.name == "LOW" or v.severity.value == "LOW"
+
+
+class TestAdditionalRefurbPatterns:
+    """Additional tests for uncovered refurb patterns."""
+
+    def test_detect_unnecessary_lambda_in_sorted(self, tmp_path):
+        """Test detection of unnecessary lambda in sorted/map/filter (FURB125)."""
+        code = """
+def process():
+    items = sorted(data, key=lambda x: str(x))
+    filtered = list(filter(lambda x: bool(x), items))
+    mapped = list(map(lambda x: int(x), values))
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB125" for v in violations)
+
+    def test_detect_type_comparison_instead_of_isinstance(self, tmp_path):
+        """Test detection of type() == comparison (FURB126)."""
+        code = """
+def check_types(x, y):
+    if type(x) == int:
+        process(x)
+    if type(y) == str:
+        print(y)
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB126" for v in violations)
+
+    def test_detect_dict_fromkeys_opportunity(self, tmp_path):
+        """Test detection of dict comprehension with constant value (FURB127)."""
+        code = """
+def create_dicts(keys, items):
+    d = {k: None for k in keys}
+    d2 = {item: 0 for item in items}
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB127" for v in violations)
+
+    def test_detect_reraise_caught_exception(self, tmp_path):
+        """Test detection of re-raising caught exception (FURB131)."""
+        code = """
+def risky_function():
+    try:
+        risky_operation()
+    except ValueError as e:
+        log_error(e)
+        raise e
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB131" for v in violations)
+
+    def test_detect_path_read_text_opportunity(self, tmp_path):
+        """Test detection of open().read() pattern (FURB130)."""
+        code = """
+content = open('file.txt').read()
+data = open('data.bin').read()
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB130" for v in violations)
+
+    def test_detect_datetime_now_instead_of_fromtimestamp(self, tmp_path):
+        """Test detection of datetime.fromtimestamp(time.time()) (FURB135)."""
+        code = """
+import time
+from datetime import datetime
+
+now = datetime.fromtimestamp(time.time())
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB135" for v in violations)
+
+    def test_detect_math_ceil_pattern_negative_floordiv(self, tmp_path):
+        """Test detection of -(-x//y) pattern (FURB139)."""
+        code = """
+def calculate():
+    result = -(-x // y)
+    value = -(-numerator // denominator)
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # This pattern is detected in Assign nodes
+        assert len(violations) > 0
+        assert any(v.rule_id == "FURB139" for v in violations)
+
+    def test_lambda_with_simple_call_in_map(self, tmp_path):
+        """Test lambda detection in various contexts."""
+        code = """
+def func(x):
+    # Lambda just calling function - unnecessary
+    result = list(map(lambda x: func(x), items))
+    
+    # Lambda with more complex expression - acceptable
+    result2 = list(map(lambda x: x * 2 + 1, items))
+    
+    return result, result2
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should detect the first lambda as unnecessary
+        furb125_violations = [v for v in violations if v.rule_id == "FURB125"]
+        assert len(furb125_violations) > 0
+
+    def test_type_comparison_variations(self, tmp_path):
+        """Test different variations of type comparisons."""
+        code = """
+def check_values(value, items):
+    # Direct type comparison - should trigger
+    if type(value) == int:
+        pass
+
+    # Type comparison with list - should trigger  
+    if type(items) == list:
+        pass
+
+    # Proper isinstance - should not trigger
+    if isinstance(value, int):
+        pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should find type comparisons but not isinstance
+        furb126_violations = [v for v in violations if v.rule_id == "FURB126"]
+        assert len(furb126_violations) == 2
+
+    def test_dict_comprehension_with_various_constant_values(self, tmp_path):
+        """Test dict comprehension detection with different constant values."""
+        code = """
+def make_dicts(keys):
+    # With None - should trigger
+    d1 = {k: None for k in keys}
+
+    # With 0 - should trigger
+    d2 = {k: 0 for k in keys}
+
+    # With empty string - should trigger
+    d3 = {k: "" for k in keys}
+
+    # With variable value - should not trigger
+    d4 = {k: compute_value(k) for k in keys}
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should detect constant value dict comprehensions
+        furb127_violations = [v for v in violations if v.rule_id == "FURB127"]
+        assert len(furb127_violations) >= 3
+
+    def test_bare_raise_vs_reraise(self, tmp_path):
+        """Test bare raise (good) vs re-raising exception (bad)."""
+        code = """
+def handle_errors():
+    # Bad: Re-raising caught exception by name
+    try:
+        operation1()
+    except ValueError as e:
+        raise e
+
+    # Good: Bare raise
+    try:
+        operation2()
+    except TypeError:
+        raise
+
+    # Bad: Re-raising with same name
+    try:
+        operation3()
+    except KeyError as err:
+        log("Error occurred")
+        raise err
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should detect explicit re-raises but not bare raises
+        furb131_violations = [v for v in violations if v.rule_id == "FURB131"]
+        assert len(furb131_violations) == 2
+
+    def test_edge_cases_for_patterns(self, tmp_path):
+        """Test edge cases and boundary conditions."""
+        code = """
+def process_data(keys, vals, items):
+    # Empty collections
+    empty_dict = {k: None for k in []}
+    empty_sorted = sorted([])
+
+    # Nested structures
+    nested = {k: {v: None for v in vals} for k in keys}
+
+    # Type checks in nested conditions
+    if x > 0 and type(x) == int:
+        pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = RefurbPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should handle edge cases without crashing
+        assert isinstance(violations, list)
