@@ -1,6 +1,16 @@
 {
   "$comment": "NOTE: GitHub MCP server tools (repo operations, issues, PRs) are built-in to Copilot and do not need configuration here. GitHub MCP uses OAuth through Copilot's built-in authentication.",
   "mcpServers": {
+    "claude": {
+      "description": "Anthropic's Claude MCP server for enhanced AI capabilities and integrations.",
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-claude"],
+      "env": {
+        "ANTHROPIC_API_KEY": "$COPILOT_MCP_ANTHROPIC_API_KEY"
+      },
+      "tools": ["*"]
+    },
     "context7": {
       "description": "Up-to-date Python security documentation for Bandit, Ruff, mypy, pytest, and compliance frameworks (OWASP, CWE, PCI-DSS, HIPAA). Provides accurate, version-specific documentation with no hallucinations.",
       "type": "http",
