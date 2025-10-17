@@ -1,44 +1,30 @@
 {
   "$comment": "NOTE: GitHub MCP server tools (repo operations, issues, PRs) are built-in to Copilot and do not need configuration here. GitHub MCP uses OAuth through Copilot's built-in authentication.",
   "mcpServers": {
-    "claude": {
-      "description": "Anthropic's Claude MCP server for enhanced AI capabilities and integrations.",
-      "type": "local",
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-server-claude"],
-      "env": {
-        "ANTHROPIC_API_KEY": "$COPILOT_MCP_ANTHROPIC_API_KEY"
-      },
-      "tools": ["*"]
-    },
     "context7": {
-      "description": "Up-to-date Python security documentation for Bandit, Ruff, mypy, pytest, and compliance frameworks (OWASP, CWE, PCI-DSS, HIPAA). Provides accurate, version-specific documentation with no hallucinations.",
       "type": "http",
       "url": "https://mcp.context7.com/mcp",
       "headers": {
-        "Authorization": "Bearer ${COPILOT_MCP_CONTEXT7_API_KEY}"
+        "CONTEXT7_API_KEY": "$COPILOT_MCP_CONTEXT7_API_KEY"
       },
       "tools": ["*"]
     },
-    "openai-websearch": {
-      "description": "Web search for Python security patterns, CWE/OWASP standards, compliance frameworks, and emerging security threats. Use for current threat intelligence and best practices.",
+    "websearch-mcp": {
       "type": "local",
       "command": "uvx",
       "args": ["openai-websearch-mcp"],
       "env": {
-        "OPENAI_API_KEY": "${COPILOT_MCP_OPENAI_API_KEY}"
+        "OPENAI_API_KEY": "$COPILOT_MCP_OPENAI_API_KEY"
       },
       "tools": ["openai_web_search"]
     },
-    "fetch": {
-      "description": "Fetch web content for security research, vulnerability databases (CVE, NVD), and compliance documentation. Useful for researching security advisories and standards.",
+    "mcp-fetch-server": {
       "type": "local",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-fetch@latest"],
       "tools": ["*"]
     },
-    "playwright": {
-      "description": "Browser automation for web security testing and validation. Use for testing web application security patterns and interactive security demonstrations.",
+    "playwright-mcp": {
       "type": "local",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-playwright@latest"],
