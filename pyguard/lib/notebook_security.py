@@ -1021,29 +1021,87 @@ class NotebookSecurityAnalyzer:
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
-            line = line.strip()
+            line_stripped = line.strip()
+            
+            # Check for extremely dangerous curl|bash patterns first (highest priority)
+            if line_stripped.startswith("!") or line_stripped.startswith("%system"):
+                # Detect curl|bash, wget|bash, or similar remote code execution
+                if re.search(r"(curl|wget)\s+.*\|\s*(bash|sh|python|ruby|perl)", line_stripped):
+                    issues.append(
+                        NotebookIssue(
+                            severity="CRITICAL",
+                            category="Remote Code Execution",
+                            message="Remote code execution via curl|bash or similar - CRITICAL security risk",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line_stripped,
+                            rule_id="NB-SHELL-002",
+                            fix_suggestion=(
+                                "Never pipe remote scripts directly to interpreters. "
+                                "Download, verify checksum, review content, then execute if safe. "
+                                "Use subprocess with explicit validation instead."
+                            ),
+                            cwe_id="CWE-494",  # Download of Code Without Integrity Check
+                            owasp_id="ASVS-5.3.3",
+                            confidence=1.0,
+                            auto_fixable=False,  # Too dangerous to auto-fix
+                        )
+                    )
+                    continue  # Don't also flag as generic shell command
+            
+            # Check for %run with remote URLs
+            if line_stripped.startswith("%run"):
+                # Detect http:// or https:// URLs
+                if re.search(r"%run\s+(https?://|ftp://)", line_stripped):
+                    issues.append(
+                        NotebookIssue(
+                            severity="CRITICAL",
+                            category="Remote Code Execution",
+                            message="%run with remote URL - downloading and executing untrusted code",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line_stripped,
+                            rule_id="NB-SHELL-003",
+                            fix_suggestion=(
+                                "Do not use %run with remote URLs. "
+                                "Download file, verify integrity (checksum), review code, then run locally."
+                            ),
+                            cwe_id="CWE-494",
+                            owasp_id="ASVS-5.3.3",
+                            confidence=1.0,
+                            auto_fixable=False,
+                        )
+                    )
+                    continue
+            
+            # Check for generic dangerous magics
             for magic, description in self.DANGEROUS_MAGICS.items():
-                if line.startswith(magic):
+                if line_stripped.startswith(magic):
                     # Assign rule_id based on magic type
                     if magic in ["%%bash", "%%sh", "%%script"]:
                         rule_id = "NB-SHELL-002"
+                        severity = "HIGH"
                     elif magic == "%run":
                         rule_id = "NB-SHELL-003"
+                        severity = "HIGH"
                     elif magic in ["!", "%system"]:
                         rule_id = "NB-SHELL-001"
+                        severity = "HIGH"
                     elif magic == "%pip":
                         rule_id = "NB-SHELL-004"
+                        severity = "MEDIUM"
                     else:
                         rule_id = "NB-SHELL-005"
+                        severity = "MEDIUM"
                     
                     issues.append(
                         NotebookIssue(
-                            severity="HIGH",
+                            severity=severity,
                             category="Unsafe Magic Command",
                             message=f"Dangerous magic command: {description}",
                             cell_index=cell_index,
                             line_number=line_num,
-                            code_snippet=line,
+                            code_snippet=line_stripped,
                             rule_id=rule_id,
                             fix_suggestion=(
                                 "Avoid using magic commands that execute system commands. "
@@ -1283,6 +1341,78 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                         break
+            
+            # Check for XSS vulnerabilities in HTML/JavaScript outputs
+            if output.get("output_type") in ["display_data", "execute_result"]:
+                data = output.get("data", {})
+                
+                # Check HTML outputs for XSS patterns
+                if "text/html" in data:
+                    html_content = data["text/html"]
+                    # Convert to string if it's a list
+                    if isinstance(html_content, list):
+                        html_content = "".join(html_content)
+                    
+                    # Detect XSS patterns in HTML output with specific rule IDs
+                    xss_patterns = {
+                        r"<script[^>]*>": ("NB-XSS-001", "Script tag in HTML output"),
+                        r"<iframe": ("NB-XSS-002", "Iframe in HTML output"),
+                        r"on\w+\s*=": ("NB-XSS-003", "Event handler in HTML output"),
+                        r"javascript:": ("NB-XSS-004", "JavaScript URL in HTML output"),
+                        r"<object": ("NB-XSS-005", "Object tag in HTML output"),
+                        r"<embed": ("NB-XSS-006", "Embed tag in HTML output"),
+                    }
+                    
+                    for pattern, (rule_id, description) in xss_patterns.items():
+                        if re.search(pattern, html_content, re.IGNORECASE):
+                            issues.append(
+                                NotebookIssue(
+                                    severity="HIGH",
+                                    category="XSS in Output",
+                                    message=f"{description} - potential XSS vulnerability",
+                                    cell_index=cell_index,
+                                    line_number=0,
+                                    code_snippet=html_content[:100],
+                                    rule_id=rule_id,
+                                    fix_suggestion=(
+                                        "Sanitize HTML output before display. "
+                                        "Remove or escape script tags, event handlers, and dangerous HTML elements. "
+                                        "Consider using DOMPurify or similar sanitization library."
+                                    ),
+                                    cwe_id="CWE-79",
+                                    owasp_id="ASVS-5.3.3",
+                                    confidence=0.85,
+                                    auto_fixable=True,
+                                )
+                            )
+                            break  # Only report once per output
+                
+                # Check JavaScript outputs
+                if "application/javascript" in data:
+                    js_content = data["application/javascript"]
+                    if isinstance(js_content, list):
+                        js_content = "".join(js_content)
+                    
+                    issues.append(
+                        NotebookIssue(
+                            severity="HIGH",
+                            category="JavaScript in Output",
+                            message="JavaScript code in output - execution risk when notebook is viewed",
+                            cell_index=cell_index,
+                            line_number=0,
+                            code_snippet=js_content[:100],
+                            rule_id="NB-XSS-001",  # Use same as script tag since both execute JS
+                            fix_suggestion=(
+                                "Avoid outputting JavaScript code directly. "
+                                "Use text/plain MIME type for displaying code. "
+                                "If JavaScript execution is needed, ensure it's from trusted sources only."
+                            ),
+                            cwe_id="CWE-79",
+                            owasp_id="ASVS-5.3.3",
+                            confidence=0.9,
+                            auto_fixable=True,
+                        )
+                    )
 
         return issues
 
@@ -1433,6 +1563,7 @@ class NotebookSecurityAnalyzer:
                         cell_index=cell_index,
                         line_number=0,
                         code_snippet=match.group(0),
+                        rule_id="NB-REPRO-001",
                         fix_suggestion=f"Pin package version: {tool} install {package}==X.Y.Z",
                         confidence=0.85,
                         auto_fixable=True,
