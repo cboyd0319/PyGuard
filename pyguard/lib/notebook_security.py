@@ -124,6 +124,7 @@ class NotebookCell:
 
 
 @dataclass
+@dataclass
 class NotebookIssue:
     """Security issue found in a notebook."""
 
@@ -818,17 +819,19 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                     else:
-                        # Assign rule_id based on pattern type
+                        # Skip pickle patterns - already detected by AST-based check in _check_unsafe_operations
                         if "pickle" in pattern:
-                            rule_id = "NB-DESERIAL-001"  # Already used for AST-based pickle detection
-                        elif "yaml" in description.lower():
+                            continue
+                        
+                        # Assign rule_id based on pattern type
+                        if "yaml" in description.lower():
                             rule_id = "NB-DESERIAL-002"
                         elif pattern == r"from_pretrained\(":
                             rule_id = "NB-ML-002"
                         else:
                             rule_id = "NB-ML-003"
                         
-                        auto_fixable = pattern in [r"pickle\.loads?\(", r"from_pretrained\("]
+                        auto_fixable = pattern in [r"from_pretrained\("]
                         issues.append(
                             NotebookIssue(
                                 severity=severity,
@@ -1057,6 +1060,7 @@ class NotebookSecurityAnalyzer:
         """Check for hardcoded secrets in cell code."""
         issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
+        seen_secrets = {}  # Track secrets to avoid duplicates: {(line_num, value): priority}
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():
@@ -1065,25 +1069,90 @@ class NotebookSecurityAnalyzer:
                     # Exclude common test/placeholder values
                     value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
                     if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
-                        issues.append(
-                            NotebookIssue(
-                                severity="HIGH",
-                                category="Hardcoded Secret",
-                                message=f"{description} detected in notebook",
-                                cell_index=cell_index,
-                                line_number=line_num,
-                                code_snippet=line[:50] + "..." if len(line) > 50 else line,
-                                rule_id="NB-SECRET-001",
-                                fix_suggestion=(
-                                    "Use environment variables or secure credential storage. "
-                                    "Load secrets from .env files or cloud secret managers."
-                                ),
-                                cwe_id="CWE-798",
-                                owasp_id="ASVS-2.6.3",
-                                auto_fixable=True,
-                            )
-                        )
+                        # Determine rule_id, severity, priority, and specific message based on secret type
+                        rule_id = "NB-SECRET-001"  # default
+                        severity = "HIGH"
+                        priority = 100  # Lower number = higher priority, generic patterns get 100
+                        specific_message = description  # Default to pattern description
+                        
+                        # AWS credentials (CRITICAL) - highest priority
+                        if "AWS" in description or "AKIA" in value:
+                            rule_id = "NB-SECRET-AWS-001"
+                            severity = "CRITICAL"
+                            priority = 1
+                            specific_message = "AWS access key detected in notebook"
+                        # GitHub tokens (CRITICAL) - specific patterns take precedence
+                        elif "GitHub" in description or value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                            rule_id = "NB-SECRET-GITHUB-001"
+                            severity = "CRITICAL"
+                            if value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                                priority = 1
+                                specific_message = "GitHub personal access token detected in notebook"
+                            else:
+                                priority = 10
+                                specific_message = "GitHub token detected in notebook"
+                        # OpenAI API keys (CRITICAL) - specific patterns take precedence
+                        elif "OpenAI" in description or value.startswith("sk-"):
+                            rule_id = "NB-SECRET-OPENAI-001"
+                            severity = "CRITICAL"
+                            if "OpenAI" in description:
+                                priority = 1
+                                specific_message = "OpenAI API key detected in notebook"
+                            else:
+                                priority = 10
+                                specific_message = "API key detected in notebook"
+                        # Slack tokens (HIGH)
+                        elif "Slack" in description or value.startswith(("xoxb-", "xoxp-", "xoxa-", "xoxr-")):
+                            rule_id = "NB-SECRET-SLACK-001"
+                            severity = "HIGH"
+                            priority = 2
+                            specific_message = "Slack token detected in notebook"
+                        # SSH/RSA keys (CRITICAL)
+                        elif "PRIVATE KEY" in value or "SSH" in description:
+                            rule_id = "NB-SECRET-SSH-001"
+                            severity = "CRITICAL"
+                            priority = 1
+                            specific_message = "SSH/RSA private key detected in notebook"
+                        # Database credentials (CRITICAL)
+                        elif any(db in description for db in ["MongoDB", "PostgreSQL", "MySQL", "Redis"]):
+                            rule_id = "NB-SECRET-DB-001"
+                            severity = "CRITICAL"
+                            priority = 1
+                            specific_message = f"Database connection string with credentials detected in notebook"
+                        # JWT tokens (HIGH)
+                        elif "JWT" in description or (value.startswith("eyJ") and value.count(".") >= 2):
+                            rule_id = "NB-SECRET-JWT-001"
+                            severity = "HIGH"
+                            priority = 2
+                            specific_message = "JWT token detected in notebook"
+                        
+                        # Create unique key for this secret
+                        secret_key = (line_num, value.strip())
+                        
+                        # Only keep the highest priority finding for each secret
+                        if secret_key not in seen_secrets or priority < seen_secrets[secret_key]['priority']:
+                            seen_secrets[secret_key] = {
+                                'priority': priority,
+                                'issue': NotebookIssue(
+                                    severity=severity,
+                                    category="Hardcoded Secret",
+                                    message=specific_message,
+                                    cell_index=cell_index,
+                                    line_number=line_num,
+                                    code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                    rule_id=rule_id,
+                                    fix_suggestion=(
+                                        "Use environment variables or secure credential storage. "
+                                        "Load secrets from .env files or cloud secret managers."
+                                    ),
+                                    cwe_id="CWE-798",
+                                    owasp_id="ASVS-2.6.3",
+                                    auto_fixable=True,
+                                )
+                            }
 
+        # Extract just the issues from the deduplication dict
+        issues = [entry['issue'] for entry in seen_secrets.values()]
         return issues
 
     def _check_unsafe_operations(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
@@ -1136,7 +1205,7 @@ class NotebookSecurityAnalyzer:
                     ):
                         issues.append(
                             NotebookIssue(
-                                severity="HIGH",
+                                severity="CRITICAL",
                                 category="Unsafe Deserialization",
                                 message="pickle.load() can execute arbitrary code",
                                 cell_index=cell_index,
