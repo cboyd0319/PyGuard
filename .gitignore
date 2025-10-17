@@ -95,6 +95,8 @@ package-lock.json
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+# Allow example notebooks
+!examples/*.ipynb
 
 # Package
 *.whl

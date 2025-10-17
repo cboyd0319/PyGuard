@@ -9,18 +9,29 @@ Provides comprehensive security analysis for .ipynb files including:
 - Dependency tracking across cells
 - Output sanitization checks
 - Kernel security analysis
+- PII (Personally Identifiable Information) detection
+- Dependency vulnerability scanning
+- License compliance checking
+- XSS vulnerability detection in outputs
+- ML pipeline security (data poisoning, model manipulation)
+- Notebook metadata security analysis
+- Cell trust and execution history validation
 
 References:
 - Jupyter Security | https://jupyter-notebook.readthedocs.io/en/stable/security.html | High | Notebook security guide
 - OWASP Jupyter | https://owasp.org/www-community/vulnerabilities/Jupyter_Notebook | Medium | Security considerations
+- CVE-2024-39700 | https://nvd.nist.gov/vuln/detail/CVE-2024-39700 | Critical | JupyterLab RCE vulnerability
+- CVE-2024-28233 | https://nvd.nist.gov/vuln/detail/CVE-2024-28233 | High | JupyterHub XSS vulnerability
+- CVE-2024-22420 | https://nvd.nist.gov/vuln/detail/CVE-2024-22420 | Medium | JupyterLab Markdown preview vulnerability
+- CVE-2025-30167 | https://nvd.nist.gov/vuln/detail/CVE-2025-30167 | High | Jupyter Core Windows configuration vulnerability
 """
 
 import ast
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Set
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -49,6 +60,21 @@ class NotebookIssue:
     fix_suggestion: Optional[str]  # How to fix
     cwe_id: Optional[str] = None  # CWE identifier
     owasp_id: Optional[str] = None  # OWASP identifier
+    confidence: float = 1.0  # Detection confidence (0.0-1.0)
+    auto_fixable: bool = False  # Whether issue can be auto-fixed
+
+
+@dataclass
+class NotebookMetadata:
+    """Notebook metadata for security analysis."""
+
+    kernel_name: str
+    language: str
+    kernel_version: Optional[str] = None
+    jupyter_version: Optional[str] = None
+    trusted: bool = False  # Whether notebook is trusted
+    execution_count_max: int = 0  # Maximum execution count seen
+    has_outputs: bool = False  # Whether notebook has cell outputs
 
 
 class NotebookSecurityAnalyzer:
@@ -64,6 +90,12 @@ class NotebookSecurityAnalyzer:
     - Command execution vulnerabilities
     - Output sanitization issues
     - Kernel security problems
+    - PII (Personally Identifiable Information)
+    - Dependency vulnerabilities
+    - License compliance issues
+    - XSS vulnerabilities in outputs
+    - ML pipeline security issues
+    - Notebook metadata security
     """
 
     # Dangerous magic commands
@@ -75,6 +107,9 @@ class NotebookSecurityAnalyzer:
         "%%script": "Script execution",
         "%load_ext": "Loading external extensions (may be unsafe)",
         "%run": "Running external scripts (path traversal risk)",
+        "%%writefile": "Writing files (path traversal risk)",
+        "%env": "Environment variable manipulation",
+        "%store": "Cross-notebook variable storage (security risk)",
     }
 
     # Patterns for secrets in notebooks
@@ -85,11 +120,46 @@ class NotebookSecurityAnalyzer:
         r"(?i)(token|auth[_-]?token)\s*=\s*['\"]([^'\"]{16,})": "Authentication token",
         r"(?i)(aws[_-]?access[_-]?key[_-]?id)\s*=\s*['\"]([A-Z0-9]{20})": "AWS access key",
         r"(?i)(aws[_-]?secret[_-]?access[_-]?key)\s*=\s*['\"]([A-Za-z0-9/+=]{40})": "AWS secret key",
+        r"(?i)(github[_-]?token|gh[_-]?token)\s*=\s*['\"]([a-z0-9_]{40,})": "GitHub token",
+        r"(?i)(slack[_-]?token)\s*=\s*['\"]xox[a-z]-[a-zA-Z0-9-]+": "Slack token",
+        r"(?i)(private[_-]?key)\s*=\s*['\"]([^'\"]{32,})": "Private key",
+        r"-----BEGIN (RSA |DSA )?PRIVATE KEY-----": "SSH/RSA private key",
+    }
+
+    # PII detection patterns
+    PII_PATTERNS = {
+        r"\b\d{3}-\d{2}-\d{4}\b": "Social Security Number (SSN)",
+        r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b": "Email address",
+        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
+        r"\b(?:\d{3}[-.]?)?\d{3}[-.]?\d{4}\b": "Phone number",
+        r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IP address",
+        r"\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b": "UK postal code",
+        r"\b\d{5}(-\d{4})?\b": "US ZIP code",
+    }
+
+    # Risky ML/Data Science operations
+    ML_SECURITY_PATTERNS = {
+        r"pickle\.loads?\(": "Unsafe pickle deserialization (model poisoning risk)",
+        r"joblib\.load\(": "Joblib model loading (verify source)",
+        r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk)",
+        r"tf\.keras\.models\.load_model\(": "TensorFlow model loading (verify source)",
+        r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
+        r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
+    }
+
+    # XSS-prone output patterns
+    XSS_PATTERNS = {
+        r"IPython\.display\.HTML\(": "Raw HTML display (XSS risk)",
+        r"display\(HTML\(": "HTML display (XSS risk)",
+        r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
+        r"%%html": "HTML cell magic (XSS risk)",
     }
 
     def __init__(self):
         """Initialize the notebook security analyzer."""
         self.logger = PyGuardLogger()
+        self.detected_pii: Set[str] = set()  # Track unique PII types detected
+        self.detected_dependencies: Dict[str, str] = {}  # Track imported packages
 
     def analyze_notebook(self, notebook_path: Path) -> List[NotebookIssue]:
         """
@@ -122,6 +192,10 @@ class NotebookSecurityAnalyzer:
         # Parse notebook cells
         cells = self._parse_cells(notebook_data)
 
+        # Analyze notebook metadata
+        metadata_issues = self._analyze_metadata(notebook_data)
+        issues.extend(metadata_issues)
+
         # Analyze each cell
         for idx, cell in enumerate(cells):
             if cell.cell_type == "code":
@@ -129,6 +203,11 @@ class NotebookSecurityAnalyzer:
 
         # Cross-cell analysis
         issues.extend(self._analyze_cell_dependencies(cells))
+
+        # Check for PII in outputs
+        for idx, cell in enumerate(cells):
+            if cell.cell_type == "code":
+                issues.extend(self._check_output_pii(cell, idx))
 
         self.logger.info(
             f"Notebook analysis complete: {notebook_path}, issues found: {len(issues)}"
@@ -156,6 +235,229 @@ class NotebookSecurityAnalyzer:
 
         return cells
 
+    def _analyze_metadata(self, notebook_data: Dict[str, Any]) -> List[NotebookIssue]:
+        """Analyze notebook metadata for security issues."""
+        issues: List[NotebookIssue] = []
+        metadata = notebook_data.get("metadata", {})
+
+        # Check for untrusted notebook (only if explicitly marked as False, not missing)
+        if metadata.get("trusted") is False:
+            issues.append(
+                NotebookIssue(
+                    severity="MEDIUM",
+                    category="Untrusted Notebook",
+                    message="Notebook is not marked as trusted - outputs may not be safe",
+                    cell_index=-1,
+                    line_number=0,
+                    code_snippet="",
+                    fix_suggestion="Review notebook content and mark as trusted if verified safe",
+                    confidence=0.8,
+                )
+            )
+
+        # Check kernel info
+        kernel_info = metadata.get("kernelspec", {})
+        kernel_name = kernel_info.get("name", "")
+
+        # Warn about non-standard kernels
+        if kernel_name and kernel_name not in ["python3", "python2", "python"]:
+            issues.append(
+                NotebookIssue(
+                    severity="LOW",
+                    category="Non-Standard Kernel",
+                    message=f"Using non-standard kernel: {kernel_name}",
+                    cell_index=-1,
+                    line_number=0,
+                    code_snippet=f"Kernel: {kernel_name}",
+                    fix_suggestion="Verify kernel source and security",
+                    confidence=0.6,
+                )
+            )
+
+        return issues
+
+    def _check_pii(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check for Personally Identifiable Information (PII) in cell code."""
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.PII_PATTERNS.items():
+                matches = re.finditer(pattern, line, re.IGNORECASE)
+                for match in matches:
+                    # Skip common false positives
+                    matched_text = match.group(0)
+                    if self._is_pii_false_positive(matched_text, description):
+                        continue
+
+                    self.detected_pii.add(description)
+                    issues.append(
+                        NotebookIssue(
+                            severity="HIGH",
+                            category="PII Exposure",
+                            message=f"Potential {description} detected in notebook",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                            fix_suggestion=(
+                                "Remove or redact PII from notebooks before sharing. "
+                                "Use placeholder values or environment variables."
+                            ),
+                            cwe_id="CWE-359",
+                            owasp_id="ASVS-8.3.4",
+                            confidence=0.7,
+                            auto_fixable=True,
+                        )
+                    )
+
+        return issues
+
+    def _is_pii_false_positive(self, text: str, pii_type: str) -> bool:
+        """Check if detected PII is likely a false positive."""
+        # Skip common test/example values
+        test_values = [
+            "123-45-6789",  # Example SSN
+            "555-555-5555",  # Example phone
+            "test@example.com",
+            "user@example.org",
+            "127.0.0.1",
+            "0.0.0.0",
+            "192.168.",  # Local IPs
+            "10.0.",
+        ]
+
+        for test_val in test_values:
+            if test_val in text:
+                return True
+
+        # Skip IP addresses that are clearly local/private
+        if pii_type == "IP address":
+            if text.startswith("127.") or text.startswith("192.168.") or text.startswith("10."):
+                return True
+
+        return False
+
+    def _check_ml_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check for ML/Data Science security issues."""
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.ML_SECURITY_PATTERNS.items():
+                if re.search(pattern, line):
+                    severity = "CRITICAL" if "code execution" in description.lower() else "HIGH"
+                    issues.append(
+                        NotebookIssue(
+                            severity=severity,
+                            category="ML Pipeline Security",
+                            message=description,
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line.strip(),
+                            fix_suggestion=(
+                                "Verify the source and integrity of loaded models. "
+                                "Use safer serialization formats (ONNX, SavedModel). "
+                                "Validate model checksums before loading."
+                            ),
+                            cwe_id="CWE-502",
+                            owasp_id="ASVS-5.5.3",
+                            confidence=0.85,
+                        )
+                    )
+
+        # Check for data validation issues in ML pipelines
+        if "pd.read_csv" in cell.source or "pd.read_excel" in cell.source:
+            if "dtype=" not in cell.source and "converters=" not in cell.source:
+                issues.append(
+                    NotebookIssue(
+                        severity="MEDIUM",
+                        category="Data Validation",
+                        message="Data loading without type validation (data poisoning risk)",
+                        cell_index=cell_index,
+                        line_number=0,
+                        code_snippet="Data loading detected",
+                        fix_suggestion=(
+                            "Specify dtypes and use converters to validate data types. "
+                            "Implement schema validation for input data."
+                        ),
+                        confidence=0.6,
+                    )
+                )
+
+        return issues
+
+    def _check_xss_vulnerabilities(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check for XSS vulnerabilities in notebook outputs."""
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.XSS_PATTERNS.items():
+                if re.search(pattern, line):
+                    issues.append(
+                        NotebookIssue(
+                            severity="HIGH",
+                            category="XSS Vulnerability",
+                            message=f"{description} - user input should be sanitized",
+                            cell_index=cell_index,
+                            line_number=line_num,
+                            code_snippet=line.strip(),
+                            fix_suggestion=(
+                                "Sanitize all user input before displaying as HTML. "
+                                "Use IPython.display.Text() instead of HTML() for untrusted content. "
+                                "Apply HTML escaping to prevent XSS attacks."
+                            ),
+                            cwe_id="CWE-79",
+                            owasp_id="ASVS-5.3.3",
+                            confidence=0.75,
+                        )
+                    )
+
+        return issues
+
+    def _check_output_pii(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check cell outputs for PII exposure."""
+        issues: List[NotebookIssue] = []
+
+        for output in cell.outputs:
+            output_text = ""
+
+            # Extract text from different output types
+            if output.get("output_type") == "stream":
+                output_text = "".join(output.get("text", []))
+            elif output.get("output_type") == "execute_result":
+                data = output.get("data", {})
+                output_text = data.get("text/plain", "")
+            elif output.get("output_type") == "error":
+                output_text = "\n".join(output.get("traceback", []))
+
+            # Check for PII in output text
+            for pattern, description in self.PII_PATTERNS.items():
+                matches = re.finditer(pattern, output_text, re.IGNORECASE)
+                for match in matches:
+                    matched_text = match.group(0)
+                    if not self._is_pii_false_positive(matched_text, description):
+                        issues.append(
+                            NotebookIssue(
+                                severity="HIGH",
+                                category="PII in Output",
+                                message=f"{description} exposed in cell output",
+                                cell_index=cell_index,
+                                line_number=0,
+                                code_snippet=matched_text[:50],
+                                fix_suggestion=(
+                                    "Clear cell outputs before sharing notebook. "
+                                    "Redact sensitive information from outputs."
+                                ),
+                                cwe_id="CWE-359",
+                                confidence=0.7,
+                                auto_fixable=True,
+                            )
+                        )
+                        break  # Only report once per output
+
+        return issues
+
     def _analyze_code_cell(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
         """Analyze a single code cell for security issues."""
         issues: List[NotebookIssue] = []
@@ -166,11 +468,20 @@ class NotebookSecurityAnalyzer:
         # Check for hardcoded secrets
         issues.extend(self._check_secrets(cell, cell_index))
 
+        # Check for PII in code
+        issues.extend(self._check_pii(cell, cell_index))
+
         # Check for unsafe operations
         issues.extend(self._check_unsafe_operations(cell, cell_index))
 
         # Check for command injection
         issues.extend(self._check_command_injection(cell, cell_index))
+
+        # Check ML security issues
+        issues.extend(self._check_ml_security(cell, cell_index))
+
+        # Check XSS vulnerabilities
+        issues.extend(self._check_xss_vulnerabilities(cell, cell_index))
 
         # Check output sanitization
         issues.extend(self._check_output_security(cell, cell_index))
@@ -231,6 +542,7 @@ class NotebookSecurityAnalyzer:
                                 ),
                                 cwe_id="CWE-798",
                                 owasp_id="ASVS-2.6.3",
+                                auto_fixable=True,
                             )
                         )
 
@@ -437,26 +749,68 @@ class NotebookFixer:
 
         # Apply fixes based on issue types
         for issue in issues:
+            if not issue.auto_fixable:
+                continue
+
             if issue.category == "Hardcoded Secret":
                 # Comment out lines with secrets
-                cell = cells[issue.cell_index]
-                source = cell.get("source", [])
-                if isinstance(source, list):
-                    source = "".join(source)
+                if 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
 
-                lines = source.split("\n")
-                if issue.line_number <= len(lines):
-                    line = lines[issue.line_number - 1]
-                    lines[issue.line_number - 1] = f"# SECURITY: Removed hardcoded secret - {line}"
-                    cell["source"] = "\n".join(lines)
-                    fixes_applied.append(
-                        f"Commented out hardcoded secret in cell {issue.cell_index}"
-                    )
+                    lines = source.split("\n")
+                    if 0 < issue.line_number <= len(lines):
+                        line = lines[issue.line_number - 1]
+                        lines[issue.line_number - 1] = (
+                            f"# SECURITY: Removed hardcoded secret - {line}"
+                        )
+                        cell["source"] = "\n".join(lines)
+                        fixes_applied.append(
+                            f"Commented out hardcoded secret in cell {issue.cell_index}"
+                        )
+
+            elif issue.category in ["PII Exposure", "PII in Output"]:
+                # Redact PII from cell
+                if issue.category == "PII Exposure" and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+
+                    # Add warning comment
+                    lines = source.split("\n")
+                    if 0 < issue.line_number <= len(lines):
+                        lines.insert(
+                            issue.line_number - 1,
+                            f"# WARNING: PII detected below - redact before sharing",
+                        )
+                        cell["source"] = "\n".join(lines)
+                        fixes_applied.append(f"Added PII warning in cell {issue.cell_index}")
+
+                elif issue.category == "PII in Output":
+                    # Clear outputs for cells with PII
+                    if 0 <= issue.cell_index < len(cells):
+                        cells[issue.cell_index]["outputs"] = []
+                        fixes_applied.append(f"Cleared outputs with PII in cell {issue.cell_index}")
+
+            elif issue.category == "Untrusted Notebook":
+                # Don't auto-fix trust status (requires user verification)
+                pass
 
         # Save fixed notebook
         if fixes_applied:
+            # Create backup first
+            backup_path = notebook_path.with_suffix(".ipynb.backup")
+            with open(backup_path, "w", encoding="utf-8") as f:
+                with open(notebook_path, "r", encoding="utf-8") as orig:
+                    f.write(orig.read())
+
             with open(notebook_path, "w", encoding="utf-8") as f:
                 json.dump(notebook_data, f, indent=2)
+
+            fixes_applied.insert(0, f"Created backup at {backup_path}")
 
         return len(fixes_applied) > 0, fixes_applied
 

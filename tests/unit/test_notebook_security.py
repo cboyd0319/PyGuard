@@ -386,6 +386,7 @@ class TestNotebookFixer:
             line_number=1,
             code_snippet="password = 'SuperSecret123'",
             fix_suggestion="Use environment variables",
+            auto_fixable=True,
         )
 
         fixer = NotebookFixer()
@@ -393,7 +394,8 @@ class TestNotebookFixer:
 
         assert success
         assert len(fixes) > 0
-        assert "Commented out" in fixes[0]
+        # First fix is backup creation, second is the actual fix
+        assert "backup" in fixes[0].lower() or "Commented out" in fixes[0]
 
         # Verify the fix was applied
         with open(temp_notebook, "r") as f:
@@ -581,5 +583,332 @@ class TestEdgeCases:
 
         loadext_issues = [i for i in issues if "%load_ext" in i.code_snippet]
         assert len(loadext_issues) >= 1
+
+        temp_notebook.unlink()
+
+    def test_pii_detection_email(self, temp_notebook):
+        """Test detection of email addresses (PII)."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "user_email = 'john.doe@company.com'",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        pii_issues = [i for i in issues if i.category == "PII Exposure"]
+        assert len(pii_issues) >= 1
+        assert "Email" in pii_issues[0].message
+
+        temp_notebook.unlink()
+
+    def test_pii_detection_ssn(self, temp_notebook):
+        """Test detection of Social Security Numbers."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "ssn = '987-65-4321'  # Real SSN - DO NOT COMMIT",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        pii_issues = [i for i in issues if i.category == "PII Exposure"]
+        assert len(pii_issues) >= 1
+        assert "Social Security Number" in pii_issues[0].message
+
+        temp_notebook.unlink()
+
+    def test_pii_false_positive_filtering(self, temp_notebook):
+        """Test that common test/example values don't trigger PII detection."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "test_email = 'test@example.com'\n",
+                        "test_ip = '127.0.0.1'\n",
+                        "example_ssn = '123-45-6789'",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        # Should not detect PII for test/example values
+        pii_issues = [i for i in issues if i.category == "PII Exposure"]
+        assert len(pii_issues) == 0
+
+        temp_notebook.unlink()
+
+    def test_ml_security_pickle_load(self, temp_notebook):
+        """Test detection of unsafe pickle loading in ML code."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "model = torch.load('untrusted_model.pth')",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        ml_issues = [i for i in issues if i.category == "ML Pipeline Security"]
+        assert len(ml_issues) >= 1
+        assert "PyTorch" in ml_issues[0].message or "torch" in ml_issues[0].message
+
+        temp_notebook.unlink()
+
+    def test_ml_security_data_validation(self, temp_notebook):
+        """Test detection of missing data validation in ML pipelines."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import pandas as pd\n",
+                        "df = pd.read_csv('untrusted_data.csv')",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        validation_issues = [i for i in issues if i.category == "Data Validation"]
+        assert len(validation_issues) >= 1
+        assert "data poisoning" in validation_issues[0].message.lower()
+
+        temp_notebook.unlink()
+
+    def test_xss_vulnerability_detection(self, temp_notebook):
+        """Test detection of XSS vulnerabilities in HTML display."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from IPython.display import HTML\n",
+                        "user_input = input('Enter HTML: ')\n",
+                        "display(HTML(user_input))",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        xss_issues = [i for i in issues if i.category == "XSS Vulnerability"]
+        assert len(xss_issues) >= 1
+        assert xss_issues[0].severity == "HIGH"
+
+        temp_notebook.unlink()
+
+    def test_pii_in_output_detection(self, temp_notebook):
+        """Test detection of PII exposed in cell outputs."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "print('Email: alice@secretcorp.com')",
+                    "outputs": [
+                        {
+                            "output_type": "stream",
+                            "name": "stdout",
+                            "text": ["Email: alice@secretcorp.com\n"],
+                        }
+                    ],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        output_pii_issues = [i for i in issues if i.category == "PII in Output"]
+        assert len(output_pii_issues) >= 1
+        assert "Email" in output_pii_issues[0].message
+
+        temp_notebook.unlink()
+
+    def test_metadata_untrusted_notebook(self, temp_notebook):
+        """Test detection of explicitly untrusted notebooks."""
+        notebook = {
+            "cells": [],
+            "metadata": {"trusted": False},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        untrusted_issues = [i for i in issues if i.category == "Untrusted Notebook"]
+        assert len(untrusted_issues) == 1
+        assert untrusted_issues[0].severity == "MEDIUM"
+
+        temp_notebook.unlink()
+
+    def test_metadata_nonstandard_kernel(self, temp_notebook):
+        """Test detection of non-standard kernels."""
+        notebook = {
+            "cells": [],
+            "metadata": {
+                "kernelspec": {
+                    "name": "custom_kernel",
+                    "display_name": "Custom Kernel",
+                }
+            },
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        kernel_issues = [i for i in issues if i.category == "Non-Standard Kernel"]
+        assert len(kernel_issues) == 1
+        assert "custom_kernel" in kernel_issues[0].code_snippet
+
+        temp_notebook.unlink()
+
+    def test_auto_fix_pii_in_output(self, temp_notebook):
+        """Test auto-fixing PII in outputs by clearing them."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "print('test')",
+                    "outputs": [
+                        {
+                            "output_type": "stream",
+                            "name": "stdout",
+                            "text": ["Email: test@realcompany.com\n"],
+                        }
+                    ],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        issue = NotebookIssue(
+            severity="HIGH",
+            category="PII in Output",
+            message="Email in output",
+            cell_index=0,
+            line_number=0,
+            code_snippet="test@realcompany.com",
+            fix_suggestion="Clear outputs",
+            auto_fixable=True,
+        )
+
+        fixer = NotebookFixer()
+        success, fixes = fixer.fix_notebook(temp_notebook, [issue])
+
+        assert success
+        assert any("Cleared outputs" in fix for fix in fixes)
+
+        # Verify outputs were cleared
+        with open(temp_notebook, "r") as f:
+            fixed_notebook = json.load(f)
+
+        assert len(fixed_notebook["cells"][0]["outputs"]) == 0
+
+        temp_notebook.unlink()
+
+    def test_github_token_detection(self, temp_notebook):
+        """Test detection of GitHub tokens."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "github_token = 'ghp_1234567890abcdefghijklmnopqrstuvwxyz'",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        github_issues = [i for i in issues if "GitHub" in i.message or "github" in i.message.lower()]
+        assert len(github_issues) >= 1
 
         temp_notebook.unlink()
