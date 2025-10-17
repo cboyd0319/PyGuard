@@ -912,3 +912,637 @@ class TestEdgeCases:
         assert len(github_issues) >= 1
 
         temp_notebook.unlink()
+
+
+class TestEnhancedFeatures:
+    """Tests for enhanced notebook security features."""
+
+    def test_entropy_based_secret_detection(self, temp_notebook):
+        """Test high-entropy secret detection using Shannon entropy."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# High-entropy base64-encoded secret\n",
+                        "secret = 'aGlnaGVudHJvcHlzdHJpbmdmb3J0ZXN0aW5ncHVycG9zZXNvbmx5bm90cmVhbA=='\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        entropy_issues = [i for i in issues if "High-Entropy" in i.category]
+        assert len(entropy_issues) >= 1
+        assert any("entropy" in i.message.lower() for i in entropy_issues)
+
+        temp_notebook.unlink()
+
+    def test_torch_load_without_weights_only(self, temp_notebook):
+        """Test detection of torch.load() without weights_only=True."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "model = torch.load('model.pth')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        torch_issues = [i for i in issues if "torch.load" in i.message]
+        assert len(torch_issues) >= 1
+        assert any("weights_only" in i.message for i in torch_issues)
+        assert any(i.severity == "CRITICAL" for i in torch_issues)
+        assert any(i.auto_fixable for i in torch_issues)
+
+        temp_notebook.unlink()
+
+    def test_torch_load_with_weights_only_safe(self, temp_notebook):
+        """Test that torch.load() with weights_only=True is not flagged."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "model = torch.load('model.pth', weights_only=True)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        # Should not flag as unsafe since weights_only=True
+        torch_issues = [i for i in issues if "torch.load" in i.message and "arbitrary code" in i.message.lower()]
+        assert len(torch_issues) == 0
+
+        temp_notebook.unlink()
+
+    def test_reproducibility_missing_torch_seed(self, temp_notebook):
+        """Test detection of PyTorch usage without seed setting."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "import torch.nn as nn\n",
+                        "model = nn.Linear(10, 1)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        repro_issues = [i for i in issues if "Reproducibility" in i.category]
+        assert len(repro_issues) >= 1
+        assert any("PyTorch" in i.message or "torch" in i.message.lower() for i in repro_issues)
+        assert any("seed" in i.message.lower() for i in repro_issues)
+        assert any(i.auto_fixable for i in repro_issues)
+
+        temp_notebook.unlink()
+
+    def test_reproducibility_with_seed_no_issue(self, temp_notebook):
+        """Test that PyTorch with seed set does not flag missing seed."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "torch.manual_seed(42)\n",
+                        "import torch.nn as nn\n",
+                        "model = nn.Linear(10, 1)\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        # Should not flag missing seed issue for PyTorch (seed is set)
+        repro_issues = [i for i in issues if "Reproducibility" in i.category and "seed not set" in i.message]
+        assert len(repro_issues) == 0
+
+        temp_notebook.unlink()
+
+    def test_unpinned_pip_install_detection(self, temp_notebook):
+        """Test detection of unpinned pip install commands."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "%pip install numpy pandas\n",
+                        "!pip install torch\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        unpinned_issues = [i for i in issues if "Unpinned Dependency" in i.category]
+        assert len(unpinned_issues) >= 2
+        assert any("reproducibility" in i.message.lower() for i in unpinned_issues)
+
+        temp_notebook.unlink()
+
+    def test_multiple_ml_frameworks_seed_detection(self, temp_notebook):
+        """Test detection of multiple ML frameworks without seeds."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import torch\n",
+                        "import numpy as np\n",
+                        "import tensorflow as tf\n",
+                        "import random\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        repro_issues = [i for i in issues if "Reproducibility" in i.category]
+        assert len(repro_issues) >= 3
+
+        temp_notebook.unlink()
+
+    def test_enhanced_secret_patterns(self, temp_notebook):
+        """Test detection of various secret patterns."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "# Various secret types (using test placeholders)\n",
+                        "aws_key = 'AKIAIOSFODNN7EXAMPLE'\n",
+                        "openai_key = 'sk-proj-testkeytestkeytestkeytestkeytestkey123456'\n",
+                        "slack_token = 'xoxb-1234567890-1234567890-testtokentesttoken'\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        secret_issues = [i for i in issues if "Secret" in i.category or "secret" in i.message.lower()]
+        assert len(secret_issues) >= 2
+
+        temp_notebook.unlink()
+
+    def test_torch_load_auto_fix(self, temp_notebook):
+        """Test auto-fix for torch.load() adds weights_only=True."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "import torch\nmodel = torch.load('model.pth')",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        torch_issues = [i for i in issues if "torch.load" in i.message and i.auto_fixable]
+        assert len(torch_issues) >= 1
+
+        fixer = NotebookFixer()
+        success, fixes = fixer.fix_notebook(temp_notebook, torch_issues)
+
+        assert success
+        assert len(fixes) > 0
+
+        with open(temp_notebook, "r") as f:
+            fixed_notebook = json.load(f)
+
+        fixed_source = fixed_notebook["cells"][0]["source"]
+        if isinstance(fixed_source, list):
+            fixed_source = "".join(fixed_source)
+
+        assert "weights_only" in fixed_source or "SECURITY" in fixed_source
+
+        temp_notebook.unlink()
+
+    def test_reproducibility_seed_auto_fix(self, temp_notebook):
+        """Test auto-fix for missing seeds adds seed setting."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": "import torch\nimport torch.nn as nn",
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        repro_issues = [i for i in issues if "Reproducibility" in i.category and i.auto_fixable]
+        assert len(repro_issues) >= 1
+
+        fixer = NotebookFixer()
+        success, fixes = fixer.fix_notebook(temp_notebook, repro_issues)
+
+        assert success
+        assert len(fixes) > 0
+
+        with open(temp_notebook, "r") as f:
+            fixed_notebook = json.load(f)
+
+        fixed_source = fixed_notebook["cells"][0]["source"]
+        if isinstance(fixed_source, list):
+            fixed_source = "".join(fixed_source)
+
+        assert "manual_seed" in fixed_source or "seed" in fixed_source.lower()
+
+        temp_notebook.unlink()
+
+    def test_hugging_face_model_security(self, temp_notebook):
+        """Test detection of Hugging Face model loading."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from transformers import AutoModel\n",
+                        "model = AutoModel.from_pretrained('user/model')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        hf_issues = [i for i in issues if "Hugging Face" in i.message or "from_pretrained" in i.message.lower()]
+        assert len(hf_issues) >= 1
+        assert any(i.severity in ["HIGH", "CRITICAL"] for i in hf_issues)
+
+        temp_notebook.unlink()
+
+    def test_data_validation_pandas(self, temp_notebook):
+        """Test detection of pandas data loading without validation."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import pandas as pd\n",
+                        "df = pd.read_csv('untrusted_data.csv')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        validation_issues = [i for i in issues if "Data Validation" in i.category]
+        assert len(validation_issues) >= 1
+        assert any("poisoning" in i.message.lower() for i in validation_issues)
+        assert any(i.auto_fixable for i in validation_issues)
+
+        temp_notebook.unlink()
+
+    def test_entropy_calculation_accuracy(self):
+        """Test entropy calculation for known strings."""
+        analyzer = NotebookSecurityAnalyzer()
+
+        # Low entropy: repeated characters
+        low_entropy_text = "aaaaaaaaaa"
+        low_entropy = analyzer._calculate_entropy(low_entropy_text)
+        assert low_entropy < 1.0
+
+        # High entropy: random-looking base64
+        high_entropy_text = "aGlnaGVudHJvcHlzdHJpbmdmb3J0ZXN0aW5n"
+        high_entropy = analyzer._calculate_entropy(high_entropy_text)
+        assert high_entropy > 4.0
+
+        # Medium entropy: regular text
+        medium_entropy_text = "this is some regular text"
+        medium_entropy = analyzer._calculate_entropy(medium_entropy_text)
+        assert 2.0 < medium_entropy < 4.5
+
+
+class TestFilesystemSecurity:
+    """Tests for filesystem security checks."""
+
+    def test_path_traversal_detection(self, temp_notebook):
+        """Test detection of path traversal attempts."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "with open('../../../etc/passwd', 'r') as f:\n",
+                        "    data = f.read()\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        fs_issues = [i for i in issues if "Filesystem Security" in i.category]
+        assert len(fs_issues) >= 1
+        assert any("traversal" in i.message.lower() for i in fs_issues)
+
+        temp_notebook.unlink()
+
+    def test_sensitive_file_access(self, temp_notebook):
+        """Test detection of access to sensitive system files."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "with open('/etc/shadow', 'r') as f:\n",
+                        "    passwords = f.read()\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        fs_issues = [i for i in issues if "Filesystem Security" in i.category]
+        assert len(fs_issues) >= 1
+        assert any("shadow" in i.message.lower() or "password" in i.message.lower() for i in fs_issues)
+
+        temp_notebook.unlink()
+
+    def test_unsafe_file_deletion(self, temp_notebook):
+        """Test detection of unsafe file deletion operations."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import os\n",
+                        "os.remove('/tmp/important_file.txt')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "remove" in i.message.lower()]
+        assert len(fs_issues) >= 1
+        assert any("deletion" in i.message.lower() or "path validation" in i.message.lower() for i in fs_issues)
+
+        temp_notebook.unlink()
+
+    def test_shutil_rmtree_detection(self, temp_notebook):
+        """Test detection of shutil.rmtree without validation."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import shutil\n",
+                        "shutil.rmtree('/tmp/data')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "rmtree" in i.message.lower()]
+        assert len(fs_issues) >= 1
+
+        temp_notebook.unlink()
+
+    def test_tempfile_mktemp_deprecated(self, temp_notebook):
+        """Test detection of deprecated tempfile.mktemp."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "import tempfile\n",
+                        "temp_path = tempfile.mktemp()\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "mktemp" in i.message.lower()]
+        assert len(fs_issues) >= 1
+        assert any(i.auto_fixable for i in fs_issues)
+        assert any("race condition" in i.message.lower() for i in fs_issues)
+
+        temp_notebook.unlink()
+
+
+class TestAdvancedXSS:
+    """Tests for advanced XSS detection."""
+
+    def test_javascript_execution_detection(self, temp_notebook):
+        """Test detection of JavaScript execution in outputs."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from IPython.display import Javascript\n",
+                        "display(Javascript('alert(\"XSS\")'))\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        xss_issues = [i for i in issues if "XSS" in i.category]
+        assert len(xss_issues) >= 1
+        assert any("Javascript" in i.message or "JavaScript" in i.message for i in xss_issues)
+
+        temp_notebook.unlink()
+
+    def test_iframe_injection_detection(self, temp_notebook):
+        """Test detection of iframe injection."""
+        notebook = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": 1,
+                    "source": [
+                        "from IPython.display import HTML\n",
+                        "HTML('<iframe src=\"https://evil.com\"></iframe>')\n",
+                    ],
+                    "outputs": [],
+                    "metadata": {},
+                }
+            ],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        temp_notebook.write_text(json.dumps(notebook))
+
+        analyzer = NotebookSecurityAnalyzer()
+        issues = analyzer.analyze_notebook(temp_notebook)
+
+        xss_issues = [i for i in issues if "XSS" in i.category]
+        # Should detect both HTML() usage and iframe pattern
+        assert len(xss_issues) >= 1
+
+        temp_notebook.unlink()
+

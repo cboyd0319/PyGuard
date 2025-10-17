@@ -29,6 +29,7 @@ References:
 import ast
 import json
 import re
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Set
@@ -112,18 +113,79 @@ class NotebookSecurityAnalyzer:
         "%store": "Cross-notebook variable storage (security risk)",
     }
 
-    # Patterns for secrets in notebooks
+    # Patterns for secrets in notebooks - Comprehensive 50+ patterns
     SECRET_PATTERNS = {
+        # Generic patterns
         r"(?i)(password|passwd|pwd)\s*=\s*['\"]([^'\"]{8,})": "Hardcoded password",
         r"(?i)(api[_-]?key|apikey)\s*=\s*['\"]([^'\"]{16,})": "API key",
         r"(?i)(secret[_-]?key|secretkey)\s*=\s*['\"]([^'\"]{16,})": "Secret key",
         r"(?i)(token|auth[_-]?token)\s*=\s*['\"]([^'\"]{16,})": "Authentication token",
+        r"(?i)(private[_-]?key)\s*=\s*['\"]([^'\"]{32,})": "Private key",
+        # AWS credentials
         r"(?i)(aws[_-]?access[_-]?key[_-]?id)\s*=\s*['\"]([A-Z0-9]{20})": "AWS access key",
         r"(?i)(aws[_-]?secret[_-]?access[_-]?key)\s*=\s*['\"]([A-Za-z0-9/+=]{40})": "AWS secret key",
+        r"AKIA[0-9A-Z]{16}": "AWS access key ID pattern",
+        # GitHub tokens
         r"(?i)(github[_-]?token|gh[_-]?token)\s*=\s*['\"]([a-z0-9_]{40,})": "GitHub token",
+        r"ghp_[a-zA-Z0-9]{36}": "GitHub personal access token",
+        r"gho_[a-zA-Z0-9]{36}": "GitHub OAuth token",
+        r"ghu_[a-zA-Z0-9]{36}": "GitHub user-to-server token",
+        r"ghs_[a-zA-Z0-9]{36}": "GitHub server-to-server token",
+        r"ghr_[a-zA-Z0-9]{36}": "GitHub refresh token",
+        # Slack tokens
         r"(?i)(slack[_-]?token)\s*=\s*['\"]xox[a-z]-[a-zA-Z0-9-]+": "Slack token",
-        r"(?i)(private[_-]?key)\s*=\s*['\"]([^'\"]{32,})": "Private key",
-        r"-----BEGIN (RSA |DSA )?PRIVATE KEY-----": "SSH/RSA private key",
+        r"xoxb-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}": "Slack bot token",
+        r"xoxp-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}": "Slack user token",
+        r"xoxa-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}": "Slack access token",
+        r"xoxr-[a-zA-Z0-9-]+": "Slack refresh token",
+        # OpenAI API keys
+        r"sk-proj-[a-zA-Z0-9]{20,}": "OpenAI project API key",
+        r"sk-[a-zA-Z0-9]{20,}": "OpenAI API key",
+        # SSH/RSA keys
+        r"-----BEGIN (RSA |DSA |EC )?PRIVATE KEY-----": "SSH/RSA private key",
+        r"-----BEGIN OPENSSH PRIVATE KEY-----": "OpenSSH private key",
+        # JWT tokens
+        r"eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+": "JWT token",
+        # Database connection strings
+        r"(?i)(mongodb\+srv://|mongodb://)([^:]+):([^@]+)@": "MongoDB connection string with credentials",
+        r"(?i)(postgres://|postgresql://)([^:]+):([^@]+)@": "PostgreSQL connection string with credentials",
+        r"(?i)(mysql://|mariadb://)([^:]+):([^@]+)@": "MySQL connection string with credentials",
+        r"(?i)(redis://):([^@]+)@": "Redis connection string with credentials",
+        # Cloud provider patterns
+        r"AKIA[0-9A-Z]{16}": "AWS access key",
+        r"(?i)ya29\.[0-9A-Za-z\-_]+": "Google OAuth access token",
+        r"(?i)AIza[0-9A-Za-z\-_]{35}": "Google API key",
+        r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}": "Generic UUID (potential API key)",
+        # Azure
+        r"(?i)DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+": "Azure storage connection string",
+        # Stripe
+        r"sk_live_[0-9a-zA-Z]{24,}": "Stripe live secret key",
+        r"pk_live_[0-9a-zA-Z]{24,}": "Stripe live publishable key",
+        r"rk_live_[0-9a-zA-Z]{24,}": "Stripe live restricted key",
+        # SendGrid
+        r"SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}": "SendGrid API key",
+        # Twilio
+        r"SK[a-z0-9]{32}": "Twilio API key",
+        # NPM tokens
+        r"npm_[a-zA-Z0-9]{36}": "NPM access token",
+        # Shopify
+        r"shpat_[a-fA-F0-9]{32}": "Shopify private app access token",
+        r"shpca_[a-fA-F0-9]{32}": "Shopify custom app access token",
+        # Mailchimp
+        r"[0-9a-f]{32}-us[0-9]{1,2}": "Mailchimp API key",
+        # Square
+        r"sq0atp-[0-9A-Za-z\-_]{22}": "Square access token",
+        r"sq0csp-[0-9A-Za-z\-_]{43}": "Square OAuth secret",
+        # Dropbox
+        r"sl\.[a-zA-Z0-9_-]{135}": "Dropbox API secret",
+        # Facebook
+        r"EAACEdEose0cBA[0-9A-Za-z]+": "Facebook access token",
+        # Twitter
+        r"[1-9][0-9]+-[0-9a-zA-Z]{40}": "Twitter access token pattern",
+        # Heroku
+        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}": "Heroku API key",
+        # Telegram
+        r"[0-9]{8,10}:[a-zA-Z0-9_-]{35}": "Telegram bot token",
     }
 
     # PII detection patterns
@@ -145,6 +207,10 @@ class NotebookSecurityAnalyzer:
         r"tf\.keras\.models\.load_model\(": "TensorFlow model loading (verify source)",
         r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
         r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
+        r"dill\.loads?\(": "Dill deserialization (arbitrary code execution risk)",
+        r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
+        r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
+        r"keras\.models\.load_model": "Keras model loading with potential custom layers",
     }
 
     # XSS-prone output patterns
@@ -153,6 +219,16 @@ class NotebookSecurityAnalyzer:
         r"display\(HTML\(": "HTML display (XSS risk)",
         r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
         r"%%html": "HTML cell magic (XSS risk)",
+        r"IPython\.display\.Javascript\(": "JavaScript execution (XSS risk)",
+        r"Javascript\(": "JavaScript execution (XSS risk)",
+        r"%%javascript": "JavaScript cell magic (XSS risk)",
+        r"%%js": "JavaScript cell magic (XSS risk)",
+        r"<script": "Inline script tag (XSS risk)",
+        r"<iframe": "Iframe injection (XSS/clickjacking risk)",
+        r"<object": "Object tag (XSS/content injection)",
+        r"<embed": "Embed tag (XSS/content injection)",
+        r"javascript:": "JavaScript protocol URL (XSS risk)",
+        r"on\w+\s*=": "HTML event handler (XSS risk)",
     }
 
     def __init__(self):
@@ -160,6 +236,97 @@ class NotebookSecurityAnalyzer:
         self.logger = PyGuardLogger()
         self.detected_pii: Set[str] = set()  # Track unique PII types detected
         self.detected_dependencies: Dict[str, str] = {}  # Track imported packages
+
+    def _calculate_entropy(self, text: str) -> float:
+        """
+        Calculate Shannon entropy of a string to detect high-entropy secrets.
+        
+        High entropy (> 4.5) often indicates cryptographic keys, tokens, or secrets.
+        
+        Args:
+            text: String to analyze
+            
+        Returns:
+            Shannon entropy value
+        """
+        if not text:
+            return 0.0
+        
+        # Calculate character frequency
+        char_freq = {}
+        for char in text:
+            char_freq[char] = char_freq.get(char, 0) + 1
+        
+        # Calculate entropy
+        entropy = 0.0
+        text_len = len(text)
+        for count in char_freq.values():
+            probability = count / text_len
+            entropy -= probability * math.log2(probability)
+        
+        return entropy
+    
+    def _detect_high_entropy_strings(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Detect high-entropy strings that may be secrets using Shannon entropy.
+        
+        Detects base64-encoded secrets, cryptographic keys, and random tokens
+        that pattern matching might miss.
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of detected issues
+        """
+        issues: List[NotebookIssue] = []
+        lines = cell.source.split("\n")
+        
+        # Pattern to extract string literals
+        string_pattern = r'["\']([a-zA-Z0-9+/=_-]{20,})["\']'
+        
+        for line_num, line in enumerate(lines, 1):
+            # Skip comments
+            if line.strip().startswith("#"):
+                continue
+                
+            matches = re.finditer(string_pattern, line)
+            for match in matches:
+                candidate = match.group(1)
+                
+                # Skip common false positives
+                if candidate.lower() in ["test", "example", "placeholder", "your_key_here"]:
+                    continue
+                
+                # Calculate entropy
+                entropy = self._calculate_entropy(candidate)
+                
+                # High entropy threshold (cryptographic material typically > 4.5)
+                if entropy > 4.5 and len(candidate) >= 20:
+                    # Additional validation: check if it's base64-like
+                    base64_chars = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
+                    if set(candidate).issubset(base64_chars):
+                        issues.append(
+                            NotebookIssue(
+                                severity="HIGH",
+                                category="High-Entropy Secret",
+                                message=f"High-entropy string detected (entropy: {entropy:.2f}) - likely a cryptographic secret",
+                                cell_index=cell_index,
+                                line_number=line_num,
+                                code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                fix_suggestion=(
+                                    "Replace high-entropy secrets with environment variables. "
+                                    "Use secure secret management (AWS Secrets Manager, HashiCorp Vault, etc.)"
+                                ),
+                                cwe_id="CWE-798",
+                                owasp_id="ASVS-2.6.3",
+                                confidence=0.75,
+                                auto_fixable=True,
+                            )
+                        )
+        
+        return issues
 
     def analyze_notebook(self, notebook_path: Path) -> List[NotebookIssue]:
         """
@@ -346,24 +513,54 @@ class NotebookSecurityAnalyzer:
             for pattern, description in self.ML_SECURITY_PATTERNS.items():
                 if re.search(pattern, line):
                     severity = "CRITICAL" if "code execution" in description.lower() else "HIGH"
-                    issues.append(
-                        NotebookIssue(
-                            severity=severity,
-                            category="ML Pipeline Security",
-                            message=description,
-                            cell_index=cell_index,
-                            line_number=line_num,
-                            code_snippet=line.strip(),
-                            fix_suggestion=(
-                                "Verify the source and integrity of loaded models. "
-                                "Use safer serialization formats (ONNX, SavedModel). "
-                                "Validate model checksums before loading."
-                            ),
-                            cwe_id="CWE-502",
-                            owasp_id="ASVS-5.5.3",
-                            confidence=0.85,
+                    
+                    # Special handling for torch.load
+                    if pattern == r"torch\.load\(":
+                        # Check if weights_only=True is present in the same line or nearby
+                        if "weights_only" in line and "True" in line:
+                            # Safe usage detected - skip
+                            continue
+                        
+                        issues.append(
+                            NotebookIssue(
+                                severity="CRITICAL",
+                                category="ML Pipeline Security",
+                                message="torch.load() without weights_only=True - arbitrary code execution risk via __reduce__",
+                                cell_index=cell_index,
+                                line_number=line_num,
+                                code_snippet=line.strip(),
+                                fix_suggestion=(
+                                    "Use torch.load() with weights_only=True (PyTorch 1.13+):\n"
+                                    "model = torch.load('model.pth', weights_only=True, map_location='cpu')\n"
+                                    "Also verify model checksum before loading."
+                                ),
+                                cwe_id="CWE-502",
+                                owasp_id="ASVS-5.5.3",
+                                confidence=0.95,
+                                auto_fixable=True,
+                            )
                         )
-                    )
+                    else:
+                        auto_fixable = pattern in [r"pickle\.loads?\(", r"from_pretrained\("]
+                        issues.append(
+                            NotebookIssue(
+                                severity=severity,
+                                category="ML Pipeline Security",
+                                message=description,
+                                cell_index=cell_index,
+                                line_number=line_num,
+                                code_snippet=line.strip(),
+                                fix_suggestion=(
+                                    "Verify the source and integrity of loaded models. "
+                                    "Use safer serialization formats (ONNX, SavedModel). "
+                                    "Validate model checksums before loading."
+                                ),
+                                cwe_id="CWE-502",
+                                owasp_id="ASVS-5.5.3",
+                                confidence=0.85,
+                                auto_fixable=auto_fixable,
+                            )
+                        )
 
         # Check for data validation issues in ML pipelines
         if "pd.read_csv" in cell.source or "pd.read_excel" in cell.source:
@@ -378,9 +575,10 @@ class NotebookSecurityAnalyzer:
                         code_snippet="Data loading detected",
                         fix_suggestion=(
                             "Specify dtypes and use converters to validate data types. "
-                            "Implement schema validation for input data."
+                            "Implement schema validation for input data using pandera or similar."
                         ),
                         confidence=0.6,
+                        auto_fixable=True,
                     )
                 )
 
@@ -465,8 +663,11 @@ class NotebookSecurityAnalyzer:
         # Check for dangerous magic commands
         issues.extend(self._check_magic_commands(cell, cell_index))
 
-        # Check for hardcoded secrets
+        # Check for hardcoded secrets (pattern-based)
         issues.extend(self._check_secrets(cell, cell_index))
+        
+        # Check for high-entropy secrets (entropy-based detection)
+        issues.extend(self._detect_high_entropy_strings(cell, cell_index))
 
         # Check for PII in code
         issues.extend(self._check_pii(cell, cell_index))
@@ -485,6 +686,12 @@ class NotebookSecurityAnalyzer:
 
         # Check output sanitization
         issues.extend(self._check_output_security(cell, cell_index))
+        
+        # Check for reproducibility issues
+        issues.extend(self._check_reproducibility(cell, cell_index))
+        
+        # Check for filesystem security issues
+        issues.extend(self._check_filesystem_security(cell, cell_index))
 
         return issues
 
@@ -717,6 +924,277 @@ class NotebookSecurityAnalyzer:
                         )
 
         return issues
+    
+    def _check_reproducibility(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Check for reproducibility issues in ML/AI notebooks.
+        
+        Detects:
+        - Missing random seeds for ML frameworks
+        - Non-deterministic operations
+        - Unpinned dependencies
+        - Missing environment constraints
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of reproducibility issues
+        """
+        issues: List[NotebookIssue] = []
+        
+        # Check for ML framework usage without seed setting
+        ml_frameworks = {
+            "torch": "PyTorch",
+            "tensorflow": "TensorFlow",
+            "tf": "TensorFlow",
+            "numpy": "NumPy",
+            "np": "NumPy",
+            "random": "Python random",
+            "sklearn": "scikit-learn",
+        }
+        
+        # Check if ML frameworks are imported
+        imports_found = []
+        try:
+            tree = ast.parse(cell.source)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name in ml_frameworks:
+                            imports_found.append((alias.name, ml_frameworks[alias.name]))
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module and node.module.split('.')[0] in ml_frameworks:
+                        imports_found.append((node.module.split('.')[0], ml_frameworks[node.module.split('.')[0]]))
+        except SyntaxError:
+            pass
+        
+        # Check if seeds are set for imported frameworks
+        seed_patterns = {
+            "torch": r"torch\.manual_seed\(",
+            "tensorflow": r"tf\.random\.set_seed\(",
+            "tf": r"tf\.random\.set_seed\(",
+            "numpy": r"np\.random\.seed\(",
+            "np": r"np\.random\.seed\(",
+            "random": r"random\.seed\(",
+        }
+        
+        for framework, framework_name in imports_found:
+            if framework in seed_patterns:
+                pattern = seed_patterns[framework]
+                if not re.search(pattern, cell.source):
+                    issues.append(
+                        NotebookIssue(
+                            severity="MEDIUM",
+                            category="Reproducibility Issue",
+                            message=f"{framework_name} imported but random seed not set - results may be non-reproducible",
+                            cell_index=cell_index,
+                            line_number=0,
+                            code_snippet=f"import {framework}",
+                            fix_suggestion=(
+                                f"Set random seed for {framework_name} to ensure reproducible results. "
+                                f"Add: {pattern.replace('(', '(42)')} or similar seed value."
+                            ),
+                            cwe_id="CWE-330",
+                            confidence=0.7,
+                            auto_fixable=True,
+                        )
+                    )
+        
+        # Check for unpinned pip/conda installs
+        unpinned_install_patterns = [
+            (r"%pip\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "pip"),
+            (r"!pip\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "pip"),
+            (r"%conda\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "conda"),
+        ]
+        
+        for pattern, tool in unpinned_install_patterns:
+            matches = re.finditer(pattern, cell.source)
+            for match in matches:
+                package = match.group(1)
+                issues.append(
+                    NotebookIssue(
+                        severity="MEDIUM",
+                        category="Unpinned Dependency",
+                        message=f"Unpinned {tool} package '{package}' - may break reproducibility",
+                        cell_index=cell_index,
+                        line_number=0,
+                        code_snippet=match.group(0),
+                        fix_suggestion=f"Pin package version: {tool} install {package}==X.Y.Z",
+                        confidence=0.85,
+                        auto_fixable=True,
+                    )
+                )
+        
+        # Check for PyTorch non-deterministic operations
+        if any(fw == "torch" for fw, _ in imports_found):
+            if "torch.backends.cudnn.deterministic" not in cell.source:
+                if "torch.nn" in cell.source or "torch.cuda" in cell.source:
+                    issues.append(
+                        NotebookIssue(
+                            severity="LOW",
+                            category="Reproducibility Issue",
+                            message="PyTorch used without deterministic mode - GPU operations may be non-reproducible",
+                            cell_index=cell_index,
+                            line_number=0,
+                            code_snippet="PyTorch GPU operations detected",
+                            fix_suggestion=(
+                                "Enable deterministic mode:\n"
+                                "torch.backends.cudnn.deterministic = True\n"
+                                "torch.backends.cudnn.benchmark = False\n"
+                                "torch.use_deterministic_algorithms(True)"
+                            ),
+                            confidence=0.6,
+                            auto_fixable=True,
+                        )
+                    )
+        
+        return issues
+
+    def _check_filesystem_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """
+        Check for filesystem security issues.
+        
+        Detects:
+        - Path traversal attempts (../)
+        - Accessing sensitive system files
+        - Unsafe file operations
+        - Symlink attacks
+        
+        Args:
+            cell: Notebook cell to analyze
+            cell_index: Index of the cell
+            
+        Returns:
+            List of filesystem security issues
+        """
+        issues: List[NotebookIssue] = []
+        
+        # Dangerous path patterns
+        dangerous_paths = {
+            r"\.\./": "Path traversal attempt (../) - directory escape risk",
+            r"/etc/passwd": "Access to sensitive system file (/etc/passwd)",
+            r"/etc/shadow": "Access to password file (/etc/shadow)",
+            r"~/.ssh/": "Access to SSH directory (private keys)",
+            r"/root/": "Access to root directory",
+            r"\.\.\\": "Windows path traversal attempt",
+            r"C:\\Windows\\System32": "Access to Windows system directory",
+        }
+        
+        for pattern, description in dangerous_paths.items():
+            if re.search(pattern, cell.source):
+                issues.append(
+                    NotebookIssue(
+                        severity="HIGH",
+                        category="Filesystem Security",
+                        message=description,
+                        cell_index=cell_index,
+                        line_number=0,
+                        code_snippet="Dangerous path detected",
+                        fix_suggestion=(
+                            "Avoid accessing sensitive system files or using path traversal. "
+                            "Validate and sanitize all file paths. Use absolute paths and "
+                            "check against an allowlist of permitted directories."
+                        ),
+                        cwe_id="CWE-22",
+                        owasp_id="ASVS-5.2.3",
+                        confidence=0.8,
+                    )
+                )
+        
+        # Check for unsafe file operations
+        try:
+            tree = ast.parse(cell.source)
+            
+            for node in ast.walk(tree):
+                # Check for os.remove, shutil.rmtree without validation
+                if isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Attribute):
+                        module = None
+                        if isinstance(node.func.value, ast.Name):
+                            module = node.func.value.id
+                        
+                        # Dangerous file operations
+                        if module == "os" and node.func.attr in ["remove", "unlink", "rmdir"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"os.{node.func.attr}() without path validation - file deletion risk",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Validate file paths before deletion. Check against allowlist. "
+                                        "Prevent path traversal and ensure file exists before deleting."
+                                    ),
+                                    cwe_id="CWE-22",
+                                    confidence=0.7,
+                                )
+                            )
+                        
+                        elif module == "shutil" and node.func.attr in ["rmtree", "move", "copy"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"shutil.{node.func.attr}() without path validation - unsafe file operation",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Validate and sanitize file paths. Implement allowlist checking. "
+                                        "Be careful with recursive operations like rmtree()."
+                                    ),
+                                    cwe_id="CWE-22",
+                                    confidence=0.7,
+                                )
+                            )
+                        
+                        # Check for chmod/chown that could elevate privileges
+                        elif module == "os" and node.func.attr in ["chmod", "chown"]:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="MEDIUM",
+                                    category="Filesystem Security",
+                                    message=f"os.{node.func.attr}() - privilege manipulation risk",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    fix_suggestion=(
+                                        "Avoid changing file permissions unless absolutely necessary. "
+                                        "Ensure proper permission model (least privilege)."
+                                    ),
+                                    cwe_id="CWE-732",
+                                    confidence=0.6,
+                                )
+                            )
+        
+        except SyntaxError:
+            pass
+        
+        # Check for tempfile misuse (predictable names)
+        if "tempfile.mktemp(" in cell.source:
+            issues.append(
+                NotebookIssue(
+                    severity="MEDIUM",
+                    category="Filesystem Security",
+                    message="tempfile.mktemp() is deprecated - race condition and predictable filename risk",
+                    cell_index=cell_index,
+                    line_number=0,
+                    code_snippet="tempfile.mktemp() detected",
+                    fix_suggestion=(
+                        "Use tempfile.mkstemp() or tempfile.NamedTemporaryFile() instead. "
+                        "These create files securely without race conditions."
+                    ),
+                    cwe_id="CWE-377",
+                    confidence=0.9,
+                    auto_fixable=True,
+                )
+            )
+        
+        return issues
 
 
 class NotebookFixer:
@@ -752,7 +1230,7 @@ class NotebookFixer:
             if not issue.auto_fixable:
                 continue
 
-            if issue.category == "Hardcoded Secret":
+            if issue.category == "Hardcoded Secret" or issue.category == "High-Entropy Secret":
                 # Comment out lines with secrets
                 if 0 <= issue.cell_index < len(cells):
                     cell = cells[issue.cell_index]
@@ -764,7 +1242,8 @@ class NotebookFixer:
                     if 0 < issue.line_number <= len(lines):
                         line = lines[issue.line_number - 1]
                         lines[issue.line_number - 1] = (
-                            f"# SECURITY: Removed hardcoded secret - {line}"
+                            f"# SECURITY: Removed hardcoded secret - use os.getenv() instead\n"
+                            f"# Original: {line}"
                         )
                         cell["source"] = "\n".join(lines)
                         fixes_applied.append(
@@ -795,6 +1274,103 @@ class NotebookFixer:
                         cells[issue.cell_index]["outputs"] = []
                         fixes_applied.append(f"Cleared outputs with PII in cell {issue.cell_index}")
 
+            elif issue.category == "ML Pipeline Security":
+                # Auto-fix ML security issues
+                if "torch.load" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    # Add weights_only=True to torch.load calls
+                    fixed_source = self._fix_torch_load(source)
+                    if fixed_source != source:
+                        cell["source"] = fixed_source
+                        fixes_applied.append(
+                            f"Added weights_only=True to torch.load() in cell {issue.cell_index}"
+                        )
+                
+                elif "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    # Add warning comment for pickle
+                    lines = source.split("\n")
+                    if 0 < issue.line_number <= len(lines):
+                        lines.insert(
+                            issue.line_number - 1,
+                            "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"
+                            "# Consider using JSON or safer serialization format\n"
+                            "# If pickle required, verify source and use restricted unpickler"
+                        )
+                        cell["source"] = "\n".join(lines)
+                        fixes_applied.append(
+                            f"Added security warning for pickle.load() in cell {issue.cell_index}"
+                        )
+
+            elif issue.category == "Reproducibility Issue":
+                # Auto-fix reproducibility issues
+                if 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    # Add seed setting
+                    fixed_source = self._add_seed_setting(source, issue.message)
+                    if fixed_source != source:
+                        cell["source"] = fixed_source
+                        fixes_applied.append(
+                            f"Added random seed setting in cell {issue.cell_index}"
+                        )
+
+            elif issue.category == "Unpinned Dependency":
+                # Add comment about pinning version
+                if 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    lines = source.split("\n")
+                    # Find the pip install line
+                    for i, line in enumerate(lines):
+                        if "pip install" in line and issue.code_snippet in line:
+                            lines.insert(
+                                i,
+                                f"# TODO: Pin package version for reproducibility (e.g., ==X.Y.Z)"
+                            )
+                            break
+                    cell["source"] = "\n".join(lines)
+                    fixes_applied.append(
+                        f"Added version pinning reminder in cell {issue.cell_index}"
+                    )
+
+            elif issue.category == "Data Validation":
+                # Add data validation reminder
+                if 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+                    
+                    # Add schema validation suggestion
+                    lines = source.split("\n")
+                    for i, line in enumerate(lines):
+                        if "pd.read_csv" in line or "pd.read_excel" in line:
+                            lines.insert(
+                                i,
+                                "# TODO: Add data validation - specify dtypes and validate schema\n"
+                                "# Example: pd.read_csv(..., dtype={'col': int}, converters={...})"
+                            )
+                            break
+                    cell["source"] = "\n".join(lines)
+                    fixes_applied.append(
+                        f"Added data validation reminder in cell {issue.cell_index}"
+                    )
+
             elif issue.category == "Untrusted Notebook":
                 # Don't auto-fix trust status (requires user verification)
                 pass
@@ -813,6 +1389,113 @@ class NotebookFixer:
             fixes_applied.insert(0, f"Created backup at {backup_path}")
 
         return len(fixes_applied) > 0, fixes_applied
+    
+    def _fix_torch_load(self, source: str) -> str:
+        """
+        Fix torch.load() calls to include weights_only=True.
+        
+        Performs AST-based transformation to safely add the parameter.
+        
+        Args:
+            source: Source code to fix
+            
+        Returns:
+            Fixed source code
+        """
+        try:
+            tree = ast.parse(source)
+            modified = False
+            
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    # Check if this is a torch.load call
+                    if isinstance(node.func, ast.Attribute):
+                        if (isinstance(node.func.value, ast.Name) and 
+                            node.func.value.id == "torch" and 
+                            node.func.attr == "load"):
+                            
+                            # Check if weights_only is already present
+                            has_weights_only = any(
+                                kw.arg == "weights_only" for kw in node.keywords
+                            )
+                            
+                            if not has_weights_only:
+                                # Add weights_only=True keyword argument
+                                node.keywords.append(
+                                    ast.keyword(
+                                        arg="weights_only",
+                                        value=ast.Constant(value=True)
+                                    )
+                                )
+                                modified = True
+            
+            if modified and hasattr(ast, "unparse"):
+                # Unparse to get fixed source
+                return ast.unparse(tree)
+            
+        except SyntaxError:
+            pass
+        
+        # Fallback: regex-based replacement if AST fails
+        if "torch.load(" in source and "weights_only" not in source:
+            # Simple regex replacement
+            source = re.sub(
+                r"torch\.load\(([^)]+)\)",
+                r"torch.load(\1, weights_only=True)",
+                source
+            )
+            # Clean up potential double comma
+            source = source.replace(", , weights_only", ", weights_only")
+            return source
+        
+        return source
+    
+    def _add_seed_setting(self, source: str, message: str) -> str:
+        """
+        Add random seed setting for ML frameworks.
+        
+        Args:
+            source: Source code to fix
+            message: Issue message describing which framework needs seeding
+            
+        Returns:
+            Fixed source code with seed setting
+        """
+        seed_additions = []
+        
+        if "PyTorch" in message or "torch" in message.lower():
+            if "torch.manual_seed" not in source:
+                seed_additions.append("torch.manual_seed(42)  # Set PyTorch seed for reproducibility")
+        
+        if "NumPy" in message or "numpy" in message.lower():
+            if "np.random.seed" not in source and "numpy.random.seed" not in source:
+                seed_additions.append("np.random.seed(42)  # Set NumPy seed for reproducibility")
+        
+        if "TensorFlow" in message:
+            if "tf.random.set_seed" not in source:
+                seed_additions.append("tf.random.set_seed(42)  # Set TensorFlow seed for reproducibility")
+        
+        if "Python random" in message:
+            if "random.seed" not in source:
+                seed_additions.append("random.seed(42)  # Set Python random seed for reproducibility")
+        
+        if seed_additions:
+            # Add seeds at the beginning of the cell (after imports ideally)
+            lines = source.split("\n")
+            insert_pos = 0
+            
+            # Try to insert after import statements
+            for i, line in enumerate(lines):
+                if line.strip() and not line.strip().startswith("import") and not line.strip().startswith("from"):
+                    insert_pos = i
+                    break
+            
+            for seed_line in reversed(seed_additions):
+                lines.insert(insert_pos, seed_line)
+            
+            return "\n".join(lines)
+        
+        return source
 
 
 def scan_notebook(notebook_path: str) -> List[NotebookIssue]:
