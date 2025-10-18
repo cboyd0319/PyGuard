@@ -49,7 +49,7 @@ class TestCoverageAnalyzer:
 
             untested = []
             for src_file in src_files:
-                if src_file and src_file != '__init__.py':
+                if src_file and not src_file.endswith('__init__.py'):
                     # Generate expected test filename
                     base_name = Path(src_file).stem
                     expected_tests = [
