@@ -375,3 +375,116 @@ class TestConfigCacheEdgeCases:
         config2 = {"settings": {"value": 2}}
         self.cache.set(config_file, config2)
         assert self.cache.get(config_file) == config2
+
+
+class TestCacheErrorHandling:
+    """Test error handling in cache operations."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.cache_dir = Path(self.temp_dir) / "cache"
+        self.cache = AnalysisCache(cache_dir=self.cache_dir)
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_save_cache_with_exception(self, monkeypatch):
+        """Test save cache handles exceptions gracefully."""
+        # Create a test file and cache it
+        test_file = Path(self.temp_dir) / "test.py"
+        test_file.write_text("print('test')")
+        self.cache.set(test_file, {"data": "test"})
+
+        # Mock open to raise exception
+        def mock_open(*args, **kwargs):
+            raise IOError("Disk full")
+
+        monkeypatch.setattr("builtins.open", mock_open)
+
+        # Should not crash when saving cache
+        self.cache._save_cache()
+        # No assertion needed - just shouldn't crash
+
+    def test_get_nonexistent_file(self):
+        """Test getting cache for non-existent file."""
+        nonexistent = Path(self.temp_dir) / "nonexistent.py"
+        result = self.cache.get(nonexistent)
+        assert result is None
+
+    def test_set_nonexistent_file(self):
+        """Test setting cache for non-existent file returns early."""
+        nonexistent = Path(self.temp_dir) / "nonexistent.py"
+        # Should handle gracefully (file_hash will be None)
+        self.cache.set(nonexistent, {"data": "test"})
+        # Verify it wasn't cached
+        assert not self.cache.is_cached(nonexistent)
+
+    def test_get_stats_with_exception(self, monkeypatch):
+        """Test get_stats handles exceptions gracefully."""
+        # Mock stat to raise exception
+        def mock_stat(*args, **kwargs):
+            raise OSError("Permission denied")
+
+        monkeypatch.setattr(Path, "stat", mock_stat)
+
+        stats = self.cache.get_stats()
+        assert stats["size_bytes"] == 0
+        assert stats["size_mb"] == 0.0
+
+
+class TestConfigCacheErrorHandling:
+    """Test error handling in ConfigCache operations."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.cache = ConfigCache()
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_get_with_exception(self, monkeypatch):
+        """Test get handles exceptions gracefully."""
+        config_file = Path(self.temp_dir) / "config.toml"
+        config_file.write_text("[settings]")
+
+        # Cache config first
+        self.cache.set(config_file, {"settings": {}})
+
+        # Mock stat to raise exception
+        def mock_stat(*args, **kwargs):
+            raise OSError("Permission denied")
+
+        monkeypatch.setattr(Path, "stat", mock_stat)
+
+        # Should return None and not crash
+        result = self.cache.get(config_file)
+        assert result is None
+
+    def test_set_with_exception(self, monkeypatch):
+        """Test set handles exceptions gracefully."""
+        config_file = Path(self.temp_dir) / "config.toml"
+        config_file.write_text("[settings]")
+
+        # Mock stat to raise exception
+        def mock_stat(*args, **kwargs):
+            raise OSError("Permission denied")
+
+        monkeypatch.setattr(Path, "stat", mock_stat)
+
+        # Should not crash
+        self.cache.set(config_file, {"settings": {}})
+        # Config shouldn't be cached due to error
+        # We can't easily verify this without another stat call
+
+    def test_invalidate_nonexistent_config(self):
+        """Test invalidating non-existent config doesn't crash."""
+        nonexistent = Path(self.temp_dir) / "nonexistent.toml"
+        # Should handle gracefully
+        self.cache.invalidate(nonexistent)
+        # No assertion needed - just shouldn't crash
