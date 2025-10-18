@@ -13,6 +13,11 @@ from pyguard.lib.type_checker import (
     TypeChecker,
     TypeInferenceEngine,
 )
+from pyguard.lib.rule_engine import (
+    RuleViolation,
+    RuleSeverity as Severity,
+    FixApplicability,
+)
 
 
 class TestTypeInference:
@@ -821,20 +826,20 @@ class TestTypeCheckerAutoFix:
     """Test type checker auto-fix functionality."""
 
     def test_apply_type_hints_with_none_content(self, tmp_path):
-        """Test apply_type_hints handles file read failure."""
+        """Test add_type_hints handles file read failure."""
         # Arrange
         nonexistent_file = tmp_path / "nonexistent.py"
         checker = TypeChecker()
         
         # Act
-        success, count = checker.apply_type_hints(nonexistent_file, [])
+        success, count = checker.add_type_hints(nonexistent_file, [])
         
         # Assert
         assert success is False
         assert count == 0
 
     def test_apply_type_hints_with_no_fixable_violations(self, tmp_path):
-        """Test apply_type_hints with no fixable violations."""
+        """Test add_type_hints with no fixable violations."""
         # Arrange
         code = "def func():\n    pass"
         test_file = tmp_path / "test.py"
@@ -842,29 +847,30 @@ class TestTypeCheckerAutoFix:
         
         checker = TypeChecker()
         # Create violations without fix_data
+        from pyguard.lib.rule_engine import RuleCategory
         violations = [
             RuleViolation(
                 rule_id="TC001",
-                category="type",
+                category=RuleCategory.TYPE,
                 severity=Severity.MEDIUM,
                 message="Missing type hint",
                 file_path=test_file,
                 line_number=1,
                 column=0,
-                fix_applicability=FixApplicability.SOMETIMES,
+                fix_applicability=FixApplicability.SUGGESTED,
                 fix_data=None,  # No fix data
             )
         ]
         
         # Act
-        success, count = checker.apply_type_hints(test_file, violations)
+        success, count = checker.add_type_hints(test_file, violations)
         
         # Assert
         assert success is True
         assert count == 0
 
     def test_apply_type_hints_with_fixable_violations(self, tmp_path):
-        """Test apply_type_hints with fixable violations (placeholder)."""
+        """Test add_type_hints with fixable violations (placeholder)."""
         # Arrange
         code = "def func():\n    return 42"
         test_file = tmp_path / "test.py"
@@ -872,22 +878,23 @@ class TestTypeCheckerAutoFix:
         
         checker = TypeChecker()
         # Create violations with inferred types
+        from pyguard.lib.rule_engine import RuleCategory
         violations = [
             RuleViolation(
                 rule_id=MISSING_RETURN_TYPE_RULE.rule_id,
-                category="type",
+                category=RuleCategory.TYPE,
                 severity=Severity.MEDIUM,
                 message="Missing return type",
                 file_path=test_file,
                 line_number=1,
                 column=0,
-                fix_applicability=FixApplicability.SOMETIMES,
+                fix_applicability=FixApplicability.SUGGESTED,
                 fix_data={"inferred_type": "int"},
             )
         ]
         
         # Act
-        success, count = checker.apply_type_hints(test_file, violations)
+        success, count = checker.add_type_hints(test_file, violations)
         
         # Assert - currently returns 0 as it's a TODO
         assert success is True
