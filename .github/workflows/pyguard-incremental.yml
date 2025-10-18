@@ -1,0 +1,52 @@
+name: PyGuard Incremental Scan
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install RipGrep
+        run: |
+          curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep_14.1.0-1_amd64.deb
+          sudo dpkg -i ripgrep_14.1.0-1_amd64.deb
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyGuard
+        run: |
+          pip install -e .
+
+      - name: Find changed Python files
+        id: changed-files
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD --name-only | \
+            rg "\.py$" > changed_files.txt || true
+
+          echo "count=$(wc -l < changed_files.txt | tr -d ' ')" >> $GITHUB_OUTPUT
+
+      - name: Scan changed files only
+        if: steps.changed-files.outputs.count > 0
+        run: |
+          cat changed_files.txt | xargs pyguard --scan-only --sarif --no-html
+
+      - name: Upload SARIF
+        if: steps.changed-files.outputs.count > 0
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pyguard-report.sarif

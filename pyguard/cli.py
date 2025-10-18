@@ -17,6 +17,11 @@ from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.sarif_reporter import SARIFReporter
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
+from pyguard.lib.ripgrep_filter import RipGrepFilter
+from pyguard.lib.secret_scanner import SecretScanner
+from pyguard.lib.import_analyzer import ImportAnalyzer
+from pyguard.lib.test_coverage import TestCoverageAnalyzer
+from pyguard.lib.compliance_tracker import ComplianceTracker
 
 
 class PyGuardCLI:
@@ -489,6 +494,38 @@ def main():
         "Press Ctrl+C to stop.",
     )
 
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Enable fast mode with ripgrep pre-filtering (requires ripgrep installed). "
+        "Dramatically improves performance for large codebases by pre-filtering files.",
+    )
+
+    parser.add_argument(
+        "--scan-secrets",
+        action="store_true",
+        help="Fast secret scanning using ripgrep to detect hardcoded credentials, "
+        "API keys, tokens, and other sensitive data.",
+    )
+
+    parser.add_argument(
+        "--analyze-imports",
+        action="store_true",
+        help="Analyze import structure to detect circular imports and god modules.",
+    )
+
+    parser.add_argument(
+        "--check-test-coverage",
+        action="store_true",
+        help="Check for modules without corresponding test files.",
+    )
+
+    parser.add_argument(
+        "--compliance-report",
+        action="store_true",
+        help="Generate compliance report from OWASP/CWE annotations in code.",
+    )
+
     args = parser.parse_args()
 
     # Initialize CLI with unsafe fixes flag
@@ -530,10 +567,191 @@ def main():
         )
         sys.exit(1)
 
+    # Handle special analysis modes first
+    # Secret scanning
+    if args.scan_secrets:
+        cli.ui.console.print("[bold cyan]Running Secret Scan...[/bold cyan]")
+        cli.ui.console.print()
+        
+        if not RipGrepFilter.is_ripgrep_available():
+            cli.ui.console.print(
+                "[yellow]Warning: ripgrep not found. Secret scanning requires ripgrep.[/yellow]"
+            )
+            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            sys.exit(1)
+        
+        for path_str in args.paths:
+            findings = SecretScanner.scan_secrets(path_str, export_sarif=args.sarif)
+            
+            if findings:
+                cli.ui.console.print(f"[red]Found {len(findings)} hardcoded secrets:[/red]")
+                
+                # Group by secret type
+                from collections import Counter
+                types = Counter(f.secret_type for f in findings)
+                for secret_type, count in types.items():
+                    cli.ui.console.print(f"  - {count} x {secret_type}")
+                
+                cli.ui.console.print()
+                cli.ui.console.print("[bold]Secret Details:[/bold]")
+                for finding in findings[:10]:  # Show first 10
+                    cli.ui.console.print(f"  {finding.file_path}:{finding.line_number} - {finding.secret_type}")
+                    cli.ui.console.print(f"    {finding.match}")
+                
+                if len(findings) > 10:
+                    cli.ui.console.print(f"  ... and {len(findings) - 10} more")
+                    
+                if args.sarif:
+                    cli.ui.console.print("[green]SARIF report: pyguard-secrets.sarif[/green]")
+            else:
+                cli.ui.console.print("[green]No hardcoded secrets found.[/green]")
+        
+        sys.exit(0)
+    
+    # Import analysis
+    if args.analyze_imports:
+        cli.ui.console.print("[bold cyan]Analyzing Import Structure...[/bold cyan]")
+        cli.ui.console.print()
+        
+        if not RipGrepFilter.is_ripgrep_available():
+            cli.ui.console.print(
+                "[yellow]Warning: ripgrep not found. Import analysis requires ripgrep.[/yellow]"
+            )
+            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            sys.exit(1)
+        
+        for path_str in args.paths:
+            # Find circular imports
+            circular = ImportAnalyzer.find_circular_imports(path_str)
+            if circular:
+                cli.ui.console.print("[red]Circular imports detected:[/red]")
+                for file_a, file_b in circular[:10]:  # Show first 10
+                    cli.ui.console.print(f"  - {file_a} ↔ {file_b}")
+                if len(circular) > 10:
+                    cli.ui.console.print(f"  ... and {len(circular) - 10} more")
+            else:
+                cli.ui.console.print("[green]No circular imports detected.[/green]")
+            
+            cli.ui.console.print()
+            
+            # Find god modules
+            god_modules = ImportAnalyzer.find_god_modules(path_str)
+            if god_modules:
+                cli.ui.console.print("[yellow]God modules (>20 imports):[/yellow]")
+                for module, count in god_modules[:10]:  # Show first 10
+                    cli.ui.console.print(f"  - {module}: imported {count} times")
+                if len(god_modules) > 10:
+                    cli.ui.console.print(f"  ... and {len(god_modules) - 10} more")
+            else:
+                cli.ui.console.print("[green]No god modules detected.[/green]")
+        
+        sys.exit(0)
+    
+    # Test coverage check
+    if args.check_test_coverage:
+        cli.ui.console.print("[bold cyan]Checking Test Coverage...[/bold cyan]")
+        cli.ui.console.print()
+        
+        if not RipGrepFilter.is_ripgrep_available():
+            cli.ui.console.print(
+                "[yellow]Warning: ripgrep not found. Test coverage check requires ripgrep.[/yellow]"
+            )
+            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            sys.exit(1)
+        
+        for path_str in args.paths:
+            # Try common test directory names
+            test_dirs = ['tests', 'test', 'testing']
+            test_dir = None
+            for td in test_dirs:
+                if Path(td).exists():
+                    test_dir = td
+                    break
+            
+            if not test_dir:
+                cli.ui.console.print("[yellow]No test directory found. Looking for 'tests', 'test', or 'testing'.[/yellow]")
+                sys.exit(1)
+            
+            coverage_ratio = TestCoverageAnalyzer.calculate_test_coverage_ratio(path_str, test_dir)
+            cli.ui.console.print(f"[bold]Test coverage: {coverage_ratio:.1f}%[/bold]")
+            cli.ui.console.print()
+            
+            untested = TestCoverageAnalyzer.find_untested_modules(path_str, test_dir)
+            if untested:
+                cli.ui.console.print(f"[yellow]Untested modules ({len(untested)}):[/yellow]")
+                for module in untested[:20]:  # Show first 20
+                    cli.ui.console.print(f"  - {module}")
+                if len(untested) > 20:
+                    cli.ui.console.print(f"  ... and {len(untested) - 20} more")
+            else:
+                cli.ui.console.print("[green]All modules have test coverage![/green]")
+        
+        sys.exit(0)
+    
+    # Compliance report
+    if args.compliance_report:
+        cli.ui.console.print("[bold cyan]Generating Compliance Report...[/bold cyan]")
+        cli.ui.console.print()
+        
+        if not RipGrepFilter.is_ripgrep_available():
+            cli.ui.console.print(
+                "[yellow]Warning: ripgrep not found. Compliance tracking requires ripgrep.[/yellow]"
+            )
+            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            sys.exit(1)
+        
+        for path_str in args.paths:
+            ComplianceTracker.generate_compliance_report(path_str)
+            
+            # Also print summary
+            annotations = ComplianceTracker.find_compliance_annotations(path_str)
+            cli.ui.console.print(f"[green]Found {len(annotations['OWASP'])} OWASP references[/green]")
+            cli.ui.console.print(f"[green]Found {len(annotations['CWE'])} CWE references[/green]")
+        
+        sys.exit(0)
+
     # Print banner and welcome
     cli.ui.print_banner()
     total_files = len(all_files) + len(notebook_files)
     cli.ui.print_welcome(total_files)
+    
+    # Apply fast mode filtering if enabled
+    if args.fast and all_files:
+        if RipGrepFilter.is_ripgrep_available():
+            cli.ui.console.print("[cyan]Fast mode enabled: Using ripgrep pre-filtering...[/cyan]")
+            
+            # Get suspicious files for each directory
+            all_candidate_files = set()
+            for path_str in args.paths:
+                path = Path(path_str)
+                if path.is_dir():
+                    candidates = RipGrepFilter.find_suspicious_files(str(path))
+                    all_candidate_files.update(candidates)
+            
+            # Convert to Path objects
+            candidate_paths = {Path(f) for f in all_candidate_files}
+            
+            # Filter the all_files list
+            original_count = len(all_files)
+            all_files = [f for f in all_files if f in candidate_paths or str(f) in all_candidate_files]
+            
+            filtered_count = original_count - len(all_files)
+            cli.ui.console.print(
+                f"[cyan]RipGrep filter: {len(all_files)} candidates "
+                f"(skipping {filtered_count} clean files)[/cyan]"
+            )
+            cli.ui.console.print()
+            
+            if len(all_files) == 0:
+                cli.ui.console.print("[green]No suspicious files found! Your codebase looks clean.[/green]")
+                sys.exit(0)
+        else:
+            cli.ui.console.print(
+                "[yellow]Warning: ripgrep not found. Fast mode disabled.[/yellow]"
+            )
+            cli.ui.console.print(
+                "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
+            )
     
     if notebook_files:
         cli.ui.console.print(
