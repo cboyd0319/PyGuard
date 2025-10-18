@@ -64,6 +64,11 @@ dev = [
     "hypothesis>=6.100.0",
     "tox>=4.31.0",
 ]
+fast = [
+    # RipGrep integration for high-performance scanning
+    # Note: This installs a Python wrapper. You still need ripgrep binary installed.
+    # Install ripgrep: brew install ripgrep (macOS), apt install ripgrep (Linux)
+]
 
 [project.urls]
 Homepage = "https://github.com/cboyd0319/PyGuard"
