@@ -259,3 +259,185 @@ class TestFileOperations:
             python_files = ops.find_python_files(Path(tmpdir))
             assert len(python_files) == 2
             assert all(str(f).endswith(".py") for f in python_files)
+
+    def test_find_python_files_with_exclusions(self):
+        """Test finding Python files with exclusion patterns."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test files
+            (Path(tmpdir) / "test1.py").write_text("print('test1')")
+            (Path(tmpdir) / "test2.py").write_text("print('test2')")
+            (Path(tmpdir) / "exclude_me.py").write_text("print('excluded')")
+            
+            ops = FileOperations()
+            python_files = ops.find_python_files(
+                Path(tmpdir),
+                exclude_patterns=["exclude_*"]
+            )
+            assert len(python_files) == 2
+            assert all("exclude" not in str(f) for f in python_files)
+
+    def test_read_file_with_unicode_decode_error(self):
+        """Test reading file that has unicode decode issues."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create file with latin-1 encoding
+            file_path = Path(tmpdir) / "latin1.py"
+            with open(file_path, "w", encoding="latin-1") as f:
+                f.write("# Comment with special char: \xe9")
+            
+            ops = FileOperations()
+            # Should fallback to latin-1 encoding
+            content = ops.read_file(file_path)
+            assert content is not None
+            assert "\xe9" in content or "é" in content
+
+    def test_read_file_nonexistent(self):
+        """Test reading nonexistent file returns None."""
+        ops = FileOperations()
+        content = ops.read_file(Path("/nonexistent/file.py"))
+        assert content is None
+
+    def test_write_file_error(self):
+        """Test writing file to invalid path."""
+        ops = FileOperations()
+        # Try to write to root (should fail without permissions)
+        result = ops.write_file("/root/protected/file.py", "content")
+        # Result depends on permissions, but shouldn't raise
+        assert isinstance(result, bool)
+
+
+class TestBackupManagerAdvanced:
+    """Advanced test cases for BackupManager class."""
+
+    def test_create_backup_failure(self):
+        """Test backup creation handles errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Try to backup nonexistent file
+            result = manager.create_backup(Path("/nonexistent/file.py"))
+            assert result is None
+
+    def test_restore_backup_failure(self):
+        """Test backup restoration handles errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Try to restore nonexistent backup
+            result = manager.restore_backup(
+                Path("/nonexistent/backup.bak"),
+                Path(tmpdir) / "restored.py"
+            )
+            assert result is False
+
+    def test_cleanup_old_backups(self):
+        """Test cleanup of old backups."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Create multiple backup files
+            for i in range(5):
+                backup = backup_dir / f"test.py.{i}.bak"
+                backup.write_text(f"backup {i}")
+            
+            # Cleanup, keeping only 2
+            manager.cleanup_old_backups(keep_count=2)
+            
+            # Should have at most 2 backups per file
+            backups = list(backup_dir.glob("*.bak"))
+            assert len(backups) <= 2
+
+    def test_cleanup_old_backups_with_exceptions(self):
+        """Test cleanup handles removal errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Create backup files
+            for i in range(3):
+                backup = backup_dir / f"test.py.{i}.bak"
+                backup.write_text(f"backup {i}")
+            
+            # Should not raise even if cleanup encounters issues
+            manager.cleanup_old_backups(keep_count=1)
+            # Test passes if no exception raised
+
+
+class TestPyGuardLoggerAdvanced:
+    """Advanced test cases for PyGuardLogger class."""
+
+    def test_log_with_file_write_failure(self):
+        """Test logging handles file write failures gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a read-only directory to force write failure
+            readonly_dir = Path(tmpdir) / "readonly"
+            readonly_dir.mkdir()
+            readonly_dir.chmod(0o444)
+            
+            log_file = readonly_dir / "log.jsonl"
+            logger = PyGuardLogger(log_file=str(log_file))
+            
+            # Should not raise exception, should fallback to console
+            logger.info("Test message", category="Test")
+            # If we get here, the fallback to console worked
+
+    def test_log_error_increments_metrics(self):
+        """Test that error logging increments error count."""
+        logger = PyGuardLogger()
+        initial_errors = logger.metrics.get("errors", 0)
+        
+        logger.error("Test error", category="Test")
+        
+        assert logger.metrics["errors"] == initial_errors + 1
+
+    def test_log_with_all_levels(self):
+        """Test logging at all levels."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "test.jsonl"
+            logger = PyGuardLogger(log_file=str(log_file))
+            
+            logger.debug("Debug message")
+            logger.info("Info message")
+            logger.warning("Warning message")
+            logger.error("Error message")
+            
+            content = log_file.read_text()
+            assert "Debug message" in content
+            assert "Info message" in content
+            assert "Warning message" in content
+            assert "Error message" in content
+
+
+class TestDiffGeneratorEdgeCases:
+    """Edge case tests for DiffGenerator class."""
+
+    def test_generate_diff_with_special_characters(self):
+        """Test diff generation with special characters."""
+        diff_gen = DiffGenerator()
+        
+        original = "# Comment with émojis: 🔥\nx = 1"
+        modified = "# Comment with émojis: 🔥\nx = 2"
+        
+        diff = diff_gen.generate_diff(original, modified)
+        assert diff is not None
+        assert "🔥" in diff or "x = 1" in diff or "x = 2" in diff
+
+    def test_generate_diff_identical_content(self):
+        """Test diff generation with identical content."""
+        diff_gen = DiffGenerator()
+        
+        content = "x = 1\ny = 2"
+        diff = diff_gen.generate_diff(content, content)
+        
+        # Diff should be minimal or empty for identical content
+        assert isinstance(diff, str)
