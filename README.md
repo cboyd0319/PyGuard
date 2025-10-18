@@ -1,32 +1,62 @@
-# PyGuard — Python Security & Code Quality Analysis
+<div align="center">
+
+<img src="docs/images/logo.png" alt="PyGuard Logo" width="200">
+
+# PyGuard
+
+### **Python security & code quality analysis with auto-fixes**
+
+Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 
 ![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Ready-brightgreen.svg)](https://github.com/marketplace/actions/pyguard-security-scanner)
 
-[![CI](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test.yml)
-[![Coverage](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/coverage.yml)
-[![Docs](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/docs-ci.yml)
 [![Code Scanning](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml)
-
 [![Test Action](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml)
 [![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
 [![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
 [![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 
-**TL;DR**: Replace 7+ tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) with one. Finds 55+ security issues, enforces 150+ quality rules, fixes 179+ problems automatically. Runs locally, no telemetry.
+[Quickstart](#-quickstart) •
+[Features](#-features) •
+[Documentation](docs/index.md) •
+[GitHub Action](docs/guides/github-action-guide.md)
 
-```bash
-# PyGuard is not yet on PyPI - install from source
-pyguard src/
-```
+</div>
 
-GitHub Marketplace Action: https://github.com/marketplace/actions/pyguard-security-scanner
+---
 
-## 🚀 GitHub Action
+## What is PyGuard?
 
-Add PyGuard security scanning to your repository in 30 seconds:
+**The problem:** Juggling 7+ security and quality tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) creates overlapping reports, config conflicts, and no unified auto-fix workflow.
+
+**The solution:** PyGuard consolidates everything into a single AST-based analyzer that finds vulnerabilities, enforces code quality, generates compliance reports, and **fixes issues automatically**—all while running 100% locally with zero telemetry.
+
+### Who is this for?
+
+- **Python developers** who want comprehensive security and quality checks without tool sprawl
+- **Security teams** enforcing OWASP ASVS and CWE compliance
+- **DevSecOps engineers** automating security scanning in CI/CD pipelines
+- **Open source maintainers** needing SARIF reports for GitHub Security tab
+
+### What's New
+
+- **10-100x faster scanning** with RipGrep integration
+- **Secret scanning** finds hardcoded credentials in seconds (114x faster)
+- **Import analysis** detects circular dependencies and god modules
+- **Test coverage checks** identify untested code automatically
+- **Compliance tracking** extracts OWASP/CWE references from code comments
+- **GitHub Action** ready for immediate CI/CD integration
+
+---
+
+## Quickstart
+
+### Option 1: GitHub Action (Recommended for CI/CD)
+
+Add PyGuard to your repository in 30 seconds:
 
 ```yaml
 # .github/workflows/pyguard.yml
@@ -49,49 +79,135 @@ jobs:
           upload-sarif: 'true'
 ```
 
-**Done!** PyGuard will automatically scan your code and upload results to GitHub Security tab. [Full GitHub Action Guide →](docs/guides/github-action-guide.md)
+**What it does:**
+- Automatically scans your code on every push/PR
+- Uploads findings to GitHub Security tab
+- Comments on PRs with vulnerability details
+- Blocks merges on critical issues
 
-## Docs
+[Full GitHub Action Guide →](docs/guides/github-action-guide.md)
 
-- Start here: docs/index.md
-- Action usage: docs/guides/github-action-guide.md
-- All guides live under docs/
+### Option 2: Local Installation
 
-## Install & Use
+Install from source (PyPI coming soon):
 
 ```bash
-# Install
-# PyGuard is not yet on PyPI - install from source
+# Install from source (PyPI coming soon)
+git clone https://github.com/cboyd0319/PyGuard.git
+cd PyGuard
+pip install -e .
 
-# Scan and fix entire project
+# Verify installation
+pyguard --version
+```
+
+### Option 3: Quick Commands
+
+```bash
+# Scan and auto-fix entire project
 pyguard src/
 
-# Security fixes only
+# Security fixes only (skip formatting)
 pyguard src/ --security-only
 
-# Scan without applying fixes
+# Scan without applying changes (CI mode)
 pyguard src/ --scan-only
 
-# Generate SARIF for GitHub Security tab
-pyguard src/ --scan-only --sarif
-
-# 🚀 NEW: Fast mode with RipGrep (10-100x faster for large codebases)
+# Fast mode (10-100x faster with RipGrep)
 pyguard src/ --fast
 
 # Secret scanning (find hardcoded credentials)
 pyguard src/ --scan-secrets --sarif
 
-# Import analysis (circular imports, god modules)
+# Import analysis (circular dependencies)
 pyguard src/ --analyze-imports
 
 # Test coverage check
 pyguard src/ --check-test-coverage
 
-# Compliance tracking (OWASP/CWE annotations)
-pyguard src/ --compliance-report
+# Generate SARIF for GitHub Security
+pyguard src/ --scan-only --sarif
 ```
 
-Expected output: backups in `.pyguard_backups/`, fixed files in place, HTML report at `pyguard-report.html`, optional SARIF at `pyguard-report.sarif`.
+**Output:** Backups in `.pyguard_backups/`, fixes applied in-place, HTML report at `pyguard-report.html`
+
+New to PyGuard? Follow the [5-minute tutorial](docs/index.md)
+
+---
+
+## Features
+
+<table>
+<tr>
+<td width="50%">
+
+**Security Scanning**
+- 55+ vulnerability checks (OWASP ASVS v5.0 aligned)
+- Code injection (eval, exec, compile)
+- SQL/NoSQL/LDAP injection detection
+- Hardcoded secrets scanning (AWS, GitHub, JWT)
+- Weak cryptography detection (MD5, SHA1)
+- SSRF, XXE, and path traversal checks
+- Framework-specific rules (Django, Flask, FastAPI)
+- **179+ auto-fixes** (most comprehensive available)
+
+**RipGrep Integration** (NEW)
+- 10-100x faster scanning on large codebases
+- Secret scanning in 3.4s (vs 390s AST-only)
+- Import analysis 16x faster
+- Test coverage checks 15x faster
+- Automatic fallback if RipGrep unavailable
+- Zero configuration required
+
+**Code Quality**
+- 150+ quality rules (PEP 8, Pylint, Bugbear)
+- Cyclomatic complexity analysis
+- Code smell detection
+- Missing docstring checks
+- Mutable default detection
+- Magic number identification
+- Type checking improvements
+
+</td>
+<td width="50%">
+
+**Compliance & Reporting**
+- **10+ frameworks**: OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP
+- SARIF 2.1.0 output for GitHub Security
+- HTML reports with severity categorization
+- CSV export for audit trails
+- Compliance tracking from code comments
+- CWE/OWASP vulnerability mapping
+- Risk scoring and prioritization
+
+**GitHub Integration**
+- GitHub Action for CI/CD
+- Automatic SARIF upload
+- PR annotations with fix suggestions
+- Security trend tracking
+- Policy enforcement (block on critical)
+- Zero-config setup
+
+**Supply Chain Security**
+- Dependency vulnerability scanning
+- SBOM generation (CycloneDX/SPDX)
+- License compliance detection
+- Risk scoring per dependency
+- Known CVE detection
+
+**Developer Experience**
+- AST-based (10-100x faster than regex)
+- Watch mode for continuous monitoring
+- Git hooks for pre-commit checks
+- VS Code integration (planned)
+- Parallel processing
+- Incremental analysis
+
+</td>
+</tr>
+</table>
+
+---
 
 ## ⚡ RipGrep Integration (NEW)
 
@@ -175,28 +291,61 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 
 **Privacy**: Runs locally. No telemetry. No SaaS. No external API calls (except optional MCP integrations).
 
-## Prerequisites
+---
 
-| Item | Version | Why |
-|------|---------|-----|
-| Python | 3.11+ | Runtime (3.13.9 recommended for dev) |
-| pip | latest | Package manager |
+## Installation
 
-Optional: Black, isort (auto-installed with PyGuard).
+### Prerequisites
 
-## Install
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Version</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Python</strong></td>
+      <td>≥ 3.11</td>
+      <td>Runtime (3.13 recommended for development)</td>
+    </tr>
+    <tr>
+      <td><strong>pip</strong></td>
+      <td>latest</td>
+      <td>Package manager</td>
+    </tr>
+    <tr>
+      <td><strong>RipGrep</strong> (optional)</td>
+      <td>≥ 13.0</td>
+      <td>10-100x faster scanning (auto-detected)</td>
+    </tr>
+  </tbody>
+</table>
+
+**Optional dependencies:** Black, isort (auto-installed with PyGuard)
+
+### Quick Install
 
 ```bash
-# From PyPI (when published)
-# PyGuard is not yet on PyPI - install from source
-
-# From source
+# From source (PyPI coming soon)
 git clone https://github.com/cboyd0319/PyGuard.git
 cd PyGuard
 pip install -e .
 
-# Verify
+# Verify installation
 pyguard --version
+
+# Optional: Install RipGrep for 10-100x faster scanning
+# macOS
+brew install ripgrep
+
+# Ubuntu/Debian
+apt install ripgrep
+
+# Windows
+winget install BurntSushi.ripgrep.MSVC
 ```
 
 ## Usage
@@ -497,27 +646,87 @@ Single config file. Single command. Unified reports.
 
 **Disclosure:** GitHub Security Advisories or https://github.com/cboyd0319 (see SECURITY.md)
 
+---
+
 ## Troubleshooting
 
-**`SyntaxError: invalid syntax`**
-- Cause: File contains invalid Python.
-- Fix: Run `python -m py_compile <file>` to verify syntax first.
+### Common Issues
 
-**`FileNotFoundError: .pyguard_backups`**
-- Cause: Backup directory missing.
-- Fix: PyGuard creates this automatically. Check write permissions on parent directory.
+<details>
+<summary><strong>Error: SyntaxError: invalid syntax</strong></summary>
 
-**`PermissionError: [Errno 13]`**
-- Cause: No write access to file or backup directory.
-- Fix: Run with appropriate user or fix directory permissions.
+**Cause:** File contains invalid Python syntax
 
-**`TypeError: 'NoneType' object is not iterable`**
-- Cause: Code uses unsupported Python feature (rare).
-- Fix: Report issue with code sample at github.com/cboyd0319/PyGuard/issues.
+**Fix:** Verify syntax before scanning:
 
-**Slow performance on large codebases**
-- Run with `--exclude` to skip vendor code, tests, or migrations.
-- Example: `pyguard src/ --exclude "*/tests/*" --exclude "*/migrations/*"`
+```bash
+python -m py_compile <file>
+```
+
+</details>
+
+<details>
+<summary><strong>Error: FileNotFoundError: .pyguard_backups</strong></summary>
+
+**Cause:** Backup directory missing or no write permissions
+
+**Fix:** PyGuard creates this automatically. Check parent directory permissions:
+
+```bash
+ls -la . | grep pyguard_backups
+chmod 755 .
+```
+
+</details>
+
+<details>
+<summary><strong>Error: PermissionError: [Errno 13]</strong></summary>
+
+**Cause:** No write access to file or backup directory
+
+**Fix:** Check permissions:
+
+```bash
+# Fix file permissions
+chmod 644 path/to/file.py
+
+# Fix directory permissions
+chmod 755 path/to/directory
+```
+
+</details>
+
+<details>
+<summary><strong>Slow performance on large codebases</strong></summary>
+
+**Cause:** Scanning unnecessary files (tests, migrations, vendor code)
+
+**Fix:** Use `--exclude` patterns or `--fast` mode:
+
+```bash
+# Exclude specific directories
+pyguard src/ --exclude "*/tests/*" --exclude "*/migrations/*"
+
+# Use RipGrep fast mode (10-100x faster)
+pyguard src/ --fast
+```
+
+See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tips.
+
+</details>
+
+<details>
+<summary><strong>Error: TypeError: 'NoneType' object is not iterable</strong></summary>
+
+**Cause:** Code uses unsupported Python feature (rare edge case)
+
+**Fix:** Report issue with minimal code sample:
+
+[File a bug report →](https://github.com/cboyd0319/PyGuard/issues/new?template=bug_report.md)
+
+</details>
+
+**More help:** [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions)
 
 ## Performance
 
@@ -571,12 +780,70 @@ make lint
 
 Dependabot auto-updates dependencies weekly. Auto-merges patch/minor updates after CI passes.
 
-## License
+---
 
-MIT License. You can: use commercially, modify, distribute, sublicense. You cannot: hold author liable. Must: include license and copyright notice.
+## Documentation
 
-Full text: [LICENSE](LICENSE) | Unsure? See [choosealicense.com](https://choosealicense.com/licenses/mit/)
+### Getting Started
+- **[Documentation Index](docs/index.md)** - Complete documentation map
+- **[GitHub Action Guide](docs/guides/github-action-guide.md)** - CI/CD integration
+- **[Capabilities Reference](docs/reference/capabilities-reference.md)** - Detailed feature catalog
+
+### Advanced Features
+- **[RipGrep Integration](docs/guides/RIPGREP_INTEGRATION.md)** - 10-100x faster scanning
+- **[Advanced Features](docs/guides/ADVANCED_FEATURES.md)** - CI/CD, profiling, custom rules
+- **[Configuration Guide](docs/guides/CONFIGURATION.md)** - pyguard.toml reference
+
+### Full Documentation Index
+See [docs/index.md](docs/index.md) for complete documentation map.
 
 ---
 
-Made by [Chad Boyd](https://github.com/cboyd0319) — contributions welcome
+## License
+
+**MIT License** - See [LICENSE](LICENSE) for full text.
+
+```
+✅ Commercial use allowed
+✅ Modification allowed
+✅ Distribution allowed
+✅ Private use allowed
+📋 License and copyright notice required
+```
+
+**TL;DR:** Use it however you want. Just include the license.
+
+Learn more: https://choosealicense.com/licenses/mit/
+
+---
+
+## Support & Community
+
+**Need help?**
+- 🐛 [File a bug report](https://github.com/cboyd0319/PyGuard/issues/new?template=bug_report.md)
+- 💡 [Request a feature](https://github.com/cboyd0319/PyGuard/discussions/new?category=feature-requests)
+- 💬 [Ask a question](https://github.com/cboyd0319/PyGuard/discussions/new?category=q-a)
+- 🔒 [Report a security issue](SECURITY.md) (private)
+
+**Resources:**
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development setup and contribution guidelines
+- [Changelog](docs/development/UPDATEv2.md) - Release history and roadmap
+- [GitHub Marketplace](https://github.com/marketplace/actions/pyguard-security-scanner) - PyGuard Action
+
+---
+
+<div align="center">
+
+## ⭐ Spread the Word
+
+If PyGuard helps secure your Python projects, **give us a star** ⭐
+
+[![Star History](https://img.shields.io/github/stars/cboyd0319/PyGuard?style=social)](https://github.com/cboyd0319/PyGuard/stargazers)
+
+**Active Development** • **Production-Ready** • **Community-Driven**
+
+Made with ❤️ for Python developers who value security
+
+[⬆ Back to top](#pyguard)
+
+</div>
