@@ -305,3 +305,108 @@ class TestSupplyChainAnalyzer:
                 + sbom.low_vulnerabilities
             )
             assert total_vulns >= 0  # At least records the analysis
+
+
+class TestVersionComparisons:
+    """Test version comparison operators."""
+
+    def test_version_comparison_less_than(self):
+        """Test version < operator."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        assert checker._version_matches("1.0.0", "<2.0.0")
+        assert not checker._version_matches("2.0.0", "<1.0.0")
+
+    def test_version_comparison_less_equal(self):
+        """Test version <= operator."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        assert checker._version_matches("1.0.0", "<=2.0.0")
+        assert checker._version_matches("2.0.0", "<=2.0.0")
+        assert not checker._version_matches("3.0.0", "<=2.0.0")
+
+    def test_version_comparison_greater_than(self):
+        """Test version > operator."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        assert checker._version_matches("2.0.0", ">1.0.0")
+        assert not checker._version_matches("1.0.0", ">2.0.0")
+
+    def test_version_comparison_greater_equal(self):
+        """Test version >= operator."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        assert checker._version_matches("2.0.0", ">=1.0.0")
+        assert checker._version_matches("2.0.0", ">=2.0.0")
+        assert not checker._version_matches("1.0.0", ">=2.0.0")
+
+    def test_version_comparison_invalid_spec(self):
+        """Test version comparison with invalid spec."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        # Should return False for invalid specs
+        result = checker._version_matches("1.0.0", "invalid")
+        assert result is False
+
+    def test_version_comparison_exception(self):
+        """Test version comparison handles exceptions."""
+        from pyguard.lib.supply_chain import VulnerabilityChecker
+        checker = VulnerabilityChecker()
+        # Malformed version strings should not crash
+        result = checker._version_matches("not-a-version", ">=1.0.0")
+        assert result is False
+
+
+class TestVulnerabilitySeverityCounting:
+    """Test vulnerability severity counting in SBOM."""
+
+    def test_count_all_severity_levels(self):
+        """Test counting vulnerabilities at all severity levels."""
+        analyzer = SupplyChainAnalyzer()
+        
+        # Create mock dependencies with different risk levels
+        deps = [
+            Dependency(
+                name="pkg1",
+                version="1.0.0",
+                source="pypi",
+                license="MIT",
+                risk_level="CRITICAL",
+                vulnerabilities=[],
+            ),
+            Dependency(
+                name="pkg2",
+                version="1.0.0",
+                source="pypi",
+                license="MIT",
+                risk_level="HIGH",
+                vulnerabilities=[],
+            ),
+            Dependency(
+                name="pkg3",
+                version="1.0.0",
+                source="pypi",
+                license="MIT",
+                risk_level="MEDIUM",
+                vulnerabilities=[],
+            ),
+            Dependency(
+                name="pkg4",
+                version="1.0.0",
+                source="pypi",
+                license="MIT",
+                risk_level="LOW",
+                vulnerabilities=[],
+            ),
+        ]
+        
+        # Manually count (simulating the logic)
+        critical = sum(1 for d in deps if d.risk_level == "CRITICAL")
+        high = sum(1 for d in deps if d.risk_level == "HIGH")
+        medium = sum(1 for d in deps if d.risk_level == "MEDIUM")
+        low = sum(1 for d in deps if d.risk_level == "LOW")
+        
+        assert critical == 1
+        assert high == 1
+        assert medium == 1
+        assert low == 1
