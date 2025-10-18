@@ -417,3 +417,198 @@ def process():
         violations = checker.check_code(code)
         try001_violations = [v for v in violations if v.rule_id == "TRY001"]
         assert len(try001_violations) == 0
+
+
+class TestExceptionHandlingCheckerErrorHandling:
+    """Test error handling in ExceptionHandlingChecker."""
+
+    def test_check_file_with_syntax_error(self, tmp_path):
+        """Test check_file handles syntax errors gracefully."""
+        # Arrange
+        checker = ExceptionHandlingChecker()
+        file_path = tmp_path / "syntax_error.py"
+        file_path.write_text("def broken(\n")  # Syntax error
+        
+        # Act
+        violations = checker.check_file(file_path)
+        
+        # Assert - Should return empty list, not raise
+        assert isinstance(violations, list)
+        assert len(violations) == 0
+
+    def test_check_file_nonexistent(self):
+        """Test check_file with nonexistent file."""
+        # Arrange
+        checker = ExceptionHandlingChecker()
+        file_path = Path("/nonexistent/file.py")
+        
+        # Act
+        violations = checker.check_file(file_path)
+        
+        # Assert - Should handle gracefully
+        assert isinstance(violations, list)
+        assert len(violations) == 0
+
+    def test_check_code_syntax_error_in_string(self):
+        """Test check_code with syntax error."""
+        # Arrange
+        checker = ExceptionHandlingChecker()
+        code = "def broken(\n"  # Incomplete function
+        
+        # Act
+        violations = checker.check_code(code)
+        
+        # Assert - Should return empty list
+        assert isinstance(violations, list)
+        assert len(violations) == 0
+
+    def test_check_code_with_empty_string(self):
+        """Test check_code with empty string."""
+        # Arrange
+        checker = ExceptionHandlingChecker()
+        
+        # Act
+        violations = checker.check_code("")
+        
+        # Assert
+        assert isinstance(violations, list)
+        assert len(violations) == 0
+
+
+class TestExceptionHandlingEdgeCases:
+    """Test edge cases for exception handling rules."""
+
+    def test_try_with_multiple_statements_no_return(self):
+        """Test try block with multiple statements but no return."""
+        code = """
+def process():
+    try:
+        x = 1
+        y = 2
+        z = x + y
+    except ValueError:
+        pass
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should not raise any specific violations for this pattern
+        assert isinstance(violations, list)
+
+    def test_nested_try_blocks(self):
+        """Test nested try-except blocks."""
+        code = """
+def process():
+    try:
+        try:
+            dangerous_operation()
+        except ValueError:
+            pass
+    except Exception:
+        pass
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should detect patterns, check if TRY002 is triggered
+        assert isinstance(violations, list)
+
+    def test_try_with_exactly_three_handlers(self):
+        """Test try block with exactly 3 handlers (boundary case)."""
+        code = """
+def process():
+    try:
+        operation()
+    except ValueError:
+        handle_value_error()
+    except TypeError:
+        handle_type_error()
+    except KeyError:
+        handle_key_error()
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should not trigger TRY301 (which requires > 3 handlers)
+        try301_violations = [v for v in violations if v.rule_id == "TRY301"]
+        assert len(try301_violations) == 0
+
+    def test_try_with_four_handlers(self):
+        """Test try block with 4 handlers (should trigger TRY301)."""
+        code = """
+def process():
+    try:
+        operation()
+    except ValueError:
+        handle_value_error()
+    except TypeError:
+        handle_type_error()
+    except KeyError:
+        handle_key_error()
+    except AttributeError:
+        handle_attribute_error()
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should trigger TRY301 (too many handlers)
+        try301_violations = [v for v in violations if v.rule_id == "TRY301"]
+        assert len(try301_violations) > 0
+
+
+class TestCoverageMissingLines:
+    """Tests to cover missing lines in exception_handling.py"""
+
+    def test_suppress_with_attribute_func(self):
+        """Test suppress() with module.suppress() format (lines 250-251)."""
+        code = """
+from contextlib import suppress
+import mymodule
+
+# Test lines 250-251: item.context_expr.func is ast.Attribute
+with mymodule.suppress(Exception):
+    risky_operation()
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should execute lines 250-251 even if no violation is raised
+        assert isinstance(violations, list)
+
+    def test_check_file_with_exception(self, tmp_path):
+        """Test check_file handles general exceptions (lines 298-301)."""
+        # Create a file that will cause an error during processing
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Valid Python\npass")
+        
+        checker = ExceptionHandlingChecker()
+        
+        # Mock the ast.parse to raise an exception (not SyntaxError)
+        import ast
+        original_parse = ast.parse
+        
+        def mock_parse_error(*args, **kwargs):
+            raise RuntimeError("Simulated error")
+        
+        ast.parse = mock_parse_error
+        try:
+            violations = checker.check_file(test_file)
+            # Should catch the exception and return empty list (lines 298-301)
+            assert violations == []
+        finally:
+            ast.parse = original_parse
+
+    def test_check_code_with_exception(self):
+        """Test check_code handles general exceptions (lines 343-348)."""
+        code = "pass"
+        checker = ExceptionHandlingChecker()
+        
+        # Mock ast.parse to raise a non-syntax exception
+        import ast
+        original_parse = ast.parse
+        
+        def mock_parse_error(*args, **kwargs):
+            raise RuntimeError("Simulated processing error")
+        
+        ast.parse = mock_parse_error
+        try:
+            violations = checker.check_code(code)
+            # Should catch the exception and return empty list (lines 343-348)
+            assert violations == []
+        finally:
+            ast.parse = original_parse

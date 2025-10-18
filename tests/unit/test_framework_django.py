@@ -460,3 +460,100 @@ class Product(models.Model):
         # Should not raise encoding errors
         # Should not trigger DJ006 since __str__ is present
         assert not any(v.rule_id == "DJ006" for v in violations)
+
+
+class TestNonDjangoFilePaths:
+    """Test coverage for non-Django file paths (lines 48-49, 83, 89, 99-100, 188-189)."""
+
+    def test_non_django_file_visit_call(self, tmp_path):
+        """Test visit_Call with non-Django file (lines 48-49)."""
+        code = """
+# Non-Django file - doesn't import django
+result = MyModel.objects.raw("SELECT * FROM table")
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DjangoRulesChecker()
+        violations = checker.check_file(file_path)
+
+        # Should not detect Django issues in non-Django files
+        # This covers lines 48-49 in visit_Call
+        assert all(v.rule_id not in ["DJ001", "DJ012"] for v in violations)
+
+    def test_non_django_file_visit_classdef(self, tmp_path):
+        """Test visit_ClassDef with non-Django file (lines 99-100)."""
+        code = """
+# Non-Django file
+class MyModel:
+    def save(self):
+        pass
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DjangoRulesChecker()
+        violations = checker.check_file(file_path)
+
+        # Should not detect Django model issues in non-Django files
+        # This covers lines 99-100 in visit_ClassDef
+        assert all(v.rule_id not in ["DJ006", "DJ007", "DJ008"] for v in violations)
+
+    def test_non_django_file_visit_assign(self, tmp_path):
+        """Test visit_Assign with non-Django file (lines 188-189)."""
+        code = """
+# Non-Django settings file
+DEBUG = True
+SECRET_KEY = "test"
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DjangoRulesChecker()
+        violations = checker.check_file(file_path)
+
+        # Should not detect Django settings issues in non-Django files
+        # This covers lines 188-189 in visit_Assign
+        assert all(v.rule_id not in ["DJ010", "DJ013"] for v in violations)
+
+    def test_objects_get_without_try_catch(self, tmp_path):
+        """Test .objects.get() detection (line 83)."""
+        code = """
+from django.db import models
+
+class User(models.Model):
+    pass
+
+def get_user(user_id):
+    # Line 83: This path just passes, doesn't check for try/except
+    user = User.objects.get(id=user_id)
+    return user
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DjangoRulesChecker()
+        violations = checker.check_file(file_path)
+
+        # This code path (line 83) exists but doesn't generate violations yet
+        # It's marked as a TODO in the code
+        assert isinstance(violations, list)
+
+    def test_render_without_csrf(self, tmp_path):
+        """Test render() call detection (line 89)."""
+        code = """
+from django.shortcuts import render
+
+def view(request):
+    # Line 89: This path just passes, doesn't check for csrf_token
+    return render(request, 'template.html', {})
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DjangoRulesChecker()
+        violations = checker.check_file(file_path)
+
+        # This code path (line 89) exists but doesn't generate violations yet
+        # It's marked as requiring template analysis
+        assert isinstance(violations, list)

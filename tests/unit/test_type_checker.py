@@ -13,6 +13,11 @@ from pyguard.lib.type_checker import (
     TypeChecker,
     TypeInferenceEngine,
 )
+from pyguard.lib.rule_engine import (
+    RuleViolation,
+    RuleSeverity as Severity,
+    FixApplicability,
+)
 
 
 class TestTypeInference:
@@ -783,3 +788,114 @@ def apply(func: Callable[[int], int], value: int) -> int:
             if v.rule_id in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
         ]
         assert len(type_violations) == 0
+
+
+class TestTypeCheckerSyntaxErrors:
+    """Test type checker handles syntax errors gracefully."""
+
+    def test_detect_type_hints_with_syntax_error(self, tmp_path):
+        """Test type hint detection handles syntax errors."""
+        # Arrange
+        code = "def broken_syntax(\n    # Unclosed paren"
+        test_file = tmp_path / "broken.py"
+        test_file.write_text(code)
+        
+        # Act
+        from pyguard.lib.type_checker import _detect_type_hints
+        violations = _detect_type_hints(code, test_file)
+        
+        # Assert - should return empty list, not crash
+        assert violations == []
+
+    def test_detect_type_comparison_with_syntax_error(self, tmp_path):
+        """Test type comparison detection handles syntax errors."""
+        # Arrange
+        code = "if type(x) == int\n    # Missing colon"
+        test_file = tmp_path / "broken.py"
+        test_file.write_text(code)
+        
+        # Act
+        from pyguard.lib.type_checker import _detect_type_comparison
+        violations = _detect_type_comparison(code, test_file)
+        
+        # Assert - should return empty list, not crash
+        assert violations == []
+
+
+class TestTypeCheckerAutoFix:
+    """Test type checker auto-fix functionality."""
+
+    def test_apply_type_hints_with_none_content(self, tmp_path):
+        """Test add_type_hints handles file read failure."""
+        # Arrange
+        nonexistent_file = tmp_path / "nonexistent.py"
+        checker = TypeChecker()
+        
+        # Act
+        success, count = checker.add_type_hints(nonexistent_file, [])
+        
+        # Assert
+        assert success is False
+        assert count == 0
+
+    def test_apply_type_hints_with_no_fixable_violations(self, tmp_path):
+        """Test add_type_hints with no fixable violations."""
+        # Arrange
+        code = "def func():\n    pass"
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+        
+        checker = TypeChecker()
+        # Create violations without fix_data
+        from pyguard.lib.rule_engine import RuleCategory
+        violations = [
+            RuleViolation(
+                rule_id="TC001",
+                category=RuleCategory.TYPE,
+                severity=Severity.MEDIUM,
+                message="Missing type hint",
+                file_path=test_file,
+                line_number=1,
+                column=0,
+                fix_applicability=FixApplicability.SUGGESTED,
+                fix_data=None,  # No fix data
+            )
+        ]
+        
+        # Act
+        success, count = checker.add_type_hints(test_file, violations)
+        
+        # Assert
+        assert success is True
+        assert count == 0
+
+    def test_apply_type_hints_with_fixable_violations(self, tmp_path):
+        """Test add_type_hints with fixable violations (placeholder)."""
+        # Arrange
+        code = "def func():\n    return 42"
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+        
+        checker = TypeChecker()
+        # Create violations with inferred types
+        from pyguard.lib.rule_engine import RuleCategory
+        violations = [
+            RuleViolation(
+                rule_id=MISSING_RETURN_TYPE_RULE.rule_id,
+                category=RuleCategory.TYPE,
+                severity=Severity.MEDIUM,
+                message="Missing return type",
+                file_path=test_file,
+                line_number=1,
+                column=0,
+                fix_applicability=FixApplicability.SUGGESTED,
+                fix_data={"inferred_type": "int"},
+            )
+        ]
+        
+        # Act
+        success, count = checker.add_type_hints(test_file, violations)
+        
+        # Assert - currently returns 0 as it's a TODO
+        assert success is True
+        assert count == 0
