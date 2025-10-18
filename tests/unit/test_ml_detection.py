@@ -196,6 +196,153 @@ ctypes.CDLL("malicious.dll")
                 assert "description" in anomaly
 
 
+    def test_detect_obfuscation_chr_usage(self):
+        """Test obfuscation detection with excessive chr() usage."""
+        # Use 6 chr() calls to exceed threshold of 5
+        code = """
+x = chr(101) + chr(118) + chr(97) + chr(108) + chr(40) + chr(41)
+exec(x)
+"""
+        anomalies = self.detector.detect_anomalies(code)
+        
+        assert any(a["type"] == "obfuscation" for a in anomalies)
+        assert any(a["severity"] == "HIGH" for a in anomalies)
+
+    def test_detect_obfuscation_long_lines(self):
+        """Test obfuscation detection with very long lines."""
+        # Create 4 lines longer than 200 characters to exceed threshold of 3
+        long_line = "x = " + " + ".join([f'"{i}"' for i in range(50)])
+        code = "\n".join([long_line] * 4)
+        
+        anomalies = self.detector.detect_anomalies(code)
+        
+        assert any(a["type"] == "obfuscation" for a in anomalies)
+
+    def test_detect_obfuscation_base64(self):
+        """Test obfuscation detection with base64 decode."""
+        code = """
+import base64
+data = base64.b64decode(secret).decode()
+"""
+        anomalies = self.detector.detect_anomalies(code)
+        
+        assert any(a["type"] == "obfuscation" for a in anomalies)
+
+    def test_detect_unusual_strings_hex_encoding(self):
+        """Test detection of hex-encoded strings."""
+        # Create string with more than 10 hex escape sequences
+        hex_string = "\\x48" * 15  # 15 hex escapes
+        code = f'data = "{hex_string}"'
+        
+        anomalies = self.detector.detect_anomalies(code)
+        
+        assert any(a["type"] == "unusual_strings" for a in anomalies)
+
+    def test_detect_suspicious_socket_without_server(self):
+        """Test socket usage without server keyword."""
+        code = """
+import socket
+sock = socket.socket()
+sock.connect(("evil.com", 1337))
+"""
+        anomalies = self.detector.detect_anomalies(code)
+        
+        suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
+        if suspicious_imports:
+            assert "socket" in suspicious_imports[0]["description"]
+
+    def test_detect_suspicious_ctypes(self):
+        """Test ctypes with system access."""
+        code = """
+import ctypes
+ctypes.windll.kernel32.SomeFunction()
+"""
+        anomalies = self.detector.detect_anomalies(code)
+        
+        suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
+        if suspicious_imports:
+            assert "ctypes" in suspicious_imports[0]["description"]
+
+    def test_detect_suspicious_dynamic_imports(self):
+        """Test dynamic import detection."""
+        code = """
+module = __import__("os")
+module.system("ls")
+"""
+        anomalies = self.detector.detect_anomalies(code)
+        
+        suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
+        if suspicious_imports:
+            assert "dynamic imports" in suspicious_imports[0]["description"]
+
+
+class TestMLRiskScorerEdgeCases:
+    """Test edge cases for ML risk scoring."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.scorer = MLRiskScorer()
+
+    def test_critical_severity_threshold(self):
+        """Test that score >= 0.8 results in CRITICAL severity."""
+        # Create code with many high-risk factors to push score above 0.8
+        code = """
+import subprocess
+eval(user_input)
+exec(malicious_code)
+password = "secret123"
+api_key = "sk-1234567890"
+token = "ghp_abcdefg"
+subprocess.run(user_command, shell=True)
+os.system(user_input)
+"""
+        score = self.scorer.calculate_risk_score(code)
+        
+        # With eval, exec, hardcoded secrets, and shell=True, score should be high
+        assert score.severity == "CRITICAL"
+
+    def test_predict_subprocess_injection(self):
+        """Test prediction of command injection via subprocess."""
+        code = """
+import subprocess
+subprocess.run(user_input, shell=True)
+"""
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "command_injection"
+        assert confidence == 0.85
+
+    def test_predict_hardcoded_credentials(self):
+        """Test prediction of hardcoded credentials."""
+        code = """
+password = "secret123"
+api_key = "sk_test_1234"
+"""
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "hardcoded_credentials"
+        assert confidence == 0.80
+
+    def test_predict_sql_injection(self):
+        """Test prediction of SQL injection with multiple patterns."""
+        code = """
+query1 = "SELECT * FROM users WHERE id = " + user_id
+query2 = "UPDATE users SET name = '" + name + "'"
+query3 = "DELETE FROM data WHERE " + condition
+cursor.execute(query1)
+"""
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "sql_injection"
+        assert confidence == 0.75
+
+
 class TestRiskScore:
     """Test RiskScore dataclass."""
 
