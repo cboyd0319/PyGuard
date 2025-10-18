@@ -193,7 +193,7 @@ class TestNotebookSecurityAnalyzer:
 
         pickle_issues = [i for i in issues if i.category == "Unsafe Deserialization"]
         assert len(pickle_issues) >= 1
-        assert pickle_issues[0].severity == "HIGH"
+        assert pickle_issues[0].severity == "CRITICAL"  # pickle.load is CRITICAL severity
         assert "pickle" in pickle_issues[0].message.lower()
 
         temp_notebook.unlink()
