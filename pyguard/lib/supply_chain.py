@@ -331,18 +331,19 @@ class VulnerabilityChecker:
 
         try:
             # Simple version comparison (in production, use packaging.version)
-            if spec.startswith("<"):
-                target = spec[1:]
-                return self._compare_versions(version, target) < 0
-            elif spec.startswith("<="):
+            # Check two-character operators first to avoid substring issues
+            if spec.startswith("<="):
                 target = spec[2:]
                 return self._compare_versions(version, target) <= 0
-            elif spec.startswith(">"):
-                target = spec[1:]
-                return self._compare_versions(version, target) > 0
             elif spec.startswith(">="):
                 target = spec[2:]
                 return self._compare_versions(version, target) >= 0
+            elif spec.startswith("<"):
+                target = spec[1:]
+                return self._compare_versions(version, target) < 0
+            elif spec.startswith(">"):
+                target = spec[1:]
+                return self._compare_versions(version, target) > 0
         except Exception:
             return False
 
