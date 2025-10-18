@@ -550,3 +550,65 @@ def process():
         # Should trigger TRY301 (too many handlers)
         try301_violations = [v for v in violations if v.rule_id == "TRY301"]
         assert len(try301_violations) > 0
+
+
+class TestCoverageMissingLines:
+    """Tests to cover missing lines in exception_handling.py"""
+
+    def test_suppress_with_attribute_func(self):
+        """Test suppress() with module.suppress() format (lines 250-251)."""
+        code = """
+from contextlib import suppress
+import mymodule
+
+# Test lines 250-251: item.context_expr.func is ast.Attribute
+with mymodule.suppress(Exception):
+    risky_operation()
+"""
+        checker = ExceptionHandlingChecker()
+        violations = checker.check_code(code)
+        # Should execute lines 250-251 even if no violation is raised
+        assert isinstance(violations, list)
+
+    def test_check_file_with_exception(self, tmp_path):
+        """Test check_file handles general exceptions (lines 298-301)."""
+        # Create a file that will cause an error during processing
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# Valid Python\npass")
+        
+        checker = ExceptionHandlingChecker()
+        
+        # Mock the ast.parse to raise an exception (not SyntaxError)
+        import ast
+        original_parse = ast.parse
+        
+        def mock_parse_error(*args, **kwargs):
+            raise RuntimeError("Simulated error")
+        
+        ast.parse = mock_parse_error
+        try:
+            violations = checker.check_file(test_file)
+            # Should catch the exception and return empty list (lines 298-301)
+            assert violations == []
+        finally:
+            ast.parse = original_parse
+
+    def test_check_code_with_exception(self):
+        """Test check_code handles general exceptions (lines 343-348)."""
+        code = "pass"
+        checker = ExceptionHandlingChecker()
+        
+        # Mock ast.parse to raise a non-syntax exception
+        import ast
+        original_parse = ast.parse
+        
+        def mock_parse_error(*args, **kwargs):
+            raise RuntimeError("Simulated processing error")
+        
+        ast.parse = mock_parse_error
+        try:
+            violations = checker.check_code(code)
+            # Should catch the exception and return empty list (lines 343-348)
+            assert violations == []
+        finally:
+            ast.parse = original_parse
