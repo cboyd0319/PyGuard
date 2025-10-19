@@ -78,14 +78,15 @@ jobs:
           coverage report --fail-under=88
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.12'
+        if: matrix.python-version == '3.12' && hashFiles('coverage.xml') != ''
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           files: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
+          flags: comprehensive-tests
+          name: pyguard-comprehensive
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+          verbose: true
 
       - name: Upload coverage HTML report
         if: always() && matrix.python-version == '3.12'
