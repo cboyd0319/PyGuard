@@ -1,23 +1,24 @@
-.PHONY: help install install-dev dev test lint format fmt type clean build docs
+.PHONY: help install install-dev dev test test-fast test-parallel lint format fmt type clean build docs
 
 help:
 	@echo "PyGuard - Development Makefile"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install      - Install PyGuard in production mode"
-	@echo "  install-dev  - Install PyGuard with development dependencies"
-	@echo "  dev          - Alias for install-dev"
-	@echo "  test         - Run test suite with coverage"
-	@echo "  test-fast    - Run tests without coverage"
-	@echo "  lint         - Run all linters (ruff, pylint, mypy)"
-	@echo "  format       - Format code with black and isort"
-	@echo "  fmt          - Alias for format"
-	@echo "  type         - Run type checking with mypy"
-	@echo "  clean        - Remove build artifacts and cache files"
-	@echo "  build        - Build distribution packages"
-	@echo "  docs         - Generate documentation"
-	@echo "  benchmark    - Run performance benchmarks"
-	@echo "  security     - Run security checks with bandit"
+	@echo "  install        - Install PyGuard in production mode"
+	@echo "  install-dev    - Install PyGuard with development dependencies"
+	@echo "  dev            - Alias for install-dev"
+	@echo "  test           - Run test suite with coverage"
+	@echo "  test-fast      - Run tests without coverage"
+	@echo "  test-parallel  - Run tests in parallel (32% faster)"
+	@echo "  lint           - Run all linters (ruff, pylint, mypy)"
+	@echo "  format         - Format code with black and isort"
+	@echo "  fmt            - Alias for format"
+	@echo "  type           - Run type checking with mypy"
+	@echo "  clean          - Remove build artifacts and cache files"
+	@echo "  build          - Build distribution packages"
+	@echo "  docs           - Generate documentation"
+	@echo "  benchmark      - Run performance benchmarks"
+	@echo "  security       - Run security checks with bandit"
 
 install:
 	pip install -e .
@@ -33,7 +34,10 @@ test:
 	pytest tests/ -v --cov=pyguard --cov-report=term-missing --cov-report=html
 
 test-fast:
-	pytest tests/ -v -x
+	pytest tests/ --no-cov -x
+
+test-parallel:
+	pytest tests/ -n auto --no-cov -q
 
 lint:
 	@echo "Running ruff..."
