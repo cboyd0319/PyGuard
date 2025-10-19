@@ -85,6 +85,27 @@ class TestStandardsMapper:
         assert result["total_violations"] == 0
         assert result["compliant"] is True
 
+    def test_check_standard_compliance_with_unmapped_issues(self):
+        """Test compliance check with mix of mapped and unmapped issues.
+        
+        Branch coverage: Tests case where some issue types are not in mapping_dict (line 314->312).
+        """
+        # Arrange - mix of known and unknown issue types
+        issues = [
+            {"type": "code_injection", "severity": "HIGH"},  # Known
+            {"type": "unknown_issue_type", "severity": "LOW"},  # Unknown - should be skipped
+            {"type": "hardcoded_credentials", "severity": "HIGH"},  # Known
+        ]
+
+        # Act
+        result = self.mapper.check_standard_compliance("NIST-CSF", issues)
+
+        # Assert
+        # Only the 2 known issues should count as violations
+        assert result["total_violations"] == 2
+        assert result["compliant"] is False
+        assert len(result["violations"]) == 2
+
     def test_check_unknown_standard(self):
         """Test checking unknown standard."""
         result = self.mapper.check_standard_compliance("UNKNOWN", [])
@@ -267,6 +288,27 @@ class TestSANSTop25Mapper:
         assert report["total_top25_weaknesses_found"] == 2
         assert "coverage_percentage" in report
 
+    def test_generate_sans_report_with_duplicate_ranks(self):
+        """Test SANS report with multiple issues having same rank.
+        
+        Branch coverage: Tests the case where rank already exists in top25_found (line 525->527).
+        """
+        # Arrange - both CWE-787 and another CWE-787 have the same rank (Rank 1)
+        issues = [
+            {"type": "buffer_overflow_1", "cwe_id": "CWE-787"},  # Rank 1
+            {"type": "buffer_overflow_2", "cwe_id": "CWE-787"},  # Same rank
+            {"type": "sql_injection", "cwe_id": "CWE-89"},      # Rank 3
+        ]
+
+        # Act
+        report = self.mapper.generate_sans_report(issues)
+
+        # Assert
+        assert report["total_top25_weaknesses_found"] == 2  # Rank 1 and Rank 3
+        # Should have both buffer overflow issues under rank 1
+        assert 1 in report["weaknesses_by_rank"]
+        assert report["weaknesses_by_rank"][1]["count"] == 2  # Both CWE-787 issues
+
 
 class TestCERTSecureCodingMapper:
     """Test CERT Secure Coding mapper."""
@@ -304,6 +346,27 @@ class TestCERTSecureCodingMapper:
 
         assert "total_cert_violations" in report
         assert report["total_cert_violations"] > 0
+        assert "violations_by_rule" in report
+
+    def test_generate_cert_report_with_duplicate_rules(self):
+        """Test CERT report with multiple issues mapping to same rule.
+        
+        Branch coverage: Tests case where rule_id already exists in violations_by_rule (line 608->610).
+        """
+        # Arrange - multiple issues of same type map to same CERT rule
+        issues = [
+            {"type": "code_injection", "severity": "HIGH"},
+            {"type": "code_injection", "severity": "HIGH"},   # Duplicate type
+            {"type": "insecure_random", "severity": "MEDIUM"},
+        ]
+
+        # Act
+        report = self.mapper.generate_cert_report(issues)
+
+        # Assert
+        assert "total_cert_violations" in report
+        assert report["total_cert_violations"] == 3  # All 3 issues counted
+        # The code_injection issues should be grouped under the same rule
         assert "violations_by_rule" in report
 
 
@@ -380,3 +443,33 @@ class TestMitreATTACKMapper:
         assert "techniques_enabled" in model
         assert "attack_surface" in model
         assert "recommendations" in model
+
+    def test_generate_threat_model_with_duplicate_techniques(self):
+        """Test threat model with multiple issues mapping to same technique.
+        
+        Branch coverage: Tests case where technique_id already exists (line 766->771).
+        """
+        # Arrange - multiple issues of same type map to same ATT&CK technique
+        issues = [
+            {"type": "code_injection", "severity": "HIGH"},
+            {"type": "code_injection", "severity": "MEDIUM"},  # Duplicate
+            {"type": "hardcoded_credentials", "severity": "HIGH"},
+        ]
+
+        # Act
+        model = self.mapper.generate_threat_model(issues)
+
+        # Assert
+        assert "attack_surface" in model
+        # code_injection maps to T1059 (Command and Script Interpreter)
+        # Should have both code_injection issues under that technique
+        # Check that we have issues grouped by technique in attack_surface
+        assert len(model["attack_surface"]) >= 2  # At least 2 different techniques
+        # Find the technique with duplicate issues
+        for technique_id, data in model["attack_surface"].items():
+            if len(data["issues"]) > 1:
+                # Found a technique with multiple issues
+                break
+        else:
+            # Should have at least one technique with multiple issues
+            assert False, "Expected at least one technique with multiple issues"
