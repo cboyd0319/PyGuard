@@ -204,6 +204,23 @@ from pdb import set_trace
         t102_violations = [v for v in violations if v.rule_id == "T102"]
         assert len(t102_violations) == 1
 
+    def test_no_false_positive_on_normal_import_from(self, tmp_path):
+        """Test that normal from imports don't trigger false positives."""
+        code = """
+from os import path
+from pathlib import Path
+from typing import Optional
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+
+        checker = DebuggingPatternChecker()
+        violations = checker.check_file(file_path)
+
+        # Should not detect normal imports as debug imports
+        t102_violations = [v for v in violations if v.rule_id == "T102"]
+        assert len(t102_violations) == 0
+
     def test_detect_all_debug_imports(self, tmp_path):
         """Test detection of all debug library imports."""
         code = """

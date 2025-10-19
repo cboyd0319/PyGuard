@@ -57,6 +57,22 @@ class TestComplianceTracker:
             assert len(result['OWASP']) == 0
             assert len(result['CWE']) == 0
 
+    def test_find_compliance_annotations_with_empty_lines(self):
+        """Test handling of empty lines and malformed lines in CWE results."""
+        with patch('subprocess.run') as mock_run:
+            # Include empty lines and malformed lines (not enough colons)
+            mock_run.side_effect = [
+                MagicMock(stdout=''),
+                MagicMock(stdout='src/sql.py:42:CWE-89\nmalformed\nsrc/xss.py:15:CWE-79\n'),
+            ]
+
+            result = ComplianceTracker.find_compliance_annotations('/test/path')
+
+            # Should correctly handle empty lines, malformed lines, and extract both valid annotations
+            assert len(result['CWE']) == 2
+            assert result['CWE'][0]['file'] == 'src/sql.py'
+            assert result['CWE'][1]['file'] == 'src/xss.py'
+
     def test_find_compliance_annotations_timeout(self):
         """Test handling timeout during annotation search."""
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('rg', 60)):

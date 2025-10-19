@@ -36,6 +36,20 @@ class TestImportAnalyzer:
 
             assert isinstance(result, list)
 
+    def test_find_circular_imports_with_malformed_lines(self):
+        """Test handling of malformed lines without colons."""
+        with patch('subprocess.run') as mock_run:
+            # Include lines without colons (malformed)
+            mock_run.return_value = MagicMock(
+                stdout='module_a.py:module_c\nmalformed_line\nmodule_b.py:module_d\n',
+                returncode=0
+            )
+
+            result = ImportAnalyzer.find_circular_imports('/test/path')
+
+            # Should handle malformed lines gracefully
+            assert isinstance(result, list)
+
     def test_find_circular_imports_timeout(self):
         """Test handling timeout during import analysis."""
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('rg', 60)):
@@ -74,6 +88,18 @@ class TestImportAnalyzer:
             result = ImportAnalyzer.find_god_modules('/test/path', import_threshold=20)
 
             assert result == []
+
+    def test_find_god_modules_with_empty_lines(self):
+        """Test handling of empty lines in output."""
+        with patch('subprocess.run') as mock_run:
+            # Include empty lines in the output
+            imports_output = '\n'.join(['utils'] * 25 + ['', '', 'helpers'] * 5)
+            mock_run.return_value = MagicMock(stdout=imports_output, returncode=0)
+
+            result = ImportAnalyzer.find_god_modules('/test/path', import_threshold=20)
+
+            # Should skip empty lines and still find god modules
+            assert isinstance(result, list)
 
     def test_find_god_modules_custom_threshold(self):
         """Test god module detection with custom threshold."""

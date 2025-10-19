@@ -246,6 +246,27 @@ class TestPyGuardWatcherOnModified:
         # Due to threading and timing, we allow for both scenarios
         assert callback.call_count in (1, 2), f"Expected 1 or 2 calls, got {callback.call_count}"
 
+    def test_on_modified_skips_already_processing_file(self, tmp_path):
+        """Test that files already in processing set are skipped."""
+        # Arrange
+        callback = Mock()
+        watcher = PyGuardWatcher(callback)
+        test_file = tmp_path / "test.py"
+        test_file.write_text("print('test')")
+
+        # Manually add file to processing set
+        watcher._processing.add(str(test_file))
+
+        event = Mock(spec=FileSystemEvent)
+        event.is_directory = False
+        event.src_path = str(test_file)
+
+        # Act - try to process file that's already being processed
+        watcher.on_modified(event)
+
+        # Assert - callback should not be called
+        callback.assert_not_called()
+
     def test_on_modified_clears_processing_after_delay(self, tmp_path):
         """Test that processing set is cleared after processing completes."""
         # Arrange

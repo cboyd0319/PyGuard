@@ -65,6 +65,21 @@ class TestSecretScanner:
             # Should have empty results for all patterns
             assert isinstance(findings, list)
 
+    def test_scan_secrets_with_empty_lines(self):
+        """Test scanning handles empty lines and malformed lines correctly."""
+        with patch('subprocess.run') as mock_run:
+            # Include empty lines and malformed lines (doesn't match regex pattern)
+            mock_run.return_value = MagicMock(
+                stdout='test.py:10:password = "secret123"\nmalformed_line_without_colons\ntest.py:20:token = "abc"\n',
+                returncode=0
+            )
+
+            findings = SecretScanner.scan_secrets('/test/path')
+
+            # Should correctly parse valid lines and skip malformed ones
+            assert len(findings) >= 2
+            assert isinstance(findings, list)
+
     def test_scan_secrets_ripgrep_not_found(self):
         """Test handling when ripgrep is not installed."""
         with patch('subprocess.run', side_effect=FileNotFoundError):

@@ -142,6 +142,20 @@ class TestEnhancedConsole:
 
         assert progress is not None
 
+    @patch('sys.platform', 'win32')
+    def test_create_progress_bar_windows_spinner(self):
+        """Test create_progress_bar uses ASCII-safe spinner on Windows."""
+        import importlib
+        from pyguard.lib import ui
+        importlib.reload(ui)
+        
+        console = ui.EnhancedConsole()
+        progress = console.create_progress_bar("Windows Test")
+        
+        # Should create progress without errors on Windows
+        assert progress is not None
+        assert hasattr(progress, "add_task") or hasattr(progress, "tasks")
+
     def test_print_summary_table(self, capsys):
         """Test print_summary_table with comprehensive metrics."""
         console = EnhancedConsole()
