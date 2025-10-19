@@ -607,3 +607,158 @@ def test_import_without_nbformat():
 
 # Import ast for tests
 import ast
+
+
+class TestNotebookAnalysisResult:
+    """Test NotebookAnalysisResult class."""
+    
+    def test_analysis_result_basic(self):
+        """Test basic NotebookAnalysisResult functionality."""
+        from pyguard.lib.notebook_analyzer import NotebookIssue
+        
+        # Create mock findings with different severities
+        findings = [
+            Mock(severity='CRITICAL', message='Critical issue'),
+            Mock(severity='HIGH', message='High issue'),
+            Mock(severity='MEDIUM', message='Medium issue'),
+            Mock(severity='LOW', message='Low issue'),
+            Mock(severity='LOW', message='Another low issue'),
+        ]
+        
+        result = NotebookAnalysisResult(findings)
+        
+        assert result.total_count() == 5
+        assert result.critical_count() == 1
+        assert result.high_count() == 1
+        assert result.medium_count() == 1
+        assert result.low_count() == 2
+    
+    def test_analysis_result_with_notebook_path(self, tmp_path):
+        """Test NotebookAnalysisResult with valid notebook path."""
+        # Create a mock notebook JSON file
+        notebook_data = {
+            "cells": [
+                {"cell_type": "code", "execution_count": 1},
+                {"cell_type": "code", "execution_count": 2},
+                {"cell_type": "markdown"},
+            ]
+        }
+        
+        nb_path = tmp_path / "test.ipynb"
+        with open(nb_path, 'w') as f:
+            json.dump(notebook_data, f)
+        
+        result = NotebookAnalysisResult([], nb_path)
+        
+        assert result.cell_count == 3
+        assert result.code_cell_count == 2
+        assert result.execution_count_valid == True
+    
+    def test_analysis_result_invalid_json(self, tmp_path):
+        """Test NotebookAnalysisResult handles invalid JSON gracefully."""
+        nb_path = tmp_path / "invalid.ipynb"
+        nb_path.write_text("not valid json {")
+        
+        # Should not raise, should handle gracefully
+        result = NotebookAnalysisResult([], nb_path)
+        
+        # Defaults should be set
+        assert result.cell_count == 0
+        assert result.code_cell_count == 0
+    
+    def test_analysis_result_nonexistent_path(self):
+        """Test NotebookAnalysisResult with nonexistent path."""
+        from pathlib import Path
+        fake_path = Path("/nonexistent/path.ipynb")
+        
+        result = NotebookAnalysisResult([], fake_path)
+        
+        # Should handle gracefully with defaults
+        assert result.cell_count == 0
+        assert result.code_cell_count == 0
+
+
+class TestNotebookAnalyzerGetFunctionName:
+    """Test _get_function_name method."""
+    
+    def test_get_function_name_attribute(self):
+        """Test _get_function_name with ast.Attribute node."""
+        import ast
+        
+        analyzer = NotebookSecurityAnalyzer()
+        
+        # Parse code with module.function call
+        code = "pickle.load(f)"
+        tree = ast.parse(code)
+        call_node = tree.body[0].value
+        
+        func_name = analyzer._get_function_name(call_node)
+        
+        assert func_name == "pickle.load"
+    
+    def test_get_function_name_name(self):
+        """Test _get_function_name with ast.Name node."""
+        import ast
+        
+        analyzer = NotebookSecurityAnalyzer()
+        
+        # Parse code with simple function call
+        code = "eval('1+1')"
+        tree = ast.parse(code)
+        call_node = tree.body[0].value
+        
+        func_name = analyzer._get_function_name(call_node)
+        
+        assert func_name == "eval"
+
+
+class TestNBFORMAT_AVAILABLE:
+    """Test NBFORMAT_AVAILABLE flag."""
+    
+    def test_nbformat_available_flag(self):
+        """Test that NBFORMAT_AVAILABLE flag is set correctly."""
+        from pyguard.lib.notebook_analyzer import NBFORMAT_AVAILABLE
+        
+        # Check the flag is a boolean
+        assert isinstance(NBFORMAT_AVAILABLE, bool)
+        
+        # If we can import nbformat, flag should be True
+        try:
+            import nbformat
+            assert NBFORMAT_AVAILABLE == True
+        except ImportError:
+            assert NBFORMAT_AVAILABLE == False
+
+
+class TestNotebookAnalyzerSARIF:
+    """Test SARIF report generation."""
+    
+    def test_generate_sarif_report(self):
+        """Test generate_sarif_report method."""
+        analyzer = NotebookSecurityAnalyzer()
+        
+        # Create mock findings
+        findings = [
+            Mock(
+                rule_id='NB-001',
+                message='Test issue',
+                severity='HIGH'
+            ),
+            Mock(
+                rule_id='NB-002',
+                message='Another issue',
+                severity='CRITICAL'
+            ),
+        ]
+        
+        result1 = NotebookAnalysisResult(findings[:1])
+        result2 = NotebookAnalysisResult(findings[1:])
+        
+        sarif = analyzer.generate_sarif_report([result1, result2])
+        
+        assert sarif['version'] == '2.1.0'
+        assert 'runs' in sarif
+        assert len(sarif['runs']) == 1
+        assert 'tool' in sarif['runs'][0]
+        assert 'results' in sarif['runs'][0]
+        assert len(sarif['runs'][0]['results']) == 2
