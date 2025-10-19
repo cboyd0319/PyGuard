@@ -238,6 +238,17 @@ class TestBestPracticesFixer:
         # Assert - should not add another TODO
         assert result.count("TODO: Add docstring") == 1
 
+    def test_add_missing_docstrings_handles_empty_lines_after_definition(self):
+        """Test that empty lines after function definition are handled correctly."""
+        # Arrange - function with empty lines before code
+        code = "def foo():\n\n\n    return 42"
+
+        # Act
+        result = self.fixer._add_missing_docstrings(code)
+
+        # Assert - should add TODO after empty lines
+        assert "TODO: Add docstring" in result
+
     @pytest.mark.parametrize(
         "code,should_warn",
         [

@@ -193,6 +193,25 @@ class TestJSONReporter:
             assert "issues" in loaded
             assert "fixes" in loaded
 
+    def test_get_status_unknown(self):
+        """Test getting unknown status when issues exist but no specific type."""
+        reporter = JSONReporter()
+        # Create metrics with issues but no security or quality issues
+        metrics = AnalysisMetrics(
+            total_files=10,
+            files_analyzed=10,
+            files_with_issues=1,
+            files_fixed=0,
+            total_issues=5,
+            security_issues=0,
+            quality_issues=0,
+            fixes_applied=0,
+            analysis_time_seconds=1.0,
+            avg_time_per_file_ms=100.0,
+        )
+        status = reporter._get_status(metrics)
+        assert status == "unknown"
+
 
 class TestHTMLReporter:
     """Test HTMLReporter functionality."""
