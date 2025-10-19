@@ -135,3 +135,14 @@ pip-wheel-metadata/
 # Build tools and binaries
 bin/
 
+# Security scanner outputs
+security/SCANNER_RESULTS/
+*-results.json
+*-results.sarif
+*-results.md
+bandit-results.*
+semgrep-results.*
+osv-results.*
+safety-results.*
+pip-audit-results.*
+
