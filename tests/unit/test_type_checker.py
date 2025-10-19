@@ -321,6 +321,39 @@ class TestTypeInferenceEdgeCases:
         # Assert
         assert result is None
 
+    def test_infer_from_constant_complex_number(self):
+        """Test type inference from complex number constant.
+        
+        Branch coverage: Tests Constant node with value type not in (bool, int, float, str, None).
+        """
+        # Arrange
+        engine = TypeInferenceEngine()
+        # Complex numbers are valid Python constants but not in the handled types
+        node = ast.Constant(value=complex(1, 2))
+        
+        # Act
+        result = engine.infer_from_default(node)
+        
+        # Assert
+        # Should return None for unhandled constant types
+        assert result is None
+
+    def test_infer_from_constant_bytes(self):
+        """Test type inference from bytes constant.
+        
+        Branch coverage: Another constant type not in the handled set.
+        """
+        # Arrange
+        engine = TypeInferenceEngine()
+        node = ast.Constant(value=b"bytes")
+        
+        # Act
+        result = engine.infer_from_default(node)
+        
+        # Assert
+        # Should return None for bytes
+        assert result is None
+
     def test_infer_return_type_single_return(self):
         """Test inferring return type from single return statement."""
         # Arrange
@@ -588,6 +621,52 @@ def check(obj):
         # Assert
         assert any(v.rule_id == TYPE_COMPARISON_RULE.rule_id for v in violations)
 
+    def test_comparison_without_type_call_left_side(self, tmp_path):
+        """Test comparison where left side is not type() call.
+        
+        Branch coverage: Tests Compare node where left is not a Call (line 278->275).
+        """
+        # Arrange
+        code = """
+def check(value):
+    # Regular comparison, not type()
+    return value == 42
+"""
+        test_file = tmp_path / "regular_compare.py"
+        test_file.write_text(code)
+        
+        # Act
+        checker = TypeChecker()
+        violations = checker.analyze_file(test_file)
+        
+        # Assert
+        # Should not detect type comparison violation
+        type_comp_violations = [v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id]
+        assert len(type_comp_violations) == 0
+
+    def test_comparison_with_non_type_call(self, tmp_path):
+        """Test comparison with a call that's not type().
+        
+        Branch coverage: Tests Compare with Call node but not type() (line 279->275).
+        """
+        # Arrange
+        code = """
+def check(obj):
+    # Call to len(), not type()
+    return len(obj) == 5
+"""
+        test_file = tmp_path / "other_call.py"
+        test_file.write_text(code)
+        
+        # Act
+        checker = TypeChecker()
+        violations = checker.analyze_file(test_file)
+        
+        # Assert
+        # Should not detect type comparison violation
+        type_comp_violations = [v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id]
+        assert len(type_comp_violations) == 0
+
 
 class TestBoundaryConditions:
     """Test boundary conditions and edge cases for robustness."""
@@ -653,6 +732,30 @@ def greet(name="World", count=1):
         # Assert
         # Should detect missing types even with defaults
         assert any(v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id for v in violations)
+
+    def test_function_with_uninferrable_defaults(self, tmp_path):
+        """Test type inference when defaults cannot be inferred.
+        
+        Branch coverage: Tests loop where no default can be inferred (line 118->116).
+        """
+        # Arrange
+        code = """
+def process(callback=lambda x: x):
+    return callback(42)
+"""
+        test_file = tmp_path / "uninferrable.py"
+        test_file.write_text(code)
+        
+        # Act
+        checker = TypeChecker()
+        violations = checker.analyze_file(test_file)
+        
+        # Assert
+        # Should detect missing param type with "Unknown" as inferred type
+        assert any(v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id for v in violations)
+        # The inferred type should be Unknown since lambda can't be inferred
+        param_violations = [v for v in violations if v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id]
+        assert len(param_violations) > 0
 
     def test_unicode_identifiers_handled(self, tmp_path):
         """Test that unicode identifiers are handled correctly."""
