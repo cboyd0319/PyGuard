@@ -705,6 +705,167 @@ class TestRuleRegistryEdgeCases:
         filtered = registry.filter_by_tags([rule], {"security"})
         assert filtered == []
 
+    def test_registry_get_fixable_rules(self):
+        """Test getting fixable rules."""
+        registry = RuleRegistry()
+
+        # Register an automatic fix rule
+        rule1 = Rule(
+            rule_id="TEST001",
+            name="test-automatic",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message_template="Test",
+            description="Test",
+            fix_applicability=FixApplicability.AUTOMATIC,
+        )
+        
+        # Register a suggested fix rule
+        rule2 = Rule(
+            rule_id="TEST002",
+            name="test-suggested",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message_template="Test",
+            description="Test",
+            fix_applicability=FixApplicability.SUGGESTED,
+        )
+        
+        # Register a non-fixable rule
+        rule3 = Rule(
+            rule_id="TEST003",
+            name="test-none",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message_template="Test",
+            description="Test",
+            fix_applicability=FixApplicability.NONE,
+        )
+        
+        registry.register(rule1)
+        registry.register(rule2)
+        registry.register(rule3)
+        
+        fixable = registry.get_fixable_rules()
+        assert len(fixable) == 2
+        assert all(r.fix_applicability in (FixApplicability.AUTOMATIC, FixApplicability.SUGGESTED) for r in fixable)
+
+
+class TestRuleExecutorEdgeCases:
+    """Test RuleExecutor edge cases."""
+
+    def test_executor_analyze_file_read_error(self, tmp_path):
+        """Test analyze_file handles file read errors."""
+        registry = RuleRegistry()
+        executor = RuleExecutor(registry)
+        
+        # Try to analyze a non-existent file
+        non_existent = tmp_path / "nonexistent.py"
+        violations = executor.analyze_file(non_existent)
+        
+        assert violations == []
+
+    def test_executor_analyze_file_with_specific_rules(self, tmp_path):
+        """Test analyze_file with specific rules list."""
+        registry = RuleRegistry()
+        
+        # Create a simple test rule
+        violations_found = []
+        def detect_func(code, file_path, tree=None):
+            if "print" in code:
+                violations_found.append(RuleViolation(
+                    rule_id="TEST001",
+                    category=RuleCategory.STYLE,
+                    severity=RuleSeverity.LOW,
+                    message="Print statement found",
+                    file_path=file_path,
+                    line_number=1,
+                    column=0,
+                ))
+            return violations_found
+        
+        rule = Rule(
+            rule_id="TEST001",
+            name="no-print",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message_template="No print",
+            description="Test",
+        )
+        rule.detect = detect_func
+        
+        executor = RuleExecutor(registry)
+        
+        # Create test file
+        test_file = tmp_path / "test.py"
+        test_file.write_text("print('hello')")
+        
+        # Analyze with specific rules
+        violations = executor.analyze_file(test_file, rules=[rule])
+        assert len(violations) == 1
+
+    def test_executor_apply_fixes_with_automatic(self):
+        """Test apply_fixes applies automatic fixes."""
+        registry = RuleRegistry()
+        
+        # Create a rule with a fix
+        def fix_func(code, violation):
+            return code.replace("print", "# print")
+        
+        rule = Rule(
+            rule_id="TEST001",
+            name="no-print",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message_template="No print",
+            description="Test",
+            fix_applicability=FixApplicability.AUTOMATIC,
+        )
+        rule.fix = fix_func
+        registry.register(rule)
+        
+        executor = RuleExecutor(registry)
+        
+        violation = RuleViolation(
+            rule_id="TEST001",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message="Print found",
+            file_path=Path("test.py"),
+            line_number=1,
+            column=0,
+            fix_applicability=FixApplicability.AUTOMATIC,
+        )
+        
+        code = "print('hello')"
+        fixed_code, applied = executor.apply_fixes(code, [violation])
+        
+        assert fixed_code == "# print('hello')"
+        assert len(applied) == 1
+
+    def test_executor_apply_fixes_skip_non_automatic(self):
+        """Test apply_fixes skips non-automatic fixes."""
+        registry = RuleRegistry()
+        executor = RuleExecutor(registry)
+        
+        violation = RuleViolation(
+            rule_id="TEST001",
+            category=RuleCategory.STYLE,
+            severity=RuleSeverity.LOW,
+            message="Manual fix required",
+            file_path=Path("test.py"),
+            line_number=1,
+            column=0,
+            fix_applicability=FixApplicability.SUGGESTED,
+        )
+        
+        code = "original code"
+        fixed_code, applied = executor.apply_fixes(code, [violation])
+        
+        assert fixed_code == code
+        assert len(applied) == 0
+        assert filtered == []
+
     def test_registry_get_all_rules(self):
         """Test getting all registered rules."""
         registry = RuleRegistry()
