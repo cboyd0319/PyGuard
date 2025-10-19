@@ -296,6 +296,42 @@ class TestFileOperations:
         content = ops.read_file(Path("/nonexistent/file.py"))
         assert content is None
 
+    def test_read_file_with_permission_error(self, mocker):
+        """Test reading file handles permission errors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "test.py"
+            test_file.write_text("test content")
+            
+            ops = FileOperations()
+            
+            # Mock open to raise a permission error
+            mocker.patch("builtins.open", side_effect=PermissionError("Access denied"))
+            
+            content = ops.read_file(test_file)
+            assert content is None
+
+    def test_read_file_with_unicode_fallback_error(self, mocker):
+        """Test reading file handles errors during encoding fallback."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "test.py"
+            test_file.write_bytes(b"\xff\xfe")  # Invalid UTF-8
+            
+            ops = FileOperations()
+            
+            # Make first open raise UnicodeDecodeError, second raise IOError
+            call_count = [0]
+            def mock_open(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    raise UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")
+                else:
+                    raise IOError("Disk error")
+            
+            mocker.patch("builtins.open", side_effect=mock_open)
+            
+            content = ops.read_file(test_file)
+            assert content is None
+
     def test_write_file_error(self):
         """Test writing file to invalid path."""
         ops = FileOperations()
@@ -371,6 +407,64 @@ class TestBackupManagerAdvanced:
             # Should not raise even if cleanup encounters issues
             manager.cleanup_old_backups(keep_count=1)
             # Test passes if no exception raised
+
+    def test_create_backup_with_permission_error(self, mocker):
+        """Test backup creation handles permission errors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            test_file = Path(tmpdir) / "test.py"
+            test_file.write_text("test")
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Mock shutil.copy2 to raise an exception
+            mocker.patch("pyguard.lib.core.shutil.copy2", side_effect=PermissionError("Access denied"))
+            
+            result = manager.create_backup(test_file)
+            assert result is None
+
+    def test_restore_backup_with_io_error(self, mocker):
+        """Test backup restoration handles I/O errors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            backup_file = backup_dir / "test.bak"
+            backup_file.write_text("backup content")
+            target_file = Path(tmpdir) / "target.py"
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Mock shutil.copy2 to raise an exception
+            mocker.patch("pyguard.lib.core.shutil.copy2", side_effect=IOError("Disk full"))
+            
+            result = manager.restore_backup(backup_file, target_file)
+            assert result is False
+
+    def test_cleanup_old_backups_with_removal_error(self, mocker):
+        """Test cleanup handles backup removal errors gracefully."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Create backup files
+            for i in range(5):
+                backup = backup_dir / f"test.py.{i}.bak"
+                backup.write_text(f"backup {i}")
+            
+            # Mock unlink to raise an exception
+            original_unlink = Path.unlink
+            def mock_unlink(self, *args, **kwargs):
+                if "test.py.0.bak" in str(self):
+                    raise OSError("Cannot delete file")
+                return original_unlink(self, *args, **kwargs)
+            
+            mocker.patch.object(Path, "unlink", mock_unlink)
+            
+            # Should not raise even if removal fails
+            manager.cleanup_old_backups(keep_count=2)
 
 
 class TestPyGuardLoggerAdvanced:
