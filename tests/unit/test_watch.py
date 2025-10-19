@@ -184,7 +184,16 @@ class TestPyGuardWatcherOnModified:
 
         # Act
         watcher.on_modified(event)
-        time.sleep(0.15)  # Wait for processing
+        
+        # Wait briefly for background thread processing with timeout
+        max_wait = 0.5  # Maximum 500ms wait
+        interval = 0.05
+        elapsed = 0
+        while elapsed < max_wait:
+            if callback.called:
+                break
+            time.sleep(interval)
+            elapsed += interval
 
         # Assert
         callback.assert_called_once()
@@ -222,8 +231,16 @@ class TestPyGuardWatcherOnModified:
         watcher.on_modified(event)
         watcher.on_modified(event)  # Should be skipped because file is in processing
 
-        # Wait for first processing to complete
-        time.sleep(0.15)
+        # Wait for first processing to complete with timeout
+        max_wait = 0.5
+        interval = 0.05
+        elapsed = 0
+        while elapsed < max_wait:
+            if callback.called:
+                time.sleep(0.05)  # Give a bit more time to ensure second call would have happened
+                break
+            time.sleep(interval)
+            elapsed += interval
 
         # Assert - second call was skipped while first was processing
         # Due to threading and timing, we allow for both scenarios
@@ -243,7 +260,16 @@ class TestPyGuardWatcherOnModified:
 
         # Act
         watcher.on_modified(event)
-        time.sleep(0.15)  # Wait for processing to complete
+        
+        # Wait for processing to complete with timeout
+        max_wait = 0.5
+        interval = 0.05
+        elapsed = 0
+        while elapsed < max_wait:
+            if str(test_file) not in watcher._processing:
+                break
+            time.sleep(interval)
+            elapsed += interval
 
         # Assert - processing set should be clear
         assert str(test_file) not in watcher._processing

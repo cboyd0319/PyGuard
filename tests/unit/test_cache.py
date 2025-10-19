@@ -156,16 +156,16 @@ class TestConfigCache:
 
     def test_config_cache_invalidation(self):
         """Test that config cache is invalidated on file modification."""
-        import time
+        from freezegun import freeze_time
 
         config = {"settings": {"value": 1}}
-        self.cache.set(self.config_file, config)
+        with freeze_time("2025-01-01 00:00:00"):
+            self.cache.set(self.config_file, config)
 
-        # Ensure different mtime
-        time.sleep(0.01)
-
-        # Modify config file
-        self.config_file.write_text("[settings]\nvalue = 2")
+        # Ensure different mtime by advancing time
+        with freeze_time("2025-01-01 00:00:01"):
+            # Modify config file
+            self.config_file.write_text("[settings]\nvalue = 2")
 
         # Cache should be invalid
         assert self.cache.get(self.config_file) is None
@@ -232,7 +232,7 @@ class TestAnalysisCacheEdgeCases:
 
     def test_cache_expiration(self):
         """Test cache entry expiration based on age."""
-        import time
+        from freezegun import freeze_time
         
         test_file = Path(self.temp_dir) / "test.py"
         test_file.write_text("print('test')")
@@ -240,18 +240,18 @@ class TestAnalysisCacheEdgeCases:
         # Create cache with very short max age (1 second = 1/3600 hours)
         cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1/3600)
         
-        # Add entry
-        cache.set(test_file, {"data": "test"})
-        assert cache.is_cached(test_file)
+        # Add entry at time T
+        with freeze_time("2025-01-01 00:00:00"):
+            cache.set(test_file, {"data": "test"})
+            assert cache.is_cached(test_file)
         
-        # Wait for expiration
-        time.sleep(1.5)
-        
-        # Trigger cleanup by checking cache
-        cache._clean_expired()
-        
-        # Entry should be expired
-        assert not cache.is_cached(test_file)
+        # Advance time past expiration (1.5 seconds)
+        with freeze_time("2025-01-01 00:00:01.5"):
+            # Trigger cleanup by checking cache
+            cache._clean_expired()
+            
+            # Entry should be expired
+            assert not cache.is_cached(test_file)
 
     def test_cache_with_entry_data_attribute(self):
         """Test cache handles entries with data attribute correctly."""
@@ -289,30 +289,30 @@ class TestAnalysisCacheEdgeCases:
 
     def test_cache_with_multiple_expired_entries(self):
         """Test cleaning multiple expired entries."""
-        import time
+        from freezegun import freeze_time
         
         # Create cache with short expiration (1 second = 1/3600 hours)
         cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1/3600)
         
-        # Add multiple entries
-        for i in range(5):
-            test_file = Path(self.temp_dir) / f"test{i}.py"
-            test_file.write_text(f"print('{i}')")
-            cache.set(test_file, {"data": i})
+        # Add multiple entries at time T
+        with freeze_time("2025-01-01 00:00:00"):
+            for i in range(5):
+                test_file = Path(self.temp_dir) / f"test{i}.py"
+                test_file.write_text(f"print('{i}')")
+                cache.set(test_file, {"data": i})
+            
+            # Verify all are cached
+            stats = cache.get_stats()
+            assert stats["entries"] == 5
         
-        # Verify all are cached
-        stats = cache.get_stats()
-        assert stats["entries"] == 5
-        
-        # Wait for expiration
-        time.sleep(1.5)
-        
-        # Clean expired
-        cache._clean_expired()
-        
-        # All should be gone
-        stats = cache.get_stats()
-        assert stats["entries"] == 0
+        # Advance time past expiration (1.5 seconds)
+        with freeze_time("2025-01-01 00:00:01.5"):
+            # Clean expired
+            cache._clean_expired()
+            
+            # All should be gone
+            stats = cache.get_stats()
+            assert stats["entries"] == 0
 
 
 class TestConfigCacheEdgeCases:

@@ -595,6 +595,7 @@ class TestSecurityFixerProperties:
         "_fix_eval_exec",
         "_fix_path_traversal",
     ])
+    @pytest.mark.slow
     def test_fixer_never_returns_none(self, fix_method):
         """Property: All fix methods always return a string, never None."""
         from hypothesis import given
