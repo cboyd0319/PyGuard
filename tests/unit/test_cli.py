@@ -1454,6 +1454,39 @@ class TestMainFunction:
                     main()
                 assert exc_info.value.code == 1
 
+    def test_main_check_tests_with_many_untested_modules(self, tmp_path):
+        """Test --check-test-coverage with more than 20 untested modules."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def function(): pass")
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        
+        # Create a list of 25 untested modules to trigger the "... and X more" message
+        untested_modules = [f"module_{i}.py" for i in range(25)]
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--check-test-coverage"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.TestCoverageAnalyzer.calculate_test_coverage_ratio", return_value=50.0):
+                    with patch("pyguard.cli.TestCoverageAnalyzer.find_untested_modules", return_value=untested_modules):
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
+    def test_main_check_tests_all_modules_tested(self, tmp_path):
+        """Test --check-test-coverage when all modules have test coverage."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def function(): pass")
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--check-test-coverage"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.TestCoverageAnalyzer.calculate_test_coverage_ratio", return_value=100.0):
+                    with patch("pyguard.cli.TestCoverageAnalyzer.find_untested_modules", return_value=[]):
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
     def test_main_with_notebook_file(self, tmp_path):
         """Test main with .ipynb file path."""
         notebook_file = tmp_path / "test.ipynb"
@@ -1518,6 +1551,25 @@ class TestMainFunction:
                             args = mock_analyze.call_args[0]
                             notebooks = args[0]
                             assert all('.ipynb_checkpoints' not in str(nb) for nb in notebooks)
+
+    def test_main_with_non_existent_path(self, tmp_path):
+        """Test main with a non-existent path (should print warning)."""
+        # Create a path that doesn't exist
+        non_existent = tmp_path / "does_not_exist.txt"
+        python_file = tmp_path / "test.py"
+        python_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(non_existent), str(python_file)]):
+            with patch("builtins.print") as mock_print:
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        main()
+                        # Check that warning was printed
+                        # Find the call with the warning message
+                        warning_calls = [call for call in mock_print.call_args_list 
+                                       if len(call.args) > 0 and "Warning:" in str(call.args[0])]
+                        assert len(warning_calls) > 0
+                        assert "not a Python file, notebook, or directory" in str(warning_calls[0].args[0])
 
     def test_main_notebook_analyzer_import_error(self):
         """Test that notebook analyzer handles ImportError gracefully."""
