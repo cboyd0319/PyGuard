@@ -444,40 +444,35 @@ data = pickle.load(open('data.pkl', 'rb'))
     def test_finding_severity_counts(self):
         """Test finding severity counting methods."""
         result = NotebookAnalysisResult(
-            notebook_path=Path('test.ipynb'),
             findings=[
                 NotebookFinding(
                     rule_id='TEST-001',
                     severity='CRITICAL',
+                    category='Test Category',
                     cell_index=0,
-                    cell_type='code',
                     line_number=1,
-                    message='Test',
-                    description='Test finding'
+                    code_snippet='test code',
+                    message='Test finding'
                 ),
                 NotebookFinding(
                     rule_id='TEST-002',
                     severity='HIGH',
+                    category='Test Category',
                     cell_index=0,
-                    cell_type='code',
                     line_number=2,
-                    message='Test',
-                    description='Test finding'
+                    code_snippet='test code',
+                    message='Test finding'
                 ),
                 NotebookFinding(
                     rule_id='TEST-003',
                     severity='MEDIUM',
+                    category='Test Category',
                     cell_index=0,
-                    cell_type='code',
                     line_number=3,
-                    message='Test',
-                    description='Test finding'
+                    code_snippet='test code',
+                    message='Test finding'
                 ),
-            ],
-            cell_count=1,
-            code_cell_count=1,
-            has_outputs=False,
-            execution_count_valid=True,
+            ]
         )
         
         assert result.critical_count() == 1
