@@ -19,6 +19,7 @@ on:
       - 'setup.py'
       - 'pytest.ini'
       - '.github/workflows/coverage.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
