@@ -419,6 +419,22 @@ def set_headers(response):
         issues = self.detector.scan_code(code, "app.py")
         assert len(issues) == 0
 
+    def test_no_issue_without_framework(self):
+        """Test no issue when no web framework is detected."""
+        # Arrange - code without any web framework
+        code = """
+def process_data(data):
+    result = []
+    for item in data:
+        result.append(item * 2)
+    return result
+"""
+        # Act
+        issues = self.detector.scan_code(code, "utils.py")
+        
+        # Assert - should not flag clickjacking issues when no framework is present
+        assert len(issues) == 0
+
 
 class TestDependencyConfusionDetector:
     """Test dependency confusion vulnerability detection."""
