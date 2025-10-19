@@ -125,6 +125,62 @@ subprocess.run(user_command, shell=True)
             _, confidence = prediction
             assert confidence < 0.9
 
+    def test_calculate_risk_score_critical_severity(self):
+        """Test that high-risk code gets CRITICAL severity."""
+        # Code with multiple high-risk patterns to reach >= 0.8 score
+        # eval (0.3) + subprocess>2 (0.2) + hardcoded (0.25) + sql>2 (0.15) = 0.9
+        code = """
+import subprocess
+eval(user_input)
+exec(code)
+subprocess.run(cmd1, shell=True)
+subprocess.run(cmd2, shell=True)
+subprocess.run(cmd3, shell=True)
+password = "secret"
+query1 = "SELECT * FROM users"
+query2 = "DELETE FROM data"  
+query3 = "INSERT INTO logs"
+"""
+        score = self.scorer.calculate_risk_score(code)
+        
+        assert score.score >= 0.8
+        assert score.severity == "CRITICAL"
+
+    def test_predict_vulnerability_subprocess(self):
+        """Test prediction for subprocess-based command injection."""
+        code = "subprocess.run(user_cmd, shell=True)"
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "command_injection"
+        assert confidence == 0.85
+
+    def test_predict_vulnerability_hardcoded_credentials(self):
+        """Test prediction for hardcoded credentials."""
+        code = '''x = "api_key"'''
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "hardcoded_credentials"
+        assert confidence == 0.80
+
+    def test_predict_vulnerability_sql_injection(self):
+        """Test prediction for SQL injection patterns."""
+        code = """
+query1 = "SELECT * FROM users"
+query2 = "DELETE FROM data"
+query3 = "INSERT INTO logs"
+cursor.execute(query1)
+"""
+        prediction = self.scorer.predict_vulnerability_type(code)
+        
+        assert prediction is not None
+        vuln_type, confidence = prediction
+        assert vuln_type == "sql_injection"
+        assert confidence == 0.75
+
 
 class TestAnomalyDetector:
     """Test anomaly detection."""
