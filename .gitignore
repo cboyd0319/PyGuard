@@ -46,6 +46,7 @@ coverage.xml
 .pytest_cache/
 htmlcov/
 .stestr/
+cov_annotate/
 
 # IDEs
 # .vscode/ config files are tracked for team consistency

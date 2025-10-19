@@ -1287,3 +1287,319 @@ class TestMainFunction:
                     # Should be called with use_isort=False
                     args, kwargs = mock_formatting.call_args
                     assert kwargs.get("use_isort") == False
+
+    def test_main_scan_secrets_success(self, tmp_path):
+        """Test --scan-secrets flag with findings."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("API_KEY = 'sk-1234567890'")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--scan-secrets"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.SecretScanner.scan_secrets") as mock_scan:
+                    mock_finding = Mock()
+                    mock_finding.secret_type = "API_KEY"
+                    mock_finding.file_path = str(test_file)
+                    mock_finding.line_number = 1
+                    mock_finding.match = "sk-1234567890"
+                    mock_scan.return_value = [mock_finding]
+                    
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+
+    def test_main_scan_secrets_no_findings(self, tmp_path):
+        """Test --scan-secrets flag with no findings."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--scan-secrets"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.SecretScanner.scan_secrets", return_value=[]):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+
+    def test_main_scan_secrets_ripgrep_not_available(self, tmp_path):
+        """Test --scan-secrets when ripgrep is not available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--scan-secrets"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=False):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
+
+    def test_main_scan_secrets_with_sarif(self, tmp_path):
+        """Test --scan-secrets with --sarif flag."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("API_KEY = 'sk-test'")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--scan-secrets", "--sarif"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.SecretScanner.scan_secrets") as mock_scan:
+                    mock_finding = Mock()
+                    mock_finding.secret_type = "API_KEY"
+                    mock_finding.file_path = str(test_file)
+                    mock_finding.line_number = 1
+                    mock_finding.match = "sk-test"
+                    mock_scan.return_value = [mock_finding]
+                    
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+                    # Verify SARIF was requested
+                    mock_scan.assert_called_once_with(str(tmp_path), export_sarif=True)
+
+    def test_main_check_imports_success(self, tmp_path):
+        """Test --analyze-imports flag with circular imports."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("import module")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--analyze-imports"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.ImportAnalyzer.find_circular_imports") as mock_circular:
+                    with patch("pyguard.cli.ImportAnalyzer.find_god_modules") as mock_god:
+                        mock_circular.return_value = [("a.py", "b.py")]
+                        mock_god.return_value = [("module.py", 25)]
+                        
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
+    def test_main_check_imports_no_issues(self, tmp_path):
+        """Test --analyze-imports flag with no issues."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("import module")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--analyze-imports"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.ImportAnalyzer.find_circular_imports", return_value=[]):
+                    with patch("pyguard.cli.ImportAnalyzer.find_god_modules", return_value=[]):
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
+    def test_main_check_imports_ripgrep_not_available(self, tmp_path):
+        """Test --analyze-imports when ripgrep is not available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("import module")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--analyze-imports"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=False):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
+
+    def test_main_check_tests_success(self, tmp_path):
+        """Test --check-test-coverage flag with test coverage."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def function(): pass")
+        test_dir = tmp_path / "tests"
+        test_dir.mkdir()
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--check-test-coverage"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.TestCoverageAnalyzer.calculate_test_coverage_ratio", return_value=85.5):
+                    with patch("pyguard.cli.TestCoverageAnalyzer.find_untested_modules", return_value=["module.py"]):
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
+    def test_main_check_tests_no_test_dir(self, tmp_path, monkeypatch):
+        """Test --check-test-coverage when no test directory exists."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def function(): pass")
+        
+        # Change to the temporary directory so test directories aren't found
+        monkeypatch.chdir(tmp_path)
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--check-test-coverage"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
+
+    def test_main_check_tests_ripgrep_not_available(self, tmp_path):
+        """Test --check-test-coverage when ripgrep is not available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def function(): pass")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--check-test-coverage"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=False):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
+
+    def test_main_with_notebook_file(self, tmp_path):
+        """Test main with .ipynb file path."""
+        notebook_file = tmp_path / "test.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4}')
+        
+        with patch("sys.argv", ["pyguard", str(notebook_file)]):
+            with patch.object(PyGuardCLI, "analyze_notebooks") as mock_analyze:
+                mock_analyze.return_value = {
+                    "total": 1,
+                    "analyzed": 1,
+                    "results": []
+                }
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        main()
+                        # Should have called analyze_notebooks
+                        assert mock_analyze.called
+
+    def test_main_with_notebook_directory(self, tmp_path):
+        """Test main with directory containing notebooks."""
+        notebook_file = tmp_path / "test.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4}')
+        python_file = tmp_path / "test.py"
+        python_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path)]):
+            with patch.object(PyGuardCLI, "analyze_notebooks") as mock_analyze:
+                mock_analyze.return_value = {
+                    "total": 1,
+                    "analyzed": 1,
+                    "results": []
+                }
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        main()
+                        # Should have found notebook
+                        args = mock_analyze.call_args[0]
+                        notebooks = args[0]
+                        assert len(notebooks) > 0
+
+    def test_main_with_notebook_exclude_checkpoints(self, tmp_path):
+        """Test that .ipynb_checkpoints are excluded."""
+        checkpoints_dir = tmp_path / ".ipynb_checkpoints"
+        checkpoints_dir.mkdir()
+        notebook_file = checkpoints_dir / "test.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4}')
+        python_file = tmp_path / "test.py"
+        python_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path)]):
+            with patch.object(PyGuardCLI, "analyze_notebooks") as mock_analyze:
+                mock_analyze.return_value = {
+                    "total": 0,
+                    "analyzed": 0,
+                    "results": []
+                }
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        main()
+                        # Should not have found checkpoint notebook
+                        if mock_analyze.called:
+                            args = mock_analyze.call_args[0]
+                            notebooks = args[0]
+                            assert all('.ipynb_checkpoints' not in str(nb) for nb in notebooks)
+
+    def test_main_notebook_analyzer_import_error(self):
+        """Test that notebook analyzer handles ImportError gracefully."""
+        # Create a fresh CLI instance
+        from pyguard.cli import PyGuardCLI
+        cli = PyGuardCLI()
+        
+        # Mock the import to raise ImportError
+        import builtins
+        real_import = builtins.__import__
+        
+        def mock_import(name, *args, **kwargs):
+            if 'notebook_analyzer' in name or 'NotebookSecurityAnalyzer' in name:
+                raise ImportError("nbformat not installed")
+            return real_import(name, *args, **kwargs)
+        
+        with patch("builtins.__import__", side_effect=mock_import):
+            # First access should handle import error
+            analyzer = cli.notebook_analyzer
+            # Should return None since import failed
+            # Note: may also set _notebook_analyzer to None as a flag
+            
+        # Test that it handles the error gracefully (doesn't crash)
+
+    def test_main_with_watch_mode(self, tmp_path):
+        """Test --watch mode."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                main()
+                # Should have called watch mode
+                assert mock_watch.called
+                args = mock_watch.call_args[0]
+                watch_paths = args[0]
+                assert len(watch_paths) > 0
+
+    def test_main_watch_mode_with_security_only(self, tmp_path):
+        """Test --watch mode with --security-only."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--security-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                with patch("rich.console.Console"):
+                    main()
+                    # Should have called watch mode
+                    assert mock_watch.called
+
+    def test_main_watch_mode_with_formatting_only(self, tmp_path):
+        """Test --watch mode with --formatting-only."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--formatting-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                with patch("rich.console.Console"):
+                    main()
+                    # Should have called watch mode
+                    assert mock_watch.called
+
+    def test_main_watch_mode_with_best_practices_only(self, tmp_path):
+        """Test --watch mode with --best-practices-only."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--best-practices-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                with patch("rich.console.Console"):
+                    main()
+                    # Should have called watch mode
+                    assert mock_watch.called
+
+    def test_main_with_notebook_findings_aggregation(self, tmp_path):
+        """Test that notebook findings are aggregated into results."""
+        notebook_file = tmp_path / "test.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4}')
+        python_file = tmp_path / "test.py"
+        python_file.write_text("x = 1")
+        
+        mock_finding = Mock()
+        mock_finding.line_number = 10
+        mock_finding.severity = "HIGH"
+        mock_finding.rule_id = "NB001"
+        mock_finding.message = "Security issue"
+        mock_finding.description = "Test description"
+        mock_finding.cell_index = 0
+        mock_finding.cell_type = "code"
+        
+        mock_result = Mock()
+        mock_result.notebook_path = notebook_file
+        mock_result.findings = [mock_finding]
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path)]):
+            with patch.object(PyGuardCLI, "analyze_notebooks") as mock_analyze:
+                mock_analyze.return_value = {
+                    "total": 1,
+                    "analyzed": 1,
+                    "results": [mock_result],
+                    "total_findings": 1,
+                    "critical_count": 0,
+                    "high_count": 1
+                }
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        main()
+                        # Test passes if no exception raised

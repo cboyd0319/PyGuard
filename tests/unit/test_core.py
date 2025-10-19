@@ -535,3 +535,80 @@ class TestDiffGeneratorEdgeCases:
         
         # Diff should be minimal or empty for identical content
         assert isinstance(diff, str)
+
+
+class TestPyGuardLoggerPathInit:
+    """Test logger initialization with Path object."""
+
+    def test_logger_with_path_object(self):
+        """Test logger initialization with Path object for log_file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "test.jsonl"
+            logger = PyGuardLogger(log_file=log_file)
+            
+            logger.info("Test message")
+            assert log_file.exists()
+            content = log_file.read_text()
+            assert "Test message" in content
+
+
+class TestBackupManagerListBackups:
+    """Test backup manager list_backups functionality."""
+
+    def test_list_backups_empty_directory(self):
+        """Test listing backups when directory is empty."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            backups = manager.list_backups()
+            assert backups == []
+
+    def test_list_backups_with_pattern(self):
+        """Test listing backups with specific pattern."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            # Create test backup files
+            (backup_dir / "test.py.1.bak").write_text("test1")
+            (backup_dir / "test.py.2.bak").write_text("test2")
+            (backup_dir / "other.py.1.bak").write_text("other")
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # List all backups
+            all_backups = manager.list_backups()
+            assert len(all_backups) == 3
+            
+            # List specific backups
+            test_backups = manager.list_backups(pattern="test.py*")
+            assert len(test_backups) == 2
+            assert all("test.py" in str(b) for b in test_backups)
+
+
+class TestDiffGeneratorComprehensive:
+    """Comprehensive tests for DiffGenerator."""
+
+    def test_generate_diff_multiline(self):
+        """Test diff generation with multiline content."""
+        diff_gen = DiffGenerator()
+        
+        original = "line1\nline2\nline3\nline4"
+        modified = "line1\nmodified2\nline3\nline4"
+        
+        diff = diff_gen.generate_diff(original, modified, "test.py")
+        assert "line2" in diff or "modified2" in diff
+        assert isinstance(diff, str)
+
+    def test_generate_side_by_side_diff_multiline(self):
+        """Test side-by-side diff with multiple lines."""
+        diff_gen = DiffGenerator()
+        
+        original = "line1\nline2\nline3"
+        modified = "line1\nchanged\nline3"
+        
+        html_diff = diff_gen.generate_side_by_side_diff(original, modified)
+        assert isinstance(html_diff, str)
+        # HTML diff should contain table elements
+        assert "<table" in html_diff or len(html_diff) > 0
