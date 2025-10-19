@@ -1,0 +1,21 @@
+# PyGuard Production Dependencies
+# Generated from pyproject.toml
+# Install with: pip install -r requirements.txt --require-hashes
+# Update hashes with: pip-compile --generate-hashes requirements.in
+
+pylint>=4.0.1
+flake8>=7.3.0
+black>=25.9.0
+isort>=7.0.0
+mypy>=1.18.2
+bandit>=1.8.6
+autopep8>=2.3.2
+pydocstyle>=6.3.0
+safety>=3.6.2
+radon>=6.0.1
+vulture>=2.14
+ruff>=0.14.0
+rich>=14.2.0
+watchdog>=6.0.0
+nbformat>=5.0.0
+nbclient>=0.5.0
