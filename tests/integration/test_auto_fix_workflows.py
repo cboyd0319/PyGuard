@@ -492,6 +492,7 @@ config = yaml.load("file")
 class TestDirectoryProcessing:
     """Test processing entire directories."""
 
+    @pytest.mark.slow
     def test_process_directory_with_multiple_files(self, temp_dir):
         """Test processing a directory with multiple Python files."""
         from pyguard.cli import PyGuardCLI
@@ -617,6 +618,7 @@ def incomplete_function(
 class TestPerformance:
     """Test performance characteristics of auto-fix workflows."""
 
+    @pytest.mark.slow
     def test_large_file_processing(self, temp_dir):
         """Test processing of large files."""
         from pyguard.cli import PyGuardCLI
@@ -640,6 +642,7 @@ class TestPerformance:
         assert "analysis_time_seconds" in results
         assert results["analysis_time_seconds"] > 0
 
+    @pytest.mark.slow
     def test_batch_file_processing_time(self, temp_dir):
         """Test timing of batch file processing."""
         from pyguard.cli import PyGuardCLI

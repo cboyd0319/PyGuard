@@ -71,7 +71,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        pytest -v --tb=short --maxfail=3
+        pytest -n auto --no-cov --tb=short --maxfail=3
 
     - name: Test CLI
       shell: bash

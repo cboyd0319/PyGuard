@@ -30,6 +30,31 @@ vale docs/
 npx linkinator README.md docs/**/*.md
 ```
 
+### Running Tests
+
+PyGuard has a comprehensive test suite with 2,369 tests. For detailed testing documentation, see [docs/development/TESTING_GUIDE.md](docs/development/TESTING_GUIDE.md).
+
+Quick reference:
+
+```bash
+# Run all tests
+pytest
+
+# Run tests without coverage (faster for development)
+pytest --no-cov
+
+# Run tests in parallel (32% faster)
+pytest -n auto
+
+# Run only fast tests (skip slow integration tests)
+pytest -m "not slow"
+
+# Run specific test file
+pytest tests/unit/test_cache.py
+```
+
+**Performance**: Full suite runs in ~20s (sequential) or ~14s (parallel with -n auto).
+
 ## Commit style
 
 Conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`
