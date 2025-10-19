@@ -223,6 +223,16 @@ class TestSARIFReporter:
         assert "security" in tags_auth
         assert "authentication" in tags_auth
 
+        # Cryptography
+        issue_crypto = {
+            "severity": "HIGH",
+            "category": "Weak Crypto",
+            "message": "Weak cryptography",
+        }
+        tags_crypto = reporter._get_tags(issue_crypto)
+        assert "security" in tags_crypto
+        assert "cryptography" in tags_crypto
+
     def test_security_severity_scores(self):
         """Test security severity score mapping."""
         reporter = SARIFReporter()
@@ -279,6 +289,24 @@ class TestSARIFReporter:
         with open(output_path, "r", encoding="utf-8") as f:
             loaded_report = json.load(f)
             assert loaded_report["version"] == "2.1.0"
+
+    def test_save_report_handles_exceptions(self, tmp_path, monkeypatch):
+        """Test save_report handles exceptions gracefully."""
+        reporter = SARIFReporter()
+        issues = [{"severity": "HIGH", "category": "Test", "message": "Test", "file": "test.py", "line": 1}]
+        report = reporter.generate_report(issues)
+        
+        # Mock open to raise an exception
+        def mock_open(*args, **kwargs):
+            raise IOError("Disk full")
+        
+        monkeypatch.setattr("builtins.open", mock_open)
+        
+        output_path = tmp_path / "test-report.sarif"
+        result = reporter.save_report(report, output_path)
+        
+        # Should return False on exception
+        assert result is False
 
     def test_validate_report(self):
         """Test SARIF report validation."""
