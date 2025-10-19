@@ -466,6 +466,47 @@ class TestBackupManagerAdvanced:
             # Should not raise even if removal fails
             manager.cleanup_old_backups(keep_count=2)
 
+    def test_cleanup_old_backups_no_deletion_needed(self):
+        """Test cleanup when backups are within keep_count limit."""
+        # Arrange
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Create exactly 2 backup files (equal to keep_count)
+            for i in range(2):
+                backup = backup_dir / f"test.py.{i}.bak"
+                backup.write_text(f"backup {i}")
+            
+            # Act - cleanup with keep_count=2, should not delete anything
+            manager.cleanup_old_backups(keep_count=2)
+            
+            # Assert - all backups should still exist
+            backups = list(backup_dir.glob("*.bak"))
+            assert len(backups) == 2
+            
+    def test_cleanup_old_backups_fewer_than_keep_count(self):
+        """Test cleanup when backups are fewer than keep_count."""
+        # Arrange
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_dir = Path(tmpdir) / "backups"
+            backup_dir.mkdir()
+            
+            manager = BackupManager(backup_dir=backup_dir)
+            
+            # Create only 1 backup file (less than keep_count)
+            backup = backup_dir / "test.py.0.bak"
+            backup.write_text("backup 0")
+            
+            # Act - cleanup with keep_count=3, should not delete anything
+            manager.cleanup_old_backups(keep_count=3)
+            
+            # Assert - backup should still exist
+            backups = list(backup_dir.glob("*.bak"))
+            assert len(backups) == 1
+
 
 class TestPyGuardLoggerAdvanced:
     """Advanced test cases for PyGuardLogger class."""
