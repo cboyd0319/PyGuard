@@ -643,14 +643,18 @@ class NotebookSecurityAnalyzer:
         for idx, cell in enumerate(cells):
             if cell.cell_type == "code":
                 issues.extend(self._analyze_code_cell(cell, idx))
+            elif cell.cell_type == "markdown":
+                # Check for secrets in markdown cells
+                issues.extend(self._check_secrets_in_markdown(cell, idx))
 
         # Cross-cell analysis
         issues.extend(self._analyze_cell_dependencies(cells))
 
-        # Check for PII in outputs
+        # Check for PII and secrets in outputs
         for idx, cell in enumerate(cells):
             if cell.cell_type == "code":
                 issues.extend(self._check_output_pii(cell, idx))
+                issues.extend(self._check_secrets_in_outputs(cell, idx))
 
         self.logger.info(
             f"Notebook analysis complete: {notebook_path}, issues found: {len(issues)}"
@@ -958,6 +962,118 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                         break  # Only report once per output
+
+        return issues
+
+    def _check_secrets_in_outputs(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check cell outputs for exposed secrets."""
+        issues: List[NotebookIssue] = []
+
+        for output in cell.outputs:
+            output_text = ""
+
+            # Extract text from different output types
+            if output.get("output_type") == "stream":
+                text_data = output.get("text", [])
+                if isinstance(text_data, list):
+                    output_text = "".join(text_data)
+                else:
+                    output_text = str(text_data)
+            elif output.get("output_type") == "execute_result":
+                data = output.get("data", {})
+                text_data = data.get("text/plain", "")
+                if isinstance(text_data, list):
+                    output_text = "".join(text_data)
+                else:
+                    output_text = str(text_data)
+            elif output.get("output_type") == "error":
+                output_text = "\n".join(output.get("traceback", []))
+
+            # Check for secrets in output text
+            if output_text:
+                for pattern, description in self.SECRET_PATTERNS.items():
+                    matches = re.finditer(pattern, output_text)
+                    for match in matches:
+                        value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
+                        # Skip common test/placeholder values
+                        if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
+                            # Determine rule_id and severity based on secret type (same logic as _check_secrets)
+                            rule_id = "NB-SECRET-OUTPUT-001"
+                            severity = "CRITICAL"
+                            specific_message = f"{description} exposed in cell output"
+                            
+                            # AWS credentials
+                            if "AWS" in description or "AKIA" in value:
+                                rule_id = "NB-SECRET-AWS-OUTPUT-001"
+                                specific_message = "AWS access key exposed in cell output"
+                            # GitHub tokens
+                            elif "GitHub" in description or value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                                rule_id = "NB-SECRET-GITHUB-OUTPUT-001"
+                                specific_message = "GitHub token exposed in cell output"
+                            # OpenAI API keys
+                            elif "OpenAI" in description or value.startswith("sk-"):
+                                rule_id = "NB-SECRET-OPENAI-OUTPUT-001"
+                                specific_message = "OpenAI API key exposed in cell output"
+                            # Slack tokens
+                            elif "Slack" in description or value.startswith(("xoxb-", "xoxp-", "xoxa-", "xoxr-")):
+                                rule_id = "NB-SECRET-SLACK-OUTPUT-001"
+                                specific_message = "Slack token exposed in cell output"
+                            
+                            issues.append(
+                                NotebookIssue(
+                                    severity=severity,
+                                    category="Secret in Output",
+                                    message=specific_message,
+                                    cell_index=cell_index,
+                                    line_number=0,
+                                    code_snippet=output_text[:50],
+                                    rule_id=rule_id,
+                                    fix_suggestion=(
+                                        "Clear cell outputs before sharing notebook. "
+                                        "Never print or display secrets. "
+                                        "Redact sensitive information from outputs."
+                                    ),
+                                    cwe_id="CWE-798",
+                                    confidence=0.9,
+                                    auto_fixable=True,
+                                )
+                            )
+                            break  # Only report once per output
+
+        return issues
+
+    def _check_secrets_in_markdown(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+        """Check markdown cells for exposed secrets."""
+        issues: List[NotebookIssue] = []
+
+        lines = cell.source.split("\n")
+        for line_num, line in enumerate(lines, 1):
+            for pattern, description in self.SECRET_PATTERNS.items():
+                matches = re.finditer(pattern, line)
+                for match in matches:
+                    value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
+                    # Skip common test/placeholder values
+                    if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
+                        issues.append(
+                            NotebookIssue(
+                                severity="HIGH",
+                                category="Secret in Markdown",
+                                message=f"{description} exposed in markdown cell",
+                                cell_index=cell_index,
+                                line_number=line_num,
+                                code_snippet=line[:50],
+                                rule_id="NB-SECRET-MARKDOWN-001",
+                                fix_suggestion=(
+                                    "Remove secrets from markdown cells. "
+                                    "Use code cells with environment variables instead. "
+                                    "Never document actual credentials."
+                                ),
+                                cwe_id="CWE-798",
+                                confidence=0.85,
+                                auto_fixable=False,
+                            )
+                        )
+                        break  # Only report once per line
 
         return issues
 
