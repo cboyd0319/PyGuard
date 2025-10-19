@@ -1,0 +1,122 @@
+> """
+> Analyze Python imports using ripgrep for performance.
+  
+> Detects circular imports, god modules, and other import-related issues.
+> """
+  
+> import subprocess
+> from collections import Counter, defaultdict
+> from typing import Dict, List, Set, Tuple, Optional
+  
+  
+> class ImportAnalyzer:
+>     """
+>     Analyze Python imports using ripgrep for performance.
+>     """
+  
+>     @staticmethod
+>     def find_circular_imports(path: str) -> List[Tuple[str, str]]:
+>         """
+>         Detect potential circular import issues.
+  
+>         Args:
+>             path: Directory to analyze
+  
+>         Returns:
+>             List of tuples containing circular import pairs
+>         """
+!         try:
+              # Extract all imports from Python files
+!             result = subprocess.run(
+!                 [
+!                     'rg',
+!                     '--type',
+!                     'py',
+!                     '--no-heading',
+!                     r'^(from\s+(\S+)\s+import|import\s+(\S+))',
+!                     '--only-matching',
+!                     '--replace',
+!                     '$2$3',
+!                     path,
+!                 ],
+!                 capture_output=True,
+!                 text=True,
+!                 timeout=60,
+!             )
+  
+!             imports = defaultdict(set)
+!             for line in result.stdout.strip().split('\n'):
+!                 if ':' in line:
+!                     file_path, imported_module = line.split(':', 1)
+!                     imports[file_path].add(imported_module.strip())
+  
+              # Detect circular dependencies (simplified)
+!             circular = []
+!             for file_a, imports_a in imports.items():
+!                 for file_b, imports_b in imports.items():
+!                     if file_a != file_b:
+                          # Check if A imports B and B imports A
+!                         module_a = file_a.replace('/', '.').replace('.py', '')
+!                         module_b = file_b.replace('/', '.').replace('.py', '')
+  
+!                         if module_b in imports_a and module_a in imports_b:
+!                             circular.append((file_a, file_b))
+  
+!             return circular
+  
+!         except subprocess.TimeoutExpired:
+!             print("Warning: Import analysis timeout")
+!             return []
+!         except FileNotFoundError:
+              # ripgrep not available
+!             return []
+  
+>     @staticmethod
+>     def find_god_modules(path: str, import_threshold: int = 20) -> List[Tuple[str, int]]:
+>         """
+>         Find modules imported by too many other modules (god modules).
+  
+>         Args:
+>             path: Directory to analyze
+>             import_threshold: Minimum number of imports to be considered a god module
+  
+>         Returns:
+>             List of tuples containing module name and import count
+>         """
+!         try:
+!             result = subprocess.run(
+!                 [
+!                     'rg',
+!                     '--type',
+!                     'py',
+!                     r'^from\s+(\S+)\s+import|^import\s+(\S+)',
+!                     '--only-matching',
+!                     '--replace',
+!                     '$1$2',
+!                     path,
+!                 ],
+!                 capture_output=True,
+!                 text=True,
+!                 timeout=60,
+!             )
+  
+!             imports = Counter()
+  
+!             for line in result.stdout.strip().split('\n'):
+!                 if line:
+!                     module = line.split('.')[0]  # Top-level module
+!                     imports[module] += 1
+  
+!             god_modules = [
+!                 (mod, count) for mod, count in imports.items() if count > import_threshold
+!             ]
+!             god_modules.sort(key=lambda x: x[1], reverse=True)
+  
+!             return god_modules
+  
+!         except subprocess.TimeoutExpired:
+!             print("Warning: God module analysis timeout")
+!             return []
+!         except FileNotFoundError:
+              # ripgrep not available
+!             return []
