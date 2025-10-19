@@ -393,3 +393,52 @@ dt = get_dt().now()
         issues = checker.check_code(code)
         # Should not crash with complex attribute access
         assert isinstance(issues, list)
+
+    def test_call_without_attribute(self):
+        """Test handling of function calls that aren't method calls."""
+        code = """
+import datetime
+
+# Regular function call (not a method)
+def my_func():
+    pass
+
+my_func()
+
+# Function from list
+funcs = [my_func]
+funcs[0]()
+
+# Lambda call
+(lambda: None)()
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+        # Should handle non-attribute calls without crashing
+        # These aren't datetime methods so should not produce issues
+        assert isinstance(issues, list)
+        assert len(issues) == 0  # No datetime issues in this code
+
+    def test_datetime_with_multiple_positional_args(self):
+        """Test tz detection with multiple positional arguments."""
+        code = """
+from datetime import datetime, timezone
+# fromtimestamp can take two positional args: timestamp and tz
+dt = datetime.fromtimestamp(1234567890, timezone.utc)
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+        # Should not flag as missing tz when tz is second positional arg
+        fromtimestamp_issues = [i for i in issues if "DTZ005" in i.rule_id]
+        assert len(fromtimestamp_issues) == 0
+
+    def test_complex_value_in_attribute(self):
+        """Test handling of complex expressions in attribute value."""
+        code = """
+# Complex attribute access with nested calls
+result = (lambda: __import__('datetime'))().datetime.now()
+"""
+        checker = DatetimeChecker()
+        issues = checker.check_code(code)
+        # Should handle complex attribute values without crashing
+        assert isinstance(issues, list)

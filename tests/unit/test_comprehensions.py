@@ -304,6 +304,153 @@ class TestComprehensionRules:
         assert len(rule_ids) == len(set(rule_ids))
 
 
+class TestC416EdgeCases:
+    """Tests for C416 edge cases with filters and transformations."""
+
+    def test_c416_with_filter_no_violation(self):
+        """Test that C416 does not trigger when comprehension has filter."""
+        code = "result = list([x for x in items if x > 0])"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+    def test_c416_with_multiple_generators_no_violation(self):
+        """Test that C416 does not trigger with multiple generators."""
+        code = "result = list([x for x in items for y in other])"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+    def test_c416_with_transformation_no_violation(self):
+        """Test that C416 does not trigger when transformation is applied."""
+        code = "result = list([x.upper() for x in items])"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+    def test_c416_set_comprehension_unnecessary(self):
+        """Test C416 detection for set with SetComp."""
+        code = "result = set({x for x in items})"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        assert any(v.rule_id == "C416" for v in violations)
+
+    def test_c416_set_comprehension_with_filter_no_violation(self):
+        """Test that C416 does not trigger for set comprehension with filter."""
+        code = "result = set({x for x in items if x > 0})"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+    def test_c416_set_comprehension_with_multiple_generators_no_violation(self):
+        """Test that C416 does not trigger for set comprehension with multiple generators."""
+        code = "result = set({x for x in items for y in other})"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+    def test_c416_set_comprehension_with_transformation_no_violation(self):
+        """Test that C416 does not trigger for set comprehension with transformation."""
+        code = "result = set({x.upper() for x in items})"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c416_violations = [v for v in violations if v.rule_id == "C416"]
+        assert len(c416_violations) == 0
+
+
+class TestC411EdgeCases:
+    """Tests for C411 edge cases."""
+
+    def test_list_call_with_non_sorted_function(self):
+        """Test that list(other_function()) does not trigger C411."""
+        code = "result = list(reversed(items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c411_violations = [v for v in violations if v.rule_id == "C411"]
+        assert len(c411_violations) == 0
+
+
+class TestC414EdgeCases:
+    """Tests for C414 edge cases."""
+
+    def test_c414_skips_list_sorted(self):
+        """Test that C414 skips list(sorted()) as it's covered by C411."""
+        code = "result = list(sorted(items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        # Should only have C411, not C414
+        c414_violations = [v for v in violations if v.rule_id == "C414"]
+        c411_violations = [v for v in violations if v.rule_id == "C411"]
+        assert len(c411_violations) > 0
+        assert len(c414_violations) == 0
+
+    def test_c414_skips_sorted_list(self):
+        """Test that C414 skips sorted(list()) as it's covered by C413."""
+        code = "result = sorted(list(items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        # Should only have C413, not C414
+        c414_violations = [v for v in violations if v.rule_id == "C414"]
+        c413_violations = [v for v in violations if v.rule_id == "C413"]
+        assert len(c413_violations) > 0
+        assert len(c414_violations) == 0
+
+    def test_c414_skips_sorted_reversed(self):
+        """Test that C414 skips sorted(reversed()) as it's covered by C413."""
+        code = "result = sorted(reversed(items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        # Should only have C413, not C414
+        c414_violations = [v for v in violations if v.rule_id == "C414"]
+        c413_violations = [v for v in violations if v.rule_id == "C413"]
+        assert len(c413_violations) > 0
+        assert len(c414_violations) == 0
+
+    def test_c414_with_non_collection_inner_function(self):
+        """Test that C414 does not trigger for non-collection inner functions."""
+        code = "result = set(map(str, items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c414_violations = [v for v in violations if v.rule_id == "C414"]
+        assert len(c414_violations) == 0
+
+    def test_c414_tuple_inside_set(self):
+        """Test C414 detection for set(tuple())."""
+        code = "result = set(tuple(items))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        assert any(v.rule_id == "C414" for v in violations)
+
+
+class TestDictEdgeCases:
+    """Tests for dict-related edge cases."""
+
+    def test_dict_with_non_list_arg_no_c406(self):
+        """Test that dict() with non-list arg does not trigger C406."""
+        code = "result = dict(zip(keys, values))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c406_violations = [v for v in violations if v.rule_id == "C406"]
+        assert len(c406_violations) == 0
+
+
+class TestTupleEdgeCases:
+    """Tests for tuple-related edge cases."""
+
+    def test_tuple_with_non_list_arg_no_c409(self):
+        """Test that tuple() with non-list arg does not trigger C409."""
+        code = "result = tuple(range(10))"
+        checker = ComprehensionChecker()
+        violations = checker.check_code(code)
+        c409_violations = [v for v in violations if v.rule_id == "C409"]
+        assert len(c409_violations) == 0
+
+
 class TestIntegration:
     """Integration tests for comprehensions."""
 

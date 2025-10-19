@@ -415,3 +415,118 @@ async def test():
         issues = checker.get_issues()
         assert len(issues) > 0
         assert all(isinstance(issue, checker.visitor.issues[0].__class__) for issue in issues)
+
+    def test_get_call_name_non_name_non_attribute(self):
+        """Test _get_call_name with complex expression."""
+        code = """
+async def test():
+    (lambda x: x)()
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should handle complex call expressions without crashing
+        assert isinstance(issues, list)
+
+    def test_context_manager_without_call(self):
+        """Test with statement that doesn't use a call as context manager."""
+        code = """
+async def test():
+    ctx = get_context()
+    with ctx:
+        pass
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should not crash with non-call context managers
+        assert isinstance(issues, list)
+
+    def test_context_manager_call_without_open_or_connection(self):
+        """Test with statement with call that isn't open/connection."""
+        code = """
+async def test():
+    with lock():
+        pass
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should not flag lock() as needing async with
+        async107_issues = [i for i in issues if i.rule_id == "ASYNC107"]
+        assert len(async107_issues) == 0
+
+    def test_for_loop_not_over_call(self):
+        """Test for loop over non-call expression."""
+        code = """
+async def test():
+    items = [1, 2, 3]
+    for item in items:
+        pass
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should not flag simple iteration
+        async108_issues = [i for i in issues if i.rule_id == "ASYNC108"]
+        assert len(async108_issues) == 0
+
+    def test_for_loop_call_without_keywords(self):
+        """Test for loop with call but no async-related keywords."""
+        code = """
+async def test():
+    for item in calculate_items():
+        pass
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should not flag calculate_items() as async
+        async108_issues = [i for i in issues if i.rule_id == "ASYNC108"]
+        assert len(async108_issues) == 0
+
+    def test_get_call_name_attribute_with_complex_value(self):
+        """Test _get_call_name with attribute but complex value (not Name)."""
+        code = """
+async def test():
+    result = (get_obj()).method()
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should handle complex attribute access without crashing
+        assert isinstance(issues, list)
+
+    def test_sync_for_loop_in_async_function(self):
+        """Test regular for loop in async function (no async keywords)."""
+        code = """
+async def test():
+    numbers = [1, 2, 3]
+    for num in numbers:
+        print(num)
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should detect async function with no await
+        # But should NOT flag the for loop
+        async108_issues = [i for i in issues if i.rule_id == "ASYNC108"]
+        assert len(async108_issues) == 0
+
+    def test_async_for_loop(self):
+        """Test that async for doesn't trigger issues."""
+        code = """
+async def test():
+    async for item in get_items():
+        process(item)
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # async for should not trigger ASYNC108
+        async108_issues = [i for i in issues if i.rule_id == "ASYNC108"]
+        assert len(async108_issues) == 0
+
+    def test_for_loop_in_sync_function(self):
+        """Test for loop in regular (non-async) function."""
+        code = """
+def sync_func():
+    for item in fetch_items():
+        process(item)
+"""
+        checker = AsyncChecker()
+        issues = checker.check_code(code)
+        # Should not trigger any async issues in sync function
+        assert len(issues) == 0
