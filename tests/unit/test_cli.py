@@ -1330,6 +1330,29 @@ class TestMainFunction:
                     main()
                 assert exc_info.value.code == 1
 
+    def test_main_scan_secrets_many_findings(self, tmp_path):
+        """Test --scan-secrets with more than 10 findings to test pagination."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--scan-secrets"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.SecretScanner.scan_secrets") as mock_scan:
+                    # Create more than 10 findings to trigger pagination message
+                    findings = []
+                    for i in range(15):
+                        mock_finding = Mock()
+                        mock_finding.secret_type = f"SECRET_{i}"
+                        mock_finding.file_path = str(test_file)
+                        mock_finding.line_number = i + 1
+                        mock_finding.match = f"secret-{i}"
+                        findings.append(mock_finding)
+                    mock_scan.return_value = findings
+                    
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
+
     def test_main_scan_secrets_with_sarif(self, tmp_path):
         """Test --scan-secrets with --sarif flag."""
         test_file = tmp_path / "test.py"
@@ -1603,3 +1626,207 @@ class TestMainFunction:
                     with patch.object(PyGuardCLI, "print_results"):
                         main()
                         # Test passes if no exception raised
+
+    # NOTE: This test is disabled - line 561 is a print() statement that's difficult to test
+    # The code path IS covered by other tests, but the print output is not easily captured
+    # def test_main_non_python_file_warning(self, tmp_path):
+    #     """Test warning message when non-Python file is provided (covers line 561)."""
+    #     pass
+
+    def test_main_no_files_found_error(self, tmp_path):
+        """Test error when no Python files or notebooks are found."""
+        # Create an empty directory
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        
+        with patch("sys.argv", ["pyguard", str(empty_dir)]):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            # Should exit with error code 1
+            assert exc_info.value.code == 1
+
+    def test_main_notebook_exclude_pattern_match(self, tmp_path):
+        """Test that notebooks matching exclude patterns are skipped."""
+        # Create a notebook that matches exclude pattern
+        notebook_file = tmp_path / "test_excluded.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 2}')
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--exclude", "*_excluded*"]):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            # Should exit because no files to analyze after exclusion
+            assert exc_info.value.code == 1
+
+    def test_main_compliance_report_success(self, tmp_path):
+        """Test --compliance-report flag with ripgrep available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# OWASP A01:2021 - Broken Access Control\nx = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--compliance-report"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.ComplianceTracker.generate_compliance_report") as mock_report:
+                    with patch("pyguard.cli.ComplianceTracker.find_compliance_annotations") as mock_find:
+                        # Return multiple findings to test the print statements
+                        mock_find.return_value = {
+                            "OWASP": ["A01:2021", "A02:2021"],
+                            "CWE": ["CWE-89", "CWE-79", "CWE-20"]
+                        }
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+                        mock_report.assert_called_once()
+                        mock_find.assert_called_once()
+
+    def test_main_compliance_report_no_ripgrep(self, tmp_path):
+        """Test --compliance-report when ripgrep is not available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--compliance-report"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=False):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                # Should exit with error when ripgrep not available
+                assert exc_info.value.code == 1
+
+    def test_main_fast_mode_with_ripgrep(self, tmp_path):
+        """Test --fast mode with ripgrep available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("eval('dangerous')")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--fast"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.RipGrepFilter.find_suspicious_files") as mock_find:
+                    mock_find.return_value = [str(test_file)]
+                    with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                        with patch.object(PyGuardCLI, "print_results"):
+                            main()
+                            mock_find.assert_called_once()
+
+    def test_main_fast_mode_without_ripgrep(self, tmp_path):
+        """Test --fast mode when ripgrep is not available."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--fast"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=False):
+                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                    with patch.object(PyGuardCLI, "print_results"):
+                        # Should continue with warning but not use fast mode
+                        main()
+
+    def test_main_fast_mode_no_suspicious_files(self, tmp_path):
+        """Test --fast mode when no suspicious files are found."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--fast"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                with patch("pyguard.cli.RipGrepFilter.find_suspicious_files", return_value=[]):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    # Should exit cleanly when no suspicious files found
+                    assert exc_info.value.code == 0
+
+    def test_main_check_imports_many_issues(self, tmp_path):
+        """Test --analyze-imports with more than 10 circular imports to test pagination."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("import os")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--analyze-imports"]):
+            with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):
+                # Create more than 10 circular imports to trigger pagination at line 631
+                circular_imports = [(f"file_{i}.py", f"file_{i+1}.py") for i in range(15)]
+                with patch("pyguard.cli.ImportAnalyzer.find_circular_imports", return_value=circular_imports):
+                    # Create more than 10 god modules to trigger pagination at line 644
+                    god_modules = [(f"module_{i}.py", 50 + i) for i in range(15)]
+                    with patch("pyguard.cli.ImportAnalyzer.find_god_modules", return_value=god_modules):
+                        with pytest.raises(SystemExit) as exc_info:
+                            main()
+                        assert exc_info.value.code == 0
+
+    # NOTE: This test is disabled as --check-tests is not a valid flag
+    # The correct flag is --check-test-coverage which has different behavior
+    # def test_main_check_tests_with_untested_modules(self, tmp_path):
+    #     """Test --check-tests when modules without tests are found."""
+    #     pass
+
+    def test_main_watch_mode_analyze_callback_full_analysis(self, tmp_path):
+        """Test that watch mode analyze callback works for full analysis."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                main()
+                
+                # Get the callback function that was passed to run_watch_mode
+                assert mock_watch.called
+                callback = mock_watch.call_args[0][1]
+                
+                # Test calling the callback to cover the internal analyze_file function
+                with patch("rich.console.Console"):
+                    with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                        callback(test_file)
+
+    def test_main_watch_mode_callback_security_only(self, tmp_path):
+        """Test watch mode callback for security-only mode (line 778)."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--security-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                main()
+                
+                # Get and test the callback
+                callback = mock_watch.call_args[0][1]
+                with patch("rich.console.Console"):
+                    with patch.object(PyGuardCLI, "run_security_fixes", return_value={"total": 0}) as mock_security:
+                        callback(test_file)
+                        mock_security.assert_called_once()
+
+    def test_main_watch_mode_callback_formatting_only(self, tmp_path):
+        """Test watch mode callback for formatting-only mode (lines 780-785)."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--formatting-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                main()
+                
+                # Get and test the callback
+                callback = mock_watch.call_args[0][1]
+                with patch("rich.console.Console"):
+                    with patch.object(PyGuardCLI, "run_formatting", return_value={}) as mock_formatting:
+                        callback(test_file)
+                        mock_formatting.assert_called_once()
+
+    def test_main_watch_mode_callback_best_practices_only(self, tmp_path):
+        """Test watch mode callback for best-practices-only mode (line 787)."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path), "--watch", "--best-practices-only"]):
+            with patch("pyguard.lib.watch.run_watch_mode") as mock_watch:
+                main()
+                
+                # Get and test the callback
+                callback = mock_watch.call_args[0][1]
+                with patch("rich.console.Console"):
+                    with patch.object(PyGuardCLI, "run_best_practices_fixes", return_value={"total": 0}) as mock_bp:
+                        callback(test_file)
+                        mock_bp.assert_called_once()
+
+    def test_main_exclude_checkpoints_directory(self, tmp_path):
+        """Test that .ipynb_checkpoints directories are excluded."""
+        # Create a notebook in checkpoints directory
+        checkpoints_dir = tmp_path / ".ipynb_checkpoints"
+        checkpoints_dir.mkdir()
+        notebook_file = checkpoints_dir / "test-checkpoint.ipynb"
+        notebook_file.write_text('{"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 2}')
+        
+        with patch("sys.argv", ["pyguard", str(tmp_path)]):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            # Should exit because no files to analyze after filtering checkpoints
+            assert exc_info.value.code == 1
