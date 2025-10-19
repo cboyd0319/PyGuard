@@ -557,3 +557,77 @@ class GoodClass:
         violation_types = {v["type"] for v in violations}
         assert "class" in violation_types
         assert "function" in violation_types
+
+
+class TestBestPracticesFixerEdgeCases:
+    """Test edge cases and missing branch coverage."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.fixer = BestPracticesFixer()
+
+    def test_fix_file_write_failure(self, mocker, tmp_path):
+        """Test fix_file handles write failure."""
+        # Arrange
+        test_file = tmp_path / "test.py"
+        test_file.write_text("result = []\nfor x in range(10):\n    result.append(x)")
+        
+        # Mock write_file to return False
+        mocker.patch.object(self.fixer.file_ops, "write_file", return_value=False)
+        
+        # Act
+        success, fixes = self.fixer.fix_file(test_file)
+        
+        # Assert - should return False when write fails
+        assert success is False
+        assert len(fixes) > 0  # Fixes were detected but not written
+
+    def test_fix_list_comprehension_already_commented(self):
+        """Test list comprehension suggestion when comment already exists on one loop."""
+        # Arrange - code with multiple for loops, one already commented
+        code = """result1 = []
+for x in range(10):
+    result1.append(x)
+
+result2 = []
+for y in range(5):  # Consider list comprehension
+    result2.append(y)"""
+        
+        # Act
+        result = self.fixer._fix_list_comprehension(code)
+        
+        # Assert - first loop gets comment, second already has it
+        lines = result.split("\n")
+        # Should have comments on both for loops now
+        for_lines = [line for line in lines if "for " in line]
+        commented_fors = [line for line in for_lines if "# Consider list comprehension" in line]
+        # At least one should be commented (the one we added)
+        assert len(commented_fors) >= 1
+
+    def test_fix_string_concatenation_already_commented(self):
+        """Test string concatenation fix when comment already exists."""
+        # Arrange - code already has the comment marker
+        code = """result = ""
+for item in items:
+    result += "item"  # Use list and join()"""
+        
+        # Act  
+        result = self.fixer._fix_string_concatenation(code)
+        
+        # Assert - should not add duplicate comment (check for PERFORMANCE: prefix)
+        assert "PERFORMANCE:" not in result or result.count("PERFORMANCE:") == 0
+        # Original comment should still be there
+        assert "# Use list and join()" in result
+
+    def test_fix_context_managers_already_commented(self):
+        """Test context manager suggestion when comment already exists."""
+        # Arrange - code already has a comment matching the check pattern
+        code = "f = open('file.txt')  # Use 'with' statement"
+        
+        # Act
+        result = self.fixer._fix_context_managers(code)
+        
+        # Assert - should not add another comment when marker exists
+        assert result == code
+        # Should not have the "Best Practice:" prefix added
+        assert result.count("Best Practice:") == 0

@@ -783,3 +783,87 @@ class TestSecurityFixerProperties:
             
             assert result_warning_count == original_warning_count, \
                 f"Added unnecessary warning to strong algorithm: {pattern}"
+
+
+class TestSecurityFixerEdgeCases:
+    """Test edge cases and missing branch coverage."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.fixer = SecurityFixer()
+
+    def test_fix_file_write_failure(self, mocker, tmp_path):
+        """Test fix_file handles write failure."""
+        # Arrange
+        test_file = tmp_path / "test.py"
+        test_file.write_text("password = 'secret123'")
+        
+        # Mock write_file to return False
+        mocker.patch.object(self.fixer.file_ops, "write_file", return_value=False)
+        
+        # Act
+        success, fixes = self.fixer.fix_file(test_file)
+        
+        # Assert - should return False when write fails
+        assert success is False
+        assert len(fixes) > 0  # Fixes were detected but not written
+
+    def test_fix_command_injection_already_commented(self):
+        """Test command injection detection when comment already exists."""
+        # Arrange - code with shell=True already has comment
+        code = 'subprocess.call(cmd, shell=True)  # COMMAND INJECTION RISK: Avoid shell=True'
+        
+        # Act
+        result = self.fixer._fix_command_injection(code)
+        
+        # Assert - should not add duplicate comment
+        assert result == code
+        assert result.count("COMMAND INJECTION") == 1
+
+    def test_fix_command_injection_os_system_already_commented(self):
+        """Test os.system detection when comment already exists."""
+        # Arrange - code with os.system already has comment (using different marker to avoid adding duplicate)
+        code = 'os.system("ls")  # COMMAND INJECTION'
+        
+        # Act
+        result = self.fixer._fix_command_injection(code)
+        
+        # Assert - should not add another comment when COMMAND INJECTION marker present
+        assert result == code
+        assert result.count("SECURITY:") == 0  # Should not add SECURITY comment when marker exists
+
+    def test_fix_path_traversal_else_branch(self):
+        """Test path traversal fix when no issues detected."""
+        # Arrange - safe code without path traversal patterns
+        code = "filename = Path('data.txt')\nwith open(filename) as f:\n    pass"
+        
+        # Act
+        result = self.fixer._fix_path_traversal(code)
+        
+        # Assert - code should remain unchanged
+        assert result == code
+        assert len(self.fixer.fixes_applied) == 0
+
+    def test_fix_insecure_random_already_commented(self):
+        """Test insecure random detection when comment already exists."""
+        # Arrange - code with insecure random already has comment
+        code = 'token = "".join(random.choices(string.ascii_letters, k=32))  # SECURITY: Use secrets module'
+        
+        # Act
+        result = self.fixer._fix_insecure_random(code)
+        
+        # Assert - should not add duplicate comment
+        assert result == code
+        assert result.count("SECURITY:") == 1
+
+    def test_fix_path_traversal_already_commented(self):
+        """Test path traversal detection when comment already exists."""
+        # Arrange - code with path traversal risk already has comment
+        code = 'path = os.path.join(base, user_input)  # PATH TRAVERSAL RISK: Validate and sanitize paths'
+        
+        # Act
+        result = self.fixer._fix_path_traversal(code)
+        
+        # Assert - should not add duplicate comment
+        assert result == code
+        assert result.count("PATH TRAVERSAL") == 1

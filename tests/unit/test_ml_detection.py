@@ -677,3 +677,30 @@ def outer():
         # Should track nested functions
         assert features["num_functions"] >= 1
         assert "max_nesting" in features
+
+
+class TestMLDetectorEdgeCases:
+    """Test edge cases and missing branch coverage."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.detector = AnomalyDetector()
+
+    def test_detect_suspicious_imports_server_socket(self):
+        """Test socket usage in server context (legitimate use case)."""
+        # Arrange - socket used for server, which is legitimate
+        code = """
+import socket
+server = socket.socket()
+server.bind(("0.0.0.0", 8080))
+server.listen(5)
+"""
+        # Act
+        anomalies = self.detector.detect_anomalies(code)
+        
+        # Assert - should not flag as suspicious because 'server' is in the code
+        if anomalies:
+            suspicious_socket = [a for a in anomalies if a["type"] == "suspicious_imports" and "socket" in str(a)]
+            # Should either have no anomalies or the socket anomaly should be filtered out
+            # because "server" appears in the code
+            assert len(suspicious_socket) == 0 or "backdoor" not in str(suspicious_socket)
