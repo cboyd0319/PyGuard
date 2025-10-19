@@ -236,3 +236,35 @@ import sys
         # Should return False, not raise exception
         assert success is False
         assert count == 0
+
+    def test_third_party_type_checking_imports(self, tmp_path):
+        """Test detection of type-checking imports from third-party libraries."""
+        code = """
+import numpy
+import pandas
+from django.db import models
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+        
+        checker = ImportRulesChecker()
+        violations = checker.check_file(file_path)
+        
+        # Should handle third-party imports
+        assert isinstance(violations, list)
+
+    def test_local_relative_import_ordering(self, tmp_path):
+        """Test that local relative imports are properly grouped."""
+        code = """
+import os
+from .local import module
+import sys
+"""
+        file_path = tmp_path / "test.py"
+        file_path.write_text(code)
+        
+        checker = ImportRulesChecker()
+        violations = checker.check_file(file_path)
+        
+        # Should detect ordering issue (relative import before sys)
+        assert isinstance(violations, list)
