@@ -32,7 +32,7 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 
 **The problem:** Juggling 7+ security and quality tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) creates overlapping reports, config conflicts, and no unified auto-fix workflow.
 
-**The solution:** PyGuard consolidates everything into a single AST-based analyzer that finds vulnerabilities, enforces code quality, generates compliance reports, and **fixes issues automatically**—all while running 100% locally with zero telemetry.
+**The solution:** PyGuard consolidates everything into a single AST-based analyzer that finds vulnerabilities, enforces code quality, generates compliance reports, and **fixes issues automatically** — all while running 100% locally with zero telemetry.
 
 ### Who is this for?
 
