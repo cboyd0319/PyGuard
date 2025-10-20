@@ -31,9 +31,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Set
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (

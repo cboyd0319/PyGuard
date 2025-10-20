@@ -145,8 +145,8 @@ class EnhancedConsole:
         
         panel = Panel(
             ready_text +
-            f"[dim]PyGuard will find security issues, improve code quality, and format your code.\n"
-            f"Sit back and relax - this will only take a moment...[/dim]",
+            "[dim]PyGuard will find security issues, improve code quality, and format your code.\n"
+            "Sit back and relax - this will only take a moment...[/dim]",
             title=title_text,
             border_style="cyan",
             box=box.DOUBLE,

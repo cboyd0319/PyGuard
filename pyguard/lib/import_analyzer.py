@@ -6,7 +6,7 @@ Detects circular imports, god modules, and other import-related issues.
 
 import subprocess
 from collections import Counter, defaultdict
-from typing import Dict, List, Set, Tuple, Optional
+from typing import List, Tuple
 
 
 class ImportAnalyzer:

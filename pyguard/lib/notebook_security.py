@@ -105,7 +105,7 @@ import ast
 import json
 import re
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Set
 
@@ -265,8 +265,7 @@ class NotebookSecurityAnalyzer:
         r"(?i)(postgres://|postgresql://)([^:]+):([^@]+)@": "PostgreSQL connection string with credentials",
         r"(?i)(mysql://|mariadb://)([^:]+):([^@]+)@": "MySQL connection string with credentials",
         r"(?i)(redis://):([^@]+)@": "Redis connection string with credentials",
-        # Cloud provider patterns
-        r"AKIA[0-9A-Z]{16}": "AWS access key",
+        # Cloud provider patterns - consolidated (removed duplicate AWS key pattern)
         r"(?i)ya29\.[0-9A-Za-z\-_]+": "Google OAuth access token",
         r"(?i)AIza[0-9A-Za-z\-_]{35}": "Google API key",
         r"(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}": "Generic UUID (potential API key)",
@@ -1292,7 +1291,7 @@ class NotebookSecurityAnalyzer:
                             rule_id = "NB-SECRET-DB-001"
                             severity = "CRITICAL"
                             priority = 1
-                            specific_message = f"Database connection string with credentials detected in notebook"
+                            specific_message = "Database connection string with credentials detected in notebook"
                         # JWT tokens (HIGH)
                         elif "JWT" in description or (value.startswith("eyJ") and value.count(".") >= 2):
                             rule_id = "NB-SECRET-JWT-001"
@@ -2179,7 +2178,7 @@ class NotebookFixer:
                     if 0 < issue.line_number <= len(lines):
                         lines.insert(
                             issue.line_number - 1,
-                            f"# WARNING: PII detected below - redact before sharing",
+                            "# WARNING: PII detected below - redact before sharing",
                         )
                         cell["source"] = "\n".join(lines)
                         fixes_applied.append(f"Added PII warning in cell {issue.cell_index}")
@@ -2286,7 +2285,7 @@ class NotebookFixer:
                         if "pip install" in line and issue.code_snippet in line:
                             lines.insert(
                                 i,
-                                f"# TODO: Pin package version for reproducibility (e.g., ==X.Y.Z)"
+                                "# TODO: Pin package version for reproducibility (e.g., ==X.Y.Z)"
                             )
                             break
                     cell["source"] = "\n".join(lines)
@@ -3039,7 +3038,7 @@ def _format_help_markdown(issue: NotebookIssue) -> str:
     if issue.owasp_id:
         help_text += f"**OWASP:** {issue.owasp_id}\\n"
     
-    help_text += f"\\n### Fix Suggestion\\n\\n"
+    help_text += "\\n### Fix Suggestion\\n\\n"
     help_text += issue.fix_suggestion or "No automated fix available. Manual review required."
     
     if issue.auto_fixable:

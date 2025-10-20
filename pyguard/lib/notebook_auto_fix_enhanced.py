@@ -31,7 +31,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.notebook_security import NotebookIssue, NotebookFixer
 
 
@@ -259,7 +258,7 @@ class EnhancedNotebookFixer(NotebookFixer):
                 if self.explanation_level == "beginner":
                     comment = f"# Get {var_name} from environment (set with: export {env_var_name}='your-value')"
                 elif self.explanation_level == "expert":
-                    comment = f"# Environment-based secret management (12-factor app principle)"
+                    comment = "# Environment-based secret management (12-factor app principle)"
                 else:
                     comment = f"# Load {var_name} from environment variable"
                 

@@ -29,11 +29,9 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import List, Set, Optional
 
-from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
     FixApplicability,
     Rule,
@@ -231,14 +229,13 @@ class APISecurityVisitor(ast.NodeVisitor):
         attributes without filtering, allowing attackers to modify sensitive fields.
         CWE-915: Improper Control of Dynamically-Managed Code Resources
         """
-        has_fields_declaration = False
         has_meta_class = False
         protected_fields: Set[str] = set()
 
         for item in node.body:
             # Check for __fields__ or __annotations__ (Pydantic)
-            if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
-                has_fields_declaration = True
+            # if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+            #     has_fields_declaration = True  # Currently unused but reserved for future validation
 
             # Check for Meta class (Django) or Config class (Pydantic)
             if isinstance(item, ast.ClassDef) and item.name in ("Meta", "Config"):
@@ -378,7 +375,6 @@ class APISecurityVisitor(ast.NodeVisitor):
         """
         has_pagination = False
         has_limit = False
-        has_paginate_method = False
 
         # Check function body for pagination patterns
         for item in ast.walk(node):
@@ -389,9 +385,9 @@ class APISecurityVisitor(ast.NodeVisitor):
                     has_limit = True
             elif isinstance(item, ast.Attribute):
                 if item.attr == "paginate":
-                    has_paginate_method = True
+                    # paginate implies built-in limit
                     has_pagination = True
-                    has_limit = True  # paginate implies built-in limit
+                    has_limit = True
                 elif item.attr in ("limit", "offset"):
                     has_pagination = True
 

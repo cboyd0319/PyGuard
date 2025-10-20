@@ -183,7 +183,7 @@ New to PyGuard? Follow the [5-minute tutorial](docs/index.md)
 - ✅ Hardcoded secrets scanning (AWS, GitHub, JWT)
 - ✅ Weak cryptography detection (MD5, SHA1)
 - ✅ SSRF, XXE, and path traversal checks
-- ✅ Framework-specific rules (Django, Flask, FastAPI)
+- ✅ Framework-specific rules (Django, Flask, **FastAPI** — NEW, Pandas, Pytest)
 - ✅ **179+ auto-fixes** (most comprehensive available)
 
 **RipGrep Integration** 🆕
@@ -313,7 +313,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 **What it does**:
 - Finds 55+ security vulnerabilities (SQL injection, XSS, hardcoded secrets, command injection, SSRF)
 - Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
-- Framework-specific checks (Django, Flask, FastAPI, Pandas, Pytest)
+- Framework-specific checks (Django, Flask, **FastAPI** — NEW, Pandas, Pytest) — **expanding to 20+ frameworks**
 - Maps to 10+ compliance frameworks (OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR)
 - ML pattern recognition, anomaly detection, risk scoring
 - **179+ auto-fixes** (safe and unsafe modes) — only tool with complete auto-fix coverage
@@ -756,10 +756,10 @@ After PyGuard:
 
 ### Comprehensiveness
 
-- **55+ security checks** vs Bandit (~10), Semgrep (~15), Ruff (~15)
+- **78+ security checks** vs Bandit (~10), Semgrep (~15), Ruff (~15) — **expanding to 300+** (Security Dominance Plan Phase 1)
 - **150+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
 - **179+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
-- **Framework-specific rules** for Django, Flask, FastAPI, Pandas, Pytest
+- **Framework-specific rules** for Django, Flask, **FastAPI** (NEW), Pandas, Pytest — **expanding to 20+** frameworks
 - **10+ compliance frameworks** — OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 
 ### Technology
@@ -771,8 +771,8 @@ After PyGuard:
 
 ### Production Quality
 
-- **1002 tests, 84% coverage** — tested, production-ready
-- **67 specialized modules** — 35,000+ lines of analysis code
+- **2,600+ tests, 88.63% coverage** — tested, production-ready — **expanding to 12,000+ tests** (Phase 1 target)
+- **69 specialized modules** — 37,000+ lines of analysis code
 - **100% local** — no SaaS, no telemetry, no external dependencies for core functionality
 - **Privacy-first** — all analysis happens on your machine, no data leaves your environment
 
