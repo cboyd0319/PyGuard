@@ -8,16 +8,16 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Library Modules** | 69 | ✅ Production |
-| **Total Lines of Code** | 37,000+ | ✅ Production |
-| **Security Checks** | 78+ | ✅ Active |
+| **Library Modules** | 70 | ✅ Production |
+| **Total Lines of Code** | 38,000+ | ✅ Production |
+| **Security Checks** | 83+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
-| **Framework Rules** | 88+ | ✅ 5 Frameworks |
+| **Framework Rules** | 90+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 80 | ✅ Comprehensive |
-| **Total Tests** | 2,600+ | ✅ Passing |
+| **Test Files** | 81 | ✅ Comprehensive |
+| **Total Tests** | 2,662+ | ✅ Passing |
 | **Test Coverage** | 88.63% | 🎯 Exceeding target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
@@ -63,17 +63,18 @@ PyGuard implements **78+ security vulnerability checks** across 9 specialized se
 | Module | Lines | Checks | CWE Coverage | Status |
 |--------|-------|--------|--------------|--------|
 | `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
-| `api_security.py` | 866 | 10 checks | API Security | ✅ Complete (Session 10) |
+| `api_security.py` | 920+ | **15 checks** | API Security | ✅ **Updated 2025-10-20** |
+| `framework_fastapi.py` | 694 | 16 checks | FastAPI-specific | ✅ Active |
 | `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
-| `framework_fastapi.py` | 694 | 13 checks | FastAPI-specific | ✅ Active (Session 9) |
 | `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
 | `xss_detection.py` | 541 | 5 XSS types | Multi-framework | ✅ Complete |
 | `supply_chain.py` | 488 | Dependencies | SBOM, licenses | ✅ Complete |
 | `advanced_security.py` | 408 | 14 vulns | Taint, race, ReDoS | ✅ Complete |
+| `auth_security.py` | 450+ | 8 checks | Auth/AuthZ | ✅ Active |
 | `security.py` | 289 | 20 vulns | Core security | ✅ Complete |
 | `notebook_security.py` | 180 | 8+ checks | Jupyter-specific | ✅ Complete |
 
-**Total Security Checks: 78+** (verified 2025-10-20)
+**Total Security Checks: 83+** (updated 2025-10-20)
 
 ### Core Security Checks (20 vulnerabilities)
 
@@ -138,9 +139,9 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 
 **Test Coverage**: 34 comprehensive tests (100% passing)
 
-### API Security (10 checks) — NEW in Session 10
+### API Security (15 checks) — **EXPANDED 2025-10-20**
 
-**Module**: `api_security.py` (866 lines)
+**Module**: `api_security.py` (920+ lines)
 
 Comprehensive security checks for REST APIs, GraphQL, and modern web APIs covering OWASP API Security Top 10.
 
@@ -156,6 +157,11 @@ Comprehensive security checks for REST APIs, GraphQL, and modern web APIs coveri
 | Open Redirect | API008 | HIGH | CWE-601 | A01:2021 | ❌ |
 | Missing Security Headers | API009 | MEDIUM | CWE-16 | A05:2021 | ✅ |
 | GraphQL Introspection Enabled | API010 | MEDIUM | CWE-200 | A01:2021 | ✅ |
+| **CORS Wildcard Origin** | **API011** | **HIGH** | **CWE-942** | **A05:2021** | ❌ |
+| **XML External Entity (XXE)** | **API012** | **HIGH** | **CWE-611** | **A05:2021** | ✅ |
+| **Insecure Deserialization** | **API013** | **HIGH** | **CWE-502** | **A08:2021** | ✅ |
+| **OAuth Redirect Unvalidated** | **API014** | **HIGH** | **CWE-601** | **A01:2021** | ❌ |
+| **CSRF Token Missing** | **API015** | **HIGH** | **CWE-352** | **A01:2021** | ❌ |
 
 **Key Features:**
 - Framework-agnostic (Flask, FastAPI, Django)
@@ -168,8 +174,13 @@ Comprehensive security checks for REST APIs, GraphQL, and modern web APIs coveri
 - Security header validation
 - Open redirect detection
 - API key exposure prevention
+- **NEW:** CORS misconfiguration detection
+- **NEW:** XXE vulnerability detection (with defusedxml tracking)
+- **NEW:** Insecure deserialization detection (pickle, marshal, dill)
+- **NEW:** OAuth flow security validation
+- **NEW:** CSRF protection enforcement
 
-**Test Coverage**: 55 comprehensive tests (100% passing)
+**Test Coverage**: 82 comprehensive tests (100% passing)
 **Performance**: <10ms per file average (benchmarked)
 | Timing Attacks | CWE-208 | Comparison analysis | ✅ Complete |
 | Buffer Overflow | CWE-120 | ctypes/CFFI usage | ✅ Complete |
