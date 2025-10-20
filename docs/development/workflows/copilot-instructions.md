@@ -111,7 +111,7 @@ make format && pyguard pyguard/ --scan-only && make test
 - **Language:** Python 3.11+ (recommend 3.13 for development)
 - **Style:** PEP 8/PEP 257 with Black formatter (line length: 100)
 - **Type hints:** Required for new code, mypy-friendly
-- **Testing:** pytest with 70%+ coverage target
+- **Testing:** pytest with 70%+ coverage target (currently 84% coverage, 78 test files)
 - **Logging:** Structured JSON logs (PyGuardLogger in `pyguard/lib/core.py`)
 
 ## MCP Integration (Model Context Protocol)
@@ -278,13 +278,13 @@ make format
 - **New features MUST have unit tests** in `tests/unit/`
 - **Integration tests** for CLI and multi-file operations in `tests/integration/`
 - **Fixtures:** Use recorded samples in `tests/fixtures/` for deterministic tests
-- **Coverage:** Aim for 70%+ coverage; never decrease existing coverage (current: 69%)
+- **Coverage:** Aim for 70%+ coverage; never decrease existing coverage (current: 84%)
 - **Test naming:** `test_*.py` files, `Test*` classes, `test_*` methods
 
 ### Test Structure
 ```
 tests/
-├── unit/                           # Unit tests (257 total)
+├── unit/                           # Unit tests (78 test files total)
 │   ├── test_advanced_security.py   # Advanced security detection tests
 │   ├── test_ast_analyzer.py        # AST analysis tests
 │   ├── test_best_practices.py      # Code quality tests

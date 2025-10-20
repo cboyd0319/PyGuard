@@ -1,43 +1,17 @@
-# PyGuard Jupyter Notebook Security - Capability Tracker
+# PyGuard Jupyter Notebook Security — Capabilities (Moved)
 
-**Version:** 0.3.0+  
-**Last Updated:** 2025-10-17  
-**Status:** Production-Ready (World-Class Foundation Established + Enhanced SARIF)
+This development tracker has been consolidated into the canonical Capabilities Reference.
 
-This document tracks all current and future capabilities of PyGuard's Jupyter notebook security analyzer, aligned with the [PYGUARD_JUPYTER_SECURITY_ENGINEER.md](PYGUARD_JUPYTER_SECURITY_ENGINEER.md) vision.
+- Primary source: `docs/reference/capabilities-reference.md` (see “Advanced Security → Jupyter Notebook Security”)
+- Rationale: avoid duplication; keep a single source of truth for capabilities
+
+If you need historical notebook‑specific status, consult commit history for this file prior to consolidation.
 
 ---
 
 ## Executive Summary
 
-PyGuard's Jupyter notebook security analyzer has achieved **world-class status** with:
-- **108+ vulnerability patterns** across 13 security categories (91% of 118 pattern target)
-- **Comprehensive auto-fix** with AST-based transformations and educational comments
-- **86 passing tests** (82 original + 4 new snapshot tests) with zero regressions
-- **Zero false negatives** on CRITICAL issues (eval, exec, pickle, torch.load, secrets)
-- **Enhanced SARIF 2.1.0** output with rollback commands and fix confidence metadata
-- **Golden file snapshot testing** for auto-fix quality assurance
-- **Production-grade quality** suitable for enterprise ML/AI workflows
-
-### Recent Enhancements (2025-10-17)
-
-#### 1. Golden File Snapshot Testing Infrastructure ✅
-- 6 vulnerable notebook fixtures covering major vulnerability types
-- 11 comprehensive snapshot tests (4 passing, 7 in progress)
-- Idempotency verification (fix(fix(nb)) == fix(nb))
-- Notebook structure preservation testing
-- False positive detection testing
-
-#### 2. Enhanced eval() Auto-Fix ✅
-- **Before:** Only added warning comments
-- **After:** Actually transforms `eval()` → `ast.literal_eval()`
-- Includes `import ast` statement insertion
-- Educational comments with CWE-95 references
-- Exception handling guidance
-
-#### 3. Enhanced SARIF 2.1.0 Output ✅
-- **Fix confidence scores** (0.0-1.0) in metadata
-- **Rollback commands** for every auto-fix
+Moved to: `docs/reference/capabilities-reference.md`.
 - **Fix quality indicators** (excellent/good/fair)
 - **Semantic risk assessment** (low/medium/high)
 - **CWE/CVE mapping** for all findings

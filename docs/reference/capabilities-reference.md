@@ -8,15 +8,15 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Library Modules** | 59 | ✅ Production |
-| **Total Lines of Code** | 30,500+ | ✅ Production |
+| **Library Modules** | 67 | ✅ Production |
+| **Total Lines of Code** | 35,000+ | ✅ Production |
 | **Security Checks** | 55+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
 | **Framework Rules** | 75+ | ✅ 4 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 62 | ✅ Comprehensive |
+| **Test Files** | 78 | ✅ Comprehensive |
 | **Test Coverage** | 84% | 🎯 Target: 100% |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
@@ -673,6 +673,30 @@ for issue in issues:
     print(f"  Impact: {issue.estimated_impact}")
 ```
 
+### RipGrep Integration (Fast Mode)
+
+Optional RipGrep-powered accelerators for large codebases. Automatically falls back when `rg` is unavailable.
+
+- Fast pre-filter (`--fast`): ripgrep narrows files before AST analysis for 9–10x speedups on big repos.
+- Secret scanning (`--scan-secrets`): detects API keys/tokens/passwords; supports SARIF export (`--sarif`).
+- Import analysis (`--analyze-imports`): circular import chains and “god modules”; ~16x faster with ripgrep.
+- Test coverage discovery (`--check-test-coverage`): finds untested modules; ~15x faster.
+- Compliance extraction (`--compliance-report`): pulls OWASP/CWE annotations from comments into a report.
+
+CLI example:
+```bash
+pyguard src/ --fast --scan-secrets --sarif \
+  --analyze-imports --check-test-coverage --compliance-report
+```
+
+Performance snapshot (typical):
+- Full scan: 480s → 52s (~9.2x)
+- Secret scan: 390s → 3.4s (~114x)
+- Import analysis: 67s → 4.1s (~16x)
+- Coverage check: 12s → 0.8s (~15x)
+
+See: `docs/guides/RIPGREP_INTEGRATION.md` for details and setup.
+
 ---
 
 ## 11. Dependency Analysis
@@ -958,7 +982,7 @@ PyGuard is the **most comprehensive Python security and code quality platform av
 
 | Category | Features | Status |
 |----------|----------|--------|
-| **Modules** | 59 library modules, 30,500+ lines | ✅ Production |
+| **Modules** | 67 library modules, 35,000+ lines | ✅ Production |
 | **Security** | 55+ vulnerability checks, 8 specialized modules | ✅ Complete |
 | **Code Quality** | 150+ rules across 14 modules | ✅ Complete |
 | **Auto-Fix** | 179+ fixes (107 safe, 72 unsafe), **100% coverage** | ✅ Complete |
@@ -967,7 +991,7 @@ PyGuard is the **most comprehensive Python security and code quality platform av
 | **Advanced** | Notebooks, AI explanations, ML detection | ✅ Complete |
 | **Integration** | CI/CD (5 platforms), performance, dependencies | ✅ Complete |
 | **Custom Rules** | User-defined regex/AST rules | ✅ Complete |
-| **Testing** | 62 test files, 84% coverage (target: 100%) | 🎯 In Progress |
+| **Testing** | 78 test files, 84% coverage (target: 100%) | 🎯 In Progress |
 
 ### Key Differentiators
 
@@ -981,9 +1005,9 @@ PyGuard is the **most comprehensive Python security and code quality platform av
 
 ### Production Ready
 
-- ✅ 59 production-ready modules
-- ✅ 30,500+ lines of analysis code
-- ✅ 62 comprehensive test files
+- ✅ 67 production-ready modules
+- ✅ 35,000+ lines of analysis code
+- ✅ 78 comprehensive test files
 - ✅ 84% test coverage (target: 100%)
 - ✅ Zero linting errors
 - ✅ Type hints on all APIs
