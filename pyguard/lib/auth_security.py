@@ -58,6 +58,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         self.session_vars: Set[str] = set()
         self.auth_functions: Set[str] = set()
         self.password_vars: Set[str] = set()
+        self.jwt_payloads_with_exp: Set[str] = set()  # Track payload variables with 'exp'
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track framework and security imports."""
@@ -84,6 +85,13 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 # Track password variables for policy checks
                 if "password" in target.id.lower() or "pwd" in target.id.lower():
                     self.password_vars.add(target.id)
+                
+                # Track JWT payloads with 'exp' claim
+                if isinstance(node.value, ast.Dict):
+                    for key in node.value.keys:
+                        if isinstance(key, ast.Constant) and key.value == "exp":
+                            self.jwt_payloads_with_exp.add(target.id)
+                            break
                 
                 # Check for hardcoded credentials
                 self._check_hardcoded_credentials(node, target.id)
@@ -258,6 +266,10 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
     def _check_missing_authentication(self, node: ast.FunctionDef) -> None:
         """Check for missing authentication on sensitive operations (AUTH005)."""
+        # Skip login/auth/public routes (they don't need authentication)
+        if any(term in node.name.lower() for term in ["login", "signup", "register", "public", "health", "ping"]):
+            return
+        
         # Look for decorators indicating authentication
         has_auth_decorator = False
         for decorator in node.decorator_list:
@@ -272,14 +284,32 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         # Check for route decorators (Flask/FastAPI)
         is_route = False
+        is_sensitive_method = False
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call):
                 if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr in ("route", "get", "post", "put", "delete", "patch"):
+                    method = decorator.func.attr
+                    if method in ("route", "get", "post", "put", "delete", "patch"):
                         is_route = True
+                        # POST, PUT, DELETE, PATCH are typically sensitive
+                        if method in ("post", "put", "delete", "patch"):
+                            is_sensitive_method = True
                         break
 
-        if is_route and not has_auth_decorator:
+        # Check for sensitive path patterns in route decorator arguments
+        has_sensitive_path = False
+        if is_route:
+            for decorator in node.decorator_list:
+                if isinstance(decorator, ast.Call) and decorator.args:
+                    for arg in decorator.args:
+                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                            path = arg.value.lower()
+                            if any(term in path for term in ["admin", "delete", "remove", "/api/", "/users/"]):
+                                has_sensitive_path = True
+                                break
+
+        # Report if route is sensitive and lacks authentication
+        if is_route and not has_auth_decorator and (is_sensitive_method or has_sensitive_path):
             self.violations.append(
                 RuleViolation(
                     rule_id="AUTH005",
@@ -296,10 +326,6 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
     def _check_idor_vulnerability(self, node: ast.FunctionDef) -> None:
         """Check for Insecure Direct Object References (AUTH006)."""
-        # Look for functions that access resources by ID without authorization
-        if not any(term in node.name.lower() for term in ["get", "fetch", "retrieve", "load"]):
-            return
-
         # Check if function accesses objects by ID
         has_id_param = False
         for arg in node.args.args:
@@ -307,6 +333,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 has_id_param = True
                 break
 
+        # Only check functions that take ID parameters
         if not has_id_param:
             return
 
@@ -314,9 +341,14 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         has_auth_check = False
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
+                # Check for permission checks (attribute calls like obj.check_permission())
                 if isinstance(child.func, ast.Attribute):
-                    # Check for permission checks
                     if any(term in child.func.attr.lower() for term in ["check", "verify", "authorize", "permission", "can"]):
+                        has_auth_check = True
+                        break
+                # Check for permission checks (function calls like check_permission())
+                elif isinstance(child.func, ast.Name):
+                    if any(term in child.func.id.lower() for term in ["check", "verify", "authorize", "permission"]):
                         has_auth_check = True
                         break
             elif isinstance(child, ast.If):
@@ -360,26 +392,40 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for JWT tokens without expiration (AUTH007)."""
         # Check if 'exp' claim is set in payload
         has_exp = False
+        
+        # Helper to check if a dict has 'exp' key
+        def dict_has_exp(dict_node):
+            if isinstance(dict_node, ast.Dict):
+                for key in dict_node.keys:
+                    if isinstance(key, ast.Constant) and key.value == "exp":
+                        return True
+            return False
+        
+        # Check keyword arguments
         for keyword in node.keywords:
             if keyword.arg == "payload" or not keyword.arg:
-                if isinstance(keyword.value, ast.Dict):
-                    for key in keyword.value.keys:
-                        if isinstance(key, ast.Constant):
-                            key_val = key.value
-                            if key_val == "exp":
-                                has_exp = True
-                                break
+                if dict_has_exp(keyword.value):
+                    has_exp = True
+                    break
+                # Check if it's a tracked variable with exp
+                elif isinstance(keyword.value, ast.Name):
+                    if keyword.value.id in self.jwt_payloads_with_exp:
+                        has_exp = True
+                        break
 
-        # Also check positional arguments
+        # Check positional arguments
         if not has_exp and node.args:
-            for arg in node.args:
-                if isinstance(arg, ast.Dict):
-                    for key in arg.keys:
-                        if isinstance(key, ast.Constant):
-                            key_val = key.value
-                            if key_val == "exp":
-                                has_exp = True
-                                break
+            # First argument is usually the payload
+            if node.args:
+                first_arg = node.args[0]
+                
+                # Check if it's a dict literal
+                if dict_has_exp(first_arg):
+                    has_exp = True
+                # Check if it's a tracked variable with exp
+                elif isinstance(first_arg, ast.Name):
+                    if first_arg.id in self.jwt_payloads_with_exp:
+                        has_exp = True
 
         if not has_exp:
             self.violations.append(
