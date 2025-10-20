@@ -582,7 +582,7 @@ def order_detail(request, order_id):
         assert len(violations) == 1
 
     def test_fastapi_jwt_pattern(self):
-        """Test JWT creation in FastAPI."""
+        """Test JWT creation in FastAPI - should detect missing JWT expiration."""
         code = """
 from fastapi import FastAPI
 import jwt
@@ -601,12 +601,368 @@ def login(credentials: dict):
         visitor.has_jwt_import = True
         visitor.visit(tree)
 
-        # Should detect missing authentication on route AND missing JWT expiration
-        auth_violations = [v for v in visitor.violations if v.rule_id == "AUTH005"]
+        # Should detect missing JWT expiration (but NOT missing auth on login route - that's expected)
         jwt_violations = [v for v in visitor.violations if v.rule_id == "AUTH007"]
         
-        assert len(auth_violations) >= 1
-        assert len(jwt_violations) == 1
+        assert len(jwt_violations) == 1, f"Expected 1 JWT violation, got {len(jwt_violations)}"
+
+
+class TestWeakPasswordResetToken:
+    """Tests for AUTH009: Weak Password Reset Token Generation."""
+
+    def test_detect_weak_reset_token_random(self):
+        """Detect password reset token using random module."""
+        code = """
+import random
+reset_token = str(random.randint(100000, 999999))
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH009"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.CRITICAL
+
+    def test_detect_weak_reset_token_choice(self):
+        """Detect reset token using random.choice()."""
+        code = """
+import random
+import string
+password_reset_token = ''.join(random.choice(string.ascii_letters) for _ in range(20))
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH009"]
+        assert len(violations) == 1
+
+    def test_safe_reset_token_secrets(self):
+        """No issue with secrets module for reset tokens."""
+        code = """
+import secrets
+reset_token = secrets.token_urlsafe(32)
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH009"]
+        assert len(violations) == 0
+
+    def test_safe_reset_token_os_urandom(self):
+        """No issue with os.urandom() for reset tokens."""
+        code = """
+import os
+import binascii
+reset_token = binascii.hexlify(os.urandom(32)).decode()
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH009"]
+        assert len(violations) == 0
+
+
+class TestPrivilegeEscalation:
+    """Tests for AUTH010: Privilege Escalation Risk."""
+
+    def test_detect_role_from_request(self):
+        """Detect setting user role from request parameter."""
+        code = """
+def update_user(request):
+    user.role = request.form['role']
+    user.save()
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH010"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.CRITICAL
+
+    def test_detect_admin_from_params(self):
+        """Detect setting is_admin from params."""
+        code = """
+def register(data):
+    user.is_admin = data['is_admin']
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH010"]
+        assert len(violations) == 1
+
+    def test_detect_permission_from_form(self):
+        """Detect setting permissions from form data."""
+        code = """
+user.permission = form['permission']
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH010"]
+        assert len(violations) == 1
+
+    def test_safe_role_assignment(self):
+        """No issue when role is set from safe source."""
+        code = """
+def create_user():
+    user.role = 'user'  # Default role
+    user.save()
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH010"]
+        assert len(violations) == 0
+
+
+class TestMissingMFA:
+    """Tests for AUTH011: Missing Multi-Factor Authentication."""
+
+    def test_detect_login_without_mfa(self):
+        """Detect login function without MFA."""
+        code = """
+from flask import Flask, request
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    if check_password(username, password):
+        return "Login successful"
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.has_flask_import = True
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH011"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.MEDIUM
+
+    def test_safe_login_with_totp(self):
+        """No issue when MFA/TOTP is implemented."""
+        code = """
+from flask import Flask
+def login(credentials):
+    if check_password(credentials):
+        if verify_totp(credentials['totp_code']):
+            return "Login successful"
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.has_flask_import = True
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH011"]
+        assert len(violations) == 0
+
+    def test_safe_login_with_mfa_check(self):
+        """No issue when MFA check is present."""
+        code = """
+def signin(user):
+    if authenticate(user):
+        return check_mfa(user)
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.has_django_import = True
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH011"]
+        assert len(violations) == 0
+
+
+class TestInsecureRememberMe:
+    """Tests for AUTH012: Insecure Remember Me Implementation."""
+
+    def test_detect_password_in_remember_cookie(self):
+        """Detect storing password in remember me cookie."""
+        code = """
+from flask import make_response
+def login():
+    response = make_response("OK")
+    response.set_cookie('remember_me', value=password)
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH012"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.HIGH
+
+    def test_detect_credential_in_cookie(self):
+        """Detect storing credential in cookie."""
+        code = """
+response.set_cookie(name='remember_token', value=user_credentials)
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH012"]
+        assert len(violations) == 1
+
+    def test_safe_remember_me_token(self):
+        """No issue when using secure token for remember me."""
+        code = """
+import secrets
+response.set_cookie('remember_me', value=secrets.token_hex(32))
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH012"]
+        assert len(violations) == 0
+
+
+class TestWeakPasswordPolicy:
+    """Tests for AUTH013: Weak Password Policy."""
+
+    def test_detect_short_password_requirement(self):
+        """Detect password validation with short minimum length."""
+        code = """
+def validate_password(pwd):
+    if len(pwd) >= 4:
+        return True
+    return False
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH013"]
+        assert len(violations) == 1
+        assert "4 < 8" in violations[0].message
+
+    def test_detect_weak_6_char_policy(self):
+        """Detect 6-character password policy."""
+        code = """
+def check_password_strength(password):
+    return len(password) >= 6
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH013"]
+        assert len(violations) == 1
+
+    def test_safe_strong_password_policy(self):
+        """No issue with 8+ character requirement."""
+        code = """
+def validate_password(pwd):
+    if len(pwd) >= 8:
+        return True
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH013"]
+        assert len(violations) == 0
+
+
+class TestNullByteAuthBypass:
+    """Tests for AUTH014: Null Byte Authentication Bypass."""
+
+    def test_detect_password_comparison(self):
+        """Detect direct password comparison vulnerable to null bytes."""
+        code = """
+def authenticate(username, password):
+    if password == stored_password:
+        return True
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH014"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.HIGH
+
+    def test_detect_token_comparison(self):
+        """Detect token comparison vulnerable to null bytes."""
+        code = """
+if auth_token == valid_token:
+    grant_access()
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH014"]
+        assert len(violations) == 1
+
+    def test_detect_user_comparison(self):
+        """Detect user comparison vulnerable to null bytes."""
+        code = """
+if user == authenticated_user:
+    allow()
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH014"]
+        assert len(violations) == 1
+
+
+class TestLDAPInjection:
+    """Tests for AUTH015: LDAP Injection in Authentication."""
+
+    def test_detect_ldap_string_concat(self):
+        """Detect LDAP query with string concatenation."""
+        code = """
+import ldap
+def authenticate(username):
+    conn = ldap.initialize('ldap://server')
+    # Direct f-string in search call
+    conn.search_s("ou=users", ldap.SCOPE_SUBTREE, f"(uid={username})")
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH015"]
+        assert len(violations) >= 1
+        assert violations[0].severity == RuleSeverity.HIGH
+
+    def test_detect_ldap_search_with_user_input(self):
+        """Detect LDAP search with unsanitized user input."""
+        code = """
+# Direct string concatenation in search call
+result = ldap_conn.search_s(base_dn, ldap.SCOPE_SUBTREE, "(cn=" + user_input + ")")
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH015"]
+        assert len(violations) >= 1
+
+    def test_safe_ldap_with_escaping(self):
+        """No issue when LDAP input is properly escaped (pattern not detected)."""
+        code = """
+import ldap.filter
+filter_str = ldap.filter.escape_filter_chars(username)
+"""
+        tree = ast.parse(code)
+        visitor = AuthSecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "AUTH015"]
+        # Note: Our check looks for string concat/f-strings in search calls
+        # so this safe code won't trigger
+        assert len(violations) == 0
 
 
 if __name__ == "__main__":
