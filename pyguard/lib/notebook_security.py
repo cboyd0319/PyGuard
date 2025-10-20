@@ -2850,7 +2850,8 @@ def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> 
             }],
             "partialFingerprints": {
                 "primaryLocationLineHash": hashlib.md5(
-                    f"{notebook_path}:{issue.cell_index}:{issue.line_number}:{issue.code_snippet}".encode()
+                    f"{notebook_path}:{issue.cell_index}:{issue.line_number}:{issue.code_snippet}".encode(),
+                    usedforsecurity=False  # Used for fingerprinting, not cryptography
                 ).hexdigest()[:16]
             },
             "properties": {

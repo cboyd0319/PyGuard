@@ -23,9 +23,9 @@ PyGuard is a security-focused static analysis tool designed to identify and fix 
 
 | Item | CWE | Likelihood | Impact | Risk Score | Status | Fix Plan |
 |------|-----|------------|--------|------------|--------|----------|
-| Transitive dependency vulnerabilities | CWE-1395 | 3 | 4 | 12 | 🟡 Active | Implement automated pip-audit, OSV-Scanner, and Safety checks in CI |
-| Lack of hash verification in requirements | CWE-494 | 2 | 4 | 8 | 🟡 Active | Generate requirements.txt with pip-tools --generate-hashes |
-| SBOM not generated automatically | N/A | 2 | 3 | 6 | 🟡 Active | Add SBOM generation (SPDX/CycloneDX) to release workflow |
+| Transitive dependency vulnerabilities | CWE-1395 | 3 | 4 | 12 | 🟢 Mitigated | ✅ Automated pip-audit, OSV-Scanner, and Safety checks in CI |
+| Lack of hash verification in requirements | CWE-494 | 2 | 4 | 8 | 🟢 Mitigated | ✅ All requirements.txt files include SHA256 hashes via pip-tools |
+| SBOM not generated automatically | N/A | 2 | 3 | 6 | 🟢 Mitigated | ✅ SBOM generation (SPDX/CycloneDX) in release workflow |
 | Artifacts not signed | CWE-345 | 2 | 3 | 6 | 🟡 Active | Implement Sigstore/cosign signing in release workflow |
 
 ### 2. GitHub Actions & CI/CD Security
@@ -66,6 +66,13 @@ PyGuard is a security-focused static analysis tool designed to identify and fix 
 
 ## Mitigated Risks (Completed)
 
+### Supply Chain Security (NEW - October 2025)
+✅ **Hash-verified dependencies** - All requirements include SHA256 hashes via pip-tools  
+✅ **Automated dependency scanning** - pip-audit, OSV-Scanner, Safety in CI  
+✅ **SBOM generation** - SPDX 2.3 and CycloneDX formats in releases  
+✅ **Dependency documentation** - Comprehensive guide in docs/DEPENDENCY_MANAGEMENT.md  
+✅ **Reproducible builds** - Deterministic package generation with locked dependencies  
+
 ### GitHub Actions Security
 ✅ **All actions SHA-pinned with version comments** - Reviewed workflows, confirmed proper pinning  
 ✅ **Minimal permissions configured** - All workflows use least-privilege permissions  
@@ -83,6 +90,7 @@ PyGuard is a security-focused static analysis tool designed to identify and fix 
 ✅ **SECURITY.md exists** - Comprehensive security policy documented  
 ✅ **Disclosure process** - Clear vulnerability reporting procedures  
 ✅ **SBOM mentioned** - Release artifacts include SPDX SBOM  
+✅ **Dependency management guide** - Detailed documentation with best practices  
 
 ---
 
@@ -91,10 +99,11 @@ PyGuard is a security-focused static analysis tool designed to identify and fix 
 1. ✅ Create comprehensive security scanning workflow (Bandit + Semgrep + pip-audit + OSV + secrets)
 2. ✅ Add requirements.txt for hash pinning preparation
 3. ✅ Create security/ folder with documentation structure
-4. 🔄 Run full security audit on all Python code
-5. 🔄 Add hash verification to requirements files
-6. 🔄 Implement automated SBOM generation
-7. 🔄 Add Sigstore signing to releases
+4. ✅ Add hash verification to requirements files (SHA256 via pip-tools)
+5. ✅ Create comprehensive dependency management documentation
+6. ✅ Implement automated SBOM generation (SPDX + CycloneDX in releases)
+7. 🔄 Run full security audit on all Python code
+8. 🔄 Add Sigstore signing to releases
 
 ---
 
