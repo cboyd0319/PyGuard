@@ -95,44 +95,54 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         if not isinstance(node.value, ast.Call):
             return
 
-        # Check for weak random functions
-        if isinstance(node.value.func, ast.Attribute):
-            module = None
-            func = node.value.func.attr
-            if isinstance(node.value.func.value, ast.Name):
-                module = node.value.func.value.id
+        # Helper to check if a call uses weak random functions
+        def check_call(call_node):
+            if isinstance(call_node.func, ast.Attribute):
+                module = None
+                func = call_node.func.attr
+                if isinstance(call_node.func.value, ast.Name):
+                    module = call_node.func.value.id
 
-            # Detect weak random usage (random.randint, random.random, etc.)
-            if module == "random" and func in ("randint", "random", "choice", "sample"):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="AUTH001",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_line(node.lineno),
-                        message=f"Weak session ID generation using random.{func}()",
-                        severity=RuleSeverity.HIGH,
-                        category=RuleCategory.SECURITY,
-                        fix_applicability=FixApplicability.SAFE,
+                # Detect weak random usage (random.randint, random.random, etc.)
+                if module == "random" and func in ("randint", "random", "choice", "sample"):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="AUTH001",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_line(node.lineno),
+                            message=f"Weak session ID generation using random.{func}()",
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
                     )
-                )
 
-            # Detect uuid.uuid1() (includes MAC address - predictable)
-            if module == "uuid" and func == "uuid1":
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="AUTH001",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_line(node.lineno),
-                        message="Session ID using uuid1() includes MAC address (predictable)",
-                        severity=RuleSeverity.HIGH,
-                        category=RuleCategory.SECURITY,
-                        fix_applicability=FixApplicability.SAFE,
+                # Detect uuid.uuid1() (includes MAC address - predictable)
+                if module == "uuid" and func == "uuid1":
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="AUTH001",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_line(node.lineno),
+                            message="Session ID using uuid1() includes MAC address (predictable)",
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
                     )
-                )
+
+        # Check the immediate call
+        check_call(node.value)
+        
+        # Also check if wrapped in str(), int(), etc.
+        if node.value.args:
+            for arg in node.value.args:
+                if isinstance(arg, ast.Call):
+                    check_call(arg)
 
     def _check_hardcoded_credentials(self, node: ast.Assign, var_name: str) -> None:
         """Check for hardcoded authentication credentials (AUTH002)."""
