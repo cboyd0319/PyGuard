@@ -94,13 +94,16 @@ PyGuard implements comprehensive supply chain security measures:
 
 ### Dependency Management
 - **Total Dependencies:** 14 core packages (see `pyproject.toml`)
-- **Version Pinning:** All direct dependencies specify minimum versions
+- **Version Pinning:** All dependencies pinned with **SHA256 hashes** for tamper protection
+- **Hash Verification:** `requirements.txt` and `requirements-dev.txt` include cryptographic hashes
 - **Automated Scanning:** 
   - pip-audit (PyPI Advisory Database)
   - OSV-Scanner (Google's Open Source Vulnerabilities)
   - Safety DB (security vulnerabilities)
 - **Update Strategy:** Dependabot weekly updates with security priority
 - **License Compliance:** MIT, Apache-2.0, BSD-2/3-Clause allowed
+
+📚 **See [docs/DEPENDENCY_MANAGEMENT.md](docs/DEPENDENCY_MANAGEMENT.md) for detailed dependency security practices**
 
 ### Verification
 You can verify PyGuard releases:

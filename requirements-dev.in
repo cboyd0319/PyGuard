@@ -1,0 +1,22 @@
+# PyGuard Development Dependencies
+# Source file for pip-compile
+# Generate requirements-dev.txt with hashes:
+#   pip-compile --generate-hashes requirements-dev.in
+
+-r requirements.txt
+
+# Testing
+pytest>=8.4.2
+pytest-cov>=7.0.0
+pytest-mock>=3.15.1
+pytest-randomly>=3.15.0
+pytest-benchmark>=4.0.0
+pytest-xdist>=3.6.0
+freezegun>=1.5.0
+hypothesis>=6.100.0
+tox>=4.31.0
+
+# Security Scanning
+# Note: pip-audit is available via pip
+# Note: semgrep, osv-scanner, and gitleaks are installed separately (not via pip)
+pip-audit>=2.7.0
