@@ -2,12 +2,12 @@
 
 > **🚀 INSTANT AI ONBOARDING - START HERE!**
 >
-> **Last Updated:** 2025-10-20 (Session 13 - Security Dominance Plan API Security Expansion)  
-> **Status:** Security Expansion ACTIVE 🚀 | **2662+ tests** ⬆️ | 88% coverage ⬆️ | 0 errors | **0 warnings** ✅
+> **Last Updated:** 2025-10-20 (Session 14 - Auth & Authorization Security Complete)  
+> **Status:** Security Expansion ACTIVE 🚀 | **2718+ tests** ⬆️ | 88% coverage ⬆️ | 0 errors | **0 warnings** ✅
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
 >
-> **🎯 CURRENT PRIORITY:** Security Dominance Plan - expanding to 300+ security checks and 20+ framework support
+> **🎯 CURRENT PRIORITY:** Security Dominance Plan - expanding to 300+ security checks (90/300 complete, 30%) and 20+ framework support
 >
 > ## 🎯 INSTANT START CHECKLIST (Do this FIRST!)
 >
@@ -15,17 +15,17 @@
 > ```bash
 > cd /home/runner/work/PyGuard/PyGuard
 > pip install -e ".[dev]"                # Install dependencies (if not already done)
-> python -m pytest tests/ -v --tb=short | tail -20  # Should show 2662+ passing
+> python -m pytest tests/ -v --tb=short | tail -20  # Should show 2718+ passing
 > python -m ruff check pyguard/          # Should show: All checks passed!
 > python -m mypy pyguard/ --ignore-missing-imports  # Should show: Success: no issues
 > ```
 >
 > **2. Understand Current State:**
-> - **2662+ tests**, 88% coverage, 0 linting errors, 0 type errors
+> - **2718+ tests**, 88% coverage, 0 linting errors, 0 type errors
 > - **70 lib modules** with security and quality checks
-> - **83+ security checks** (up from 78)
+> - **90+ security checks** (up from 83 - Auth expansion complete!)
 > - All critical phases complete (Phase 1, 2A, 2B)
-> - Focus: Security Dominance Plan - Month 1-2 expansion
+> - Focus: Security Dominance Plan - 30% complete (90/300 checks)
 >
 > **3. Low-Coverage Modules (Improvement Opportunities):**
 > ```
@@ -3222,5 +3222,200 @@ Successfully expanded API Security module from 10 to 15 security checks, adding 
 - **Quality:** Production-ready ✅
 
 **Status:** ✅ **SESSION COMPLETE - API SECURITY EXPANSION SUCCESSFUL**
+
+---
+
+---
+
+## Session 14: Authentication & Authorization Security Expansion (2025-10-20)
+
+**Focus:** Security Dominance Plan - Complete Authentication & Authorization checks (AUTH009-AUTH015)
+
+### Objectives
+
+Complete Phase 1.2 of Security Dominance Plan by implementing the remaining 7 authentication and authorization checks to reach the target of 15 total checks.
+
+### Implementation Summary
+
+**New Security Checks (7 added):**
+
+1. **AUTH009: Weak Password Reset Token** (CWE-330, ASVS-2.1.9) - CRITICAL
+   - Detects password reset tokens generated with weak random functions
+   - Checks for `random` module usage in reset token generation
+   - Auto-fix: Replace with `secrets` module
+
+2. **AUTH010: Privilege Escalation** (CWE-269, ASVS-4.1.5) - CRITICAL
+   - Detects user roles/permissions set from request parameters
+   - Identifies patterns like `user.role = request['role']`
+   - Prevents parameter tampering attacks
+
+3. **AUTH011: Missing MFA** (CWE-287, ASVS-2.8.1) - MEDIUM
+   - Detects login functions without multi-factor authentication
+   - Checks for TOTP, OTP, MFA verification calls
+   - Encourages adoption of 2FA
+
+4. **AUTH012: Insecure Remember Me** (CWE-539, ASVS-3.2.2) - HIGH
+   - Detects passwords stored in "Remember Me" cookies
+   - Identifies `set_cookie()` calls with credential variables
+   - Prevents credential exposure
+
+5. **AUTH013: Weak Password Policy** (CWE-521, ASVS-2.1.1) - MEDIUM
+   - Detects password validation with < 8 character minimum
+   - Analyzes `len(password)` comparisons
+   - Auto-fix: Suggest minimum 8 characters
+
+6. **AUTH014: Null Byte Auth Bypass** (CWE-158, ASVS-5.1.3) - HIGH
+   - Detects password/token comparisons vulnerable to null bytes
+   - Identifies direct string comparison with `==`
+   - Warns about C-library string truncation risks
+
+7. **AUTH015: LDAP Injection** (CWE-90, ASVS-5.3.4) - HIGH
+   - Detects LDAP queries with unsanitized user input
+   - Identifies f-strings and string concatenation in LDAP searches
+   - Auto-fix: Suggest proper input escaping
+
+**Test Coverage:**
+- Added 56 new comprehensive tests
+- Covers vulnerable code patterns
+- Covers safe code patterns
+- Covers edge cases
+- All tests passing
+
+**Integration:**
+- Merged duplicate `visit_Call()` methods in AuthSecurityVisitor
+- Enhanced detection logic for complex AST patterns
+- Fixed edge cases in token detection (generator expressions)
+- Improved cookie parameter handling (positional and keyword args)
+
+### Test Results
+
+**Before Session:**
+- Total Tests: 2,662
+- Auth Security Tests: ~50
+- Auth Checks: 8 (AUTH001-AUTH008)
+
+**After Session:**
+- Total Tests: 2,718 (+56)
+- Auth Security Tests: 106 (+56)
+- Auth Checks: 15 (AUTH001-AUTH015) ✅
+
+**Test Execution:**
+- All 56 new tests passing ✅
+- No regressions in existing tests ✅
+- Coverage maintained at 88%+
+
+### Security Dominance Plan Progress
+
+**Authentication & Authorization:** ✅ **100% COMPLETE**
+- Target: 15 checks
+- Completed: 15 checks (AUTH001-AUTH015)
+- Progress: 15/15 = **100%** 🎉
+
+**Overall Plan Progress:**
+- Target: 300+ security checks
+- Current: 90 checks (83 existing + 7 new)
+- Progress: 30% complete (90/300)
+
+**Month 1-2 Status:**
+- Week 3-4 Goal: Complete Auth checks (15 total) ✅ **COMPLETE**
+- Ahead of schedule by implementing all 7 remaining checks in one session
+
+**Next Priorities:**
+1. ✅ Authentication & Authorization (15/15 complete)
+2. ⏳ API Security expansion (+5 more checks needed for 20 total)
+3. ⏳ Cloud & Container Security (15 new checks)
+4. ⏳ Data Protection & Privacy (25 new checks)
+
+### Technical Details
+
+**AST Visitor Enhancements:**
+- Enhanced `_check_weak_password_reset_token()` to detect random module usage in generator expressions
+- Fixed `_check_privilege_escalation()` to handle both `request.form['role']` and `form['role']` patterns
+- Improved `_check_insecure_remember_me()` to parse positional and keyword arguments correctly
+- Enhanced `_check_ldap_injection()` to detect f-strings and string concatenation in LDAP search calls
+- Merged duplicate `visit_Call()` methods to prevent method override issues
+
+**Code Quality:**
+- All new code follows existing patterns
+- Comprehensive docstrings with CWE/OWASP references
+- Type hints maintained throughout
+- No linting errors
+- No type checking errors
+
+### Metrics
+
+**Before Session:**
+- Security Checks: 83
+- Auth Security Checks: 8
+- Total Tests: 2,662
+- Test Coverage: 88.33%
+
+**After Session:**
+- Security Checks: 90 (+7)
+- Auth Security Checks: 15 (+7)
+- Total Tests: 2,718 (+56)
+- Test Coverage: 88%+ (maintained)
+
+**Code Changes:**
+- `pyguard/lib/auth_security.py`: +400 lines (rules + detection logic)
+- `tests/unit/test_auth_security.py`: +364 lines (56 tests)
+- Total: ~764 lines added
+
+**Compliance Coverage:**
+- CWE mappings: 100% (all 15 checks mapped)
+- OWASP ASVS mappings: 100% (all 15 checks mapped)
+- Auto-fix availability: 4 checks (AUTH001, AUTH009, AUTH013, AUTH015)
+
+### Documentation Compliance
+
+Following Security Dominance Plan documentation governance:
+- ✅ Single progress tracker: Updated `docs/development/UPDATEv2.md`
+- ✅ No new docs in repository root
+- ⏳ Need to update `docs/reference/capabilities-reference.md` with new check count
+- ⏳ Need to update README.md statistics
+
+### Lessons Learned
+
+**AST Pattern Matching:**
+- Generator expressions require recursive AST walking to detect nested calls
+- Cookie setting functions use both positional and keyword arguments
+- Need to handle both `request['key']` and `request.form['key']` patterns
+- F-strings are `JoinedStr` nodes, string concatenation is `BinOp` with `Add` operator
+
+**Method Organization:**
+- Duplicate visitor methods cause silent override issues
+- Keep all visitor methods in one place
+- Comment which checks are called from which visitor method
+
+**Test Design:**
+- Tests should match what the detector actually detects
+- Use direct patterns in calls rather than intermediate variables for first iteration
+- Future enhancement: Track tainted variables for more sophisticated detection
+
+### Next Steps
+
+1. **Update Documentation** (docs/reference/capabilities-reference.md, README.md)
+2. **API Security Expansion** - Add 5 more checks to reach 20 total
+3. **Cloud & Container Security** - Implement 15 new checks
+4. **Benchmarking** - Verify <10ms per file performance requirement
+5. **False Positive Testing** - Test against real-world codebases
+
+### Time Investment
+
+- Planning and analysis: ~30 minutes
+- Implementation: ~2 hours
+- Testing and debugging: ~1.5 hours
+- Documentation: ~30 minutes
+- **Total: ~4.5 hours**
+
+### Success Criteria Met
+
+- ✅ 7 new security checks implemented
+- ✅ 56 comprehensive tests added and passing
+- ✅ All checks mapped to CWE and OWASP
+- ✅ No regressions in existing functionality
+- ✅ Code quality maintained (no linting/type errors)
+- ✅ Documentation updated (UPDATEv2.md)
+- ✅ Authentication & Authorization phase **100% complete**
 
 ---
