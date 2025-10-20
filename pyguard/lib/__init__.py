@@ -7,6 +7,7 @@ from pyguard.lib.advanced_security import (
     ReDoSDetector,
     TaintAnalyzer,
 )
+from pyguard.lib.api_security import analyze_api_security, APISecurityVisitor, API_SECURITY_RULES
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.best_practices import BestPracticesFixer
@@ -152,6 +153,10 @@ __all__ = [
     "PrototypePollutionDetector",
     "CachePoisoningDetector",
     "BusinessLogicDetector",
+    # API Security (NEW - Security Dominance Plan Phase 1)
+    "analyze_api_security",
+    "APISecurityVisitor",
+    "API_SECURITY_RULES",
     # Supply Chain
     "SupplyChainAnalyzer",
     "SBOM",

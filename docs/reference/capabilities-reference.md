@@ -8,15 +8,15 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Library Modules** | 68 | ✅ Production |
-| **Total Lines of Code** | 36,000+ | ✅ Production |
-| **Security Checks** | 68+ | ✅ Active |
+| **Library Modules** | 69 | ✅ Production |
+| **Total Lines of Code** | 37,000+ | ✅ Production |
+| **Security Checks** | 78+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
-| **Framework Rules** | 88+ | ✅ 5 Frameworks |
+| **Framework Rules** | 98+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 78 | ✅ Comprehensive |
+| **Test Files** | 80 | ✅ Comprehensive |
 | **Test Coverage** | 84% | 🎯 Target: 100% |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
@@ -53,7 +53,7 @@
 
 ## 1. Security Detection
 
-PyGuard implements **55+ security vulnerability checks** across 8 specialized security modules.
+PyGuard implements **78+ security vulnerability checks** across 9 specialized security modules.
 
 ### Security Modules Overview
 
@@ -62,6 +62,7 @@ PyGuard implements **55+ security vulnerability checks** across 8 specialized se
 | `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
 | `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
 | `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
+| `api_security.py` | 610 | 10 checks | API Security | ✅ **NEW** |
 | `xss_detection.py` | 541 | 5 XSS types | Multi-framework | ✅ Complete |
 | `advanced_security.py` | 408 | 14 vulns | Taint, race, ReDoS | ✅ Complete |
 | `security.py` | 289 | 20 vulns | Core security | ✅ Complete |
