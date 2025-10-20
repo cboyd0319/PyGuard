@@ -146,16 +146,21 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             if func_name == "FastAPI":
                 self._check_docs_exposure(node)
 
-            # Detect CORS misconfiguration
-            if func_name == "CORSMiddleware":
-                self._check_cors_misconfiguration(node)
-
             # Detect OAuth2 misconfigurations
             if func_name in ("OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer"):
                 self._check_oauth2_misconfiguration(node)
 
-        # Check for Pydantic validation bypasses
+        # Check for Attribute calls
         if isinstance(node.func, ast.Attribute):
+            # Check for add_middleware with CORSMiddleware
+            if node.func.attr == "add_middleware":
+                # Check if first argument is CORSMiddleware
+                if len(node.args) > 0:
+                    if isinstance(node.args[0], ast.Name):
+                        if node.args[0].id == "CORSMiddleware":
+                            self._check_cors_misconfiguration(node)
+            
+            # Check for Pydantic validation bypasses
             if node.func.attr in ("construct", "parse_obj", "parse_raw"):
                 self._check_pydantic_validation_bypass(node)
 
@@ -168,6 +173,22 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     def _check_authentication_dependency(self, node: ast.FunctionDef) -> bool:
         """Check if function has authentication dependency."""
         for arg in node.args.args:
+            # Check for default values with Depends
+            if arg.arg and hasattr(node.args, 'defaults'):
+                # Get default values
+                num_defaults = len(node.args.defaults)
+                num_args = len(node.args.args)
+                default_offset = num_args - num_defaults
+                arg_index = node.args.args.index(arg)
+                
+                if arg_index >= default_offset:
+                    default_value = node.args.defaults[arg_index - default_offset]
+                    if isinstance(default_value, ast.Call):
+                        if isinstance(default_value.func, ast.Name):
+                            if default_value.func.id == "Depends":
+                                return True
+            
+            # Check annotations
             if arg.annotation:
                 # Check for Depends(...) with authentication
                 if isinstance(arg.annotation, ast.Subscript):
@@ -205,12 +226,20 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Check for missing origin validation
         has_origin_check = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Compare):
-                # Look for origin checks
-                if isinstance(stmt.left, ast.Attribute):
-                    if stmt.left.attr in ("origin", "headers"):
-                        has_origin_check = True
-                        break
+            # Look for variables named 'origin'
+            if isinstance(stmt, ast.Name) and stmt.id == "origin":
+                has_origin_check = True
+                break
+            # Look for .headers.get() calls
+            if isinstance(stmt, ast.Call):
+                if isinstance(stmt.func, ast.Attribute):
+                    if stmt.func.attr == "get":
+                        # Check if getting 'origin' header
+                        if len(stmt.args) > 0:
+                            if isinstance(stmt.args[0], ast.Constant):
+                                if stmt.args[0].value == "origin":
+                                    has_origin_check = True
+                                    break
 
         if not has_origin_check:
             self.violations.append(
@@ -545,11 +574,14 @@ class FastAPISecurityChecker:
 
     def __init__(self):
         self.logger = PyGuardLogger(__name__)
+        self.file_ops = FileOperations()
 
     def check_file(self, file_path: Path) -> List[RuleViolation]:
         """Check a Python file for FastAPI security issues."""
         try:
-            code = FileOperations.read_file(file_path)
+            code = self.file_ops.read_file(file_path)
+            if code is None:
+                return []
             tree = ast.parse(code)
             visitor = FastAPISecurityVisitor(file_path, code)
             visitor.visit(tree)
