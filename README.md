@@ -42,14 +42,14 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 - **DevSecOps engineers** automating security scanning in CI/CD pipelines
 - **Open source maintainers** needing SARIF reports for GitHub Security tab
 
-### What's New
+### 🆕 What's New
 
-- **10-100x faster scanning** with RipGrep integration
-- **Secret scanning** finds hardcoded credentials in seconds (114x faster)
-- **Import analysis** detects circular dependencies and god modules
-- **Test coverage checks** identify untested code automatically
-- **Compliance tracking** extracts OWASP/CWE references from code comments
-- **GitHub Action** ready for immediate CI/CD integration
+- ⚡ **10-100x faster scanning** with RipGrep integration
+- 🔑 **Secret scanning** finds hardcoded credentials in seconds (114x faster)
+- 🔄 **Import analysis** detects circular dependencies and god modules
+- 🧪 **Test coverage checks** identify untested code automatically
+- 📋 **Compliance tracking** extracts OWASP/CWE references from code comments
+- ⚙️ **GitHub Action** ready for immediate CI/CD integration
 
 ### 🛡️ Security-First Design
 
@@ -66,7 +66,7 @@ See [SECURITY.md](SECURITY.md) and [docs/DEPENDENCY_MANAGEMENT.md](docs/DEPENDEN
 
 ---
 
-## Quickstart
+## ⚡ Quickstart
 
 ### Option 1: GitHub Action (Recommended for CI/CD)
 
@@ -170,73 +170,73 @@ New to PyGuard? Follow the [5-minute tutorial](docs/index.md)
 
 ---
 
-## Features
+## ✨ Features
 
 <table>
 <tr>
 <td width="50%">
 
 **Security Scanning**
-- 55+ vulnerability checks (OWASP ASVS v5.0 aligned)
-- Code injection (eval, exec, compile)
-- SQL/NoSQL/LDAP injection detection
-- Hardcoded secrets scanning (AWS, GitHub, JWT)
-- Weak cryptography detection (MD5, SHA1)
-- SSRF, XXE, and path traversal checks
-- Framework-specific rules (Django, Flask, FastAPI)
-- **179+ auto-fixes** (most comprehensive available)
+- ✅ **55+ vulnerability checks** (OWASP ASVS v5.0 aligned)
+- ✅ Code injection (eval, exec, compile)
+- ✅ SQL/NoSQL/LDAP injection detection
+- ✅ Hardcoded secrets scanning (AWS, GitHub, JWT)
+- ✅ Weak cryptography detection (MD5, SHA1)
+- ✅ SSRF, XXE, and path traversal checks
+- ✅ Framework-specific rules (Django, Flask, FastAPI)
+- ✅ **179+ auto-fixes** (most comprehensive available)
 
-**RipGrep Integration** (NEW)
-- 10-100x faster scanning on large codebases
-- Secret scanning in 3.4s (vs 390s AST-only)
-- Import analysis 16x faster
-- Test coverage checks 15x faster
-- Automatic fallback if RipGrep unavailable
-- Zero configuration required
+**RipGrep Integration** 🆕
+- ✅ 10-100x faster scanning on large codebases
+- ✅ Secret scanning in 3.4s (vs 390s AST-only)
+- ✅ Import analysis 16x faster
+- ✅ Test coverage checks 15x faster
+- ✅ Automatic fallback if RipGrep unavailable
+- ✅ Zero configuration required
 
 **Code Quality**
-- 150+ quality rules (PEP 8, Pylint, Bugbear)
-- Cyclomatic complexity analysis
-- Code smell detection
-- Missing docstring checks
-- Mutable default detection
-- Magic number identification
-- Type checking improvements
+- ✅ **150+ quality rules** (PEP 8, Pylint, Bugbear)
+- ✅ Cyclomatic complexity analysis
+- ✅ Code smell detection
+- ✅ Missing docstring checks
+- ✅ Mutable default detection
+- ✅ Magic number identification
+- ✅ Type checking improvements
 
 </td>
 <td width="50%">
 
 **Compliance & Reporting**
-- **10+ frameworks**: OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP
-- SARIF 2.1.0 output for GitHub Security
-- HTML reports with severity categorization
-- CSV export for audit trails
-- Compliance tracking from code comments
-- CWE/OWASP vulnerability mapping
-- Risk scoring and prioritization
+- ✅ **10+ frameworks**: OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP
+- ✅ SARIF 2.1.0 output for GitHub Security
+- ✅ HTML reports with severity categorization
+- ✅ CSV export for audit trails
+- ✅ Compliance tracking from code comments
+- ✅ CWE/OWASP vulnerability mapping
+- ✅ Risk scoring and prioritization
 
 **GitHub Integration**
-- GitHub Action for CI/CD
-- Automatic SARIF upload
-- PR annotations with fix suggestions
-- Security trend tracking
-- Policy enforcement (block on critical)
-- Zero-config setup
+- ✅ GitHub Action for CI/CD
+- ✅ Automatic SARIF upload
+- ✅ PR annotations with fix suggestions
+- ✅ Security trend tracking
+- ✅ Policy enforcement (block on critical)
+- ✅ Zero-config setup
 
 **Supply Chain Security**
-- Dependency vulnerability scanning
-- SBOM generation (CycloneDX/SPDX)
-- License compliance detection
-- Risk scoring per dependency
-- Known CVE detection
+- ✅ Dependency vulnerability scanning
+- ✅ SBOM generation (CycloneDX/SPDX)
+- ✅ License compliance detection
+- ✅ Risk scoring per dependency
+- ✅ Known CVE detection
 
 **Developer Experience**
-- AST-based (10-100x faster than regex)
-- Watch mode for continuous monitoring
-- Git hooks for pre-commit checks
-- VS Code integration (planned)
-- Parallel processing
-- Incremental analysis
+- ✅ AST-based (10-100x faster than regex)
+- ✅ Watch mode for continuous monitoring
+- ✅ Git hooks for pre-commit checks
+- 🔄 VS Code integration (planned v0.4.0)
+- ✅ Parallel processing
+- ✅ Incremental analysis
 
 </td>
 </tr>
@@ -328,7 +328,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 
 ---
 
-## Installation
+## 🚀 Installation
 
 ### Prerequisites
 
@@ -383,7 +383,7 @@ apt install ripgrep
 winget install BurntSushi.ripgrep.MSVC
 ```
 
-## Usage
+## 📖 Usage
 
 ### Basic — Default happy-path
 
@@ -468,7 +468,7 @@ use_black = true
 use_isort = true
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 | Key | Type | Default | Example | Notes |
 |-----|------|---------|---------|-------|
@@ -551,7 +551,7 @@ See [docs/index.md](docs/index.md) for the documentation hub.
 
 **🎯 [GITHUB ACTION GUIDE](docs/guides/github-action-guide.md) — Using PyGuard in GitHub Actions with examples and best practices**
 
-## Advanced Features (NEW!)
+## 🚀 Advanced Features
 
 PyGuard now includes powerful development workflow integrations:
 
@@ -752,7 +752,7 @@ After PyGuard:
 
 ---
 
-## Why PyGuard
+## 🎯 Why PyGuard
 
 ### Comprehensiveness
 
@@ -789,7 +789,7 @@ After PyGuard:
 
 Single config file. Single command. Unified reports.
 
-## Security
+## 🔒 Security
 
 **Secrets:** Use environment variables. Never commit credentials. PyGuard requires no secrets (reads local files only). Optional: `PYGUARD_LOG_LEVEL` for logging control.
 
@@ -801,7 +801,7 @@ Single config file. Single command. Unified reports.
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
@@ -881,7 +881,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 **More help:** [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions)
 
-## Performance
+## ⚡ Performance
 
 **Expected throughput**
 - Single file: 10-50ms (depends on file size and complexity)
@@ -901,7 +901,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 - Project size: tested up to 100,000 total lines
 - Memory: ~50MB baseline + ~1KB per file
 
-## Roadmap
+## 🗺️ Roadmap
 
 Current: v0.3.0 (1002 tests, 84% coverage)
 
@@ -968,7 +968,7 @@ Using PyGuard in production? We'd love to feature your project!
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - How to run tests, lint, format code
@@ -1008,7 +1008,7 @@ See [docs/index.md](docs/index.md) for complete documentation map.
 
 ---
 
-## License
+## 📄 License
 
 **MIT License** - See [LICENSE](LICENSE) for full text.
 
@@ -1026,7 +1026,7 @@ Learn more: https://choosealicense.com/licenses/mit/
 
 ---
 
-## Support & Community
+## 💬 Support & Community
 
 **Need help?**
 - 🐛 [File a bug report](https://github.com/cboyd0319/PyGuard/issues/new?template=bug_report.md)
