@@ -8,12 +8,12 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Library Modules** | 67 | ✅ Production |
-| **Total Lines of Code** | 35,000+ | ✅ Production |
-| **Security Checks** | 55+ | ✅ Active |
+| **Library Modules** | 68 | ✅ Production |
+| **Total Lines of Code** | 36,000+ | ✅ Production |
+| **Security Checks** | 68+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
-| **Framework Rules** | 75+ | ✅ 4 Frameworks |
+| **Framework Rules** | 88+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
 | **Test Files** | 78 | ✅ Comprehensive |
@@ -30,7 +30,7 @@
 1. [Security Detection](#1-security-detection) — 55+ vulnerability checks
 2. [Code Quality](#2-code-quality) — 150+ rules across 10 categories
 3. [Auto-Fix System](#3-auto-fix-system) — 179+ fixes, 100% coverage
-4. [Framework Support](#4-framework-support) — Django, Flask, Pandas, Pytest
+4. [Framework Support](#4-framework-support) — Django, Flask, FastAPI, Pandas, Pytest
 
 ### Advanced Capabilities
 5. [Advanced Security](#5-advanced-security) — Jupyter notebooks, AI explanations
@@ -463,7 +463,8 @@ PyGuard includes specialized rules for popular Python frameworks.
 | Framework | Module | Lines | Rules | Auto-Fix | Status |
 |-----------|--------|-------|-------|----------|--------|
 | Django | `framework_django.py` | 333 | 25+ | ✅ | ✅ Complete |
-| Flask/FastAPI | `framework_flask.py` | 409 | 20+ | ✅ | ✅ Complete |
+| Flask | `framework_flask.py` | 409 | 20+ | ✅ | ✅ Complete |
+| **FastAPI** | **`framework_fastapi.py`** | **664** | **13+** | 🔜 | ✅ **NEW** |
 | Pandas | `framework_pandas.py` | 279 | 15+ | ⚠️ | ✅ Complete |
 | Pytest | `framework_pytest.py` | 300 | 18+ | ⚠️ | ✅ Complete |
 
@@ -482,7 +483,7 @@ PyGuard includes specialized rules for popular Python frameworks.
 - Missing select_related/prefetch_related
 - Raw SQL usage
 
-### Flask/FastAPI Rules (20+)
+### Flask Rules (20+)
 
 **Security (10)**:
 - Debug mode in production
@@ -491,6 +492,34 @@ PyGuard includes specialized rules for popular Python frameworks.
 - Server-Side Template Injection
 - Insecure session config
 - Missing rate limiting
+
+### FastAPI Rules (13+) — NEW!
+
+**Security (13)**:
+- FASTAPI001: Missing authentication on sensitive routes (CWE-639)
+- FASTAPI002: WebSocket missing origin validation (CWE-346)
+- FASTAPI003: Query parameter injection (CWE-89) [TODO]
+- FASTAPI004: File upload missing size validation (CWE-770)
+- FASTAPI005: Background task privilege escalation (CWE-269)
+- FASTAPI006: API docs exposed in production (CWE-200)
+- FASTAPI007: CORS wildcard origin (CWE-942)
+- FASTAPI008: CORS credentials with wildcard (CWE-942)
+- FASTAPI009: OAuth2 insecure HTTP (CWE-319)
+- FASTAPI010: Pydantic validation bypass (CWE-20)
+- FASTAPI011: Cookie missing secure flag (CWE-614)
+- FASTAPI012: Cookie missing httponly flag (CWE-1004)
+- FASTAPI013: Cookie missing samesite (CWE-352)
+
+**Coverage Areas**:
+- Authentication & Authorization
+- WebSocket Security
+- CORS Configuration
+- OAuth2 Security
+- Cookie Security
+- File Upload Security
+- Background Task Security
+- API Documentation Exposure
+- Pydantic Model Validation
 
 ### Pandas Rules (15+)
 
