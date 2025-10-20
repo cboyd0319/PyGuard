@@ -683,7 +683,7 @@ pyguard vulnerable_code.py
 | **Jupyter Notebook Support** | ✅ **Native** | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Local/No Telemetry** | ✅ | ✅ | ✅ | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |
 | **ML-Powered Detection** | ✅ | ❌ | ❌ | ❌ | ✅ | ⚠️ Limited |
-| **Framework-Specific Rules** | 4 | 2 | 3 | 4+ | 5+ | 6+ |
+| **Framework-Specific Rules** | **5** | 2 | 3 | 4+ | 5+ | 6+ |
 | **SARIF Output** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **GitHub Actions Native** | ✅ | ⚠️ Manual | ⚠️ Manual | ✅ | ✅ | ✅ |
 | **Cost** | **Free** | Free | Free | Free/Paid | Paid | Free/Paid |
