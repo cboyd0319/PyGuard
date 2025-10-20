@@ -108,13 +108,95 @@ class APISecurityVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        """Check for security header configurations."""
+        """Check for security header configurations and API key exposure in URLs."""
         self._check_missing_security_headers(node)
+        
+        # Check for API key exposure in URL assignments
+        for value in [node.value]:
+            if isinstance(value, ast.JoinedStr):
+                # Check if this is a URL with sensitive parameters
+                url_pattern = False
+                has_sensitive_param = False
+                
+                for val in value.values:
+                    if isinstance(val, ast.Constant) and isinstance(val.value, str):
+                        # Check if this looks like a URL
+                        if "http" in val.value.lower() or "://" in val.value:
+                            url_pattern = True
+                        # Check for sensitive parameter names in URL
+                        if any(
+                            keyword in val.value.lower()
+                            for keyword in ("api_key=", "apikey=", "token=", "secret=", "password=", "auth=")
+                        ):
+                            has_sensitive_param = True
+                
+                if url_pattern and has_sensitive_param:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="API007",
+                            file_path=self.file_path,
+                            line_number=value.lineno,
+                            column=value.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            message="API key may be exposed in URL - visible in logs and history",
+                            fix_suggestion="Pass API keys in Authorization header instead of URL parameters",
+                            cwe_id="CWE-598",
+                            owasp_id="A04:2021 - Insecure Design",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
+        
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for GraphQL introspection and other API call issues."""
         self._check_graphql_introspection(node)
+        
+        # Check for JWT algorithm confusion in module-level calls
+        func_name = None
+        is_jwt_call = False
+        
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+            # Check if it's jwt.encode() or jwt.decode()
+            if isinstance(node.func.value, ast.Name):
+                if "jwt" in node.func.value.id.lower():
+                    is_jwt_call = True
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id
+
+        if is_jwt_call and func_name in ("encode", "decode"):
+            # Check for algorithm parameter
+            algo_value = None
+            for keyword in node.keywords:
+                if keyword.arg == "algorithms" or keyword.arg == "algorithm":
+                    if isinstance(keyword.value, ast.Constant):
+                        algo_value = keyword.value.value
+                    elif isinstance(keyword.value, ast.List):
+                        for elt in keyword.value.elts:
+                            if isinstance(elt, ast.Constant):
+                                if elt.value == "HS256" or elt.value == "none":
+                                    algo_value = elt.value
+                                    break
+
+            if algo_value in ("HS256", "none"):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="API006",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        message=f"JWT using weak algorithm '{algo_value}' - vulnerable to algorithm confusion",
+                        fix_suggestion="Use RS256 or ES256 for JWT signing; never allow 'none' algorithm",
+                        cwe_id="CWE-327",
+                        owasp_id="A02:2021 - Cryptographic Failures",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+        
         self.generic_visit(node)
 
     def _get_name(self, node: ast.expr) -> Optional[str]:
@@ -202,8 +284,11 @@ class APISecurityVisitor(ast.NodeVisitor):
                 decorator_name = decorator.id
             elif isinstance(decorator, ast.Attribute):
                 decorator_name = decorator.attr
-            elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):
-                decorator_name = decorator.func.id
+            elif isinstance(decorator, ast.Call):
+                if isinstance(decorator.func, ast.Name):
+                    decorator_name = decorator.func.id
+                elif isinstance(decorator.func, ast.Attribute):
+                    decorator_name = decorator.func.attr
 
             if decorator_name and "limit" in decorator_name.lower():
                 has_rate_limit = True
@@ -293,6 +378,7 @@ class APISecurityVisitor(ast.NodeVisitor):
         """
         has_pagination = False
         has_limit = False
+        has_paginate_method = False
 
         # Check function body for pagination patterns
         for item in ast.walk(node):
@@ -302,14 +388,28 @@ class APISecurityVisitor(ast.NodeVisitor):
                 if item.id in ("limit", "max_results", "page_size"):
                     has_limit = True
             elif isinstance(item, ast.Attribute):
-                if item.attr in ("paginate", "limit", "offset"):
+                if item.attr == "paginate":
+                    has_paginate_method = True
+                    has_pagination = True
+                    has_limit = True  # paginate implies built-in limit
+                elif item.attr in ("limit", "offset"):
                     has_pagination = True
 
         # Only flag list/query endpoints
         is_list_endpoint = any(
             keyword in node.name.lower()
-            for keyword in ("list", "all", "get", "query", "search", "find")
+            for keyword in ("list", "all", "query", "search", "find")
         )
+        
+        # Don't flag if function has parameters suggesting single item (like user_id)
+        has_id_param = any(
+            arg.arg.endswith('_id') or arg.arg == 'id'
+            for arg in node.args.args
+        )
+        
+        # If it has "get" and an ID parameter, it's probably a single-item endpoint
+        if "get" in node.name.lower() and has_id_param:
+            is_list_endpoint = False
 
         if is_list_endpoint and not (has_pagination and has_limit):
             self.violations.append(
@@ -378,15 +478,18 @@ class APISecurityVisitor(ast.NodeVisitor):
         for item in ast.walk(node):
             if isinstance(item, ast.Call):
                 func_name = None
+                is_jwt_call = False
+                
                 if isinstance(item.func, ast.Attribute):
                     func_name = item.func.attr
+                    # Check if it's jwt.encode() or jwt.decode()
+                    if isinstance(item.func.value, ast.Name):
+                        if "jwt" in item.func.value.id.lower():
+                            is_jwt_call = True
                 elif isinstance(item.func, ast.Name):
                     func_name = item.func.id
 
-                if func_name in ("encode", "decode") and any(
-                    isinstance(arg, ast.Name) and "jwt" in arg.id.lower()
-                    for arg in ast.walk(item)
-                ):
+                if is_jwt_call and func_name in ("encode", "decode"):
                     # Check for algorithm parameter
                     algo_value = None
                     for keyword in item.keywords:
@@ -425,32 +528,40 @@ class APISecurityVisitor(ast.NodeVisitor):
         CWE-598: Use of GET Request Method With Sensitive Query Strings
         """
         for item in ast.walk(node):
-            if isinstance(item, ast.Call):
-                # Check for URL building with API keys
-                for arg in item.args:
-                    if isinstance(arg, ast.JoinedStr):  # f-string
-                        # Check if it contains 'api_key', 'token', etc.
-                        for value in arg.values:
-                            if isinstance(value, ast.Constant):
-                                if any(
-                                    keyword in value.value.lower()
-                                    for keyword in ("api_key", "apikey", "token", "secret")
-                                ):
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="API007",
-                                            file_path=self.file_path,
-                                            line_number=item.lineno,
-                                            column=item.col_offset,
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            message="API key may be exposed in URL - visible in logs and history",
-                                            fix_suggestion="Pass API keys in Authorization header instead of URL parameters",
-                                            cwe_id="CWE-598",
-                                            owasp_id="A04:2021 - Insecure Design",
-                                            fix_applicability=FixApplicability.SUGGESTED,
-                                        )
-                                    )
+            # Check f-strings for API keys in URLs (both in assignments and function calls)
+            if isinstance(item, ast.JoinedStr):
+                # Check if it contains URL with 'api_key', 'token', etc. in query params
+                url_pattern = False
+                has_sensitive_param = False
+                
+                for value in item.values:
+                    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                        # Check if this looks like a URL
+                        if "http" in value.value.lower() or "://" in value.value:
+                            url_pattern = True
+                        # Check for sensitive parameter names in URL
+                        if any(
+                            keyword in value.value.lower()
+                            for keyword in ("api_key=", "apikey=", "token=", "secret=", "password=", "auth=")
+                        ):
+                            has_sensitive_param = True
+                
+                if url_pattern and has_sensitive_param:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="API007",
+                            file_path=self.file_path,
+                            line_number=item.lineno,
+                            column=item.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            message="API key may be exposed in URL - visible in logs and history",
+                            fix_suggestion="Pass API keys in Authorization header instead of URL parameters",
+                            cwe_id="CWE-598",
+                            owasp_id="A04:2021 - Insecure Design",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
     def _check_open_redirect(self, node: ast.FunctionDef) -> None:
         """
@@ -568,7 +679,11 @@ class APISecurityVisitor(ast.NodeVisitor):
         elif isinstance(node.func, ast.Name):
             func_name = node.func.id
 
-        if func_name and "graphql" in func_name.lower():
+        # Check for GraphQL-related function calls (Schema, GraphQLApp, etc.)
+        if func_name and (
+            "graphql" in func_name.lower() or 
+            func_name in ("Schema", "GraphQLApp", "GraphQLView")
+        ):
             # Check for introspection parameter
             for keyword in node.keywords:
                 if keyword.arg == "introspection":

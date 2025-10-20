@@ -730,13 +730,13 @@ class TestPerformance:
         code = "\n".join(["def func(): pass"] * 50)
         result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
         # Should complete quickly
-        assert benchmark.stats.mean < 0.050  # <50ms
+        assert benchmark.stats['mean'] < 0.050  # <50ms
 
     def test_medium_file_performance(self, benchmark):
         """Benchmark on 1000-line file."""
         code = "\n".join(["def func(): pass"] * 500)
         result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
-        assert benchmark.stats.mean < 0.200  # <200ms
+        assert benchmark.stats['mean'] < 0.200  # <200ms
 
     def test_api_heavy_file_performance(self, benchmark):
         """Benchmark on file with many API routes."""
@@ -749,7 +749,7 @@ def endpoint{i}():
 """)
         code = "from flask import Flask\napp = Flask(__name__)\n" + "\n".join(routes)
         result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
-        assert benchmark.stats.mean < 0.300  # <300ms for 50 routes
+        assert benchmark.stats['mean'] < 0.300  # <300ms for 50 routes
 
 
 # Run tests with: pytest tests/unit/test_api_security.py -v
