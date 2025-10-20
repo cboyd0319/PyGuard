@@ -6,7 +6,6 @@ Dramatically improves performance for large codebases.
 """
 
 import subprocess
-from pathlib import Path
 from typing import List, Set, Optional
 
 
