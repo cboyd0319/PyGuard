@@ -374,7 +374,7 @@ MCP configuration supports environment variable substitution using the `${VAR_NA
 
 ## Related Documentation
 
-- **[MCP Integration Guide](../docs/MCP-GUIDE.md)** — Detailed guide with examples
+- **[MCP Integration Guide](copilot-instructions.md#mcp-integration-model-context-protocol)** — Detailed guide with examples
 - **[GitHub Copilot Instructions](copilot-instructions.md)** — Project-specific Copilot guidance
 - **[Security Policy](../../../SECURITY.md)** — Security practices and disclosure
 - **[Contributing Guidelines](../../../CONTRIBUTING.md)** — Development workflow

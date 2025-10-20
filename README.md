@@ -19,8 +19,8 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 [![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
 [![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 
-[Quickstart](#-quickstart) •
-[Features](#-features) •
+[Quickstart](#quickstart) •
+[Features](#features) •
 [Documentation](docs/index.md) •
 [GitHub Action](docs/guides/github-action-guide.md)
 

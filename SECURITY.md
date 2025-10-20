@@ -168,6 +168,8 @@ PyGuard itself is continuously scanned with:
 - 🎯 **Threat Model** - `security/THREAT_MODEL.md`
 - 📚 **Secure Coding Guide** - `security/SECURE_CODING_GUIDE.md`
 - 🔍 **Custom Security Rules** - `security/POLICIES/semgrep/`
+- 🚀 **Security Quickstart** - `docs/security/SECURITY_QUICKSTART.md`
+- 📄 **Security Summary** - `docs/security/SECURITY_SUMMARY.md`
 
 ## Security Hall of Fame
 

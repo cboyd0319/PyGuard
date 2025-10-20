@@ -257,8 +257,8 @@ Check Security tab weekly to address accumulating issues.
 
 ## Support
 
-- **Documentation:** [docs/github-action-guide.md](../../docs/github-action-guide.md)
-- **Full Capabilities:** [docs/capabilities-reference.md](../../docs/capabilities-reference.md)
+- **Documentation:** [GitHub Action Guide](../../guides/github-action-guide.md)
+- **Full Capabilities:** [Capabilities Reference](../../reference/capabilities-reference.md)
 - **Issues:** https://github.com/cboyd0319/PyGuard/issues
 
 ## Contributing

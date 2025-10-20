@@ -461,6 +461,6 @@ For issues or questions:
 ## See Also
 
 - [PyGuard Main Documentation](../../README.md)
-- [Security Rules Reference](security-rules.md)
-- [Capabilities Reference](capabilities-reference.md)
+- [Security Rules Reference](../reference/security-rules.md)
+- [Capabilities Reference](../reference/capabilities-reference.md)
 - [CI/CD Integration Examples](../../examples/)

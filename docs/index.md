@@ -6,17 +6,17 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### Getting Started
 - [Main README](../README.md) - Quick start and overview
-- [Installation & Setup](README.md#installation) - Detailed installation guide
+- [Installation & Setup](../README.md#installation) - Detailed installation guide
 - [Examples](examples/README.md) - Code examples
 
 ### User Guides
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
 - [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules ✨ NEW
-- [Auto-Fix Guide](auto-fix-guide.md) - Automated code fixes
-- [Git Hooks Guide](git-hooks-guide.md) - Pre-commit integration
-- [Notebook Security Guide](notebook-security-guide.md) - Jupyter notebook scanning
-- [Capabilities Reference](capabilities-reference.md) - Complete feature catalog
-- [Security Rules Reference](security-rules.md) - All security checks
+- [Auto-Fix Guide](guides/auto-fix-guide.md) - Automated code fixes
+- [Git Hooks Guide](guides/git-hooks-guide.md) - Pre-commit integration
+- [Notebook Security Guide](guides/notebook-security-guide.md) - Jupyter notebook scanning
+- [Capabilities Reference](reference/capabilities-reference.md) - Complete feature catalog
+- [Security Rules Reference](reference/security-rules.md) - All security checks
 
 ### Architecture & Implementation
 - [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
@@ -36,7 +36,7 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 ### For Users
 - **First time?** Start with [Main README](../README.md)
 - **Want examples?** Check [examples/](examples/)
-- **Need help?** See [Capabilities Reference](capabilities-reference.md)
+- **Need help?** See [Capabilities Reference](reference/capabilities-reference.md)
 
 ### For Developers
 - **Contributing?** Read [Contributing Guide](../CONTRIBUTING.md)
@@ -44,9 +44,9 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - **Adding features?** Check [Development Updates](development/UPDATEv2.md)
 
 ### For Security Teams
-- **Compliance?** Review [Capabilities Reference](capabilities-reference.md)
-- **Integration?** See [Git Hooks Guide](git-hooks-guide.md)
-- **Custom rules?** Check [Security Rules Reference](security-rules.md)
+- **Compliance?** Review [Capabilities Reference](reference/capabilities-reference.md)
+- **Integration?** See [Git Hooks Guide](guides/git-hooks-guide.md)
+- **Custom rules?** Check [Security Rules Reference](reference/security-rules.md)
 
 ## 📖 Documentation Templates
 

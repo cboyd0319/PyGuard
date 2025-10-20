@@ -183,7 +183,7 @@ url = "https://pypi.org/simple/"
 3. **Prevent dependency confusion attacks**
 4. **Monitor for namespace hijacking**
 
-See [PYSEC.md](../docs/copilot/PYSEC.md) for comprehensive private registry security.
+See [PYSEC.md](copilot/PYSEC.md) for comprehensive private registry security.
 
 ## Transitive Dependencies
 
@@ -304,7 +304,7 @@ Hash verification adds verification time but increases security.
 
 ## Additional Resources
 
-- [PYSEC.md](../docs/copilot/PYSEC.md) - Comprehensive Python security guidelines
+- [PYSEC.md](copilot/PYSEC.md) - Comprehensive Python security guidelines
 - [SECURITY.md](../SECURITY.md) - Security policy and reporting
 - [RISK_LEDGER.md](../security/RISK_LEDGER.md) - Current security risks
 - [pip-tools documentation](https://pip-tools.readthedocs.io/)

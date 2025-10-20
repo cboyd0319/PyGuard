@@ -343,7 +343,7 @@ When adding tests for a module:
 
 ## Resources
 
-- [TEST_PLAN.md](./TEST_PLAN.md) - Comprehensive testing strategy
+- [TEST_PLAN.md](../TEST_PLAN.md) - Comprehensive testing strategy
 - [pytest documentation](https://docs.pytest.org/)
 - [Coverage.py docs](https://coverage.readthedocs.io/)
 - [hypothesis](https://hypothesis.readthedocs.io/) - Property-based testing
@@ -352,4 +352,4 @@ When adding tests for a module:
 
 **Last Updated**: Initial comprehensive assessment  
 **Document Maintained By**: PyGuard Test Team  
-**Questions**: See TEST_PLAN.md for detailed strategies
+**Questions**: See [TEST_PLAN.md](../TEST_PLAN.md) for detailed strategies
