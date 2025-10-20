@@ -159,12 +159,20 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["pyguard"]
-omit = ["*/tests/*", "*/test_*.py"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/examples/*",
+    "*/benchmarks/*",
+    "*/__pycache__/*",
+]
+parallel = true
 
 [tool.coverage.report]
 fail_under = 87
 skip_covered = true
 show_missing = true
+precision = 2
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -175,6 +183,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
     "@abc.abstractmethod",
+    "pass",
 ]
 
 [tool.pylint.messages_control]

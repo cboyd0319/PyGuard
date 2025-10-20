@@ -1,0 +1,38 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  
+  # Allow document start without ---
+  document-start: disable
+  
+  # Allow comments without space after #
+  comments:
+    min-spaces-from-content: 1
+  
+  # Allow duplicate keys in examples
+  key-duplicates: disable
+  
+  # Allow truthy values (yes/no, on/off)
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+  
+  # GitHub Actions specific
+  braces:
+    max-spaces-inside: 1
+  
+  brackets:
+    max-spaces-inside: 1
+
+ignore: |
+  .github/
+  node_modules/
+  venv/
+  .venv/

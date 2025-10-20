@@ -1,0 +1,270 @@
+rules:
+  - id: pyguard-unsafe-eval
+    patterns:
+      - pattern: eval(...)
+      - pattern-not: eval("...")  # Allow string literals
+    message: |
+      Detected use of eval() with dynamic input. This is extremely dangerous
+      as it can lead to arbitrary code execution. Use ast.literal_eval() for
+      safe evaluation of literals, or redesign to avoid dynamic code execution.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+      owasp: "A03:2021 - Injection"
+      category: security
+      subcategory: [vuln]
+      likelihood: HIGH
+      impact: CRITICAL
+      confidence: HIGH
+
+  - id: pyguard-unsafe-exec
+    patterns:
+      - pattern: exec(...)
+      - pattern-not: exec("...")  # Allow string literals
+    message: |
+      Detected use of exec() with dynamic input. This can lead to arbitrary
+      code execution. Avoid exec() entirely or ensure input is from trusted
+      sources only and properly validated.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-95"
+      owasp: "A03:2021 - Injection"
+
+  - id: pyguard-pickle-load
+    pattern: pickle.load(...)
+    message: |
+      pickle.load() on untrusted data can lead to arbitrary code execution.
+      Never unpickle data from untrusted sources. Consider using JSON or
+      another safe serialization format.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+      owasp: "A08:2021 - Software and Data Integrity Failures"
+
+  - id: pyguard-yaml-unsafe-load
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)
+      - pattern-not: yaml.safe_load(...)
+    message: |
+      yaml.load() without SafeLoader can execute arbitrary Python code.
+      Use yaml.safe_load() instead or yaml.load(..., Loader=yaml.SafeLoader).
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-502"
+      owasp: "A08:2021"
+
+  - id: pyguard-shell-injection
+    patterns:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+      - pattern-not: subprocess.$FUNC("...", shell=True, ...)
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: ^(run|call|check_call|check_output|Popen)$
+    message: |
+      subprocess call with shell=True and dynamic input can lead to command
+      injection. Use argument lists without shell=True, or use shlex.quote()
+      to sanitize input.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+      owasp: "A03:2021 - Injection"
+
+  - id: pyguard-sql-injection
+    patterns:
+      - pattern: $CURSOR.execute("..." + $VAR + "...")
+      - pattern: $CURSOR.execute(f"...{$VAR}...")
+      - pattern: $CURSOR.execute("..." % $VAR)
+    message: |
+      SQL query constructed with string formatting/concatenation. This can
+      lead to SQL injection. Use parameterized queries with placeholders.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+
+  - id: pyguard-hardcoded-secret
+    patterns:
+      - pattern: |
+          $VAR = "..."
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: ^(PASSWORD|API_KEY|SECRET|TOKEN|PRIVATE_KEY)$
+    message: |
+      Potential hardcoded secret detected. Use environment variables or a
+      secret management system instead.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      owasp: "A07:2021 - Identification and Authentication Failures"
+
+  - id: pyguard-weak-crypto-md5
+    patterns:
+      - pattern: hashlib.md5(...)
+      - pattern-not: hashlib.md5()  # Empty call for non-crypto use
+    message: |
+      MD5 is cryptographically broken and should not be used for security
+      purposes. Use SHA256 or stronger (SHA384, SHA512) instead.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: pyguard-weak-crypto-sha1
+    pattern: hashlib.sha1(...)
+    message: |
+      SHA1 is cryptographically broken and should not be used for security.
+      Use SHA256 or stronger (SHA384, SHA512) instead.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-327"
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: pyguard-path-traversal
+    patterns:
+      - pattern: open($VAR, ...)
+      - pattern-not: open("...", ...)
+      - pattern-not-inside: |
+          $PATH = Path(...).resolve()
+          ...
+          if str($PATH).startswith(...):
+            ...
+    message: |
+      Opening file with user-controlled path without validation. This can
+      lead to path traversal attacks. Validate paths with Path().resolve()
+      and check they're within expected directory.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-22: Path Traversal"
+      owasp: "A01:2021 - Broken Access Control"
+
+  - id: pyguard-insecure-random
+    patterns:
+      - pattern: random.$FUNC(...)
+      - pattern-not: random.Random(...)
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: ^(randint|random|randrange|choice)$
+    message: |
+      Use of non-cryptographic random function for security purposes. Use
+      secrets module instead (secrets.token_bytes, secrets.token_urlsafe).
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: pyguard-template-injection
+    patterns:
+      - pattern: jinja2.Template($VAR)
+      - pattern-not-inside: |
+          jinja2.Environment(autoescape=True)
+    message: |
+      Jinja2 template created without autoescape. This can lead to XSS.
+      Use jinja2.Environment(autoescape=True) for HTML templates.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 - Injection"
+
+  - id: pyguard-debug-enabled
+    patterns:
+      - pattern: app.run(..., debug=True, ...)
+      - pattern: app.debug = True
+    message: |
+      Debug mode enabled. This should never be used in production as it
+      exposes sensitive information and can execute arbitrary code.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-489: Active Debug Code"
+      owasp: "A05:2021 - Security Misconfiguration"
+
+  - id: pyguard-assert-used
+    pattern: assert $CONDITION
+    message: |
+      Assertions can be disabled with -O flag and should not be used for
+      security checks or input validation. Use explicit if statements and
+      raise exceptions.
+    severity: INFO
+    languages: [python]
+    metadata:
+      cwe: "CWE-703: Improper Check or Handling of Exceptional Conditions"
+      category: security
+
+  - id: pyguard-catch-all-exception
+    patterns:
+      - pattern: |
+          try:
+            ...
+          except:
+            ...
+      - pattern-not: |
+          try:
+            ...
+          except Exception:
+            ...
+            raise
+    message: |
+      Bare except clause catches all exceptions including KeyboardInterrupt
+      and SystemExit. Use specific exception types or 'except Exception:'.
+    severity: INFO
+    languages: [python]
+    metadata:
+      category: best-practice
+
+  - id: pyguard-tarfile-extract
+    patterns:
+      - pattern: $TAR.extractall(...)
+      - pattern-not-inside: |
+          def is_safe_path(...):
+            ...
+          if is_safe_path(...):
+            $TAR.extractall(...)
+    message: |
+      Extracting tar archives without validation can lead to path traversal
+      (Zip Slip). Validate all paths before extraction to ensure they're
+      within the target directory.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-22: Path Traversal"
+      owasp: "A01:2021 - Broken Access Control"
+
+  - id: pyguard-xml-external-entity
+    patterns:
+      - pattern: xml.etree.ElementTree.parse(...)
+      - pattern-not-inside: |
+          import defusedxml
+          ...
+    message: |
+      xml.etree.ElementTree is vulnerable to XXE attacks. Use defusedxml
+      library instead for parsing untrusted XML.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      cwe: "CWE-611: XML External Entity (XXE)"
+      owasp: "A05:2021 - Security Misconfiguration"
+
+  - id: pyguard-temp-file-race
+    patterns:
+      - pattern: tempfile.mktemp(...)
+    message: |
+      tempfile.mktemp() is deprecated due to race condition vulnerabilities.
+      Use tempfile.mkstemp() or tempfile.TemporaryFile() instead.
+    severity: WARNING
+    languages: [python]
+    metadata:
+      cwe: "CWE-377: Insecure Temporary File"
+      owasp: "A04:2021 - Insecure Design"
