@@ -123,10 +123,15 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             
             # Check for SSRF in URL parameters
             self._check_ssrf_in_url_params(node)
+            
+            # Check for missing security headers
+            if is_route:
+                self._check_missing_security_headers(node)
         
         # Check for JWT algorithm confusion (in any function)
         if self.has_fastapi_import:
             self._check_jwt_algorithm_confusion(node)
+            self._check_graphql_introspection(node)
 
         self.generic_visit(node)
 
@@ -753,6 +758,92 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                             )
                                         )
 
+    def _check_missing_security_headers(self, node: ast.FunctionDef) -> None:
+        """Check for missing security headers in responses."""
+        # Look for Response object usage in route
+        has_response_headers = False
+        
+        for stmt in ast.walk(node):
+            # Check for response.headers assignments
+            if isinstance(stmt, ast.Assign):
+                for target in stmt.targets:
+                    if isinstance(target, ast.Subscript):
+                        if isinstance(target.value, ast.Attribute):
+                            if target.value.attr == "headers":
+                                has_response_headers = True
+                                # Check if security headers are set
+                                if isinstance(target.slice, ast.Constant):
+                                    header_name = target.slice.value
+                                    if isinstance(header_name, str):
+                                        if header_name.lower() in ("strict-transport-security", "hsts"):
+                                            return  # HSTS is set, no violation
+        
+        # Look for @app decorators to check if this is a route
+        is_route = False
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                if decorator.func.attr in ("get", "post", "put", "delete", "patch"):
+                    is_route = True
+                    break
+        
+        # Only warn for routes that return responses
+        if is_route:
+            # Check if function returns a Response object
+            for stmt in ast.walk(node):
+                if isinstance(stmt, ast.Return) and stmt.value:
+                    # Only flag if we see explicit response handling but no headers
+                    if isinstance(stmt.value, ast.Call):
+                        if isinstance(stmt.value.func, ast.Name):
+                            if stmt.value.func.id in ("Response", "JSONResponse", "HTMLResponse"):
+                                if not has_response_headers:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FASTAPI019",
+                                            message=f"Route {node.name}() missing HSTS security header (CWE-523)",
+                                            line_number=node.lineno,
+                                            column=node.col_offset,
+                                            severity=RuleSeverity.MEDIUM,
+                                            category=RuleCategory.SECURITY,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.MANUAL,
+                                            fix_data={
+                                                "suggestion": "Add response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'",
+                                            },
+                                        )
+                                    )
+
+    def _check_graphql_introspection(self, node: ast.FunctionDef) -> None:
+        """Check for GraphQL introspection enabled in production."""
+        # Look for GraphQL schema or app creation
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Call):
+                if isinstance(stmt.func, ast.Name):
+                    # Check for GraphQL or Strawberry initialization
+                    if "graphql" in stmt.func.id.lower() or "strawberry" in stmt.func.id.lower():
+                        # Check for introspection parameter
+                        has_introspection_disabled = False
+                        for keyword in stmt.keywords:
+                            if keyword.arg and "introspection" in keyword.arg.lower():
+                                if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                                    has_introspection_disabled = True
+                        
+                        if not has_introspection_disabled:
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI020",
+                                    message="GraphQL introspection enabled - should be disabled in production (CWE-200)",
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.MEDIUM,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.SAFE,
+                                    fix_data={
+                                        "suggestion": "Add introspection=False to GraphQL initialization",
+                                    },
+                                )
+                            )
+
     def _get_name(self, node: ast.AST) -> Optional[str]:
         """Get the name from an AST node."""
         if isinstance(node, ast.Name):
@@ -942,6 +1033,34 @@ FASTAPI_SSRF_URL_PARAM_RULE = Rule(
     ],
 )
 
+FASTAPI_MISSING_HSTS_RULE = Rule(
+    rule_id="FASTAPI019",
+    name="fastapi-missing-hsts",
+    message_template="Route missing HSTS security header (CWE-523)",
+    description="Route returns Response without Strict-Transport-Security header",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-523: Unprotected Transport of Credentials",
+        "OWASP ASVS 14.4.5 v5.0: HTTP Security Headers",
+    ],
+)
+
+FASTAPI_GRAPHQL_INTROSPECTION_RULE = Rule(
+    rule_id="FASTAPI020",
+    name="fastapi-graphql-introspection",
+    message_template="GraphQL introspection enabled (CWE-200)",
+    description="GraphQL introspection enabled - should be disabled in production",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-200: Exposure of Sensitive Information",
+        "OWASP ASVS 14.1.3 v5.0: Build and Deploy",
+    ],
+)
+
 
 # Register all rules
 def register_fastapi_rules():
@@ -958,5 +1077,7 @@ def register_fastapi_rules():
         FASTAPI_JWT_NO_VERIFY_RULE,
         FASTAPI_MISSING_RATE_LIMIT_RULE,
         FASTAPI_SSRF_URL_PARAM_RULE,
+        FASTAPI_MISSING_HSTS_RULE,
+        FASTAPI_GRAPHQL_INTROSPECTION_RULE,
     ]
     register_rules(rules)

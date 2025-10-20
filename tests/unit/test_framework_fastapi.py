@@ -1101,3 +1101,117 @@ async def multi_fetch(url1: str, url2: str):
 
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI018"]
         assert len(violations) >= 2  # Should detect both URL parameters
+
+
+class TestFastAPISecurityHeaders:
+    """Test security header detection."""
+
+    def test_detect_missing_hsts_header(self):
+        """Test detection of missing HSTS header in Response."""
+        code = """
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+@app.get("/data")
+async def get_data():
+    # Missing HSTS header
+    return JSONResponse(content={"data": "value"})
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI019"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.MEDIUM
+        assert "hsts" in violations[0].message.lower()
+
+    def test_safe_with_hsts_header(self):
+        """Test no violation when HSTS header is set."""
+        code = """
+from fastapi import FastAPI
+from fastapi.responses import Response
+
+app = FastAPI()
+
+@app.get("/data")
+async def get_data():
+    response = Response(content="data")
+    response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return response
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI019"]
+        assert len(violations) == 0
+
+    def test_no_violation_for_simple_dict_return(self):
+        """Test no violation for routes returning simple dicts (automatic JSON)."""
+        code = """
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/data")
+async def get_data():
+    # Simple dict return - FastAPI handles this
+    return {"data": "value"}
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI019"]
+        assert len(violations) == 0
+
+
+class TestFastAPIGraphQL:
+    """Test GraphQL security checks."""
+
+    def test_detect_graphql_introspection_enabled(self):
+        """Test detection of GraphQL introspection enabled."""
+        code = """
+from fastapi import FastAPI
+import strawberry
+from strawberry.fastapi import GraphQLRouter
+
+app = FastAPI()
+
+def setup_graphql():
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(schema)  # Introspection enabled by default
+    return graphql_app
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI020"]
+        assert len(violations) == 1
+        assert violations[0].severity == RuleSeverity.MEDIUM
+        assert "introspection" in violations[0].message.lower()
+
+    def test_safe_graphql_introspection_disabled(self):
+        """Test no violation when introspection is disabled."""
+        code = """
+from fastapi import FastAPI
+import strawberry
+from strawberry.fastapi import GraphQLRouter
+
+app = FastAPI()
+
+def setup_graphql():
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(schema, graphql_ide=False, introspection=False)
+    return graphql_app
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test.py"), code)
+        visitor.visit(tree)
+
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI020"]
+        assert len(violations) == 0
