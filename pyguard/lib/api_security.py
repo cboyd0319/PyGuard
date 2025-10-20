@@ -18,6 +18,13 @@ Security Areas Covered:
 - Missing security headers (HSTS, CSP, X-Frame-Options)
 - Open redirect vulnerabilities
 - Clickjacking vulnerabilities
+- CORS wildcard origin misconfiguration
+- XML External Entity (XXE) attacks
+- Insecure deserialization in API payloads
+- OAuth flow unvalidated redirects
+- Missing CSRF token validation
+
+Total Security Checks: 15
 
 References:
 - OWASP API Security Top 10 | https://owasp.org/API-Security/ | High
@@ -55,6 +62,15 @@ class APISecurityVisitor(ast.NodeVisitor):
         self.has_django = False
         self.route_functions: Set[str] = set()
         self.model_classes: Set[str] = set()
+        self.defusedxml_imports: Set[str] = set()  # Track defusedxml imports
+
+    def visit_Import(self, node: ast.Import) -> None:
+        """Track imports including defusedxml."""
+        for alias in node.names:
+            if "defusedxml" in alias.name:
+                import_name = alias.asname if alias.asname else alias.name.split('.')[-1]
+                self.defusedxml_imports.add(import_name)
+        self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track framework imports."""
@@ -65,6 +81,11 @@ class APISecurityVisitor(ast.NodeVisitor):
                 self.has_fastapi = True
             elif node.module.startswith("django"):
                 self.has_django = True
+            elif "defusedxml" in node.module:
+                # Track defusedxml imports
+                for alias in node.names:
+                    import_name = alias.asname if alias.asname else alias.name
+                    self.defusedxml_imports.add(import_name)
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -93,6 +114,8 @@ class APISecurityVisitor(ast.NodeVisitor):
             self._check_missing_authentication(node)
             self._check_pagination_issues(node)
             self._check_http_method_security(node)
+            self._check_oauth_flow_misconfig(node)
+            self._check_csrf_token_missing(node)
 
         # Check for JWT algorithm confusion in any function
         self._check_jwt_algorithm_confusion(node)
@@ -150,6 +173,9 @@ class APISecurityVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         """Check for GraphQL introspection and other API call issues."""
         self._check_graphql_introspection(node)
+        self._check_cors_misconfiguration(node)
+        self._check_xxe_vulnerability(node)
+        self._check_insecure_deserialization(node)
         
         # Check for JWT algorithm confusion in module-level calls
         func_name = None
@@ -702,6 +728,230 @@ class APISecurityVisitor(ast.NodeVisitor):
                             )
 
 
+    def _check_cors_misconfiguration(self, node: ast.Call) -> None:
+        """Check for CORS wildcard origin misconfiguration."""
+        # Check for CORS configuration with wildcard
+        func_check = False
+        if isinstance(node.func, ast.Attribute):
+            if "cors" in node.func.attr.lower() or "add_middleware" in node.func.attr.lower():
+                func_check = True
+        elif isinstance(node.func, ast.Name):
+            if "cors" in node.func.id.lower():
+                func_check = True
+        
+        if func_check:
+            for keyword in node.keywords:
+                if keyword.arg in ("allow_origins", "origins", "allowed_origins"):
+                    # Check for wildcard origin
+                    if isinstance(keyword.value, ast.Constant):
+                        if keyword.value.value == "*":
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="API011",
+                                    file_path=self.file_path,
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    message="CORS configured with wildcard origin (*) - allows any domain",
+                                    fix_suggestion="Specify exact allowed origins instead of wildcard",
+                                    cwe_id="CWE-942",
+                                    owasp_id="A05:2021 - Security Misconfiguration",
+                                    fix_applicability=FixApplicability.SUGGESTED,
+                                )
+                            )
+                    elif isinstance(keyword.value, ast.List):
+                        for elt in keyword.value.elts:
+                            if isinstance(elt, ast.Constant) and elt.value == "*":
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="API011",
+                                        file_path=self.file_path,
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        message="CORS configured with wildcard origin (*) - allows any domain",
+                                        fix_suggestion="Specify exact allowed origins instead of wildcard",
+                                        cwe_id="CWE-942",
+                                        owasp_id="A05:2021 - Security Misconfiguration",
+                                        fix_applicability=FixApplicability.SUGGESTED,
+                                    )
+                                )
+
+    def _check_xxe_vulnerability(self, node: ast.Call) -> None:
+        """Check for XML External Entity (XXE) vulnerabilities."""
+        # Check for XML parsing without disabling external entities
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+            if func_name in ("parse", "fromstring", "XMLParser"):
+                # Check if using defusedxml
+                using_defusedxml = False
+                
+                if isinstance(node.func.value, ast.Name):
+                    # Check if the module variable is from defusedxml
+                    if node.func.value.id in self.defusedxml_imports:
+                        using_defusedxml = True
+                    elif "defusedxml" in node.func.value.id.lower():
+                        using_defusedxml = True
+                    
+                    # Check for XMLParser creation with resolve_entities=False
+                    if func_name == "XMLParser":
+                        for keyword in node.keywords:
+                            if keyword.arg == "resolve_entities":
+                                if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                                    return  # Safe - explicitly disabled
+                
+                # Only flag if NOT using defusedxml AND NOT using resolve_entities=False
+                if not using_defusedxml and func_name in ("parse", "fromstring"):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="API012",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            message="XML parsing without XXE protection - vulnerable to XML External Entity attacks",
+                            fix_suggestion="Use defusedxml library or disable external entity resolution",
+                            cwe_id="CWE-611",
+                            owasp_id="A05:2021 - Security Misconfiguration",
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+
+    def _check_insecure_deserialization(self, node: ast.Call) -> None:
+        """Check for insecure deserialization in API payloads."""
+        # Check for unsafe pickle, marshal, or shelve usage
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+            module_name = None
+            
+            if isinstance(node.func.value, ast.Name):
+                module_name = node.func.value.id.lower()
+            
+            if module_name in ("pickle", "marshal", "shelve", "dill") and func_name == "loads":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="API013",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        message=f"Insecure deserialization using {module_name}.{func_name}() - can execute arbitrary code",
+                        fix_suggestion="Use safe formats like JSON for API payloads; validate all deserialized data",
+                        cwe_id="CWE-502",
+                        owasp_id="A08:2021 - Software and Data Integrity Failures",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
+    def _check_oauth_flow_misconfig(self, node: ast.FunctionDef) -> None:
+        """Check for OAuth flow misconfigurations including unvalidated redirects."""
+        # First check if this has a route decorator
+        has_route_decorator = False
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                if decorator.func.attr in ("get", "post", "route"):
+                    has_route_decorator = True
+                    break
+            elif isinstance(decorator, ast.Attribute):
+                if decorator.attr in ("get", "post", "route"):
+                    has_route_decorator = True
+                    break
+        
+        if not has_route_decorator:
+            return  # Not a route handler, skip
+        
+        # Check for OAuth redirect without validation
+        has_redirect = False
+        validates_redirect = False
+        
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Attribute):
+                    if "redirect" in child.func.attr.lower():
+                        has_redirect = True
+                elif isinstance(child.func, ast.Name):
+                    if "redirect" in child.func.id.lower():
+                        has_redirect = True
+                        # Check if redirect URL is validated
+                        for arg in child.args:
+                            if isinstance(arg, ast.Call):
+                                validates_redirect = True
+        
+        # Check for validation patterns in the function body
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Name):
+                    if "validate" in child.func.id.lower() or "is_safe" in child.func.id.lower():
+                        validates_redirect = True
+            elif isinstance(child, ast.If):
+                # Check for conditional validation
+                validates_redirect = True  # Assume if statement might be validating
+        
+        if has_redirect and not validates_redirect:
+            # Check if function name suggests OAuth
+            if any(keyword in node.name.lower() for keyword in ("oauth", "authorize", "callback", "login")):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="API014",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        message="OAuth flow redirect URL not validated - vulnerable to open redirect",
+                        fix_suggestion="Validate redirect_uri against whitelist of allowed URLs",
+                        cwe_id="CWE-601",
+                        owasp_id="A01:2021 - Broken Access Control",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
+    def _check_csrf_token_missing(self, node: ast.FunctionDef) -> None:
+        """Check for missing CSRF token validation in state-changing operations."""
+        # Check if this is a state-changing route (POST, PUT, DELETE, PATCH)
+        is_state_changing = False
+        has_csrf_check = False
+        
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                method = decorator.func.attr
+                if method in ("post", "put", "delete", "patch"):
+                    is_state_changing = True
+        
+        if is_state_changing:
+            # Check for CSRF validation
+            for child in ast.walk(node):
+                if isinstance(child, ast.Name):
+                    if "csrf" in child.id.lower():
+                        has_csrf_check = True
+                        break
+                elif isinstance(child, ast.Attribute):
+                    if "csrf" in child.attr.lower():
+                        has_csrf_check = True
+                        break
+            
+            if not has_csrf_check:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="API015",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        message="State-changing endpoint missing CSRF token validation",
+                        fix_suggestion="Add CSRF token validation for POST/PUT/DELETE/PATCH endpoints",
+                        cwe_id="CWE-352",
+                        owasp_id="A01:2021 - Broken Access Control",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
+
 def analyze_api_security(file_path: Path, code: str) -> List[RuleViolation]:
     """
     Analyze code for API security vulnerabilities.
@@ -844,6 +1094,66 @@ API010_GRAPHQL_INTROSPECTION = Rule(
     cwe_mapping="CWE-200",
 )
 
+API011_CORS_WILDCARD = Rule(
+    rule_id="API011",
+    name="api-cors-wildcard",
+    message_template="CORS configured with wildcard origin (*)",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="Wildcard CORS allows any domain to access the API",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A05:2021 - Security Misconfiguration",
+    cwe_mapping="CWE-942",
+)
+
+API012_XXE_VULNERABILITY = Rule(
+    rule_id="API012",
+    name="api-xxe-vulnerability",
+    message_template="XML parsing without XXE protection",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="XML External Entity attacks can lead to data disclosure and SSRF",
+    fix_applicability=FixApplicability.SAFE,
+    owasp_mapping="A05:2021 - Security Misconfiguration",
+    cwe_mapping="CWE-611",
+)
+
+API013_INSECURE_DESERIALIZATION = Rule(
+    rule_id="API013",
+    name="api-insecure-deserialization",
+    message_template="Insecure deserialization in API payload",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="Deserializing untrusted data can execute arbitrary code",
+    fix_applicability=FixApplicability.SAFE,
+    owasp_mapping="A08:2021 - Software and Data Integrity Failures",
+    cwe_mapping="CWE-502",
+)
+
+API014_OAUTH_REDIRECT_UNVALIDATED = Rule(
+    rule_id="API014",
+    name="api-oauth-redirect-unvalidated",
+    message_template="OAuth redirect URL not validated",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="Unvalidated OAuth redirects can be exploited for phishing",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A01:2021 - Broken Access Control",
+    cwe_mapping="CWE-601",
+)
+
+API015_CSRF_TOKEN_MISSING = Rule(
+    rule_id="API015",
+    name="api-csrf-token-missing",
+    message_template="State-changing endpoint missing CSRF protection",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="Missing CSRF tokens allow attackers to forge requests",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A01:2021 - Broken Access Control",
+    cwe_mapping="CWE-352",
+)
+
 # Collect all rules
 API_SECURITY_RULES = [
     API001_MASS_ASSIGNMENT,
@@ -856,6 +1166,11 @@ API_SECURITY_RULES = [
     API008_OPEN_REDIRECT,
     API009_SECURITY_HEADERS,
     API010_GRAPHQL_INTROSPECTION,
+    API011_CORS_WILDCARD,
+    API012_XXE_VULNERABILITY,
+    API013_INSECURE_DESERIALIZATION,
+    API014_OAUTH_REDIRECT_UNVALIDATED,
+    API015_CSRF_TOKEN_MISSING,
 ]
 
 # Register rules
