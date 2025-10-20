@@ -132,6 +132,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         if self.has_fastapi_import:
             self._check_jwt_algorithm_confusion(node)
             self._check_graphql_introspection(node)
+            self._check_sse_injection(node)
+            self._check_exception_handler_leakage(node)
+            self._check_form_validation_bypass(node)
+            self._check_async_sql_injection(node)
 
         self.generic_visit(node)
 
@@ -852,6 +856,179 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             return node.attr
         return None
 
+    def _check_sse_injection(self, node: ast.FunctionDef) -> None:
+        """Check for Server-Sent Events injection vulnerabilities."""
+        # Look for EventSource or SSE responses
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Call):
+                if isinstance(stmt.func, ast.Name):
+                    # Check for SSE response creation
+                    if "event" in stmt.func.id.lower() and "source" in stmt.func.id.lower():
+                        # Check if user input is used in event data
+                        for arg in stmt.args:
+                            if isinstance(arg, (ast.FormattedValue, ast.JoinedStr)):
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI021",
+                                        message="Server-Sent Events data includes user input - injection risk (CWE-79)",
+                                        line_number=stmt.lineno,
+                                        column=stmt.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.MANUAL,
+                                        fix_data={
+                                            "suggestion": "Sanitize user input before including in SSE data",
+                                        },
+                                    )
+                                )
+
+    def _check_exception_handler_leakage(self, node: ast.FunctionDef) -> None:
+        """Check for information leakage in exception handlers."""
+        # Check if this is an exception handler
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                if decorator.func.attr == "exception_handler":
+                    # Check for exception details being returned
+                    for stmt in ast.walk(node):
+                        if isinstance(stmt, ast.Return) and stmt.value:
+                            # Check if exception message is in return value
+                            if isinstance(stmt.value, ast.Call):
+                                # Check arguments of the return call
+                                for arg in stmt.value.args:
+                                    if isinstance(arg, (ast.FormattedValue, ast.JoinedStr, ast.Attribute)):
+                                        if isinstance(arg, ast.Attribute) and "exc" in getattr(arg.value, "id", "").lower():
+                                            self.violations.append(
+                                                RuleViolation(
+                                                    rule_id="FASTAPI023",
+                                                    message="Exception handler exposes sensitive error details (CWE-209)",
+                                                    line_number=stmt.lineno,
+                                                    column=stmt.col_offset,
+                                                    severity=RuleSeverity.MEDIUM,
+                                                    category=RuleCategory.SECURITY,
+                                                    file_path=self.file_path,
+                                                    fix_applicability=FixApplicability.SAFE,
+                                                    fix_data={
+                                                        "suggestion": "Return generic error message instead of exception details",
+                                                    },
+                                                )
+                                            )
+                                # Check keywords (e.g., content={...})
+                                for kw in stmt.value.keywords:
+                                    # Walk through the keyword value
+                                    for sub_node in ast.walk(kw.value):
+                                        if isinstance(sub_node, (ast.FormattedValue, ast.JoinedStr)):
+                                            # Check if 'exc' is in the f-string
+                                            for val in ast.walk(sub_node):
+                                                if isinstance(val, ast.Name) and val.id == "exc":
+                                                    self.violations.append(
+                                                        RuleViolation(
+                                                            rule_id="FASTAPI023",
+                                                            message="Exception handler exposes sensitive error details (CWE-209)",
+                                                            line_number=stmt.lineno,
+                                                            column=stmt.col_offset,
+                                                            severity=RuleSeverity.MEDIUM,
+                                                            category=RuleCategory.SECURITY,
+                                                            file_path=self.file_path,
+                                                            fix_applicability=FixApplicability.SAFE,
+                                                            fix_data={
+                                                                "suggestion": "Return generic error message instead of exception details",
+                                                            },
+                                                        )
+                                                    )
+                                                    break
+
+    def _check_form_validation_bypass(self, node: ast.FunctionDef) -> None:
+        """Check for form data validation bypasses."""
+        # Look for Form() usage without validation
+        # Form is typically used as a default value, not as annotation
+        for arg in node.args.args:
+            # Check defaults for Form() calls
+            if node.args.defaults:
+                arg_index = node.args.args.index(arg)
+                defaults_start = len(node.args.args) - len(node.args.defaults)
+                if arg_index >= defaults_start:
+                    default_value = node.args.defaults[arg_index - defaults_start]
+                    if isinstance(default_value, ast.Call):
+                        if isinstance(default_value.func, ast.Name):
+                            if default_value.func.id == "Form":
+                                # Check if Form has validation constraints
+                                has_validation = False
+                                for keyword in default_value.keywords:
+                                    if keyword.arg in ("min_length", "max_length", "regex", "ge", "le", "gt", "lt"):
+                                        has_validation = True
+                                        break
+                                
+                                if not has_validation:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FASTAPI028",
+                                            message=f"Form field '{arg.arg}' missing validation constraints (CWE-20)",
+                                            line_number=arg.lineno,
+                                            column=arg.col_offset,
+                                            severity=RuleSeverity.MEDIUM,
+                                            category=RuleCategory.SECURITY,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.MANUAL,
+                                            fix_data={
+                                                "suggestion": "Add validation constraints like min_length, max_length, or regex pattern",
+                                            },
+                                        )
+                                    )
+
+    def _check_async_sql_injection(self, node: ast.FunctionDef) -> None:
+        """Check for SQL injection in async database queries."""
+        # Look for SQL query assignment with string concatenation or f-strings
+        for stmt in ast.walk(node):
+            # Check variable assignments
+            if isinstance(stmt, ast.Assign):
+                for target in stmt.targets:
+                    if isinstance(target, ast.Name):
+                        if "query" in target.id.lower() or "sql" in target.id.lower():
+                            # Check if query is built with string concatenation or f-strings
+                            if isinstance(stmt.value, (ast.BinOp, ast.JoinedStr)):
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI030",
+                                        message=f"SQL query variable '{target.id}' uses string concatenation - SQL injection risk (CWE-89)",
+                                        line_number=stmt.lineno,
+                                        column=stmt.col_offset,
+                                        severity=RuleSeverity.CRITICAL,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SUGGESTED,
+                                        fix_data={
+                                            "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
+                                        },
+                                    )
+                                )
+            
+            # Check await expressions for database methods
+            if isinstance(stmt, ast.Await):
+                if isinstance(stmt.value, ast.Call):
+                    if isinstance(stmt.value.func, ast.Attribute):
+                        method = stmt.value.func.attr
+                        if method in ("execute", "executemany", "fetch", "fetchall", "fetchone"):
+                            # Check if first argument uses string concatenation or f-strings
+                            if stmt.value.args:
+                                arg = stmt.value.args[0]
+                                if isinstance(arg, (ast.BinOp, ast.JoinedStr)):
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FASTAPI030",
+                                            message="Async SQL query uses string concatenation - SQL injection risk (CWE-89)",
+                                            line_number=stmt.lineno,
+                                            column=stmt.col_offset,
+                                            severity=RuleSeverity.CRITICAL,
+                                            category=RuleCategory.SECURITY,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.SUGGESTED,
+                                            fix_data={
+                                                "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
+                                            },
+                                        )
+                                    )
+
 
 class FastAPISecurityChecker:
     """Main checker for FastAPI security vulnerabilities."""
@@ -1061,6 +1238,62 @@ FASTAPI_GRAPHQL_INTROSPECTION_RULE = Rule(
     ],
 )
 
+FASTAPI_SSE_INJECTION_RULE = Rule(
+    rule_id="FASTAPI021",
+    name="fastapi-sse-injection",
+    message_template="SSE data includes user input - injection risk (CWE-79)",
+    description="Server-Sent Events data includes unsanitized user input",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-79: Improper Neutralization of Input During Web Page Generation",
+        "OWASP ASVS 5.3.3 v5.0: Output Encoding and Injection Prevention",
+    ],
+)
+
+FASTAPI_EXCEPTION_LEAKAGE_RULE = Rule(
+    rule_id="FASTAPI023",
+    name="fastapi-exception-leakage",
+    message_template="Exception handler exposes sensitive error details (CWE-209)",
+    description="Exception handler returns detailed error information to users",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-209: Generation of Error Message Containing Sensitive Information",
+        "OWASP ASVS 7.4.1 v5.0: Error Handling",
+    ],
+)
+
+FASTAPI_FORM_VALIDATION_BYPASS_RULE = Rule(
+    rule_id="FASTAPI028",
+    name="fastapi-form-validation-bypass",
+    message_template="Form field missing validation constraints (CWE-20)",
+    description="Form data accepted without proper validation constraints",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-20: Improper Input Validation",
+        "OWASP ASVS 5.1.1 v5.0: Input Validation Requirements",
+    ],
+)
+
+FASTAPI_ASYNC_SQL_INJECTION_RULE = Rule(
+    rule_id="FASTAPI030",
+    name="fastapi-async-sql-injection",
+    message_template="Async SQL query uses string concatenation (CWE-89)",
+    description="Async database query built with string concatenation - SQL injection risk",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SUGGESTED,
+    references=[
+        "CWE-89: SQL Injection",
+        "OWASP ASVS 5.3.4 v5.0: SQL Injection Prevention",
+    ],
+)
+
 
 # Register all rules
 def register_fastapi_rules():
@@ -1079,5 +1312,9 @@ def register_fastapi_rules():
         FASTAPI_SSRF_URL_PARAM_RULE,
         FASTAPI_MISSING_HSTS_RULE,
         FASTAPI_GRAPHQL_INTROSPECTION_RULE,
+        FASTAPI_SSE_INJECTION_RULE,
+        FASTAPI_EXCEPTION_LEAKAGE_RULE,
+        FASTAPI_FORM_VALIDATION_BYPASS_RULE,
+        FASTAPI_ASYNC_SQL_INJECTION_RULE,
     ]
     register_rules(rules)
