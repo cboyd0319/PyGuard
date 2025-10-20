@@ -32,7 +32,7 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Optional
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -117,6 +117,16 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
             # Check for background task security
             self._check_background_task_security(node)
+            
+            # Check for missing rate limiting
+            self._check_missing_rate_limiting(node)
+            
+            # Check for SSRF in URL parameters
+            self._check_ssrf_in_url_params(node)
+        
+        # Check for JWT algorithm confusion (in any function)
+        if self.has_fastapi_import:
+            self._check_jwt_algorithm_confusion(node)
 
         self.generic_visit(node)
 
@@ -567,6 +577,190 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 )
             )
 
+    def _check_jwt_algorithm_confusion(self, node: ast.FunctionDef) -> None:
+        """Check for JWT algorithm confusion vulnerabilities (RS256 vs HS256)."""
+        # Look for jwt.decode() calls in function body
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Call):
+                # Check for jwt.decode() or JWT.decode()
+                if isinstance(stmt.func, ast.Attribute):
+                    if stmt.func.attr == "decode":
+                        # Check if it's a JWT decode
+                        func_name = self._get_name(stmt.func.value)
+                        if func_name and "jwt" in func_name.lower():
+                            # Check for missing algorithm verification
+                            has_algorithms = False
+                            has_verify_signature = True  # Default is True
+                            
+                            for keyword in stmt.keywords:
+                                if keyword.arg == "algorithms":
+                                    has_algorithms = True
+                                    # Check for 'none' algorithm
+                                    if isinstance(keyword.value, ast.List):
+                                        for elt in keyword.value.elts:
+                                            if isinstance(elt, ast.Constant):
+                                                if elt.value and elt.value.lower() == "none":
+                                                    self.violations.append(
+                                                        RuleViolation(
+                                                            rule_id="FASTAPI014",
+                                                            message="JWT decode allows 'none' algorithm - bypasses signature verification (CWE-347)",
+                                                            line_number=stmt.lineno,
+                                                            column=stmt.col_offset,
+                                                            severity=RuleSeverity.CRITICAL,
+                                                            category=RuleCategory.SECURITY,
+                                                            file_path=self.file_path,
+                                                            fix_applicability=FixApplicability.SAFE,
+                                                            fix_data={
+                                                                "suggestion": "Remove 'none' from algorithms list",
+                                                            },
+                                                        )
+                                                    )
+                                elif keyword.arg == "verify_signature":
+                                    if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                                        has_verify_signature = False
+                            
+                            if not has_algorithms and has_verify_signature:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI015",
+                                        message="JWT decode missing 'algorithms' parameter - vulnerable to algorithm confusion (CWE-347)",
+                                        line_number=stmt.lineno,
+                                        column=stmt.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SAFE,
+                                        fix_data={
+                                            "suggestion": "Add algorithms=['HS256'] or algorithms=['RS256'] to jwt.decode()",
+                                        },
+                                    )
+                                )
+                            
+                            if not has_verify_signature:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI016",
+                                        message="JWT decode has signature verification disabled (CWE-347)",
+                                        line_number=stmt.lineno,
+                                        column=stmt.col_offset,
+                                        severity=RuleSeverity.CRITICAL,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SAFE,
+                                        fix_data={
+                                            "suggestion": "Remove verify_signature=False or set to True",
+                                        },
+                                    )
+                                )
+
+    def _check_missing_rate_limiting(self, node: ast.FunctionDef) -> None:
+        """Check for missing rate limiting on API routes."""
+        # Check if route has rate limiting decorator or dependency
+        has_rate_limit = False
+        
+        for decorator in node.decorator_list:
+            # Check for @limiter.limit() or similar decorators
+            if isinstance(decorator, ast.Call):
+                if isinstance(decorator.func, ast.Attribute):
+                    if decorator.func.attr in ("limit", "rate_limit"):
+                        has_rate_limit = True
+                        break
+        
+        # Check for rate limiting dependency in function parameters
+        for arg in node.args.args:
+            if "rate" in arg.arg.lower() or "limit" in arg.arg.lower():
+                has_rate_limit = True
+                break
+        
+        if not has_rate_limit:
+            # Only warn for POST/PUT/DELETE routes (state-changing operations)
+            route_methods = []
+            for decorator in node.decorator_list:
+                if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                    method = decorator.func.attr
+                    if method in ("post", "put", "delete", "patch"):
+                        route_methods.append(method)
+            
+            if route_methods:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI017",
+                        message=f"Route {node.name}() with {route_methods} methods missing rate limiting (CWE-770)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Add rate limiting using slowapi or similar: @limiter.limit('5/minute')",
+                        },
+                    )
+                )
+
+    def _check_ssrf_in_url_params(self, node: ast.FunctionDef) -> None:
+        """Check for Server-Side Request Forgery (SSRF) vulnerabilities."""
+        # Look for URL parameters that might be used in HTTP requests
+        url_params = []
+        for arg in node.args.args:
+            if "url" in arg.arg.lower() or "endpoint" in arg.arg.lower() or "callback" in arg.arg.lower():
+                url_params.append(arg.arg)
+        
+        if url_params:
+            # Check if these params are used in HTTP request libraries
+            for stmt in ast.walk(node):
+                if isinstance(stmt, ast.Call):
+                    # Check for requests.get/post, httpx.get/post, urllib.request.urlopen
+                    if isinstance(stmt.func, ast.Attribute):
+                        if stmt.func.attr in ("get", "post", "put", "delete", "patch", "request", "urlopen"):
+                            func_name = self._get_name(stmt.func.value)
+                            if func_name and func_name.lower() in ("requests", "httpx", "urllib"):
+                                # Check if URL param is used directly
+                                for arg in stmt.args:
+                                    if isinstance(arg, ast.Name):
+                                        if arg.id in url_params:
+                                            self.violations.append(
+                                                RuleViolation(
+                                                    rule_id="FASTAPI018",
+                                                    message=f"Potential SSRF: URL parameter '{arg.id}' used in HTTP request without validation (CWE-918)",
+                                                    line_number=stmt.lineno,
+                                                    column=stmt.col_offset,
+                                                    severity=RuleSeverity.HIGH,
+                                                    category=RuleCategory.SECURITY,
+                                                    file_path=self.file_path,
+                                                    fix_applicability=FixApplicability.MANUAL,
+                                                    fix_data={
+                                                        "parameter": arg.id,
+                                                        "suggestion": "Validate URL against allowlist or use URL parsing to check scheme/host",
+                                                    },
+                                                )
+                                            )
+                                    elif isinstance(arg, (ast.JoinedStr, ast.BinOp)):
+                                        # f-string or string concatenation with URL param
+                                        self.violations.append(
+                                            RuleViolation(
+                                                rule_id="FASTAPI018",
+                                                message=f"Potential SSRF: URL constructed from user input in {node.name}() (CWE-918)",
+                                                line_number=stmt.lineno,
+                                                column=stmt.col_offset,
+                                                severity=RuleSeverity.HIGH,
+                                                category=RuleCategory.SECURITY,
+                                                file_path=self.file_path,
+                                                fix_applicability=FixApplicability.MANUAL,
+                                                fix_data={
+                                                    "suggestion": "Validate URL against allowlist before making request",
+                                                },
+                                            )
+                                        )
+
+    def _get_name(self, node: ast.AST) -> Optional[str]:
+        """Get the name from an AST node."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            return node.attr
+        return None
+
 
 class FastAPISecurityChecker:
     """Main checker for FastAPI security vulnerabilities."""
@@ -678,6 +872,76 @@ FASTAPI_COOKIE_SECURE_RULE = Rule(
     ],
 )
 
+FASTAPI_JWT_NONE_ALGORITHM_RULE = Rule(
+    rule_id="FASTAPI014",
+    name="fastapi-jwt-none-algorithm",
+    message_template="JWT decode allows 'none' algorithm (CWE-347)",
+    description="JWT decode allows 'none' algorithm - bypasses signature verification",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-347: Improper Verification of Cryptographic Signature",
+        "OWASP ASVS 6.2.1 v5.0: Algorithms",
+    ],
+)
+
+FASTAPI_JWT_MISSING_ALGORITHM_RULE = Rule(
+    rule_id="FASTAPI015",
+    name="fastapi-jwt-missing-algorithm",
+    message_template="JWT decode missing 'algorithms' parameter (CWE-347)",
+    description="JWT decode missing 'algorithms' parameter - vulnerable to algorithm confusion attacks",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-347: Improper Verification of Cryptographic Signature",
+        "OWASP ASVS 6.2.1 v5.0: Algorithms",
+    ],
+)
+
+FASTAPI_JWT_NO_VERIFY_RULE = Rule(
+    rule_id="FASTAPI016",
+    name="fastapi-jwt-no-verify",
+    message_template="JWT decode has signature verification disabled (CWE-347)",
+    description="JWT decode has verify_signature=False - allows forged tokens",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-347: Improper Verification of Cryptographic Signature",
+        "OWASP ASVS 6.2.2 v5.0: Algorithm Verification",
+    ],
+)
+
+FASTAPI_MISSING_RATE_LIMIT_RULE = Rule(
+    rule_id="FASTAPI017",
+    name="fastapi-missing-rate-limit",
+    message_template="Route missing rate limiting (CWE-770)",
+    description="State-changing route missing rate limiting - vulnerable to abuse",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-770: Allocation of Resources Without Limits or Throttling",
+        "OWASP ASVS 4.2.2 v5.0: Operation Level Access Control",
+    ],
+)
+
+FASTAPI_SSRF_URL_PARAM_RULE = Rule(
+    rule_id="FASTAPI018",
+    name="fastapi-ssrf-url-param",
+    message_template="Potential SSRF in URL parameter (CWE-918)",
+    description="URL parameter used in HTTP request without validation - SSRF risk",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-918: Server-Side Request Forgery (SSRF)",
+        "OWASP ASVS 5.2.6 v5.0: Sanitization and Sandboxing",
+    ],
+)
+
 
 # Register all rules
 def register_fastapi_rules():
@@ -689,5 +953,10 @@ def register_fastapi_rules():
         FASTAPI_CORS_WILDCARD_RULE,
         FASTAPI_OAUTH2_HTTP_RULE,
         FASTAPI_COOKIE_SECURE_RULE,
+        FASTAPI_JWT_NONE_ALGORITHM_RULE,
+        FASTAPI_JWT_MISSING_ALGORITHM_RULE,
+        FASTAPI_JWT_NO_VERIFY_RULE,
+        FASTAPI_MISSING_RATE_LIMIT_RULE,
+        FASTAPI_SSRF_URL_PARAM_RULE,
     ]
     register_rules(rules)
