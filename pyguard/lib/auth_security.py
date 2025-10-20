@@ -95,6 +95,12 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 
                 # Check for hardcoded credentials
                 self._check_hardcoded_credentials(node, target.id)
+                
+                # Check for weak password reset tokens
+                self._check_weak_password_reset_token(node, target.id)
+        
+        # Check for privilege escalation
+        self._check_privilege_escalation(node)
         
         self.generic_visit(node)
 
@@ -196,6 +202,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             self.auth_functions.add(node.name)
             self._check_timing_attack(node)
             self._check_session_fixation(node)
+            self._check_missing_mfa(node)
         
         # Check for missing authentication on sensitive operations
         if any(term in node.name.lower() for term in ["delete", "remove", "update", "admin", "sudo"]):
@@ -203,6 +210,16 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         
         # Check for IDOR vulnerabilities
         self._check_idor_vulnerability(node)
+        
+        # Check for weak password policies
+        self._check_weak_password_policy(node)
+        
+        self.generic_visit(node)
+    
+    def visit_Compare(self, node: ast.Compare) -> None:
+        """Check for security issues in comparisons."""
+        # Check for null byte authentication bypass
+        self._check_null_byte_auth_bypass(node)
         
         self.generic_visit(node)
 
@@ -377,6 +394,12 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for JWT and session configuration issues."""
+        # Check for insecure Remember Me implementations (AUTH012)
+        self._check_insecure_remember_me(node)
+        
+        # Check for LDAP injection (AUTH015)
+        self._check_ldap_injection(node)
+        
         if isinstance(node.func, ast.Attribute):
             # Check JWT encode without expiration (AUTH007)
             if node.func.attr == "encode" and self.has_jwt_import:
@@ -447,6 +470,288 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         # This is a simple check - actual implementation would need more context
         # Looking for session.permanent = False or missing timeout config
         pass  # Placeholder for now
+
+    def _check_weak_password_reset_token(self, node: ast.Assign, var_name: str) -> None:
+        """Check for weak password reset token generation (AUTH009)."""
+        # Check if variable name indicates a reset token
+        var_lower = var_name.lower()
+        if not (("reset" in var_lower or "recovery" in var_lower) and ("token" in var_lower or "code" in var_lower)):
+            return
+        
+        if not isinstance(node.value, ast.Call):
+            return
+        
+        # Helper to check for weak random in the call tree
+        def check_for_weak_random(call_node):
+            if isinstance(call_node.func, ast.Attribute):
+                module = None
+                func = call_node.func.attr
+                if isinstance(call_node.func.value, ast.Name):
+                    module = call_node.func.value.id
+                
+                if module == "random":
+                    return True
+            
+            # Check arguments for nested calls
+            for arg in call_node.args:
+                if isinstance(arg, ast.Call):
+                    if check_for_weak_random(arg):
+                        return True
+                elif isinstance(arg, ast.GeneratorExp):
+                    # Check generator expression for random usage
+                    for child in ast.walk(arg):
+                        if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                            if isinstance(child.func.value, ast.Name) and child.func.value.id == "random":
+                                return True
+            return False
+        
+        if check_for_weak_random(node.value):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="AUTH009",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_line(node.lineno),
+                    message="Weak password reset token generation using random module",
+                    severity=RuleSeverity.CRITICAL,
+                    category=RuleCategory.SECURITY,
+                    fix_applicability=FixApplicability.SAFE,
+                )
+            )
+
+    def _check_privilege_escalation(self, node: ast.Assign) -> None:
+        """Check for privilege escalation via parameter tampering (AUTH010)."""
+        for target in node.targets:
+            if not isinstance(target, ast.Attribute):
+                continue
+            
+            # Check for setting user roles/permissions from request
+            attr_name = target.attr.lower()
+            if any(term in attr_name for term in ["role", "permission", "admin", "is_staff", "is_superuser"]):
+                # Check if value comes from request parameters (Subscript like request['role'])
+                if isinstance(node.value, ast.Subscript):
+                    # Check the value being subscripted
+                    if isinstance(node.value.value, ast.Attribute):
+                        # Check patterns like request.form['role']
+                        if node.value.value.attr in ("form", "data", "params", "query", "json"):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="AUTH010",
+                                    file_path=self.file_path,
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    code_snippet=self._get_line(node.lineno),
+                                    message=f"Privilege escalation risk: setting {target.attr} from user input",
+                                    severity=RuleSeverity.CRITICAL,
+                                    category=RuleCategory.SECURITY,
+                                    fix_applicability=FixApplicability.NONE,
+                                )
+                            )
+                    elif isinstance(node.value.value, ast.Name):
+                        # Check patterns like request['role'], form['role'], data['role']
+                        if node.value.value.id in ("request", "form", "data", "params", "query", "json"):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="AUTH010",
+                                    file_path=self.file_path,
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    code_snippet=self._get_line(node.lineno),
+                                    message=f"Privilege escalation risk: setting {target.attr} from user input",
+                                    severity=RuleSeverity.CRITICAL,
+                                    category=RuleCategory.SECURITY,
+                                    fix_applicability=FixApplicability.NONE,
+                                )
+                            )
+
+    def _check_missing_mfa(self, node: ast.FunctionDef) -> None:
+        """Check for missing multi-factor authentication (AUTH011)."""
+        if "login" not in node.name.lower() and "signin" not in node.name.lower():
+            return
+        
+        # Check if MFA/2FA is implemented
+        has_mfa = False
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Attribute):
+                    if any(term in child.func.attr.lower() for term in ["mfa", "2fa", "totp", "otp", "verify_code"]):
+                        has_mfa = True
+                        break
+                elif isinstance(child.func, ast.Name):
+                    if any(term in child.func.id.lower() for term in ["mfa", "2fa", "totp", "otp", "verify_code"]):
+                        has_mfa = True
+                        break
+        
+        if not has_mfa and (self.has_flask_import or self.has_django_import or self.has_fastapi_import):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="AUTH011",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_line(node.lineno),
+                    message="Login function lacks multi-factor authentication",
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    fix_applicability=FixApplicability.NONE,
+                )
+            )
+
+    def _check_insecure_remember_me(self, node: ast.Call) -> None:
+        """Check for insecure 'Remember Me' implementation (AUTH012)."""
+        # Check for cookie setting with passwords or credentials
+        if not isinstance(node.func, ast.Attribute):
+            return
+        
+        if node.func.attr != "set_cookie":
+            return
+        
+        # Check cookie name and value
+        cookie_name = None
+        cookie_value_var = None
+        
+        # Check positional and keyword arguments
+        if len(node.args) >= 1:
+            # First arg is usually the cookie name
+            if isinstance(node.args[0], ast.Constant):
+                cookie_name = node.args[0].value
+        
+        for keyword in node.keywords:
+            if keyword.arg in ("key", "name"):
+                if isinstance(keyword.value, ast.Constant):
+                    cookie_name = keyword.value.value
+            elif keyword.arg == "value":
+                if isinstance(keyword.value, ast.Name):
+                    cookie_value_var = keyword.value.id
+        
+        # Also check second positional arg for value
+        if len(node.args) >= 2 and isinstance(node.args[1], ast.Name):
+            cookie_value_var = node.args[1].id
+        
+        # Check if it's a remember me cookie storing sensitive data
+        if cookie_name and isinstance(cookie_name, str) and "remember" in cookie_name.lower():
+            if cookie_value_var and any(term in cookie_value_var.lower() for term in ["password", "pwd", "credential", "secret"]):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="AUTH012",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_line(node.lineno),
+                        message="Insecure 'Remember Me': storing password in cookie",
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        fix_applicability=FixApplicability.NONE,
+                    )
+                )
+
+    def _check_weak_password_policy(self, node: ast.FunctionDef) -> None:
+        """Check for weak password validation (AUTH013)."""
+        if not any(term in node.name.lower() for term in ["password", "validate", "check"]):
+            return
+        
+        # Look for length checks
+        has_length_check = False
+        min_length = 0
+        
+        for child in ast.walk(node):
+            if isinstance(child, ast.Compare):
+                # Check for len(password) comparisons
+                if isinstance(child.left, ast.Call):
+                    if isinstance(child.left.func, ast.Name) and child.left.func.id == "len":
+                        for comparator in child.comparators:
+                            if isinstance(comparator, ast.Constant) and isinstance(comparator.value, int):
+                                min_length = comparator.value
+                                has_length_check = True
+        
+        if has_length_check and min_length < 8:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="AUTH013",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_line(node.lineno),
+                    message=f"Weak password policy: minimum length {min_length} < 8",
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
+
+    def _check_null_byte_auth_bypass(self, node: ast.Compare) -> None:
+        """Check for null byte authentication bypass vulnerability (AUTH014)."""
+        # Check if comparing authentication-related strings
+        if isinstance(node.left, ast.Name):
+            var_name = node.left.id.lower()
+            if any(term in var_name for term in ["password", "token", "user", "auth"]):
+                # Check if using == without null byte protection
+                if any(isinstance(op, ast.Eq) for op in node.ops):
+                    # Look for string comparisons without encoding checks
+                    for comparator in node.comparators:
+                        if isinstance(comparator, (ast.Constant, ast.Name, ast.Subscript)):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="AUTH014",
+                                    file_path=self.file_path,
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    code_snippet=self._get_line(node.lineno),
+                                    message="Authentication comparison may be vulnerable to null byte injection",
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    fix_applicability=FixApplicability.NONE,
+                                )
+                            )
+                            break
+
+    def _check_ldap_injection(self, node: ast.Call) -> None:
+        """Check for LDAP injection in authentication (AUTH015)."""
+        # Check for LDAP operations with string formatting
+        if not isinstance(node.func, ast.Attribute):
+            return
+        
+        func_name = node.func.attr.lower()
+        # Check for common LDAP methods
+        if not any(term in func_name for term in ["search", "search_s", "search_st", "search_ext"]):
+            return
+        
+        # Check arguments for string concatenation or formatting in LDAP queries
+        for arg in node.args:
+            # Check for f-strings (JoinedStr)
+            if isinstance(arg, ast.JoinedStr):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="AUTH015",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_line(node.lineno),
+                        message="LDAP injection risk: f-string in LDAP query",
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+                break
+            # Check for string concatenation (BinOp with Add)
+            elif isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add):
+                # Check if it's string concatenation
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="AUTH015",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_line(node.lineno),
+                        message="LDAP injection risk: string concatenation in LDAP query",
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+                break
 
     def _get_line(self, line_number: int) -> str:
         """Get the source code line."""
@@ -632,6 +937,97 @@ AUTH008_SESSION_TIMEOUT = Rule(
     fix_applicability=FixApplicability.NONE,
 )
 
+AUTH009_WEAK_PASSWORD_RESET_TOKEN = Rule(
+    rule_id="AUTH009",
+    name="weak-password-reset-token",
+    message_template="Weak password reset token generation detected",
+    description="Password reset token generated using weak random function",
+    explanation="Password reset tokens should use cryptographically secure random generation (secrets module or os.urandom). Weak tokens can be predicted by attackers.",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-330",
+    owasp_mapping="ASVS-2.1.9",
+    fix_applicability=FixApplicability.SAFE,
+)
+
+AUTH010_PRIVILEGE_ESCALATION = Rule(
+    rule_id="AUTH010",
+    name="privilege-escalation-risk",
+    message_template="Potential privilege escalation via user-controlled parameter",
+    description="User role/permission set from request parameter without validation",
+    explanation="Never allow users to directly set their roles or permissions. Validate authorization server-side and use secure session management.",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-269",
+    owasp_mapping="ASVS-4.1.5",
+    fix_applicability=FixApplicability.NONE,
+)
+
+AUTH011_MISSING_MFA = Rule(
+    rule_id="AUTH011",
+    name="missing-mfa",
+    message_template="Login function without multi-factor authentication",
+    description="Authentication endpoint lacks multi-factor authentication (MFA)",
+    explanation="Implement MFA for sensitive operations and administrative access. Use TOTP, SMS, or hardware tokens as a second factor.",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-287",
+    owasp_mapping="ASVS-2.8.1",
+    fix_applicability=FixApplicability.NONE,
+)
+
+AUTH012_INSECURE_REMEMBER_ME = Rule(
+    rule_id="AUTH012",
+    name="insecure-remember-me",
+    message_template="Insecure 'Remember Me' implementation detected",
+    description="Remember Me functionality stores credentials or uses weak tokens",
+    explanation="Never store passwords in cookies. Use secure, time-limited tokens and bind them to specific sessions. Implement token rotation and revocation.",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-539",
+    owasp_mapping="ASVS-3.2.2",
+    fix_applicability=FixApplicability.NONE,
+)
+
+AUTH013_WEAK_PASSWORD_POLICY = Rule(
+    rule_id="AUTH013",
+    name="weak-password-policy",
+    message_template="Weak password policy detected in code",
+    description="Password validation enforces insufficient complexity requirements",
+    explanation="Implement strong password policies: minimum 8 characters, complexity requirements, prevent common passwords. Consider using passphrase or password manager recommendations.",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-521",
+    owasp_mapping="ASVS-2.1.1",
+    fix_applicability=FixApplicability.SUGGESTED,
+)
+
+AUTH014_NULL_BYTE_AUTH_BYPASS = Rule(
+    rule_id="AUTH014",
+    name="null-byte-auth-bypass",
+    message_template="Potential null byte authentication bypass vulnerability",
+    description="String comparison in authentication may be vulnerable to null byte injection",
+    explanation="Null bytes can truncate strings in C-based libraries, bypassing authentication. Use length-checking comparisons and validate input encoding.",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-158",
+    owasp_mapping="ASVS-5.1.3",
+    fix_applicability=FixApplicability.NONE,
+)
+
+AUTH015_LDAP_INJECTION = Rule(
+    rule_id="AUTH015",
+    name="ldap-injection",
+    message_template="LDAP injection vulnerability in authentication",
+    description="User input concatenated into LDAP query without sanitization",
+    explanation="Sanitize all user input before including in LDAP queries. Use parameterized queries or proper escaping to prevent LDAP injection attacks.",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    cwe_mapping="CWE-90",
+    owasp_mapping="ASVS-5.3.4",
+    fix_applicability=FixApplicability.SUGGESTED,
+)
+
 # Register all rules
 register_rules(
     [
@@ -643,5 +1039,12 @@ register_rules(
         AUTH006_IDOR,
         AUTH007_JWT_NO_EXPIRATION,
         AUTH008_SESSION_TIMEOUT,
+        AUTH009_WEAK_PASSWORD_RESET_TOKEN,
+        AUTH010_PRIVILEGE_ESCALATION,
+        AUTH011_MISSING_MFA,
+        AUTH012_INSECURE_REMEMBER_ME,
+        AUTH013_WEAK_PASSWORD_POLICY,
+        AUTH014_NULL_BYTE_AUTH_BYPASS,
+        AUTH015_LDAP_INJECTION,
     ]
 )
