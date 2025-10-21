@@ -63,6 +63,9 @@ class APISecurityVisitor(ast.NodeVisitor):
         self.route_functions: Set[str] = set()
         self.model_classes: Set[str] = set()
         self.defusedxml_imports: Set[str] = set()  # Track defusedxml imports
+        self.has_hsts_header = False  # Track if HSTS header is set anywhere
+        self.has_xframe_header = False  # Track if X-Frame-Options is set
+        self.has_csp_header = False  # Track if CSP is set
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track imports including defusedxml."""
@@ -116,6 +119,10 @@ class APISecurityVisitor(ast.NodeVisitor):
             self._check_http_method_security(node)
             self._check_oauth_flow_misconfig(node)
             self._check_csrf_token_missing(node)
+            self._check_api_versioning_security(node)
+
+        # Check for SSRF in any function (not just routes)
+        self._check_ssrf_vulnerability(node)
 
         # Check for JWT algorithm confusion in any function
         self._check_jwt_algorithm_confusion(node)
@@ -131,6 +138,9 @@ class APISecurityVisitor(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check for security header configurations and API key exposure in URLs."""
         self._check_missing_security_headers(node)
+        self._check_missing_hsts_header(node)
+        self._check_missing_xframe_options(node)
+        self._check_missing_csp_header(node)
         
         # Check for API key exposure in URL assignments
         for value in [node.value]:
@@ -910,6 +920,272 @@ class APISecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
+    def _check_api_versioning_security(self, node: ast.FunctionDef) -> None:
+        """Check for API versioning security issues (API016)."""
+        # Check if route has versioning in path
+        uses_deprecated_version = False
+        
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                # Check route path for version patterns
+                if decorator.args:
+                    route_arg = decorator.args[0]
+                    if isinstance(route_arg, ast.Constant) and isinstance(route_arg.value, str):
+                        route_path = route_arg.value.lower()
+                        # Check for deprecated versions (v0, v1 are often deprecated)
+                        if '/v0/' in route_path or ('/v1/' in route_path and '/v2/' not in self.code):
+                            uses_deprecated_version = True
+        
+        # Check function body for version validation
+        has_version_check = False
+        for child in ast.walk(node):
+            if isinstance(child, ast.Compare):
+                for comp in child.comparators:
+                    if isinstance(comp, ast.Constant):
+                        if isinstance(comp.value, str) and any(v in comp.value.lower() for v in ['v1', 'v2', 'v3', 'version']):
+                            has_version_check = True
+        
+        # Report if using deprecated version without checks
+        if uses_deprecated_version and not has_version_check:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="API016",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    message="API using deprecated version (v0/v1) without version validation - potential compatibility issues",
+                    fix_suggestion="Add version validation and deprecation warnings; migrate to newer API version",
+                    cwe_id="CWE-1188",
+                    owasp_id="A04:2021 - Insecure Design",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
+
+    def _check_ssrf_vulnerability(self, node: ast.FunctionDef) -> None:
+        """Check for Server-Side Request Forgery (SSRF) vulnerabilities (API017)."""
+        # Check for URL requests using user input
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                # Check for requests library calls
+                if isinstance(child.func, ast.Attribute):
+                    func_name = child.func.attr
+                    
+                    # Check for requests.get(), urllib.request.urlopen(), httpx.get(), etc.
+                    if func_name in ('get', 'post', 'put', 'delete', 'patch', 'request', 'urlopen', 'urlretrieve'):
+                        # Get the module name (could be nested like urllib.request)
+                        module = None
+                        if isinstance(child.func.value, ast.Name):
+                            module = child.func.value.id
+                        elif isinstance(child.func.value, ast.Attribute):
+                            # Handle urllib.request.urlopen
+                            if isinstance(child.func.value.value, ast.Name):
+                                module = child.func.value.value.id
+                        
+                        if module in ('requests', 'urllib', 'httpx'):
+                            # Check if URL is from user input
+                            if child.args:
+                                url_arg = child.args[0]
+                                # Check for function parameters, request.args, etc.
+                                has_user_input = self._is_user_input(url_arg)
+                                has_url_validation = self._has_url_validation(node, url_arg)
+                                
+                                if has_user_input and not has_url_validation:
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="API017",
+                                            file_path=self.file_path,
+                                            line_number=child.lineno,
+                                            column=child.col_offset,
+                                            severity=RuleSeverity.HIGH,
+                                            category=RuleCategory.SECURITY,
+                                            message=f"Potential SSRF vulnerability - {module}.{func_name}() using user-controlled URL without validation",
+                                            fix_suggestion="Validate URL against whitelist of allowed domains/IP ranges; use URL parsing to check scheme and hostname",
+                                            cwe_id="CWE-918",
+                                            owasp_id="A10:2021 - Server-Side Request Forgery",
+                                            fix_applicability=FixApplicability.SUGGESTED,
+                                        )
+                                    )
+
+    def _check_missing_hsts_header(self, node: ast.Assign) -> None:
+        """Check for missing HSTS (HTTP Strict Transport Security) header (API018)."""
+        # Check for response header setting
+        for target in node.targets:
+            if isinstance(target, ast.Subscript):
+                if isinstance(target.value, ast.Attribute):
+                    if target.value.attr == "headers":
+                        # Check if HSTS is being set
+                        if isinstance(target.slice, ast.Constant):
+                            header_name = target.slice.value
+                            if isinstance(header_name, str) and "strict-transport-security" in header_name.lower():
+                                self.has_hsts_header = True
+                                return  # HSTS is set
+        
+        # Check app configuration for HSTS
+        for target in node.targets:
+            if isinstance(target, ast.Attribute):
+                if target.attr == "config" and isinstance(node.value, ast.Dict):
+                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    if any(k and "hsts" in str(k).lower() for k in keys):
+                        self.has_hsts_header = True
+                        return  # HSTS configured
+
+    def _check_missing_xframe_options(self, node: ast.Assign) -> None:
+        """Check for missing X-Frame-Options header (clickjacking protection) (API019)."""
+        # Check for response header setting
+        for target in node.targets:
+            if isinstance(target, ast.Subscript):
+                if isinstance(target.value, ast.Attribute):
+                    if target.value.attr == "headers":
+                        # Check if X-Frame-Options is being set
+                        if isinstance(target.slice, ast.Constant):
+                            header_name = target.slice.value
+                            if isinstance(header_name, str) and "x-frame-options" in header_name.lower():
+                                self.has_xframe_header = True
+                                return  # X-Frame-Options is set
+        
+        # Check app configuration for X-Frame-Options
+        for target in node.targets:
+            if isinstance(target, ast.Attribute):
+                if target.attr == "config" and isinstance(node.value, ast.Dict):
+                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    if any(k and "frame" in str(k).lower() for k in keys):
+                        self.has_xframe_header = True
+                        return  # X-Frame-Options configured
+
+    def _check_missing_csp_header(self, node: ast.Assign) -> None:
+        """Check for missing Content-Security-Policy header (API020)."""
+        # Check for response header setting
+        for target in node.targets:
+            if isinstance(target, ast.Subscript):
+                if isinstance(target.value, ast.Attribute):
+                    if target.value.attr == "headers":
+                        # Check if CSP is being set
+                        if isinstance(target.slice, ast.Constant):
+                            header_name = target.slice.value
+                            if isinstance(header_name, str) and "content-security-policy" in header_name.lower():
+                                self.has_csp_header = True
+                                return  # CSP is set
+        
+        # Check app configuration for CSP (handle both hyphens and underscores)
+        for target in node.targets:
+            if isinstance(target, ast.Attribute):
+                if target.attr == "config" and isinstance(node.value, ast.Dict):
+                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    # Check for CSP with hyphens or underscores
+                    if any(k and ("content-security-policy" in str(k).lower().replace('_', '-')) for k in keys):
+                        self.has_csp_header = True
+                        return  # CSP configured
+
+    def _is_user_input(self, node: ast.AST) -> bool:
+        """Check if a node represents user input."""
+        # Check for common user input patterns
+        if isinstance(node, ast.Name):
+            var_name = node.id.lower()
+            return any(keyword in var_name for keyword in ['url', 'uri', 'link', 'redirect', 'request', 'input', 'param'])
+        elif isinstance(node, ast.Subscript):
+            # Check for request.args['url'], request.form['url'], etc.
+            if isinstance(node.value, ast.Attribute):
+                if node.value.attr in ('args', 'form', 'json', 'data', 'params', 'query_params'):
+                    return True
+        elif isinstance(node, ast.Call):
+            # Check for request.get('url'), request.args.get('url'), etc.
+            if isinstance(node.func, ast.Attribute):
+                if node.func.attr == 'get' and node.args:
+                    if isinstance(node.args[0], ast.Constant):
+                        arg_name = str(node.args[0].value).lower()
+                        return any(keyword in arg_name for keyword in ['url', 'uri', 'link', 'redirect'])
+        return False
+
+    def _has_url_validation(self, func_node: ast.FunctionDef, url_node: ast.AST) -> bool:
+        """Check if URL validation exists in the function."""
+        # Look for URL validation patterns
+        for child in ast.walk(func_node):
+            # Check for urlparse, domain checking, whitelist validation
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Name):
+                    if child.func.id in ('urlparse', 'urlsplit'):
+                        return True
+                elif isinstance(child.func, ast.Attribute):
+                    if child.func.attr in ('parse_url', 'validate_url', 'check_domain', 'is_safe_url'):
+                        return True
+            # Check for 'in allowed_domains' or similar whitelist checks
+            elif isinstance(child, ast.Compare):
+                for op in child.ops:
+                    if isinstance(op, ast.In):
+                        for comp in child.comparators:
+                            if isinstance(comp, ast.Name):
+                                if 'allowed' in comp.id.lower() or 'whitelist' in comp.id.lower():
+                                    return True
+        return False
+
+    def _report_missing_headers(self) -> None:
+        """Report missing security headers after analyzing the entire file."""
+        # Only check if we're in a web framework context
+        if not (self.has_flask or self.has_django or self.has_fastapi):
+            return
+        
+        # Check if we found any app initialization
+        has_app_init = "Flask(" in self.code or "FastAPI(" in self.code or "Django" in self.code
+        
+        if not has_app_init:
+            return
+        
+        # Report missing HSTS
+        if not self.has_hsts_header:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="API018",
+                    file_path=self.file_path,
+                    line_number=1,
+                    column=0,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    message="Missing HSTS (HTTP Strict-Transport-Security) header - forces HTTPS",
+                    fix_suggestion="Add 'Strict-Transport-Security: max-age=31536000; includeSubDomains' header",
+                    cwe_id="CWE-319",
+                    owasp_id="A05:2021 - Security Misconfiguration",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
+        
+        # Report missing X-Frame-Options
+        if not self.has_xframe_header:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="API019",
+                    file_path=self.file_path,
+                    line_number=1,
+                    column=0,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    message="Missing X-Frame-Options header - vulnerable to clickjacking attacks",
+                    fix_suggestion="Add 'X-Frame-Options: DENY' or 'X-Frame-Options: SAMEORIGIN' header",
+                    cwe_id="CWE-1021",
+                    owasp_id="A05:2021 - Security Misconfiguration",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
+        
+        # Report missing CSP
+        if not self.has_csp_header:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="API020",
+                    file_path=self.file_path,
+                    line_number=1,
+                    column=0,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    message="Missing Content-Security-Policy header - helps prevent XSS attacks",
+                    fix_suggestion="Add Content-Security-Policy header with strict directives (e.g., default-src 'self')",
+                    cwe_id="CWE-693",
+                    owasp_id="A05:2021 - Security Misconfiguration",
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
+
     def _check_csrf_token_missing(self, node: ast.FunctionDef) -> None:
         """Check for missing CSRF token validation in state-changing operations."""
         # Check if this is a state-changing route (POST, PUT, DELETE, PATCH)
@@ -967,6 +1243,8 @@ def analyze_api_security(file_path: Path, code: str) -> List[RuleViolation]:
         tree = ast.parse(code)
         visitor = APISecurityVisitor(file_path, code)
         visitor.visit(tree)
+        # Report missing security headers after analyzing the whole file
+        visitor._report_missing_headers()
         return visitor.violations
     except SyntaxError:
         return []
@@ -1154,6 +1432,66 @@ API015_CSRF_TOKEN_MISSING = Rule(
     cwe_mapping="CWE-352",
 )
 
+API016_API_VERSIONING = Rule(
+    rule_id="API016",
+    name="api-versioning-security",
+    message_template="API using deprecated version without validation - potential compatibility issues",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    description="API versioning security ensures deprecated versions are properly validated and migrated",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A04:2021 - Insecure Design",
+    cwe_mapping="CWE-1188",
+)
+
+API017_SSRF_VULNERABILITY = Rule(
+    rule_id="API017",
+    name="api-ssrf-vulnerability",
+    message_template="Potential SSRF vulnerability - HTTP request using user-controlled URL without validation",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    description="Server-Side Request Forgery (SSRF) allows attackers to make requests to internal resources",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A10:2021 - Server-Side Request Forgery",
+    cwe_mapping="CWE-918",
+)
+
+API018_MISSING_HSTS = Rule(
+    rule_id="API018",
+    name="api-missing-hsts-header",
+    message_template="Missing HSTS header - forces HTTPS connections",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    description="HTTP Strict-Transport-Security (HSTS) header forces browsers to use HTTPS",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A05:2021 - Security Misconfiguration",
+    cwe_mapping="CWE-319",
+)
+
+API019_MISSING_XFRAME = Rule(
+    rule_id="API019",
+    name="api-missing-xframe-options",
+    message_template="Missing X-Frame-Options header - vulnerable to clickjacking",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    description="X-Frame-Options header prevents clickjacking attacks by controlling iframe embedding",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A05:2021 - Security Misconfiguration",
+    cwe_mapping="CWE-1021",
+)
+
+API020_MISSING_CSP = Rule(
+    rule_id="API020",
+    name="api-missing-csp-header",
+    message_template="Missing Content-Security-Policy header - helps prevent XSS attacks",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    description="Content-Security-Policy (CSP) header restricts resource loading to prevent XSS",
+    fix_applicability=FixApplicability.SUGGESTED,
+    owasp_mapping="A05:2021 - Security Misconfiguration",
+    cwe_mapping="CWE-693",
+)
+
 # Collect all rules
 API_SECURITY_RULES = [
     API001_MASS_ASSIGNMENT,
@@ -1171,6 +1509,11 @@ API_SECURITY_RULES = [
     API013_INSECURE_DESERIALIZATION,
     API014_OAUTH_REDIRECT_UNVALIDATED,
     API015_CSRF_TOKEN_MISSING,
+    API016_API_VERSIONING,
+    API017_SSRF_VULNERABILITY,
+    API018_MISSING_HSTS,
+    API019_MISSING_XFRAME,
+    API020_MISSING_CSP,
 ]
 
 # Register rules

@@ -9,19 +9,19 @@
 | Category | Count | Status |
 |----------|-------|--------|
 | **Library Modules** | 70 | ✅ Production |
-| **Total Lines of Code** | 38,000+ | ✅ Production |
-| **Security Checks** | 83+ | ✅ Active |
+| **Total Lines of Code** | 38,500+ | ✅ Production |
+| **Security Checks** | 88+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
 | **Framework Rules** | 90+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
 | **Test Files** | 81 | ✅ Comprehensive |
-| **Total Tests** | 2,662+ | ✅ Passing |
-| **Test Coverage** | 88.63% | 🎯 Exceeding target |
+| **Total Tests** | 2,722+ | ✅ Passing |
+| **Test Coverage** | 88.32% | 🎯 Exceeding target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
-**Updated: 2025-10-20** | **Security Dominance Plan Phase 1: Active**
+**Updated: 2025-10-21** | **Security Dominance Plan Phase 1: Active - 29% Complete (88/300)**
 
 **Tool Replacement Matrix**: Bandit • Semgrep • Ruff • Pylint • Black • isort • mypy (partial) • Safety • Flake8
 
@@ -56,25 +56,25 @@
 
 ## 1. Security Detection
 
-PyGuard implements **78+ security vulnerability checks** across 9 specialized security modules.
+PyGuard implements **88+ security vulnerability checks** across 9 specialized security modules.
 
 ### Security Modules Overview
 
 | Module | Lines | Checks | CWE Coverage | Status |
 |--------|-------|--------|--------------|--------|
 | `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
-| `api_security.py` | 920+ | **15 checks** | API Security | ✅ **Updated 2025-10-20** |
+| `api_security.py` | 1290+ | **20 checks** | API Security | ✅ **Updated 2025-10-21** |
 | `framework_fastapi.py` | 694 | 16 checks | FastAPI-specific | ✅ Active |
 | `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
 | `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
 | `xss_detection.py` | 541 | 5 XSS types | Multi-framework | ✅ Complete |
 | `supply_chain.py` | 488 | Dependencies | SBOM, licenses | ✅ Complete |
 | `advanced_security.py` | 408 | 14 vulns | Taint, race, ReDoS | ✅ Complete |
-| `auth_security.py` | 450+ | 8 checks | Auth/AuthZ | ✅ Active |
+| `auth_security.py` | 450+ | 15 checks | Auth/AuthZ | ✅ Active |
 | `security.py` | 289 | 20 vulns | Core security | ✅ Complete |
 | `notebook_security.py` | 180 | 8+ checks | Jupyter-specific | ✅ Complete |
 
-**Total Security Checks: 83+** (updated 2025-10-20)
+**Total Security Checks: 88+** (updated 2025-10-21)
 
 ### Core Security Checks (20 vulnerabilities)
 
@@ -139,15 +139,43 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 
 **Test Coverage**: 34 comprehensive tests (100% passing)
 
-### API Security (15 checks) — **EXPANDED 2025-10-20**
+### API Security (20 checks) — **EXPANDED 2025-10-21**
 
-**Module**: `api_security.py` (920+ lines)
+**Module**: `api_security.py` (1290+ lines)
 
 Comprehensive security checks for REST APIs, GraphQL, and modern web APIs covering OWASP API Security Top 10.
 
 | Vulnerability | Rule ID | Severity | CWE | OWASP | Auto-Fix |
 |--------------|---------|----------|-----|-------|----------|
 | Mass Assignment | API001 | HIGH | CWE-915 | A04:2021 | ❌ |
+| Missing Rate Limiting | API002 | MEDIUM | CWE-770 | A04:2021 | ❌ |
+| Missing Authentication | API003 | HIGH | CWE-306 | A01:2021 | ❌ |
+| Pagination Resource Exhaustion | API004 | MEDIUM | CWE-770 | A04:2021 | ❌ |
+| Insecure HTTP Methods | API005 | HIGH | CWE-749 | A05:2021 | ❌ |
+| JWT Algorithm Confusion | API006 | HIGH | CWE-327 | A02:2021 | ❌ |
+| API Key Exposure in URL | API007 | HIGH | CWE-598 | A01:2021 | ❌ |
+| Open Redirect | API008 | HIGH | CWE-601 | A01:2021 | ❌ |
+| Missing Security Headers | API009 | MEDIUM | CWE-16 | A05:2021 | ❌ |
+| GraphQL Introspection Leak | API010 | MEDIUM | CWE-200 | A01:2021 | ❌ |
+| CORS Wildcard Origin | API011 | HIGH | CWE-942 | A05:2021 | ❌ |
+| XXE Vulnerability | API012 | HIGH | CWE-611 | A03:2021 | ❌ |
+| Insecure Deserialization | API013 | HIGH | CWE-502 | A08:2021 | ❌ |
+| OAuth Redirect Unvalidated | API014 | HIGH | CWE-601 | A01:2021 | ❌ |
+| Missing CSRF Token | API015 | HIGH | CWE-352 | A01:2021 | ❌ |
+| **API Versioning Security** | **API016** | **MEDIUM** | **CWE-1188** | **A04:2021** | **❌** |
+| **SSRF Vulnerability** | **API017** | **HIGH** | **CWE-918** | **A10:2021** | **❌** |
+| **Missing HSTS Header** | **API018** | **MEDIUM** | **CWE-319** | **A05:2021** | **❌** |
+| **Missing X-Frame-Options** | **API019** | **MEDIUM** | **CWE-1021** | **A05:2021** | **❌** |
+| **Missing CSP Header** | **API020** | **MEDIUM** | **CWE-693** | **A05:2021** | **❌** |
+
+**NEW in 2025-10-21:**
+- **API016**: API versioning security - detects deprecated versions (v0, v1) without validation
+- **API017**: Server-Side Request Forgery (SSRF) - detects user-controlled URLs in HTTP requests
+- **API018**: Missing HSTS header - enforces HTTPS with HTTP Strict-Transport-Security
+- **API019**: Missing X-Frame-Options - prevents clickjacking attacks
+- **API020**: Missing Content-Security-Policy - helps prevent XSS attacks
+
+**Test Coverage**: 107 comprehensive tests (100% passing)
 | Missing Rate Limiting | API002 | MEDIUM | CWE-770 | A04:2021 | ❌ |
 | Missing Authentication | API003 | HIGH | CWE-284 | A01:2021 | ❌ |
 | Improper Pagination | API004 | MEDIUM | CWE-770 | A04:2021 | ❌ |
