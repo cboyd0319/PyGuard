@@ -923,7 +923,6 @@ class APISecurityVisitor(ast.NodeVisitor):
     def _check_api_versioning_security(self, node: ast.FunctionDef) -> None:
         """Check for API versioning security issues (API016)."""
         # Check if route has versioning in path
-        has_version_in_path = False
         uses_deprecated_version = False
         
         for decorator in node.decorator_list:
@@ -933,12 +932,9 @@ class APISecurityVisitor(ast.NodeVisitor):
                     route_arg = decorator.args[0]
                     if isinstance(route_arg, ast.Constant) and isinstance(route_arg.value, str):
                         route_path = route_arg.value.lower()
-                        # Check for version patterns like /v1/, /api/v2/, etc.
-                        if any(v in route_path for v in ['/v1/', '/v0/', '/api/v1/', '/api/v0/']):
-                            has_version_in_path = True
-                            # Check for deprecated versions (v0, v1 are often deprecated)
-                            if '/v0/' in route_path or ('/v1/' in route_path and '/v2/' not in self.code):
-                                uses_deprecated_version = True
+                        # Check for deprecated versions (v0, v1 are often deprecated)
+                        if '/v0/' in route_path or ('/v1/' in route_path and '/v2/' not in self.code):
+                            uses_deprecated_version = True
         
         # Check function body for version validation
         has_version_check = False
