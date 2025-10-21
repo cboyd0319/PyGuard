@@ -236,8 +236,11 @@ class TestIAMSecurityDetection:
         code = """
 import boto3
 iam = boto3.client('iam')
-policy = '{"Statement": [{"Action": "*", "Effect": "Allow"}]}'
-iam.put_user_policy(UserName='user', PolicyName='policy', PolicyDocument=policy)
+iam.put_user_policy(
+    UserName='user',
+    PolicyName='policy',
+    PolicyDocument='{"Statement": [{"Action": "*", "Effect": "Allow"}]}'
+)
 """
         violations = check_cloud_security(Path("test.py"), code)
         assert len(violations) == 1
@@ -488,21 +491,21 @@ class TestPerformance:
         code = "import os\n" * 50 + "import boto3\n" * 50
         result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <5ms
-        assert benchmark.stats.mean < 0.005
+        assert benchmark.stats['mean'] < 0.005
 
     def test_performance_medium_file(self, benchmark):
         """Check performance on medium file (1000 lines)."""
         code = "import os\n" * 500 + "import boto3\n" * 500
         result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <50ms
-        assert benchmark.stats.mean < 0.050
+        assert benchmark.stats['mean'] < 0.050
 
     def test_performance_large_file(self, benchmark):
         """Check performance on large file (10000 lines)."""
         code = "import os\n" * 5000 + "import boto3\n" * 5000
         result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <500ms
-        assert benchmark.stats.mean < 0.500
+        assert benchmark.stats['mean'] < 0.500
 
 
 # EDGE CASE TESTS

@@ -71,6 +71,21 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 self.has_kubernetes = True
         self.generic_visit(node)
 
+    def visit_Import(self, node: ast.Import) -> None:
+        """Track cloud and container framework imports (import statements)."""
+        for alias in node.names:
+            if "boto" in alias.name or "boto3" in alias.name:
+                self.has_boto3 = True
+            elif "azure" in alias.name:
+                self.has_azure = True
+            elif "google" in alias.name:
+                self.has_gcp = True
+            elif "docker" in alias.name:
+                self.has_docker = True
+            elif "kubernetes" in alias.name or "k8s" in alias.name:
+                self.has_kubernetes = True
+        self.generic_visit(node)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check for hardcoded cloud credentials and security issues."""
         # Check for hardcoded AWS credentials
@@ -152,7 +167,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 
                 azure_patterns = [
                     "azure_key", "azure_secret", "storage_account_key",
-                    "azure_connection_string", "cosmos_key"
+                    "azure_connection_string", "cosmos_key", "sas", "azure_sas"
                 ]
                 
                 if any(pattern in var_name for pattern in azure_patterns):
