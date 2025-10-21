@@ -91,7 +91,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                 method = decorator.func.attr
-                if method in ("get", "post", "put", "delete", "patch", "options", "head"):
+                if method in ("get", "post", "put", "delete", "patch", "options", "head", "trace"):
                     is_route = True
                     route_methods.append(method)
                     self.route_functions.add(node.name)
