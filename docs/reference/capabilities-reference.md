@@ -8,16 +8,16 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Library Modules** | 72 | ✅ Production |
-| **Total Lines of Code** | 39,100+ | ✅ Production |
+| **Library Modules** | 73 | ✅ Production |
+| **Total Lines of Code** | 39,880+ | ✅ Production |
 | **Security Checks** | 101+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
-| **Auto-Fixes** | 179+ | ✅ 100% Coverage |
+| **Auto-Fixes** | 199+ | ✅ 100% Coverage |
 | **Framework Rules** | 105+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 83 | ✅ Comprehensive |
-| **Total Tests** | 2,888+ | ✅ Passing |
+| **Test Files** | 84 | ✅ Comprehensive |
+| **Total Tests** | 2,924+ | ✅ Passing |
 | **Test Coverage** | 88.28% | 🎯 Exceeding target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
@@ -67,7 +67,8 @@ PyGuard implements **101+ security vulnerability checks** across 9 specialized s
 | Module | Lines | Checks | CWE Coverage | Status |
 |--------|-------|--------|--------------|--------|
 | `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
-| `api_security.py` | 1290+ | **20 checks** | API Security | ✅ **Updated 2025-10-21** |
+| `api_security.py` | 1290+ | **20 checks** | API Security | ✅ **100% Auto-Fix 2025-10-21** |
+| `api_security_fixes.py` | 780+ | **20 auto-fixes** | API Security | ✅ **NEW 2025-10-21** |
 | `framework_fastapi.py` | 1943 | **30 checks** | FastAPI-specific | ✅ **COMPLETE 2025-10-21** |
 | `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
 | `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
@@ -79,6 +80,7 @@ PyGuard implements **101+ security vulnerability checks** across 9 specialized s
 | `notebook_security.py` | 180 | 8+ checks | Jupyter-specific | ✅ Complete |
 
 **Total Security Checks: 101+** (updated 2025-10-21)
+**Total Auto-Fixes: 199+** (20 new API security fixes added)
 
 ### Core Security Checks (20 vulnerabilities)
 
@@ -155,57 +157,49 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 **Test Coverage**: 76 comprehensive tests (100% passing)
 **Expansion Status**: 20/30 checks (67% complete) - 10 more to be added in Phase 1
 
-### API Security (20 checks) — **EXPANDED 2025-10-21**
+### API Security (20 checks) — **100% AUTO-FIX COMPLETE 2025-10-21** ✅
 
-**Module**: `api_security.py` (1290+ lines)
+**Modules**: `api_security.py` (1290+ lines) + `api_security_fixes.py` (780+ lines)
 
-Comprehensive security checks for REST APIs, GraphQL, and modern web APIs covering OWASP API Security Top 10.
+Comprehensive security checks for REST APIs, GraphQL, and modern web APIs covering OWASP API Security Top 10. **Now with 100% auto-fix coverage (20/20 fixes implemented).**
 
-| Vulnerability | Rule ID | Severity | CWE | OWASP | Auto-Fix |
-|--------------|---------|----------|-----|-------|----------|
-| Mass Assignment | API001 | HIGH | CWE-915 | A04:2021 | ❌ |
-| Missing Rate Limiting | API002 | MEDIUM | CWE-770 | A04:2021 | ❌ |
-| Missing Authentication | API003 | HIGH | CWE-306 | A01:2021 | ❌ |
-| Pagination Resource Exhaustion | API004 | MEDIUM | CWE-770 | A04:2021 | ❌ |
-| Insecure HTTP Methods | API005 | HIGH | CWE-749 | A05:2021 | ❌ |
-| JWT Algorithm Confusion | API006 | HIGH | CWE-327 | A02:2021 | ❌ |
-| API Key Exposure in URL | API007 | HIGH | CWE-598 | A01:2021 | ❌ |
-| Open Redirect | API008 | HIGH | CWE-601 | A01:2021 | ❌ |
-| Missing Security Headers | API009 | MEDIUM | CWE-16 | A05:2021 | ❌ |
-| GraphQL Introspection Leak | API010 | MEDIUM | CWE-200 | A01:2021 | ❌ |
-| CORS Wildcard Origin | API011 | HIGH | CWE-942 | A05:2021 | ❌ |
-| XXE Vulnerability | API012 | HIGH | CWE-611 | A03:2021 | ❌ |
-| Insecure Deserialization | API013 | HIGH | CWE-502 | A08:2021 | ❌ |
-| OAuth Redirect Unvalidated | API014 | HIGH | CWE-601 | A01:2021 | ❌ |
-| Missing CSRF Token | API015 | HIGH | CWE-352 | A01:2021 | ❌ |
-| **API Versioning Security** | **API016** | **MEDIUM** | **CWE-1188** | **A04:2021** | **❌** |
-| **SSRF Vulnerability** | **API017** | **HIGH** | **CWE-918** | **A10:2021** | **❌** |
-| **Missing HSTS Header** | **API018** | **MEDIUM** | **CWE-319** | **A05:2021** | **❌** |
-| **Missing X-Frame-Options** | **API019** | **MEDIUM** | **CWE-1021** | **A05:2021** | **❌** |
-| **Missing CSP Header** | **API020** | **MEDIUM** | **CWE-693** | **A05:2021** | **❌** |
+| Vulnerability | Rule ID | Severity | CWE | OWASP | Auto-Fix | Safety |
+|--------------|---------|----------|-----|-------|----------|--------|
+| Mass Assignment | API001 | HIGH | CWE-915 | A04:2021 | ✅ | UNSAFE |
+| Missing Rate Limiting | API002 | MEDIUM | CWE-770 | A04:2021 | ✅ | UNSAFE |
+| Missing Authentication | API003 | HIGH | CWE-306 | A01:2021 | ✅ | UNSAFE |
+| Pagination Resource Exhaustion | API004 | MEDIUM | CWE-770 | A04:2021 | ✅ | UNSAFE |
+| Insecure HTTP Methods (TRACE/TRACK) | API005 | HIGH | CWE-749 | A05:2021 | ✅ | SAFE |
+| JWT Algorithm Confusion | API006 | HIGH | CWE-327 | A02:2021 | ✅ | SAFE |
+| API Key Exposure in URL | API007 | HIGH | CWE-598 | A01:2021 | ✅ | UNSAFE |
+| Open Redirect | API008 | HIGH | CWE-601 | A01:2021 | ✅ | UNSAFE |
+| Missing Security Headers | API009 | MEDIUM | CWE-16 | A05:2021 | ✅ | UNSAFE |
+| GraphQL Introspection Leak | API010 | MEDIUM | CWE-200 | A01:2021 | ✅ | SAFE |
+| CORS Wildcard Origin | API011 | HIGH | CWE-942 | A05:2021 | ✅ | UNSAFE |
+| XXE Vulnerability | API012 | HIGH | CWE-611 | A03:2021 | ✅ | SAFE |
+| Insecure Deserialization | API013 | HIGH | CWE-502 | A08:2021 | ✅ | SAFE |
+| OAuth Redirect Unvalidated | API014 | HIGH | CWE-601 | A01:2021 | ✅ | UNSAFE |
+| Missing CSRF Token | API015 | HIGH | CWE-352 | A01:2021 | ✅ | UNSAFE |
+| API Versioning Security | API016 | MEDIUM | CWE-1188 | A04:2021 | ✅ | UNSAFE |
+| SSRF Vulnerability | API017 | HIGH | CWE-918 | A10:2021 | ✅ | UNSAFE |
+| Missing HSTS Header | API018 | MEDIUM | CWE-319 | A05:2021 | ✅ | UNSAFE |
+| Missing X-Frame-Options | API019 | MEDIUM | CWE-1021 | A05:2021 | ✅ | UNSAFE |
+| Missing CSP Header | API020 | MEDIUM | CWE-693 | A05:2021 | ✅ | UNSAFE |
 
-**NEW in 2025-10-21:**
+**NEW in 2025-10-21 - 100% AUTO-FIX COVERAGE ACHIEVED:**
+- **All 20 API security checks now have auto-fix implementations**
+- **5 SAFE fixes**: Applied automatically (API005, API006, API010, API012, API013)
+- **15 UNSAFE fixes**: Require `--unsafe` flag (API001-004, API007-009, API011, API014-020)
+- **Auto-fix capabilities**: JWT algorithm replacement, security header injection, XXE protection, etc.
+
+**Security Checks Added (API016-API020):**
 - **API016**: API versioning security - detects deprecated versions (v0, v1) without validation
 - **API017**: Server-Side Request Forgery (SSRF) - detects user-controlled URLs in HTTP requests
 - **API018**: Missing HSTS header - enforces HTTPS with HTTP Strict-Transport-Security
 - **API019**: Missing X-Frame-Options - prevents clickjacking attacks
 - **API020**: Missing Content-Security-Policy - helps prevent XSS attacks
 
-**Test Coverage**: 107 comprehensive tests (100% passing)
-| Missing Rate Limiting | API002 | MEDIUM | CWE-770 | A04:2021 | ❌ |
-| Missing Authentication | API003 | HIGH | CWE-284 | A01:2021 | ❌ |
-| Improper Pagination | API004 | MEDIUM | CWE-770 | A04:2021 | ❌ |
-| Insecure HTTP Methods (TRACE/TRACK) | API005 | HIGH | CWE-16 | A05:2021 | ✅ |
-| JWT Algorithm Confusion | API006 | HIGH | CWE-327 | A02:2021 | ✅ |
-| API Key in URL | API007 | HIGH | CWE-598 | A04:2021 | ❌ |
-| Open Redirect | API008 | HIGH | CWE-601 | A01:2021 | ❌ |
-| Missing Security Headers | API009 | MEDIUM | CWE-16 | A05:2021 | ✅ |
-| GraphQL Introspection Enabled | API010 | MEDIUM | CWE-200 | A01:2021 | ✅ |
-| **CORS Wildcard Origin** | **API011** | **HIGH** | **CWE-942** | **A05:2021** | ❌ |
-| **XML External Entity (XXE)** | **API012** | **HIGH** | **CWE-611** | **A05:2021** | ✅ |
-| **Insecure Deserialization** | **API013** | **HIGH** | **CWE-502** | **A08:2021** | ✅ |
-| **OAuth Redirect Unvalidated** | **API014** | **HIGH** | **CWE-601** | **A01:2021** | ❌ |
-| **CSRF Token Missing** | **API015** | **HIGH** | **CWE-352** | **A01:2021** | ❌ |
+**Test Coverage**: 139 comprehensive tests (104 detection + 35 auto-fix tests, 100% passing)
 
 **Key Features:**
 - Framework-agnostic (Flask, FastAPI, Django)
@@ -218,6 +212,7 @@ Comprehensive security checks for REST APIs, GraphQL, and modern web APIs coveri
 - Security header validation
 - Open redirect detection
 - API key exposure prevention
+- **100% auto-fix coverage with safety classification**
 - **NEW:** CORS misconfiguration detection
 - **NEW:** XXE vulnerability detection (with defusedxml tracking)
 - **NEW:** Insecure deserialization detection (pickle, marshal, dill)
