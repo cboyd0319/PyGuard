@@ -8,6 +8,7 @@ from pyguard.lib.advanced_security import (
     TaintAnalyzer,
 )
 from pyguard.lib.api_security import analyze_api_security, APISecurityVisitor, API_SECURITY_RULES
+from pyguard.lib.cloud_security import check_cloud_security, CloudSecurityVisitor, CLOUD_SECURITY_RULES
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.best_practices import BestPracticesFixer
@@ -157,6 +158,10 @@ __all__ = [
     "analyze_api_security",
     "APISecurityVisitor",
     "API_SECURITY_RULES",
+    # Cloud Security (NEW - Security Dominance Plan Phase 1.3)
+    "check_cloud_security",
+    "CloudSecurityVisitor",
+    "CLOUD_SECURITY_RULES",
     # Supply Chain
     "SupplyChainAnalyzer",
     "SBOM",
