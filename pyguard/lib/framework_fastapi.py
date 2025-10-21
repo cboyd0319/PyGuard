@@ -234,6 +234,51 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Check for weak JWT secrets (in any file)
         self._check_jwt_secret_weakness(node)
         
+        # Check for dependency_overrides attribute access
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                # Check if assigning from app.dependency_overrides
+                if isinstance(node.value, ast.Attribute):
+                    if node.value.attr == "dependency_overrides":
+                        filename = self.file_path.name.lower()
+                        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI025",
+                                    message="Dependency override detected in production code - security risk (CWE-94)",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "suggestion": "Remove dependency_overrides from production code - only use in tests",
+                                    },
+                                )
+                            )
+            elif isinstance(target, ast.Subscript):
+                # Check for app.dependency_overrides[key] = value
+                if isinstance(target.value, ast.Attribute):
+                    if target.value.attr == "dependency_overrides":
+                        filename = self.file_path.name.lower()
+                        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI025",
+                                    message="Dependency override detected in production code - security risk (CWE-94)",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "suggestion": "Remove dependency_overrides from production code - only use in tests",
+                                    },
+                                )
+                            )
+        
         self.generic_visit(node)
 
     def _check_authentication_dependency(self, node: ast.FunctionDef) -> bool:
@@ -1163,28 +1208,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             )
 
     def _check_dependency_override_security(self, node: ast.Call) -> None:
-        """Check for dependency override security risks."""
-        # Check for dependency_overrides usage
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "dependency_overrides":
-                # Check context - should only be in tests
-                filename = self.file_path.name.lower()
-                if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FASTAPI025",
-                            message="Dependency override detected in production code - security risk (CWE-94)",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.MANUAL,
-                            fix_data={
-                                "suggestion": "Remove dependency_overrides from production code - only use in tests",
-                            },
-                        )
-                    )
+        """Check for dependency override security risks in Call nodes."""
+        # This method checks Call nodes (not used currently, but kept for compatibility)
+        pass
 
     def _check_redis_cache_poisoning(self, node: ast.Call) -> None:
         """Check for Redis cache poisoning vulnerabilities."""
@@ -1400,7 +1426,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for GraphQL query execution with user input
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("execute", "execute_sync"):
-                # Check if query includes user input
+                # Check if it's being called on a graphql module/object
+                # This handles: graphql.execute(), schema.execute(), etc.
+                # We look for any execute/execute_sync call with string manipulation in first arg
                 if node.args:
                     query_arg = node.args[0]
                     if isinstance(query_arg, (ast.JoinedStr, ast.BinOp)):
