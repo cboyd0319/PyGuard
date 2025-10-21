@@ -7,17 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned for v0.4.0
+### Planned for v0.5.0
 - VS Code extension
 - Language Server Protocol (LSP) support
-- Pre-commit hooks integration
 - Watch mode for continuous monitoring
 - Git diff analysis
-
-### Planned for v0.5.0
 - Configuration inheritance (project → user → system)
-- Advanced performance profiling
+- Advanced performance profiling enhancements
 - Custom rules API enhancements
+
+---
+
+## [0.4.0] - 2025-10-21
+
+### Added - API Security Dominance 🔐
+- **API Security Module** - Complete API security coverage (20 checks, 100% auto-fix)
+  - Mass assignment vulnerabilities detection (Django/Flask/FastAPI)
+  - Missing rate limiting and authentication checks
+  - JWT algorithm confusion attacks (RS256 vs HS256)
+  - API key exposure in URLs detection
+  - Open redirect and CORS misconfiguration checks
+  - XXE vulnerability detection with defusedxml tracking
+  - Insecure deserialization detection (pickle, marshal, dill)
+  - OAuth security validation (unvalidated redirects)
+  - CSRF token validation enforcement
+  - API versioning security checks
+  - SSRF vulnerability detection
+  - Security header validation (HSTS, X-Frame-Options, CSP)
+  - GraphQL introspection leakage detection
+
+- **Auto-Fix System** - 20 new API security auto-fixes (199+ total)
+  - 5 SAFE fixes (applied automatically)
+  - 15 UNSAFE fixes (require --unsafe flag)
+  - JWT algorithm enforcement
+  - Security header injection
+  - XXE protection with defusedxml
+  - Insecure deserialization replacement
+
+- **FastAPI Support** - Complete FastAPI framework coverage (30 checks)
+  - Async pattern security analysis
+  - WebSocket security validation
+  - Dependency injection authentication checks
+  - Pydantic model validation
+  - OAuth2 security verification
+  - Cookie security flags enforcement
+
+### Enhanced
+- **Security Checks**: Expanded from 55+ to 101+ (46 new checks)
+- **Auto-Fixes**: Increased from 179+ to 199+ (20 new fixes)
+- **Test Coverage**: 143 comprehensive API security tests added
+- **Performance**: All API security checks under 10ms per file
+- **Documentation**: Complete API security reference guide
+
+### Statistics
+- Total Security Checks: 101+ (up from 55+)
+- Auto-Fix Coverage: 199+ fixes with 100% coverage maintained
+- Test Count: 2900+ tests (88%+ coverage)
+- Framework Support: 5 frameworks (Django, Flask, FastAPI, Pandas, Pytest)
+
+### Fixed
+- API security module line counts in documentation
+- Test coverage reporting for API security modules
+- Version consistency across all files
 
 ---
 
@@ -180,5 +231,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/cboyd0319/PyGuard/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/cboyd0319/PyGuard/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/cboyd0319/PyGuard/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cboyd0319/PyGuard/releases/tag/v0.3.0
