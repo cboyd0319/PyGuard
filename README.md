@@ -8,7 +8,7 @@
 
 Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Ready-brightgreen.svg)](https://github.com/marketplace/actions/pyguard-security-scanner)
@@ -42,12 +42,14 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 - **DevSecOps engineers** automating security scanning in CI/CD pipelines
 - **Open source maintainers** needing SARIF reports for GitHub Security tab
 
-### 🆕 What's New
+### 🆕 What's New in v0.4.0
 
+- 🔐 **API Security Complete** — 20 comprehensive checks covering REST, GraphQL, JWT, OAuth, CORS, and more
+- 🔧 **100% Auto-Fix Coverage** — All 20 API security issues can be automatically fixed
+- 🚀 **101+ Security Checks** — Expanded from 55+ to 101+ total security vulnerability detections
+- 🎯 **FastAPI Support** — Full framework coverage with 30 FastAPI-specific security rules
 - ⚡ **10-100x faster scanning** with RipGrep integration
 - 🔑 **Secret scanning** finds hardcoded credentials in seconds (114x faster)
-- 🔄 **Import analysis** detects circular dependencies and god modules
-- 🧪 **Test coverage checks** identify untested code automatically
 - 📋 **Compliance tracking** extracts OWASP/CWE references from code comments
 - ⚙️ **GitHub Action** ready for immediate CI/CD integration
 
@@ -119,7 +121,7 @@ After installing, confirm everything works:
 ```bash
 # Check version
 pyguard --version
-# Output: PyGuard v0.3.0
+# Output: PyGuard v0.4.0
 
 # View all commands
 pyguard --help
@@ -177,14 +179,15 @@ New to PyGuard? Follow the [5-minute tutorial](docs/index.md)
 <td width="50%">
 
 **Security Scanning**
-- ✅ **55+ vulnerability checks** (OWASP ASVS v5.0 aligned)
+- ✅ **101+ vulnerability checks** (OWASP ASVS v5.0 aligned)
+- ✅ **API Security** — 20 checks for REST, GraphQL, JWT, OAuth, CORS
 - ✅ Code injection (eval, exec, compile)
 - ✅ SQL/NoSQL/LDAP injection detection
 - ✅ Hardcoded secrets scanning (AWS, GitHub, JWT)
 - ✅ Weak cryptography detection (MD5, SHA1)
 - ✅ SSRF, XXE, and path traversal checks
-- ✅ Framework-specific rules (Django, Flask, **FastAPI** — NEW, Pandas, Pytest)
-- ✅ **179+ auto-fixes** (most comprehensive available)
+- ✅ Framework-specific rules (Django, Flask, **FastAPI**, Pandas, Pytest)
+- ✅ **199+ auto-fixes** (100% coverage — most comprehensive available)
 
 **RipGrep Integration** 🆕
 - ✅ 10-100x faster scanning on large codebases
@@ -311,9 +314,9 @@ See [RipGrep Integration Guide](docs/guides/RIPGREP_INTEGRATION.md) for full doc
 Static analysis tool for Python. Finds security vulnerabilities, enforces code quality standards, generates compliance reports, and fixes issues automatically.
 
 **What it does**:
-- Finds 55+ security vulnerabilities (SQL injection, XSS, hardcoded secrets, command injection, SSRF)
+- Finds 101+ security vulnerabilities (API security, SQL injection, XSS, hardcoded secrets, command injection, SSRF)
 - Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
-- Framework-specific checks (Django, Flask, **FastAPI** with 20 security checks - 67% to 30 target, Pandas, Pytest) — **expanding to 20+ frameworks** via 6-9 month Security Dominance Plan
+- Framework-specific checks (Django, Flask, **FastAPI** with 30 security checks, Pandas, Pytest) — **expanding to 20+ frameworks** via 6-9 month Security Dominance Plan
 - Maps to 10+ compliance frameworks (OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR)
 - ML pattern recognition, anomaly detection, risk scoring
 - **179+ auto-fixes** (safe and unsafe modes) — only tool with complete auto-fix coverage
@@ -676,9 +679,9 @@ pyguard vulnerable_code.py
 
 | Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
 |---------|---------|--------|------|---------|------|-----------|
-| **Security Checks** | 55+ | 40+ | 73 | 100+ | 200+ | 100+ |
+| **Security Checks** | **101+** ⬆️ | 40+ | 73 | 100+ | 200+ | 100+ |
 | **Code Quality Rules** | 150+ | ❌ | 800+ | 50+ | 100+ | 500+ |
-| **Auto-Fix Coverage** | **100%** (179+) | ❌ | ~10% | ❌ | ❌ | ❌ |
+| **Auto-Fix Coverage** | **100%** (199+) ⬆️ | ❌ | ~10% | ❌ | ❌ | ❌ |
 | **Compliance Frameworks** | 10+ | ❌ | ❌ | ❌ | Limited | ✅ |
 | **Jupyter Notebook Support** | ✅ **Native** | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Local/No Telemetry** | ✅ | ✅ | ✅ | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |

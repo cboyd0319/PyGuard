@@ -2,7 +2,7 @@
 
 **Complete catalog of all capabilities, features, and integrations in PyGuard**
 
-> **TL;DR**: Comprehensive Python security and code quality platform. Replaces 7+ tools (Bandit, Ruff, Pylint, Semgrep, Black, isort, mypy) with 55+ security checks, 150+ code quality rules, 179+ auto-fixes, ML-powered detection, and 10+ compliance frameworks. Runs locally, no telemetry.
+> **TL;DR**: Comprehensive Python security and code quality platform. Replaces 7+ tools (Bandit, Ruff, Pylint, Semgrep, Black, isort, mypy) with **101+ security checks** (including 20 API security checks), 150+ code quality rules, **199+ auto-fixes** with 100% coverage, ML-powered detection, and 10+ compliance frameworks. Runs locally, no telemetry.
 
 ## Statistics at a Glance
 
@@ -34,9 +34,9 @@
 ## Table of Contents
 
 ### Core Capabilities
-1. [Security Detection](#1-security-detection) — 55+ vulnerability checks
+1. [Security Detection](#1-security-detection) — **101+ vulnerability checks** (including 20 API security checks)
 2. [Code Quality](#2-code-quality) — 150+ rules across 10 categories
-3. [Auto-Fix System](#3-auto-fix-system) — 179+ fixes, 100% coverage
+3. [Auto-Fix System](#3-auto-fix-system) — **199+ fixes**, 100% coverage
 4. [Framework Support](#4-framework-support) — Django, Flask, FastAPI, Pandas, Pytest
 
 ### Advanced Capabilities
@@ -67,8 +67,8 @@ PyGuard implements **101+ security vulnerability checks** across 9 specialized s
 | Module | Lines | Checks | CWE Coverage | Status |
 |--------|-------|--------|--------------|--------|
 | `ruff_security.py` | 1598 | 73 rules | All Bandit S-rules | ✅ Complete |
-| `api_security.py` | 1290+ | **20 checks** | API Security | ✅ **100% Auto-Fix 2025-10-21** |
-| `api_security_fixes.py` | 780+ | **20 auto-fixes** | API Security | ✅ **NEW 2025-10-21** |
+| `api_security.py` | 1520 | **20 checks** | API Security | ✅ **100% Auto-Fix 2025-10-21** |
+| `api_security_fixes.py` | 592 | **20 auto-fixes** | API Security | ✅ **NEW 2025-10-21** |
 | `framework_fastapi.py` | 1943 | **30 checks** | FastAPI-specific | ✅ **COMPLETE 2025-10-21** |
 | `enhanced_detections.py` | 793 | 13+ patterns | Advanced detection | ✅ Complete |
 | `ultra_advanced_security.py` | 657 | 21+ vulns | Framework-specific | ✅ Complete |
@@ -159,7 +159,7 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 
 ### API Security (20 checks) — **100% AUTO-FIX COMPLETE 2025-10-21** ✅
 
-**Modules**: `api_security.py` (1290+ lines) + `api_security_fixes.py` (780+ lines)
+**Modules**: `api_security.py` (1520 lines) + `api_security_fixes.py` (592 lines)
 
 Comprehensive security checks for REST APIs, GraphQL, and modern web APIs covering OWASP API Security Top 10. **Now with 100% auto-fix coverage (20/20 fixes implemented).**
 
@@ -199,7 +199,7 @@ Comprehensive security checks for REST APIs, GraphQL, and modern web APIs coveri
 - **API019**: Missing X-Frame-Options - prevents clickjacking attacks
 - **API020**: Missing Content-Security-Policy - helps prevent XSS attacks
 
-**Test Coverage**: 139 comprehensive tests (104 detection + 35 auto-fix tests, 100% passing)
+**Test Coverage**: 143 comprehensive tests (107 detection + 36 auto-fix tests, 100% passing)
 
 **Key Features:**
 - Framework-agnostic (Flask, FastAPI, Django)
@@ -219,8 +219,12 @@ Comprehensive security checks for REST APIs, GraphQL, and modern web APIs coveri
 - **NEW:** OAuth flow security validation
 - **NEW:** CSRF protection enforcement
 
-**Test Coverage**: 82 comprehensive tests (100% passing)
 **Performance**: <10ms per file average (benchmarked)
+
+### Advanced Detection Patterns
+
+| Vulnerability | CWE | Implementation | Status |
+|--------------|-----|----------------|--------|
 | Timing Attacks | CWE-208 | Comparison analysis | ✅ Complete |
 | Buffer Overflow | CWE-120 | ctypes/CFFI usage | ✅ Complete |
 
