@@ -29,6 +29,32 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 
 ---
 
+## Table of Contents
+
+- [What is PyGuard?](#what-is-pyguard)
+- [Quickstart](#quickstart)
+- [Features](#features)
+- [RipGrep Integration](#ripgrep-integration-new)
+- [What this is](#what-this-is)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Advanced Features](#advanced-features)
+- [See It In Action](#see-it-in-action)
+- [Comparison with Other Tools](#comparison-with-other-tools)
+- [Real-World Impact](#real-world-impact)
+- [Why PyGuard](#why-pyguard)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Performance](#performance)
+- [Roadmap](#roadmap)
+- [Community & Ecosystem](#community--ecosystem)
+- [Contributing](#contributing)
+- [Maintenance](#maintenance)
+- [Documentation](#documentation)
+- [License](#license)
+- [Support & Community](#support--community)
+
 ## What is PyGuard?
 
 **The problem:** Juggling 7+ security and quality tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) creates overlapping reports, config conflicts, and no unified auto-fix workflow.
