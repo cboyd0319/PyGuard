@@ -9,19 +9,21 @@
 | Category | Count | Status |
 |----------|-------|--------|
 | **Library Modules** | 72 | ✅ Production |
-| **Total Lines of Code** | 39,000+ | ✅ Production |
-| **Security Checks** | 88+ | ✅ Active |
+| **Total Lines of Code** | 39,100+ | ✅ Production |
+| **Security Checks** | 91+ | ✅ Active |
 | **Code Quality Rules** | 150+ | ✅ Active |
 | **Auto-Fixes** | 179+ | ✅ 100% Coverage |
-| **Framework Rules** | 90+ | ✅ 5 Frameworks |
+| **Framework Rules** | 95+ | ✅ 5 Frameworks |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
 | **Test Files** | 82 | ✅ Comprehensive |
-| **Total Tests** | 2,842+ | ✅ Passing |
+| **Total Tests** | 2,847+ | ✅ Passing |
 | **Test Coverage** | 88.28% | 🎯 Exceeding target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
-**Updated: 2025-10-21** | **Security Dominance Plan Phase 1: Active - 29% Complete (88/300)**
+**Updated: 2025-10-21** | **Security Dominance Plan Phase 1: Active - 30% Complete (91/300)**
+
+**FastAPI:** 20/30 checks (67% complete) - Priority P0 framework expansion in progress
 
 **Roadmap:** Following 6-9 month expansion plan toward 300+ security checks and 20+ framework support to achieve market leadership (50% more checks than Snyk, 4x more frameworks than SonarQube)
 
@@ -107,11 +109,11 @@ PyGuard implements **88+ security vulnerability checks** across 9 specialized se
 | Integer Overflow | CWE-190 | Bounds checking | ✅ Complete |
 | Memory Disclosure | CWE-209 | Traceback detection | ✅ Complete |
 
-### FastAPI Security (17 checks) — Expanding to 30
+### FastAPI Security (20 checks) — Expanding to 30
 
-**Module**: `framework_fastapi.py` (1320 lines)
+**Module**: `framework_fastapi.py` (1400+ lines)
 
-Comprehensive security analysis for FastAPI applications focusing on async patterns, dependency injection, and modern API security. Currently expanding from 17 to 30 checks as part of Security Dominance Plan Phase 1.
+Comprehensive security analysis for FastAPI applications focusing on async patterns, dependency injection, and modern API security. Currently at 67% completion (20/30 checks) as part of Security Dominance Plan Phase 1.
 
 | Vulnerability | Rule ID | Severity | CWE | Auto-Fix | Safety |
 |--------------|---------|----------|-----|----------|--------|
@@ -136,6 +138,9 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 | Exception Handler Leakage | FASTAPI023 | MEDIUM | CWE-209 | ✅ | SAFE |
 | Form Validation Bypass | FASTAPI028 | MEDIUM | CWE-20 | ❌ | MANUAL |
 | Async SQL Injection | FASTAPI030 | CRITICAL | CWE-89 | ❌ | SUGGESTED |
+| Missing CSRF Protection | FASTAPI031 | HIGH | CWE-352 | ❌ | MANUAL |
+| TestClient in Production | FASTAPI032 | MEDIUM | CWE-489 | ❌ | MANUAL |
+| Static File Path Traversal | FASTAPI033 | HIGH | CWE-22 | ❌ | MANUAL |
 
 **Key Features:**
 - AST-based dependency injection analysis
@@ -147,8 +152,8 @@ Comprehensive security analysis for FastAPI applications focusing on async patte
 - Background task security
 - API documentation exposure prevention
 
-**Test Coverage**: 50+ comprehensive tests (100% passing)
-**Expansion Target**: 30 checks (13 more to be added in Phase 1)
+**Test Coverage**: 76 comprehensive tests (100% passing)
+**Expansion Status**: 20/30 checks (67% complete) - 10 more to be added in Phase 1
 
 ### API Security (20 checks) — **EXPANDED 2025-10-21**
 
