@@ -70,6 +70,11 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                         self.has_depends_import = True
                     elif alias.name in ("OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer"):
                         self.has_oauth2_import = True
+            # Check for TestClient in production code (should be test-only)
+            if node.module == "starlette.testclient" or node.module == "fastapi.testclient":
+                for alias in node.names:
+                    if alias.name == "TestClient":
+                        self._check_testclient_import(node)
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -167,6 +172,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Detect OAuth2 misconfigurations
             if func_name in ("OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer"):
                 self._check_oauth2_misconfiguration(node)
+            
+            # Detect StaticFiles mount without proper validation
+            if func_name == "StaticFiles":
+                self._check_static_files_security(node)
 
         # Check for Attribute calls
         if isinstance(node.func, ast.Attribute):
@@ -185,6 +194,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for insecure session cookie settings
             if node.func.attr == "set_cookie":
                 self._check_cookie_security(node)
+            
+            # Check for mount() calls with StaticFiles
+            if node.func.attr == "mount":
+                self._check_static_mount_security(node)
 
         self.generic_visit(node)
 
@@ -1029,6 +1042,63 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                         )
                                     )
 
+    def _check_testclient_import(self, node: ast.ImportFrom) -> None:
+        """Check for TestClient import in production code."""
+        # TestClient should only be used in test files
+        # Heuristic: if file doesn't end with test_*.py or *_test.py, warn
+        filename = self.file_path.name.lower()
+        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FASTAPI032",
+                    message="TestClient import detected - should only be used in tests (CWE-489)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data={
+                        "suggestion": "Remove TestClient from production code",
+                    },
+                )
+            )
+
+    def _check_static_files_security(self, node: ast.Call) -> None:
+        """Check StaticFiles configuration for path traversal risks."""
+        # Look for directory parameter
+        has_directory = False
+        for keyword in node.keywords:
+            if keyword.arg == "directory":
+                has_directory = True
+        
+        if has_directory:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FASTAPI033",
+                    message="StaticFiles without proper path validation - potential path traversal (CWE-22)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.HIGH,
+                    category=RuleCategory.SECURITY,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data={
+                        "suggestion": "Ensure directory parameter is a trusted, absolute path",
+                    },
+                )
+            )
+
+    def _check_static_mount_security(self, node: ast.Call) -> None:
+        """Check app.mount() calls for StaticFiles security."""
+        # Check if mounting StaticFiles
+        if len(node.args) >= 2:
+            # Second argument should be the app/handler
+            if isinstance(node.args[1], ast.Call):
+                if isinstance(node.args[1].func, ast.Name):
+                    if node.args[1].func.id == "StaticFiles":
+                        self._check_static_files_security(node.args[1])
+
 
 class FastAPISecurityChecker:
     """Main checker for FastAPI security vulnerabilities."""
@@ -1294,6 +1364,48 @@ FASTAPI_ASYNC_SQL_INJECTION_RULE = Rule(
     ],
 )
 
+FASTAPI_MISSING_CSRF_RULE = Rule(
+    rule_id="FASTAPI031",
+    name="fastapi-missing-csrf",
+    message_template="Route accepts state-changing requests without CSRF protection (CWE-352)",
+    description="State-changing route missing CSRF token validation - vulnerable to CSRF attacks",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-352: Cross-Site Request Forgery (CSRF)",
+        "OWASP ASVS 4.2.2 v5.0: Operation Level Access Control",
+    ],
+)
+
+FASTAPI_TESTCLIENT_PRODUCTION_RULE = Rule(
+    rule_id="FASTAPI032",
+    name="fastapi-testclient-production",
+    message_template="TestClient import detected - should not be in production code (CWE-489)",
+    description="TestClient from starlette.testclient should only be used in tests",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-489: Active Debug Code",
+        "OWASP ASVS 14.1.1 v5.0: Build and Deploy Verification",
+    ],
+)
+
+FASTAPI_STATIC_FILE_TRAVERSAL_RULE = Rule(
+    rule_id="FASTAPI033",
+    name="fastapi-static-file-traversal",
+    message_template="Static file serving without proper path validation (CWE-22)",
+    description="StaticFiles mount may be vulnerable to path traversal attacks",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-22: Improper Limitation of a Pathname to a Restricted Directory",
+        "OWASP ASVS 12.3.1 v5.0: File Upload Requirements",
+    ],
+)
+
 
 # Register all rules
 def register_fastapi_rules():
@@ -1316,5 +1428,8 @@ def register_fastapi_rules():
         FASTAPI_EXCEPTION_LEAKAGE_RULE,
         FASTAPI_FORM_VALIDATION_BYPASS_RULE,
         FASTAPI_ASYNC_SQL_INJECTION_RULE,
+        FASTAPI_MISSING_CSRF_RULE,
+        FASTAPI_TESTCLIENT_PRODUCTION_RULE,
+        FASTAPI_STATIC_FILE_TRAVERSAL_RULE,
     ]
     register_rules(rules)

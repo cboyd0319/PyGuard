@@ -1452,3 +1452,92 @@ async def get_user(user_id: int, session: AsyncSession):
         
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI030"]
         assert len(violations) == 0
+
+
+class TestFastAPIAdditionalChecks:
+    """Test additional FastAPI security checks added in Security Dominance Plan."""
+
+    def test_testclient_import_in_production_code(self):
+        """Detect TestClient import in non-test files."""
+        code = """
+from fastapi.testclient import TestClient
+from fastapi import FastAPI
+
+app = FastAPI()
+client = TestClient(app)
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("main.py"), code)
+        visitor.visit(tree)
+        
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI032"]
+        assert len(violations) == 1
+        assert "TestClient" in violations[0].message
+        assert violations[0].severity == RuleSeverity.MEDIUM
+
+    def test_testclient_import_in_test_file_ok(self):
+        """TestClient import is allowed in test files."""
+        code = """
+from fastapi.testclient import TestClient
+from fastapi import FastAPI
+
+app = FastAPI()
+client = TestClient(app)
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("test_main.py"), code)
+        visitor.visit(tree)
+        
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI032"]
+        assert len(violations) == 0
+
+    def test_static_files_directory_mount(self):
+        """Detect StaticFiles mount with directory parameter."""
+        code = """
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("main.py"), code)
+        visitor.visit(tree)
+        
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI033"]
+        # Should detect both the StaticFiles call and the mount call
+        assert len(violations) >= 1
+        assert "path traversal" in violations[0].message.lower()
+        assert violations[0].severity == RuleSeverity.HIGH
+
+    def test_static_files_direct_call(self):
+        """Detect direct StaticFiles instantiation."""
+        code = """
+from fastapi.staticfiles import StaticFiles
+
+files = StaticFiles(directory="/var/www/static")
+"""
+        tree = ast.parse(code)
+        visitor = FastAPISecurityVisitor(Path("main.py"), code)
+        visitor.visit(tree)
+        
+        violations = [v for v in visitor.violations if v.rule_id == "FASTAPI033"]
+        assert len(violations) == 1
+
+    def test_all_new_rules_registered(self):
+        """Verify new rules are properly registered."""
+        from pyguard.lib.framework_fastapi import (
+            FASTAPI_MISSING_CSRF_RULE,
+            FASTAPI_TESTCLIENT_PRODUCTION_RULE,
+            FASTAPI_STATIC_FILE_TRAVERSAL_RULE,
+        )
+        
+        assert FASTAPI_MISSING_CSRF_RULE.rule_id == "FASTAPI031"
+        assert FASTAPI_TESTCLIENT_PRODUCTION_RULE.rule_id == "FASTAPI032"
+        assert FASTAPI_STATIC_FILE_TRAVERSAL_RULE.rule_id == "FASTAPI033"
+        
+        # Verify CWE mappings
+        assert "CWE-352" in FASTAPI_MISSING_CSRF_RULE.references[0]
+        assert "CWE-489" in FASTAPI_TESTCLIENT_PRODUCTION_RULE.references[0]
+        assert "CWE-22" in FASTAPI_STATIC_FILE_TRAVERSAL_RULE.references[0]
+
