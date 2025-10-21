@@ -132,6 +132,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for missing security headers
             if is_route:
                 self._check_missing_security_headers(node)
+                self._check_insecure_http_methods(node)
+                self._check_missing_api_auth_tokens(node)
+                self._check_oauth_redirect_validation(node)
         
         # Check for JWT algorithm confusion (in any function)
         if self.has_fastapi_import:
@@ -186,6 +189,8 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if isinstance(node.args[0], ast.Name):
                         if node.args[0].id == "CORSMiddleware":
                             self._check_cors_misconfiguration(node)
+                # Check middleware ordering
+                self._check_middleware_ordering(node)
             
             # Check for Pydantic validation bypasses
             if node.func.attr in ("construct", "parse_obj", "parse_raw"):
@@ -198,7 +203,37 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for mount() calls with StaticFiles
             if node.func.attr == "mount":
                 self._check_static_mount_security(node)
+            
+            # Check for dependency_overrides usage (works without import check)
+            if node.func.attr == "dependency_overrides":
+                self._check_dependency_override_security(node)
+            
+            # Check for Redis cache poisoning (works without import check)
+            if node.func.attr in ("set", "setex", "hset", "hmset"):
+                self._check_redis_cache_poisoning(node)
+            
+            # Check for GraphQL injection (works without import check)
+            if node.func.attr in ("execute", "execute_sync"):
+                self._check_graphql_injection(node)
+            
+            # Check for API keys in URLs (works without import check)
+            if node.func.attr in ("get", "post", "put", "delete", "request"):
+                self._check_api_key_in_url(node)
 
+        # Check for mass assignment (works without import check)
+        if node.keywords:
+            for keyword in node.keywords:
+                if keyword.arg is None:  # **kwargs pattern
+                    self._check_mass_assignment(node)
+                    break
+
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Check assignments for security issues."""
+        # Check for weak JWT secrets (in any file)
+        self._check_jwt_secret_weakness(node)
+        
         self.generic_visit(node)
 
     def _check_authentication_dependency(self, node: ast.FunctionDef) -> bool:
@@ -1099,6 +1134,324 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if node.args[1].func.id == "StaticFiles":
                         self._check_static_files_security(node.args[1])
 
+    def _check_middleware_ordering(self, node: ast.Call) -> None:
+        """Check for dangerous middleware ordering issues."""
+        # Check if adding authentication middleware
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == "add_middleware":
+                # Check for authentication/authorization middleware
+                if len(node.args) > 0:
+                    if isinstance(node.args[0], ast.Name):
+                        middleware_name = node.args[0].id
+                        # Check for security-critical middleware
+                        if any(keyword in middleware_name.lower() for keyword in ["auth", "security", "cors"]):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI024",
+                                    message=f"Security middleware '{middleware_name}' ordering may be incorrect - ensure CORS before auth (CWE-863)",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.MEDIUM,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "middleware": middleware_name,
+                                        "suggestion": "Ensure middleware ordering: CORS -> TrustedHost -> Authentication -> Authorization",
+                                    },
+                                )
+                            )
+
+    def _check_dependency_override_security(self, node: ast.Call) -> None:
+        """Check for dependency override security risks."""
+        # Check for dependency_overrides usage
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == "dependency_overrides":
+                # Check context - should only be in tests
+                filename = self.file_path.name.lower()
+                if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FASTAPI025",
+                            message="Dependency override detected in production code - security risk (CWE-94)",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.MANUAL,
+                            fix_data={
+                                "suggestion": "Remove dependency_overrides from production code - only use in tests",
+                            },
+                        )
+                    )
+
+    def _check_redis_cache_poisoning(self, node: ast.Call) -> None:
+        """Check for Redis cache poisoning vulnerabilities."""
+        # Look for Redis set/setex operations with user-controlled keys
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ("set", "setex", "hset", "hmset"):
+                # Check if key includes user input
+                if node.args:
+                    key_arg = node.args[0]
+                    # Check for f-strings or string concatenation in key
+                    if isinstance(key_arg, (ast.JoinedStr, ast.BinOp)):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI026",
+                                message="Redis cache key uses user input - cache poisoning risk (CWE-639)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Sanitize/hash user input before using in cache keys",
+                                },
+                            )
+                        )
+
+    def _check_mass_assignment(self, node: ast.Call) -> None:
+        """Check for mass assignment vulnerabilities."""
+        # Look for Pydantic model initialization from user data
+        # Check for Model(**request_data) patterns
+        if node.keywords:
+            for keyword in node.keywords:
+                if keyword.arg is None:  # **kwargs pattern
+                    # Check if the value is user input (common names)
+                    if isinstance(keyword.value, ast.Name):
+                        var_name = keyword.value.id.lower()
+                        if any(pattern in var_name for pattern in ["request", "data", "body", "payload", "input"]):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI027",
+                                    message=f"Potential mass assignment: {keyword.value.id} unpacked into model (CWE-915)",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "suggestion": "Use explicit field assignment or Pydantic model with restricted fields",
+                                    },
+                                )
+                            )
+
+    def _check_insecure_http_methods(self, node: ast.FunctionDef) -> None:
+        """Check for insecure HTTP methods (TRACE, OPTIONS) enabled."""
+        # Check decorators for route definitions
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                method = decorator.func.attr
+                if method in ("trace", "options"):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FASTAPI029",
+                            message=f"Route uses insecure HTTP method {method.upper()} - can be abused (CWE-749)",
+                            line_number=decorator.lineno,
+                            column=decorator.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.MANUAL,
+                            fix_data={
+                                "method": method.upper(),
+                                "suggestion": "Disable TRACE/OPTIONS methods unless specifically required",
+                            },
+                        )
+                    )
+
+    def _check_missing_api_auth_tokens(self, node: ast.FunctionDef) -> None:
+        """Check for missing API authentication tokens in headers."""
+        # Look for routes that should require API tokens
+        is_api_route = False
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call):
+                # Check if route path suggests API endpoint
+                if decorator.args and isinstance(decorator.args[0], ast.Constant):
+                    path = decorator.args[0].value
+                    if isinstance(path, str) and "/api/" in path:
+                        is_api_route = True
+                        break
+        
+        if is_api_route:
+            # Check if function has X-API-Key or Authorization header check
+            has_auth_check = False
+            for stmt in ast.walk(node):
+                if isinstance(stmt, ast.Subscript):
+                    if isinstance(stmt.value, ast.Attribute):
+                        if stmt.value.attr == "headers":
+                            if isinstance(stmt.slice, ast.Constant):
+                                header_name = stmt.slice.value
+                                if isinstance(header_name, str):
+                                    if header_name.lower() in ("x-api-key", "authorization", "api-key"):
+                                        has_auth_check = True
+                                        break
+            
+            if not has_auth_check and not self._check_authentication_dependency(node):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI034",
+                        message=f"API route {node.name}() missing API token validation (CWE-306)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Add X-API-Key or Authorization header validation",
+                        },
+                    )
+                )
+
+    def _check_jwt_secret_weakness(self, node: ast.Assign) -> None:
+        """Check for weak JWT secrets."""
+        # Look for JWT_SECRET or SECRET_KEY assignments
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                var_name = target.id
+                if any(keyword in var_name.upper() for keyword in ["JWT_SECRET", "SECRET_KEY", "TOKEN_SECRET"]):
+                    # Check if value is weak (short, common, hardcoded)
+                    if isinstance(node.value, ast.Constant):
+                        secret_value = node.value.value
+                        if isinstance(secret_value, str):
+                            if len(secret_value) < 32:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI035",
+                                        message=f"JWT secret '{var_name}' is too short (<32 chars) - weak security (CWE-326)",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SAFE,
+                                        fix_data={
+                                            "variable": var_name,
+                                            "suggestion": "Use environment variable with 256-bit (32+ character) secret",
+                                        },
+                                    )
+                                )
+                            # Check for common weak secrets
+                            weak_secrets = ["secret", "password", "changeme", "test", "dev", "default"]
+                            if secret_value.lower() in weak_secrets:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="FASTAPI035",
+                                        message=f"JWT secret '{var_name}' uses common weak value (CWE-798)",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.CRITICAL,
+                                        category=RuleCategory.SECURITY,
+                                        file_path=self.file_path,
+                                        fix_applicability=FixApplicability.SAFE,
+                                        fix_data={
+                                            "variable": var_name,
+                                            "suggestion": "Use strong, randomly generated secret from environment",
+                                        },
+                                    )
+                                )
+
+    def _check_oauth_redirect_validation(self, node: ast.FunctionDef) -> None:
+        """Check for unvalidated redirects in OAuth flows."""
+        # Look for OAuth callback routes
+        is_oauth_route = False
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Call):
+                if decorator.args and isinstance(decorator.args[0], ast.Constant):
+                    path = decorator.args[0].value
+                    if isinstance(path, str) and any(keyword in path.lower() for keyword in ["oauth", "callback", "redirect"]):
+                        is_oauth_route = True
+                        break
+        
+        if is_oauth_route:
+            # Check for redirect_uri validation
+            has_validation = False
+            for stmt in ast.walk(node):
+                # Look for redirect_uri checks
+                if isinstance(stmt, ast.Compare):
+                    if isinstance(stmt.left, ast.Name):
+                        if "redirect" in stmt.left.id.lower():
+                            has_validation = True
+                            break
+            
+            if not has_validation:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI036",
+                        message=f"OAuth route {node.name}() missing redirect_uri validation (CWE-601)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Validate redirect_uri against allowlist before redirecting",
+                        },
+                    )
+                )
+
+    def _check_graphql_injection(self, node: ast.Call) -> None:
+        """Check for GraphQL injection vulnerabilities."""
+        # Look for GraphQL query execution with user input
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ("execute", "execute_sync"):
+                # Check if query includes user input
+                if node.args:
+                    query_arg = node.args[0]
+                    if isinstance(query_arg, (ast.JoinedStr, ast.BinOp)):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI037",
+                                message="GraphQL query constructed from user input - injection risk (CWE-943)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Use parameterized GraphQL queries with variables",
+                                },
+                            )
+                        )
+
+    def _check_api_key_in_url(self, node: ast.Call) -> None:
+        """Check for API keys exposed in URLs."""
+        # Look for URL construction with API keys
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ("get", "post", "put", "delete", "request"):
+                # Check if URL includes api_key or token
+                if node.args:
+                    url_arg = node.args[0]
+                    # Check f-strings with api_key or token
+                    if isinstance(url_arg, ast.JoinedStr):
+                        for value in url_arg.values:
+                            if isinstance(value, ast.FormattedValue):
+                                if isinstance(value.value, ast.Name):
+                                    var_name = value.value.id.lower()
+                                    if any(keyword in var_name for keyword in ["api_key", "token", "secret", "password"]):
+                                        self.violations.append(
+                                            RuleViolation(
+                                                rule_id="FASTAPI038",
+                                                message=f"API key '{value.value.id}' exposed in URL - should use headers (CWE-598)",
+                                                line_number=node.lineno,
+                                                column=node.col_offset,
+                                                severity=RuleSeverity.HIGH,
+                                                category=RuleCategory.SECURITY,
+                                                file_path=self.file_path,
+                                                fix_applicability=FixApplicability.MANUAL,
+                                                fix_data={
+                                                    "variable": value.value.id,
+                                                    "suggestion": "Pass API keys in Authorization header, not URL query parameters",
+                                                },
+                                            )
+                                        )
+
 
 class FastAPISecurityChecker:
     """Main checker for FastAPI security vulnerabilities."""
@@ -1406,6 +1759,147 @@ FASTAPI_STATIC_FILE_TRAVERSAL_RULE = Rule(
     ],
 )
 
+FASTAPI_MIDDLEWARE_ORDERING_RULE = Rule(
+    rule_id="FASTAPI024",
+    name="fastapi-middleware-ordering",
+    message_template="Security middleware ordering may be incorrect (CWE-863)",
+    description="Middleware ordering issues can bypass security checks",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-863: Incorrect Authorization",
+        "OWASP ASVS 4.1.3 v5.0: General Access Control Design",
+    ],
+)
+
+FASTAPI_DEPENDENCY_OVERRIDE_RULE = Rule(
+    rule_id="FASTAPI025",
+    name="fastapi-dependency-override",
+    message_template="Dependency override in production code (CWE-94)",
+    description="Dependency overrides in production can bypass security controls",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-94: Improper Control of Generation of Code",
+        "OWASP ASVS 14.2.1 v5.0: Dependency Management",
+    ],
+)
+
+FASTAPI_REDIS_CACHE_POISONING_RULE = Rule(
+    rule_id="FASTAPI026",
+    name="fastapi-redis-cache-poisoning",
+    message_template="Redis cache key uses user input - poisoning risk (CWE-639)",
+    description="User-controlled cache keys can lead to cache poisoning attacks",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-639: Authorization Bypass Through User-Controlled Key",
+        "OWASP ASVS 8.3.4 v5.0: Sensitive Private Data",
+    ],
+)
+
+FASTAPI_MASS_ASSIGNMENT_RULE = Rule(
+    rule_id="FASTAPI027",
+    name="fastapi-mass-assignment",
+    message_template="Potential mass assignment vulnerability (CWE-915)",
+    description="Unpacking user data into models can expose unintended fields",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes",
+        "OWASP ASVS 5.1.2 v5.0: Input Validation Requirements",
+    ],
+)
+
+FASTAPI_INSECURE_HTTP_METHODS_RULE = Rule(
+    rule_id="FASTAPI029",
+    name="fastapi-insecure-http-methods",
+    message_template="Insecure HTTP method enabled (CWE-749)",
+    description="TRACE/OPTIONS methods can be abused for attacks",
+    severity=RuleSeverity.MEDIUM,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-749: Exposed Dangerous Method or Function",
+        "OWASP ASVS 14.5.4 v5.0: HTTP Security Headers",
+    ],
+)
+
+FASTAPI_MISSING_API_AUTH_TOKEN_RULE = Rule(
+    rule_id="FASTAPI034",
+    name="fastapi-missing-api-auth-token",
+    message_template="API route missing authentication token validation (CWE-306)",
+    description="API endpoint lacks proper token-based authentication",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-306: Missing Authentication for Critical Function",
+        "OWASP ASVS 2.1.1 v5.0: Password Security Requirements",
+    ],
+)
+
+FASTAPI_JWT_SECRET_WEAKNESS_RULE = Rule(
+    rule_id="FASTAPI035",
+    name="fastapi-jwt-secret-weakness",
+    message_template="JWT secret is weak or hardcoded (CWE-798)",
+    description="Weak JWT secrets can be brute-forced or are hardcoded",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.SAFE,
+    references=[
+        "CWE-798: Use of Hard-coded Credentials",
+        "CWE-326: Inadequate Encryption Strength",
+        "OWASP ASVS 6.2.1 v5.0: Algorithms",
+    ],
+)
+
+FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE = Rule(
+    rule_id="FASTAPI036",
+    name="fastapi-oauth-redirect-validation",
+    message_template="OAuth redirect_uri not validated (CWE-601)",
+    description="Unvalidated redirects in OAuth can lead to open redirect attacks",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-601: URL Redirection to Untrusted Site",
+        "OWASP ASVS 5.1.5 v5.0: Deserialization Prevention",
+    ],
+)
+
+FASTAPI_GRAPHQL_INJECTION_RULE = Rule(
+    rule_id="FASTAPI037",
+    name="fastapi-graphql-injection",
+    message_template="GraphQL query injection vulnerability (CWE-943)",
+    description="GraphQL queries constructed from user input can be injected",
+    severity=RuleSeverity.CRITICAL,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-943: Improper Neutralization of Special Elements in Data Query Logic",
+        "OWASP ASVS 5.3.4 v5.0: Query Injection Prevention",
+    ],
+)
+
+FASTAPI_API_KEY_IN_URL_RULE = Rule(
+    rule_id="FASTAPI038",
+    name="fastapi-api-key-in-url",
+    message_template="API key exposed in URL (CWE-598)",
+    description="API keys in URLs are logged and can be exposed",
+    severity=RuleSeverity.HIGH,
+    category=RuleCategory.SECURITY,
+    fix_applicability=FixApplicability.MANUAL,
+    references=[
+        "CWE-598: Use of GET Request Method With Sensitive Query Strings",
+        "OWASP ASVS 2.2.1 v5.0: General Authenticator Requirements",
+    ],
+)
+
 
 # Register all rules
 def register_fastapi_rules():
@@ -1426,10 +1920,20 @@ def register_fastapi_rules():
         FASTAPI_GRAPHQL_INTROSPECTION_RULE,
         FASTAPI_SSE_INJECTION_RULE,
         FASTAPI_EXCEPTION_LEAKAGE_RULE,
+        FASTAPI_MIDDLEWARE_ORDERING_RULE,
+        FASTAPI_DEPENDENCY_OVERRIDE_RULE,
+        FASTAPI_REDIS_CACHE_POISONING_RULE,
+        FASTAPI_MASS_ASSIGNMENT_RULE,
         FASTAPI_FORM_VALIDATION_BYPASS_RULE,
+        FASTAPI_INSECURE_HTTP_METHODS_RULE,
         FASTAPI_ASYNC_SQL_INJECTION_RULE,
         FASTAPI_MISSING_CSRF_RULE,
         FASTAPI_TESTCLIENT_PRODUCTION_RULE,
         FASTAPI_STATIC_FILE_TRAVERSAL_RULE,
+        FASTAPI_MISSING_API_AUTH_TOKEN_RULE,
+        FASTAPI_JWT_SECRET_WEAKNESS_RULE,
+        FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE,
+        FASTAPI_GRAPHQL_INJECTION_RULE,
+        FASTAPI_API_KEY_IN_URL_RULE,
     ]
     register_rules(rules)
