@@ -313,7 +313,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 **What it does**:
 - Finds 55+ security vulnerabilities (SQL injection, XSS, hardcoded secrets, command injection, SSRF)
 - Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
-- Framework-specific checks (Django, Flask, **FastAPI** — NEW, Pandas, Pytest) — **expanding to 20+ frameworks**
+- Framework-specific checks (Django, Flask, **FastAPI** with 17 security checks, Pandas, Pytest) — **expanding to 20+ frameworks** via 6-9 month Security Dominance Plan
 - Maps to 10+ compliance frameworks (OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR)
 - ML pattern recognition, anomaly detection, risk scoring
 - **179+ auto-fixes** (safe and unsafe modes) — only tool with complete auto-fix coverage
@@ -756,10 +756,10 @@ After PyGuard:
 
 ### Comprehensiveness
 
-- **78+ security checks** vs Bandit (~10), Semgrep (~15), Ruff (~15) — **expanding to 300+** (Security Dominance Plan Phase 1)
+- **88+ security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73) — **expanding to 300+** (Security Dominance Plan: 29% complete, targeting market leadership with 50% more checks than Snyk)
 - **150+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
 - **179+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
-- **Framework-specific rules** for Django, Flask, **FastAPI** (NEW), Pandas, Pytest — **expanding to 20+** frameworks
+- **Framework-specific rules** for Django, Flask, **FastAPI** (17 checks), Pandas, Pytest — **expanding to 20+** frameworks (Security Dominance Plan: 6-9 month roadmap for 4x more framework support than SonarQube)
 - **10+ compliance frameworks** — OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 
 ### Technology
