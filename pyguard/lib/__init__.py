@@ -9,6 +9,18 @@ from pyguard.lib.advanced_security import (
 )
 from pyguard.lib.api_security import analyze_api_security, APISecurityVisitor, API_SECURITY_RULES
 from pyguard.lib.cloud_security import check_cloud_security, CloudSecurityVisitor, CLOUD_SECURITY_RULES
+from pyguard.lib.dependency_confusion import (
+    analyze_dependency_confusion,
+    analyze_requirements_file,
+    DependencyConfusionVisitor,
+    DEP_CONF001_TYPOSQUATTING,
+    DEP_CONF002_MALICIOUS_PATTERN,
+    DEP_CONF003_NAMESPACE_HIJACK,
+    DEP_CONF004_SUSPICIOUS_NAMING,
+    DEP_CONF005_INSECURE_HTTP,
+    DEP_CONF006_MISSING_VERSION_PIN,
+    DEP_CONF007_MISSING_HASH,
+)
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.best_practices import BestPracticesFixer
@@ -162,6 +174,17 @@ __all__ = [
     "check_cloud_security",
     "CloudSecurityVisitor",
     "CLOUD_SECURITY_RULES",
+    # Dependency Confusion & Supply Chain Attacks (NEW - Security Dominance Plan Phase 1.2)
+    "analyze_dependency_confusion",
+    "analyze_requirements_file",
+    "DependencyConfusionVisitor",
+    "DEP_CONF001_TYPOSQUATTING",
+    "DEP_CONF002_MALICIOUS_PATTERN",
+    "DEP_CONF003_NAMESPACE_HIJACK",
+    "DEP_CONF004_SUSPICIOUS_NAMING",
+    "DEP_CONF005_INSECURE_HTTP",
+    "DEP_CONF006_MISSING_VERSION_PIN",
+    "DEP_CONF007_MISSING_HASH",
     # Supply Chain
     "SupplyChainAnalyzer",
     "SBOM",
