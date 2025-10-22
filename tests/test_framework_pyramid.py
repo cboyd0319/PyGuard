@@ -175,6 +175,8 @@ class TestContextFactory:
     def test_detect_context_without_acl(self):
         """Detect resource class with __getitem__ but no __acl__."""
         code = """
+from pyramid.traversal import resource_path
+
 class UserFactory:
     def __getitem__(self, key):
         return User.get_by_id(key)
@@ -208,6 +210,8 @@ class TestTraversalSecurity:
     def test_detect_unsafe_traversal_in_getitem(self):
         """Detect unsafe path handling in __getitem__."""
         code = """
+from pyramid.traversal import resource_path
+
 class FileFactory:
     def __getitem__(self, key):
         path = '/data/' + key  # Path traversal risk
