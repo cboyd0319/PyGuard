@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions — PyGuard
 
-> **Purpose:** PyGuard is a comprehensive Python security & code quality analysis tool with ML-powered detection, auto-fix capabilities, and support for 10+ compliance frameworks (OWASP, CWE, PCI-DSS, HIPAA, etc.). It detects 55+ security vulnerabilities and code quality issues while maintaining 100% local operation with no telemetry.
+> **Purpose:** PyGuard is a comprehensive Python security & code quality analysis tool with ML-powered detection, auto-fix capabilities, and support for 10+ compliance frameworks (OWASP, CWE, PCI-DSS, HIPAA, etc.). It detects **184 security vulnerabilities** and code quality issues while maintaining 100% local operation with no telemetry. **Currently 61% complete on Security Dominance Plan** (targeting 300+ checks to surpass all competitors).
 
 ## Quick Reference (Most Common Commands)
 ```bash
@@ -30,12 +30,13 @@ make format && pyguard pyguard/ --scan-only && make test
 ## Project Overview
 
 - **Core functionality:** Static analysis → Detection → Auto-fix → Report
-- **Security focus:** 55+ vulnerability types (CWE, OWASP Top 10, OWASP ASVS)
-- **Quality analysis:** 10+ code quality checks (naming, docstrings, complexity, best practices)
+- **Security focus:** **184 security vulnerability types** (CWE, OWASP Top 10, OWASP ASVS) — **61% toward 300+ goal**, only 16 checks behind Snyk
+- **Quality analysis:** 150+ code quality checks (naming, docstrings, complexity, best practices)
 - **Compliance:** Multi-framework support (OWASP, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX)
 - **ML-powered:** Risk scoring, anomaly detection, vulnerability prediction
-- **Auto-fix:** Automatic remediation with backup/rollback support
-- **Reports:** HTML, JSON, console output with severity-based filtering
+- **Auto-fix:** **199+ automatic fixes** with backup/rollback support — **100% coverage maintained**
+- **Reports:** HTML, JSON, SARIF, console output with severity-based filtering
+- **Frameworks:** Django, Flask, **FastAPI** (30 checks), Pandas, Pytest — **expanding to 20+ frameworks**
 
 ## Repository Standards & Configuration
 
