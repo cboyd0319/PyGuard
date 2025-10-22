@@ -1,9 +1,13 @@
-# PyGuard Development Update & Roadmap v2
+# PyGuard Development Update & Roadmap v2 (v0.5.0 and Earlier)
 
-> **🚀 INSTANT AI ONBOARDING - START HERE!**
+> **📦 v0.5.0 RELEASE ARCHIVE**
+>
+> This document tracks development history for PyGuard v0.5.0 and earlier releases.
+>
+> **🚀 For v0.6.0 development, see [UPDATEv06.md](./UPDATEv06.md)**
 >
 > **Last Updated:** 2025-10-22 (Session 28 - **v0.5.0 RELEASED** ✅ 🎉)  
-> **Status:** **v0.5.0** | Security Dominance Plan - Phase 1 COMPLETE | 3072+ tests | 88%+ coverage | 0 errors | **0 warnings** ✅
+> **Status:** **v0.5.0 ARCHIVED** | Security Dominance Plan - Phase 1 COMPLETE | 3072+ tests | 88%+ coverage | 0 errors | **0 warnings** ✅
 >
 > **What PyGuard does:** Python security & code quality analysis tool that replaces Ruff, Bandit, Semgrep, Pylint, Black, isort, mypy.
 >
