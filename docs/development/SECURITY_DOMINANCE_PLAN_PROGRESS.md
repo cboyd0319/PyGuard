@@ -419,7 +419,7 @@ PyGuard is implementing a comprehensive Security Dominance Plan to achieve marke
 
 All updates follow the **Documentation Governance** rules (non-negotiable):
 
-- ✅ Single progress tracker: `docs/development/UPDATEv2.md` ✅
+- ✅ Version-specific progress trackers (v0.6.0: `docs/development/UPDATEv06.md`, archived: `UPDATEv2.md`) ✅
 - ✅ Single capabilities source: `docs/reference/capabilities-reference.md` ✅
 - ✅ All docs under `docs/` directory ✅
 - ✅ README.md statistics aligned ✅
@@ -444,7 +444,7 @@ All updates follow the **Documentation Governance** rules (non-negotiable):
 
 4. **Documentation:**
    - [ ] Update capabilities-reference.md with each new check
-   - [ ] Update UPDATEv2.md with progress
+   - [ ] Update version tracker (UPDATEv06.md for v0.6.0) with progress
    - [ ] Maintain README.md statistics alignment
 
 ---

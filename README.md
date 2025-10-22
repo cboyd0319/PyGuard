@@ -68,7 +68,7 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 - **DevSecOps engineers** automating security scanning in CI/CD pipelines
 - **Open source maintainers** needing SARIF reports for GitHub Security tab
 
-### 🆕 What's New in v0.6.0-dev
+### 🆕 What's New in v0.5.0
 
 - 🏆 **#1 MARKET LEADER** — **334 Security Checks** (67% more than Snyk) - **Phase 1 EXCEEDED TARGET!** 🎉
 - 🌪️ **Tornado Framework** — 20 checks for async web apps, WebSockets, RequestHandler security ✅

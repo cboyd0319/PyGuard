@@ -634,7 +634,8 @@ line_length = 100
 
 ### Documentation
 - **Main Docs:** `docs/README.md` — Comprehensive documentation (architecture, usage, API)
-- **Development:** `docs/UPDATEv2.md` — Development status and roadmap
+- **Development:** `docs/development/UPDATEv06.md` — v0.6.0 development status and roadmap (current)
+- **Development Archive:** `docs/development/UPDATEv2.md` — v0.5.0 and earlier history (archived)
 - **Security Rules:** `docs/security-rules.md` — Security detection rules reference
 - **Contributing:** `CONTRIBUTING.md` — Contribution guidelines
 - **Security Policy:** `SECURITY.md` — Security reporting and policies
