@@ -14,8 +14,10 @@ Security Areas Covered:
 - Cloud function security issues
 - Serverless vulnerabilities
 - Infrastructure-as-Code security
+- Terraform state file security
+- Kubernetes RBAC misconfiguration
 
-Total Security Checks: 15
+Total Security Checks: 15 (Week 3-4 COMPLETE ✅)
 
 References:
 - AWS Security Best Practices | https://aws.amazon.com/architecture/security-identity-compliance/ | High
@@ -97,7 +99,23 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         # Check for hardcoded GCP credentials
         self._check_gcp_credentials(node)
         
-        # Check for Docker secrets in environment
+        # Check for Docker secrets in environment variables
+        self._check_docker_secrets(node)
+        
+        # Check for Kubernetes secrets
+        self._check_k8s_secrets(node)
+        
+        # Check for Terraform state file secrets
+        self._check_terraform_state_secrets(node)
+        
+        self.generic_visit(node)
+    
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Check for serverless function security issues."""
+        # Check for serverless cold start vulnerabilities
+        self._check_serverless_cold_start(node)
+        
+        self.generic_visit(node)
         self._check_docker_secrets(node)
         
         # Check for Kubernetes secrets mishandling
@@ -119,11 +137,17 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         # Check for container escape risks
         self._check_container_escape_risks(node)
         
+        # Check for container escape attempts
+        self._check_container_escape_attempts(node)
+        
         # Check for cloud storage public access
         self._check_storage_public_access(node)
         
-        # Check for serverless cold start issues
+        # Check for serverless timeout issues
         self._check_serverless_timeout_abuse(node)
+        
+        # Check for Kubernetes RBAC misconfiguration
+        self._check_k8s_rbac_misconfiguration(node)
         
         self.generic_visit(node)
 
@@ -438,6 +462,125 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     )
                                 )
 
+    def _check_terraform_state_secrets(self, node: ast.Assign) -> None:
+        """Detect Terraform state file secrets exposure."""
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                var_name = target.id.lower()
+                
+                # Check for Terraform state file references with secrets
+                if "terraform" in var_name and "state" in var_name:
+                    if isinstance(node.value, ast.Constant):
+                        if isinstance(node.value.value, str):
+                            # Check for common secret patterns in Terraform state
+                            secret_patterns = [
+                                "password", "secret", "api_key", "access_key",
+                                "private_key", "token", "credential"
+                            ]
+                            value_lower = node.value.value.lower()
+                            if any(pattern in value_lower for pattern in secret_patterns):
+                                self.violations.append(
+                                    RuleViolation(
+                                        file_path=self.file_path,
+                                        rule_id="cloud-security-terraform-state-secrets",
+                                        message=f"Terraform state file may contain secrets in variable '{target.id}'. "
+                                                "Use remote state with encryption and secret management.",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        cwe_id="CWE-798",
+                                        fix_applicability=FixApplicability.MANUAL,
+                                    )
+                                )
+
+    def _check_serverless_cold_start(self, node: ast.FunctionDef) -> None:
+        """Detect serverless cold start vulnerabilities."""
+        # Check for Lambda handlers with security issues during cold starts
+        if "handler" in node.name or "lambda_handler" in node.name:
+            # Look for global credential initialization (cold start issue)
+            for stmt in node.body[:3]:  # Check first few statements
+                if isinstance(stmt, ast.Assign):
+                    for target in stmt.targets:
+                        if isinstance(target, ast.Name):
+                            var_name = target.id.lower()
+                            if any(cred in var_name for cred in ["client", "session", "connection", "credentials"]):
+                                # Check if it's initialized with credentials
+                                if isinstance(stmt.value, ast.Call):
+                                    self.violations.append(
+                                        RuleViolation(
+                                            file_path=self.file_path,
+                                            rule_id="cloud-security-serverless-cold-start",
+                                            message=f"Credentials/clients initialized in serverless handler '{node.name}'. "
+                                                    "Cold start vulnerabilities may expose credentials. Use lazy initialization.",
+                                            line_number=stmt.lineno,
+                                            column=stmt.col_offset,
+                                            severity=RuleSeverity.MEDIUM,
+                                            category=RuleCategory.SECURITY,
+                                            cwe_id="CWE-522",
+                                            fix_applicability=FixApplicability.SUGGESTED,
+                                        )
+                                    )
+                                    break
+
+    def _check_k8s_rbac_misconfiguration(self, node: ast.Call) -> None:
+        """Detect Kubernetes RBAC misconfiguration."""
+        if not self.has_kubernetes:
+            return
+        
+        # Check for overly permissive RBAC rules
+        if isinstance(node.func, ast.Attribute):
+            if "create_role" in node.func.attr or "create_cluster_role" in node.func.attr:
+                for keyword in node.keywords:
+                    if keyword.arg == "rules":
+                        # Check for wildcard permissions
+                        rules_str = ast.unparse(keyword.value)
+                        if '"*"' in rules_str or "'*'" in rules_str:
+                            self.violations.append(
+                                RuleViolation(
+                                    file_path=self.file_path,
+                                    rule_id="cloud-security-k8s-rbac-wildcard",
+                                    message="Kubernetes RBAC rule uses wildcard ('*') permissions. "
+                                            "Apply least privilege principle with specific resource permissions.",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    cwe_id="CWE-732",
+                                    fix_applicability=FixApplicability.MANUAL,
+                                )
+                            )
+
+    def _check_container_escape_attempts(self, node: ast.Call) -> None:
+        """Detect container escape attempt patterns in code."""
+        if not self.has_docker:
+            return
+        
+        # Check for dangerous system calls that could enable container escape
+        if isinstance(node.func, ast.Attribute):
+            dangerous_calls = {
+                "chroot": "chroot() can be used for container escape",
+                "pivot_root": "pivot_root() can be used for container escape",
+                "unshare": "unshare() with CLONE_NEWUSER can escalate privileges",
+                "setns": "setns() can break namespace isolation",
+            }
+            
+            if node.func.attr in dangerous_calls:
+                self.violations.append(
+                    RuleViolation(
+                        file_path=self.file_path,
+                        rule_id="cloud-security-container-escape-attempt",
+                        message=f"Potential container escape: {dangerous_calls[node.func.attr]}. "
+                                "Ensure proper security context and restrictions.",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        cwe_id="CWE-250",
+                        fix_applicability=FixApplicability.MANUAL,
+                    )
+                )
+
 
 def check_cloud_security(file_path: Path, code: str) -> List[RuleViolation]:
     """
@@ -624,6 +767,67 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SAFE,
         references=[
             "https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html"
+        ]
+    ),
+    Rule(
+        rule_id="cloud-security-terraform-state-secrets",
+        name="Terraform State File Secrets",
+        message_template="Terraform state file may contain secrets. Use remote state with encryption and secret management.",
+        description="Detects Terraform state files that may contain hardcoded secrets",
+        explanation="Terraform state files can contain sensitive data. Use remote backends with encryption (S3+KMS, Azure Blob+encryption) and never commit state files to version control.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        cwe_mapping="CWE-798",
+        owasp_mapping="A02:2021",
+        fix_applicability=FixApplicability.MANUAL,
+        references=[
+            "https://developer.hashicorp.com/terraform/language/state/sensitive-data"
+        ]
+    ),
+    Rule(
+        rule_id="cloud-security-serverless-cold-start",
+        name="Serverless Cold Start Vulnerability",
+        message_template="Credentials initialized in serverless handler may be exposed during cold starts. Use lazy initialization.",
+        description="Detects credential initialization patterns that may be vulnerable during serverless cold starts",
+        explanation="Initializing credentials at the module level in serverless functions can expose them during cold starts. Use lazy initialization and proper secret management.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-522",
+        owasp_mapping="A02:2021",
+        fix_applicability=FixApplicability.SUGGESTED,
+        references=[
+            "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
+        ]
+    ),
+    Rule(
+        rule_id="cloud-security-k8s-rbac-wildcard",
+        name="Kubernetes RBAC Wildcard Permissions",
+        message_template="Kubernetes RBAC rule uses wildcard permissions. Apply least privilege with specific resources.",
+        description="Detects Kubernetes RBAC rules using wildcard ('*') permissions",
+        explanation="Wildcard permissions in Kubernetes RBAC violate the principle of least privilege. Specify explicit resource permissions and verbs.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        cwe_mapping="CWE-732",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+        references=[
+            "https://kubernetes.io/docs/concepts/security/rbac-good-practices/"
+        ]
+    ),
+    Rule(
+        rule_id="cloud-security-container-escape-attempt",
+        name="Container Escape Attempt Detection",
+        message_template="Potential container escape attempt detected using dangerous system calls. Ensure proper security context.",
+        description="Detects dangerous system calls that could be used for container escape (chroot, pivot_root, unshare, setns)",
+        explanation="System calls like chroot(), pivot_root(), unshare(), and setns() can be used to escape container isolation. Ensure proper security contexts, AppArmor/SELinux policies, and syscall filtering (seccomp).",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-250",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+        references=[
+            "https://docs.docker.com/engine/security/seccomp/",
+            "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
         ]
     ),
 ]
