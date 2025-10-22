@@ -64,16 +64,13 @@ References:
 """
 
 import ast
-import re
 from typing import List, Set, Optional
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
-    Rule,
     RuleCategory,
     RuleSeverity,
     RuleViolation,
-    register_rules,
 )
 
 

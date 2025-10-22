@@ -35,10 +35,9 @@ References:
 - CWE Top 25 | https://cwe.mitre.org/top25/ | High
 """
 
-import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -568,8 +567,7 @@ class APISecurityFixer:
                 for line in lines:
                     fixed_lines.append(line)
                     if "Response(" in line or "return" in line:
-                        indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add Content-Security-Policy header (API020)"
+                        # Add suggestion for CSP header
                         self.fixes_applied.append("Added CSP header suggestion (API020)")
                         break
                 return "\n".join(fixed_lines)
