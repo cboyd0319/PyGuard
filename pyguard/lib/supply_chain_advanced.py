@@ -58,7 +58,7 @@ References:
 import ast
 import re
 from pathlib import Path
-from typing import List, Set, Optional
+from typing import List
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -104,7 +104,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                                           "Never commit credentials to workflow files.",
                             cwe_id="CWE-798",
                             owasp_id="A07:2021 - Identification and Authentication Failures",
-                            fix_applicability=FixApplicability.UNSAFE,
+                            fix_applicability=FixApplicability.MANUAL,
                         )
                     )
 
@@ -153,8 +153,8 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 # Look ahead for inputs without validation
                 if line_num < len(self.lines):
                     next_lines = self.lines[line_num:line_num + 10]
-                    has_inputs = any('inputs:' in l for l in next_lines)
-                    has_validation = any('required:' in l or 'type:' in l for l in next_lines)
+                    has_inputs = any('inputs:' in line for line in next_lines)
+                    has_validation = any('required:' in line or 'type:' in line for line in next_lines)
                     if has_inputs and not has_validation:
                         self.violations.append(
                             RuleViolation(
@@ -583,7 +583,7 @@ SUPPLY_CHAIN_RULES = [
         category=RuleCategory.SECURITY,
         description="Detects hardcoded credentials in CI/CD configuration files",
         explanation="Hardcoded secrets in CI files are visible in version control and to anyone with repository access",
-        fix_applicability=FixApplicability.UNSAFE,
+        fix_applicability=FixApplicability.MANUAL,
         owasp_mapping="A07:2021 - Identification and Authentication Failures",
         cwe_mapping="CWE-798",
     ),

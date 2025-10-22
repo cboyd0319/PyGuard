@@ -31,7 +31,7 @@ References:
 import ast
 import re
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,

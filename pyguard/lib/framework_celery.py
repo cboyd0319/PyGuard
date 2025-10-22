@@ -38,9 +38,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set, Optional
+from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -487,7 +486,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                               "Never commit credentials to source code.",
                                 cwe_id="CWE-798",
                                 owasp_id="A07:2021 - Identification and Authentication Failures",
-                                fix_applicability=FixApplicability.UNSAFE,
+                                fix_applicability=FixApplicability.MANUAL,
                             )
                         )
 

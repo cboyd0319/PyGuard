@@ -28,9 +28,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import List, Set
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -485,7 +484,6 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         def check_for_weak_random(call_node):
             if isinstance(call_node.func, ast.Attribute):
                 module = None
-                func = call_node.func.attr
                 if isinstance(call_node.func.value, ast.Name):
                     module = call_node.func.value.id
                 

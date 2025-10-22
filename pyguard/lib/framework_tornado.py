@@ -39,7 +39,7 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set, Optional
+from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -258,7 +258,7 @@ class TornadoSecurityVisitor(ast.NodeVisitor):
                                                       "Store in environment variable, not in code.",
                                         cwe_id="CWE-326",
                                         owasp_id="A02:2021 - Cryptographic Failures",
-                                        fix_applicability=FixApplicability.UNSAFE,
+                                        fix_applicability=FixApplicability.MANUAL,
                                     )
                                 )
 
@@ -610,15 +610,13 @@ class TornadoSecurityVisitor(ast.NodeVisitor):
         """TORNADO015: Detect concurrent request race conditions."""
         # Check for non-atomic operations on shared state
         if isinstance(node, ast.AsyncFunctionDef):
-            has_self_assignment = False
             for stmt in ast.walk(node):
                 if isinstance(stmt, ast.Assign):
                     for target in stmt.targets:
                         if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
                             if target.value.id == "self":
-                                has_self_assignment = True
                                 # Check if there's an await between read and write
-                                # This is a simplified check
+                                # This is a simplified check - detected race condition
                                 self.violations.append(
                                     RuleViolation(
                                         rule_id="TORNADO015",
@@ -718,7 +716,7 @@ class TornadoSecurityVisitor(ast.NodeVisitor):
         for item in node.body:
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 # Check if handler method has tornado.web.authenticated decorator
-                has_auth_decorator = any(
+                _ = any(
                     isinstance(dec, ast.Name) and dec.id == "authenticated"
                     for dec in item.decorator_list
                 ) or any(
@@ -840,7 +838,7 @@ TORNADO_RULES = [
         category=RuleCategory.SECURITY,
         description="Detects weak or hardcoded cookie secrets",
         explanation="Weak cookie secrets can be cracked, allowing session hijacking",
-        fix_applicability=FixApplicability.UNSAFE,
+        fix_applicability=FixApplicability.MANUAL,
         owasp_mapping="A02:2021 - Cryptographic Failures",
         cwe_mapping="CWE-326",
     ),

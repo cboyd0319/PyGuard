@@ -33,8 +33,7 @@ References:
 """
 
 import ast
-import re
-from typing import List, Set
+from typing import List
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -157,7 +156,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                         node, "CRYPTO001", f"{algo} Algorithm",
                         f"Deprecated cryptographic algorithm {algo} detected. "
                         f"{algo} is cryptographically weak and should not be used.",
-                        f"Use modern algorithms: AES-256-GCM for encryption, SHA-256/SHA-3 for hashing",
+                        "Use modern algorithms: AES-256-GCM for encryption, SHA-256/SHA-3 for hashing",
                         RuleSeverity.HIGH,
                         "CWE-327",
                         "OWASP ASVS v5.0 (V6.2.1)"
@@ -435,7 +434,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                         if any(storage in func_name for storage in insecure_storage):
                             self._create_violation(
                                 node, "CRYPTO012", "Insecure Key Storage",
-                                f"Storing cryptographic key/secret in file or insecure storage. "
+                                "Storing cryptographic key/secret in file or insecure storage. "
                                 "Keys stored in plaintext files can be easily compromised.",
                                 "Use secure key management systems (AWS KMS, Azure Key Vault, HashiCorp Vault) "
                                 "or encrypted credential storage",
