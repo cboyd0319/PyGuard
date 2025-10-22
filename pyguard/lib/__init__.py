@@ -59,6 +59,8 @@ from pyguard.lib.framework_celery import analyze_celery_security, CelerySecurity
 from pyguard.lib.framework_tornado import analyze_tornado_security, TornadoSecurityVisitor, TORNADO_RULES
 from pyguard.lib.framework_numpy import analyze_numpy_security, NumPySecurityVisitor, NUMPY_RULES
 from pyguard.lib.framework_tensorflow import analyze_tensorflow_security, TensorFlowSecurityVisitor, TENSORFLOW_RULES
+from pyguard.lib.framework_pyramid import analyze_pyramid_security, PyramidSecurityVisitor, PYRAMID_RULES
+from pyguard.lib.business_logic import analyze_business_logic, BusinessLogicVisitor, BUSINESS_LOGIC_RULES
 from pyguard.lib.git_hooks import (
     GitHooksManager,
     install_git_hooks,
@@ -308,6 +310,22 @@ __all__ = [
     "analyze_tornado_security",
     "TornadoSecurityVisitor",
     "TORNADO_RULES",
+    # NumPy Framework (NEW - Security Dominance Plan Week 13-14)
+    "analyze_numpy_security",
+    "NumPySecurityVisitor",
+    "NUMPY_RULES",
+    # TensorFlow Framework (NEW - Security Dominance Plan Week 13-14)
+    "analyze_tensorflow_security",
+    "TensorFlowSecurityVisitor",
+    "TENSORFLOW_RULES",
+    # Pyramid Framework (NEW - Security Dominance Plan Week 15-16)
+    "analyze_pyramid_security",
+    "PyramidSecurityVisitor",
+    "PYRAMID_RULES",
+    # Business Logic Security (NEW - Security Dominance Plan Week 15-16)
+    "analyze_business_logic",
+    "BusinessLogicVisitor",
+    "BUSINESS_LOGIC_RULES",
     # Supply Chain Advanced (NEW - Security Dominance Plan Week 11-12)
     "analyze_supply_chain_advanced",
     "SupplyChainAdvancedVisitor",
