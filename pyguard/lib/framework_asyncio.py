@@ -112,23 +112,21 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                 func_name = node.func.id
 
         if func_name == "create_subprocess_shell":
-            # Check if command contains user input
+            # Any use of create_subprocess_shell is potentially dangerous
             if node.args:
-                arg = node.args[0]
-                if isinstance(arg, (ast.Name, ast.Call, ast.BinOp)):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO001",
-                            message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                            
-                        )
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO001",
+                        message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
+                        
                     )
+                )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Analyze regular functions for asyncio security issues."""
