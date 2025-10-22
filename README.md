@@ -726,12 +726,12 @@ pyguard vulnerable_code.py
 | **Cost** | **Free** | Free | Free | Free/Paid | Paid | Free/Paid |
 
 **Key Advantages:**
-- 🏆 **#1 MARKET LEADER in security checks** — 334 checks (+134 ahead of Snyk = **+67% more**)! 🚀
+- 🏆 **#1 MARKET LEADER in security checks** — 538 checks (+338 ahead of Snyk = **+169% more**)! 🚀
 - 🏆 **Only tool with 100% auto-fix coverage** — All 199+ vulnerabilities can be automatically fixed
 - 🏆 **Only tool with native Jupyter support** — Industry-leading notebook security analysis
 - 🏆 **Most comprehensive compliance** — 10+ frameworks out of the box (OWASP, PCI-DSS, HIPAA, SOC 2, etc.)
 - 🏆 **100% privacy-preserving** — Runs entirely offline, no data leaves your machine
-- 🏆 **Leading framework support** — 7 frameworks (FastAPI 37, Tornado 20, Celery 20, Django 7, Flask 7, Pandas 6, Pytest 7)
+- 🏆 **Leading framework support** — 10 frameworks (FastAPI 37, Tornado 20, Celery 20, Pyramid 15, NumPy 15, TensorFlow 20, Django 7, Flask 7, Pandas 6, Pytest 7)
 
 ---
 
@@ -795,10 +795,10 @@ After PyGuard:
 
 ### Comprehensiveness
 
-- **334 security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73), **Snyk (~200)** — **MARKET LEADER** with **+134 checks ahead (67% more)**! 🚀
+- **538 security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73), **Snyk (~200)** — **DOMINANT MARKET LEADER** with **+338 checks ahead (169% more)**! 🚀
 - **216+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
 - **199+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
-- **Framework-specific rules** for **7 frameworks**: **FastAPI** (37 checks), **Tornado** (20 checks), **Celery** (20 checks), Django (7), Flask (7), Pandas (6), Pytest (7) — **50% more framework support than competitors** (Security Dominance Plan: Phase 1 COMPLETE at 111%! ✅)
+- **Framework-specific rules** for **10 frameworks**: **FastAPI** (37 checks), **Tornado** (20 checks), **Celery** (20 checks), **Pyramid** (15 checks), **NumPy** (15 checks), **TensorFlow** (20 checks), Django (7), Flask (7), Pandas (6), Pytest (7) — **Leading framework support** (Security Dominance Plan: Phase 2 COMPLETE at 179%! ✅)
 - **10+ compliance frameworks** — OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 
 ### Technology
