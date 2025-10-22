@@ -1,1 +1,0 @@
-{"timestamp": "2025-10-22T04:43:35.521444", "correlation_id": "143de01c-9fc1-4aba-b970-291ebbb5607a", "level": "WARNING", "category": "General", "message": "Syntax error in /tmp/pytest-of-runner/pytest-0/test_check_file_syntax_error0/bad_syntax.py: expected '(' (<unknown>, line 2)", "file": null, "details": {}}
