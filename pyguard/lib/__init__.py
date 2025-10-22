@@ -63,6 +63,7 @@ from pyguard.lib.framework_pyramid import analyze_pyramid_security, PyramidSecur
 from pyguard.lib.business_logic import analyze_business_logic, BusinessLogicVisitor, BUSINESS_LOGIC_RULES
 from pyguard.lib.mobile_iot_security import analyze_mobile_iot_security, MobileIoTSecurityVisitor, MOBILE_IOT_RULES
 from pyguard.lib.ai_ml_security import analyze_ai_ml_security, AIMLSecurityVisitor, AIML_SECURITY_RULES
+from pyguard.lib.blockchain_security import analyze_blockchain_security, BlockchainSecurityVisitor, BLOCKCHAIN_RULES
 from pyguard.lib.git_hooks import (
     GitHooksManager,
     install_git_hooks,
@@ -336,6 +337,10 @@ __all__ = [
     "analyze_ai_ml_security",
     "AIMLSecurityVisitor",
     "AIML_SECURITY_RULES",
+    # Blockchain & Web3 Security (NEW - Security Dominance Plan Month 5-6)
+    "analyze_blockchain_security",
+    "BlockchainSecurityVisitor",
+    "BLOCKCHAIN_RULES",
     # Supply Chain Advanced (NEW - Security Dominance Plan Week 11-12)
     "analyze_supply_chain_advanced",
     "SupplyChainAdvancedVisitor",
