@@ -5,24 +5,26 @@ Detects PII exposure in source code to ensure GDPR, CCPA, HIPAA, and other
 privacy regulation compliance. Identifies sensitive personal data patterns
 that should not be hardcoded or exposed in logs.
 
-Security Areas Covered:
-- Social Security Numbers (SSN) - US and international formats
+Security Areas Covered (21 PII Types):
+- Social Security Numbers (SSN) - US format with separators
 - Credit card numbers (Luhn algorithm validation)
 - IBAN/SWIFT codes
 - Passport numbers (international formats)
 - Driver's license numbers (US states)
-- National ID numbers (50+ countries)
 - Health insurance numbers
-- Biometric data references
-- Genetic information markers
-- IP addresses in logs (GDPR violation)
-- MAC addresses
-- Device IDs (IMEI, serial numbers)
+- IP addresses (IPv4/IPv6) - GDPR personal data
+- MAC addresses - Device identifiers
+- Device IDs (IMEI) - 15-digit mobile identifiers
 - Location data (GPS coordinates)
-- Email addresses in code (context-aware)
+- Email addresses (context-aware)
 - Phone numbers (E.164 international format)
+- Date of birth (context-aware)
+- Financial account numbers (context-aware)
+- Tax ID numbers (EIN/ITIN) - US format
+- Medical record numbers (MRN) - HIPAA PHI
+- Vehicle Identification Numbers (VIN)
 
-Total Security Checks: 25 (Week 5-6 Target)
+Total Security Checks: 19 rules (PII001-PII021, gaps at PII008-PII009, PII012)
 
 References:
 - GDPR Article 4(1) | https://gdpr-info.eu/art-4-gdpr/ | Critical
@@ -112,6 +114,67 @@ PHONE_PATTERN = re.compile(
 # GPS coordinates
 GPS_PATTERN = re.compile(
     r'\b-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+\b'  # Lat,Long: 40.7128,-74.0060
+)
+
+# Date of birth pattern (common formats)
+DOB_PATTERN = re.compile(
+    r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b'  # DOB: 01/15/1990, 1-15-90
+)
+
+# Financial account number (generic pattern)
+FINANCIAL_ACCOUNT_PATTERN = re.compile(
+    r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4,12}\b'  # Account: 1234-5678-9012345
+)
+
+# Tax ID / EIN pattern (US)
+TAX_ID_PATTERN = re.compile(
+    r'\b\d{2}[-\s]?\d{7}\b'  # EIN: 12-3456789
+)
+
+# Medical record number pattern
+MEDICAL_RECORD_PATTERN = re.compile(
+    r'\bMRN[-\s]?\d{6,10}\b'  # MRN-12345678
+)
+
+# IMEI device identifier
+IMEI_PATTERN = re.compile(
+    r'\b\d{15}\b'  # IMEI: 15 digits exactly
+)
+
+# VIN (Vehicle Identification Number)
+VIN_PATTERN = re.compile(
+    r'\b[A-HJ-NPR-Z0-9]{17}\b'  # VIN: 17 characters (excludes I, O, Q)
+)
+
+# Insurance policy number pattern
+INSURANCE_POLICY_PATTERN = re.compile(
+    r'\b[A-Z]{2,4}\d{6,12}\b'  # Policy: ABC123456789
+)
+
+# National ID patterns (common formats)
+NATIONAL_ID_PATTERN = re.compile(
+    r'\b[A-Z]{1,2}\d{6,10}[A-Z]?\b'  # Generic national ID format
+)
+
+# Biometric data reference keywords
+BIOMETRIC_KEYWORDS = ["fingerprint", "retina", "iris", "facial", "biometric", "palm"]
+
+# Genetic data reference keywords
+GENETIC_KEYWORDS = ["dna", "genetic", "genome", "chromosome", "mutation"]
+
+# Serial number pattern (devices, equipment)
+SERIAL_NUMBER_PATTERN = re.compile(
+    r'\b[A-Z]{2,4}\d{8,12}[A-Z]?\b'  # Serial: ABC12345678
+)
+
+# Full name pattern (First Last format)
+FULL_NAME_PATTERN = re.compile(
+    r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b'  # Name: John Doe
+)
+
+# Street address pattern
+ADDRESS_PATTERN = re.compile(
+    r'\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b'
 )
 
 
@@ -293,6 +356,97 @@ class PIIDetectionVisitor(ast.NodeVisitor):
                 "Phone number detected. Personal contact information should not be hardcoded."
             )
 
+        # Check for date of birth (context-aware)
+        if DOB_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["birth", "dob", "born"]):
+            self._add_violation(
+                node, "PII016", "Date of Birth", var_name,
+                "Date of birth detected. DOB is sensitive PII under GDPR and HIPAA. Store encrypted."
+            )
+
+        # Check for financial account number (context-aware)
+        if FINANCIAL_ACCOUNT_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["account", "bank", "routing"]):
+            self._add_violation(
+                node, "PII017", "Financial Account", var_name,
+                "Financial account number detected. Store in PCI-DSS compliant system with encryption."
+            )
+
+        # Check for tax ID / EIN (context-aware)
+        if TAX_ID_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["tax", "ein", "itin"]):
+            self._add_violation(
+                node, "PII018", "Tax ID", var_name,
+                "Tax identification number (EIN/ITIN) detected. Store encrypted, not in source code."
+            )
+
+        # Check for medical record number (context-aware)
+        if MEDICAL_RECORD_PATTERN.search(value) or (any(keyword in var_name.lower() for keyword in ["mrn", "medical", "patient", "record"]) and re.search(r'\b\d{6,10}\b', value)):
+            self._add_violation(
+                node, "PII019", "Medical Record", var_name,
+                "Medical record number detected. PHI under HIPAA. Must be encrypted and access-controlled."
+            )
+
+        # Check for IMEI device identifier (context-aware)
+        if IMEI_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["imei", "device", "phone"]):
+            self._add_violation(
+                node, "PII020", "IMEI", var_name,
+                "IMEI device identifier detected. Device identifiers are PII under GDPR."
+            )
+
+        # Check for VIN (context-aware)
+        if VIN_PATTERN.search(value) and ("vin" in var_name.lower() or "vehicle" in var_name.lower()):
+            self._add_violation(
+                node, "PII021", "VIN", var_name,
+                "Vehicle Identification Number detected. VIN can be used to identify vehicle owners."
+            )
+
+        # Check for insurance policy number (context-aware)
+        if INSURANCE_POLICY_PATTERN.search(value) and ("policy" in var_name.lower() or "insurance" in var_name.lower()):
+            self._add_violation(
+                node, "PII022", "Insurance Policy", var_name,
+                "Insurance policy number detected. Personal insurance information is PII."
+            )
+
+        # Check for national ID (context-aware)
+        if NATIONAL_ID_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["national", "id", "citizen", "identity"]):
+            self._add_violation(
+                node, "PII023", "National ID", var_name,
+                "National identification number detected. Government-issued IDs are sensitive PII."
+            )
+
+        # Check for biometric data references (context-aware)
+        if any(keyword in var_name.lower() for keyword in BIOMETRIC_KEYWORDS):
+            self._add_violation(
+                node, "PII024", "Biometric Data", var_name,
+                "Biometric data reference detected. Biometric information is highly sensitive PII under GDPR Article 9."
+            )
+
+        # Check for genetic data references (context-aware)
+        if any(keyword in var_name.lower() for keyword in GENETIC_KEYWORDS):
+            self._add_violation(
+                node, "PII025", "Genetic Data", var_name,
+                "Genetic information reference detected. Genetic data is special category PII under GDPR Article 9."
+            )
+
+        # Check for serial numbers (context-aware)
+        if SERIAL_NUMBER_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["serial", "device", "equipment"]):
+            self._add_violation(
+                node, "PII008", "Serial Number", var_name,
+                "Device/equipment serial number detected. Can be used to identify and track individuals."
+            )
+
+        # Check for full names (context-aware)
+        if FULL_NAME_PATTERN.search(value) and ("name" in var_name.lower() or "user" in var_name.lower() or "customer" in var_name.lower()):
+            self._add_violation(
+                node, "PII009", "Full Name", var_name,
+                "Full name detected. Personal names are PII under GDPR and should not be hardcoded."
+            )
+
+        # Check for residential addresses (context-aware)
+        if ADDRESS_PATTERN.search(value) and ("address" in var_name.lower() or "street" in var_name.lower()):
+            self._add_violation(
+                node, "PII012", "Residential Address", var_name,
+                "Residential address detected. Home addresses are sensitive PII protected under GDPR."
+            )
+
     def _check_pii_in_logging(self, node: ast.Call, value: str) -> None:
         """Check for PII in logging statements (GDPR violation)."""
         # Check for IP addresses in logging
@@ -464,6 +618,30 @@ PII_RULES = [
         fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
+        rule_id="PII008",
+        name="Serial Number Detection",
+        message_template="Device/equipment serial number detected. Can be used to identify individuals.",
+        description="Detects device and equipment serial numbers",
+        explanation="Serial numbers can be used to identify and track device owners, considered PII in some contexts.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII009",
+        name="Full Name Detection",
+        message_template="Full name detected. Personal names are PII under GDPR.",
+        description="Detects full names (First Last format) in source code",
+        explanation="Personal names are directly identifiable information protected under GDPR.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
         rule_id="PII010",
         name="IP Address Detection",
         message_template="IP address detected. Under GDPR, IP addresses are personal data. Anonymize in logs.",
@@ -483,6 +661,18 @@ PII_RULES = [
         explanation="MAC addresses uniquely identify devices and are PII under GDPR.",
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII012",
+        name="Residential Address Detection",
+        message_template="Residential address detected. Home addresses are sensitive PII.",
+        description="Detects residential street addresses in source code",
+        explanation="Home addresses are sensitive personal information protected under GDPR and other privacy laws.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
         cwe_mapping="CWE-359",
         owasp_mapping="A01:2021",
         fix_applicability=FixApplicability.MANUAL,
@@ -519,6 +709,126 @@ PII_RULES = [
         explanation="Phone numbers are personal contact information protected under privacy laws.",
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII016",
+        name="Date of Birth Detection",
+        message_template="Date of birth detected. DOB is sensitive PII under GDPR and HIPAA.",
+        description="Detects dates of birth in source code",
+        explanation="Date of birth is sensitive PII that can be used for identity theft. Protected under GDPR and HIPAA.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII017",
+        name="Financial Account Number Detection",
+        message_template="Financial account number detected. Store in PCI-DSS compliant system.",
+        description="Detects financial account numbers in source code",
+        explanation="Financial account numbers must be protected under PCI-DSS. Store encrypted in secure database.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII018",
+        name="Tax ID Detection",
+        message_template="Tax identification number (EIN/ITIN) detected. Store encrypted.",
+        description="Detects tax ID numbers (EIN, ITIN) in source code",
+        explanation="Tax identification numbers are sensitive financial PII. Must be stored encrypted.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII019",
+        name="Medical Record Number Detection",
+        message_template="Medical record number detected (PHI under HIPAA).",
+        description="Detects medical record numbers in source code",
+        explanation="Medical record numbers are Protected Health Information under HIPAA. Must be encrypted and access-controlled.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII020",
+        name="IMEI Device Identifier Detection",
+        message_template="IMEI device identifier detected. Device identifiers are PII under GDPR.",
+        description="Detects IMEI device identifiers in source code",
+        explanation="IMEI numbers uniquely identify mobile devices and are PII under GDPR.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII021",
+        name="VIN Detection",
+        message_template="Vehicle Identification Number detected. Can identify vehicle owners.",
+        description="Detects Vehicle Identification Numbers in source code",
+        explanation="VINs can be used to identify vehicle owners and are considered PII.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII022",
+        name="Insurance Policy Number Detection",
+        message_template="Insurance policy number detected. Personal insurance information is PII.",
+        description="Detects insurance policy numbers in source code",
+        explanation="Insurance policy numbers link to personal health and financial information.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII023",
+        name="National ID Detection",
+        message_template="National identification number detected. Government-issued IDs are sensitive PII.",
+        description="Detects national ID numbers in source code",
+        explanation="National IDs are government-issued identifiers used in many countries (e.g., Aadhaar, NIF, DNI).",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII024",
+        name="Biometric Data Detection",
+        message_template="Biometric data reference detected. Highly sensitive PII under GDPR Article 9.",
+        description="Detects biometric data references (fingerprint, retina, iris, facial recognition)",
+        explanation="Biometric data is special category data under GDPR Article 9. Requires explicit consent and enhanced protection.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        cwe_mapping="CWE-359",
+        owasp_mapping="A01:2021",
+        fix_applicability=FixApplicability.MANUAL,
+    ),
+    Rule(
+        rule_id="PII025",
+        name="Genetic Data Detection",
+        message_template="Genetic information detected. Special category PII under GDPR Article 9.",
+        description="Detects genetic information references (DNA, genome, genetic markers)",
+        explanation="Genetic data is special category data under GDPR Article 9. Cannot be processed without explicit consent.",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
         cwe_mapping="CWE-359",
         owasp_mapping="A01:2021",
         fix_applicability=FixApplicability.MANUAL,

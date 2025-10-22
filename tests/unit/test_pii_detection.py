@@ -494,12 +494,221 @@ mac = "00:1A:2B:3C:4D:5E"
         assert benchmark.stats['mean'] < 0.100  # 100ms
 
 
+class TestDateOfBirthDetection:
+    """Test date of birth detection - PII016."""
+
+    def test_detect_dob_in_variable(self):
+        """Detect date of birth in variable name."""
+        code = """
+birth_date = "01/15/1990"
+dob = "12-25-1985"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII016" for v in violations)
+
+    def test_safe_regular_date(self):
+        """Should not flag regular date variables without birth context."""
+        code = """
+start_date = "01/01/2020"
+end_date = "12/31/2020"
+"""
+        violations = check_pii(Path("test.py"), code)
+        dob_violations = [v for v in violations if v.rule_id == "PII016"]
+        assert len(dob_violations) == 0
+
+
+class TestFinancialAccountDetection:
+    """Test financial account number detection - PII017."""
+
+    def test_detect_account_number(self):
+        """Detect financial account number."""
+        code = """
+bank_account = "1234-5678-90123456"
+account_number = "9876543210"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 1
+        assert any(v.rule_id == "PII017" for v in violations)
+
+
+class TestTaxIDDetection:
+    """Test tax ID detection - PII018."""
+
+    def test_detect_ein(self):
+        """Detect Employer Identification Number."""
+        code = """
+ein = "12-3456789"
+tax_id = "98 7654321"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII018" for v in violations)
+
+
+class TestMedicalRecordDetection:
+    """Test medical record number detection - PII019."""
+
+    def test_detect_mrn(self):
+        """Detect medical record number."""
+        code = """
+mrn = "MRN-12345678"
+patient_record = "87654321"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 1
+        assert any(v.rule_id == "PII019" for v in violations)
+
+
+class TestIMEIDetection:
+    """Test IMEI device identifier detection - PII020."""
+
+    def test_detect_imei(self):
+        """Detect IMEI device identifier."""
+        code = """
+device_imei = "123456789012345"
+phone_id = "987654321098765"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII020" for v in violations)
+
+
+class TestVINDetection:
+    """Test VIN detection - PII021."""
+
+    def test_detect_vin(self):
+        """Detect Vehicle Identification Number."""
+        code = """
+vin = "1HGBH41JXMN109186"
+vehicle_id = "JH4KA7561PC008269"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII021" for v in violations)
+
+
+class TestInsurancePolicyDetection:
+    """Test insurance policy number detection - PII022."""
+
+    def test_detect_insurance_policy(self):
+        """Detect insurance policy number."""
+        code = """
+policy_number = "ABC123456789"
+insurance_id = "XYZ987654321"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII022" for v in violations)
+
+
+class TestNationalIDDetection:
+    """Test national ID detection - PII023."""
+
+    def test_detect_national_id(self):
+        """Detect national identification number."""
+        code = """
+national_id = "AB1234567C"
+citizen_id = "X9876543"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII023" for v in violations)
+
+
+class TestBiometricDataDetection:
+    """Test biometric data detection - PII024."""
+
+    def test_detect_biometric_references(self):
+        """Detect biometric data references."""
+        code = """
+fingerprint_data = "binary_data_here"
+facial_recognition_id = "face_template_123"
+retina_scan = "scan_data"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 3
+        assert any(v.rule_id == "PII024" for v in violations)
+
+
+class TestGeneticDataDetection:
+    """Test genetic data detection - PII025."""
+
+    def test_detect_genetic_references(self):
+        """Detect genetic data references."""
+        code = """
+dna_sequence = "ATCG..."
+genetic_marker = "rs12345"
+genome_data = "genome_file.vcf"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 3
+        assert any(v.rule_id == "PII025" for v in violations)
+
+
+class TestSerialNumberDetection:
+    """Test serial number detection - PII008."""
+
+    def test_detect_serial_number(self):
+        """Detect device serial number."""
+        code = """
+device_serial = "ABC123456789"
+equipment_serial = "XYZ987654321D"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII008" for v in violations)
+
+
+class TestFullNameDetection:
+    """Test full name detection - PII009."""
+
+    def test_detect_full_name(self):
+        """Detect full names."""
+        code = """
+user_name = "John Smith"
+customer_name = "Jane Doe"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII009" for v in violations)
+
+
+class TestResidentialAddressDetection:
+    """Test residential address detection - PII012."""
+
+    def test_detect_address(self):
+        """Detect residential address."""
+        code = """
+home_address = "123 Main Street"
+street_address = "456 Oak Avenue"
+"""
+        violations = check_pii(Path("test.py"), code)
+        assert len(violations) >= 2
+        assert any(v.rule_id == "PII012" for v in violations)
+
+
 class TestRuleRegistration:
     """Test rule registration and metadata."""
 
     def test_rules_registered(self):
         """Verify all PII rules are registered."""
         from pyguard.lib.pii_detection import PII_RULES
+        
+        # Should have 25 PII rules (target achieved!)
+        assert len(PII_RULES) >= 25
+        
+        # Verify rule IDs are unique
+        rule_ids = [rule.rule_id for rule in PII_RULES]
+        assert len(rule_ids) == len(set(rule_ids))
+        
+        # Verify all rules have required fields
+        for rule in PII_RULES:
+            assert rule.rule_id.startswith("PII")
+            assert rule.name
+            assert rule.message_template
+            assert rule.cwe_mapping == "CWE-359"
+            assert rule.owasp_mapping == "A01:2021"
         
         assert len(PII_RULES) >= 12  # We defined 12 rules
         
