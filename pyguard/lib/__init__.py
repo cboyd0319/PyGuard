@@ -55,6 +55,8 @@ from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
 from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
 from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
 from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker
+from pyguard.lib.framework_celery import analyze_celery_security, CelerySecurityVisitor, CELERY_RULES
+from pyguard.lib.framework_tornado import analyze_tornado_security, TornadoSecurityVisitor, TORNADO_RULES
 from pyguard.lib.git_hooks import (
     GitHooksManager,
     install_git_hooks,
@@ -124,6 +126,7 @@ from pyguard.lib.string_operations import (
     StringOperationsVisitor,
 )
 from pyguard.lib.supply_chain import SBOM, Dependency, SupplyChainAnalyzer
+from pyguard.lib.supply_chain_advanced import analyze_supply_chain_advanced, SupplyChainAdvancedVisitor, SUPPLY_CHAIN_RULES as SUPPLY_CHAIN_ADVANCED_RULES
 
 # NEW in v0.8.0: Ultra-advanced auto-fixes
 from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
@@ -295,6 +298,18 @@ __all__ = [
     "PYTEST_RULES",
     "PandasRulesChecker",
     "PANDAS_RULES",
+    # Celery Framework (NEW - Security Dominance Plan Week 11-12)
+    "analyze_celery_security",
+    "CelerySecurityVisitor",
+    "CELERY_RULES",
+    # Tornado Framework (NEW - Security Dominance Plan Week 11-12)
+    "analyze_tornado_security",
+    "TornadoSecurityVisitor",
+    "TORNADO_RULES",
+    # Supply Chain Advanced (NEW - Security Dominance Plan Week 11-12)
+    "analyze_supply_chain_advanced",
+    "SupplyChainAdvancedVisitor",
+    "SUPPLY_CHAIN_ADVANCED_RULES",
     # Git Hooks (NEW v0.4.0)
     "GitHooksManager",
     "install_git_hooks",
