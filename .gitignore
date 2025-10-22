@@ -83,6 +83,7 @@ backups/
 *.backup
 pyguard.jsonl
 .pyguard/
+pyguard.lib.*  # Test artifact files
 
 # Documentation
 docs/_build/
