@@ -146,9 +146,11 @@
 
 To prevent documentation sprawl and ensure consistency, the following rules are mandatory:
 
-- Single progress tracker: `docs/development/UPDATEv2.md` is the only place for status/progress updates.
+- Version-specific progress trackers: Use version-specific tracking documents for each major/minor release.
+  - v0.5.0 and earlier: `docs/development/UPDATEv2.md` (archived)
+  - v0.6.0 and later: `docs/development/UPDATEv06.md` (active)
   - Do not create new status/summary/progress docs per PR.
-  - Append to/update `UPDATEv2.md` with clearly dated entries.
+  - Append to/update the current version tracker with clearly dated entries.
 
 - Single capabilities source of truth: `docs/reference/capabilities-reference.md`.
   - When adding/changing features, update this file and align the README features section.
@@ -161,7 +163,7 @@ To prevent documentation sprawl and ensure consistency, the following rules are 
   - PR reviewers must verify these rules before approval.
   - CI will run doc/link/style checks; violations block merges.
 
-These rules are non‑negotiable. Exceptions require maintainer approval and must be documented in `UPDATEv2.md`.
+These rules are non‑negotiable. Exceptions require maintainer approval and must be documented in the current version tracker (currently `docs/development/UPDATEv06.md` for v0.6.0).
 
 ---
 
@@ -1602,7 +1604,7 @@ Position PyGuard as the **definitive Python security solution**.
 **Week 5-6:** ✅ **COMPLETE**
 - ✅ Data Protection & Privacy (25 checks) — **DONE**
 - ✅ Testing phase 1 — **DONE** (3,117+ tests, 88%+ coverage)
-- ✅ Documentation updates — **DONE** (UPDATEv2.md, capabilities-reference.md)
+- ✅ Documentation updates — **DONE** (version trackers, capabilities-reference.md)
 
 **Week 7-8:** ✅ **COMPLETE**
 - ✅ Cryptography & Key Management (15 checks) — **DONE**
@@ -1841,7 +1843,7 @@ Position PyGuard as the **definitive Python security solution**.
 1. ✅ **Plan approved and active**
 2. ✅ **Resources allocated** (development team active)
 3. ✅ **Month 1-2 implementation COMPLETE** (Weeks 1-10 DONE)
-4. ✅ **Weekly progress tracked** (UPDATEv2.md maintained)
+4. ✅ **Weekly progress tracked** (version-specific trackers maintained)
 5. ✅ **First milestone exceeded** (224 checks vs 155 target = +69 bonus)
 6. ✅ **SURPASSED SNYK** — **Now market leader!** 🚀
 
