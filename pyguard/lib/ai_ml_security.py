@@ -106,6 +106,58 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check for AI/ML security issues in assignments."""
+        # AIML001: Check for prompt injection in assignments (f-strings, .format())
+        if self.has_llm_framework:
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    var_name = target.id
+                    # Check if this looks like a prompt variable
+                    if "prompt" in var_name.lower() or "message" in var_name.lower():
+                        # Check if using f-string
+                        if isinstance(node.value, ast.JoinedStr):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="AIML001",
+                                    category=RuleCategory.SECURITY,
+                                    severity=RuleSeverity.CRITICAL,
+                                    message="Potential prompt injection: F-string used for LLM prompt with user input",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                                    file_path=str(self.file_path),
+                                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                    fix_applicability=FixApplicability.SAFE,
+                                    fix_data=None,
+                                    owasp_id="LLM01",
+                                    cwe_id="CWE-94",
+                                    source_tool="pyguard",
+                                )
+                            )
+                        # Check if using .format()
+                        elif isinstance(node.value, ast.Call):
+                            if isinstance(node.value.func, ast.Attribute):
+                                if node.value.func.attr == "format":
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="AIML001",
+                                            category=RuleCategory.SECURITY,
+                                            severity=RuleSeverity.CRITICAL,
+                                            message="Potential prompt injection: .format() used for LLM prompt with user input",
+                                            line_number=node.lineno,
+                                            column=node.col_offset,
+                                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                                            file_path=str(self.file_path),
+                                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                            fix_applicability=FixApplicability.SAFE,
+                                            fix_data=None,
+                                            owasp_id="LLM01",
+                                            cwe_id="CWE-94",
+                                            source_tool="pyguard",
+                                        )
+                                    )
+        
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
         
@@ -272,26 +324,33 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML003: Detect training data poisoning risks."""
         # Check for data loading without validation
         if isinstance(node.value, ast.Call):
+            func_name = None
+            # Check for function calls like dataset.load() or module.load_dataset()
             if isinstance(node.value.func, ast.Attribute):
-                if node.value.func.attr in ["load_dataset", "read_csv", "load_from_disk"]:
-                    violation = RuleViolation(
-                        rule_id="AIML003",
-                        category=RuleCategory.SECURITY,
-                        severity=RuleSeverity.HIGH,
-                        message="Training data poisoning risk: Unvalidated data source",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        end_line_number=getattr(node, "end_lineno", node.lineno),
-                        end_column=getattr(node, "end_col_offset", node.col_offset),
-                        file_path=str(self.file_path),
-                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
-                        fix_applicability=FixApplicability.MANUAL,
-                        fix_data=None,
-                        owasp_id="LLM03",
-                        cwe_id="CWE-20",
-                        source_tool="pyguard",
-                    )
-                    self.violations.append(violation)
+                func_name = node.value.func.attr
+            # Check for function calls like load_dataset()
+            elif isinstance(node.value.func, ast.Name):
+                func_name = node.value.func.id
+                
+            if func_name and func_name in ["load_dataset", "read_csv", "load_from_disk", "load_data"]:
+                violation = RuleViolation(
+                    rule_id="AIML003",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Training data poisoning risk: Unvalidated data source",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     def _check_model_extraction(self, node: ast.FunctionDef) -> None:
         """AIML005: Detect model extraction vulnerabilities."""
@@ -361,10 +420,17 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             has_privacy = False
             for child in ast.walk(node):
                 if isinstance(child, ast.Call):
+                    func_name = None
+                    # Check for method calls (object.method())
                     if isinstance(child.func, ast.Attribute):
-                        if any(x in child.func.attr.lower() for x in ["differential", "privacy", "noise", "clip"]):
-                            has_privacy = True
-                            break
+                        func_name = child.func.attr
+                    # Check for function calls (function())
+                    elif isinstance(child.func, ast.Name):
+                        func_name = child.func.id
+                    
+                    if func_name and any(x in func_name.lower() for x in ["differential", "privacy", "noise", "clip"]):
+                        has_privacy = True
+                        break
                             
             if not has_privacy:
                 violation = RuleViolation(

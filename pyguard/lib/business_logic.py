@@ -432,6 +432,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         self.shared_vars: Set[str] = set()
         self.financial_functions: Set[str] = set()
         self.auth_checked_functions: Set[str] = set()
+        self.regex_patterns: dict = {}  # variable_name -> pattern_string
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
@@ -459,7 +460,8 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         financial_keywords = [
             "payment", "pay", "charge", "refund", "withdraw", "deposit",
             "transfer", "transaction", "purchase", "buy", "sell", "price",
-            "cost", "amount", "total", "discount", "tax", "fee", "balance"
+            "cost", "amount", "total", "discount", "tax", "fee", "balance",
+            "order", "checkout", "cart", "invoice", "billing"
         ]
         return any(keyword in func_name.lower() for keyword in financial_keywords)
 
@@ -528,25 +530,44 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         # BIZLOGIC027: ReDoS - Regular expression DoS
         if "re.compile" in call_name or "re.match" in call_name or "re.search" in call_name:
             # Check for catastrophic backtracking patterns
+            pattern_to_check = None
             if node.args:
                 arg = node.args[0]
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    pattern = arg.value
-                    # Simple heuristic: nested quantifiers are risky
-                    if re.search(r'(\(.*[+*]\).*[+*]|\[.*[+*]\].*[+*])', pattern):
-                        self.issues.append(
-                            SecurityIssue(
-                                severity="HIGH",
-                                category="Access Control DoS",
-                                message=f"ReDoS vulnerability: Regular expression with potential catastrophic backtracking",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                code_snippet=self._get_code_snippet(node),
-                                fix_suggestion="Avoid nested quantifiers; use atomic groups or possessive quantifiers",
-                                cwe_id="CWE-1333",
-                                owasp_id="ASVS-5.1.5",
-                            )
+                    pattern_to_check = arg.value
+                elif isinstance(arg, ast.Name) and arg.id in self.regex_patterns:
+                    # Look up the pattern from tracked assignments
+                    pattern_to_check = self.regex_patterns[arg.id]
+                    
+            if pattern_to_check:
+                # Improved heuristics for ReDoS detection:
+                # 1. Nested quantifiers: (a+)+, (a*)*
+                # 2. Alternation with quantifiers: (a|a)*
+                # 3. Multiple quantifiers: (.*)+
+                redos_patterns = [
+                    r'\([^)]*[+*?]\)[+*?]',  # (pattern+)+  or (pattern*)*
+                    r'\(\w+\|\w+\)[+*?]',     # (a|a)+ or (a|b)*
+                ]
+                is_redos = False
+                for redos_pattern in redos_patterns:
+                    if re.search(redos_pattern, pattern_to_check):
+                        is_redos = True
+                        break
+                
+                if is_redos:
+                    self.issues.append(
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Access Control DoS",
+                            message=f"ReDoS vulnerability: Regular expression with potential catastrophic backtracking",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Avoid nested quantifiers; use atomic groups or possessive quantifiers",
+                            cwe_id="CWE-1333",
+                            owasp_id="ASVS-5.1.5",
                         )
+                    )
 
         # BIZLOGIC028: Zip bomb - Archive extraction without size limits
         extract_ops = ["zipfile.ZipFile.extractall", "tarfile.TarFile.extractall", "extract"]
@@ -566,8 +587,18 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             )
 
         # BIZLOGIC029: XML bomb - Billion Laughs attack
-        xml_parse_ops = ["xml.etree.ElementTree.parse", "xml.dom.minidom.parse", "lxml.etree.parse"]
-        if any(op in call_name for op in xml_parse_ops):
+        # Check for various forms of XML parsing
+        is_xml_parse = False
+        if "parse" in call_name:
+            # Check if this looks like an XML parsing call
+            lower_call = call_name.lower()
+            if any(xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]):
+                is_xml_parse = True
+            # Also check for ET.parse or xml*.parse patterns
+            elif ".parse" in call_name and call_name.count('.') <= 2:
+                is_xml_parse = True
+                
+        if is_xml_parse:
             self.issues.append(
                 SecurityIssue(
                     severity="HIGH",
@@ -582,6 +613,18 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                 )
             )
 
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign):
+        """Track variable assignments, especially regex patterns."""
+        # Track regex pattern assignments for ReDoS detection
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            var_name = node.targets[0].id
+            # Check if this looks like a pattern variable
+            if "pattern" in var_name.lower() or "regex" in var_name.lower():
+                if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    self.regex_patterns[var_name] = node.value.value
+        
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -632,11 +675,23 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                         uses_float_for_money = True
 
             # Check for user input in pricing
-            if isinstance(child, ast.Call):
-                child_call = self._get_call_name(child)
-                if "price" in func_name.lower() or "cost" in func_name.lower():
-                    if any(inp in child_call.lower() for inp in ["request.", "input", "args", "kwargs", "params"]):
-                        uses_user_input_price = True
+            if isinstance(child, ast.Assign):
+                # Check if assigning from user input to a price/amount variable
+                for target in child.targets:
+                    if isinstance(target, ast.Name):
+                        var_name = target.id
+                        # Check if this looks like a price/amount variable
+                        if any(kw in var_name.lower() for kw in ["price", "amount", "cost", "total", "balance"]):
+                            # Check if value comes from user input
+                            if isinstance(child.value, ast.Call):
+                                call_name = self._get_call_name(child.value)
+                                if any(inp in call_name.lower() for inp in ["request.", "input", ".get", "args", "kwargs", "params"]):
+                                    uses_user_input_price = True
+                            elif isinstance(child.value, ast.Attribute):
+                                # request.args pattern
+                                if isinstance(child.value.value, ast.Name):
+                                    if "request" in child.value.value.id.lower():
+                                        uses_user_input_price = True
 
         # BIZLOGIC011: Integer overflow in pricing
         if is_financial:
@@ -813,11 +868,38 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def visit_For(self, node: ast.For):
         """Check for concurrent modification during iteration."""
         # BIZLOGIC008: Concurrent modification
+        # Get the target being iterated over
+        iter_target = None
+        if isinstance(node.target, ast.Name):
+            iter_target = node.target.id
+        
         for child in ast.walk(node):
+            # Check for Delete statements (del keyword)
+            if isinstance(child, ast.Delete):
+                for target in child.targets:
+                    if isinstance(target, ast.Subscript):
+                        # del collection[key] pattern
+                        if isinstance(target.value, ast.Name):
+                            self.issues.append(
+                                SecurityIssue(
+                                    severity="MEDIUM",
+                                    category="Race Condition",
+                                    message="Concurrent modification risk: Modifying collection during iteration",
+                                    line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
+                                    column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                                    code_snippet=self._get_code_snippet(child),
+                                    fix_suggestion="Iterate over a copy: for item in list(collection): ...",
+                                    cwe_id="CWE-362",
+                                    owasp_id="ASVS-11.1.3",
+                                )
+                            )
+                            break
+            
+            # Check for method calls that modify collections
             if isinstance(child, ast.Call):
                 call_name = self._get_call_name(child)
                 # Check if modifying the collection being iterated
-                if any(mod in call_name for mod in ["append", "remove", "pop", "extend", "insert", "del"]):
+                if any(mod in call_name for mod in ["append", "remove", "pop", "extend", "insert", "clear"]):
                     self.issues.append(
                         SecurityIssue(
                             severity="MEDIUM",
@@ -838,33 +920,60 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def visit_With(self, node: ast.With):
         """Track lock acquisitions for deadlock detection."""
         # BIZLOGIC009-010: Lock ordering and deadlock
+        has_lock = False
         for item in node.items:
+            lock_name = None
+            
+            # Check if this is a lock (either from a call or a variable)
             if isinstance(item.context_expr, ast.Call):
                 call_name = self._get_call_name(item.context_expr)
                 if "Lock" in call_name or "lock" in call_name.lower():
+                    has_lock = True
                     lock_name = call_name
                     if item.optional_vars and isinstance(item.optional_vars, ast.Name):
                         lock_name = item.optional_vars.id
-                    
-                    self.lock_acquisitions.append((node.lineno, lock_name))
-                    
-                    # Check for nested locks (potential deadlock)
-                    # Look for another with statement inside this one
-                    for child in ast.walk(node):
-                        if isinstance(child, ast.With) and child != node:
-                            self.issues.append(
-                                SecurityIssue(
-                                    severity="MEDIUM",
-                                    category="Race Condition",
-                                    message="Deadlock potential: Nested locks detected",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    code_snippet=self._get_code_snippet(node),
-                                    fix_suggestion="Avoid nested locks; use lock hierarchy or single lock",
-                                    cwe_id="CWE-833",
-                                    owasp_id="ASVS-11.1.3",
+            elif isinstance(item.context_expr, ast.Name):
+                # Variable name suggesting it's a lock
+                var_name = item.context_expr.id
+                if "lock" in var_name.lower():
+                    has_lock = True
+                    lock_name = var_name
+            
+            if has_lock and lock_name:
+                self.lock_acquisitions.append((node.lineno, lock_name))
+                
+                # Check for nested locks (potential deadlock)
+                # Look for another with statement inside this one
+                for child in ast.walk(node):
+                    if isinstance(child, ast.With) and child != node:
+                        # Check if the nested with is also acquiring a lock
+                        for nested_item in child.items:
+                            is_nested_lock = False
+                            if isinstance(nested_item.context_expr, ast.Call):
+                                nested_call = self._get_call_name(nested_item.context_expr)
+                                if "Lock" in nested_call or "lock" in nested_call.lower():
+                                    is_nested_lock = True
+                            elif isinstance(nested_item.context_expr, ast.Name):
+                                nested_var = nested_item.context_expr.id
+                                if "lock" in nested_var.lower():
+                                    is_nested_lock = True
+                            
+                            if is_nested_lock:
+                                self.issues.append(
+                                    SecurityIssue(
+                                        severity="MEDIUM",
+                                        category="Race Condition",
+                                        message="Deadlock potential: Nested locks detected",
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        code_snippet=self._get_code_snippet(node),
+                                        fix_suggestion="Avoid nested locks; use lock hierarchy or single lock",
+                                        cwe_id="CWE-833",
+                                        owasp_id="ASVS-11.1.3",
+                                    )
                                 )
-                            )
+                                break
+                        if self.issues and self.issues[-1].message == "Deadlock potential: Nested locks detected":
                             break
 
         self.generic_visit(node)
