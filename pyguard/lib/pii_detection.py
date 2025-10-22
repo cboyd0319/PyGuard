@@ -48,13 +48,15 @@ from pyguard.lib.rule_engine import (
 
 
 # Regex patterns for PII detection
+# SSN pattern - must have dashes or spaces to avoid false positives on random numbers
 SSN_PATTERN = re.compile(
-    r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b'  # US SSN: 123-45-6789 or 123456789
+    r'\b\d{3}[-\s]\d{2}[-\s]\d{4}\b'  # US SSN: 123-45-6789 or 123 45 6789 (must have separators)
 )
 
-# Luhn algorithm for credit card validation
+# Credit card pattern - 13-19 digits with optional separators
+# Matches: 1234567890123456, 1234-5678-9012-3456, 1234 5678 9012 3456
 CREDIT_CARD_PATTERN = re.compile(
-    r'\b(?:\d{4}[-\s]?){3}\d{4}\b'  # 16-digit cards: 1234-5678-9012-3456
+    r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{1,7}\b'  # 13-19 digit cards
 )
 
 # IBAN pattern (international bank account)
@@ -101,9 +103,10 @@ EMAIL_PATTERN = re.compile(
     r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
 )
 
-# Phone number patterns (E.164 international format)
+# Phone number patterns (E.164 international format) - must have separators to avoid false positives
+# Matches: 555-123-4567, +1-555-123-4567, (555) 123-4567
 PHONE_PATTERN = re.compile(
-    r'\b\+?\d{1,4}[\s-]?\(?\d{1,4}\)?[\s-]?\d{1,4}[\s-]?\d{1,9}\b'
+    r'\b\+?\d{1,4}?[\s-]?\(?\d{2,4}\)?[\s-]\d{3,4}[\s-]\d{4}\b'  # Requires at least one separator
 )
 
 # GPS coordinates
@@ -151,6 +154,14 @@ class PIIDetectionVisitor(ast.NodeVisitor):
             if isinstance(node.value, ast.Constant):
                 value_str = str(node.value.value)
                 self._check_pii_patterns(node, var_name, value_str)
+            elif isinstance(node.value, ast.Dict):
+                # Check dictionary values for PII
+                for key, value in zip(node.value.keys, node.value.values):
+                    if isinstance(value, ast.Constant):
+                        # Get key name for context
+                        key_name = key.value if isinstance(key, ast.Constant) else "unknown"
+                        value_str = str(value.value)
+                        self._check_pii_patterns(node, f"{var_name}['{key_name}']", value_str)
 
         self.generic_visit(node)
 
@@ -193,6 +204,10 @@ class PIIDetectionVisitor(ast.NodeVisitor):
 
     def _check_pii_patterns(self, node: ast.AST, var_name: str, value: str) -> None:
         """Check for various PII patterns in a value."""
+        # Skip if value is just an integer (not a string) - avoids false positives on IDs
+        if isinstance(value, int):
+            return
+            
         # Check for SSN
         if SSN_PATTERN.search(value):
             self._add_violation(
@@ -314,16 +329,18 @@ class PIIDetectionVisitor(ast.NodeVisitor):
 
         # Luhn algorithm
         def luhn_checksum(card_number):
-            def digits_of(n):
-                return [int(d) for d in str(n)]
-            
-            digits = digits_of(card_number)
-            odd_digits = digits[-1::-2]
-            even_digits = digits[-2::-2]
-            checksum = sum(odd_digits)
-            for d in even_digits:
-                checksum += sum(digits_of(d * 2))
-            return checksum % 10
+            """Calculate Luhn checksum."""
+            digits_list = [int(d) for d in str(card_number)]
+            # Reverse the digits for processing
+            digits_list = digits_list[::-1]
+            # Double every second digit
+            for i in range(1, len(digits_list), 2):
+                digits_list[i] *= 2
+                # If result is > 9, subtract 9
+                if digits_list[i] > 9:
+                    digits_list[i] -= 9
+            # Sum all digits
+            return sum(digits_list) % 10
 
         return luhn_checksum(digits) == 0
 
