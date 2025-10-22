@@ -72,8 +72,10 @@ Replace 7+ tools with one • 179+ auto-fixes • 100% local, zero telemetry
 
 - 🔐 **API Security Complete** — 20 comprehensive checks covering REST, GraphQL, JWT, OAuth, CORS, and more
 - 🔧 **100% Auto-Fix Coverage** — All 20 API security issues can be automatically fixed
-- 🚀 **101+ Security Checks** — Expanded from 55+ to 101+ total security vulnerability detections
+- 🚀 **159 Security Checks** — Expanded from 55+ to 159 total security vulnerability detections (53% toward 300+ target)
 - 🎯 **FastAPI Support** — Full framework coverage with 30 FastAPI-specific security rules
+- ☁️ **Cloud Security** — 15 checks for AWS, Azure, GCP, Docker, Kubernetes, Terraform
+- 🔐 **Auth Security** — 15 checks for authentication and authorization vulnerabilities
 - ⚡ **10-100x faster scanning** with RipGrep integration
 - 🔑 **Secret scanning** finds hardcoded credentials in seconds (114x faster)
 - 📋 **Compliance tracking** extracts OWASP/CWE references from code comments
@@ -705,7 +707,7 @@ pyguard vulnerable_code.py
 
 | Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
 |---------|---------|--------|------|---------|------|-----------|
-| **Security Checks** | **101+** ⬆️ | 40+ | 73 | 100+ | 200+ | 100+ |
+| **Security Checks** | **159** ⬆️ | 40+ | 73 | 100+ | 200+ | 100+ |
 | **Code Quality Rules** | 150+ | ❌ | 800+ | 50+ | 100+ | 500+ |
 | **Auto-Fix Coverage** | **100%** (199+) ⬆️ | ❌ | ~10% | ❌ | ❌ | ❌ |
 | **Compliance Frameworks** | 10+ | ❌ | ❌ | ❌ | Limited | ✅ |
@@ -785,7 +787,7 @@ After PyGuard:
 
 ### Comprehensiveness
 
-- **91+ security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73) — **expanding to 300+** (Security Dominance Plan: 30% complete, targeting market leadership with 50% more checks than Snyk)
+- **159 security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73) — **expanding to 300+** (Security Dominance Plan: 53% complete, targeting market leadership with 50% more checks than Snyk)
 - **150+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
 - **179+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
 - **Framework-specific rules** for Django, Flask, **FastAPI** (20 checks, 67% to target), Pandas, Pytest — **expanding to 20+** frameworks (Security Dominance Plan: 6-9 month roadmap for 4x more framework support than SonarQube)
