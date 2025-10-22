@@ -57,6 +57,8 @@ from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
 from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker
 from pyguard.lib.framework_celery import analyze_celery_security, CelerySecurityVisitor, CELERY_RULES
 from pyguard.lib.framework_tornado import analyze_tornado_security, TornadoSecurityVisitor, TORNADO_RULES
+from pyguard.lib.framework_numpy import analyze_numpy_security, NumPySecurityVisitor, NUMPY_RULES
+from pyguard.lib.framework_tensorflow import analyze_tensorflow_security, TensorFlowSecurityVisitor, TENSORFLOW_RULES
 from pyguard.lib.git_hooks import (
     GitHooksManager,
     install_git_hooks,
