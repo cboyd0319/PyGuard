@@ -1,5 +1,6 @@
 """PyGuard library modules - v0.8.0 with 55+ security checks and 20+ auto-fixes!"""
 
+from pyguard.lib.advanced_injection import analyze_advanced_injection, AdvancedInjectionVisitor
 from pyguard.lib.advanced_security import (
     AdvancedSecurityAnalyzer,
     IntegerSecurityAnalyzer,

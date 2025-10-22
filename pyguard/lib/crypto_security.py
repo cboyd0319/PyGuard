@@ -147,7 +147,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
             'RC4': ['Crypto.Cipher.ARC4', 'ARC4.new', 'RC4'],
             'MD5': ['hashlib.md5', 'MD5.new'],
             'SHA1': ['hashlib.sha1', 'SHA1.new'],
-            'Blowfish': ['Crypto.Cipher.Blowfish'],
+            'Blowfish': ['Crypto.Cipher.Blowfish', 'Blowfish.new', 'Blowfish.MODE'],
         }
         
         for algo, patterns in deprecated_algos.items():
@@ -313,16 +313,19 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                     if hash_func in func_name:
                         # Check if salt parameter exists
                         salt_arg = self._get_keyword_arg(node, 'salt')
+                        # For pbkdf2_hmac, salt is the 3rd positional argument (index 2)
                         if not salt_arg and 'pbkdf2' in hash_func:
-                            self._create_violation(
-                                node, "CRYPTO007", "Missing Salt",
-                                "Password hashing without salt detected. "
-                                "Salts prevent rainbow table attacks and ensure unique hashes.",
-                                "Add a unique random salt: salt = os.urandom(32)",
-                                RuleSeverity.HIGH,
-                                "CWE-759",
-                                "OWASP ASVS v5.0 (V6.2.2)"
-                            )
+                            # Check positional arguments (pbkdf2_hmac signature: hash_name, password, salt, iterations)
+                            if len(node.args) < 3:
+                                self._create_violation(
+                                    node, "CRYPTO007", "Missing Salt",
+                                    "Password hashing without salt detected. "
+                                    "Salts prevent rainbow table attacks and ensure unique hashes.",
+                                    "Add a unique random salt: salt = os.urandom(32)",
+                                    RuleSeverity.HIGH,
+                                    "CWE-759",
+                                    "OWASP ASVS v5.0 (V6.2.2)"
+                                )
 
     def _check_hardcoded_keys(self, node: ast.Assign):
         """CRYPTO008: Detect hardcoded encryption keys."""
@@ -444,13 +447,27 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
     def _check_weak_tls(self, node: ast.Call, func_name: str):
         """CRYPTO013: Detect weak TLS/SSL configurations."""
         if 'ssl.wrap_socket' in func_name or 'SSLContext' in func_name:
-            # Check SSL/TLS version
+            # Check SSL/TLS version - can be positional or keyword argument
             ssl_version = self._get_keyword_arg(node, 'ssl_version')
+            if not ssl_version and 'SSLContext' in func_name and node.args:
+                # SSLContext typically takes protocol as first argument
+                ssl_version = node.args[0]
+            
             if ssl_version:
                 ssl_str = self._get_attr_chain(ssl_version) if isinstance(ssl_version, ast.Attribute) else str(ssl_version)
-                weak_versions = ['SSLv2', 'SSLv3', 'TLSv1', 'TLSv1_1', 'PROTOCOL_SSLv2', 'PROTOCOL_SSLv3', 'PROTOCOL_TLSv1']
+                # Be precise with version matching - TLSv1 but not TLSv1_2 or TLSv1_3
+                weak_versions = [
+                    'PROTOCOL_SSLv2', 'SSLv2', 
+                    'PROTOCOL_SSLv3', 'SSLv3',
+                    'PROTOCOL_TLSv1_1', 'TLSv1_1',  # Check specific versions first
+                ]
+                # Check for TLSv1 but exclude TLSv1_2 and TLSv1_3
+                if ('PROTOCOL_TLSv1' in ssl_str or 'TLSv1' in ssl_str) and not ('TLSv1_2' in ssl_str or 'TLSv1_3' in ssl_str):
+                    is_weak = True
+                else:
+                    is_weak = any(weak_ver in ssl_str for weak_ver in weak_versions)
                 
-                if any(weak_ver in ssl_str for weak_ver in weak_versions):
+                if is_weak:
                     self._create_violation(
                         node, "CRYPTO013", "Weak TLS Version",
                         f"Weak SSL/TLS version detected: {ssl_str}. "
