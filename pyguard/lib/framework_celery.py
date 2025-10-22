@@ -486,7 +486,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                               "Never commit credentials to source code.",
                                 cwe_id="CWE-798",
                                 owasp_id="A07:2021 - Identification and Authentication Failures",
-                                fix_applicability=FixApplicability.UNSAFE,
+                                fix_applicability=FixApplicability.MANUAL,
                             )
                         )
 

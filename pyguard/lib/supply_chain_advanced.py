@@ -104,7 +104,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                                           "Never commit credentials to workflow files.",
                             cwe_id="CWE-798",
                             owasp_id="A07:2021 - Identification and Authentication Failures",
-                            fix_applicability=FixApplicability.UNSAFE,
+                            fix_applicability=FixApplicability.MANUAL,
                         )
                     )
 
@@ -583,7 +583,7 @@ SUPPLY_CHAIN_RULES = [
         category=RuleCategory.SECURITY,
         description="Detects hardcoded credentials in CI/CD configuration files",
         explanation="Hardcoded secrets in CI files are visible in version control and to anyone with repository access",
-        fix_applicability=FixApplicability.UNSAFE,
+        fix_applicability=FixApplicability.MANUAL,
         owasp_mapping="A07:2021 - Identification and Authentication Failures",
         cwe_mapping="CWE-798",
     ),

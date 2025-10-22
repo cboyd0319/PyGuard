@@ -258,7 +258,7 @@ class TornadoSecurityVisitor(ast.NodeVisitor):
                                                       "Store in environment variable, not in code.",
                                         cwe_id="CWE-326",
                                         owasp_id="A02:2021 - Cryptographic Failures",
-                                        fix_applicability=FixApplicability.UNSAFE,
+                                        fix_applicability=FixApplicability.MANUAL,
                                     )
                                 )
 
@@ -838,7 +838,7 @@ TORNADO_RULES = [
         category=RuleCategory.SECURITY,
         description="Detects weak or hardcoded cookie secrets",
         explanation="Weak cookie secrets can be cracked, allowing session hijacking",
-        fix_applicability=FixApplicability.UNSAFE,
+        fix_applicability=FixApplicability.MANUAL,
         owasp_mapping="A02:2021 - Cryptographic Failures",
         cwe_mapping="CWE-326",
     ),
