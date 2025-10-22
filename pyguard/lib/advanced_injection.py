@@ -214,7 +214,11 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
 
     def _check_jinja2_ssti(self, node: ast.Call, func_name: str):
         """INJECT001: Detect Jinja2 Server-Side Template Injection."""
-        if 'jinja2' in self.imported_modules or 'Template' in func_name:
+        # Check for Flask's render_template_string or Jinja2 Template() with user input
+        uses_jinja = any(mod in self.imported_modules for mod in ['jinja2', 'flask'])
+        is_template_call = 'render_template_string' in func_name or 'Template' in func_name
+        
+        if uses_jinja or is_template_call:
             # Check for render_template_string or Template().render() with user input
             if 'render_template_string' in func_name or ('Template' in func_name and 'render' in func_name):
                 # Check if template string comes from user input
