@@ -62,6 +62,9 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         self.has_mqtt = False
         self.has_coap = False
         self.storage_calls: Set[str] = set()
+        # Track MQTT client configurations
+        self.mqtt_clients_with_auth: Set[str] = set()
+        self.mqtt_clients_with_tls: Set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track mobile and IoT framework imports."""
@@ -258,6 +261,27 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         # Check for weak encryption algorithms
         weak_algorithms = ['DES', 'RC4', 'MD5', 'SHA1']
         
+        # Check if calling a weak algorithm module (e.g., DES.new, RC4.new)
+        if isinstance(node.func, ast.Attribute):
+            if isinstance(node.func.value, ast.Name):
+                module_name = node.func.value.id
+                if module_name in weak_algorithms:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="MOBILE003",
+                            message=f"Weak mobile encryption: Using deprecated {module_name} algorithm",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-326",
+                            owasp_id="M2",
+                        )
+                    )
+                    return
+        
+        # Also check arguments for algorithm constants (e.g., Crypto.Cipher.MODE_DES)
         if func_name in ['new', 'encrypt', 'decrypt']:
             for arg in node.args:
                 if isinstance(arg, ast.Attribute):
@@ -707,15 +731,46 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         """
         func_name = self._get_function_name(node)
         
+        # Track username_pw_set and tls_set calls
+        if func_name == 'username_pw_set':
+            # Get the client object name if available
+            if isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name):
+                    client_name = node.func.value.id
+                    self.mqtt_clients_with_auth.add(client_name)
+            return
+        
+        if func_name == 'tls_set':
+            # Get the client object name if available
+            if isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name):
+                    client_name = node.func.value.id
+                    self.mqtt_clients_with_tls.add(client_name)
+            return
+        
         # Check for MQTT connections
         if 'mqtt' in func_name.lower() or (self.has_mqtt and 'connect' in func_name.lower()):
-            # Check for authentication
+            # Get the client object name
+            client_name = None
+            if isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name):
+                    client_name = node.func.value.id
+            
+            # Check for authentication (either in keywords or previously configured)
             has_auth = False
             has_tls = False
+            
             for keyword in node.keywords:
                 if keyword.arg in ['username', 'password', 'auth']:
                     has_auth = True
                 if keyword.arg in ['tls', 'ssl', 'ca_certs']:
+                    has_tls = True
+            
+            # Check if this client was previously configured with auth/TLS
+            if client_name:
+                if client_name in self.mqtt_clients_with_auth:
+                    has_auth = True
+                if client_name in self.mqtt_clients_with_tls:
                     has_tls = True
             
             if not has_auth:
