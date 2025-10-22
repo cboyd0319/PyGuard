@@ -462,11 +462,20 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
         if not node.value:
             return
         
-        # Check if ACL contains overly permissive rules
-        code = self._get_code_snippet(node)
+        # Get the ACL definition as text (may span multiple lines)
+        # Use ast.unparse for Python 3.9+ or fall back to source code extraction
+        try:
+            code = ast.unparse(node.value)
+        except AttributeError:
+            # Fallback for older Python versions
+            code = self._get_code_snippet(node)
+        
+        # Also check the actual line for single-line ACLs
+        code_line = self._get_code_snippet(node)
+        code_full = code + " " + code_line
         
         # PYRAMID001: Check for "Allow, Everyone" which is often too permissive
-        if "Allow" in code and "Everyone" in code:
+        if ("Allow" in code_full and "Everyone" in code_full):
             # This might be OK for public views, but flag it
             self.issues.append(
                 SecurityIssue(
@@ -475,7 +484,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                     message="ACL misconfiguration: Overly permissive Allow rule for Everyone",
                     line_number=node.lineno,
                     column=node.col_offset,
-                    code_snippet=code,
+                    code_snippet=code_line,
                     fix_suggestion="Use specific principals (Authenticated, group:editors) instead of Everyone when possible",
                     cwe_id="CWE-284",
                     owasp_id="ASVS-4.1.1",
@@ -485,8 +494,31 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
     def _check_traversal_security(self, node: ast.FunctionDef):
         """Check __getitem__ for path traversal vulnerabilities."""
         # PYRAMID005: Look for unsafe path operations
+        # Check for path concatenation using key parameter
         for child in ast.walk(node):
-            if isinstance(child, ast.Subscript):
+            # Look for string concatenation with the key parameter
+            if isinstance(child, ast.BinOp) and isinstance(child.op, ast.Add):
+                code = self._get_code_snippet(child)
+                # Check if concatenating paths with key
+                if any(keyword in code for keyword in ['/data/', '/path/', 'path =', 'key']):
+                    # Check if the parameter (key) is used without validation
+                    if 'key' in code:
+                        self.issues.append(
+                            SecurityIssue(
+                                severity="HIGH",
+                                category="Pyramid Traversal",
+                                message="Traversal security issue: Path traversal risk in resource lookup",
+                                line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
+                                column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                                code_snippet=code,
+                                fix_suggestion="Validate traversal keys; check for '..' and absolute paths",
+                                cwe_id="CWE-22",
+                                owasp_id="ASVS-5.2.2",
+                            )
+                        )
+                        break
+            # Also check for subscript operations
+            elif isinstance(child, ast.Subscript):
                 code = self._get_code_snippet(child)
                 # Check if directly using key without validation
                 if "request" in code or "__getitem__" in code:
@@ -518,7 +550,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             call_name = node.func.id
 
         # PYRAMID011: Check session factory
-        if "session_factory" in call_name.lower() or call_name == "set_session_factory":
+        if "sessionfactory" in call_name.lower() or call_name == "set_session_factory":
             kwargs = {}
             for keyword in node.keywords:
                 if keyword.arg:
@@ -541,9 +573,14 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                     )
                 )
             
-            # Check for weak secret
+            # Check for weak secret (from keywords or first positional arg)
+            secret = None
             if "secret" in kwargs:
                 secret = str(kwargs["secret"])
+            elif len(node.args) >= 1 and isinstance(node.args[0], ast.Constant):
+                secret = str(node.args[0].value)
+            
+            if secret:
                 if len(secret) < 32 or secret in ["secret", "changeme", "default"]:
                     self.issues.append(
                         SecurityIssue(
@@ -587,23 +624,27 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                 if keyword.arg and isinstance(keyword.value, ast.Constant):
                     kwargs[keyword.arg] = keyword.value.value
             
+            # add_route takes pattern as second positional arg or 'pattern' keyword
+            pattern = None
             if "pattern" in kwargs:
                 pattern = kwargs["pattern"]
-                # Check if API route without version
-                if "/api" in pattern and "/v" not in pattern:
-                    self.issues.append(
-                        SecurityIssue(
-                            severity="LOW",
-                            category="Pyramid Route",
-                            message="Insecure route prefix: API routes without version prefix",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion="Use versioned API routes: /api/v1/... for better security and evolution",
-                            cwe_id="CWE-16",
-                            owasp_id="ASVS-4.3.1",
-                        )
+            elif len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):
+                pattern = node.args[1].value
+            
+            if pattern and "/api" in pattern and "/v" not in pattern:
+                self.issues.append(
+                    SecurityIssue(
+                        severity="LOW",
+                        category="Pyramid Route",
+                        message="Insecure route prefix: API routes without version prefix",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use versioned API routes: /api/v1/... for better security and evolution",
+                        cwe_id="CWE-16",
+                        owasp_id="ASVS-4.3.1",
                     )
+                )
 
         # PYRAMID010: Check request factory
         if "request_factory" in call_name or call_name == "set_request_factory":
