@@ -449,7 +449,7 @@ QUART_RULES = [
         explanation="Always use async functions when accessing request context in Quart",
         cwe_mapping="CWE-662",
         owasp_mapping="A04:2021 - Insecure Design",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART002",
@@ -461,7 +461,7 @@ QUART_RULES = [
         explanation="Add authentication checks to WebSocket routes to prevent unauthorized access",
         cwe_mapping="CWE-306",
         owasp_mapping="A07:2021 - Identification and Authentication Failures",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART003",
@@ -473,7 +473,7 @@ QUART_RULES = [
         explanation="Validate and sanitize user input before passing to background tasks",
         cwe_mapping="CWE-20",
         owasp_mapping="A03:2021 - Injection",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART004",
@@ -485,7 +485,7 @@ QUART_RULES = [
         explanation="Use async functions when modifying session data",
         cwe_mapping="CWE-662",
         owasp_mapping="A04:2021 - Insecure Design",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART005",
@@ -497,7 +497,7 @@ QUART_RULES = [
         explanation="Configure CORS with specific allowed origins",
         cwe_mapping="CWE-346",
         owasp_mapping="A05:2021 - Security Misconfiguration",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART006",
@@ -509,7 +509,7 @@ QUART_RULES = [
         explanation="Use secure_filename() or similar validation for uploaded filenames",
         cwe_mapping="CWE-434",
         owasp_mapping="A03:2021 - Injection",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART007",
@@ -521,7 +521,7 @@ QUART_RULES = [
         explanation="Use render_template() with template files instead of render_template_string() with user input",
         cwe_mapping="CWE-94",
         owasp_mapping="A03:2021 - Injection",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART008",
@@ -533,7 +533,7 @@ QUART_RULES = [
         explanation="Set secure=True for all cookies containing sensitive data",
         cwe_mapping="CWE-614",
         owasp_mapping="A05:2021 - Security Misconfiguration",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART009",
@@ -545,7 +545,7 @@ QUART_RULES = [
         explanation="Set httponly=True to prevent XSS attacks from stealing cookies",
         cwe_mapping="CWE-1004",
         owasp_mapping="A05:2021 - Security Misconfiguration",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART010",
@@ -557,7 +557,7 @@ QUART_RULES = [
         explanation="Set samesite='Strict' or 'Lax' to prevent CSRF attacks",
         cwe_mapping="CWE-352",
         owasp_mapping="A01:2021 - Broken Access Control",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART011",
@@ -569,7 +569,7 @@ QUART_RULES = [
         explanation="Implement CSRF token validation for state-changing operations",
         cwe_mapping="CWE-352",
         owasp_mapping="A01:2021 - Broken Access Control",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART012",
@@ -581,7 +581,7 @@ QUART_RULES = [
         explanation="Add authentication decorators to routes accessing sensitive data",
         cwe_mapping="CWE-306",
         owasp_mapping="A07:2021 - Identification and Authentication Failures",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART013",
@@ -593,7 +593,7 @@ QUART_RULES = [
         explanation="Configure error handlers to show generic messages in production",
         cwe_mapping="CWE-209",
         owasp_mapping="A04:2021 - Insecure Design",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
     Rule(
         rule_id="QUART014",
@@ -605,7 +605,7 @@ QUART_RULES = [
         explanation="Validate and sanitize file paths before serving static files",
         cwe_mapping="CWE-22",
         owasp_mapping="A01:2021 - Broken Access Control",
-        fix_fix_applicability=FixApplicability.MANUAL,
+        fix_applicability=FixApplicability.MANUAL,
     ),
     Rule(
         rule_id="QUART015",
@@ -617,7 +617,7 @@ QUART_RULES = [
         explanation="Use parameterized queries or an ORM to prevent SQL injection",
         cwe_mapping="CWE-89",
         owasp_mapping="A03:2021 - Injection",
-        fix_fix_applicability=FixApplicability.SAFE,
+        fix_applicability=FixApplicability.SAFE,
     ),
 ]
 
