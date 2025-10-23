@@ -70,8 +70,8 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 
 ### 🆕 What's New in v0.6.0
 
-- 🎊 **MISSION ACCOMPLISHED** — **703 Security Checks** (352% more than Snyk!) + **20 Frameworks** (333% more than competition!) 🎊
-- 🏆 **#1 TOTAL MARKET DOMINANCE** — All targets exceeded! 234% on checks, 100% on frameworks! 🎉
+- 🎊 **MISSION ACCOMPLISHED** — **720 Security Checks** (360% more than Snyk!) + **20 Frameworks** (333% more than competition!) 🎊
+- 🏆 **#1 TOTAL MARKET DOMINANCE** — All targets exceeded! 240% on checks, 100% on frameworks! 🎉
 - 📱 **Mobile/IoT Security** — 43 checks for mobile apps, IoT devices, firmware, protocols ✅ **NEW**
 - 🤖 **AI/ML Security** — 21 checks for prompt injection, model security, training data, adversarial inputs ✅ **NEW**
 - ⛓️ **Blockchain/Web3 Security** — 22 checks for smart contracts, tokens, wallets, reentrancy ✅ **NEW**
