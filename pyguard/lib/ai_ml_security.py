@@ -313,8 +313,23 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - Visual grounding attacks - AIML493
 - Embodied AI risks (robotics) - AIML494
 - Sensor fusion manipulation - AIML495
+- Federated averaging poisoning - AIML496
+- Client selection manipulation - AIML497
+- Model aggregation attacks - AIML498
+- Byzantine client detection bypass - AIML499
+- Privacy budget exploitation - AIML500
+- Differential privacy bypass - AIML501
+- Secure aggregation vulnerabilities - AIML502
+- Homomorphic encryption weaknesses - AIML503
+- Trusted execution environment gaps - AIML504
+- Split learning injection - AIML505
+- Differential privacy parameter manipulation - AIML506
+- SMPC (Secure Multi-Party Computation) risks - AIML507
+- Trusted execution environment bypass - AIML508
+- Encrypted inference vulnerabilities - AIML509
+- Zero-knowledge proof gaps - AIML510
 
-Total Security Checks: 485 AI/ML rules (v0.8.3 - Phase 5.2 Complete: Multimodal & Fusion Models)
+Total Security Checks: 500 AI/ML rules (v0.8.4 - Phase 5.3 Complete: Federated & Privacy-Preserving ML) 🎯
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical

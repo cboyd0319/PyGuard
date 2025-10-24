@@ -2693,3 +2693,338 @@ fused_data = sensor_fusion.fuse(validated_data)
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML495" for v in violations)
 
+
+# Phase 5.3: Federated & Privacy-Preserving ML (AIML496-510)
+# Phase 5.3.1: Federated Learning Security (AIML496-505)
+
+
+class TestAIML496FederatedAveragingPoisoning:
+    """Test federated averaging poisoning detection."""
+
+    def test_detect_fedavg_without_byzantine_robust(self):
+        """Detect FedAvg without Byzantine-robust aggregation."""
+        code = """
+aggregated_model = federated_averaging([client1_update, client2_update, client3_update])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML496" for v in violations)
+
+    def test_safe_fedavg_with_byzantine_robust(self):
+        """FedAvg with Byzantine-robust aggregation should not trigger."""
+        code = """
+aggregated_model = byzantine_robust_aggregation([client1_update, client2_update, client3_update], method='krum')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML496" for v in violations)
+
+
+class TestAIML497ClientSelectionManipulation:
+    """Test client selection manipulation detection."""
+
+    def test_detect_client_selection_without_validation(self):
+        """Detect client selection without reputation checks."""
+        code = """
+selected_clients = random.sample(all_clients, k=10)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML497" for v in violations)
+
+    def test_safe_client_selection_with_reputation(self):
+        """Client selection with reputation system should not trigger."""
+        code = """
+selected_clients = reputation_based_sampling(all_clients, k=10)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML497" for v in violations)
+
+
+class TestAIML498ModelAggregationAttacks:
+    """Test model aggregation attack detection."""
+
+    def test_detect_aggregation_without_secure_protocol(self):
+        """Detect model aggregation without secure aggregation."""
+        code = """
+global_model = aggregate_models([model1, model2, model3])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML498" for v in violations)
+
+    def test_safe_aggregation_with_secure_protocol(self):
+        """Model aggregation with secure protocol should not trigger."""
+        code = """
+global_model = secure_aggregation([model1, model2, model3], use_encryption=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML498" for v in violations)
+
+
+class TestAIML499ByzantineClientDetectionBypass:
+    """Test Byzantine client detection bypass."""
+
+    def test_detect_aggregation_without_outlier_detection(self):
+        """Detect aggregation without outlier detection."""
+        code = """
+result = aggregate_gradients(client_gradients)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML499" for v in violations)
+
+    def test_safe_aggregation_with_outlier_detection(self):
+        """Aggregation with outlier detection should not trigger."""
+        code = """
+result = krum_aggregation(client_gradients, n_byzantine=2)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML499" for v in violations)
+
+
+class TestAIML500PrivacyBudgetExploitation:
+    """Test privacy budget exploitation detection."""
+
+    def test_detect_dp_without_budget_tracking(self):
+        """Detect DP without privacy budget tracking."""
+        code = """
+noisy_result = add_gaussian_noise(data, sigma=1.0)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML500" for v in violations)
+
+    def test_safe_dp_with_budget_tracking(self):
+        """DP with budget tracking should not trigger."""
+        code = """
+privacy_accountant.track_epsilon(epsilon=0.1)
+noisy_result = dp_mechanism.add_noise(data, epsilon=0.1, delta=1e-5)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML500" for v in violations)
+
+
+class TestAIML501DifferentialPrivacyBypass:
+    """Test differential privacy bypass detection."""
+
+    def test_detect_insufficient_noise(self):
+        """Detect DP with insufficient noise calibration."""
+        code = """
+noisy_gradients = gradients + np.random.normal(0, 0.01, gradients.shape)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML501" for v in violations)
+
+    def test_safe_dp_with_proper_noise(self):
+        """DP with proper noise calibration should not trigger."""
+        code = """
+noisy_gradients = dp_sgd.privatize_gradients(gradients, epsilon=1.0, delta=1e-5, sensitivity=1.0)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML501" for v in violations)
+
+
+class TestAIML502SecureAggregationVulnerabilities:
+    """Test secure aggregation vulnerabilities detection."""
+
+    def test_detect_aggregation_without_encryption(self):
+        """Detect gradient aggregation without encryption."""
+        code = """
+aggregated = sum(client_updates) / len(client_updates)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML502" for v in violations)
+
+    def test_safe_aggregation_with_encryption(self):
+        """Aggregation with homomorphic encryption should not trigger."""
+        code = """
+aggregated = homomorphic_aggregation(encrypted_updates)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML502" for v in violations)
+
+
+class TestAIML503HomomorphicEncryptionWeaknesses:
+    """Test homomorphic encryption weaknesses detection."""
+
+    def test_detect_he_without_proper_key_management(self):
+        """Detect HE without proper key management."""
+        code = """
+encrypted_model = seal.encrypt(model_weights)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML503" for v in violations)
+
+    def test_safe_he_with_key_management(self):
+        """HE with proper key management should not trigger."""
+        code = """
+context = seal.SEALContext.Create(params)
+keygen = seal.KeyGenerator(context)
+encrypted_model = seal.encrypt(model_weights, public_key=keygen.public_key())
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML503" for v in violations)
+
+
+class TestAIML504TrustedExecutionEnvironmentGaps:
+    """Test trusted execution environment gaps detection."""
+
+    def test_detect_tee_without_attestation(self):
+        """Detect TEE usage without remote attestation."""
+        code = """
+sgx_enclave = load_enclave("enclave.so")
+result = sgx_enclave.compute(sensitive_data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML504" for v in violations)
+
+    def test_safe_tee_with_attestation(self):
+        """TEE with remote attestation should not trigger."""
+        code = """
+sgx_enclave = load_enclave("enclave.so")
+attestation_report = sgx_enclave.get_remote_attestation()
+verify_attestation(attestation_report)
+result = sgx_enclave.compute(sensitive_data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML504" for v in violations)
+
+
+class TestAIML505SplitLearningInjection:
+    """Test split learning injection detection."""
+
+    def test_detect_split_learning_without_validation(self):
+        """Detect split learning without activation validation."""
+        code = """
+client_activations = client_model.forward(data)
+server_result = server_model.forward(client_activations)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML505" for v in violations)
+
+    def test_safe_split_learning_with_validation(self):
+        """Split learning with activation validation should not trigger."""
+        code = """
+client_activations = client_model.forward(data)
+validated_activations = validate_activations(client_activations)
+server_result = server_model.forward(validated_activations)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML505" for v in violations)
+
+
+# Phase 5.3.2: Privacy-Enhancing Technologies (AIML506-510)
+
+
+class TestAIML506DifferentialPrivacyParameterManipulation:
+    """Test differential privacy parameter manipulation detection."""
+
+    def test_detect_hardcoded_epsilon(self):
+        """Detect hardcoded epsilon/delta parameters."""
+        code = """
+epsilon = 1.0
+delta = 1e-5
+dp_mechanism = GaussianMechanism(epsilon, delta)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML506" for v in violations)
+
+    def test_safe_adaptive_privacy_budget(self):
+        """Adaptive privacy budget should not trigger."""
+        code = """
+privacy_budget = AdaptivePrivacyBudget()
+epsilon = privacy_budget.allocate_epsilon()
+dp_mechanism = GaussianMechanism(epsilon, privacy_budget.delta)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML506" for v in violations)
+
+
+class TestAIML507SMPCRisks:
+    """Test SMPC risks detection."""
+
+    def test_detect_smpc_without_malicious_security(self):
+        """Detect SMPC without malicious security guarantees."""
+        code = """
+shares = secret_share(data, n_parties=3)
+reconstructed = reconstruct(shares)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML507" for v in violations)
+
+    def test_safe_smpc_with_malicious_security(self):
+        """SMPC with malicious security should not trigger."""
+        code = """
+shares = malicious_secure_secret_share(data, n_parties=3, threshold=2)
+reconstructed = malicious_secure_reconstruct(shares, verify_commitments=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML507" for v in violations)
+
+
+class TestAIML508TrustedExecutionEnvironmentBypass:
+    """Test trusted execution environment bypass detection."""
+
+    def test_detect_tee_without_side_channel_mitigation(self):
+        """Detect TEE without side-channel mitigations."""
+        code = """
+enclave = SGXEnclave()
+result = enclave.process(secret_data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML508" for v in violations)
+
+    def test_safe_tee_with_side_channel_mitigation(self):
+        """TEE with side-channel mitigations should not trigger."""
+        code = """
+enclave = SGXEnclave(enable_oblivious_ram=True, constant_time=True)
+measurement = enclave.get_measurement()
+verify_enclave_measurement(measurement)
+result = enclave.process(secret_data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML508" for v in violations)
+
+
+class TestAIML509EncryptedInferenceVulnerabilities:
+    """Test encrypted inference vulnerabilities detection."""
+
+    def test_detect_encrypted_inference_without_key_management(self):
+        """Detect encrypted inference without proper key management."""
+        code = """
+encrypted_input = he_encrypt(input_data)
+encrypted_output = model.predict(encrypted_input)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML509" for v in violations)
+
+    def test_safe_encrypted_inference_with_key_management(self):
+        """Encrypted inference with key management should not trigger."""
+        code = """
+key_manager = SecureKeyManager()
+public_key = key_manager.get_public_key()
+encrypted_input = he_encrypt(input_data, public_key)
+encrypted_output = model.predict(encrypted_input)
+verify_ciphertext_integrity(encrypted_output)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML509" for v in violations)
+
+
+class TestAIML510ZeroKnowledgeProofGaps:
+    """Test zero-knowledge proof gaps detection."""
+
+    def test_detect_zkp_without_soundness_verification(self):
+        """Detect ZKP without soundness guarantees."""
+        code = """
+proof = generate_proof(statement, witness)
+verified = verify_proof(proof, statement)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML510" for v in violations)
+
+    def test_safe_zkp_with_soundness_verification(self):
+        """ZKP with soundness verification should not trigger."""
+        code = """
+proof = zk_snark.generate_proof(statement, witness, proving_key)
+verified = zk_snark.verify_proof(proof, statement, verification_key, check_soundness=True)
+assert verified, "Proof verification failed"
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML510" for v in violations)
+
