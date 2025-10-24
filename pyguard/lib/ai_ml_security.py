@@ -752,6 +752,52 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML175: Transformation order vulnerabilities
         self._check_transformation_order_vulnerabilities(node)
         
+        # Phase 2.1.2: Feature Store Security (15 checks - AIML176-AIML190)
+        # AIML176: Feast feature store injection
+        self._check_feast_feature_store_injection(node)
+        
+        # AIML177: Missing feature validation
+        self._check_missing_feature_validation(node)
+        
+        # AIML178: Feature drift without detection
+        self._check_feature_drift_without_detection(node)
+        
+        # AIML179: Feature serving vulnerabilities
+        self._check_feature_serving_vulnerabilities(node)
+        
+        # AIML180: Offline/online feature skew
+        self._check_offline_online_feature_skew(node)
+        
+        # AIML181: Feature metadata tampering
+        self._check_feature_metadata_tampering(node)
+        
+        # AIML182: Feature lineage missing
+        self._check_feature_lineage_missing(node)
+        
+        # AIML183: Access control gaps
+        self._check_feature_access_control_gaps(node)
+        
+        # AIML184: Feature deletion/corruption
+        self._check_feature_deletion_corruption(node)
+        
+        # AIML185: Version control weaknesses
+        self._check_feature_version_control_weaknesses(node)
+        
+        # AIML186: Feature freshness attacks
+        self._check_feature_freshness_attacks(node)
+        
+        # AIML187: Batch vs real-time inconsistencies
+        self._check_batch_realtime_inconsistencies(node)
+        
+        # AIML188: Feature engineering code injection
+        self._check_feature_engineering_code_injection(node)
+        
+        # AIML189: Schema evolution attacks
+        self._check_schema_evolution_attacks(node)
+        
+        # AIML190: Feature importance manipulation
+        self._check_feature_importance_manipulation(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -6479,6 +6525,490 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     )
                     self.violations.append(violation)
 
+    # Phase 2.1.2: Feature Store Security (15 checks - AIML176-AIML190)
+    
+    def _check_feast_feature_store_injection(self, node: ast.Call) -> None:
+        """AIML176: Detect Feast feature store injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for Feast feature store operations
+        if isinstance(node.func, ast.Attribute):
+            if "feast" in str(node).lower() or "feature_store" in node.func.attr.lower():
+                # Check for SQL/NoSQL injection in feature queries
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if any(keyword in line_text for keyword in ["user", "input", "request", "param"]):
+                    violation = RuleViolation(
+                        rule_id="AIML176",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Feast feature store query with user input - injection risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-89",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_missing_feature_validation(self, node: ast.Call) -> None:
+        """AIML177: Detect missing feature validation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature retrieval without validation
+        if isinstance(node.func, ast.Attribute):
+            if "get_features" in node.func.attr.lower() or "fetch_features" in node.func.attr.lower():
+                # Check if validation is present
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "validate" not in line_text and "check" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML177",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature retrieval without validation - integrity risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_drift_without_detection(self, node: ast.Call) -> None:
+        """AIML178: Detect feature drift without detection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature serving without drift monitoring
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "transform", "get_features"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "drift" not in line_text and "monitor" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML178",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Feature usage without drift detection - add monitoring",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML06",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_serving_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML179: Detect feature serving vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature serving endpoints
+        if isinstance(node.func, ast.Attribute):
+            if "serve" in node.func.attr.lower() and "feature" in str(node).lower():
+                # Check for authentication
+                has_auth = any(
+                    kw.arg in ["auth", "authentication", "token", "api_key"]
+                    for kw in node.keywords
+                )
+                
+                if not has_auth:
+                    violation = RuleViolation(
+                        rule_id="AIML179",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Feature serving without authentication - access control risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="A01",
+                        cwe_id="CWE-306",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_offline_online_feature_skew(self, node: ast.Call) -> None:
+        """AIML180: Detect offline/online feature skew."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for online feature serving
+        if isinstance(node.func, ast.Attribute):
+            if "online" in node.func.attr.lower() or "real_time" in str(node).lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "consistency" not in line_text and "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML180",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Online feature serving - validate consistency with offline features",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_metadata_tampering(self, node: ast.Call) -> None:
+        """AIML181: Detect feature metadata tampering."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for metadata updates
+        if isinstance(node.func, ast.Attribute):
+            if "metadata" in node.func.attr.lower() and "update" in node.func.attr.lower():
+                # Check for integrity verification
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "verify" not in line_text and "checksum" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML181",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature metadata update without integrity check - tampering risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_lineage_missing(self, node: ast.Call) -> None:
+        """AIML182: Detect missing feature lineage."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature creation without lineage tracking
+        if isinstance(node.func, ast.Attribute):
+            if "create_feature" in node.func.attr.lower() or "register_feature" in node.func.attr.lower():
+                # Check for lineage metadata
+                has_lineage = any(
+                    kw.arg in ["lineage", "source", "provenance", "metadata"]
+                    for kw in node.keywords
+                )
+                
+                if not has_lineage:
+                    violation = RuleViolation(
+                        rule_id="AIML182",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Feature creation without lineage tracking - add provenance metadata",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-778",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_access_control_gaps(self, node: ast.Call) -> None:
+        """AIML183: Detect feature access control gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature access without authorization
+        if isinstance(node.func, ast.Attribute):
+            if "get_features" in node.func.attr.lower() or "access" in node.func.attr.lower():
+                # Check for authorization
+                has_auth = any(
+                    kw.arg in ["user", "role", "permissions", "acl"]
+                    for kw in node.keywords
+                )
+                
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if not has_auth and "auth" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML183",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Feature access without authorization - add access control",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="A01",
+                        cwe_id="CWE-862",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_deletion_corruption(self, node: ast.Call) -> None:
+        """AIML184: Detect feature deletion/corruption risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature deletion operations
+        if isinstance(node.func, ast.Attribute):
+            if "delete" in node.func.attr.lower() and "feature" in str(node).lower():
+                # Check for soft delete or backup
+                has_backup = any(
+                    kw.arg in ["backup", "archive", "soft_delete"]
+                    for kw in node.keywords
+                )
+                
+                if not has_backup:
+                    violation = RuleViolation(
+                        rule_id="AIML184",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature deletion without backup - data loss risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-404",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_version_control_weaknesses(self, node: ast.Call) -> None:
+        """AIML185: Detect feature version control weaknesses."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature updates without versioning
+        if isinstance(node.func, ast.Attribute):
+            if "update_feature" in node.func.attr.lower() or "modify_feature" in node.func.attr.lower():
+                # Check for version parameter
+                has_version = any(
+                    kw.arg in ["version", "revision"]
+                    for kw in node.keywords
+                )
+                
+                if not has_version:
+                    violation = RuleViolation(
+                        rule_id="AIML185",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Feature update without version control - tracking risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-778",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_freshness_attacks(self, node: ast.Call) -> None:
+        """AIML186: Detect feature freshness attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature serving without freshness validation
+        if isinstance(node.func, ast.Attribute):
+            if "get_features" in node.func.attr.lower() or "serve" in node.func.attr.lower():
+                # Check for timestamp/ttl validation
+                has_freshness = any(
+                    kw.arg in ["ttl", "max_age", "timestamp", "freshness"]
+                    for kw in node.keywords
+                )
+                
+                if not has_freshness:
+                    violation = RuleViolation(
+                        rule_id="AIML186",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature serving without freshness validation - stale data risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-672",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_batch_realtime_inconsistencies(self, node: ast.Call) -> None:
+        """AIML187: Detect batch vs real-time inconsistencies."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for batch processing
+        if isinstance(node.func, ast.Attribute):
+            if "batch" in node.func.attr.lower() and "feature" in str(node).lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "consistency" not in line_text and "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML187",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Batch feature processing - validate consistency with real-time",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_engineering_code_injection(self, node: ast.Call) -> None:
+        """AIML188: Detect feature engineering code injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for dynamic feature engineering
+        if isinstance(node.func, ast.Attribute):
+            if "feature" in node.func.attr.lower() and "transform" in node.func.attr.lower():
+                # Check if transformation uses user input
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if any(keyword in line_text for keyword in ["user", "input", "request", "eval", "exec"]):
+                    violation = RuleViolation(
+                        rule_id="AIML188",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Feature transformation with dynamic code - injection risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="A03",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_schema_evolution_attacks(self, node: ast.Call) -> None:
+        """AIML189: Detect schema evolution attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for schema updates
+        if isinstance(node.func, ast.Attribute):
+            if "schema" in node.func.attr.lower() and ("update" in node.func.attr.lower() or "evolve" in node.func.attr.lower()):
+                # Check for validation
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "validate" not in line_text and "verify" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML189",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Schema evolution without validation - compatibility risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_importance_manipulation(self, node: ast.Call) -> None:
+        """AIML190: Detect feature importance manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature importance calculations
+        if isinstance(node.func, ast.Attribute):
+            if "feature_importances" in node.func.attr.lower() or "permutation_importance" in str(node).lower():
+                # Check if importance is user-controllable
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "user" in line_text or "input" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML190",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature importance calculation with user input - manipulation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
         if isinstance(node.func, ast.Attribute):
@@ -7732,4 +8262,20 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML173", name="pipeline-versioning-gaps", description="Pipeline versioning gaps", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Pipeline saved without version metadata - tracking risk", explanation="Pipelines should include version metadata for tracking", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-778", owasp_mapping="ML03", tags={"ai", "ml", "pipeline", "versioning", "best-practice"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
     Rule(rule_id="AIML174", name="preprocessing-state-tampering", description="Preprocessing state tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Preprocessing state loaded without integrity check - tampering risk", explanation="Preprocessing state should be integrity-checked when loaded", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "preprocessing", "tampering", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
     Rule(rule_id="AIML175", name="transformation-order-vulnerabilities", description="Transformation order vulnerabilities", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Pipeline transformation order - document to prevent vulnerabilities", explanation="Transformation order should be documented for security review", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML03", tags={"ai", "ml", "pipeline", "order", "best-practice"}, references=["https://scikit-learn.org/stable/modules/compose.html"]),
+    # Phase 2.1.2: Feature Store Security (AIML176-AIML190)
+    Rule(rule_id="AIML176", name="feast-feature-store-injection", description="Feast feature store injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Feast feature store query with user input - injection risk", explanation="Feature store queries should validate inputs to prevent injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-89", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "feast", "injection"}, references=["https://docs.feast.dev/"]),
+    Rule(rule_id="AIML177", name="missing-feature-validation", description="Missing feature validation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature retrieval without validation - integrity risk", explanation="Retrieved features should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "validation"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML178", name="feature-drift-without-detection", description="Feature drift without detection", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Feature usage without drift detection - add monitoring", explanation="Feature drift should be monitored to maintain model quality", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML06", tags={"ai", "ml", "feature-store", "drift", "monitoring"}, references=["https://arxiv.org/abs/2004.03045"]),
+    Rule(rule_id="AIML179", name="feature-serving-vulnerabilities", description="Feature serving vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Feature serving without authentication - access control risk", explanation="Feature serving endpoints should require authentication", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-306", owasp_mapping="A01", tags={"ai", "ml", "feature-store", "serving", "auth"}, references=["https://owasp.org/www-project-top-ten/"]),
+    Rule(rule_id="AIML180", name="offline-online-feature-skew", description="Offline/online feature skew", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Online feature serving - validate consistency with offline features", explanation="Online and offline features should be consistent to prevent skew", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "skew", "consistency"}, references=["https://arxiv.org/abs/2004.03045"]),
+    Rule(rule_id="AIML181", name="feature-metadata-tampering", description="Feature metadata tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature metadata update without integrity check - tampering risk", explanation="Feature metadata should be integrity-protected", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "feature-store", "metadata", "tampering"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML182", name="feature-lineage-missing", description="Feature lineage missing", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Feature creation without lineage tracking - add provenance metadata", explanation="Feature lineage enables security audits and debugging", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-778", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "lineage", "provenance"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML183", name="feature-access-control-gaps", description="Access control gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Feature access without authorization - add access control", explanation="Feature access should be role-based and authorized", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-862", owasp_mapping="A01", tags={"ai", "ml", "feature-store", "access-control", "authorization"}, references=["https://owasp.org/www-project-top-ten/"]),
+    Rule(rule_id="AIML184", name="feature-deletion-corruption", description="Feature deletion/corruption", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature deletion without backup - data loss risk", explanation="Feature deletion should include backup or soft delete", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-404", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "deletion", "backup"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML185", name="feature-version-control-weaknesses", description="Version control weaknesses", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Feature update without version control - tracking risk", explanation="Feature updates should be versioned for tracking and rollback", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-778", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "versioning"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML186", name="feature-freshness-attacks", description="Feature freshness attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature serving without freshness validation - stale data risk", explanation="Features should have TTL or timestamp validation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-672", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "freshness", "ttl"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML187", name="batch-realtime-inconsistencies", description="Batch vs real-time inconsistencies", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Batch feature processing - validate consistency with real-time", explanation="Batch and real-time processing should produce consistent results", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "batch", "consistency"}, references=["https://arxiv.org/abs/2004.03045"]),
+    Rule(rule_id="AIML188", name="feature-engineering-code-injection", description="Feature engineering code injection", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Feature transformation with dynamic code - injection risk", explanation="Feature engineering should not use dynamic code execution", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "feature-store", "injection", "code-execution"}, references=["https://owasp.org/www-project-top-ten/"]),
+    Rule(rule_id="AIML189", name="schema-evolution-attacks", description="Schema evolution attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Schema evolution without validation - compatibility risk", explanation="Schema changes should be validated for backward compatibility", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "schema", "evolution"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML190", name="feature-importance-manipulation", description="Feature importance manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature importance calculation with user input - manipulation risk", explanation="Feature importance should not be influenced by user input", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "importance", "manipulation"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
 ]
