@@ -507,8 +507,8 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 150 AI/ML security rules are registered (Phase 1 complete - Milestone 1)."""
-        assert len(AIML_SECURITY_RULES) == 150
+        """Verify all 165 AI/ML security rules are registered (Phase 1 + Phase 2.1.1 partial)."""
+        assert len(AIML_SECURITY_RULES) == 165
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",

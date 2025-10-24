@@ -705,6 +705,53 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML160: Robustness testing absent
         self._check_robustness_testing_absent(node)
         
+        # Phase 2.1: Feature Engineering & Preprocessing (30 checks)
+        # Phase 2.1.1: Data Preprocessing Security (15 checks - AIML161-AIML175)
+        # AIML161: Missing input validation in preprocessing
+        self._check_missing_preprocessing_validation(node)
+        
+        # AIML162: Normalization bypass attacks
+        self._check_normalization_bypass(node)
+        
+        # AIML163: Feature scaling manipulation
+        self._check_feature_scaling_manipulation(node)
+        
+        # AIML164: Missing value injection
+        self._check_missing_value_injection(node)
+        
+        # AIML165: Encoding injection
+        self._check_encoding_injection(node)
+        
+        # AIML166: Feature extraction vulnerabilities
+        self._check_feature_extraction_vulnerabilities(node)
+        
+        # AIML167: Dimensionality reduction poisoning
+        self._check_dimensionality_reduction_poisoning(node)
+        
+        # AIML168: Feature selection manipulation
+        self._check_feature_selection_manipulation(node)
+        
+        # AIML169: Missing outlier detection
+        self._check_missing_outlier_detection(node)
+        
+        # AIML170: Data leakage in preprocessing
+        self._check_data_leakage_preprocessing(node)
+        
+        # AIML171: Test/train contamination
+        self._check_test_train_contamination(node)
+        
+        # AIML172: Feature store injection
+        self._check_feature_store_injection(node)
+        
+        # AIML173: Pipeline versioning gaps
+        self._check_pipeline_versioning_gaps(node)
+        
+        # AIML174: Preprocessing state tampering
+        self._check_preprocessing_state_tampering(node)
+        
+        # AIML175: Transformation order vulnerabilities
+        self._check_transformation_order_vulnerabilities(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -5944,6 +5991,494 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     )
                     self.violations.append(violation)
 
+    # Phase 2.1: Feature Engineering & Preprocessing (30 checks)
+    # Phase 2.1.1: Data Preprocessing Security (15 checks - AIML161-AIML175)
+    
+    def _check_missing_preprocessing_validation(self, node: ast.Call) -> None:
+        """AIML161: Detect missing input validation in preprocessing."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for preprocessing without validation
+        preprocessing_funcs = ["fit_transform", "transform", "scale", "normalize", "encode"]
+        
+        if isinstance(node.func, ast.Attribute):
+            if any(func in node.func.attr.lower() for func in preprocessing_funcs):
+                # Check if validation is present
+                has_validation = any(
+                    kw.arg in ["validate", "check_input", "force_all_finite"]
+                    for kw in node.keywords
+                )
+                
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML161",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Preprocessing without input validation - add validation checks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_normalization_bypass(self, node: ast.Call) -> None:
+        """AIML162: Detect normalization bypass attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for normalization without bounds checking
+        if isinstance(node.func, ast.Attribute):
+            if "normalize" in node.func.attr.lower() or "standard" in node.func.attr.lower():
+                # Check for clip/bound parameters
+                has_bounds = any(
+                    kw.arg in ["clip", "min", "max", "clip_values"]
+                    for kw in node.keywords
+                )
+                
+                if not has_bounds:
+                    violation = RuleViolation(
+                        rule_id="AIML162",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Normalization without bounds checking - bypass attack risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_scaling_manipulation(self, node: ast.Call) -> None:
+        """AIML163: Detect feature scaling manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for scaling operations
+        if isinstance(node.func, ast.Attribute):
+            if "scaler" in node.func.attr.lower() or "scale" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                # Check if scaling parameters are hardcoded
+                if "user" in line_text or "input" in line_text or "request" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML163",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature scaling with user input - manipulation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_missing_value_injection(self, node: ast.Call) -> None:
+        """AIML164: Detect missing value injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for imputation without validation
+        if isinstance(node.func, ast.Attribute):
+            if "impute" in node.func.attr.lower() or "fillna" in node.func.attr.lower():
+                # Check for strategy validation
+                has_strategy_validation = any(
+                    kw.arg in ["strategy", "method"]
+                    for kw in node.keywords
+                )
+                
+                if has_strategy_validation:
+                    for kw in node.keywords:
+                        if kw.arg in ["strategy", "method"] and not isinstance(kw.value, ast.Constant):
+                            violation = RuleViolation(
+                                rule_id="AIML164",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.MEDIUM,
+                                message="Missing value imputation with dynamic strategy - injection risk",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="ML03",
+                                cwe_id="CWE-20",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+    
+    def _check_encoding_injection(self, node: ast.Call) -> None:
+        """AIML165: Detect encoding injection in categorical features."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for encoding operations
+        if isinstance(node.func, ast.Attribute):
+            if "encode" in node.func.attr.lower() and "categorical" in str(node).lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "validate" not in line_text and "sanitize" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML165",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Categorical encoding without validation - injection risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_extraction_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML166: Detect feature extraction vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature extraction
+        if isinstance(node.func, ast.Attribute):
+            if "extract" in node.func.attr.lower() or "feature" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "sanitize" not in line_text and "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML166",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature extraction without validation - vulnerability risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_dimensionality_reduction_poisoning(self, node: ast.Call) -> None:
+        """AIML167: Detect dimensionality reduction poisoning."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for dimensionality reduction
+        if isinstance(node.func, ast.Attribute):
+            dim_red_methods = ["pca", "tsne", "umap", "lda", "svd", "nmf"]
+            if any(method in node.func.attr.lower() for method in dim_red_methods):
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML167",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Dimensionality reduction without validation - poisoning risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_selection_manipulation(self, node: ast.Call) -> None:
+        """AIML168: Detect feature selection manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature selection
+        if isinstance(node.func, ast.Attribute):
+            if "selectk" in node.func.attr.lower() or "feature_selection" in str(node).lower():
+                # Check if selection criteria is hardcoded
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "user" in line_text or "input" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML168",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature selection with user input - manipulation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_missing_outlier_detection(self, node: ast.Call) -> None:
+        """AIML169: Detect missing outlier detection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for preprocessing without outlier detection
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["fit", "fit_transform"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "outlier" not in line_text and "anomaly" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML169",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Preprocessing without outlier detection - consider adding anomaly detection",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_data_leakage_preprocessing(self, node: ast.Call) -> None:
+        """AIML170: Detect data leakage in preprocessing."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for fit_transform on entire dataset
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == "fit_transform":
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "test" in line_text or "validation" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML170",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Data leakage - fitting preprocessing on test/validation data",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_test_train_contamination(self, node: ast.Call) -> None:
+        """AIML171: Detect test/train contamination."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for train_test_split usage
+        if isinstance(node.func, ast.Attribute):
+            if "split" in node.func.attr.lower():
+                # Check if shuffle is disabled
+                has_shuffle = any(
+                    kw.arg == "shuffle" and isinstance(kw.value, ast.Constant) and kw.value.value
+                    for kw in node.keywords
+                )
+                
+                has_random_state = any(
+                    kw.arg == "random_state"
+                    for kw in node.keywords
+                )
+                
+                if not has_random_state:
+                    violation = RuleViolation(
+                        rule_id="AIML171",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Train/test split without random_state - reproducibility risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-330",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_store_injection(self, node: ast.Call) -> None:
+        """AIML172: Detect feature store injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature store operations
+        if isinstance(node.func, ast.Attribute):
+            if "feature" in node.func.attr.lower() and "get" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "validate" not in line_text and "sanitize" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML172",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Feature store access without validation - injection risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_pipeline_versioning_gaps(self, node: ast.Call) -> None:
+        """AIML173: Detect pipeline versioning gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for pipeline save/load without version
+        if isinstance(node.func, ast.Attribute):
+            if "pipeline" in str(node).lower() and node.func.attr in ["save", "dump", "pickle"]:
+                # Check if version is specified
+                has_version = any(
+                    kw.arg in ["version", "metadata"]
+                    for kw in node.keywords
+                )
+                
+                if not has_version:
+                    violation = RuleViolation(
+                        rule_id="AIML173",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Pipeline saved without version metadata - tracking risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-778",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_preprocessing_state_tampering(self, node: ast.Call) -> None:
+        """AIML174: Detect preprocessing state tampering."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for preprocessor state loading
+        if isinstance(node.func, ast.Attribute):
+            if "load" in node.func.attr.lower() and ("scaler" in str(node).lower() or "encoder" in str(node).lower()):
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "verify" not in line_text and "checksum" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML174",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Preprocessing state loaded without integrity check - tampering risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_transformation_order_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML175: Detect transformation order vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for make_pipeline usage
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "pipeline" in func_name.lower():
+                # Pipeline order matters for security
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "comment" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML175",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.LOW,
+                        message="Pipeline transformation order - document to prevent vulnerabilities",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-693",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
         if isinstance(node.func, ast.Attribute):
@@ -7180,4 +7715,21 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML158", name="detection-mechanism-missing", description="Detection mechanism missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="No adversarial example detector - add detection layer", explanation="Detection mechanisms can identify adversarial inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "detection", "security"}, references=["https://arxiv.org/abs/1705.07263"]),
     Rule(rule_id="AIML159", name="rejection-option-missing", description="Rejection option missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model lacks confidence-based rejection - add uncertainty quantification", explanation="Rejection mechanisms can refuse low-confidence predictions", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "rejection", "security"}, references=["https://arxiv.org/abs/1802.04865"]),
     Rule(rule_id="AIML160", name="robustness-testing-absent", description="Robustness testing absent", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="No adversarial robustness testing - add evaluation suite", explanation="Models should be tested against adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1059", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "testing", "best-practice"}, references=["https://arxiv.org/abs/1902.06705"]),
+    # Phase 2.1: Feature Engineering & Preprocessing (30 checks)
+    # Phase 2.1.1: Data Preprocessing Security (AIML161-AIML175)
+    Rule(rule_id="AIML161", name="missing-preprocessing-validation", description="Missing input validation in preprocessing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Preprocessing without input validation - add validation checks", explanation="Input data should be validated before preprocessing to prevent attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "validation", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML162", name="normalization-bypass", description="Normalization bypass attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Normalization without bounds checking - bypass attack risk", explanation="Normalization should include bounds to prevent bypass attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "normalization", "security"}, references=["https://arxiv.org/abs/1811.11553"]),
+    Rule(rule_id="AIML163", name="feature-scaling-manipulation", description="Feature scaling manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature scaling with user input - manipulation risk", explanation="Scaling parameters should be protected from user manipulation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "scaling", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML164", name="missing-value-injection", description="Missing value injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Missing value imputation with dynamic strategy - injection risk", explanation="Imputation strategies should be validated to prevent injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "imputation", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML165", name="encoding-injection", description="Encoding injection (categorical features)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Categorical encoding without validation - injection risk", explanation="Categorical encoders should validate input to prevent injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "encoding", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML166", name="feature-extraction-vulnerabilities", description="Feature extraction vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature extraction without validation - vulnerability risk", explanation="Feature extraction should validate inputs to prevent vulnerabilities", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "extraction", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML167", name="dimensionality-reduction-poisoning", description="Dimensionality reduction poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dimensionality reduction without validation - poisoning risk", explanation="Dimensionality reduction should validate inputs to prevent poisoning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "dimensionality", "security"}, references=["https://arxiv.org/abs/1804.00308"]),
+    Rule(rule_id="AIML168", name="feature-selection-manipulation", description="Feature selection manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature selection with user input - manipulation risk", explanation="Feature selection criteria should be protected from manipulation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "selection", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML169", name="missing-outlier-detection", description="Missing outlier detection", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Preprocessing without outlier detection - consider adding anomaly detection", explanation="Outlier detection can prevent poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "outliers", "best-practice"}, references=["https://arxiv.org/abs/1811.11553"]),
+    Rule(rule_id="AIML170", name="data-leakage-preprocessing", description="Data leakage in preprocessing", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Data leakage - fitting preprocessing on test/validation data", explanation="Preprocessing should only fit on training data to prevent leakage", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "leakage", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML171", name="test-train-contamination", description="Test/train contamination", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Train/test split without random_state - reproducibility risk", explanation="Train/test splits should use random_state for reproducibility", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-330", owasp_mapping="ML03", tags={"ai", "ml", "preprocessing", "splitting", "best-practice"}, references=["https://scikit-learn.org/stable/modules/cross_validation.html"]),
+    Rule(rule_id="AIML172", name="feature-store-injection", description="Feature store injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Feature store access without validation - injection risk", explanation="Feature store queries should be validated to prevent injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "feature-store", "injection", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML173", name="pipeline-versioning-gaps", description="Pipeline versioning gaps", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Pipeline saved without version metadata - tracking risk", explanation="Pipelines should include version metadata for tracking", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-778", owasp_mapping="ML03", tags={"ai", "ml", "pipeline", "versioning", "best-practice"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML174", name="preprocessing-state-tampering", description="Preprocessing state tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Preprocessing state loaded without integrity check - tampering risk", explanation="Preprocessing state should be integrity-checked when loaded", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "preprocessing", "tampering", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML175", name="transformation-order-vulnerabilities", description="Transformation order vulnerabilities", category=RuleCategory.CONVENTION, severity=RuleSeverity.LOW, message_template="Pipeline transformation order - document to prevent vulnerabilities", explanation="Transformation order should be documented for security review", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML03", tags={"ai", "ml", "pipeline", "order", "best-practice"}, references=["https://scikit-learn.org/stable/modules/compose.html"]),
 ]
