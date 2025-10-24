@@ -7,6 +7,7 @@ model serialization risks, training data poisoning, and GPU memory leakage.
 Security Areas Covered:
 - Prompt injection in LLM applications
 - System prompt override attempts (delimiter injection)
+- Unicode/homoglyph injection (zero-width characters, bi-directional overrides)
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -17,7 +18,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 11 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
+Total Security Checks: 12 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -97,6 +98,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML011: System prompt override (delimiter injection)
         self._check_system_prompt_override(node)
         
+        # AIML012: Unicode/homoglyph injection
+        self._check_unicode_injection(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -164,6 +168,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         # AIML011: Check for system prompt override patterns in string constants
                         elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                             self._check_string_for_prompt_override(node.value.value, node)
+                            self._check_string_for_unicode_injection(node.value.value, node)
         
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
@@ -255,6 +260,62 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 category=RuleCategory.SECURITY,
                 severity=RuleSeverity.CRITICAL,
                 message="System prompt override attempt detected: delimiter injection pattern",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+            
+    def _check_unicode_injection(self, node: ast.Call) -> None:
+        """AIML012: Detect Unicode/homoglyph injection in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_unicode_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_unicode_injection(keyword.value.value, node)
+    
+    def _check_string_for_unicode_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains Unicode injection patterns."""
+        if not self.has_llm_framework:
+            return
+            
+        # Check for Unicode/homoglyph patterns
+        suspicious_unicode_ranges = [
+            (0x200B, 0x200F),  # Zero-width characters
+            (0x202A, 0x202E),  # Bi-directional text overrides
+            (0xFEFF, 0xFEFF),  # Zero-width no-break space
+        ]
+        
+        def contains_suspicious_unicode(text: str) -> bool:
+            """Check if text contains suspicious Unicode characters."""
+            for char in text:
+                code_point = ord(char)
+                for start, end in suspicious_unicode_ranges:
+                    if start <= code_point <= end:
+                        return True
+            return False
+        
+        if contains_suspicious_unicode(text):
+            violation = RuleViolation(
+                rule_id="AIML012",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Unicode injection detected: suspicious zero-width or bi-directional characters",
                 line_number=node.lineno,
                 column=node.col_offset,
                 end_line_number=getattr(node, "end_lineno", node.lineno),
@@ -714,6 +775,20 @@ AIML_SECURITY_RULES = [
         cwe_mapping="CWE-94",
         owasp_mapping="LLM01",
         tags={"ai", "llm", "injection", "prompt", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML012",
+        name="unicode-homoglyph-injection",
+        description="Detects Unicode/homoglyph injection attempts in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Unicode injection: suspicious zero-width or bi-directional characters detected",
+        explanation="Unicode injection using zero-width characters or bi-directional overrides can manipulate LLM behavior invisibly",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "unicode", "security"},
         references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
 ]
