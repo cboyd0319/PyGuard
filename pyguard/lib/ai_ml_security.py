@@ -1127,6 +1127,68 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML295: Video frame injection
         self._check_video_frame_injection(node)
         
+        # Phase 3.1.2: Vision Transformers (10 checks - AIML296-AIML305)
+        # AIML296: Patch embedding manipulation
+        self._check_patch_embedding_manipulation(node)
+        
+        # AIML297: Position encoding injection
+        self._check_position_encoding_injection(node)
+        
+        # AIML298: Attention mechanism attacks
+        self._check_attention_mechanism_attacks(node)
+        
+        # AIML299: Vision-language model risks (CLIP)
+        self._check_vision_language_model_risks(node)
+        
+        # AIML300: Diffusion model injection (Stable Diffusion)
+        self._check_diffusion_model_injection(node)
+        
+        # AIML301: Text-to-image prompt injection
+        self._check_text_to_image_prompt_injection(node)
+        
+        # AIML302: Image-to-image manipulation
+        self._check_image_to_image_manipulation(node)
+        
+        # AIML303: Inpainting attacks
+        self._check_inpainting_attacks(node)
+        
+        # AIML304: Outpainting vulnerabilities
+        self._check_outpainting_vulnerabilities(node)
+        
+        # AIML305: Multimodal fusion risks
+        self._check_multimodal_fusion_risks(node)
+        
+        # Phase 3.1.3: CNN & Architecture Security (10 checks - AIML306-AIML315)
+        # AIML306: ResNet skip connection attacks
+        self._check_resnet_skip_connection_attacks(node)
+        
+        # AIML307: DenseNet feature concatenation
+        self._check_densenet_feature_concatenation(node)
+        
+        # AIML308: EfficientNet scaling manipulation
+        self._check_efficientnet_scaling_manipulation(node)
+        
+        # AIML309: MobileNet depthwise convolution risks
+        self._check_mobilenet_depthwise_convolution_risks(node)
+        
+        # AIML310: SqueezeNet fire module injection
+        self._check_squeezenet_fire_module_injection(node)
+        
+        # AIML311: Neural architecture search poisoning
+        self._check_neural_architecture_search_poisoning(node)
+        
+        # AIML312: Activation function vulnerabilities
+        self._check_activation_function_vulnerabilities(node)
+        
+        # AIML313: Pooling layer manipulation
+        self._check_pooling_layer_manipulation(node)
+        
+        # AIML314: Dropout bypass techniques
+        self._check_dropout_bypass_techniques(node)
+        
+        # AIML315: Batch normalization attacks
+        self._check_batch_normalization_attacks(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -9960,6 +10022,393 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML295: Detect video frame injection."""
         pass  # Placeholder - video security
 
+    # Phase 3.1.2: Vision Transformers (AIML296-AIML305)
+    
+    def _check_patch_embedding_manipulation(self, node: ast.Call) -> None:
+        """AIML296: Detect Vision Transformer patch embedding manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Vision Transformer patch embedding operations
+        if "patch" in line_text and ("embed" in line_text or "vit" in line_text or "vision_transformer" in line_text):
+            if "validate" not in line_text and "check" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML296",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Vision Transformer patch embedding - validate patches to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_position_encoding_injection(self, node: ast.Call) -> None:
+        """AIML297: Detect position encoding injection in Vision Transformers."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for position encoding operations
+        if "position" in line_text and ("encod" in line_text or "embed" in line_text):
+            if "validate" not in line_text and "check" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML297",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Vision Transformer position encoding - validate to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_attention_mechanism_attacks(self, node: ast.Call) -> None:
+        """AIML298: Detect attention mechanism attacks in Vision Transformers."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for attention mechanism operations
+        if "attention" in line_text and ("vit" in line_text or "transformer" in line_text):
+            if "robust" not in line_text and "defense" not in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML298",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Vision Transformer attention - implement defenses against attention manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_vision_language_model_risks(self, node: ast.Call) -> None:
+        """AIML299: Detect vision-language model risks (CLIP)."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for CLIP and multimodal operations
+        if "clip" in line_text or ("vision" in line_text and "language" in line_text):
+            if "validate" not in line_text and "sanitize" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML299",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="CLIP model - validate both image and text inputs to prevent cross-modal attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_diffusion_model_injection(self, node: ast.Call) -> None:
+        """AIML300: Detect diffusion model injection (Stable Diffusion)."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for diffusion model operations
+        if "stable" in line_text and "diffusion" in line_text:
+            if "sanitize" not in line_text and "validate" not in line_text and "filter" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML300",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Stable Diffusion - sanitize prompts and validate generated images",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_text_to_image_prompt_injection(self, node: ast.Call) -> None:
+        """AIML301: Detect text-to-image prompt injection."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for text-to-image generation
+        if ("text" in line_text or "prompt" in line_text) and ("image" in line_text or "generate" in line_text):
+            if "sanitize" not in line_text and "validate" not in line_text and "filter" not in line_text:
+                # Check if this is a generation call
+                if isinstance(node.func, ast.Attribute) and "generate" in node.func.attr.lower():
+                    violation = RuleViolation(
+                        rule_id="AIML301",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Text-to-image generation - sanitize prompts to prevent harmful content",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML01",
+                        cwe_id="CWE-74",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_image_to_image_manipulation(self, node: ast.Call) -> None:
+        """AIML302: Detect image-to-image manipulation."""
+        pass  # Placeholder - advanced image manipulation detection
+    
+    def _check_inpainting_attacks(self, node: ast.Call) -> None:
+        """AIML303: Detect inpainting attacks."""
+        pass  # Placeholder - inpainting security
+    
+    def _check_outpainting_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML304: Detect outpainting vulnerabilities."""
+        pass  # Placeholder - outpainting security
+    
+    def _check_multimodal_fusion_risks(self, node: ast.Call) -> None:
+        """AIML305: Detect multimodal fusion risks."""
+        pass  # Placeholder - multimodal security
+    
+    # Phase 3.1.3: CNN & Architecture Security (AIML306-AIML315)
+    
+    def _check_resnet_skip_connection_attacks(self, node: ast.Call) -> None:
+        """AIML306: Detect ResNet skip connection attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ResNet skip connections
+        if "resnet" in line_text or ("skip" in line_text and "connection" in line_text):
+            if "validate" not in line_text and "gradient" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML306",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ResNet architecture - validate skip connections to prevent gradient manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_densenet_feature_concatenation(self, node: ast.Call) -> None:
+        """AIML307: Detect DenseNet feature concatenation vulnerabilities."""
+        pass  # Placeholder - DenseNet security
+    
+    def _check_efficientnet_scaling_manipulation(self, node: ast.Call) -> None:
+        """AIML308: Detect EfficientNet scaling manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for EfficientNet scaling operations
+        if "efficientnet" in line_text or ("compound" in line_text and "scal" in line_text):
+            if "validate" not in line_text and "limit" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML308",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="EfficientNet - validate compound scaling parameters to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_mobilenet_depthwise_convolution_risks(self, node: ast.Call) -> None:
+        """AIML309: Detect MobileNet depthwise convolution risks."""
+        pass  # Placeholder - MobileNet security
+    
+    def _check_squeezenet_fire_module_injection(self, node: ast.Call) -> None:
+        """AIML310: Detect SqueezeNet fire module injection."""
+        pass  # Placeholder - SqueezeNet security
+    
+    def _check_neural_architecture_search_poisoning(self, node: ast.Call) -> None:
+        """AIML311: Detect neural architecture search poisoning."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for NAS operations
+        if "nas" in line_text or ("neural" in line_text and "architecture" in line_text and "search" in line_text):
+            if "validate" not in line_text and "sanitize" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML311",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="NAS - validate search space and architecture selection to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_activation_function_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML312: Detect activation function vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for custom activation functions
+        if isinstance(node.func, ast.Attribute):
+            if "activation" in node.func.attr.lower() or "relu" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                if "custom" in line_text and "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML312",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Custom activation functions - validate for numerical stability and gradient flow",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_pooling_layer_manipulation(self, node: ast.Call) -> None:
+        """AIML313: Detect pooling layer manipulation."""
+        pass  # Placeholder - pooling layer security
+    
+    def _check_dropout_bypass_techniques(self, node: ast.Call) -> None:
+        """AIML314: Detect dropout bypass techniques."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for dropout operations
+        if "dropout" in line_text:
+            if "training" in line_text and "=" in line_text and ("true" in line_text or "false" in line_text):
+                # Check if mode is hardcoded instead of using model.train()/model.eval()
+                violation = RuleViolation(
+                    rule_id="AIML314",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Dropout layers - ensure proper training/inference mode to prevent bypass",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_batch_normalization_attacks(self, node: ast.Call) -> None:
+        """AIML315: Detect batch normalization attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for batch normalization operations
+        if "batchnorm" in line_text or "batch_norm" in line_text or ("bn" in line_text and "layer" in line_text):
+            if "validate" not in line_text and "statistics" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML315",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Batch normalization - validate statistics to prevent poisoning attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -11104,4 +11553,26 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML293", name="image-captioning-poisoning", description="Image captioning poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Image captioning - validate captions to prevent poisoning attacks", explanation="Captioning models should validate generated text", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "captioning", "poisoning"}, references=["https://arxiv.org/abs/1502.03044"]),
     Rule(rule_id="AIML294", name="visual-question-answering-attacks", description="Visual question answering attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="VQA model - validate questions and answers to prevent attacks", explanation="VQA models should validate both questions and generated answers", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "ml", "cv", "vqa", "attacks"}, references=["https://arxiv.org/abs/1505.00468"]),
     Rule(rule_id="AIML295", name="video-frame-injection", description="Video frame injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Video processing - validate frames to prevent injection attacks", explanation="Video frames should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "ml", "cv", "video", "injection"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    # Phase 3.1.2: Vision Transformers (AIML296-AIML305)
+    Rule(rule_id="AIML296", name="patch-embedding-manipulation", description="Patch embedding manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Vision Transformer patch embedding - validate patches to prevent manipulation", explanation="ViT patch embeddings can be manipulated to fool the model", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "vit", "patch-embedding"}, references=["https://arxiv.org/abs/2010.11929"]),
+    Rule(rule_id="AIML297", name="position-encoding-injection", description="Position encoding injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Vision Transformer position encoding - validate to prevent injection", explanation="Position encodings can be injected to manipulate model behavior", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "vit", "position-encoding"}, references=["https://arxiv.org/abs/2010.11929"]),
+    Rule(rule_id="AIML298", name="attention-mechanism-attacks", description="Attention mechanism attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Vision Transformer attention - implement defenses against attention manipulation", explanation="Attention mechanisms can be exploited for adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "vit", "attention"}, references=["https://arxiv.org/abs/2010.11929"]),
+    Rule(rule_id="AIML299", name="vision-language-model-risks", description="Vision-language model risks (CLIP)", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="CLIP model - validate both image and text inputs to prevent cross-modal attacks", explanation="Vision-language models vulnerable to cross-modal adversarial examples", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "clip", "multimodal"}, references=["https://arxiv.org/abs/2103.00020"]),
+    Rule(rule_id="AIML300", name="diffusion-model-injection", description="Diffusion model injection (Stable Diffusion)", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Stable Diffusion - sanitize prompts and validate generated images", explanation="Diffusion models can generate harmful content via prompt injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML01", tags={"ai", "ml", "cv", "diffusion", "stable-diffusion"}, references=["https://arxiv.org/abs/2112.10752"]),
+    Rule(rule_id="AIML301", name="text-to-image-prompt-injection", description="Text-to-image prompt injection", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Text-to-image generation - sanitize prompts to prevent harmful content", explanation="Text-to-image models vulnerable to prompt injection attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML01", tags={"ai", "ml", "cv", "text-to-image", "prompt-injection"}, references=["https://arxiv.org/abs/2112.10752"]),
+    Rule(rule_id="AIML302", name="image-to-image-manipulation", description="Image-to-image manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Image-to-image translation - validate inputs to prevent malicious manipulation", explanation="Image translation models can be exploited for deepfakes", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "image-to-image", "manipulation"}, references=["https://arxiv.org/abs/1703.10593"]),
+    Rule(rule_id="AIML303", name="inpainting-attacks", description="Inpainting attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Image inpainting - validate masked regions to prevent attacks", explanation="Inpainting can be exploited to insert malicious content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "inpainting", "attacks"}, references=["https://arxiv.org/abs/1801.07892"]),
+    Rule(rule_id="AIML304", name="outpainting-vulnerabilities", description="Outpainting vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Image outpainting - validate generated regions for consistency", explanation="Outpainting can generate inconsistent or harmful content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "cv", "outpainting", "vulnerabilities"}, references=["https://arxiv.org/abs/1901.07518"]),
+    Rule(rule_id="AIML305", name="multimodal-fusion-risks", description="Multimodal fusion risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Multimodal fusion - validate cross-modal interactions to prevent attacks", explanation="Multimodal models vulnerable to cross-modal adversarial examples", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "multimodal", "fusion"}, references=["https://arxiv.org/abs/2103.00020"]),
+    # Phase 3.1.3: CNN & Architecture Security (AIML306-AIML315)
+    Rule(rule_id="AIML306", name="resnet-skip-connection-attacks", description="ResNet skip connection attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ResNet architecture - validate skip connections to prevent gradient manipulation", explanation="ResNet skip connections can be exploited for gradient-based attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "resnet", "skip-connection"}, references=["https://arxiv.org/abs/1512.03385"]),
+    Rule(rule_id="AIML307", name="densenet-feature-concatenation", description="DenseNet feature concatenation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DenseNet architecture - validate feature concatenation for integrity", explanation="DenseNet feature concatenation vulnerable to manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "densenet", "concatenation"}, references=["https://arxiv.org/abs/1608.06993"]),
+    Rule(rule_id="AIML308", name="efficientnet-scaling-manipulation", description="EfficientNet scaling manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="EfficientNet - validate compound scaling parameters to prevent manipulation", explanation="EfficientNet scaling can be exploited for resource exhaustion", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "cv", "efficientnet", "scaling"}, references=["https://arxiv.org/abs/1905.11946"]),
+    Rule(rule_id="AIML309", name="mobilenet-depthwise-convolution-risks", description="MobileNet depthwise convolution risks", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="MobileNet - validate depthwise convolutions for numerical stability", explanation="Depthwise convolutions can introduce numerical vulnerabilities", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML04", tags={"ai", "ml", "cv", "mobilenet", "depthwise"}, references=["https://arxiv.org/abs/1704.04861"]),
+    Rule(rule_id="AIML310", name="squeezenet-fire-module-injection", description="SqueezeNet fire module injection", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="SqueezeNet - validate fire module parameters", explanation="Fire modules can be exploited through parameter manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "squeezenet", "fire-module"}, references=["https://arxiv.org/abs/1602.07360"]),
+    Rule(rule_id="AIML311", name="neural-architecture-search-poisoning", description="Neural architecture search poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="NAS - validate search space and architecture selection to prevent poisoning", explanation="Neural architecture search can be poisoned to select vulnerable architectures", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "nas", "poisoning"}, references=["https://arxiv.org/abs/1808.05377"]),
+    Rule(rule_id="AIML312", name="activation-function-vulnerabilities", description="Activation function vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Custom activation functions - validate for numerical stability and gradient flow", explanation="Custom activations can introduce numerical vulnerabilities", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "cv", "activation", "vulnerability"}, references=["https://arxiv.org/abs/1710.05941"]),
+    Rule(rule_id="AIML313", name="pooling-layer-manipulation", description="Pooling layer manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Pooling layers - validate pooling parameters to prevent manipulation", explanation="Pooling operations can be exploited for adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "pooling", "manipulation"}, references=["https://arxiv.org/abs/1412.6806"]),
+    Rule(rule_id="AIML314", name="dropout-bypass-techniques", description="Dropout bypass techniques", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dropout layers - ensure proper training/inference mode to prevent bypass", explanation="Dropout can be bypassed by manipulating training/inference mode", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "cv", "dropout", "bypass"}, references=["https://arxiv.org/abs/1207.0580"]),
+    Rule(rule_id="AIML315", name="batch-normalization-attacks", description="Batch normalization attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Batch normalization - validate statistics to prevent poisoning attacks", explanation="Batch norm statistics can be poisoned during training", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "batchnorm", "poisoning"}, references=["https://arxiv.org/abs/1502.03167"]),
 ]

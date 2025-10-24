@@ -519,7 +519,7 @@ class TestAIMLSecurityRules:
         Note: AIML013-AIML022 (10 rules) from Phase 1.1.1 are not yet added to the rules list.
         When those are added, this count should be 295.
         """
-        assert len(AIML_SECURITY_RULES) == 285
+        assert len(AIML_SECURITY_RULES) == 305
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
