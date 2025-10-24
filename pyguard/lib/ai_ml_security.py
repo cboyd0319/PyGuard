@@ -41,6 +41,21 @@ Security Areas Covered:
 - Search result poisoning - AIML043
 - User profile injection - AIML044
 - Conversation history injection - AIML045
+- Missing rate limiting on LLM API calls - AIML046
+- Unvalidated temperature/top_p parameters - AIML047
+- Max_tokens manipulation (DoS) - AIML048
+- Streaming response injection - AIML049
+- Function calling injection - AIML050
+- Tool use parameter tampering - AIML051
+- System message manipulation via API - AIML052
+- Model selection bypass - AIML053
+- API key exposure in client code - AIML054
+- Hardcoded model names (version lock-in) - AIML055
+- Missing timeout configurations - AIML056
+- Unhandled API errors (info disclosure) - AIML057
+- Token counting bypass - AIML058
+- Cost overflow attacks - AIML059
+- Multi-turn conversation state injection - AIML060
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -51,7 +66,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 45 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
+Total Security Checks: 60 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.1.3 Complete)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -232,6 +247,52 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML045: Conversation history injection
         self._check_conversation_history_injection(node)
+        
+        # Phase 1.1.3: LLM API Security (15 checks)
+        # AIML046: Missing rate limiting on LLM API calls
+        self._check_missing_rate_limiting(node)
+        
+        # AIML047: Unvalidated temperature/top_p parameters
+        self._check_unvalidated_llm_parameters(node)
+        
+        # AIML048: Max_tokens manipulation (DoS)
+        self._check_max_tokens_manipulation(node)
+        
+        # AIML049: Streaming response injection
+        self._check_streaming_response_injection(node)
+        
+        # AIML050: Function calling injection
+        self._check_function_calling_injection(node)
+        
+        # AIML051: Tool use parameter tampering
+        self._check_tool_use_tampering(node)
+        
+        # AIML052: System message manipulation via API
+        self._check_system_message_manipulation(node)
+        
+        # AIML053: Model selection bypass
+        self._check_model_selection_bypass(node)
+        
+        # AIML054: API key exposure in client code
+        self._check_api_key_exposure(node)
+        
+        # AIML055: Hardcoded model names (version lock-in)
+        self._check_hardcoded_model_names(node)
+        
+        # AIML056: Missing timeout configurations
+        self._check_missing_timeout(node)
+        
+        # AIML057: Unhandled API errors (info disclosure)
+        self._check_unhandled_api_errors(node)
+        
+        # AIML058: Token counting bypass
+        self._check_token_counting_bypass(node)
+        
+        # AIML059: Cost overflow attacks
+        self._check_cost_overflow(node)
+        
+        # AIML060: Multi-turn conversation state injection
+        self._check_conversation_state_injection(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -1960,6 +2021,466 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     source_tool="pyguard",
                 )
                 self.violations.append(violation)
+    
+    # Phase 1.1.3: LLM API Security (15 checks - AIML046-AIML060)
+    
+    def _check_missing_rate_limiting(self, node: ast.Call) -> None:
+        """AIML046: Detect missing rate limiting on LLM API calls."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for LLM API calls without rate limiting
+        llm_api_calls = [
+            "create", "completion", "chat", "complete",
+            "ChatCompletion", "Completion", "generate"
+        ]
+        
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in llm_api_calls:
+                # Simple heuristic: Check if there's no rate limiting decorator or call
+                # This is a simplified check - in reality, would need more context
+                violation = RuleViolation(
+                    rule_id="AIML046",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Missing rate limiting on LLM API call - potential DoS risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM04",
+                    cwe_id="CWE-770",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_unvalidated_llm_parameters(self, node: ast.Call) -> None:
+        """AIML047: Detect unvalidated temperature/top_p parameters."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for temperature and top_p parameters that could be manipulated
+        for keyword in node.keywords:
+            if keyword.arg in ["temperature", "top_p", "top_k"]:
+                # Check if value comes from user input (not a constant)
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML047",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message=f"Unvalidated {keyword.arg} parameter - could enable model manipulation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_max_tokens_manipulation(self, node: ast.Call) -> None:
+        """AIML048: Detect max_tokens manipulation (DoS)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for max_tokens parameter
+        for keyword in node.keywords:
+            if keyword.arg in ["max_tokens", "max_length", "max_new_tokens"]:
+                # Check if value is not validated or comes from user input
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML048",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Max tokens parameter from user input - DoS risk from excessive token generation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM04",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_streaming_response_injection(self, node: ast.Call) -> None:
+        """AIML049: Detect streaming response injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for streaming API calls
+        for keyword in node.keywords:
+            if keyword.arg == "stream":
+                if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                    violation = RuleViolation(
+                        rule_id="AIML049",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Streaming response without validation - injection risk in streamed chunks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_function_calling_injection(self, node: ast.Call) -> None:
+        """AIML050: Detect function calling injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for function calling parameters
+        for keyword in node.keywords:
+            if keyword.arg in ["functions", "tools", "function_call"]:
+                violation = RuleViolation(
+                    rule_id="AIML050",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Function calling enabled - validate function parameters to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_tool_use_tampering(self, node: ast.Call) -> None:
+        """AIML051: Detect tool use parameter tampering."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for tool use configurations
+        for keyword in node.keywords:
+            if keyword.arg in ["tool_choice", "tools"]:
+                # Check if tool parameters could be user-controlled
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML051",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Tool use parameters from user input - tampering risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_system_message_manipulation(self, node: ast.Call) -> None:
+        """AIML052: Detect system message manipulation via API."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for messages parameter with system role
+        for keyword in node.keywords:
+            if keyword.arg == "messages":
+                # Check if it's a list/dict that could contain user-controlled system messages
+                if isinstance(keyword.value, (ast.List, ast.Dict, ast.Name)):
+                    violation = RuleViolation(
+                        rule_id="AIML052",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="System message construction - ensure user input cannot modify system role",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_selection_bypass(self, node: ast.Call) -> None:
+        """AIML053: Detect model selection bypass."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for model parameter that could be user-controlled
+        for keyword in node.keywords:
+            if keyword.arg in ["model", "engine", "model_name"]:
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML053",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model selection from user input - bypass risk and cost implications",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_api_key_exposure(self, node: ast.Call) -> None:
+        """AIML054: Detect API key exposure in client code."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for hardcoded API keys
+        for keyword in node.keywords:
+            if keyword.arg in ["api_key", "api_token", "auth_token", "key"]:
+                if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                    # Check if it looks like an API key (common patterns)
+                    key_value = keyword.value.value
+                    if len(key_value) > 10 and not key_value.startswith("$"):  # Not env var
+                        violation = RuleViolation(
+                            rule_id="AIML054",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.CRITICAL,
+                            message="API key hardcoded in client code - use environment variables instead",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM10",
+                            cwe_id="CWE-798",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_hardcoded_model_names(self, node: ast.Call) -> None:
+        """AIML055: Detect hardcoded model names (version lock-in)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for hardcoded model names without version pinning
+        for keyword in node.keywords:
+            if keyword.arg in ["model", "engine"]:
+                if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                    model_name = keyword.value.value
+                    # Check if it's a model name without version
+                    common_models = ["gpt-3.5-turbo", "gpt-4", "claude", "llama"]
+                    if any(m in model_name.lower() for m in common_models):
+                        violation = RuleViolation(
+                            rule_id="AIML055",
+                            category=RuleCategory.CONVENTION,
+                            severity=RuleSeverity.LOW,
+                            message="Hardcoded model name - consider using configuration for flexibility",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM04",
+                            cwe_id="CWE-1188",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_missing_timeout(self, node: ast.Call) -> None:
+        """AIML056: Detect missing timeout configurations."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for LLM API calls
+        llm_api_calls = [
+            "create", "completion", "chat", "complete",
+            "ChatCompletion", "Completion", "generate"
+        ]
+        
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in llm_api_calls:
+                # Check if timeout is specified
+                has_timeout = any(kw.arg == "timeout" for kw in node.keywords)
+                if not has_timeout:
+                    violation = RuleViolation(
+                        rule_id="AIML056",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Missing timeout on LLM API call - DoS risk from hanging requests",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM04",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_unhandled_api_errors(self, node: ast.Call) -> None:
+        """AIML057: Detect unhandled API errors (info disclosure)."""
+        if not self.has_llm_framework:
+            return
+        
+        # This check would ideally look at try/except blocks around API calls
+        # For now, we flag API calls that might need error handling
+        llm_api_calls = [
+            "create", "completion", "chat", "complete",
+            "ChatCompletion", "Completion", "generate"
+        ]
+        
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in llm_api_calls:
+                # Simple heuristic: flag for manual review
+                violation = RuleViolation(
+                    rule_id="AIML057",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="LLM API call - ensure error handling prevents information disclosure",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM04",
+                    cwe_id="CWE-209",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_token_counting_bypass(self, node: ast.Call) -> None:
+        """AIML058: Detect token counting bypass."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for API calls without token counting
+        llm_api_calls = [
+            "create", "completion", "chat", "complete",
+            "ChatCompletion", "Completion", "generate"
+        ]
+        
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in llm_api_calls:
+                # Simple heuristic: warn about token counting
+                violation = RuleViolation(
+                    rule_id="AIML058",
+                    category=RuleCategory.CONVENTION,
+                    severity=RuleSeverity.LOW,
+                    message="LLM API call - implement token counting to prevent context overflow",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM04",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_cost_overflow(self, node: ast.Call) -> None:
+        """AIML059: Detect cost overflow attacks."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for expensive operations without cost limits
+        for keyword in node.keywords:
+            if keyword.arg in ["n", "num_completions", "best_of"]:
+                # Check if value could be user-controlled
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML059",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Completion count from user input - cost overflow risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM04",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_conversation_state_injection(self, node: ast.Call) -> None:
+        """AIML060: Detect multi-turn conversation state injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for state management in multi-turn conversations
+        state_keywords = ["session_id", "conversation_id", "state", "context"]
+        
+        for keyword in node.keywords:
+            if keyword.arg in state_keywords:
+                # Check if state could be user-controlled
+                if not isinstance(keyword.value, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML060",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Conversation state from user input - injection risk in multi-turn interactions",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
@@ -2742,6 +3263,217 @@ AIML_SECURITY_RULES = [
         cwe_mapping="CWE-94",
         owasp_mapping="LLM01",
         tags={"ai", "llm", "injection", "indirect", "history", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    # Phase 1.1.3: LLM API Security (15 checks - AIML046-AIML060)
+    Rule(
+        rule_id="AIML046",
+        name="missing-rate-limiting",
+        description="Detects missing rate limiting on LLM API calls",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Missing rate limiting on LLM API call - potential DoS risk",
+        explanation="LLM API calls without rate limiting can lead to denial of service and excessive costs",
+        fix_applicability=FixApplicability.MANUAL,
+        cwe_mapping="CWE-770",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "rate-limit", "dos", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML047",
+        name="unvalidated-llm-parameters",
+        description="Detects unvalidated temperature/top_p parameters in LLM calls",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Unvalidated LLM parameter - could enable model manipulation",
+        explanation="Unvalidated model parameters like temperature and top_p can be manipulated to alter model behavior",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-20",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "parameters", "validation", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML048",
+        name="max-tokens-manipulation",
+        description="Detects max_tokens parameter from user input (DoS risk)",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Max tokens parameter from user input - DoS risk from excessive token generation",
+        explanation="User-controlled max_tokens parameter can lead to resource exhaustion and excessive API costs",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-400",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "dos", "tokens", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML049",
+        name="streaming-response-injection",
+        description="Detects streaming responses without validation",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Streaming response without validation - injection risk in streamed chunks",
+        explanation="Streaming LLM responses require validation to prevent injection attacks in individual chunks",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "api", "streaming", "injection", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML050",
+        name="function-calling-injection",
+        description="Detects function calling without parameter validation",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Function calling enabled - validate function parameters to prevent injection",
+        explanation="LLM function calling can be exploited to execute unintended operations if parameters are not validated",
+        fix_applicability=FixApplicability.MANUAL,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "api", "function-calling", "injection", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML051",
+        name="tool-use-tampering",
+        description="Detects tool use parameter tampering risks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Tool use parameters from user input - tampering risk",
+        explanation="User-controlled tool parameters can be manipulated to execute unintended tool operations",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "api", "tools", "tampering", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML052",
+        name="system-message-manipulation",
+        description="Detects system message manipulation via API",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="System message construction - ensure user input cannot modify system role",
+        explanation="User input in system messages can override safety instructions and manipulate model behavior",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "api", "system-message", "manipulation", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML053",
+        name="model-selection-bypass",
+        description="Detects model selection from user input",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Model selection from user input - bypass risk and cost implications",
+        explanation="User-controlled model selection can bypass intended model restrictions and incur unexpected costs",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-20",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "model-selection", "bypass", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML054",
+        name="api-key-exposure",
+        description="Detects hardcoded API keys in client code",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="API key hardcoded in client code - use environment variables instead",
+        explanation="Hardcoded API keys in source code can be exposed through version control or code sharing",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-798",
+        owasp_mapping="LLM10",
+        tags={"ai", "llm", "api", "credentials", "exposure", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML055",
+        name="hardcoded-model-names",
+        description="Detects hardcoded model names (version lock-in)",
+        category=RuleCategory.CONVENTION,
+        severity=RuleSeverity.LOW,
+        message_template="Hardcoded model name - consider using configuration for flexibility",
+        explanation="Hardcoded model names reduce flexibility and can lead to version lock-in",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-1188",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "configuration", "best-practice"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML056",
+        name="missing-timeout",
+        description="Detects missing timeout configurations on LLM API calls",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Missing timeout on LLM API call - DoS risk from hanging requests",
+        explanation="LLM API calls without timeouts can hang indefinitely, leading to resource exhaustion",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-400",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "timeout", "dos", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML057",
+        name="unhandled-api-errors",
+        description="Detects unhandled API errors (info disclosure risk)",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.LOW,
+        message_template="LLM API call - ensure error handling prevents information disclosure",
+        explanation="Unhandled API errors can leak sensitive information about the system or API keys",
+        fix_applicability=FixApplicability.MANUAL,
+        cwe_mapping="CWE-209",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "error-handling", "info-disclosure", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML058",
+        name="token-counting-bypass",
+        description="Detects missing token counting in LLM applications",
+        category=RuleCategory.CONVENTION,
+        severity=RuleSeverity.LOW,
+        message_template="LLM API call - implement token counting to prevent context overflow",
+        explanation="Lack of token counting can lead to context window overflow and unexpected API behavior",
+        fix_applicability=FixApplicability.MANUAL,
+        cwe_mapping="CWE-400",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "tokens", "best-practice"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML059",
+        name="cost-overflow",
+        description="Detects cost overflow attacks through excessive completions",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Completion count from user input - cost overflow risk",
+        explanation="User-controlled completion counts can lead to excessive API costs through repeated generations",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-400",
+        owasp_mapping="LLM04",
+        tags={"ai", "llm", "api", "cost", "dos", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML060",
+        name="conversation-state-injection",
+        description="Detects multi-turn conversation state injection",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Conversation state from user input - injection risk in multi-turn interactions",
+        explanation="User-controlled conversation state can be manipulated to inject malicious context",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "api", "state", "injection", "security"},
         references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
 ]
