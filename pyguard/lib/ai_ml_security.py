@@ -56,6 +56,16 @@ Security Areas Covered:
 - Token counting bypass - AIML058
 - Cost overflow attacks - AIML059
 - Multi-turn conversation state injection - AIML060
+- Missing output sanitization - AIML061
+- Code execution in LLM responses - AIML062
+- SQL injection via generated queries - AIML063
+- XSS via generated HTML - AIML064
+- Command injection via generated shell scripts - AIML065
+- Path traversal in generated file paths - AIML066
+- Arbitrary file access via generated code - AIML067
+- Sensitive data leakage in responses - AIML068
+- PII disclosure from training data - AIML069
+- Copyright violation risks (memorized content) - AIML070
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -66,7 +76,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 60 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.1.3 Complete)
+Total Security Checks: 70 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.1.4 Complete)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -293,6 +303,37 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML060: Multi-turn conversation state injection
         self._check_conversation_state_injection(node)
+        
+        # Phase 1.1.4: Output Validation & Filtering (10 checks)
+        # AIML061: Missing output sanitization
+        self._check_missing_output_sanitization(node)
+        
+        # AIML062: Code execution in LLM responses
+        self._check_code_execution_in_response(node)
+        
+        # AIML063: SQL injection via generated queries
+        self._check_sql_injection_in_generated(node)
+        
+        # AIML064: XSS via generated HTML
+        self._check_xss_in_generated_html(node)
+        
+        # AIML065: Command injection via generated shell scripts
+        self._check_command_injection_in_generated(node)
+        
+        # AIML066: Path traversal in generated file paths
+        self._check_path_traversal_in_generated(node)
+        
+        # AIML067: Arbitrary file access via generated code
+        self._check_arbitrary_file_access_in_generated(node)
+        
+        # AIML068: Sensitive data leakage in responses
+        self._check_sensitive_data_leakage(node)
+        
+        # AIML069: PII disclosure from training data
+        self._check_pii_disclosure(node)
+        
+        # AIML070: Copyright violation risks (memorized content)
+        self._check_copyright_violation_risk(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -2481,6 +2522,396 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         source_tool="pyguard",
                     )
                     self.violations.append(violation)
+    
+    # Phase 1.1.4: Output Validation & Filtering (10 checks - AIML061-AIML070)
+    
+    def _check_missing_output_sanitization(self, node: ast.Call) -> None:
+        """AIML061: Detect missing output sanitization on LLM responses."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for LLM API calls that produce responses
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        
+        # Check for common LLM response methods
+        llm_response_methods = ["create", "complete", "chat", "generate", "invoke", "call"]
+        if any(method in func_name.lower() for method in llm_response_methods):
+            # Flag if output is not being sanitized (heuristic check)
+            violation = RuleViolation(
+                rule_id="AIML061",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Missing output sanitization - ensure LLM response is validated before use",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM02",
+                cwe_id="CWE-20",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_code_execution_in_response(self, node: ast.Call) -> None:
+        """AIML062: Detect code execution risks in LLM responses."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for dangerous execution functions that might use LLM output
+        dangerous_funcs = ["exec", "eval", "compile", "__import__"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if func_name in dangerous_funcs:
+            # Check if any argument looks like it could come from LLM
+            for arg in node.args:
+                if isinstance(arg, (ast.Name, ast.Attribute, ast.Subscript)):
+                    violation = RuleViolation(
+                        rule_id="AIML062",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Code execution on LLM response - extreme arbitrary code execution risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_sql_injection_in_generated(self, node: ast.Call) -> None:
+        """AIML063: Detect SQL injection risks via LLM-generated queries."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for SQL execution functions
+        sql_funcs = ["execute", "executemany", "raw", "exec_driver_sql"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if func_name in sql_funcs:
+            # Check if argument could be from LLM-generated content
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML063",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="SQL execution with dynamic query - SQL injection risk if using LLM-generated content",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-89",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_xss_in_generated_html(self, node: ast.Call) -> None:
+        """AIML064: Detect XSS risks via LLM-generated HTML."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for HTML rendering functions
+        html_funcs = ["render", "render_template", "render_to_string", "mark_safe", "Markup"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if any(html_func in func_name for html_func in html_funcs):
+            # Check if rendering dynamic content
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML064",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="HTML rendering with dynamic content - XSS risk if using LLM-generated HTML",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-79",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_command_injection_in_generated(self, node: ast.Call) -> None:
+        """AIML065: Detect command injection risks via LLM-generated shell scripts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for shell command execution
+        shell_funcs = ["system", "popen", "run", "call", "check_output", "Popen"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if func_name in shell_funcs:
+            # Check if using dynamic commands
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML065",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Shell command with dynamic input - command injection risk if using LLM-generated scripts",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-78",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_path_traversal_in_generated(self, node: ast.Call) -> None:
+        """AIML066: Detect path traversal risks in LLM-generated file paths."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for file operations
+        file_funcs = ["open", "read", "write", "remove", "unlink", "rmdir"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if func_name in file_funcs:
+            # Check if using dynamic file paths
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML066",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="File operation with dynamic path - path traversal risk if using LLM-generated paths",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-22",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_arbitrary_file_access_in_generated(self, node: ast.Call) -> None:
+        """AIML067: Detect arbitrary file access risks via LLM-generated code."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for file system access patterns
+        import_funcs = ["__import__", "importlib.import_module"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_str = ""
+            if hasattr(node.func.value, 'id'):
+                func_str = f"{node.func.value.id}.{node.func.attr}"
+            else:
+                func_str = node.func.attr
+            func_name = func_str
+        
+        if any(imp in func_name for imp in import_funcs):
+            # Check if importing dynamic modules
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML067",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Dynamic module import - arbitrary file access risk if using LLM-generated code",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM02",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_sensitive_data_leakage(self, node: ast.Call) -> None:
+        """AIML068: Detect sensitive data leakage in LLM responses."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for logging or output of LLM responses
+        log_funcs = ["print", "log", "debug", "info", "warning", "error", "write"]
+        
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        
+        if func_name in log_funcs:
+            # Check if logging dynamic content that could be LLM response
+            for arg in node.args:
+                if isinstance(arg, (ast.Name, ast.Attribute, ast.Subscript)):
+                    # Look for response-like variable names
+                    var_name = ""
+                    if isinstance(arg, ast.Name):
+                        var_name = arg.id
+                    
+                    if any(term in var_name.lower() for term in ["response", "completion", "result", "output", "answer"]):
+                        violation = RuleViolation(
+                            rule_id="AIML068",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="Logging LLM response - sensitive data leakage risk",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM06",
+                            cwe_id="CWE-532",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_pii_disclosure(self, node: ast.Call) -> None:
+        """AIML069: Detect PII disclosure risk from training data."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for LLM API calls that might expose training data
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        
+        # Check for completion/chat calls
+        llm_funcs = ["create", "complete", "chat", "generate"]
+        if any(func in func_name.lower() for func in llm_funcs):
+            # Check for high temperature (more likely to leak training data)
+            for keyword in node.keywords:
+                if keyword.arg == "temperature":
+                    if isinstance(keyword.value, ast.Constant):
+                        if keyword.value.value > 1.5:
+                            violation = RuleViolation(
+                                rule_id="AIML069",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.MEDIUM,
+                                message="High temperature setting - increased PII disclosure risk from training data",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="LLM06",
+                                cwe_id="CWE-359",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+    
+    def _check_copyright_violation_risk(self, node: ast.Call) -> None:
+        """AIML070: Detect copyright violation risks from memorized content."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for LLM API calls that might generate copyrighted content
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        
+        # Check for completion/chat calls with long outputs
+        llm_funcs = ["create", "complete", "chat", "generate"]
+        if any(func in func_name.lower() for func in llm_funcs):
+            # Check for high max_tokens (more likely to generate long copyrighted text)
+            for keyword in node.keywords:
+                if keyword.arg in ["max_tokens", "max_length"]:
+                    if isinstance(keyword.value, ast.Constant):
+                        if keyword.value.value > 2000:
+                            violation = RuleViolation(
+                                rule_id="AIML070",
+                                category=RuleCategory.CONVENTION,
+                                severity=RuleSeverity.LOW,
+                                message="High max_tokens setting - copyright violation risk from memorized content",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data=None,
+                                owasp_id="LLM06",
+                                cwe_id="CWE-1059",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
@@ -3474,6 +3905,147 @@ AIML_SECURITY_RULES = [
         cwe_mapping="CWE-94",
         owasp_mapping="LLM01",
         tags={"ai", "llm", "api", "state", "injection", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    # Phase 1.1.4: Output Validation & Filtering (10 checks)
+    Rule(
+        rule_id="AIML061",
+        name="missing-output-sanitization",
+        description="Detects missing output sanitization on LLM responses",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Missing output sanitization - ensure LLM response is validated before use",
+        explanation="LLM outputs should be sanitized before use to prevent injection attacks and data leakage",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-20",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "sanitization", "validation", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML062",
+        name="code-execution-in-response",
+        description="Detects code execution risks in LLM responses",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="Code execution on LLM response - extreme arbitrary code execution risk",
+        explanation="Executing LLM-generated code without validation can lead to arbitrary code execution",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "code-execution", "critical", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML063",
+        name="sql-injection-in-generated",
+        description="Detects SQL injection risks via LLM-generated queries",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="SQL execution with dynamic query - SQL injection risk if using LLM-generated content",
+        explanation="Using LLM-generated SQL queries without validation can lead to SQL injection attacks",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-89",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "sql-injection", "database", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML064",
+        name="xss-in-generated-html",
+        description="Detects XSS risks via LLM-generated HTML",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="HTML rendering with dynamic content - XSS risk if using LLM-generated HTML",
+        explanation="Rendering LLM-generated HTML without sanitization can lead to cross-site scripting attacks",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-79",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "xss", "web", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML065",
+        name="command-injection-in-generated",
+        description="Detects command injection risks via LLM-generated shell scripts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="Shell command with dynamic input - command injection risk if using LLM-generated scripts",
+        explanation="Executing LLM-generated shell commands can lead to command injection and system compromise",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-78",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "command-injection", "shell", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML066",
+        name="path-traversal-in-generated",
+        description="Detects path traversal risks in LLM-generated file paths",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="File operation with dynamic path - path traversal risk if using LLM-generated paths",
+        explanation="Using LLM-generated file paths without validation can lead to path traversal attacks",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-22",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "path-traversal", "file-system", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML067",
+        name="arbitrary-file-access-in-generated",
+        description="Detects arbitrary file access risks via LLM-generated code",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="Dynamic module import - arbitrary file access risk if using LLM-generated code",
+        explanation="Dynamic module imports from LLM-generated code can lead to arbitrary file access",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM02",
+        tags={"ai", "llm", "output", "file-access", "import", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML068",
+        name="sensitive-data-leakage",
+        description="Detects sensitive data leakage in LLM responses",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Logging LLM response - sensitive data leakage risk",
+        explanation="Logging LLM responses can leak sensitive information included in the output",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-532",
+        owasp_mapping="LLM06",
+        tags={"ai", "llm", "output", "logging", "data-leakage", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML069",
+        name="pii-disclosure",
+        description="Detects PII disclosure risk from training data",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="High temperature setting - increased PII disclosure risk from training data",
+        explanation="High temperature settings increase the likelihood of exposing PII from model training data",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-359",
+        owasp_mapping="LLM06",
+        tags={"ai", "llm", "output", "pii", "privacy", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML070",
+        name="copyright-violation-risk",
+        description="Detects copyright violation risks from memorized content",
+        category=RuleCategory.CONVENTION,
+        severity=RuleSeverity.LOW,
+        message_template="High max_tokens setting - copyright violation risk from memorized content",
+        explanation="Long outputs increase the risk of generating copyrighted content memorized during training",
+        fix_applicability=FixApplicability.MANUAL,
+        cwe_mapping="CWE-1059",
+        owasp_mapping="LLM06",
+        tags={"ai", "llm", "output", "copyright", "legal", "best-practice"},
         references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
 ]

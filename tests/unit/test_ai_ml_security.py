@@ -507,8 +507,8 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 50 AI/ML security rules are registered."""
-        assert len(AIML_SECURITY_RULES) == 50
+        """Verify all 60 AI/ML security rules are registered."""
+        assert len(AIML_SECURITY_RULES) == 60
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -521,7 +521,10 @@ class TestAIMLSecurityRules:
             # Phase 1.1.3: LLM API Security (AIML046-AIML060)
             "AIML046", "AIML047", "AIML048", "AIML049", "AIML050",
             "AIML051", "AIML052", "AIML053", "AIML054", "AIML055",
-            "AIML056", "AIML057", "AIML058", "AIML059", "AIML060"
+            "AIML056", "AIML057", "AIML058", "AIML059", "AIML060",
+            # Phase 1.1.4: Output Validation & Filtering (AIML061-AIML070)
+            "AIML061", "AIML062", "AIML063", "AIML064", "AIML065",
+            "AIML066", "AIML067", "AIML068", "AIML069", "AIML070"
         ]
         actual_ids = [rule.rule_id for rule in AIML_SECURITY_RULES]
         
