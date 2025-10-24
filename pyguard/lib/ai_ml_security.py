@@ -248,8 +248,28 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - Delta Lake poisoning - AIML428
 - Iceberg table manipulation - AIML429
 - Hudi data versioning risks - AIML430
+- MLflow Model Registry injection - AIML431
+- Weights & Biases artifact tampering - AIML432
+- Neptune.ai model poisoning - AIML433
+- Comet.ml registry manipulation - AIML434
+- AWS SageMaker model registry risks - AIML435
+- Azure ML model registry gaps - AIML436
+- Google Vertex AI model registry - AIML437
+- Custom registry vulnerabilities - AIML438
+- Model metadata injection - AIML439
+- Model versioning bypass - AIML440
+- Model lineage tampering - AIML441
+- Model approval workflow gaps - AIML442
+- Docker image model injection - AIML443
+- Model as a service (MaaS) risks - AIML444
+- Model marketplace vulnerabilities - AIML445
+- Model license bypass - AIML446
+- Model watermark removal - AIML447
+- Model fingerprinting attacks - AIML448
+- Model compression tampering - AIML449
+- Model conversion vulnerabilities - AIML450
 
-Total Security Checks: 430 (v0.7.9 - Phase 4.2 Complete: Dataset & Data Pipeline Security)
+Total Security Checks: 440 AI/ML rules (v0.8.0 - Phase 4.3 Complete: Model Registry & Versioning Security)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -1650,6 +1670,69 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML430: Hudi versioning risks
         self._check_hudi_versioning_risks(node)
+        
+        # Phase 4.3: Model Registry & Versioning (20 checks - AIML431-450)
+        # Phase 4.3.1: Model Registry Security (12 checks - AIML431-442)
+        # AIML431: MLflow Model Registry injection
+        self._check_mlflow_registry_injection(node)
+        
+        # AIML432: Weights & Biases artifact tampering
+        self._check_wandb_artifact_tampering(node)
+        
+        # AIML433: Neptune.ai model poisoning
+        self._check_neptune_model_poisoning(node)
+        
+        # AIML434: Comet.ml registry manipulation
+        self._check_comet_registry_manipulation(node)
+        
+        # AIML435: AWS SageMaker model registry risks
+        self._check_sagemaker_registry_risks(node)
+        
+        # AIML436: Azure ML model registry gaps
+        self._check_azure_ml_registry_gaps(node)
+        
+        # AIML437: Google Vertex AI model registry
+        self._check_vertex_ai_registry(node)
+        
+        # AIML438: Custom registry vulnerabilities
+        self._check_custom_registry_vulnerabilities(node)
+        
+        # AIML439: Model metadata injection
+        self._check_model_metadata_injection(node)
+        
+        # AIML440: Model versioning bypass
+        self._check_model_versioning_bypass(node)
+        
+        # AIML441: Model lineage tampering
+        self._check_model_lineage_tampering(node)
+        
+        # AIML442: Model approval workflow gaps
+        self._check_model_approval_workflow_gaps(node)
+        
+        # Phase 4.3.2: Model Packaging & Distribution (8 checks - AIML443-450)
+        # AIML443: Docker image model injection
+        self._check_docker_image_model_injection(node)
+        
+        # AIML444: Model as a service (MaaS) risks
+        self._check_maas_risks(node)
+        
+        # AIML445: Model marketplace vulnerabilities
+        self._check_model_marketplace_vulnerabilities(node)
+        
+        # AIML446: Model license bypass
+        self._check_model_license_bypass(node)
+        
+        # AIML447: Model watermark removal
+        self._check_model_watermark_removal(node)
+        
+        # AIML448: Model fingerprinting attacks
+        self._check_model_fingerprinting_attacks(node)
+        
+        # AIML449: Model compression tampering
+        self._check_model_compression_tampering(node)
+        
+        # AIML450: Model conversion vulnerabilities
+        self._check_model_conversion_vulnerabilities(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -13934,6 +14017,546 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         source_tool="pyguard",
                     )
                     self.violations.append(violation)
+    
+    # Phase 4.3: Model Registry & Versioning Security (20 checks - AIML431-450)
+    
+    def _check_mlflow_registry_injection(self, node: ast.Call) -> None:
+        """AIML431: Detect MLflow Model Registry injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for MLflow registry operations
+        if "mlflow" in line_text:
+            if any(x in line_text for x in ["register_model", "create_model_version", "transition_model_version_stage"]):
+                if not any(x in line_text for x in ["validate", "sanitize"]):
+                    violation = RuleViolation(
+                        rule_id="AIML431",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="MLflow Model Registry - validate model source and metadata to prevent injection",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_wandb_artifact_tampering(self, node: ast.Call) -> None:
+        """AIML432: Detect Weights & Biases artifact tampering risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for W&B artifact operations
+        if "wandb" in line_text or "weights_biases" in line_text or "weights & biases" in line_text:
+            if any(x in line_text for x in ["use_artifact", "log_artifact", "download"]):
+                if not any(x in line_text for x in ["verify", "checksum"]):
+                    violation = RuleViolation(
+                        rule_id="AIML432",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Weights & Biases artifact - verify integrity to prevent tampering",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_neptune_model_poisoning(self, node: ast.Call) -> None:
+        """AIML433: Detect Neptune.ai model poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Neptune.ai operations
+        if "neptune" in line_text:
+            if any(x in line_text for x in ["upload", "download", "fetch_model"]):
+                if not any(x in line_text for x in ["validate", "verify"]):
+                    violation = RuleViolation(
+                        rule_id="AIML433",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Neptune.ai model operations - validate model integrity to prevent poisoning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_comet_registry_manipulation(self, node: ast.Call) -> None:
+        """AIML434: Detect Comet.ml registry manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Comet.ml registry operations
+        if "comet" in line_text:
+            if any(x in line_text for x in ["log_model", "download_registry_model", "register_model"]):
+                if not any(x in line_text for x in ["validate", "verify"]):
+                    violation = RuleViolation(
+                        rule_id="AIML434",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Comet.ml registry - validate model registration to prevent manipulation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_sagemaker_registry_risks(self, node: ast.Call) -> None:
+        """AIML435: Detect AWS SageMaker model registry security risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for SageMaker model registry operations
+        if "sagemaker" in line_text:
+            if any(x in line_text for x in ["create_model_package", "register_model", "describe_model_package"]):
+                if not any(x in line_text for x in ["approval", "validation"]):
+                    violation = RuleViolation(
+                        rule_id="AIML435",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="AWS SageMaker model registry - implement approval workflows and validation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-285",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_azure_ml_registry_gaps(self, node: ast.Call) -> None:
+        """AIML436: Detect Azure ML model registry security gaps."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Azure ML registry operations
+        if "azure" in line_text or "azureml" in line_text:
+            if any(x in line_text for x in ["register_model", "model.register", "download"]):
+                if not any(x in line_text for x in ["validate", "approved"]):
+                    violation = RuleViolation(
+                        rule_id="AIML436",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Azure ML model registry - implement validation and approval workflows",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-285",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_vertex_ai_registry(self, node: ast.Call) -> None:
+        """AIML437: Detect Google Vertex AI model registry vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Vertex AI registry operations
+        if "vertex" in line_text or "vertexai" in line_text:
+            if any(x in line_text for x in ["upload_model", "deploy_model", "model.upload"]):
+                if not any(x in line_text for x in ["validate", "scan"]):
+                    violation = RuleViolation(
+                        rule_id="AIML437",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Google Vertex AI model registry - validate models before deployment",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-285",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_custom_registry_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML438: Detect custom model registry vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for custom registry operations
+        if any(x in line_text for x in ["model_registry", "registry.register", "registry.fetch"]):
+            if not any(x in line_text for x in ["validate", "verify", "checksum"]):
+                violation = RuleViolation(
+                    rule_id="AIML438",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Custom model registry - implement validation and integrity checks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_metadata_injection(self, node: ast.Call) -> None:
+        """AIML439: Detect model metadata injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for metadata operations
+        if any(x in line_text for x in ["metadata", "model_info", "model_card"]):
+            if any(x in line_text for x in ["update", "set", "write"]):
+                if not any(x in line_text for x in ["sanitize", "validate"]):
+                    violation = RuleViolation(
+                        rule_id="AIML439",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model metadata operations - sanitize inputs to prevent injection",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_versioning_bypass(self, node: ast.Call) -> None:
+        """AIML440: Detect model versioning bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for version-related operations
+        if any(x in line_text for x in ["version", "model_version"]):
+            if "latest" in line_text or "head" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML440",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model versioning - avoid 'latest' tag, use specific version for reproducibility",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_lineage_tampering(self, node: ast.Call) -> None:
+        """AIML441: Detect model lineage tampering risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for lineage operations
+        if any(x in line_text for x in ["lineage", "provenance", "parent_model"]):
+            if any(x in line_text for x in ["set", "update", "modify"]):
+                if not any(x in line_text for x in ["audit", "log"]):
+                    violation = RuleViolation(
+                        rule_id="AIML441",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model lineage operations - implement audit logging to prevent tampering",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_approval_workflow_gaps(self, node: ast.Call) -> None:
+        """AIML442: Detect model approval workflow security gaps."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for deployment operations without approval
+        if any(x in line_text for x in ["deploy", "promote", "production"]):
+            if "model" in line_text:
+                if not any(x in line_text for x in ["approved", "reviewed", "validated"]):
+                    violation = RuleViolation(
+                        rule_id="AIML442",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model deployment - implement approval workflow before production",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-285",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_docker_image_model_injection(self, node: ast.Call) -> None:
+        """AIML443: Detect Docker image model injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Docker operations with models
+        if "docker" in line_text:
+            if any(x in line_text for x in ["build", "run", "pull"]):
+                if "model" in line_text and not any(x in line_text for x in ["scan", "verify"]):
+                    violation = RuleViolation(
+                        rule_id="AIML443",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Docker image with model - scan for vulnerabilities before deployment",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_maas_risks(self, node: ast.Call) -> None:
+        """AIML444: Detect Model as a Service (MaaS) security risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for MaaS endpoint operations
+        if any(x in line_text for x in ["api", "endpoint", "serve"]):
+            if "model" in line_text:
+                if not any(x in line_text for x in ["auth", "rate_limit", "throttle"]):
+                    violation = RuleViolation(
+                        rule_id="AIML444",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model serving endpoint - implement authentication and rate limiting",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-306",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_marketplace_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML445: Detect model marketplace vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for marketplace operations
+        if any(x in line_text for x in ["marketplace", "model_hub", "model_zoo"]):
+            if any(x in line_text for x in ["download", "fetch", "load"]):
+                if not any(x in line_text for x in ["verify", "trusted"]):
+                    violation = RuleViolation(
+                        rule_id="AIML445",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Model marketplace download - verify model source and integrity",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_license_bypass(self, node: ast.Call) -> None:
+        """AIML446: Detect model license bypass attempts."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for license-related operations
+        if "model" in line_text:
+            if any(x in line_text for x in ["license", "terms", "commercial"]):
+                if "ignore" in line_text or "bypass" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML446",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model license - ensure compliance with licensing terms",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-1059",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_watermark_removal(self, node: ast.Call) -> None:
+        """AIML447: Detect model watermark removal attempts."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for watermark removal operations
+        if "watermark" in line_text or "signature" in line_text:
+            if any(x in line_text for x in ["remove", "strip", "delete"]):
+                violation = RuleViolation(
+                    rule_id="AIML447",
+                    category=RuleCategory.CONVENTION,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model watermark removal - respect model authorship and provenance",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_fingerprinting_attacks(self, node: ast.Call) -> None:
+        """AIML448: Detect model fingerprinting attack risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for model extraction attempts
+        if "model" in line_text:
+            if any(x in line_text for x in ["extract", "steal", "copy", "clone"]):
+                if "predict" in line_text or "inference" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML448",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model extraction risk - implement query limits to prevent fingerprinting",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML07",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_compression_tampering(self, node: ast.Call) -> None:
+        """AIML449: Detect model compression tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for compression operations
+        if any(x in line_text for x in ["compress", "quantize", "prune"]):
+            if "model" in line_text:
+                if not any(x in line_text for x in ["verify", "validate", "test"]):
+                    violation = RuleViolation(
+                        rule_id="AIML449",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model compression - validate model integrity after compression",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_model_conversion_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML450: Detect model conversion vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for model conversion operations
+        if any(x in line_text for x in ["convert", "export", "transform"]):
+            if "model" in line_text:
+                if any(x in line_text for x in ["onnx", "tflite", "coreml"]):
+                    if not any(x in line_text for x in ["validate", "test"]):
+                        violation = RuleViolation(
+                            rule_id="AIML450",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="Model conversion - validate converted model for equivalence and security",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML03",
+                            cwe_id="CWE-345",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
 
     # Helper methods
     
@@ -15245,4 +15868,29 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML428", name="delta-lake-poisoning", description="Delta Lake poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Delta Lake operations - validate transaction logs and data integrity", explanation="Delta Lake transaction logs can be poisoned", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "delta-lake", "poisoning", "transaction"}, references=["https://docs.delta.io/latest/delta-intro.html"]),
     Rule(rule_id="AIML429", name="iceberg-table-manipulation", description="Iceberg table manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Iceberg table operations - validate metadata and snapshots", explanation="Iceberg table metadata can be manipulated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "iceberg", "manipulation", "table"}, references=["https://iceberg.apache.org/"]),
     Rule(rule_id="AIML430", name="hudi-versioning-risks", description="Hudi data versioning risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Hudi operations - validate timeline and commit integrity", explanation="Hudi timeline and commits can be manipulated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "hudi", "versioning", "risk"}, references=["https://hudi.apache.org/"]),
+    
+    # Phase 4.3: Model Registry & Versioning Security (20 checks - AIML431-450)
+    # Phase 4.3.1: Model Registry Security (12 checks - AIML431-442)
+    Rule(rule_id="AIML431", name="mlflow-registry-injection", description="MLflow Model Registry injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="MLflow Model Registry - validate model source and metadata to prevent injection", explanation="MLflow registry operations can be exploited through malicious model metadata", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "mlflow", "registry", "injection"}, references=["https://mlflow.org/docs/latest/model-registry.html"]),
+    Rule(rule_id="AIML432", name="wandb-artifact-tampering", description="Weights & Biases artifact tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Weights & Biases artifact - verify integrity to prevent tampering", explanation="W&B artifacts should be verified for integrity before use", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "wandb", "artifact", "tampering"}, references=["https://docs.wandb.ai/guides/artifacts"]),
+    Rule(rule_id="AIML433", name="neptune-model-poisoning", description="Neptune.ai model poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Neptune.ai model operations - validate model integrity to prevent poisoning", explanation="Neptune.ai models should be validated for integrity", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "neptune", "poisoning", "model"}, references=["https://docs.neptune.ai/"]),
+    Rule(rule_id="AIML434", name="comet-registry-manipulation", description="Comet.ml registry manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Comet.ml registry - validate model registration to prevent manipulation", explanation="Comet.ml registry can be manipulated without proper validation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "comet", "registry", "manipulation"}, references=["https://www.comet.com/docs/v2/guides/model-registry/"]),
+    Rule(rule_id="AIML435", name="sagemaker-registry-risks", description="AWS SageMaker model registry risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="AWS SageMaker model registry - implement approval workflows and validation", explanation="SageMaker registry requires proper approval and validation workflows", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML03", tags={"ai", "ml", "sagemaker", "registry", "risk"}, references=["https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html"]),
+    Rule(rule_id="AIML436", name="azure-ml-registry-gaps", description="Azure ML model registry gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Azure ML model registry - implement validation and approval workflows", explanation="Azure ML registry needs proper validation and approval processes", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML03", tags={"ai", "ml", "azure", "registry", "gap"}, references=["https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment"]),
+    Rule(rule_id="AIML437", name="vertex-ai-registry", description="Google Vertex AI model registry", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Google Vertex AI model registry - validate models before deployment", explanation="Vertex AI models should be validated before deployment", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML03", tags={"ai", "ml", "vertex", "registry", "google"}, references=["https://cloud.google.com/vertex-ai/docs/model-registry/introduction"]),
+    Rule(rule_id="AIML438", name="custom-registry-vulnerabilities", description="Custom registry vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Custom model registry - implement validation and integrity checks", explanation="Custom registries may lack security controls", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-494", owasp_mapping="ML03", tags={"ai", "ml", "custom", "registry", "vulnerability"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML439", name="model-metadata-injection", description="Model metadata injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model metadata operations - sanitize inputs to prevent injection", explanation="Model metadata can be exploited for injection attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "metadata", "injection", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML440", name="model-versioning-bypass", description="Model versioning bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model versioning - avoid 'latest' tag, use specific version for reproducibility", explanation="Using 'latest' tag creates security and reproducibility risks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML03", tags={"ai", "ml", "versioning", "bypass", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML441", name="model-lineage-tampering", description="Model lineage tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model lineage operations - implement audit logging to prevent tampering", explanation="Model lineage should be protected with audit logging", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "lineage", "tampering", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML442", name="model-approval-workflow-gaps", description="Model approval workflow gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model deployment - implement approval workflow before production", explanation="Production deployments should require approval workflows", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML03", tags={"ai", "ml", "approval", "workflow", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    
+    # Phase 4.3.2: Model Packaging & Distribution (8 checks - AIML443-450)
+    Rule(rule_id="AIML443", name="docker-image-model-injection", description="Docker image model injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Docker image with model - scan for vulnerabilities before deployment", explanation="Docker images containing models should be scanned for vulnerabilities", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML03", tags={"ai", "ml", "docker", "injection", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML444", name="maas-risks", description="Model as a service (MaaS) risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model serving endpoint - implement authentication and rate limiting", explanation="Model APIs should have authentication and rate limiting", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-306", owasp_mapping="ML09", tags={"ai", "ml", "maas", "serving", "risk"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML445", name="model-marketplace-vulnerabilities", description="Model marketplace vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model marketplace download - verify model source and integrity", explanation="Models from marketplaces should be verified before use", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "marketplace", "vulnerability", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML446", name="model-license-bypass", description="Model license bypass", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Model license - ensure compliance with licensing terms", explanation="Model usage should comply with license terms", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1059", owasp_mapping="ML03", tags={"ai", "ml", "license", "bypass", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML447", name="model-watermark-removal", description="Model watermark removal", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Model watermark removal - respect model authorship and provenance", explanation="Model watermarks should be preserved to maintain provenance", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "watermark", "removal", "model"}, references=["https://arxiv.org/abs/1701.04082"]),
+    Rule(rule_id="AIML448", name="model-fingerprinting-attacks", description="Model fingerprinting attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model extraction risk - implement query limits to prevent fingerprinting", explanation="Model APIs should limit queries to prevent extraction attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="ML07", tags={"ai", "ml", "fingerprinting", "attack", "model"}, references=["https://arxiv.org/abs/1609.02943"]),
+    Rule(rule_id="AIML449", name="model-compression-tampering", description="Model compression tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model compression - validate model integrity after compression", explanation="Compressed models should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "compression", "tampering", "model"}, references=["https://arxiv.org/abs/1710.09282"]),
+    Rule(rule_id="AIML450", name="model-conversion-vulnerabilities", description="Model conversion vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model conversion - validate converted model for equivalence and security", explanation="Model conversions should be validated for equivalence", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "conversion", "vulnerability", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
 ]
