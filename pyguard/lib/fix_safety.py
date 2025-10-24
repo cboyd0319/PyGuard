@@ -258,6 +258,56 @@ class FixSafetyClassifier:
             "Comment-based suggestion for reproducibility",
         )
 
+        # Stage 2 priority AI/ML fixes
+        self._add_safe_fix(
+            "api_parameter_validation",
+            "security",
+            "Validate LLM API parameters (temperature, top_p)",
+            "Adds validation warnings for parameters outside valid ranges",
+        )
+
+        self._add_safe_fix(
+            "missing_timeout",
+            "security",
+            "Add timeout configuration to LLM API calls",
+            "Adds warning to prevent indefinite hangs on API calls",
+        )
+
+        self._add_safe_fix(
+            "unhandled_api_errors",
+            "security",
+            "Add error handling for LLM API calls",
+            "Adds warning to prevent information disclosure from unhandled exceptions",
+        )
+
+        self._add_safe_fix(
+            "untrusted_url_loading",
+            "security",
+            "Add validation for loading models from untrusted URLs",
+            "Adds warning to validate URLs before loading models",
+        )
+
+        self._add_safe_fix(
+            "torch_jit_load",
+            "security",
+            "Add security parameters to torch.jit.load() calls",
+            "Adds warning to use map_location for security",
+        )
+
+        self._add_safe_fix(
+            "model_integrity_verification",
+            "security",
+            "Add model integrity verification using checksums",
+            "Adds warning to verify model checksums",
+        )
+
+        self._add_safe_fix(
+            "model_card_credentials",
+            "security",
+            "Remove credentials from model cards and metadata",
+            "Detects and warns about API keys in model metadata",
+        )
+
         # Unsafe AI/ML security fixes
         self._add_unsafe_fix(
             "pickle_to_safetensors",
