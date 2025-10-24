@@ -106,8 +106,37 @@ Security Areas Covered:
 - Space app injection (Gradio/Streamlit) - AIML108
 - Model repository tampering - AIML109
 - Private model access control - AIML110
+- Unvalidated training data sources - AIML111
+- Missing data sanitization - AIML112
+- PII leakage in training datasets - AIML113
+- Copyright-infringing data inclusion - AIML114
+- Data poisoning detection (label flipping) - AIML115
+- Backdoor injection in datasets - AIML116
+- Trigger pattern insertion - AIML117
+- Data augmentation attacks - AIML118
+- Synthetic data vulnerabilities - AIML119
+- Web scraping data risks - AIML120
+- User-generated content risks - AIML121
+- Missing data provenance tracking - AIML122
+- Gradient manipulation attacks - AIML123
+- Learning rate manipulation - AIML124
+- Optimizer state poisoning - AIML125
+- Checkpoint tampering during training - AIML126
+- Early stopping bypass - AIML127
+- Validation set poisoning - AIML128
+- TensorBoard logging injection - AIML129
+- Experiment tracking manipulation - AIML130
+- Distributed training node compromise - AIML131
+- Parameter server vulnerabilities - AIML132
+- Base model poisoning - AIML133
+- Fine-tuning data injection - AIML134
+- Catastrophic forgetting exploitation - AIML135
+- PEFT attacks - AIML136
+- LoRA poisoning - AIML137
+- Adapter injection - AIML138
+- Prompt tuning manipulation - AIML139
+- Instruction fine-tuning risks - AIML140
 - Model inversion attack vectors
-- Training data poisoning risks
 - Adversarial input acceptance
 - Model extraction vulnerabilities
 - AI bias detection in code
@@ -116,7 +145,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 110 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.2 Complete)
+Total Security Checks: 140 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.3 Complete)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -498,6 +527,100 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML110: Private model access control
         self._check_private_model_access(node)
+        
+        # Phase 1.3: Training & Fine-Tuning Security (30 checks)
+        # Phase 1.3.1: Training Data Security (12 checks - AIML111-AIML122)
+        # AIML111: Unvalidated training data sources
+        self._check_unvalidated_training_data(node)
+        
+        # AIML112: Missing data sanitization
+        self._check_missing_data_sanitization(node)
+        
+        # AIML113: PII leakage in training datasets
+        self._check_pii_in_training_data(node)
+        
+        # AIML114: Copyright-infringing data inclusion
+        self._check_copyright_infringing_data(node)
+        
+        # AIML115: Data poisoning detection (label flipping)
+        self._check_label_flipping_detection(node)
+        
+        # AIML116: Backdoor injection in datasets
+        self._check_backdoor_in_dataset(node)
+        
+        # AIML117: Trigger pattern insertion
+        self._check_trigger_pattern_insertion(node)
+        
+        # AIML118: Data augmentation attacks
+        self._check_data_augmentation_attacks(node)
+        
+        # AIML119: Synthetic data vulnerabilities
+        self._check_synthetic_data_vulnerabilities(node)
+        
+        # AIML120: Web scraping data risks
+        self._check_web_scraping_data_risks(node)
+        
+        # AIML121: User-generated content risks
+        self._check_user_generated_content_risks(node)
+        
+        # AIML122: Missing data provenance tracking
+        self._check_missing_data_provenance(node)
+        
+        # Phase 1.3.2: Training Process Security (10 checks - AIML123-AIML132)
+        # AIML123: Gradient manipulation attacks
+        self._check_gradient_manipulation(node)
+        
+        # AIML124: Learning rate manipulation
+        self._check_learning_rate_manipulation(node)
+        
+        # AIML125: Optimizer state poisoning
+        self._check_optimizer_state_poisoning(node)
+        
+        # AIML126: Checkpoint tampering during training
+        self._check_checkpoint_tampering_training(node)
+        
+        # AIML127: Early stopping bypass
+        self._check_early_stopping_bypass(node)
+        
+        # AIML128: Validation set poisoning
+        self._check_validation_set_poisoning(node)
+        
+        # AIML129: TensorBoard logging injection
+        self._check_tensorboard_logging_injection(node)
+        
+        # AIML130: Experiment tracking manipulation
+        self._check_experiment_tracking_manipulation(node)
+        
+        # AIML131: Distributed training node compromise
+        self._check_distributed_training_node_compromise(node)
+        
+        # AIML132: Parameter server vulnerabilities
+        self._check_parameter_server_vulnerabilities(node)
+        
+        # Phase 1.3.3: Fine-Tuning Risks (8 checks - AIML133-AIML140)
+        # AIML133: Base model poisoning
+        self._check_base_model_poisoning(node)
+        
+        # AIML134: Fine-tuning data injection
+        self._check_fine_tuning_data_injection(node)
+        
+        # AIML135: Catastrophic forgetting exploitation
+        self._check_catastrophic_forgetting_exploitation(node)
+        
+        # AIML136: PEFT attacks
+        self._check_peft_attacks(node)
+        
+        # AIML137: LoRA poisoning
+        self._check_lora_poisoning(node)
+        
+        # AIML138: Adapter injection
+        self._check_adapter_injection(node)
+        
+        # AIML139: Prompt tuning manipulation
+        self._check_prompt_tuning_manipulation(node)
+        
+        # AIML140: Instruction fine-tuning risks
+        self._check_instruction_fine_tuning_risks(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -4201,6 +4324,937 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                             self.violations.append(violation)
                         break
 
+    # Phase 1.3: Training & Fine-Tuning Security (30 checks)
+    # Phase 1.3.1: Training Data Security (12 checks - AIML111-AIML122)
+    
+    def _check_unvalidated_training_data(self, node: ast.Call) -> None:
+        """AIML111: Detect unvalidated training data sources."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for data loading from URLs or files without validation
+        data_loaders = ["load_dataset", "read_csv", "from_csv", "ImageFolder", "DataLoader"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in data_loaders:
+                # Check if validation is mentioned anywhere
+                has_validation = any(
+                    kw.arg in ["trust", "verify", "validate", "safe_mode"]
+                    for kw in node.keywords
+                )
+                
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML111",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Training data from unvalidated source - data poisoning risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_missing_data_sanitization(self, node: ast.Call) -> None:
+        """AIML112: Detect missing data sanitization."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for text/string data loading without sanitization
+        text_loaders = ["read_text", "load_dataset", "read_csv", "from_pandas"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in text_loaders:
+                has_sanitization = any(
+                    kw.arg in ["clean", "sanitize", "strip", "preprocess"]
+                    for kw in node.keywords
+                )
+                
+                if not has_sanitization:
+                    violation = RuleViolation(
+                        rule_id="AIML112",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Training data without sanitization - injection risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_pii_in_training_data(self, node: ast.Call) -> None:
+        """AIML113: Detect PII leakage in training datasets."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for training with user data or sensitive sources
+        sensitive_sources = ["user_data", "customers", "patients", "employees", "personal"]
+        
+        for arg in node.args:
+            if isinstance(arg, (ast.Name, ast.Constant)):
+                value = arg.id if isinstance(arg, ast.Name) else str(arg.value).lower()
+                if any(source in value.lower() for source in sensitive_sources):
+                    violation = RuleViolation(
+                        rule_id="AIML113",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="PII in training data - privacy violation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML06",
+                        cwe_id="CWE-359",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+
+    def _check_copyright_infringing_data(self, node: ast.Call) -> None:
+        """AIML114: Detect copyright-infringing data inclusion."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for web scraping without copyright consideration
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in ["scrape", "crawl", "fetch_web", "download"]:
+                violation = RuleViolation(
+                    rule_id="AIML114",
+                    category=RuleCategory.CONVENTION,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Training data may include copyrighted content - legal risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-1059",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_label_flipping_detection(self, node: ast.Call) -> None:
+        """AIML115: Detect label flipping attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for training without label validation
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["fit", "train", "fit_transform"]:
+                has_validation = any(
+                    kw.arg in ["validate_labels", "check_labels", "verify_labels"]
+                    for kw in node.keywords
+                )
+                
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML115",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Training without label validation - label flipping attack risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_backdoor_in_dataset(self, node: ast.Call) -> None:
+        """AIML116: Detect backdoor injection in datasets."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for dataset loading without backdoor detection
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in ["load_dataset", "ImageFolder", "DataLoader"]:
+                has_detection = any(
+                    kw.arg in ["scan_backdoor", "detect_triggers", "verify_clean"]
+                    for kw in node.keywords
+                )
+                
+                if not has_detection:
+                    violation = RuleViolation(
+                        rule_id="AIML116",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Dataset without backdoor detection - hidden trigger risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-912",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_trigger_pattern_insertion(self, node: ast.Call) -> None:
+        """AIML117: Detect trigger pattern insertion."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for data augmentation without trigger validation
+        augmentation_funcs = ["RandomCrop", "RandomFlip", "ColorJitter", "augment", "transform"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in augmentation_funcs:
+                violation = RuleViolation(
+                    rule_id="AIML117",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Data augmentation without validation - trigger pattern risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_data_augmentation_attacks(self, node: ast.Call) -> None:
+        """AIML118: Detect data augmentation attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for complex augmentation pipelines
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "Compose" in func_name or "Pipeline" in func_name:
+                violation = RuleViolation(
+                    rule_id="AIML118",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Data augmentation - validate transformations to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_synthetic_data_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML119: Detect synthetic data vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for synthetic data generation
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "generate" in func_name.lower() or "synthesize" in func_name.lower():
+                violation = RuleViolation(
+                    rule_id="AIML119",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Synthetic data generation - validate quality and safety",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_web_scraping_data_risks(self, node: ast.Call) -> None:
+        """AIML120: Detect web scraping data risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for web scraping functions
+        scraping_funcs = ["scrape", "crawl", "BeautifulSoup", "requests.get", "urllib"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if any(func in func_name for func in scraping_funcs):
+                violation = RuleViolation(
+                    rule_id="AIML120",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Web scraped data - validate and sanitize to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_user_generated_content_risks(self, node: ast.Call) -> None:
+        """AIML121: Detect user-generated content risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for loading user content for training
+        for arg in node.args:
+            if isinstance(arg, (ast.Name, ast.Constant)):
+                value = arg.id if isinstance(arg, ast.Name) else str(arg.value).lower()
+                if "user" in value or "upload" in value or "submission" in value:
+                    violation = RuleViolation(
+                        rule_id="AIML121",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="User-generated training data - validate to prevent poisoning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+
+    def _check_missing_data_provenance(self, node: ast.Call) -> None:
+        """AIML122: Detect missing data provenance tracking."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for data loading without provenance tracking
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if func_name in ["load_dataset", "read_csv", "from_csv"]:
+                has_provenance = any(
+                    kw.arg in ["source", "origin", "metadata", "provenance"]
+                    for kw in node.keywords
+                )
+                
+                if not has_provenance:
+                    violation = RuleViolation(
+                        rule_id="AIML122",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Training data without provenance - unable to verify integrity",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-778",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    # Phase 1.3.2: Training Process Security (10 checks - AIML123-AIML132)
+    
+    def _check_gradient_manipulation(self, node: ast.Call) -> None:
+        """AIML123: Detect gradient manipulation attacks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for gradient computation without validation
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["backward", "grad", "gradient"]:
+                violation = RuleViolation(
+                    rule_id="AIML123",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Gradient computation - validate to prevent manipulation attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_learning_rate_manipulation(self, node: ast.Call) -> None:
+        """AIML124: Detect learning rate manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for dynamic learning rate changes without validation
+        for keyword in node.keywords:
+            if keyword.arg == "lr" or keyword.arg == "learning_rate":
+                if isinstance(keyword.value, ast.Name):  # Variable, not constant
+                    violation = RuleViolation(
+                        rule_id="AIML124",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Dynamic learning rate without validation - manipulation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+
+    def _check_optimizer_state_poisoning(self, node: ast.Call) -> None:
+        """AIML125: Detect optimizer state poisoning."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for optimizer state loading
+        if isinstance(node.func, ast.Attribute):
+            if "load_state_dict" in node.func.attr and "optimizer" in self.lines[node.lineno - 1].lower():
+                violation = RuleViolation(
+                    rule_id="AIML125",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Optimizer state loading - verify integrity to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_checkpoint_tampering_training(self, node: ast.Call) -> None:
+        """AIML126: Detect checkpoint tampering during training."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for checkpoint saving without integrity protection
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "save" in func_name and "checkpoint" in self.lines[node.lineno - 1].lower():
+                has_hash = any(
+                    kw.arg in ["checksum", "hash", "integrity"]
+                    for kw in node.keywords
+                )
+                
+                if not has_hash:
+                    violation = RuleViolation(
+                        rule_id="AIML126",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Checkpoint saving without integrity checks - tampering risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_early_stopping_bypass(self, node: ast.Call) -> None:
+        """AIML127: Detect early stopping bypass."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for early stopping without validation monitoring
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "EarlyStopping" in func_name:
+                violation = RuleViolation(
+                    rule_id="AIML127",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Early stopping without validation monitoring - bypass risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_validation_set_poisoning(self, node: ast.Call) -> None:
+        """AIML128: Detect validation set poisoning."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for validation data loading
+        for keyword in node.keywords:
+            if keyword.arg in ["validation_data", "val_data", "valid_data"]:
+                violation = RuleViolation(
+                    rule_id="AIML128",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Validation data from untrusted source - poisoning risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+                break
+
+    def _check_tensorboard_logging_injection(self, node: ast.Call) -> None:
+        """AIML129: Detect TensorBoard logging injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for TensorBoard logging
+        if isinstance(node.func, ast.Attribute):
+            if "SummaryWriter" in str(node.func) or "add_scalar" in node.func.attr:
+                violation = RuleViolation(
+                    rule_id="AIML129",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="TensorBoard logging - sanitize data to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-117",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_experiment_tracking_manipulation(self, node: ast.Call) -> None:
+        """AIML130: Detect experiment tracking manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for experiment tracking without validation
+        tracking_libs = ["mlflow", "wandb", "neptune", "comet"]
+        
+        if isinstance(node.func, ast.Attribute):
+            if any(lib in str(node.func).lower() for lib in tracking_libs):
+                if "log" in node.func.attr:
+                    violation = RuleViolation(
+                        rule_id="AIML130",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Experiment tracking - validate metrics to prevent manipulation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_distributed_training_node_compromise(self, node: ast.Call) -> None:
+        """AIML131: Detect distributed training node compromise."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for distributed training without secure communication
+        distributed_funcs = ["DistributedDataParallel", "init_process_group", "all_reduce"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if any(func in func_name for func in distributed_funcs):
+                violation = RuleViolation(
+                    rule_id="AIML131",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Distributed training - secure communication between nodes",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-300",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_parameter_server_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML132: Detect parameter server vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for parameter server usage
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "ParameterServer" in func_name or "parameter_server" in func_name:
+                violation = RuleViolation(
+                    rule_id="AIML132",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Parameter server - implement authentication and encryption",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-306",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    # Phase 1.3.3: Fine-Tuning Risks (8 checks - AIML133-AIML140)
+    
+    def _check_base_model_poisoning(self, node: ast.Call) -> None:
+        """AIML133: Detect base model poisoning."""
+        if not self.has_transformers:
+            return
+        
+        # Check for fine-tuning from untrusted base model
+        if isinstance(node.func, ast.Attribute):
+            if "from_pretrained" in node.func.attr:
+                has_verification = any(
+                    kw.arg in ["revision", "trust_remote_code"]
+                    for kw in node.keywords
+                    if kw.arg == "trust_remote_code" and isinstance(kw.value, ast.Constant) and kw.value.value is False
+                )
+                
+                if not has_verification:
+                    violation = RuleViolation(
+                        rule_id="AIML133",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Fine-tuning from untrusted base model - poisoning risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_fine_tuning_data_injection(self, node: ast.Call) -> None:
+        """AIML134: Detect fine-tuning data injection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for fine-tuning with unvalidated data
+        if isinstance(node.func, ast.Attribute):
+            if "train" in node.func.attr or "fit" in node.func.attr:
+                # Look for fine-tuning context
+                line_text = self.lines[node.lineno - 1].lower()
+                if "fine" in line_text or "finetune" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML134",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Fine-tuning data - validate to prevent injection attacks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_catastrophic_forgetting_exploitation(self, node: ast.Call) -> None:
+        """AIML135: Detect catastrophic forgetting exploitation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for fine-tuning without forgetting protection
+        if isinstance(node.func, ast.Attribute):
+            if "train" in node.func.attr and "fine" in self.lines[node.lineno - 1].lower():
+                has_protection = any(
+                    kw.arg in ["preserve_weights", "elastic_weight_consolidation", "ewc"]
+                    for kw in node.keywords
+                )
+                
+                if not has_protection:
+                    violation = RuleViolation(
+                        rule_id="AIML135",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Fine-tuning without forgetting protection - exploitation risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_peft_attacks(self, node: ast.Call) -> None:
+        """AIML136: Detect PEFT attacks."""
+        if not self.has_transformers:
+            return
+        
+        # Check for PEFT without validation
+        peft_funcs = ["get_peft_model", "PeftModel", "prepare_model_for_kbit_training"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if any(func in func_name for func in peft_funcs):
+                violation = RuleViolation(
+                    rule_id="AIML136",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="PEFT without validation - parameter tampering risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_lora_poisoning(self, node: ast.Call) -> None:
+        """AIML137: Detect LoRA poisoning."""
+        if not self.has_transformers:
+            return
+        
+        # Check for LoRA adapter loading
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "LoraConfig" in func_name or "lora" in func_name.lower():
+                violation = RuleViolation(
+                    rule_id="AIML137",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="LoRA adapter - verify source to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_adapter_injection(self, node: ast.Call) -> None:
+        """AIML138: Detect adapter injection."""
+        if not self.has_transformers:
+            return
+        
+        # Check for adapter loading
+        adapter_funcs = ["add_adapter", "load_adapter", "set_adapter"]
+        
+        if isinstance(node.func, ast.Attribute):
+            if any(func in node.func.attr for func in adapter_funcs):
+                violation = RuleViolation(
+                    rule_id="AIML138",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Adapter loading - validate to prevent malicious injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_prompt_tuning_manipulation(self, node: ast.Call) -> None:
+        """AIML139: Detect prompt tuning manipulation."""
+        if not self.has_transformers:
+            return
+        
+        # Check for prompt tuning
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "PromptTuning" in func_name or "prompt_tuning" in func_name.lower():
+                violation = RuleViolation(
+                    rule_id="AIML139",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Prompt tuning - validate prompts to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_instruction_fine_tuning_risks(self, node: ast.Call) -> None:
+        """AIML140: Detect instruction fine-tuning risks."""
+        if not self.has_transformers:
+            return
+        
+        # Check for instruction fine-tuning
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "instruction" in line_text and ("train" in line_text or "fine" in line_text):
+            violation = RuleViolation(
+                rule_id="AIML140",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Instruction fine-tuning - validate data to prevent jailbreaks",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
         if isinstance(node.func, ast.Attribute):
@@ -5380,4 +6434,38 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML108", name="space-app-injection", description="Space app injection (Gradio/Streamlit)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Gradio/Streamlit interface - validate inputs to prevent injection", explanation="Space apps should validate user inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "ml", "gradio", "streamlit", "security"}, references=["https://huggingface.co/docs/hub/spaces"]),
     Rule(rule_id="AIML109", name="model-repo-tampering", description="Model repository tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model repository cloning - verify source to prevent tampering", explanation="Model repositories can be tampered with", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "repository", "tampering", "security"}, references=["https://huggingface.co/docs/hub/repositories"]),
     Rule(rule_id="AIML110", name="private-model-access", description="Private model access control", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Model loading without authentication - consider access controls", explanation="Private models should use proper authentication", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML05", tags={"ai", "ml", "access-control", "authentication", "security"}, references=["https://huggingface.co/docs/hub/security-tokens"]),
+    # Phase 1.3: Training & Fine-Tuning Security (30 checks)
+    # Phase 1.3.1: Training Data Security (AIML111-AIML122)
+    Rule(rule_id="AIML111", name="unvalidated-training-data", description="Unvalidated training data sources", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Training data from unvalidated source - data poisoning risk", explanation="Training data sources should be validated to prevent poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "data-poisoning", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML112", name="missing-data-sanitization", description="Missing data sanitization", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Training data without sanitization - injection risk", explanation="Training data should be sanitized to prevent malicious content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "training", "sanitization", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML113", name="pii-in-training-data", description="PII leakage in training datasets", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="PII in training data - privacy violation risk", explanation="Training datasets should not contain personally identifiable information", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-359", owasp_mapping="ML06", tags={"ai", "ml", "training", "pii", "privacy", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML114", name="copyright-infringing-data", description="Copyright-infringing data inclusion", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Training data may include copyrighted content - legal risk", explanation="Training datasets should verify copyright compliance", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1059", owasp_mapping="ML03", tags={"ai", "ml", "training", "copyright", "legal"}, references=["https://www.congress.gov/bill/117th-congress/house-bill/3684"]),
+    Rule(rule_id="AIML115", name="label-flipping-detection", description="Data poisoning detection (label flipping)", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Training without label validation - label flipping attack risk", explanation="Labels should be validated to detect poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "label-flipping", "security"}, references=["https://arxiv.org/abs/1804.00308"]),
+    Rule(rule_id="AIML116", name="backdoor-in-dataset", description="Backdoor injection in datasets", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Dataset without backdoor detection - hidden trigger risk", explanation="Datasets should be scanned for backdoor triggers", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-912", owasp_mapping="ML03", tags={"ai", "ml", "training", "backdoor", "security"}, references=["https://arxiv.org/abs/1708.06733"]),
+    Rule(rule_id="AIML117", name="trigger-pattern-insertion", description="Trigger pattern insertion", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Data augmentation without validation - trigger pattern risk", explanation="Augmented data should be validated for malicious patterns", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "trigger", "security"}, references=["https://arxiv.org/abs/1712.05526"]),
+    Rule(rule_id="AIML118", name="data-augmentation-attacks", description="Data augmentation attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Data augmentation - validate transformations to prevent poisoning", explanation="Augmentation pipelines can be exploited for poisoning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "augmentation", "security"}, references=["https://arxiv.org/abs/2004.13066"]),
+    Rule(rule_id="AIML119", name="synthetic-data-vulnerabilities", description="Synthetic data vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Synthetic data generation - validate quality and safety", explanation="Synthetic data can introduce vulnerabilities", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "synthetic", "security"}, references=["https://arxiv.org/abs/1907.00503"]),
+    Rule(rule_id="AIML120", name="web-scraping-data-risks", description="Web scraping data risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Web scraped data - validate and sanitize to prevent poisoning", explanation="Web scraped data can contain malicious content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "training", "scraping", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML121", name="user-generated-content-risks", description="User-generated content risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="User-generated training data - validate to prevent poisoning", explanation="User content should be validated before training", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "training", "ugc", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML122", name="missing-data-provenance", description="Missing data provenance tracking", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="Training data without provenance - unable to verify integrity", explanation="Data lineage should be tracked for security audits", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-778", owasp_mapping="ML03", tags={"ai", "ml", "training", "provenance", "best-practice"}, references=["https://www.nist.gov/publications/nist-ai-600-1-artificial-intelligence-risk-management-framework-generative"]),
+    # Phase 1.3.2: Training Process Security (AIML123-AIML132)
+    Rule(rule_id="AIML123", name="gradient-manipulation", description="Gradient manipulation attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Gradient computation - validate to prevent manipulation attacks", explanation="Gradients can be manipulated to poison models", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "gradient", "security"}, references=["https://arxiv.org/abs/1811.12470"]),
+    Rule(rule_id="AIML124", name="learning-rate-manipulation", description="Learning rate manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dynamic learning rate without validation - manipulation risk", explanation="Learning rate changes should be validated", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "learning-rate", "security"}, references=["https://arxiv.org/abs/2006.08131"]),
+    Rule(rule_id="AIML125", name="optimizer-state-poisoning", description="Optimizer state poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Optimizer state loading - verify integrity to prevent poisoning", explanation="Optimizer state can be poisoned between training sessions", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "optimizer", "security"}, references=["https://arxiv.org/abs/1804.00308"]),
+    Rule(rule_id="AIML126", name="checkpoint-tampering-training", description="Checkpoint tampering during training", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Checkpoint saving without integrity checks - tampering risk", explanation="Training checkpoints should be integrity-protected", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "training", "checkpoint", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML127", name="early-stopping-bypass", description="Early stopping bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Early stopping without validation monitoring - bypass risk", explanation="Early stopping can be bypassed by validation set poisoning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "early-stopping", "security"}, references=["https://arxiv.org/abs/2006.08131"]),
+    Rule(rule_id="AIML128", name="validation-set-poisoning", description="Validation set poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Validation data from untrusted source - poisoning risk", explanation="Validation sets should be verified for integrity", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "validation", "security"}, references=["https://arxiv.org/abs/1804.00308"]),
+    Rule(rule_id="AIML129", name="tensorboard-logging-injection", description="TensorBoard logging injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TensorBoard logging - sanitize data to prevent injection", explanation="Logging data should be sanitized", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-117", owasp_mapping="ML05", tags={"ai", "ml", "training", "logging", "security"}, references=["https://www.tensorflow.org/tensorboard"]),
+    Rule(rule_id="AIML130", name="experiment-tracking-manipulation", description="Experiment tracking manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Experiment tracking - validate metrics to prevent manipulation", explanation="Experiment metrics can be manipulated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "training", "tracking", "security"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML131", name="distributed-training-node-compromise", description="Distributed training node compromise", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Distributed training - secure communication between nodes", explanation="Training nodes should authenticate and encrypt communication", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-300", owasp_mapping="ML03", tags={"ai", "ml", "training", "distributed", "security"}, references=["https://arxiv.org/abs/1811.12470"]),
+    Rule(rule_id="AIML132", name="parameter-server-vulnerabilities", description="Parameter server vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Parameter server - implement authentication and encryption", explanation="Parameter servers need secure communication", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-306", owasp_mapping="ML03", tags={"ai", "ml", "training", "parameter-server", "security"}, references=["https://arxiv.org/abs/1811.12470"]),
+    # Phase 1.3.3: Fine-Tuning Risks (AIML133-AIML140)
+    Rule(rule_id="AIML133", name="base-model-poisoning", description="Base model poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Fine-tuning from untrusted base model - poisoning risk", explanation="Base models should be verified before fine-tuning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "fine-tuning", "poisoning", "security"}, references=["https://arxiv.org/abs/2004.10908"]),
+    Rule(rule_id="AIML134", name="fine-tuning-data-injection", description="Fine-tuning data injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Fine-tuning data - validate to prevent injection attacks", explanation="Fine-tuning data can inject backdoors", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "injection", "security"}, references=["https://arxiv.org/abs/2004.10908"]),
+    Rule(rule_id="AIML135", name="catastrophic-forgetting-exploitation", description="Catastrophic forgetting exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Fine-tuning without forgetting protection - exploitation risk", explanation="Fine-tuning can be exploited to remove security features", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "forgetting", "security"}, references=["https://arxiv.org/abs/1612.00796"]),
+    Rule(rule_id="AIML136", name="peft-attacks", description="PEFT (Parameter Efficient Fine-Tuning) attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="PEFT without validation - parameter tampering risk", explanation="PEFT adapters can be exploited", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "peft", "security"}, references=["https://arxiv.org/abs/2106.09685"]),
+    Rule(rule_id="AIML137", name="lora-poisoning", description="LoRA poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LoRA adapter - verify source to prevent poisoning", explanation="LoRA adapters can contain backdoors", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "lora", "security"}, references=["https://arxiv.org/abs/2106.09685"]),
+    Rule(rule_id="AIML138", name="adapter-injection", description="Adapter injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Adapter loading - validate to prevent malicious injection", explanation="Adapters can inject malicious behavior", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "adapter", "security"}, references=["https://arxiv.org/abs/1902.00751"]),
+    Rule(rule_id="AIML139", name="prompt-tuning-manipulation", description="Prompt tuning manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Prompt tuning - validate prompts to prevent manipulation", explanation="Soft prompts can be manipulated to change behavior", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "prompt-tuning", "security"}, references=["https://arxiv.org/abs/2104.08691"]),
+    Rule(rule_id="AIML140", name="instruction-fine-tuning-risks", description="Instruction fine-tuning risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Instruction fine-tuning - validate data to prevent jailbreaks", explanation="Instruction data can introduce jailbreak vulnerabilities", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="LLM01", tags={"ai", "ml", "fine-tuning", "instruction", "security"}, references=["https://arxiv.org/abs/2109.01652"]),
 ]
