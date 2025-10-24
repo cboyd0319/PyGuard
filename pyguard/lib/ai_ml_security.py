@@ -6,6 +6,7 @@ model serialization risks, training data poisoning, and GPU memory leakage.
 
 Security Areas Covered:
 - Prompt injection in LLM applications
+- System prompt override attempts (delimiter injection)
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -16,7 +17,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 10 (Month 5-6 - Security Dominance Plan)
+Total Security Checks: 11 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -93,6 +94,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML001: Prompt injection
         self._check_prompt_injection(node)
         
+        # AIML011: System prompt override (delimiter injection)
+        self._check_system_prompt_override(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -112,7 +116,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 if isinstance(target, ast.Name):
                     var_name = target.id
                     # Check if this looks like a prompt variable
-                    if "prompt" in var_name.lower() or "message" in var_name.lower():
+                    if "prompt" in var_name.lower() or "message" in var_name.lower() or "text" in var_name.lower() or "query" in var_name.lower() or "content" in var_name.lower() or "msg" in var_name.lower() or "input" in var_name.lower() or "user" in var_name.lower():
                         # Check if using f-string
                         if isinstance(node.value, ast.JoinedStr):
                             self.violations.append(
@@ -157,6 +161,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                                             source_tool="pyguard",
                                         )
                                     )
+                        # AIML011: Check for system prompt override patterns in string constants
+                        elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                            self._check_string_for_prompt_override(node.value.value, node)
         
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
@@ -207,6 +214,60 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                             source_tool="pyguard",
                         )
                         self.violations.append(violation)
+    
+    def _check_system_prompt_override(self, node: ast.Call) -> None:
+        """AIML011: Detect system prompt override attempts (delimiter injection)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for dangerous delimiter patterns in function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_prompt_override(arg.value, node)
+                    
+        # Also check for delimiter injection in keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_prompt_override(keyword.value.value, node)
+    
+    def _check_string_for_prompt_override(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains prompt override patterns."""
+        if not self.has_llm_framework:
+            return
+            
+        # Check for dangerous delimiter patterns in string literals
+        dangerous_patterns = [
+            "ignore previous instructions",
+            "ignore above",
+            "ignore all previous",
+            "new system message",
+            "system:",
+            "assistant:",
+            "you are now",
+            "forget everything",
+            "disregard previous",
+        ]
+        
+        lower_val = text.lower()
+        if any(pattern in lower_val for pattern in dangerous_patterns):
+            violation = RuleViolation(
+                rule_id="AIML011",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.CRITICAL,
+                message="System prompt override attempt detected: delimiter injection pattern",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
@@ -640,5 +701,19 @@ AIML_SECURITY_RULES = [
         owasp_mapping="LLM06",
         tags={"ai", "ml", "privacy", "federated"},
         references=["https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf"],
+    ),
+    Rule(
+        rule_id="AIML011",
+        name="system-prompt-override",
+        description="Detects system prompt override attempts via delimiter injection",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.CRITICAL,
+        message_template="System prompt override attempt: delimiter injection pattern detected",
+        explanation="Delimiter injection can allow attackers to override system prompts and manipulate LLM behavior",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "prompt", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
 ]
