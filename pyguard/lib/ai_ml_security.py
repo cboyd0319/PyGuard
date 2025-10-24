@@ -298,8 +298,23 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - 3D generation vulnerabilities (Point-E, Shap-E) - AIML478
 - Music generation risks (Jukebox, MusicLM) - AIML479
 - Audio generation injection (AudioLM, Whisper) - AIML480
+- CLIP contrastive learning poisoning - AIML481
+- ALIGN multimodal injection - AIML482
+- Flamingo few-shot manipulation - AIML483
+- BLIP-2 query injection - AIML484
+- GPT-4 Vision prompt attacks - AIML485
+- LLaVA instruction tuning risks - AIML486
+- MiniGPT-4 alignment bypass - AIML487
+- CoCa caption poisoning - AIML488
+- Audio-text alignment poisoning - AIML489
+- Video-text retrieval manipulation - AIML490
+- Speech-to-text injection - AIML491
+- Text-to-speech vulnerabilities - AIML492
+- Visual grounding attacks - AIML493
+- Embodied AI risks (robotics) - AIML494
+- Sensor fusion manipulation - AIML495
 
-Total Security Checks: 470 AI/ML rules (v0.8.2 - Phase 5.1 Complete: Generative AI Security)
+Total Security Checks: 485 AI/ML rules (v0.8.3 - Phase 5.2 Complete: Multimodal & Fusion Models)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -1862,6 +1877,54 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML480: Audio generation injection (AudioLM, Whisper)
         self._check_audio_generation_injection(node)
+        
+        # Phase 5.2: Multimodal & Fusion Models (15 checks - AIML481-495)
+        # Phase 5.2.1: Vision-Language Models (8 checks - AIML481-488)
+        # AIML481: CLIP contrastive learning poisoning
+        self._check_clip_contrastive_poisoning(node)
+        
+        # AIML482: ALIGN multimodal injection
+        self._check_align_multimodal_injection(node)
+        
+        # AIML483: Flamingo few-shot manipulation
+        self._check_flamingo_few_shot_manipulation(node)
+        
+        # AIML484: BLIP-2 query injection
+        self._check_blip2_query_injection(node)
+        
+        # AIML485: GPT-4 Vision prompt attacks
+        self._check_gpt4_vision_prompt_attacks(node)
+        
+        # AIML486: LLaVA instruction tuning risks
+        self._check_llava_instruction_tuning_risks(node)
+        
+        # AIML487: MiniGPT-4 alignment bypass
+        self._check_minigpt4_alignment_bypass(node)
+        
+        # AIML488: CoCa caption poisoning
+        self._check_coca_caption_poisoning(node)
+        
+        # Phase 5.2.2: Audio-Visual & Cross-Modal (7 checks - AIML489-495)
+        # AIML489: Audio-text alignment poisoning
+        self._check_audio_text_alignment_poisoning(node)
+        
+        # AIML490: Video-text retrieval manipulation
+        self._check_video_text_retrieval_manipulation(node)
+        
+        # AIML491: Speech-to-text injection
+        self._check_speech_to_text_injection(node)
+        
+        # AIML492: Text-to-speech vulnerabilities
+        self._check_text_to_speech_vulnerabilities(node)
+        
+        # AIML493: Visual grounding attacks
+        self._check_visual_grounding_attacks(node)
+        
+        # AIML494: Embodied AI risks (robotics)
+        self._check_embodied_ai_risks(node)
+        
+        # AIML495: Sensor fusion manipulation
+        self._check_sensor_fusion_manipulation(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -15586,6 +15649,443 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     )
                     self.violations.append(violation)
 
+    # Phase 5.2: Multimodal & Fusion Models Detection Methods (AIML481-AIML495)
+    
+    def _check_clip_contrastive_poisoning(self, node: ast.Call) -> None:
+        """AIML481: Detect CLIP contrastive learning poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for CLIP usage without integrity verification
+        if any(x in line_text for x in ["clip", "contrastive"]):
+            if any(x in line_text for x in ["model", "encode", "embed"]):
+                # Check for integrity verification
+                has_verification = any(x in line_text for x in ["verify", "validate", "check_integrity"])
+                if not has_verification:
+                    violation = RuleViolation(
+                        rule_id="AIML481",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="CLIP contrastive learning poisoning - validate model integrity and embedding consistency",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_align_multimodal_injection(self, node: ast.Call) -> None:
+        """AIML482: Detect ALIGN multimodal injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ALIGN usage without input validation
+        if any(x in line_text for x in ["align", "multimodal"]):
+            if any(x in line_text for x in ["encode", "process", "embed"]):
+                # Check for input validation
+                has_validation = any(x in line_text for x in ["validate", "sanitize", "filter"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML482",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="ALIGN multimodal injection - validate and sanitize image-text pairs before processing",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_flamingo_few_shot_manipulation(self, node: ast.Call) -> None:
+        """AIML483: Detect Flamingo few-shot manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Flamingo usage without few-shot validation
+        if any(x in line_text for x in ["flamingo", "few_shot", "few-shot"]):
+            if any(x in line_text for x in ["prompt", "example", "demo"]):
+                # Check for example validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "check"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML483",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Flamingo few-shot manipulation - validate few-shot examples to prevent context poisoning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_blip2_query_injection(self, node: ast.Call) -> None:
+        """AIML484: Detect BLIP-2 query injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for BLIP-2 usage without query validation
+        if any(x in line_text for x in ["blip", "blip2", "blip-2"]):
+            if any(x in line_text for x in ["query", "question", "generate"]):
+                # Check for query validation
+                has_validation = any(x in line_text for x in ["validate", "sanitize", "filter"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML484",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="BLIP-2 query injection - sanitize queries and validate Q-Former inputs",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_gpt4_vision_prompt_attacks(self, node: ast.Call) -> None:
+        """AIML485: Detect GPT-4 Vision prompt attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for GPT-4 Vision usage without image validation
+        if any(x in line_text for x in ["gpt-4-vision", "gpt4v", "vision"]):
+            if any(x in line_text for x in ["image", "visual", "picture"]):
+                # Check for image validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "scan"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML485",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="GPT-4 Vision prompt attack - validate images and text prompts to prevent visual jailbreaks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_llava_instruction_tuning_risks(self, node: ast.Call) -> None:
+        """AIML486: Detect LLaVA instruction tuning risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for LLaVA usage without instruction validation
+        if any(x in line_text for x in ["llava", "llava-"]):
+            if any(x in line_text for x in ["instruct", "train", "finetune"]):
+                # Check for instruction validation
+                has_validation = any(x in line_text for x in ["validate", "filter", "sanitize"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML486",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="LLaVA instruction tuning risks - validate visual instructions to prevent poisoning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_minigpt4_alignment_bypass(self, node: ast.Call) -> None:
+        """AIML487: Detect MiniGPT-4 alignment bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for MiniGPT-4 usage without alignment checks
+        if any(x in line_text for x in ["minigpt", "mini-gpt"]):
+            if any(x in line_text for x in ["generate", "response", "answer"]):
+                # Check for alignment verification
+                has_alignment_check = any(x in line_text for x in ["align", "safety", "guard"])
+                if not has_alignment_check:
+                    violation = RuleViolation(
+                        rule_id="AIML487",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="MiniGPT-4 alignment bypass - implement safety guardrails and alignment verification",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-863",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_coca_caption_poisoning(self, node: ast.Call) -> None:
+        """AIML488: Detect CoCa caption poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for CoCa usage without caption validation
+        if any(x in line_text for x in ["coca", "caption"]):
+            if any(x in line_text for x in ["generate", "create", "produce"]):
+                # Check for caption validation
+                has_validation = any(x in line_text for x in ["validate", "filter", "sanitize"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML488",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="CoCa caption poisoning - validate generated captions to prevent content injection",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_audio_text_alignment_poisoning(self, node: ast.Call) -> None:
+        """AIML489: Detect audio-text alignment poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for audio-text alignment without validation
+        if any(x in line_text for x in ["audio", "speech"]):
+            if any(x in line_text for x in ["text", "transcript", "align"]):
+                # Check for alignment validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "check"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML489",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Audio-text alignment poisoning - validate audio-text correspondence to prevent manipulation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_video_text_retrieval_manipulation(self, node: ast.Call) -> None:
+        """AIML490: Detect video-text retrieval manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for video-text retrieval without validation
+        if any(x in line_text for x in ["video", "clip"]):
+            if any(x in line_text for x in ["retrieval", "search", "query"]):
+                # Check for retrieval validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "sanitize"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML490",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Video-text retrieval manipulation - validate video frames and temporal alignment",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_speech_to_text_injection(self, node: ast.Call) -> None:
+        """AIML491: Detect speech-to-text injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for speech-to-text without audio validation
+        if any(x in line_text for x in ["speech_to_text", "transcribe", "asr"]):
+            if any(x in line_text for x in ["audio", "wav", "mp3"]):
+                # Check for audio validation
+                has_validation = any(x in line_text for x in ["validate", "sanitize", "filter"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML491",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Speech-to-text injection - validate audio inputs to prevent adversarial audio attacks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_text_to_speech_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML492: Detect text-to-speech vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for text-to-speech without input validation
+        if any(x in line_text for x in ["text_to_speech", "tts", "synthesize"]):
+            if any(x in line_text for x in ["voice", "audio", "speak"]):
+                # Check for text validation
+                has_validation = any(x in line_text for x in ["validate", "sanitize", "filter"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML492",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Text-to-speech vulnerabilities - validate text inputs and prevent voice cloning attacks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_visual_grounding_attacks(self, node: ast.Call) -> None:
+        """AIML493: Detect visual grounding attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for visual grounding without validation
+        if any(x in line_text for x in ["grounding", "localize", "refer"]):
+            if any(x in line_text for x in ["visual", "image", "object"]):
+                # Check for grounding validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "check"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML493",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Visual grounding attacks - validate object localization and referring expressions",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_embodied_ai_risks(self, node: ast.Call) -> None:
+        """AIML494: Detect embodied AI (robotics) security risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for robotics/embodied AI without safety checks
+        if any(x in line_text for x in ["robot", "embodied", "control"]):
+            if any(x in line_text for x in ["action", "command", "execute"]):
+                # Check for safety validation
+                has_safety = any(x in line_text for x in ["safety", "validate", "verify", "check"])
+                if not has_safety:
+                    violation = RuleViolation(
+                        rule_id="AIML494",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Embodied AI risks - implement safety checks and validate robot control commands",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_sensor_fusion_manipulation(self, node: ast.Call) -> None:
+        """AIML495: Detect sensor fusion manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for sensor fusion without integrity checks
+        if any(x in line_text for x in ["sensor", "fusion", "fuse"]):
+            if any(x in line_text for x in ["data", "input", "merge"]):
+                # Check for sensor validation
+                has_validation = any(x in line_text for x in ["validate", "verify", "consistency"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML495",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Sensor fusion manipulation - validate sensor data consistency and implement integrity checks",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -16957,4 +17457,24 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML478", name="3d-generation-vulnerabilities", description="3D generation vulnerabilities (Point-E, Shap-E)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="3D generation - validate generated 3D models for malicious content", explanation="3D generation applications should validate outputs for embedded malicious content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "3d-generation", "point-e", "shap-e", "validation"}, references=["https://arxiv.org/abs/2212.08751", "https://github.com/openai/shap-e"]),
     Rule(rule_id="AIML479", name="music-generation-risks", description="Music generation risks (Jukebox, MusicLM)", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Music generation - implement copyright protection and content filtering", explanation="Music generation applications should filter for copyrighted content and implement watermarking", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="LLM09", tags={"ai", "music-generation", "jukebox", "musiclm", "copyright"}, references=["https://arxiv.org/abs/2005.00341", "https://google-research.github.io/seanet/musiclm/examples/"]),
     Rule(rule_id="AIML480", name="audio-generation-injection", description="Audio generation injection (AudioLM, Whisper)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Audio generation injection - validate inputs and sanitize generated audio", explanation="Audio generation applications should validate inputs and sanitize outputs to prevent malicious audio generation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "audio-generation", "audiolm", "whisper", "injection"}, references=["https://arxiv.org/abs/2209.03143", "https://github.com/openai/whisper"]),
+    
+    # Phase 5.2: Multimodal & Fusion Models (15 rules - AIML481-495)
+    # Phase 5.2.1: Vision-Language Models (8 rules - AIML481-488)
+    Rule(rule_id="AIML481", name="clip-contrastive-poisoning", description="CLIP contrastive learning poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="CLIP contrastive learning poisoning - validate model integrity and embedding consistency", explanation="CLIP models should be validated for contrastive learning poisoning attacks that manipulate image-text embeddings", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "multimodal", "clip", "contrastive", "poisoning"}, references=["https://arxiv.org/abs/2103.00020", "https://github.com/openai/CLIP"]),
+    Rule(rule_id="AIML482", name="align-multimodal-injection", description="ALIGN multimodal injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ALIGN multimodal injection - validate and sanitize image-text pairs before processing", explanation="ALIGN models should validate image-text pairs to prevent noisy data injection and alignment manipulation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "multimodal", "align", "injection", "validation"}, references=["https://arxiv.org/abs/2102.05918"]),
+    Rule(rule_id="AIML483", name="flamingo-few-shot-manipulation", description="Flamingo few-shot manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Flamingo few-shot manipulation - validate few-shot examples to prevent context poisoning", explanation="Flamingo models should validate few-shot visual examples to prevent context manipulation attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="LLM01", tags={"ai", "multimodal", "flamingo", "few-shot", "manipulation"}, references=["https://arxiv.org/abs/2204.14198"]),
+    Rule(rule_id="AIML484", name="blip2-query-injection", description="BLIP-2 query injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="BLIP-2 query injection - sanitize queries and validate Q-Former inputs", explanation="BLIP-2 models should sanitize queries and validate Q-Former inputs to prevent query transformer injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "multimodal", "blip2", "query", "injection"}, references=["https://arxiv.org/abs/2301.12597"]),
+    Rule(rule_id="AIML485", name="gpt4-vision-prompt-attacks", description="GPT-4 Vision prompt attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="GPT-4 Vision prompt attack - validate images and text prompts to prevent visual jailbreaks", explanation="GPT-4 Vision applications should validate images and text prompts to prevent visual prompt injection and jailbreak attempts", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "multimodal", "gpt4-vision", "prompt", "jailbreak"}, references=["https://openai.com/research/gpt-4v-system-card", "https://arxiv.org/abs/2311.16732"]),
+    Rule(rule_id="AIML486", name="llava-instruction-tuning-risks", description="LLaVA instruction tuning risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LLaVA instruction tuning risks - validate visual instructions to prevent poisoning", explanation="LLaVA models should validate visual instruction data to prevent instruction tuning poisoning attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "multimodal", "llava", "instruction", "tuning"}, references=["https://arxiv.org/abs/2304.08485", "https://llava-vl.github.io/"]),
+    Rule(rule_id="AIML487", name="minigpt4-alignment-bypass", description="MiniGPT-4 alignment bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="MiniGPT-4 alignment bypass - implement safety guardrails and alignment verification", explanation="MiniGPT-4 applications should implement safety guardrails to prevent alignment bypass attempts", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-863", owasp_mapping="LLM01", tags={"ai", "multimodal", "minigpt4", "alignment", "bypass"}, references=["https://arxiv.org/abs/2304.10592", "https://minigpt-4.github.io/"]),
+    Rule(rule_id="AIML488", name="coca-caption-poisoning", description="CoCa caption poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="CoCa caption poisoning - validate generated captions to prevent content injection", explanation="CoCa models should validate generated captions to prevent caption poisoning and content injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="ML09", tags={"ai", "multimodal", "coca", "caption", "poisoning"}, references=["https://arxiv.org/abs/2205.01917"]),
+    
+    # Phase 5.2.2: Audio-Visual & Cross-Modal (7 rules - AIML489-495)
+    Rule(rule_id="AIML489", name="audio-text-alignment-poisoning", description="Audio-text alignment poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Audio-text alignment poisoning - validate audio-text correspondence to prevent manipulation", explanation="Audio-text models should validate alignment to prevent speech embedding poisoning attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "multimodal", "audio", "text", "alignment"}, references=["https://arxiv.org/abs/2106.07889"]),
+    Rule(rule_id="AIML490", name="video-text-retrieval-manipulation", description="Video-text retrieval manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Video-text retrieval manipulation - validate video frames and temporal alignment", explanation="Video-text retrieval systems should validate temporal alignment to prevent frame injection attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "multimodal", "video", "text", "retrieval"}, references=["https://arxiv.org/abs/2112.01514"]),
+    Rule(rule_id="AIML491", name="speech-to-text-injection", description="Speech-to-text injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Speech-to-text injection - validate audio inputs to prevent adversarial audio attacks", explanation="Speech-to-text systems should validate audio inputs to prevent adversarial audio and ASR poisoning", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="ML01", tags={"ai", "speech", "asr", "injection", "adversarial"}, references=["https://arxiv.org/abs/1801.01944", "https://github.com/carlini/audio_adversarial_examples"]),
+    Rule(rule_id="AIML492", name="text-to-speech-vulnerabilities", description="Text-to-speech vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Text-to-speech vulnerabilities - validate text inputs and prevent voice cloning attacks", explanation="Text-to-speech systems should validate inputs to prevent prosody manipulation and voice cloning", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "tts", "voice", "cloning", "synthesis"}, references=["https://arxiv.org/abs/2010.05646"]),
+    Rule(rule_id="AIML493", name="visual-grounding-attacks", description="Visual grounding attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Visual grounding attacks - validate object localization and referring expressions", explanation="Visual grounding models should validate object localization to prevent spatial reasoning attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "visual", "grounding", "localization", "attack"}, references=["https://arxiv.org/abs/1808.08089"]),
+    Rule(rule_id="AIML494", name="embodied-ai-risks", description="Embodied AI risks (robotics)", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Embodied AI risks - implement safety checks and validate robot control commands", explanation="Embodied AI systems should implement safety checks to prevent malicious control commands and sensor spoofing", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML09", tags={"ai", "robotics", "embodied", "safety", "control"}, references=["https://arxiv.org/abs/2210.06217", "https://www.nist.gov/itl/ai-risk-management-framework"]),
+    Rule(rule_id="AIML495", name="sensor-fusion-manipulation", description="Sensor fusion manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Sensor fusion manipulation - validate sensor data consistency and implement integrity checks", explanation="Sensor fusion systems should validate multi-sensor data consistency to prevent cross-sensor attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "sensor", "fusion", "manipulation", "integrity"}, references=["https://arxiv.org/abs/1903.03921"]),
 ]

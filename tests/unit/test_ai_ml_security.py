@@ -523,10 +523,11 @@ class TestAIMLSecurityRules:
         Phase 4.3: 20 checks (AIML431-AIML450) - Model Registry & Versioning Security
         Phase 4.4: 10 checks (AIML451-AIML460) - Cloud & Infrastructure Security
         Phase 5.1: 20 checks (AIML461-AIML480) - Generative AI Security
+        Phase 5.2: 15 checks (AIML481-AIML495) - Multimodal & Fusion Models
         
-        Total: 470 checks (v0.8.2 - Phase 5.1 Complete: Generative AI Security)
+        Total: 485 checks (v0.8.3 - Phase 5.2 Complete: Multimodal & Fusion Models)
         """
-        assert len(AIML_SECURITY_RULES) == 470  # Updated for Phase 5.1 (20 new generative AI security checks)
+        assert len(AIML_SECURITY_RULES) == 485  # Updated for Phase 5.2 (15 new multimodal & fusion model checks)
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -2374,4 +2375,320 @@ audio = audiolm.synthesize(sanitized_text)
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML480" for v in violations)
+
+
+# Phase 5.2: Multimodal & Fusion Models Tests (AIML481-495)
+
+class TestAIML481CLIPContrastivePoisoning:
+    """Test CLIP contrastive learning poisoning detection."""
+
+    def test_detect_clip_without_verification(self):
+        """Detect CLIP usage without model verification."""
+        code = """
+image_features = clip.encode_image(image)
+text_features = clip.encode_text(text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML481" for v in violations)
+
+    def test_safe_clip_with_verification(self):
+        """CLIP with verification should not trigger."""
+        code = """
+verify_model_integrity(clip_model)
+image_features = clip.encode_image(image)
+text_features = clip.encode_text(text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML481" for v in violations)
+
+
+class TestAIML482ALIGNMultimodalInjection:
+    """Test ALIGN multimodal injection detection."""
+
+    def test_detect_align_without_validation(self):
+        """Detect ALIGN usage without input validation."""
+        code = """
+embedding = align.encode(image, text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML482" for v in violations)
+
+    def test_safe_align_with_validation(self):
+        """ALIGN with validation should not trigger."""
+        code = """
+validated_text = validate_input(text)
+embedding = align.encode(image, validated_text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML482" for v in violations)
+
+
+class TestAIML483FlamingoFewShotManipulation:
+    """Test Flamingo few-shot manipulation detection."""
+
+    def test_detect_flamingo_without_example_validation(self):
+        """Detect Flamingo usage without example validation."""
+        code = """
+response = flamingo.generate(prompt, examples=few_shot_examples)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML483" for v in violations)
+
+    def test_safe_flamingo_with_validation(self):
+        """Flamingo with validation should not trigger."""
+        code = """
+validated_examples = validate_examples(few_shot_examples)
+response = flamingo.generate(prompt, examples=validated_examples)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML483" for v in violations)
+
+
+class TestAIML484BLIP2QueryInjection:
+    """Test BLIP-2 query injection detection."""
+
+    def test_detect_blip2_without_query_sanitization(self):
+        """Detect BLIP-2 usage without query sanitization."""
+        code = """
+answer = blip2.generate_answer(image, query=user_query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML484" for v in violations)
+
+    def test_safe_blip2_with_sanitization(self):
+        """BLIP-2 with sanitization should not trigger."""
+        code = """
+sanitized_query = sanitize_query(user_query)
+answer = blip2.generate_answer(image, query=sanitized_query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML484" for v in violations)
+
+
+class TestAIML485GPT4VisionPromptAttacks:
+    """Test GPT-4 Vision prompt attack detection."""
+
+    def test_detect_gpt4v_without_image_validation(self):
+        """Detect GPT-4 Vision usage without image validation."""
+        code = """
+response = gpt4v.chat(messages=[{"role": "user", "content": [{"type": "image", "image": image}]}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML485" for v in violations)
+
+    def test_safe_gpt4v_with_validation(self):
+        """GPT-4 Vision with validation should not trigger."""
+        code = """
+validated_image = validate_image(image)
+response = gpt4v.chat(messages=[{"role": "user", "content": [{"type": "image", "image": validated_image}]}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML485" for v in violations)
+
+
+class TestAIML486LLaVAInstructionTuningRisks:
+    """Test LLaVA instruction tuning risks detection."""
+
+    def test_detect_llava_without_instruction_validation(self):
+        """Detect LLaVA usage without instruction validation."""
+        code = """
+model = llava.finetune(dataset, instruction_data=user_instructions)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML486" for v in violations)
+
+    def test_safe_llava_with_validation(self):
+        """LLaVA with validation should not trigger."""
+        code = """
+filtered_instructions = filter_instructions(user_instructions)
+model = llava.finetune(dataset, instruction_data=filtered_instructions)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML486" for v in violations)
+
+
+class TestAIML487MiniGPT4AlignmentBypass:
+    """Test MiniGPT-4 alignment bypass detection."""
+
+    def test_detect_minigpt4_without_guardrails(self):
+        """Detect MiniGPT-4 usage without safety guardrails."""
+        code = """
+response = minigpt4.generate(prompt, image=image)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML487" for v in violations)
+
+    def test_safe_minigpt4_with_guardrails(self):
+        """MiniGPT-4 with guardrails should not trigger."""
+        code = """
+response = minigpt4.generate(prompt, image=image, safety_filter=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML487" for v in violations)
+
+
+class TestAIML488CoCaCaptionPoisoning:
+    """Test CoCa caption poisoning detection."""
+
+    def test_detect_coca_without_caption_validation(self):
+        """Detect CoCa usage without caption validation."""
+        code = """
+caption = coca.generate_caption(image)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML488" for v in violations)
+
+    def test_safe_coca_with_validation(self):
+        """CoCa with validation should not trigger."""
+        code = """
+caption = coca.generate_caption(image)
+validated_caption = validate_caption(caption)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML488" for v in violations)
+
+
+class TestAIML489AudioTextAlignmentPoisoning:
+    """Test audio-text alignment poisoning detection."""
+
+    def test_detect_audio_text_without_validation(self):
+        """Detect audio-text alignment without validation."""
+        code = """
+alignment = audio_text_model.align(audio, text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML489" for v in violations)
+
+    def test_safe_audio_text_with_validation(self):
+        """Audio-text alignment with validation should not trigger."""
+        code = """
+verified_alignment = verify_audio_text_alignment(audio, text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML489" for v in violations)
+
+
+class TestAIML490VideoTextRetrievalManipulation:
+    """Test video-text retrieval manipulation detection."""
+
+    def test_detect_video_retrieval_without_validation(self):
+        """Detect video-text retrieval without validation."""
+        code = """
+results = video_search.query(text_query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML490" for v in violations)
+
+    def test_safe_video_retrieval_with_validation(self):
+        """Video-text retrieval with validation should not trigger."""
+        code = """
+sanitized_query = sanitize_query(text_query)
+results = video_search.query(sanitized_query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML490" for v in violations)
+
+
+class TestAIML491SpeechToTextInjection:
+    """Test speech-to-text injection detection."""
+
+    def test_detect_speech_to_text_without_validation(self):
+        """Detect speech-to-text without audio validation."""
+        code = """
+transcript = speech_to_text(audio_file)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML491" for v in violations)
+
+    def test_safe_speech_to_text_with_validation(self):
+        """Speech-to-text with validation should not trigger."""
+        code = """
+validated_audio = validate_audio(audio_file)
+transcript = speech_to_text(validated_audio)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML491" for v in violations)
+
+
+class TestAIML492TextToSpeechVulnerabilities:
+    """Test text-to-speech vulnerabilities detection."""
+
+    def test_detect_tts_without_validation(self):
+        """Detect text-to-speech without input validation."""
+        code = """
+audio = tts.synthesize(user_text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML492" for v in violations)
+
+    def test_safe_tts_with_validation(self):
+        """Text-to-speech with validation should not trigger."""
+        code = """
+sanitized_text = sanitize_text(user_text)
+audio = tts.synthesize(sanitized_text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML492" for v in violations)
+
+
+class TestAIML493VisualGroundingAttacks:
+    """Test visual grounding attack detection."""
+
+    def test_detect_visual_grounding_without_validation(self):
+        """Detect visual grounding without validation."""
+        code = """
+bbox = visual_grounding_model.localize(image, referring_expression)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML493" for v in violations)
+
+    def test_safe_visual_grounding_with_validation(self):
+        """Visual grounding with validation should not trigger."""
+        code = """
+verified_bbox = verify_localization(image, referring_expression)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML493" for v in violations)
+
+
+class TestAIML494EmbodiedAIRisks:
+    """Test embodied AI risks detection."""
+
+    def test_detect_robot_control_without_safety(self):
+        """Detect robot control without safety checks."""
+        code = """
+robot.execute_action(user_command)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML494" for v in violations)
+
+    def test_safe_robot_control_with_safety(self):
+        """Robot control with safety checks should not trigger."""
+        code = """
+validated_command = safety_check(user_command)
+robot.execute_action(validated_command)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML494" for v in violations)
+
+
+class TestAIML495SensorFusionManipulation:
+    """Test sensor fusion manipulation detection."""
+
+    def test_detect_sensor_fusion_without_validation(self):
+        """Detect sensor fusion without consistency checks."""
+        code = """
+fused_data = sensor_fusion.fuse([lidar_data, camera_data, radar_data])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML495" for v in violations)
+
+    def test_safe_sensor_fusion_with_validation(self):
+        """Sensor fusion with validation should not trigger."""
+        code = """
+validated_data = validate_sensor_consistency([lidar_data, camera_data, radar_data])
+fused_data = sensor_fusion.fuse(validated_data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML495" for v in violations)
 
