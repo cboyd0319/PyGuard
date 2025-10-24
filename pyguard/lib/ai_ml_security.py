@@ -6,8 +6,13 @@ model serialization risks, training data poisoning, and GPU memory leakage.
 
 Security Areas Covered:
 - Prompt injection in LLM applications
-- System prompt override attempts (delimiter injection)
-- Unicode/homoglyph injection (zero-width characters, bi-directional overrides)
+- System prompt override attempts (delimiter injection) - AIML011
+- Unicode/homoglyph injection (zero-width characters, bi-directional overrides) - AIML012
+- Role confusion attacks (DAN mode, jailbreaks) - AIML013
+- Instruction concatenation bypasses - AIML014
+- Multi-language prompt injection (non-English) - AIML015
+- Markdown injection in prompts - AIML016
+- XML/JSON payload injection - AIML017
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -18,7 +23,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 12 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
+Total Security Checks: 17 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -101,6 +106,21 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML012: Unicode/homoglyph injection
         self._check_unicode_injection(node)
         
+        # AIML013: Role confusion attacks (DAN mode)
+        self._check_role_confusion(node)
+        
+        # AIML014: Instruction concatenation bypasses
+        self._check_instruction_concatenation(node)
+        
+        # AIML015: Multi-language prompt injection
+        self._check_multilanguage_injection(node)
+        
+        # AIML016: Markdown injection in prompts
+        self._check_markdown_injection(node)
+        
+        # AIML017: XML/JSON payload injection
+        self._check_payload_injection(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -165,10 +185,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                                             source_tool="pyguard",
                                         )
                                     )
-                        # AIML011: Check for system prompt override patterns in string constants
+                        # AIML011-AIML017: Check for various prompt injection patterns in string constants
                         elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                             self._check_string_for_prompt_override(node.value.value, node)
                             self._check_string_for_unicode_injection(node.value.value, node)
+                            self._check_string_for_role_confusion(node.value.value, node)
+                            self._check_string_for_instruction_concatenation(node.value.value, node)
+                            self._check_string_for_multilanguage_injection(node.value.value, node)
+                            self._check_string_for_markdown_injection(node.value.value, node)
+                            self._check_string_for_payload_injection(node.value.value, node)
         
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
@@ -316,6 +341,317 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 category=RuleCategory.SECURITY,
                 severity=RuleSeverity.HIGH,
                 message="Unicode injection detected: suspicious zero-width or bi-directional characters",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_role_confusion(self, node: ast.Call) -> None:
+        """AIML013: Detect role confusion attacks (DAN mode, jailbreaks)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_role_confusion(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_role_confusion(keyword.value.value, node)
+    
+    def _check_string_for_role_confusion(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains role confusion patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Role confusion patterns - DAN mode, jailbreaks
+        role_confusion_patterns = [
+            "dan mode",
+            "do anything now",
+            "developer mode",
+            "jailbreak",
+            "unrestricted mode",
+            "act as if",
+            "pretend you are",
+            "simulate being",
+            "roleplay as",
+            "you are now a",
+            "switch to",
+            "enable dev mode",
+            "unlock",
+        ]
+        
+        lower_text = text.lower()
+        if any(pattern in lower_text for pattern in role_confusion_patterns):
+            violation = RuleViolation(
+                rule_id="AIML013",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.CRITICAL,
+                message="Role confusion attack detected: DAN mode or jailbreak attempt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_instruction_concatenation(self, node: ast.Call) -> None:
+        """AIML014: Detect instruction concatenation bypasses."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_instruction_concatenation(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_instruction_concatenation(keyword.value.value, node)
+    
+    def _check_string_for_instruction_concatenation(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains instruction concatenation patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Instruction concatenation patterns - multiple newlines or delimiter sequences
+        concatenation_indicators = [
+            "\n\n\n",  # Multiple newlines
+            "---",     # Delimiter sequence
+            "###",     # Markdown header delimiters
+            "===",     # Another delimiter
+            "***",     # Another delimiter
+        ]
+        
+        # Also check for instruction keywords after delimiters
+        instruction_keywords = ["new instruction:", "new task:", "new prompt:", "override:", "update:"]
+        
+        has_delimiter = any(delimiter in text for delimiter in concatenation_indicators)
+        has_instruction = any(keyword in text.lower() for keyword in instruction_keywords)
+        
+        if has_delimiter and has_instruction:
+            violation = RuleViolation(
+                rule_id="AIML014",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Instruction concatenation bypass detected: delimiter followed by instruction keywords",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_multilanguage_injection(self, node: ast.Call) -> None:
+        """AIML015: Detect multi-language prompt injection (non-English)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_multilanguage_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_multilanguage_injection(keyword.value.value, node)
+    
+    def _check_string_for_multilanguage_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains multi-language injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Common prompt injection phrases in other languages
+        multilang_patterns = [
+            # Chinese (Simplified)
+            "忽略以上",  # ignore above
+            "忽略之前",  # ignore previous
+            "新指令",    # new instruction
+            # Spanish (case-insensitive)
+            ("ignorar instrucciones anteriores", True),
+            ("nueva instrucción", True),
+            # French (case-insensitive)
+            ("ignorer les instructions précédentes", True),
+            ("nouvelle instruction", True),
+            # German (case-insensitive)
+            ("vorherige anweisungen ignorieren", True),
+            ("neue anweisung", True),
+            # Russian (Cyrillic)
+            "игнорировать предыдущие",
+            "новая инструкция",
+            # Japanese
+            "以前の指示を無視",
+            "新しい指示",
+            # Korean
+            "이전 지시 무시",
+            "새로운 지시",
+        ]
+        
+        lower_text = text.lower()
+        for pattern in multilang_patterns:
+            # Handle tuple patterns (pattern, case_insensitive)
+            if isinstance(pattern, tuple):
+                pattern_text, case_insensitive = pattern
+                if case_insensitive:
+                    if pattern_text.lower() in lower_text:
+                        matched = True
+                        break
+                else:
+                    if pattern_text in text:
+                        matched = True
+                        break
+            else:
+                # Direct string match (for non-Latin scripts)
+                if pattern in text:
+                    matched = True
+                    break
+        else:
+            matched = False
+        
+        if matched:
+            violation = RuleViolation(
+                rule_id="AIML015",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Multi-language prompt injection detected: non-English prompt manipulation attempt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_markdown_injection(self, node: ast.Call) -> None:
+        """AIML016: Detect Markdown injection in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_markdown_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_markdown_injection(keyword.value.value, node)
+    
+    def _check_string_for_markdown_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains Markdown injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Markdown patterns that could be used for injection
+        markdown_injection_patterns = [
+            "](javascript:",  # Markdown link with javascript protocol
+            "](data:",        # Markdown link with data protocol
+            "](file:",        # Markdown link with file protocol
+            "![",             # Image embedding
+            "<script",        # Script tag in markdown
+            "<iframe",        # Iframe tag in markdown
+            "```javascript",  # JavaScript code block
+            "```html",        # HTML code block
+        ]
+        
+        lower_text = text.lower()
+        if any(pattern in lower_text for pattern in markdown_injection_patterns):
+            violation = RuleViolation(
+                rule_id="AIML016",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Markdown injection detected: potentially malicious markdown constructs in prompt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_payload_injection(self, node: ast.Call) -> None:
+        """AIML017: Detect XML/JSON payload injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_payload_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_payload_injection(keyword.value.value, node)
+    
+    def _check_string_for_payload_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains XML/JSON payload injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # XML/JSON payload injection patterns
+        payload_patterns = [
+            "<system>",       # XML system tag
+            "</system>",      # XML system closing tag
+            "<instruction>",  # XML instruction tag
+            '"role":',        # JSON role field
+            '"system":',      # JSON system field
+            '{"role": "system"',  # JSON system role
+            "<assistant>",    # XML assistant tag
+            '"content":',     # JSON content field
+        ]
+        
+        lower_text = text.lower()
+        
+        # Count suspicious patterns
+        suspicious_count = sum(1 for pattern in payload_patterns if pattern in lower_text)
+        
+        # Flag if multiple payload indicators present
+        if suspicious_count >= 2:
+            violation = RuleViolation(
+                rule_id="AIML017",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="XML/JSON payload injection detected: structured payload manipulation in prompt",
                 line_number=node.lineno,
                 column=node.col_offset,
                 end_line_number=getattr(node, "end_lineno", node.lineno),
