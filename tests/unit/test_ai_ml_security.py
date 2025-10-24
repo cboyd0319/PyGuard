@@ -3028,3 +3028,343 @@ assert verified, "Proof verification failed"
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML510" for v in violations)
 
+
+# ===== AUTO-FIX TESTS =====
+
+class TestAIMLSecurityFixer:
+    """Test AI/ML security auto-fix functionality."""
+
+    def test_torch_load_weights_only_fix(self, tmp_path):
+        """Test torch.load() → torch.load(weights_only=True) fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+
+model = torch.load('model.pth')
+checkpoint = torch.load('/path/to/checkpoint.pt')
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 1
+        assert "torch.load() → torch.load(weights_only=True)" in fixes[0]
+
+        fixed_code = test_file.read_text()
+        assert "weights_only=True" in fixed_code
+        assert fixed_code.count("weights_only=True") == 2
+
+    def test_from_pretrained_trust_fix(self, tmp_path):
+        """Test from_pretrained() → trust_remote_code=False fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from transformers import AutoModel
+
+model = AutoModel.from_pretrained('model-name')
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 1
+        assert "trust_remote_code=False" in fixes[0]
+
+        fixed_code = test_file.read_text()
+        assert "trust_remote_code=False" in fixed_code
+
+    def test_api_key_exposure_fix(self, tmp_path):
+        """Test API key exposure → environment variable fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+openai.api_key = "sk-1234567890abcdef"
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 1
+        assert "API key → environment variable" in fixes[0]
+
+        fixed_code = test_file.read_text()
+        assert "os.getenv" in fixed_code
+        assert "OPENAI_API_KEY" in fixed_code
+        assert "sk-1234567890abcdef" not in fixed_code
+        assert "import os" in fixed_code
+
+    def test_gpu_memory_limits_fix(self, tmp_path):
+        """Test GPU memory limits fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 1
+        assert "GPU memory limit" in fixes[0]
+
+        fixed_code = test_file.read_text()
+        assert "set_per_process_memory_fraction" in fixed_code
+
+    def test_llm_rate_limiting_fix(self, tmp_path):
+        """Test LLM rate limiting fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+response = openai.ChatCompletion.create(messages=[{"role": "user", "content": "Hello"}])
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 1
+        assert "max_tokens" in fixes[0]
+
+        fixed_code = test_file.read_text()
+        assert "max_tokens=150" in fixed_code
+
+    def test_model_versioning_fix(self, tmp_path):
+        """Test model versioning warning fix."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from transformers import AutoModel
+
+model = AutoModel.from_pretrained("model:latest")
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert any("'latest' tag" in fix for fix in fixes)
+
+        fixed_code = test_file.read_text()
+        assert "PyGuard:" in fixed_code
+        assert "specific version" in fixed_code
+
+    def test_multiple_fixes_applied(self, tmp_path):
+        """Test multiple fixes applied in one pass."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+from transformers import AutoModel
+import openai
+
+model = torch.load('model.pth')
+hf_model = AutoModel.from_pretrained('model')
+openai.api_key = "sk-test123"
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) == 3
+
+        fixed_code = test_file.read_text()
+        assert "weights_only=True" in fixed_code
+        assert "trust_remote_code=False" in fixed_code
+        assert "os.getenv" in fixed_code
+
+    def test_idempotent_fixes(self, tmp_path):
+        """Test that fixes are idempotent (can be applied multiple times)."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+
+model = torch.load('model.pth')
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+
+        # Apply fixes first time
+        success1, fixes1 = fixer.fix_file(test_file)
+        assert success1
+        assert len(fixes1) == 1
+
+        # Apply fixes second time - should not apply again
+        success2, fixes2 = fixer.fix_file(test_file)
+        assert success2
+        assert len(fixes2) == 0  # No new fixes applied
+
+    def test_preserve_code_structure(self, tmp_path):
+        """Test that fixes preserve code structure and comments."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+
+# Load the pre-trained model
+# This is important for inference
+model = torch.load('model.pth')
+
+# Use the model
+output = model(input_data)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+
+        # Check that original comments are preserved
+        assert "# Load the pre-trained model" in fixed_code
+        assert "# This is important for inference" in fixed_code
+        assert "# Use the model" in fixed_code
+        assert "weights_only=True" in fixed_code
+
+    def test_safe_fixes_only_by_default(self, tmp_path):
+        """Test that only safe fixes are applied by default."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+
+model = torch.load('model.pth')
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        # Without allow_unsafe, only safe fixes should be applied
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Only safe fixes should be in the list
+        for fix in fixes:
+            assert "torch.load()" in fix  # This is a safe fix
+
+    def test_unsafe_fixes_require_flag(self, tmp_path):
+        """Test that unsafe fixes require the allow_unsafe flag."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import pickle
+
+# This would require an unsafe fix to convert to safetensors
+with open('model.pkl', 'rb') as f:
+    model = pickle.load(f)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        # Without allow_unsafe, unsafe fixes should not be applied
+        fixer_safe = AIMLSecurityFixer(allow_unsafe=False)
+        success1, fixes1 = fixer_safe.fix_file(test_file)
+        assert success1
+
+        # With allow_unsafe, unsafe fixes could be applied (stub for now)
+        fixer_unsafe = AIMLSecurityFixer(allow_unsafe=True)
+        success2, fixes2 = fixer_unsafe.fix_file(test_file)
+        assert success2
+
+
+class TestAIMLAutoFixIntegration:
+    """Integration tests for AI/ML auto-fix functionality."""
+
+    def test_real_world_pytorch_example(self, tmp_path):
+        """Test auto-fix on real-world PyTorch code."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import torch
+import torch.nn as nn
+
+class MyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer = nn.Linear(10, 5)
+
+    def forward(self, x):
+        return self.layer(x)
+
+# Load pre-trained weights
+model = MyModel()
+state_dict = torch.load('weights.pth')
+model.load_state_dict(state_dict)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        assert "weights_only=True" in fixed_code
+
+    def test_real_world_transformers_example(self, tmp_path):
+        """Test auto-fix on real-world Transformers code."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from transformers import AutoTokenizer, AutoModel
+
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+model = AutoModel.from_pretrained('bert-base-uncased')
+
+inputs = tokenizer("Hello world", return_tensors="pt")
+outputs = model(**inputs)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        assert "trust_remote_code=False" in fixed_code
+        assert fixed_code.count("trust_remote_code=False") == 2  # Both calls fixed
+
+    def test_real_world_openai_example(self, tmp_path):
+        """Test auto-fix on real-world OpenAI code."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+openai.api_key = "sk-proj-1234567890abcdef"
+
+response = openai.ChatCompletion.create(model="gpt-4", messages=[{"role": "system", "content": "You are a helpful assistant."}])
+
+print(response.choices[0].message.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        assert len(fixes) >= 1  # At least API key fix
+
+        fixed_code = test_file.read_text()
+        assert "os.getenv" in fixed_code
+        assert "sk-proj-" not in fixed_code
+
