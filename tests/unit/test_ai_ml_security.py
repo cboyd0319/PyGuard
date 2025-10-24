@@ -507,14 +507,17 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 20 AI/ML security rules are registered."""
-        assert len(AIML_SECURITY_RULES) == 20
+        """Verify all 35 AI/ML security rules are registered."""
+        assert len(AIML_SECURITY_RULES) == 35
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
             "AIML006", "AIML007", "AIML008", "AIML009", "AIML010",
             "AIML011", "AIML012", "AIML023", "AIML024", "AIML025",
-            "AIML026", "AIML027", "AIML028", "AIML029", "AIML030"
+            "AIML026", "AIML027", "AIML028", "AIML029", "AIML030",
+            "AIML031", "AIML032", "AIML033", "AIML034", "AIML035",
+            "AIML036", "AIML037", "AIML038", "AIML039", "AIML040",
+            "AIML041", "AIML042", "AIML043", "AIML044", "AIML045"
         ]
         actual_ids = [rule.rule_id for rule in AIML_SECURITY_RULES]
         
@@ -870,6 +873,170 @@ openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML030" for v in violations)
+
+
+class TestAIML031To045IndirectInjection:
+    """Test indirect prompt injection detection (AIML031-AIML045)."""
+    
+    def test_url_based_injection(self):
+        """AIML031: Detect URL-based injection."""
+        code = """
+import openai
+import requests
+content = requests.get("http://example.com").text
+openai.ChatCompletion.create(messages=[{"role": "user", "content": content}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML031" for v in violations)
+    
+    def test_document_poisoning(self):
+        """AIML032: Detect document poisoning."""
+        code = """
+import openai
+from PyPDF2 import PdfReader
+text = PdfReader().extract_text()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": text}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML032" for v in violations)
+    
+    def test_image_injection(self):
+        """AIML033: Detect image-based injection."""
+        code = """
+import openai
+import pytesseract
+text = pytesseract.image_to_text("image.png")
+openai.ChatCompletion.create(messages=[{"role": "user", "content": text}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML033" for v in violations)
+    
+    def test_api_response_injection(self):
+        """AIML034: Detect API response injection."""
+        code = """
+import openai
+import requests
+response = requests.get("https://api.example.com/data")
+data = response.json()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(data)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML034" for v in violations)
+    
+    def test_database_injection(self):
+        """AIML035: Detect database content injection."""
+        code = """
+import openai
+import sqlite3
+cursor = conn.execute("SELECT * FROM data")
+rows = cursor.fetchall()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(rows)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML035" for v in violations)
+    
+    def test_file_upload_injection(self):
+        """AIML036: Detect file upload injection."""
+        code = """
+import openai
+uploaded_file = request.files['file']
+content = uploaded_file.read()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": content}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML036" for v in violations)
+    
+    def test_email_injection(self):
+        """AIML037: Detect email content injection."""
+        code = """
+import openai
+email_body = mail.get_body()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": email_body}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML037" for v in violations)
+    
+    def test_social_scraping_injection(self):
+        """AIML038: Detect social media scraping injection."""
+        code = """
+import openai
+tweets = api.get_tweets()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(tweets)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML038" for v in violations)
+    
+    def test_rag_poisoning(self):
+        """AIML039: Detect RAG poisoning."""
+        code = """
+import openai
+from langchain.vectorstores import FAISS
+retriever = FAISS.from_documents(docs)
+context = retriever.retrieve(query)
+openai.ChatCompletion.create(messages=[{"role": "user", "content": context}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML039" for v in violations)
+    
+    def test_vector_db_injection(self):
+        """AIML040: Detect vector database injection."""
+        code = """
+import openai
+results = vector_db.similarity_search(query)
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(results)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML040" for v in violations)
+    
+    def test_knowledge_base_tampering(self):
+        """AIML041: Detect knowledge base tampering."""
+        code = """
+import openai
+facts = kb.get_knowledge(topic)
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(facts)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML041" for v in violations)
+    
+    def test_citation_manipulation(self):
+        """AIML042: Detect citation manipulation."""
+        code = """
+import openai
+citations = doc.get_citations()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(citations)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML042" for v in violations)
+    
+    def test_search_poisoning(self):
+        """AIML043: Detect search result poisoning."""
+        code = """
+import openai
+results = google_api.search(query)
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(results)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML043" for v in violations)
+    
+    def test_user_profile_injection(self):
+        """AIML044: Detect user profile injection."""
+        code = """
+import openai
+profile = user.get_profile()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(profile)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML044" for v in violations)
+    
+    def test_conversation_history_injection(self):
+        """AIML045: Detect conversation history injection."""
+        code = """
+import openai
+history = session.get_history()
+openai.ChatCompletion.create(messages=[{"role": "user", "content": str(history)}])
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML045" for v in violations)
 
 
 class TestPerformance:
