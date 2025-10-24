@@ -268,8 +268,18 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - Model fingerprinting attacks - AIML448
 - Model compression tampering - AIML449
 - Model conversion vulnerabilities - AIML450
+- AWS SageMaker notebook injection - AIML451
+- Azure ML workspace tampering - AIML452
+- Google Vertex AI pipeline manipulation - AIML453
+- Databricks ML runtime risks - AIML454
+- Snowflake ML vulnerabilities - AIML455
+- BigQuery ML injection - AIML456
+- Redshift ML tampering - AIML457
+- Lambda ML inference risks - AIML458
+- Cloud Functions ML serving gaps - AIML459
+- Serverless ML vulnerabilities - AIML460
 
-Total Security Checks: 440 AI/ML rules (v0.8.0 - Phase 4.3 Complete: Model Registry & Versioning Security)
+Total Security Checks: 450 AI/ML rules (v0.8.1 - Phase 4.4 Complete: Cloud & Infrastructure Security)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -307,6 +317,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         self.has_pytorch = False
         self.has_tensorflow = False
         self.has_transformers = False
+        self.has_snowflake = False
         self.model_loads: Set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -324,6 +335,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 self.has_transformers = True
             elif any(x in node.module for x in ["sklearn", "keras", "jax"]):
                 self.has_ml_framework = True
+            # Cloud platforms
+            elif "snowflake" in node.module:
+                self.has_snowflake = True
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -1733,6 +1747,38 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML450: Model conversion vulnerabilities
         self._check_model_conversion_vulnerabilities(node)
+        
+        # Phase 4.4: Cloud & Infrastructure Security (10 checks - AIML451-460)
+        # Phase 4.4.1: Cloud ML Services (10 checks - AIML451-460)
+        # AIML451: AWS SageMaker notebook injection
+        self._check_sagemaker_notebook_injection(node)
+        
+        # AIML452: Azure ML workspace tampering
+        self._check_azure_ml_workspace_tampering(node)
+        
+        # AIML453: Google Vertex AI pipeline manipulation
+        self._check_vertex_ai_pipeline_manipulation(node)
+        
+        # AIML454: Databricks ML runtime risks
+        self._check_databricks_ml_runtime_risks(node)
+        
+        # AIML455: Snowflake ML vulnerabilities
+        self._check_snowflake_ml_vulnerabilities(node)
+        
+        # AIML456: BigQuery ML injection
+        self._check_bigquery_ml_injection(node)
+        
+        # AIML457: Redshift ML tampering
+        self._check_redshift_ml_tampering(node)
+        
+        # AIML458: Lambda ML inference risks
+        self._check_lambda_ml_inference_risks(node)
+        
+        # AIML459: Cloud Functions ML serving gaps
+        self._check_cloud_functions_ml_serving_gaps(node)
+        
+        # AIML460: Serverless ML vulnerabilities
+        self._check_serverless_ml_vulnerabilities(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -14558,6 +14604,324 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         )
                         self.violations.append(violation)
 
+    # Phase 4.4: Cloud & Infrastructure Security Detection Methods (AIML451-AIML460)
+    
+    def _check_sagemaker_notebook_injection(self, node: ast.Call) -> None:
+        """AIML451: Detect AWS SageMaker notebook injection vulnerabilities."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for SageMaker notebook operations
+        if any(x in full_text for x in ["sagemaker", "notebookinstance"]):
+            if any(x in full_text for x in ["create", "start", "update"]):
+                # Check if security controls are present
+                has_security = any(x in full_text for x in [
+                    "rootaccess='disabled'", 'rootaccess="disabled"',
+                    "directinternetaccess='disabled'", 'directinternetaccess="disabled"',
+                    "volumeencryption=true", "volumeencryption = true"
+                ])
+                if not has_security:
+                    violation = RuleViolation(
+                        rule_id="AIML451",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="AWS SageMaker notebook - disable root access and direct internet access",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_azure_ml_workspace_tampering(self, node: ast.Call) -> None:
+        """AIML452: Detect Azure ML workspace tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Azure ML workspace operations
+        if any(x in line_text for x in ["azureml", "workspace"]):
+            if any(x in line_text for x in ["create", "update", "from_config"]):
+                if not any(x in line_text for x in ["auth", "authentication", "identity", "rbac"]):
+                    violation = RuleViolation(
+                        rule_id="AIML452",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Azure ML workspace - implement proper authentication and RBAC",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-287",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_vertex_ai_pipeline_manipulation(self, node: ast.Call) -> None:
+        """AIML453: Detect Google Vertex AI pipeline manipulation vulnerabilities."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for Vertex AI pipeline operations
+        if any(x in full_text for x in ["vertex", "aiplatform", "pipeline"]):
+            if any(x in full_text for x in ["create", "submit", "run"]):
+                # Check if security controls are present
+                has_security = any(x in full_text for x in [
+                    "service_account", "encryption_spec", "network"
+                ])
+                if not has_security:
+                    violation = RuleViolation(
+                        rule_id="AIML453",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Google Vertex AI pipeline - configure service account and encryption",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-311",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_databricks_ml_runtime_risks(self, node: ast.Call) -> None:
+        """AIML454: Detect Databricks ML runtime risks."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for Databricks ML runtime operations with hardcoded tokens
+        if any(x in full_text for x in ["databricks", "dbutils", "mlflow"]):
+            # Look for hardcoded tokens/keys (not using secrets API)
+            if ("token" in full_text or "api_key" in full_text):
+                # Check if using string literals with token/key values (like 'dapi...' or "token_...")
+                if ("'dapi" in full_text or '"dapi' in full_text or 
+                    "'token_" in full_text or '"token_' in full_text or
+                    ("=" in full_text and "token" in full_text and ("'" in full_text or '"' in full_text))):
+                    # Make sure it's not using secrets API
+                    if not any(x in full_text for x in ["secret", "getargument", "dbutils.secrets"]):
+                        violation = RuleViolation(
+                            rule_id="AIML454",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.CRITICAL,
+                            message="Databricks ML runtime - use secrets API instead of hardcoded tokens",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="A07",
+                            cwe_id="CWE-798",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_snowflake_ml_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML455: Detect Snowflake ML vulnerabilities."""
+        # Only check if Snowflake is imported
+        if not self.has_snowflake:
+            return
+            
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for model registration operations
+        if "register_model" in full_text or "create_model" in full_text:
+            if not any(x in full_text for x in ["validate", "verify", "secure"]):
+                violation = RuleViolation(
+                    rule_id="AIML455",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Snowflake ML - validate model before registration",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bigquery_ml_injection(self, node: ast.Call) -> None:
+        """AIML456: Detect BigQuery ML injection vulnerabilities."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 2)  # Look at more context
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno) + 2)
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for BigQuery ML operations with user input (look for query variable assignments)
+        if any(x in full_text for x in ["bigquery", "bqml", "create model", "ml.predict"]):
+            # Check for string formatting that could indicate SQL injection
+            if any(x in full_text for x in ["query = f\"", "query = f'", "query=f\"", "query=f'"]):
+                violation = RuleViolation(
+                    rule_id="AIML456",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="BigQuery ML - use parameterized queries to prevent SQL injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-89",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_redshift_ml_tampering(self, node: ast.Call) -> None:
+        """AIML457: Detect Redshift ML tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Redshift ML operations
+        if any(x in line_text for x in ["redshift", "create model", "ml.predict"]):
+            if any(x in line_text for x in ["format", "f\"", "f'", "%s"]):
+                violation = RuleViolation(
+                    rule_id="AIML457",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Redshift ML - use parameterized queries to prevent SQL injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-89",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_lambda_ml_inference_risks(self, node: ast.Call) -> None:
+        """AIML458: Detect Lambda ML inference risks."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for Lambda ML inference operations
+        if "lambda" in full_text and "invoke" in full_text:
+            # Check if it looks like model inference based on function name
+            if any(x in full_text for x in ["model", "predict", "inference", "ml"]):
+                # Check for resource limits
+                has_limits = any(x in full_text for x in ["timeout", "memory", "vpc"])
+                if not has_limits:
+                    violation = RuleViolation(
+                        rule_id="AIML458",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Lambda ML inference - configure timeout, memory limits, and VPC",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_cloud_functions_ml_serving_gaps(self, node: ast.Call) -> None:
+        """AIML459: Detect Cloud Functions ML serving security gaps."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Cloud Functions ML serving
+        if any(x in line_text for x in ["cloud_function", "cloudfunctions", "gcf"]):
+            if any(x in line_text for x in ["model", "predict", "inference"]):
+                if not any(x in line_text for x in ["auth", "authentication", "iam"]):
+                    violation = RuleViolation(
+                        rule_id="AIML459",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Cloud Functions ML serving - implement authentication and IAM",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="A07",
+                        cwe_id="CWE-306",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_serverless_ml_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML460: Detect serverless ML vulnerabilities."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for serverless ML deployments with function deploy calls
+        if any(x in full_text for x in ["serverless", "faas", "function"]):
+            # Look for deploy/create operations with ML-related names
+            if ("deploy" in full_text or "create" in full_text):
+                if any(x in full_text for x in ["model", "ml", "predict", "inference"]):
+                    # Check for rate limiting
+                    has_rate_limit = any(x in full_text for x in ["rate_limit", "throttle", "quota"])
+                    if not has_rate_limit:
+                        violation = RuleViolation(
+                            rule_id="AIML460",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="Serverless ML - implement rate limiting and resource quotas",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML09",
+                            cwe_id="CWE-770",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -15893,4 +16257,17 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML448", name="model-fingerprinting-attacks", description="Model fingerprinting attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model extraction risk - implement query limits to prevent fingerprinting", explanation="Model APIs should limit queries to prevent extraction attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="ML07", tags={"ai", "ml", "fingerprinting", "attack", "model"}, references=["https://arxiv.org/abs/1609.02943"]),
     Rule(rule_id="AIML449", name="model-compression-tampering", description="Model compression tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model compression - validate model integrity after compression", explanation="Compressed models should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "compression", "tampering", "model"}, references=["https://arxiv.org/abs/1710.09282"]),
     Rule(rule_id="AIML450", name="model-conversion-vulnerabilities", description="Model conversion vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model conversion - validate converted model for equivalence and security", explanation="Model conversions should be validated for equivalence", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "conversion", "vulnerability", "model"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    
+    # Phase 4.4: Cloud & Infrastructure Security (10 checks - AIML451-460)
+    # Phase 4.4.1: Cloud ML Services (10 checks - AIML451-460)
+    Rule(rule_id="AIML451", name="sagemaker-notebook-injection", description="AWS SageMaker notebook injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="AWS SageMaker notebook - disable root access and direct internet access", explanation="SageMaker notebooks should have root access disabled and no direct internet access", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="ML09", tags={"ai", "ml", "sagemaker", "aws", "notebook"}, references=["https://docs.aws.amazon.com/sagemaker/latest/dg/nbi-root-access.html"]),
+    Rule(rule_id="AIML452", name="azure-ml-workspace-tampering", description="Azure ML workspace tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Azure ML workspace - implement proper authentication and RBAC", explanation="Azure ML workspaces should use proper authentication and role-based access control", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-287", owasp_mapping="ML03", tags={"ai", "ml", "azure", "workspace", "tampering"}, references=["https://learn.microsoft.com/en-us/azure/machine-learning/concept-workspace-security"]),
+    Rule(rule_id="AIML453", name="vertex-ai-pipeline-manipulation", description="Google Vertex AI pipeline manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Google Vertex AI pipeline - configure service account and encryption", explanation="Vertex AI pipelines should use dedicated service accounts and encryption", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-311", owasp_mapping="ML03", tags={"ai", "ml", "vertex", "google", "pipeline"}, references=["https://cloud.google.com/vertex-ai/docs/pipelines/configure-project"]),
+    Rule(rule_id="AIML454", name="databricks-ml-runtime-risks", description="Databricks ML runtime risks", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Databricks ML runtime - use secrets API instead of hardcoded tokens", explanation="Databricks should use secrets API for credentials, not hardcoded tokens", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-798", owasp_mapping="A07", tags={"ai", "ml", "databricks", "secrets", "token"}, references=["https://docs.databricks.com/security/secrets/index.html"]),
+    Rule(rule_id="AIML455", name="snowflake-ml-vulnerabilities", description="Snowflake ML vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Snowflake ML - validate model before registration", explanation="Snowflake ML models should be validated before registration", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "snowflake", "model", "validation"}, references=["https://docs.snowflake.com/en/developer-guide/snowpark-ml/index"]),
+    Rule(rule_id="AIML456", name="bigquery-ml-injection", description="BigQuery ML injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="BigQuery ML - use parameterized queries to prevent SQL injection", explanation="BigQuery ML operations should use parameterized queries", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-89", owasp_mapping="A03", tags={"ai", "ml", "bigquery", "sql", "injection"}, references=["https://cloud.google.com/bigquery/docs/parameterized-queries"]),
+    Rule(rule_id="AIML457", name="redshift-ml-tampering", description="Redshift ML tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Redshift ML - use parameterized queries to prevent SQL injection", explanation="Redshift ML operations should use parameterized queries", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-89", owasp_mapping="A03", tags={"ai", "ml", "redshift", "sql", "tampering"}, references=["https://docs.aws.amazon.com/redshift/latest/dg/r_CREATE_MODEL.html"]),
+    Rule(rule_id="AIML458", name="lambda-ml-inference-risks", description="Lambda ML inference risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Lambda ML inference - configure timeout, memory limits, and VPC", explanation="Lambda ML functions should have proper resource limits and VPC configuration", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "lambda", "aws", "inference"}, references=["https://docs.aws.amazon.com/lambda/latest/dg/lambda-security.html"]),
+    Rule(rule_id="AIML459", name="cloud-functions-ml-serving-gaps", description="Cloud Functions ML serving gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Cloud Functions ML serving - implement authentication and IAM", explanation="Cloud Functions ML serving should use proper authentication and IAM", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-306", owasp_mapping="A07", tags={"ai", "ml", "cloud-functions", "google", "serving"}, references=["https://cloud.google.com/functions/docs/securing"]),
+    Rule(rule_id="AIML460", name="serverless-ml-vulnerabilities", description="Serverless ML vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Serverless ML - implement rate limiting and resource quotas", explanation="Serverless ML deployments should have rate limiting and resource quotas", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-770", owasp_mapping="ML09", tags={"ai", "ml", "serverless", "faas", "rate-limit"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
 ]
