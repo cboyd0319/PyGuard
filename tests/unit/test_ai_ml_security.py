@@ -524,10 +524,11 @@ class TestAIMLSecurityRules:
         Phase 4.4: 10 checks (AIML451-AIML460) - Cloud & Infrastructure Security
         Phase 5.1: 20 checks (AIML461-AIML480) - Generative AI Security
         Phase 5.2: 15 checks (AIML481-AIML495) - Multimodal & Fusion Models
+        Phase 5.3: 15 checks (AIML496-AIML510) - Federated & Privacy-Preserving ML
         
-        Total: 485 checks (v0.8.3 - Phase 5.2 Complete: Multimodal & Fusion Models)
+        Total: 500 checks (v0.7.1 - Phase 5.3 Complete: Federated & Privacy-Preserving ML) 🎉
         """
-        assert len(AIML_SECURITY_RULES) == 485  # Updated for Phase 5.2 (15 new multimodal & fusion model checks)
+        assert len(AIML_SECURITY_RULES) == 500  # Updated for Phase 5.3 (15 new federated & privacy-preserving ML checks)
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",

@@ -1926,6 +1926,52 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML495: Sensor fusion manipulation
         self._check_sensor_fusion_manipulation(node)
         
+        # Phase 5.3: Federated & Privacy-Preserving ML (AIML496-510)
+        # AIML496: Federated averaging poisoning
+        self._check_federated_averaging_poisoning(node)
+        
+        # AIML497: Client selection manipulation
+        self._check_client_selection_manipulation(node)
+        
+        # AIML498: Model aggregation attacks
+        self._check_model_aggregation_attacks(node)
+        
+        # AIML499: Byzantine client detection bypass
+        self._check_byzantine_client_detection_bypass(node)
+        
+        # AIML500: Privacy budget exploitation
+        self._check_privacy_budget_exploitation(node)
+        
+        # AIML501: Differential privacy bypass
+        self._check_differential_privacy_bypass(node)
+        
+        # AIML502: Secure aggregation vulnerabilities
+        self._check_secure_aggregation_vulnerabilities(node)
+        
+        # AIML503: Homomorphic encryption weaknesses
+        self._check_homomorphic_encryption_weaknesses(node)
+        
+        # AIML504: Trusted execution environment gaps
+        self._check_trusted_execution_environment_gaps(node)
+        
+        # AIML505: Split learning injection
+        self._check_split_learning_injection(node)
+        
+        # AIML506: Differential privacy parameter manipulation
+        self._check_differential_privacy_parameter_manipulation(node)
+        
+        # AIML507: SMPC risks
+        self._check_smpc_risks(node)
+        
+        # AIML508: Trusted execution environment bypass
+        self._check_trusted_execution_environment_bypass(node)
+        
+        # AIML509: Encrypted inference vulnerabilities
+        self._check_encrypted_inference_vulnerabilities(node)
+        
+        # AIML510: Zero-knowledge proof gaps
+        self._check_zero_knowledge_proof_gaps(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -16086,6 +16132,430 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     )
                     self.violations.append(violation)
 
+    # Phase 5.3: Federated & Privacy-Preserving ML (AIML496-510)
+    
+    def _check_federated_averaging_poisoning(self, node: ast.Call) -> None:
+        """AIML496: Detect federated averaging poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for federated learning with averaging
+        if any(x in line_text for x in ["fedavg", "federated_averaging", "aggregate", "average"]):
+            if any(x in line_text for x in ["gradient", "model", "update", "weights"]):
+                # Check for Byzantine-robust aggregation
+                has_robust = any(x in line_text for x in ["krum", "median", "trimmed", "byzantine", "robust"])
+                if not has_robust:
+                    violation = RuleViolation(
+                        rule_id="AIML496",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Federated averaging poisoning - implement Byzantine-robust aggregation and validate client gradients",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_client_selection_manipulation(self, node: ast.Call) -> None:
+        """AIML497: Detect client selection manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for client selection in federated learning
+        if any(x in line_text for x in ["select_clients", "client_selection", "sample_clients"]):
+            # Check for secure sampling
+            has_secure = any(x in line_text for x in ["secure", "random", "reputation", "verified"])
+            if not has_secure:
+                violation = RuleViolation(
+                    rule_id="AIML497",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Client selection manipulation - implement secure random client sampling and reputation systems",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-330",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_model_aggregation_attacks(self, node: ast.Call) -> None:
+        """AIML498: Detect model aggregation attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for model aggregation
+        if any(x in line_text for x in ["aggregate_models", "model_aggregation", "combine_updates"]):
+            # Check for secure aggregation
+            has_secure_agg = any(x in line_text for x in ["secure_aggregation", "encrypted", "secret_sharing"])
+            if not has_secure_agg:
+                violation = RuleViolation(
+                    rule_id="AIML498",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Model aggregation attacks - implement secure aggregation protocols and verify model updates",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_byzantine_client_detection_bypass(self, node: ast.Call) -> None:
+        """AIML499: Detect Byzantine client detection bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for federated learning without Byzantine detection
+        if any(x in line_text for x in ["federated", "fl_train", "fed_learning"]):
+            if any(x in line_text for x in ["client", "participant", "node"]):
+                # Check for Byzantine detection
+                has_detection = any(x in line_text for x in ["byzantine", "outlier", "detect", "filter", "krum"])
+                if not has_detection:
+                    violation = RuleViolation(
+                        rule_id="AIML499",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Byzantine client detection bypass - implement outlier detection and Byzantine-robust algorithms (Krum, Median)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_privacy_budget_exploitation(self, node: ast.Call) -> None:
+        """AIML500: Detect privacy budget exploitation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for differential privacy without budget tracking
+        if any(x in line_text for x in ["differential_privacy", "dp", "add_noise", "laplace", "gaussian_noise"]):
+            # Check for privacy budget tracking
+            has_tracking = any(x in line_text for x in ["epsilon", "delta", "budget", "accountant", "privacy_loss"])
+            if not has_tracking:
+                violation = RuleViolation(
+                    rule_id="AIML500",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Privacy budget exploitation - implement proper epsilon/delta tracking and privacy amplification",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_differential_privacy_bypass(self, node: ast.Call) -> None:
+        """AIML501: Detect differential privacy bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DP with inadequate noise
+        if any(x in line_text for x in ["add_noise", "laplace", "gaussian", "dp_noise"]):
+            # Check for proper noise calibration
+            has_calibration = any(x in line_text for x in ["sensitivity", "scale", "sigma", "calibrate", "composition"])
+            if not has_calibration:
+                violation = RuleViolation(
+                    rule_id="AIML501",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Differential privacy bypass - implement adequate noise calibration and composition bounds",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_secure_aggregation_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML502: Detect secure aggregation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for aggregation without encryption
+        if any(x in line_text for x in ["aggregate", "sum", "average", "combine"]) and any(x in line_text for x in ["gradient", "model", "update"]):
+            # Check for secure aggregation
+            has_secure = any(x in line_text for x in ["secure", "encrypted", "homomorphic", "secret_sharing"])
+            if not has_secure:
+                violation = RuleViolation(
+                    rule_id="AIML502",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Secure aggregation vulnerabilities - use homomorphic encryption or secret sharing for gradient aggregation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-311",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_homomorphic_encryption_weaknesses(self, node: ast.Call) -> None:
+        """AIML503: Detect homomorphic encryption weaknesses."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for homomorphic encryption usage
+        if any(x in line_text for x in ["homomorphic", "fhe", "ckks", "bfv", "tfhe"]):
+            # Check for key management
+            has_key_mgmt = any(x in line_text for x in ["key", "context", "params", "setup"])
+            if not has_key_mgmt:
+                violation = RuleViolation(
+                    rule_id="AIML503",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Homomorphic encryption weaknesses - implement proper key management and validate encryption schemes (CKKS, BFV)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-320",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_trusted_execution_environment_gaps(self, node: ast.Call) -> None:
+        """AIML504: Detect TEE gaps in federated learning."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for federated learning without TEE
+        if any(x in line_text for x in ["federated", "fl_", "distributed_training"]):
+            if any(x in line_text for x in ["train", "compute", "process"]):
+                # Check for TEE usage
+                has_tee = any(x in line_text for x in ["sgx", "trustzone", "tee", "enclave", "attestation"])
+                if not has_tee:
+                    violation = RuleViolation(
+                        rule_id="AIML504",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="TEE gaps - implement SGX/TrustZone integration and remote attestation for federated learning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_split_learning_injection(self, node: ast.Call) -> None:
+        """AIML505: Detect split learning injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for split learning
+        if any(x in line_text for x in ["split_learning", "splitnn", "cut_layer"]):
+            # Check for activation protection
+            has_protection = any(x in line_text for x in ["encrypt", "protect", "secure", "validate"])
+            if not has_protection:
+                violation = RuleViolation(
+                    rule_id="AIML505",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Split learning injection - validate cut layer and protect activation sharing between client and server",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_differential_privacy_parameter_manipulation(self, node: ast.Call) -> None:
+        """AIML506: Detect DP parameter manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for hardcoded DP parameters
+        if any(x in line_text for x in ["epsilon", "delta"]) and "=" in line_text:
+            # Check for hardcoded values
+            if any(x in line_text for x in ["0.1", "0.5", "1.0", "1.5"]):
+                violation = RuleViolation(
+                    rule_id="AIML506",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="DP parameter manipulation - avoid hardcoded epsilon/delta and implement adaptive privacy budget allocation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-798",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_smpc_risks(self, node: ast.Call) -> None:
+        """AIML507: Detect SMPC risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for SMPC usage
+        if any(x in line_text for x in ["mpc", "smpc", "multi_party", "secret_sharing"]):
+            # Check for malicious security
+            has_malicious_security = any(x in line_text for x in ["malicious", "actively_secure", "verifiable"])
+            if not has_malicious_security:
+                violation = RuleViolation(
+                    rule_id="AIML507",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="SMPC risks - implement malicious security and validate secret sharing reconstruction",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_trusted_execution_environment_bypass(self, node: ast.Call) -> None:
+        """AIML508: Detect TEE bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for TEE usage
+        if any(x in line_text for x in ["sgx", "enclave", "tee", "trustzone"]):
+            # Check for side-channel mitigation
+            has_mitigation = any(x in line_text for x in ["mitigation", "constant_time", "oblivious", "side_channel"])
+            if not has_mitigation:
+                violation = RuleViolation(
+                    rule_id="AIML508",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TEE bypass - implement side-channel mitigations and validate enclave measurement during attestation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-203",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_encrypted_inference_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML509: Detect encrypted inference vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for encrypted inference
+        if any(x in line_text for x in ["encrypted_inference", "fhe_inference", "homomorphic_inference"]):
+            # Check for key management
+            has_key_mgmt = any(x in line_text for x in ["key_manager", "context", "params", "integrity"])
+            if not has_key_mgmt:
+                violation = RuleViolation(
+                    rule_id="AIML509",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Encrypted inference vulnerabilities - implement proper key management and validate ciphertext integrity",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-311",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_zero_knowledge_proof_gaps(self, node: ast.Call) -> None:
+        """AIML510: Detect zero-knowledge proof gaps."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ZKP usage
+        if any(x in line_text for x in ["zkp", "zero_knowledge", "proof", "zk_snark", "zk_stark"]):
+            # Check for soundness verification
+            has_verification = any(x in line_text for x in ["verify", "soundness", "challenge", "commitment"])
+            if not has_verification:
+                violation = RuleViolation(
+                    rule_id="AIML510",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ZKP gaps - implement soundness guarantees and validate proof generation/verification",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -17477,4 +17947,25 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML493", name="visual-grounding-attacks", description="Visual grounding attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Visual grounding attacks - validate object localization and referring expressions", explanation="Visual grounding models should validate object localization to prevent spatial reasoning attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "visual", "grounding", "localization", "attack"}, references=["https://arxiv.org/abs/1808.08089"]),
     Rule(rule_id="AIML494", name="embodied-ai-risks", description="Embodied AI risks (robotics)", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Embodied AI risks - implement safety checks and validate robot control commands", explanation="Embodied AI systems should implement safety checks to prevent malicious control commands and sensor spoofing", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML09", tags={"ai", "robotics", "embodied", "safety", "control"}, references=["https://arxiv.org/abs/2210.06217", "https://www.nist.gov/itl/ai-risk-management-framework"]),
     Rule(rule_id="AIML495", name="sensor-fusion-manipulation", description="Sensor fusion manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Sensor fusion manipulation - validate sensor data consistency and implement integrity checks", explanation="Sensor fusion systems should validate multi-sensor data consistency to prevent cross-sensor attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "sensor", "fusion", "manipulation", "integrity"}, references=["https://arxiv.org/abs/1903.03921"]),
+    
+    # Phase 5.3: Federated & Privacy-Preserving ML (15 rules - AIML496-510)
+    
+    # Phase 5.3.1: Federated Learning Security (10 rules - AIML496-505)
+    Rule(rule_id="AIML496", name="federated-averaging-poisoning", description="Federated averaging poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Federated averaging poisoning - implement Byzantine-robust aggregation and validate client gradients", explanation="Federated learning systems should use Byzantine-robust aggregation methods to prevent gradient poisoning attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "federated-learning", "poisoning", "aggregation", "byzantine"}, references=["https://arxiv.org/abs/1703.03757", "https://arxiv.org/abs/1802.07927"]),
+    Rule(rule_id="AIML497", name="client-selection-manipulation", description="Client selection manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Client selection manipulation - implement secure random client sampling and reputation systems", explanation="Federated learning should validate client selection to prevent adversarial client participation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-330", owasp_mapping="ML09", tags={"ai", "federated-learning", "client-selection", "reputation", "sampling"}, references=["https://arxiv.org/abs/1902.01046"]),
+    Rule(rule_id="AIML498", name="model-aggregation-attacks", description="Model aggregation attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model aggregation attacks - implement secure aggregation protocols and verify model updates", explanation="Federated learning should use secure aggregation to protect individual model updates from adversaries", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "federated-learning", "aggregation", "secure", "model-update"}, references=["https://eprint.iacr.org/2017/281.pdf"]),
+    Rule(rule_id="AIML499", name="byzantine-client-detection-bypass", description="Byzantine client detection bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Byzantine client detection bypass - implement outlier detection and Byzantine-robust algorithms (Krum, Median)", explanation="Federated learning systems should detect and filter Byzantine clients using robust aggregation methods", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "federated-learning", "byzantine", "outlier-detection", "krum"}, references=["https://arxiv.org/abs/1703.02757", "https://arxiv.org/abs/1803.01498"]),
+    Rule(rule_id="AIML500", name="privacy-budget-exploitation", description="Privacy budget exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Privacy budget exploitation - implement proper epsilon/delta tracking and privacy amplification", explanation="Differential privacy systems should track privacy budget to prevent privacy leakage through composition", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="ML09", tags={"ai", "differential-privacy", "privacy-budget", "epsilon", "delta"}, references=["https://arxiv.org/abs/1607.00133", "https://desfontain.es/privacy/differential-privacy-reading-list.html"]),
+    Rule(rule_id="AIML501", name="differential-privacy-bypass", description="Differential privacy bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Differential privacy bypass - implement adequate noise calibration and composition bounds", explanation="Differential privacy implementations should use sufficient noise and proper composition tracking to prevent privacy attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="ML09", tags={"ai", "differential-privacy", "noise", "composition", "bypass"}, references=["https://arxiv.org/abs/1905.02383", "https://privacytools.seas.harvard.edu/publications"]),
+    Rule(rule_id="AIML502", name="secure-aggregation-vulnerabilities", description="Secure aggregation vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Secure aggregation vulnerabilities - use homomorphic encryption or secret sharing for gradient aggregation", explanation="Federated learning should use cryptographic secure aggregation to protect individual client updates", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-311", owasp_mapping="ML09", tags={"ai", "federated-learning", "secure-aggregation", "homomorphic", "secret-sharing"}, references=["https://eprint.iacr.org/2017/281.pdf", "https://research.google/pubs/pub45808/"]),
+    Rule(rule_id="AIML503", name="homomorphic-encryption-weaknesses", description="Homomorphic encryption weaknesses", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Homomorphic encryption weaknesses - implement proper key management and validate encryption schemes (CKKS, BFV)", explanation="Homomorphic encryption in ML should use proper key management and validated encryption schemes", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-320", owasp_mapping="ML09", tags={"ai", "homomorphic-encryption", "fhe", "ckks", "key-management"}, references=["https://eprint.iacr.org/2016/421.pdf", "https://homomorphicencryption.org/"]),
+    Rule(rule_id="AIML504", name="trusted-execution-environment-gaps", description="Trusted execution environment gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="TEE gaps - implement SGX/TrustZone integration and remote attestation for federated learning", explanation="Federated learning in TEEs should implement proper attestation and enclave measurement verification", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-494", owasp_mapping="ML09", tags={"ai", "tee", "sgx", "trustzone", "attestation"}, references=["https://arxiv.org/abs/1902.05964", "https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html"]),
+    Rule(rule_id="AIML505", name="split-learning-injection", description="Split learning injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Split learning injection - validate cut layer and protect activation sharing between client and server", explanation="Split learning should validate cut layer selection and secure activation transmission to prevent inference attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="ML09", tags={"ai", "split-learning", "cut-layer", "activation", "inference-attack"}, references=["https://arxiv.org/abs/1812.00564", "https://arxiv.org/abs/2004.12666"]),
+    
+    # Phase 5.3.2: Privacy-Enhancing Technologies (5 rules - AIML506-510)
+    Rule(rule_id="AIML506", name="differential-privacy-parameter-manipulation", description="Differential privacy parameter manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DP parameter manipulation - avoid hardcoded epsilon/delta and implement adaptive privacy budget allocation", explanation="Differential privacy implementations should use adaptive privacy budgets and avoid hardcoded parameters", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-798", owasp_mapping="ML09", tags={"ai", "differential-privacy", "epsilon", "delta", "parameter"}, references=["https://arxiv.org/abs/1607.00133"]),
+    Rule(rule_id="AIML507", name="smpc-risks", description="SMPC (Secure Multi-Party Computation) risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="SMPC risks - implement malicious security and validate secret sharing reconstruction", explanation="SMPC protocols should provide malicious security guarantees and validate input contributions", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "smpc", "mpc", "secret-sharing", "malicious-security"}, references=["https://eprint.iacr.org/2011/136.pdf", "https://www.cs.umd.edu/~jkatz/imc.html"]),
+    Rule(rule_id="AIML508", name="trusted-execution-environment-bypass", description="Trusted execution environment bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="TEE bypass - implement side-channel mitigations and validate enclave measurement during attestation", explanation="TEE implementations should mitigate side-channel attacks and implement proper attestation verification", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-203", owasp_mapping="ML09", tags={"ai", "tee", "side-channel", "attestation", "enclave"}, references=["https://arxiv.org/abs/1706.03757", "https://sgx101.gitbook.io/"]),
+    Rule(rule_id="AIML509", name="encrypted-inference-vulnerabilities", description="Encrypted inference vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Encrypted inference vulnerabilities - implement proper key management and validate ciphertext integrity", explanation="Encrypted inference systems should use proper key management and validate homomorphic operations", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-311", owasp_mapping="ML09", tags={"ai", "encrypted-inference", "homomorphic", "key-management", "integrity"}, references=["https://arxiv.org/abs/1811.04008", "https://eprint.iacr.org/2016/421.pdf"]),
+    Rule(rule_id="AIML510", name="zero-knowledge-proof-gaps", description="Zero-knowledge proof gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ZKP gaps - implement soundness guarantees and validate proof generation/verification", explanation="Zero-knowledge proof systems should provide soundness guarantees and properly verify challenges", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "zkp", "zero-knowledge", "soundness", "verification"}, references=["https://zkp.science/", "https://eprint.iacr.org/2016/263.pdf"]),
 ]
