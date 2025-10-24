@@ -136,6 +136,26 @@ Security Areas Covered:
 - Adapter injection - AIML138
 - Prompt tuning manipulation - AIML139
 - Instruction fine-tuning risks - AIML140
+- Missing input adversarial defense - AIML141
+- No FGSM protection - AIML142
+- PGD vulnerability - AIML143
+- C&W attack surface - AIML144
+- DeepFool susceptibility - AIML145
+- Universal adversarial perturbations - AIML146
+- Black-box attack vulnerability - AIML147
+- Transfer attack risks - AIML148
+- Physical adversarial examples - AIML149
+- Adversarial patch detection missing - AIML150
+- Missing adversarial training - AIML151
+- No certified defenses - AIML152
+- Input gradient masking - AIML153
+- Defensive distillation gaps - AIML154
+- Ensemble defenses missing - AIML155
+- Randomization defense gaps - AIML156
+- Input transformation missing - AIML157
+- Detection mechanism missing - AIML158
+- Rejection option missing - AIML159
+- Robustness testing absent - AIML160
 - Model inversion attack vectors
 - Adversarial input acceptance
 - Model extraction vulnerabilities
@@ -145,7 +165,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 140 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.3 Complete)
+Total Security Checks: 160 (v0.7.0 - AI/ML Security Dominance Plan Phase 1 Complete - Milestone 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -621,6 +641,69 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML140: Instruction fine-tuning risks
         self._check_instruction_fine_tuning_risks(node)
+        
+        # Phase 1.4: Adversarial ML & Model Robustness (20 checks)
+        # Phase 1.4.1: Adversarial Input Detection (10 checks - AIML141-AIML150)
+        # AIML141: Missing input adversarial defense
+        self._check_missing_adversarial_defense(node)
+        
+        # AIML142: No FGSM protection
+        self._check_no_fgsm_protection(node)
+        
+        # AIML143: PGD vulnerability
+        self._check_pgd_vulnerability(node)
+        
+        # AIML144: C&W attack surface
+        self._check_cw_attack_surface(node)
+        
+        # AIML145: DeepFool susceptibility
+        self._check_deepfool_susceptibility(node)
+        
+        # AIML146: Universal adversarial perturbations
+        self._check_universal_adversarial_perturbations(node)
+        
+        # AIML147: Black-box attack vulnerability
+        self._check_black_box_attack_vulnerability(node)
+        
+        # AIML148: Transfer attack risks
+        self._check_transfer_attack_risks(node)
+        
+        # AIML149: Physical adversarial examples
+        self._check_physical_adversarial_examples(node)
+        
+        # AIML150: Adversarial patch detection missing
+        self._check_adversarial_patch_detection_missing(node)
+        
+        # Phase 1.4.2: Model Robustness (10 checks - AIML151-AIML160)
+        # AIML151: Missing adversarial training
+        self._check_missing_adversarial_training(node)
+        
+        # AIML152: No certified defenses
+        self._check_no_certified_defenses(node)
+        
+        # AIML153: Input gradient masking
+        self._check_input_gradient_masking(node)
+        
+        # AIML154: Defensive distillation gaps
+        self._check_defensive_distillation_gaps(node)
+        
+        # AIML155: Ensemble defenses missing
+        self._check_ensemble_defenses_missing(node)
+        
+        # AIML156: Randomization defense gaps
+        self._check_randomization_defense_gaps(node)
+        
+        # AIML157: Input transformation missing
+        self._check_input_transformation_missing(node)
+        
+        # AIML158: Detection mechanism missing
+        self._check_detection_mechanism_missing(node)
+        
+        # AIML159: Rejection option missing
+        self._check_rejection_option_missing(node)
+        
+        # AIML160: Robustness testing absent
+        self._check_robustness_testing_absent(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -5255,6 +5338,612 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             )
             self.violations.append(violation)
 
+    # Phase 1.4: Adversarial ML & Model Robustness (20 checks)
+    # Phase 1.4.1: Adversarial Input Detection (10 checks - AIML141-AIML150)
+    
+    def _check_missing_adversarial_defense(self, node: ast.Call) -> None:
+        """AIML141: Detect missing adversarial defense."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model inference without adversarial defense
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward", "__call__", "infer"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                # Check for adversarial defense keywords
+                has_defense = any(
+                    keyword in line_text
+                    for keyword in ["adversarial", "robust", "defense", "certify"]
+                )
+                
+                if not has_defense:
+                    violation = RuleViolation(
+                        rule_id="AIML141",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Model inference without adversarial defense - attack vulnerability",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_no_fgsm_protection(self, node: ast.Call) -> None:
+        """AIML142: Detect lack of FGSM protection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for training without FGSM adversarial examples
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["fit", "train"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "fgsm" not in line_text and "adversarial" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML142",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Model vulnerable to FGSM attacks - add adversarial training",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_pgd_vulnerability(self, node: ast.Call) -> None:
+        """AIML143: Detect PGD vulnerability."""
+        if not self.has_ml_framework:
+            return
+        
+        # Similar to FGSM check, looking for PGD protection
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["fit", "train"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "pgd" not in line_text and "projected" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML143",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Model vulnerable to PGD attacks - implement robust training",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_cw_attack_surface(self, node: ast.Call) -> None:
+        """AIML144: Detect C&W attack surface."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for defense against C&W attacks
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "distillation" in func_name.lower() or "defensive" in str(node).lower():
+                violation = RuleViolation(
+                    rule_id="AIML144",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Model vulnerable to C&W attacks - add defensive distillation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_deepfool_susceptibility(self, node: ast.Call) -> None:
+        """AIML145: Detect DeepFool susceptibility."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for perturbation validation
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == "predict":
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "perturbation" not in line_text and "validate" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML145",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model vulnerable to DeepFool attacks - validate input perturbations",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_universal_adversarial_perturbations(self, node: ast.Call) -> None:
+        """AIML146: Detect universal adversarial perturbations vulnerability."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for input validation against universal perturbations
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward"]:
+                violation = RuleViolation(
+                    rule_id="AIML146",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Model vulnerable to universal perturbations - add input validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_black_box_attack_vulnerability(self, node: ast.Call) -> None:
+        """AIML147: Detect black-box attack vulnerability."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for API endpoints exposing inference
+        if isinstance(node.func, ast.Attribute):
+            if "api" in str(node.func).lower() and "predict" in node.func.attr:
+                violation = RuleViolation(
+                    rule_id="AIML147",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model API exposes inference - black-box attack risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_transfer_attack_risks(self, node: ast.Call) -> None:
+        """AIML148: Detect transfer attack risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for models similar to public architectures
+        public_archs = ["resnet", "vgg", "inception", "mobilenet", "efficientnet"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = str(node.func).lower()
+            
+            if any(arch in func_name for arch in public_archs):
+                violation = RuleViolation(
+                    rule_id="AIML148",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model architecture similar to public models - transfer attack risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_physical_adversarial_examples(self, node: ast.Call) -> None:
+        """AIML149: Detect physical adversarial examples vulnerability."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for vision models without physical robustness
+        vision_funcs = ["detect", "classify", "segment", "recognize"]
+        
+        if isinstance(node.func, ast.Attribute):
+            if any(func in node.func.attr.lower() for func in vision_funcs):
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "camera" in line_text or "video" in line_text or "real" in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML149",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Vision model without physical robustness - real-world attack risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_adversarial_patch_detection_missing(self, node: ast.Call) -> None:
+        """AIML150: Detect missing adversarial patch detection."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for object detection without patch detection
+        if isinstance(node.func, ast.Attribute):
+            if "detect" in node.func.attr.lower():
+                violation = RuleViolation(
+                    rule_id="AIML150",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Object detection without patch detection - adversarial sticker risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    # Phase 1.4.2: Model Robustness (10 checks - AIML151-AIML160)
+    
+    def _check_missing_adversarial_training(self, node: ast.Call) -> None:
+        """AIML151: Detect missing adversarial training."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for training without adversarial examples
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["fit", "train"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "adversarial" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML151",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Model trained without adversarial examples - weak robustness",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-693",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_no_certified_defenses(self, node: ast.Call) -> None:
+        """AIML152: Detect lack of certified defenses."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for certified defense mechanisms
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "certify" not in func_name.lower() and "provable" not in str(node).lower():
+                if isinstance(node.func, ast.Attribute) and node.func.attr in ["predict", "forward"]:
+                    violation = RuleViolation(
+                        rule_id="AIML152",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model lacks certified robustness guarantees",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-693",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_input_gradient_masking(self, node: ast.Call) -> None:
+        """AIML153: Detect input gradient masking."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for gradient masking techniques
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "gradient" in line_text and ("mask" in line_text or "obfuscate" in line_text):
+            violation = RuleViolation(
+                rule_id="AIML153",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.LOW,
+                message="Model uses gradient masking - false sense of security",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML04",
+                cwe_id="CWE-693",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+
+    def _check_defensive_distillation_gaps(self, node: ast.Call) -> None:
+        """AIML154: Detect defensive distillation gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for defensive distillation usage
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if "distillation" in func_name.lower():
+                violation = RuleViolation(
+                    rule_id="AIML154",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Defensive distillation incomplete - C&W vulnerability",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-693",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
+    def _check_ensemble_defenses_missing(self, node: ast.Call) -> None:
+        """AIML155: Detect missing ensemble defenses."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for single model inference (no ensemble)
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "ensemble" not in line_text and "voting" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML155",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Single model inference - consider ensemble for robustness",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-693",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_randomization_defense_gaps(self, node: ast.Call) -> None:
+        """AIML156: Detect randomization defense gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for randomization-only defense
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "random" in line_text and "defense" in line_text:
+            violation = RuleViolation(
+                rule_id="AIML156",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.LOW,
+                message="Randomization defense weak - can be circumvented",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML04",
+                cwe_id="CWE-693",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+
+    def _check_input_transformation_missing(self, node: ast.Call) -> None:
+        """AIML157: Detect missing input transformation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for preprocessing/transformation layers
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "transform" not in line_text and "preprocess" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML157",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="No input preprocessing defenses - add transformation layers",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_detection_mechanism_missing(self, node: ast.Call) -> None:
+        """AIML158: Detect missing detection mechanism."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for adversarial detection layer
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "detect" not in line_text or "adversarial" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML158",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="No adversarial example detector - add detection layer",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_rejection_option_missing(self, node: ast.Call) -> None:
+        """AIML159: Detect missing rejection option."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for confidence-based rejection
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["predict", "forward"]:
+                has_rejection = any(
+                    kw.arg in ["confidence_threshold", "reject_threshold", "min_confidence"]
+                    for kw in node.keywords
+                )
+                
+                if not has_rejection:
+                    violation = RuleViolation(
+                        rule_id="AIML159",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model lacks confidence-based rejection - add uncertainty quantification",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
+    def _check_robustness_testing_absent(self, node: ast.Call) -> None:
+        """AIML160: Detect absence of robustness testing."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for robustness testing
+        test_funcs = ["test", "evaluate", "benchmark"]
+        
+        if isinstance(node.func, (ast.Name, ast.Attribute)):
+            func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            
+            if any(test in func_name.lower() for test in test_funcs):
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "adversarial" not in line_text and "robust" not in line_text:
+                    violation = RuleViolation(
+                        rule_id="AIML160",
+                        category=RuleCategory.CONVENTION,
+                        severity=RuleSeverity.MEDIUM,
+                        message="No adversarial robustness testing - add evaluation suite",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML04",
+                        cwe_id="CWE-1059",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
         if isinstance(node.func, ast.Attribute):
@@ -6468,4 +7157,27 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML138", name="adapter-injection", description="Adapter injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Adapter loading - validate to prevent malicious injection", explanation="Adapters can inject malicious behavior", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "adapter", "security"}, references=["https://arxiv.org/abs/1902.00751"]),
     Rule(rule_id="AIML139", name="prompt-tuning-manipulation", description="Prompt tuning manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Prompt tuning - validate prompts to prevent manipulation", explanation="Soft prompts can be manipulated to change behavior", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "fine-tuning", "prompt-tuning", "security"}, references=["https://arxiv.org/abs/2104.08691"]),
     Rule(rule_id="AIML140", name="instruction-fine-tuning-risks", description="Instruction fine-tuning risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Instruction fine-tuning - validate data to prevent jailbreaks", explanation="Instruction data can introduce jailbreak vulnerabilities", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="LLM01", tags={"ai", "ml", "fine-tuning", "instruction", "security"}, references=["https://arxiv.org/abs/2109.01652"]),
+    # Phase 1.4: Adversarial ML & Model Robustness (20 checks)
+    # Phase 1.4.1: Adversarial Input Detection (AIML141-AIML150)
+    Rule(rule_id="AIML141", name="missing-adversarial-defense", description="Missing input adversarial defense", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model inference without adversarial defense - attack vulnerability", explanation="Models should include adversarial input detection and defense", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "defense", "security"}, references=["https://arxiv.org/abs/1412.6572"]),
+    Rule(rule_id="AIML142", name="no-fgsm-protection", description="No FGSM (Fast Gradient Sign Method) protection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model vulnerable to FGSM attacks - add adversarial training", explanation="Models should be hardened against FGSM attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "fgsm", "security"}, references=["https://arxiv.org/abs/1412.6572"]),
+    Rule(rule_id="AIML143", name="pgd-vulnerability", description="PGD (Projected Gradient Descent) vulnerability", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model vulnerable to PGD attacks - implement robust training", explanation="PGD is a powerful adversarial attack that requires defense", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "pgd", "security"}, references=["https://arxiv.org/abs/1706.06083"]),
+    Rule(rule_id="AIML144", name="cw-attack-surface", description="C&W (Carlini & Wagner) attack surface", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model vulnerable to C&W attacks - add defensive distillation", explanation="C&W attacks can bypass many defenses, requiring robust countermeasures", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "cw", "security"}, references=["https://arxiv.org/abs/1608.04644"]),
+    Rule(rule_id="AIML145", name="deepfool-susceptibility", description="DeepFool susceptibility", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model vulnerable to DeepFool attacks - validate input perturbations", explanation="DeepFool finds minimal perturbations to fool models", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "deepfool", "security"}, references=["https://arxiv.org/abs/1511.04599"]),
+    Rule(rule_id="AIML146", name="universal-adversarial-perturbations", description="Universal adversarial perturbations", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model vulnerable to universal perturbations - add input validation", explanation="Universal perturbations can fool models on any input", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "universal", "security"}, references=["https://arxiv.org/abs/1610.08401"]),
+    Rule(rule_id="AIML147", name="black-box-attack-vulnerability", description="Black-box attack vulnerability", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model API exposes inference - black-box attack risk", explanation="Inference APIs enable black-box adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "black-box", "security"}, references=["https://arxiv.org/abs/1602.02697"]),
+    Rule(rule_id="AIML148", name="transfer-attack-risks", description="Transfer attack risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model architecture similar to public models - transfer attack risk", explanation="Adversarial examples can transfer between models", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "transfer", "security"}, references=["https://arxiv.org/abs/1605.07277"]),
+    Rule(rule_id="AIML149", name="physical-adversarial-examples", description="Physical adversarial examples", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Vision model without physical robustness - real-world attack risk", explanation="Physical adversarial examples work in the real world", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "physical", "security"}, references=["https://arxiv.org/abs/1607.02533"]),
+    Rule(rule_id="AIML150", name="adversarial-patch-detection-missing", description="Adversarial patch detection missing", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Object detection without patch detection - adversarial sticker risk", explanation="Adversarial patches can fool object detection systems", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "adversarial", "patch", "security"}, references=["https://arxiv.org/abs/1712.09665"]),
+    # Phase 1.4.2: Model Robustness (AIML151-AIML160)
+    Rule(rule_id="AIML151", name="missing-adversarial-training", description="Missing adversarial training", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Model trained without adversarial examples - weak robustness", explanation="Adversarial training improves model robustness", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "training", "security"}, references=["https://arxiv.org/abs/1706.06083"]),
+    Rule(rule_id="AIML152", name="no-certified-defenses", description="No certified defenses", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model lacks certified robustness guarantees", explanation="Certified defenses provide provable robustness", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "certified", "security"}, references=["https://arxiv.org/abs/1805.12514"]),
+    Rule(rule_id="AIML153", name="input-gradient-masking", description="Input gradient masking", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Model uses gradient masking - false sense of security", explanation="Gradient masking can be bypassed and provides weak defense", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "gradient-masking", "security"}, references=["https://arxiv.org/abs/1803.09868"]),
+    Rule(rule_id="AIML154", name="defensive-distillation-gaps", description="Defensive distillation gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Defensive distillation incomplete - C&W vulnerability", explanation="Defensive distillation can be bypassed by advanced attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "distillation", "security"}, references=["https://arxiv.org/abs/1511.04508"]),
+    Rule(rule_id="AIML155", name="ensemble-defenses-missing", description="Ensemble defenses missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Single model inference - consider ensemble for robustness", explanation="Ensemble methods improve adversarial robustness", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "ensemble", "security"}, references=["https://arxiv.org/abs/1705.07204"]),
+    Rule(rule_id="AIML156", name="randomization-defense-gaps", description="Randomization defense gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Randomization defense weak - can be circumvented", explanation="Randomization alone provides limited adversarial protection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-693", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "randomization", "security"}, references=["https://arxiv.org/abs/1711.01991"]),
+    Rule(rule_id="AIML157", name="input-transformation-missing", description="Input transformation missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="No input preprocessing defenses - add transformation layers", explanation="Input transformations can remove adversarial perturbations", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "transformation", "security"}, references=["https://arxiv.org/abs/1704.01155"]),
+    Rule(rule_id="AIML158", name="detection-mechanism-missing", description="Detection mechanism missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="No adversarial example detector - add detection layer", explanation="Detection mechanisms can identify adversarial inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "detection", "security"}, references=["https://arxiv.org/abs/1705.07263"]),
+    Rule(rule_id="AIML159", name="rejection-option-missing", description="Rejection option missing", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model lacks confidence-based rejection - add uncertainty quantification", explanation="Rejection mechanisms can refuse low-confidence predictions", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "rejection", "security"}, references=["https://arxiv.org/abs/1802.04865"]),
+    Rule(rule_id="AIML160", name="robustness-testing-absent", description="Robustness testing absent", category=RuleCategory.CONVENTION, severity=RuleSeverity.MEDIUM, message_template="No adversarial robustness testing - add evaluation suite", explanation="Models should be tested against adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1059", owasp_mapping="ML04", tags={"ai", "ml", "robustness", "testing", "best-practice"}, references=["https://arxiv.org/abs/1902.06705"]),
 ]
