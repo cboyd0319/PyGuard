@@ -15227,6 +15227,36 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         if func_name in ["generate", "completion", "create", "chat"]:
             # Check arguments for prompts with memorization exploitation keywords
+            # Check positional arguments
+            for arg in node.args:
+                if isinstance(arg, ast.Name):
+                    # Variable name might indicate prompt with memorization keywords
+                    # Check assignment statements in the file for this variable
+                    var_name = arg.id
+                    for line in self.lines:
+                        line_lower = line.lower()
+                        if var_name.lower() in line_lower and any(x in line_lower for x in ["repeat", "recite", "verbatim", "exact"]):
+                            violation = RuleViolation(
+                                rule_id="AIML463",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.HIGH,
+                                message="LLM memorization exploitation - implement output validation to prevent memorized content extraction",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="LLM06",
+                                cwe_id="CWE-200",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+                            break
+            
+            # Check keyword arguments
             for keyword in node.keywords:
                 key = keyword.arg if keyword.arg else ""
                 if key in ["prompt", "text", "input"]:
