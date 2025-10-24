@@ -507,8 +507,8 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 100 AI/ML security rules are registered."""
-        assert len(AIML_SECURITY_RULES) == 100
+        """Verify all 150 AI/ML security rules are registered (Phase 1 complete - Milestone 1)."""
+        assert len(AIML_SECURITY_RULES) == 150
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -536,6 +536,22 @@ class TestAIMLSecurityRules:
             # Phase 1.2.3: Hugging Face & Transformers (AIML101-AIML110)
             "AIML101", "AIML102", "AIML103", "AIML104", "AIML105",
             "AIML106", "AIML107", "AIML108", "AIML109", "AIML110",
+            # Phase 1.3.1: Training Data Security (AIML111-AIML122)
+            "AIML111", "AIML112", "AIML113", "AIML114", "AIML115",
+            "AIML116", "AIML117", "AIML118", "AIML119", "AIML120",
+            "AIML121", "AIML122",
+            # Phase 1.3.2: Training Process Security (AIML123-AIML132)
+            "AIML123", "AIML124", "AIML125", "AIML126", "AIML127",
+            "AIML128", "AIML129", "AIML130", "AIML131", "AIML132",
+            # Phase 1.3.3: Fine-Tuning Risks (AIML133-AIML140)
+            "AIML133", "AIML134", "AIML135", "AIML136", "AIML137",
+            "AIML138", "AIML139", "AIML140",
+            # Phase 1.4.1: Adversarial Input Detection (AIML141-AIML150)
+            "AIML141", "AIML142", "AIML143", "AIML144", "AIML145",
+            "AIML146", "AIML147", "AIML148", "AIML149", "AIML150",
+            # Phase 1.4.2: Model Robustness (AIML151-AIML160)
+            "AIML151", "AIML152", "AIML153", "AIML154", "AIML155",
+            "AIML156", "AIML157", "AIML158", "AIML159", "AIML160",
         ]
         actual_ids = [rule.rule_id for rule in AIML_SECURITY_RULES]
         
