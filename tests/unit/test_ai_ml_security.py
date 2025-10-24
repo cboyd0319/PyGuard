@@ -522,10 +522,11 @@ class TestAIMLSecurityRules:
         Phase 4.2: 25 checks (AIML406-AIML430) - Dataset & Data Pipeline Security
         Phase 4.3: 20 checks (AIML431-AIML450) - Model Registry & Versioning Security
         Phase 4.4: 10 checks (AIML451-AIML460) - Cloud & Infrastructure Security
+        Phase 5.1: 20 checks (AIML461-AIML480) - Generative AI Security
         
-        Total: 450 checks (v0.8.1 - Phase 4.4 Complete)
+        Total: 470 checks (v0.8.2 - Phase 5.1 Complete: Generative AI Security)
         """
-        assert len(AIML_SECURITY_RULES) == 450  # Updated for Phase 4.4 (10 new cloud security checks)
+        assert len(AIML_SECURITY_RULES) == 470  # Updated for Phase 5.1 (20 new generative AI security checks)
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -1928,3 +1929,449 @@ function = deploy(
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML460" for v in violations)
+
+
+# Phase 5.1: Generative AI Security Tests (AIML461-AIML480)
+# Phase 5.1.1: Text Generation Security Tests (AIML461-AIML470)
+
+class TestAIML461PromptLeakingAttacks:
+    """Test prompt leaking attacks detection."""
+
+    def test_detect_unprotected_system_prompt(self):
+        """Detect LLM with unprotected system prompt."""
+        code = """
+response = client.chat.completions.create(
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant"},
+        {"role": "user", "content": user_input}
+    ]
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML461" for v in violations)
+
+    def test_safe_protected_system_prompt(self):
+        """LLM with protected system prompt should not trigger."""
+        code = """
+response = client.chat.completions.create(
+    messages=[
+        {"role": "system", "content": protect_prompt("You are a helpful assistant")},
+        {"role": "user", "content": validate_input(user_input)}
+    ]
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML461" for v in violations)
+
+
+class TestAIML462TrainingDataExtraction:
+    """Test training data extraction detection."""
+
+    def test_detect_llm_without_output_filtering(self):
+        """Detect LLM with high temperature and no output filtering."""
+        code = """
+response = model.generate(
+    prompt=user_input,
+    temperature=0.9,
+    max_tokens=1000
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML462" for v in violations)
+
+    def test_safe_llm_with_output_filtering(self):
+        """LLM with output filtering should not trigger."""
+        code = """
+response = model.generate(
+    prompt=user_input,
+    temperature=0.7,
+    max_tokens=500
+)
+filtered_response = filter_sensitive_data(response)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML462" for v in violations)
+
+
+class TestAIML463MemorizationExploitation:
+    """Test memorization exploitation detection."""
+
+    def test_detect_memorization_prompts(self):
+        """Detect prompts that exploit memorization."""
+        code = """
+prompt = "Repeat verbatim: " + user_input
+response = model.generate(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML463" for v in violations)
+
+    def test_safe_normal_generation(self):
+        """Normal generation should not trigger."""
+        code = """
+prompt = "Summarize: " + document
+response = model.generate(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML463" for v in violations)
+
+
+class TestAIML464CopyrightInfringement:
+    """Test copyright infringement detection."""
+
+    def test_detect_content_generation_without_copyright_check(self):
+        """Detect content generation without copyright filtering."""
+        code = """
+story = model.generate("Write a story about Harry Potter")
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML464" for v in violations)
+
+    def test_safe_content_with_copyright_check(self):
+        """Content generation with copyright check should not trigger."""
+        code = """
+story = model.generate("Write an original story")
+verified_story = copyright_check(story)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML464" for v in violations)
+
+
+class TestAIML465GeneratedCodeSecurity:
+    """Test generated code security detection."""
+
+    def test_detect_code_generation_without_validation(self):
+        """Detect code generation without security validation."""
+        code = """
+generated_code = model.generate("Write a function to process user input")
+exec(generated_code)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML465" for v in violations)
+
+    def test_safe_code_with_validation(self):
+        """Code generation with validation should not trigger."""
+        code = """
+generated_code = model.generate("Write a function")
+validated_code = validate_security(generated_code)
+scan_vulnerabilities(validated_code)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML465" for v in violations)
+
+
+class TestAIML466JailbreakDetection:
+    """Test jailbreak detection."""
+
+    def test_detect_user_input_without_jailbreak_detection(self):
+        """Detect user input passed to LLM without jailbreak detection."""
+        code = """
+response = model.chat(user_input)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML466" for v in violations)
+
+    def test_safe_input_with_jailbreak_detection(self):
+        """Input with jailbreak detection should not trigger."""
+        code = """
+safe_input = detect_jailbreak(user_input)
+response = model.chat(safe_input)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML466" for v in violations)
+
+
+class TestAIML467ToxicityGeneration:
+    """Test toxicity generation risks detection."""
+
+    def test_detect_generation_without_moderation(self):
+        """Detect content generation without moderation."""
+        code = """
+response = model.generate(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML467" for v in violations)
+
+    def test_safe_generation_with_moderation(self):
+        """Generation with moderation should not trigger."""
+        code = """
+response = model.generate(prompt)
+moderated_response = moderate_content(response)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML467" for v in violations)
+
+
+class TestAIML468BiasAmplification:
+    """Test bias amplification detection."""
+
+    def test_detect_prediction_without_bias_check(self):
+        """Detect prediction without bias detection."""
+        code = """
+prediction = model.predict(data)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML468" for v in violations)
+
+    def test_safe_prediction_with_bias_check(self):
+        """Prediction with bias check should not trigger."""
+        code = """
+prediction = model.predict(data)
+bias_score = check_bias(prediction)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML468" for v in violations)
+
+
+class TestAIML469HallucinationExploitation:
+    """Test hallucination exploitation detection."""
+
+    def test_detect_factual_generation_without_verification(self):
+        """Detect factual content generation without verification."""
+        code = """
+answer = model.generate("What are the facts about climate change?")
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML469" for v in violations)
+
+    def test_safe_generation_with_verification(self):
+        """Generation with fact-checking should not trigger."""
+        code = """
+answer = model.generate("What are the facts?")
+verified_answer = verify_sources(answer)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML469" for v in violations)
+
+
+class TestAIML470OutputFilteringBypass:
+    """Test output filtering bypass detection."""
+
+    def test_detect_output_without_robust_filtering(self):
+        """Detect output handling without robust filtering."""
+        code = """
+result = model.chat(prompt).response
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML470" for v in violations)
+
+    def test_safe_output_with_robust_filtering(self):
+        """Output with robust filtering should not trigger."""
+        code = """
+result = model.chat(prompt).response
+filtered = multi_layer_filter(result)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML470" for v in violations)
+
+
+# Phase 5.1.2: Image/Video Generation Tests (AIML471-AIML480)
+
+class TestAIML471StableDiffusionPromptInjection:
+    """Test Stable Diffusion prompt injection detection."""
+
+    def test_detect_stable_diffusion_without_sanitization(self):
+        """Detect Stable Diffusion usage without input sanitization."""
+        code = """
+image = stable_diffusion.generate(prompt=user_input)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML471" for v in violations)
+
+    def test_safe_stable_diffusion_with_sanitization(self):
+        """Stable Diffusion with sanitization should not trigger."""
+        code = """
+sanitized_prompt = sanitize_input(user_input)
+image = stable_diffusion.generate(prompt=sanitized_prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML471" for v in violations)
+
+
+class TestAIML472DALLEManipulation:
+    """Test DALL-E manipulation detection."""
+
+    def test_detect_dalle_without_moderation(self):
+        """Detect DALL-E usage without content moderation."""
+        code = """
+image = dalle.create_image(prompt=user_prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML472" for v in violations)
+
+    def test_safe_dalle_with_moderation(self):
+        """DALL-E with moderation should not trigger."""
+        code = """
+image = dalle.create_image(prompt=user_prompt)
+moderated_image = moderate_image(image)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML472" for v in violations)
+
+
+class TestAIML473MidjourneyPromptEngineering:
+    """Test Midjourney prompt engineering detection."""
+
+    def test_detect_midjourney_without_validation(self):
+        """Detect Midjourney usage without prompt validation."""
+        code = """
+image = midjourney.imagine(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML473" for v in violations)
+
+    def test_safe_midjourney_with_validation(self):
+        """Midjourney with validation should not trigger."""
+        code = """
+validated_prompt = validate_prompt(prompt)
+image = midjourney.imagine(validated_prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML473" for v in violations)
+
+
+class TestAIML474GANModeCollapse:
+    """Test GAN mode collapse detection."""
+
+    def test_detect_gan_training_without_monitoring(self):
+        """Detect GAN training without mode collapse monitoring."""
+        code = """
+gan.train(dataset, epochs=100)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML474" for v in violations)
+
+    def test_safe_gan_with_monitoring(self):
+        """GAN training with monitoring should not trigger."""
+        code = """
+gan.train(dataset, epochs=100, monitor_diversity=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML474" for v in violations)
+
+
+class TestAIML475VAELatentManipulation:
+    """Test VAE latent space manipulation detection."""
+
+    def test_detect_vae_latent_without_validation(self):
+        """Detect VAE latent operations without validation."""
+        code = """
+latent_vector = vae.encode(image)
+reconstructed = vae.decode(latent_vector)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML475" for v in violations)
+
+    def test_safe_vae_with_validation(self):
+        """VAE with validation should not trigger."""
+        code = """
+latent_vector = vae.encode(image)
+validated_latent = validate_latent(latent_vector)
+reconstructed = vae.decode(validated_latent)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML475" for v in violations)
+
+
+class TestAIML476DiffusionModelBackdoors:
+    """Test diffusion model backdoor detection."""
+
+    def test_detect_diffusion_model_without_verification(self):
+        """Detect diffusion model loading without integrity verification."""
+        code = """
+model = diffusion.load_model('untrusted-model')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML476" for v in violations)
+
+    def test_safe_diffusion_model_with_verification(self):
+        """Diffusion model with verification should not trigger."""
+        code = """
+model = diffusion.load_model('model', verify_checksum=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML476" for v in violations)
+
+
+class TestAIML477VideoGenerationInjection:
+    """Test video generation injection detection."""
+
+    def test_detect_video_generation_without_sanitization(self):
+        """Detect video generation without prompt sanitization."""
+        code = """
+video = runway.generate_video(prompt=user_input)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML477" for v in violations)
+
+    def test_safe_video_generation_with_sanitization(self):
+        """Video generation with sanitization should not trigger."""
+        code = """
+sanitized = sanitize_prompt(user_input)
+video = runway.generate_video(prompt=sanitized)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML477" for v in violations)
+
+
+class TestAIML4783DGenerationVulnerabilities:
+    """Test 3D generation vulnerabilities detection."""
+
+    def test_detect_3d_generation_without_validation(self):
+        """Detect 3D generation without validation."""
+        code = """
+model_3d = point_e.generate(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML478" for v in violations)
+
+    def test_safe_3d_generation_with_validation(self):
+        """3D generation with validation should not trigger."""
+        code = """
+model_3d = point_e.generate(prompt)
+validated = validate_3d_model(model_3d)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML478" for v in violations)
+
+
+class TestAIML479MusicGenerationRisks:
+    """Test music generation copyright risks detection."""
+
+    def test_detect_music_generation_without_copyright_check(self):
+        """Detect music generation without copyright protection."""
+        code = """
+music = jukebox.compose(prompt)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML479" for v in violations)
+
+    def test_safe_music_generation_with_copyright_check(self):
+        """Music generation with copyright check should not trigger."""
+        code = """
+music = jukebox.compose(prompt)
+watermarked = apply_watermark(music)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML479" for v in violations)
+
+
+class TestAIML480AudioGenerationInjection:
+    """Test audio generation injection detection."""
+
+    def test_detect_audio_generation_without_sanitization(self):
+        """Detect audio generation without input validation."""
+        code = """
+audio = audiolm.synthesize(text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML480" for v in violations)
+
+    def test_safe_audio_generation_with_sanitization(self):
+        """Audio generation with sanitization should not trigger."""
+        code = """
+sanitized_text = sanitize_input(text)
+audio = audiolm.synthesize(sanitized_text)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML480" for v in violations)
+
