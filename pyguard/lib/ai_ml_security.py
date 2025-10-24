@@ -13,6 +13,11 @@ Security Areas Covered:
 - Multi-language prompt injection (non-English) - AIML015
 - Markdown injection in prompts - AIML016
 - XML/JSON payload injection - AIML017
+- SQL-style comment injection - AIML018
+- Escape sequence injection - AIML019
+- Token stuffing attacks (context window exhaustion) - AIML020
+- Recursive prompt injection (prompts containing prompts) - AIML021
+- Base64 encoded injection attempts - AIML022
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -23,7 +28,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 17 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
+Total Security Checks: 22 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -121,6 +126,21 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML017: XML/JSON payload injection
         self._check_payload_injection(node)
         
+        # AIML018: SQL-style comment injection
+        self._check_sql_comment_injection(node)
+        
+        # AIML019: Escape sequence injection
+        self._check_escape_sequence_injection(node)
+        
+        # AIML020: Token stuffing attacks
+        self._check_token_stuffing(node)
+        
+        # AIML021: Recursive prompt injection
+        self._check_recursive_prompt_injection(node)
+        
+        # AIML022: Base64 encoded injection
+        self._check_base64_injection(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -185,7 +205,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                                             source_tool="pyguard",
                                         )
                                     )
-                        # AIML011-AIML017: Check for various prompt injection patterns in string constants
+                        # AIML011-AIML022: Check for various prompt injection patterns in string constants
                         elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                             self._check_string_for_prompt_override(node.value.value, node)
                             self._check_string_for_unicode_injection(node.value.value, node)
@@ -194,6 +214,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                             self._check_string_for_multilanguage_injection(node.value.value, node)
                             self._check_string_for_markdown_injection(node.value.value, node)
                             self._check_string_for_payload_injection(node.value.value, node)
+                            self._check_string_for_sql_comment_injection(node.value.value, node)
+                            self._check_string_for_escape_sequence_injection(node.value.value, node)
+                            self._check_string_for_token_stuffing(node.value.value, node)
+                            self._check_string_for_recursive_prompt_injection(node.value.value, node)
+                            self._check_string_for_base64_injection(node.value.value, node)
         
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
@@ -665,6 +690,301 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 source_tool="pyguard",
             )
             self.violations.append(violation)
+    
+    def _check_sql_comment_injection(self, node: ast.Call) -> None:
+        """AIML018: Detect SQL-style comment injection in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_sql_comment_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_sql_comment_injection(keyword.value.value, node)
+    
+    def _check_string_for_sql_comment_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains SQL-style comment injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # SQL-style comment patterns used for prompt injection
+        sql_comment_patterns = [
+            "-- ",          # SQL single-line comment
+            "--\n",         # SQL comment with newline
+            "--\r",         # SQL comment with carriage return
+            "/* ",          # SQL multi-line comment start
+            " */",          # SQL multi-line comment end
+            "#ignore",      # Hash comment with injection keyword
+            "-- ignore",    # SQL comment with ignore
+            "/* ignore",    # Multi-line comment with ignore
+        ]
+        
+        # Also check for patterns that combine comments with instructions
+        has_comment = any(pattern in text for pattern in sql_comment_patterns)
+        has_instruction_after_comment = False
+        
+        if has_comment:
+            # Check if there's an instruction keyword after the comment
+            instruction_keywords = ["ignore", "bypass", "override", "new", "system", "admin"]
+            lower_text = text.lower()
+            has_instruction_after_comment = any(keyword in lower_text for keyword in instruction_keywords)
+        
+        if has_comment and has_instruction_after_comment:
+            violation = RuleViolation(
+                rule_id="AIML018",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="SQL-style comment injection detected: comment syntax used for prompt manipulation",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_escape_sequence_injection(self, node: ast.Call) -> None:
+        """AIML019: Detect escape sequence injection in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_escape_sequence_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_escape_sequence_injection(keyword.value.value, node)
+    
+    def _check_string_for_escape_sequence_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains escape sequence injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Escape sequence patterns that could be used for injection
+        # Looking for patterns like actual newlines (Python has already processed escape sequences)
+        # Check for multiple consecutive newlines
+        has_multiple_newlines = "\n\n\n" in text
+        has_multiple_crlf = "\r\n\r\n" in text
+        has_null_byte = "\x00" in text
+        has_escape_char = "\x1b" in text or "\033" in text
+        
+        # Count suspicious patterns
+        suspicious_count = sum([
+            has_multiple_newlines,
+            has_multiple_crlf,
+            has_null_byte,
+            has_escape_char
+        ])
+        
+        # Also check for these patterns followed by instruction keywords
+        has_escape_with_instruction = False
+        if suspicious_count > 0:
+            instruction_keywords = ["new", "system", "ignore", "override", "instruction"]
+            lower_text = text.lower()
+            has_escape_with_instruction = any(keyword in lower_text for keyword in instruction_keywords)
+        
+        if suspicious_count >= 1 and has_escape_with_instruction:
+            violation = RuleViolation(
+                rule_id="AIML019",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Escape sequence injection detected: suspicious escape sequences in prompt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_token_stuffing(self, node: ast.Call) -> None:
+        """AIML020: Detect token stuffing attacks (context window exhaustion)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments for very long strings
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_token_stuffing(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_token_stuffing(keyword.value.value, node)
+    
+    def _check_string_for_token_stuffing(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string is attempting token stuffing."""
+        if not self.has_llm_framework:
+            return
+        
+        # Token stuffing indicators:
+        # 1. Very long strings (>8000 chars is suspicious)
+        # 2. Highly repetitive content
+        text_length = len(text)
+        
+        if text_length > 8000:
+            # Check for repetitiveness (same pattern repeated many times)
+            # Simple heuristic: if the first 100 chars appear multiple times, it's repetitive
+            if text_length > 200:
+                sample = text[:100]
+                occurrences = text.count(sample)
+                if occurrences > 10:  # Very repetitive
+                    violation = RuleViolation(
+                        rule_id="AIML020",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message=f"Token stuffing attack detected: very long ({text_length} chars) repetitive prompt",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_recursive_prompt_injection(self, node: ast.Call) -> None:
+        """AIML021: Detect recursive prompt injection (prompts containing prompts)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_recursive_prompt_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_recursive_prompt_injection(keyword.value.value, node)
+    
+    def _check_string_for_recursive_prompt_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains recursive prompt injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Recursive prompt injection patterns - prompts within prompts
+        recursive_patterns = [
+            "prompt:",
+            "user:",
+            "assistant:",
+            "system:",
+            "generate a prompt",
+            "create a prompt",
+            "write a prompt",
+            "respond to:",
+            "answer:",
+        ]
+        
+        lower_text = text.lower()
+        pattern_count = sum(1 for pattern in recursive_patterns if pattern in lower_text)
+        
+        # If multiple prompt-related keywords, likely recursive
+        if pattern_count >= 2:
+            violation = RuleViolation(
+                rule_id="AIML021",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Recursive prompt injection detected: prompt contains nested prompt instructions",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_base64_injection(self, node: ast.Call) -> None:
+        """AIML022: Detect Base64 encoded injection attempts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_base64_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_base64_injection(keyword.value.value, node)
+    
+    def _check_string_for_base64_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains Base64 encoded injection attempts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Base64 pattern detection
+        # Look for Base64-like strings (alphanumeric + / and + with = padding)
+        import re
+        base64_pattern = r'[A-Za-z0-9+/]{20,}={0,2}'
+        matches = re.findall(base64_pattern, text)
+        
+        if matches:
+            # Try to decode and check for malicious patterns
+            try:
+                import base64
+                for match in matches:
+                    try:
+                        decoded = base64.b64decode(match).decode('utf-8', errors='ignore')
+                        # Check if decoded text contains injection keywords
+                        malicious_keywords = ["ignore", "system", "bypass", "override", "admin", "jailbreak"]
+                        if any(keyword in decoded.lower() for keyword in malicious_keywords):
+                            violation = RuleViolation(
+                                rule_id="AIML022",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.HIGH,
+                                message="Base64 encoded injection detected: encoded malicious content in prompt",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="LLM01",
+                                cwe_id="CWE-94",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+                            break
+                    except Exception:
+                        # Invalid Base64, skip
+                        continue
+            except ImportError:
+                # base64 module not available, skip
+                pass
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
