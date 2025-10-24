@@ -18,6 +18,29 @@ Security Areas Covered:
 - Token stuffing attacks (context window exhaustion) - AIML020
 - Recursive prompt injection (prompts containing prompts) - AIML021
 - Base64 encoded injection attempts - AIML022
+- ROT13/Caesar cipher obfuscation - AIML023
+- Invisible character injection (zero-width spaces) - AIML024
+- Right-to-left override attacks (Unicode bidi) - AIML025
+- Prompt template literal injection - AIML026
+- F-string injection in prompts - AIML027
+- Variable substitution attacks - AIML028
+- Context window overflow - AIML029
+- Attention mechanism manipulation - AIML030
+- URL-based injection (fetched web content) - AIML031
+- Document poisoning (PDF, DOCX injection) - AIML032
+- Image-based prompt injection (OCR manipulation) - AIML033
+- API response injection (3rd party data) - AIML034
+- Database content injection - AIML035
+- File upload injection vectors - AIML036
+- Email content injection - AIML037
+- Social media scraping injection - AIML038
+- RAG poisoning (retrieval augmented generation) - AIML039
+- Vector database injection - AIML040
+- Knowledge base tampering - AIML041
+- Citation manipulation - AIML042
+- Search result poisoning - AIML043
+- User profile injection - AIML044
+- Conversation history injection - AIML045
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -28,7 +51,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 22 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
+Total Security Checks: 45 (v0.7.0 - AI/ML Security Dominance Plan Phase 1)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -141,6 +164,75 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML022: Base64 encoded injection
         self._check_base64_injection(node)
         
+        # AIML023: ROT13/Caesar cipher obfuscation
+        self._check_rot13_obfuscation(node)
+        
+        # AIML024: Invisible character injection (zero-width spaces)
+        self._check_invisible_char_injection(node)
+        
+        # AIML025: Right-to-left override attacks (Unicode bidi)
+        self._check_bidi_override(node)
+        
+        # AIML026: Prompt template literal injection
+        self._check_template_literal_injection(node)
+        
+        # AIML027: F-string injection in prompts
+        self._check_fstring_injection(node)
+        
+        # AIML028: Variable substitution attacks
+        self._check_variable_substitution(node)
+        
+        # AIML029: Context window overflow
+        self._check_context_window_overflow(node)
+        
+        # AIML030: Attention mechanism manipulation
+        self._check_attention_manipulation(node)
+        
+        # AIML031: URL-based injection (fetched web content)
+        self._check_url_based_injection(node)
+        
+        # AIML032: Document poisoning (PDF, DOCX injection)
+        self._check_document_poisoning(node)
+        
+        # AIML033: Image-based prompt injection (OCR manipulation)
+        self._check_image_injection(node)
+        
+        # AIML034: API response injection (3rd party data)
+        self._check_api_response_injection(node)
+        
+        # AIML035: Database content injection
+        self._check_database_injection(node)
+        
+        # AIML036: File upload injection vectors
+        self._check_file_upload_injection(node)
+        
+        # AIML037: Email content injection
+        self._check_email_injection(node)
+        
+        # AIML038: Social media scraping injection
+        self._check_social_scraping_injection(node)
+        
+        # AIML039: RAG poisoning (retrieval augmented generation)
+        self._check_rag_poisoning(node)
+        
+        # AIML040: Vector database injection
+        self._check_vector_db_injection(node)
+        
+        # AIML041: Knowledge base tampering
+        self._check_knowledge_base_tampering(node)
+        
+        # AIML042: Citation manipulation
+        self._check_citation_manipulation(node)
+        
+        # AIML043: Search result poisoning
+        self._check_search_poisoning(node)
+        
+        # AIML044: User profile injection
+        self._check_user_profile_injection(node)
+        
+        # AIML045: Conversation history injection
+        self._check_conversation_history_injection(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -219,6 +311,13 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                             self._check_string_for_token_stuffing(node.value.value, node)
                             self._check_string_for_recursive_prompt_injection(node.value.value, node)
                             self._check_string_for_base64_injection(node.value.value, node)
+                            self._check_string_for_rot13_obfuscation(node.value.value, node)
+                            self._check_string_for_invisible_char_injection(node.value.value, node)
+                            self._check_string_for_bidi_override(node.value.value, node)
+                            self._check_string_for_template_literal_injection(node.value.value, node)
+                            self._check_string_for_variable_substitution(node.value.value, node)
+                            self._check_string_for_context_window_overflow(node.value.value, node)
+                            self._check_string_for_attention_manipulation(node.value.value, node)
         
         # AIML002: Model inversion risks
         self._check_model_inversion(node)
@@ -986,6 +1085,882 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 # base64 module not available, skip
                 pass
 
+    def _check_rot13_obfuscation(self, node: ast.Call) -> None:
+        """AIML023: Detect ROT13/Caesar cipher obfuscation in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_rot13_obfuscation(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_rot13_obfuscation(keyword.value.value, node)
+    
+    def _check_string_for_rot13_obfuscation(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains ROT13 or Caesar cipher obfuscation."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for ROT13 encoded text by looking for patterns
+        # ROT13 characteristic: high concentration of unusual letter patterns
+        # Simple heuristic: check if decoding with ROT13 produces more common English words
+        import codecs
+        try:
+            # Try ROT13 decode
+            decoded = codecs.decode(text, 'rot_13')
+            
+            # Check if decoded text contains malicious keywords
+            malicious_keywords = ["ignore", "system", "bypass", "override", "admin", "jailbreak", "instruction"]
+            lower_decoded = decoded.lower()
+            
+            # Also check original text doesn't contain these keywords (to avoid false positives)
+            lower_text = text.lower()
+            has_keywords_in_decoded = any(keyword in lower_decoded for keyword in malicious_keywords)
+            has_keywords_in_original = any(keyword in lower_text for keyword in malicious_keywords)
+            
+            # If decoded has keywords but original doesn't, likely ROT13 obfuscation
+            if has_keywords_in_decoded and not has_keywords_in_original and len(text) > 10:
+                violation = RuleViolation(
+                    rule_id="AIML023",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="ROT13/Caesar cipher obfuscation detected: encoded malicious content in prompt",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+        except Exception:
+            # ROT13 decode failed, skip
+            pass
+    
+    def _check_invisible_char_injection(self, node: ast.Call) -> None:
+        """AIML024: Detect invisible character injection (zero-width spaces)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_invisible_char_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_invisible_char_injection(keyword.value.value, node)
+    
+    def _check_string_for_invisible_char_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains invisible character injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Invisible/zero-width characters that can be used for injection
+        invisible_chars = [
+            '\u200b',  # Zero-width space
+            '\u200c',  # Zero-width non-joiner
+            '\u200d',  # Zero-width joiner
+            '\u2060',  # Word joiner
+            '\ufeff',  # Zero-width no-break space (BOM)
+            '\u180e',  # Mongolian vowel separator
+            '\u00ad',  # Soft hyphen
+        ]
+        
+        # Count invisible characters
+        invisible_count = sum(text.count(char) for char in invisible_chars)
+        
+        if invisible_count > 0:
+            # Check if there are also instruction keywords (suggests malicious intent)
+            malicious_keywords = ["ignore", "system", "bypass", "override", "instruction"]
+            has_keywords = any(keyword in text.lower() for keyword in malicious_keywords)
+            
+            if has_keywords or invisible_count >= 3:
+                violation = RuleViolation(
+                    rule_id="AIML024",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message=f"Invisible character injection detected: {invisible_count} zero-width characters in prompt",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bidi_override(self, node: ast.Call) -> None:
+        """AIML025: Detect right-to-left override attacks (Unicode bidi)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_bidi_override(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_bidi_override(keyword.value.value, node)
+    
+    def _check_string_for_bidi_override(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains Unicode bidi override attacks."""
+        if not self.has_llm_framework:
+            return
+        
+        # Unicode bidirectional text control characters
+        bidi_chars = [
+            '\u202a',  # Left-to-right embedding
+            '\u202b',  # Right-to-left embedding
+            '\u202c',  # Pop directional formatting
+            '\u202d',  # Left-to-right override
+            '\u202e',  # Right-to-left override
+            '\u2066',  # Left-to-right isolate
+            '\u2067',  # Right-to-left isolate
+            '\u2068',  # First strong isolate
+            '\u2069',  # Pop directional isolate
+        ]
+        
+        # Count bidi control characters
+        bidi_count = sum(text.count(char) for char in bidi_chars)
+        
+        if bidi_count > 0:
+            violation = RuleViolation(
+                rule_id="AIML025",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message=f"Unicode bidirectional override detected: {bidi_count} bidi control characters in prompt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_template_literal_injection(self, node: ast.Call) -> None:
+        """AIML026: Detect prompt template literal injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_template_literal_injection(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_template_literal_injection(keyword.value.value, node)
+    
+    def _check_string_for_template_literal_injection(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains template literal injection patterns."""
+        if not self.has_llm_framework:
+            return
+        
+        # Template literal injection patterns
+        template_patterns = [
+            "${",          # JavaScript template literal
+            "{{",          # Jinja2/Handlebars template
+            "{%",          # Jinja2 control
+            "<%",          # ERB/EJS template
+            "[[",          # Custom template syntax
+            "<<",          # Heredoc-style templates
+        ]
+        
+        # Check for template patterns
+        has_template = any(pattern in text for pattern in template_patterns)
+        
+        if has_template:
+            # Check if there are also injection keywords
+            injection_keywords = ["eval", "exec", "import", "system", "process", "require"]
+            has_injection = any(keyword in text.lower() for keyword in injection_keywords)
+            
+            if has_injection:
+                violation = RuleViolation(
+                    rule_id="AIML026",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Template literal injection detected: template syntax with dangerous code execution patterns",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_fstring_injection(self, node: ast.Call) -> None:
+        """AIML027: Detect F-string injection in prompts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for f-string usage in arguments
+        for arg in node.args:
+            if isinstance(arg, ast.JoinedStr):
+                # This is an f-string
+                violation = RuleViolation(
+                    rule_id="AIML027",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="F-string injection in prompt: unvalidated user input in f-string can lead to injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+        
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.JoinedStr):
+                violation = RuleViolation(
+                    rule_id="AIML027",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="F-string injection in prompt: unvalidated user input in f-string can lead to injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_variable_substitution(self, node: ast.Call) -> None:
+        """AIML028: Detect variable substitution attacks."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_variable_substitution(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_variable_substitution(keyword.value.value, node)
+    
+    def _check_string_for_variable_substitution(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string contains variable substitution attacks."""
+        if not self.has_llm_framework:
+            return
+        
+        # Variable substitution patterns that could be exploited
+        substitution_patterns = [
+            "$(",          # Shell command substitution
+            "`",           # Backtick command substitution
+            "${env:",      # Environment variable access
+            "${var:",      # Variable interpolation
+            "$(whoami)",   # Common attack pattern
+            "${PATH}",     # Environment variable
+            "$USER",       # Environment variable
+        ]
+        
+        # Check for substitution patterns
+        has_substitution = any(pattern in text for pattern in substitution_patterns)
+        
+        if has_substitution:
+            violation = RuleViolation(
+                rule_id="AIML028",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Variable substitution attack detected: shell/environment variable substitution in prompt",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_context_window_overflow(self, node: ast.Call) -> None:
+        """AIML029: Detect context window overflow attempts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_context_window_overflow(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_context_window_overflow(keyword.value.value, node)
+    
+    def _check_string_for_context_window_overflow(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string attempts context window overflow."""
+        if not self.has_llm_framework:
+            return
+        
+        # Context window overflow indicators:
+        # 1. Extremely long text (>32000 chars is suspicious for most LLMs)
+        # 2. Repetitive patterns designed to fill context
+        text_length = len(text)
+        
+        if text_length > 32000:
+            violation = RuleViolation(
+                rule_id="AIML029",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message=f"Context window overflow detected: extremely long prompt ({text_length} chars)",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="LLM01",
+                cwe_id="CWE-400",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_attention_manipulation(self, node: ast.Call) -> None:
+        """AIML030: Detect attention mechanism manipulation attempts."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check function call arguments
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                self._check_string_for_attention_manipulation(arg.value, node)
+                    
+        # Check keyword arguments
+        for keyword in node.keywords:
+            if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                self._check_string_for_attention_manipulation(keyword.value.value, node)
+    
+    def _check_string_for_attention_manipulation(self, text: str, node: ast.AST) -> None:
+        """Helper to check if a string attempts to manipulate attention mechanisms."""
+        if not self.has_llm_framework:
+            return
+        
+        # Attention manipulation patterns
+        attention_patterns = [
+            "pay attention to",
+            "focus on",
+            "most important",
+            "critical:",
+            "priority:",
+            "emphasis:",
+            "highlight:",
+            "**important**",
+            "!!!",
+            "URGENT",
+            "CRITICAL",
+        ]
+        
+        # Check for attention manipulation combined with instruction changes
+        has_attention = any(pattern in text.lower() for pattern in [p.lower() for p in attention_patterns])
+        
+        if has_attention:
+            # Check if combined with instruction keywords
+            instruction_keywords = ["ignore", "override", "bypass", "forget", "new instruction", "disregard"]
+            has_instruction = any(keyword in text.lower() for keyword in instruction_keywords)
+            
+            if has_instruction:
+                violation = RuleViolation(
+                    rule_id="AIML030",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Attention manipulation detected: emphasis markers combined with instruction override attempts",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_url_based_injection(self, node: ast.Call) -> None:
+        """AIML031: Detect URL-based injection (fetched web content)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for requests/urllib usage before LLM calls (indicates external content fetching)
+        if isinstance(node.func, ast.Attribute):
+            # Look for patterns like: content = requests.get(url).text; llm.generate(content)
+            if node.func.attr in ["get", "post", "fetch", "retrieve", "download"]:
+                # This is a potential external content fetch
+                # Flag if used in LLM context
+                violation = RuleViolation(
+                    rule_id="AIML031",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="URL-based injection risk: External content fetched without sanitization before LLM processing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_document_poisoning(self, node: ast.Call) -> None:
+        """AIML032: Detect document poisoning (PDF, DOCX injection)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for document parsing libraries
+        if isinstance(node.func, ast.Attribute):
+            doc_parsers = ["extract_text", "read_pdf", "parse_docx", "load_document", "parse_document"]
+            if node.func.attr in doc_parsers:
+                violation = RuleViolation(
+                    rule_id="AIML032",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Document poisoning risk: Document content parsed without validation before LLM processing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_image_injection(self, node: ast.Call) -> None:
+        """AIML033: Detect image-based prompt injection (OCR manipulation)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for OCR/image processing
+        if isinstance(node.func, ast.Attribute):
+            image_processors = ["image_to_text", "ocr", "read_text", "extract_text_from_image", "vision"]
+            if node.func.attr in image_processors:
+                violation = RuleViolation(
+                    rule_id="AIML033",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Image-based injection risk: OCR/image text extracted without validation before LLM processing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_api_response_injection(self, node: ast.Call) -> None:
+        """AIML034: Detect API response injection (3rd party data)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for API response parsing (json(), .text, etc.)
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["json", "text", "content"]:
+                # Check if this is from a response object
+                if isinstance(node.func.value, ast.Name):
+                    if "response" in node.func.value.id.lower() or "resp" in node.func.value.id.lower():
+                        violation = RuleViolation(
+                            rule_id="AIML034",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="API response injection risk: Third-party API data used without sanitization",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM01",
+                            cwe_id="CWE-94",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_database_injection(self, node: ast.Call) -> None:
+        """AIML035: Detect database content injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for database query executions
+        if isinstance(node.func, ast.Attribute):
+            db_methods = ["execute", "fetchall", "fetchone", "query", "find", "find_one"]
+            if node.func.attr in db_methods:
+                violation = RuleViolation(
+                    rule_id="AIML035",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Database injection risk: Database content used without validation in LLM prompts",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_file_upload_injection(self, node: ast.Call) -> None:
+        """AIML036: Detect file upload injection vectors."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for file read/upload operations
+        if isinstance(node.func, ast.Attribute):
+            file_ops = ["read", "read_text", "readlines", "load", "upload"]
+            if node.func.attr in file_ops:
+                # Check if this is a file operation
+                if isinstance(node.func.value, ast.Name):
+                    if "file" in node.func.value.id.lower() or "upload" in node.func.value.id.lower():
+                        violation = RuleViolation(
+                            rule_id="AIML036",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="File upload injection risk: Uploaded file content used without validation",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM01",
+                            cwe_id="CWE-94",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_email_injection(self, node: ast.Call) -> None:
+        """AIML037: Detect email content injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for email parsing
+        if isinstance(node.func, ast.Attribute):
+            email_methods = ["get_body", "get_content", "parse_email", "read_email"]
+            if node.func.attr in email_methods:
+                violation = RuleViolation(
+                    rule_id="AIML037",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Email injection risk: Email content used without sanitization in LLM prompts",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_social_scraping_injection(self, node: ast.Call) -> None:
+        """AIML038: Detect social media scraping injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for social media APIs
+        if isinstance(node.func, ast.Attribute):
+            social_methods = ["get_tweets", "get_posts", "scrape", "fetch_timeline", "get_comments"]
+            if node.func.attr in social_methods:
+                violation = RuleViolation(
+                    rule_id="AIML038",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Social scraping injection risk: Social media content used without validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_rag_poisoning(self, node: ast.Call) -> None:
+        """AIML039: Detect RAG poisoning (retrieval augmented generation)."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for RAG operations
+        if isinstance(node.func, ast.Attribute):
+            rag_methods = ["retrieve", "search", "query", "get_context", "get_relevant_docs"]
+            if node.func.attr in rag_methods:
+                # Check if this is a vector/document search
+                if isinstance(node.func.value, ast.Name):
+                    if any(keyword in node.func.value.id.lower() for keyword in ["vector", "index", "retriev", "rag", "embed"]):
+                        violation = RuleViolation(
+                            rule_id="AIML039",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="RAG poisoning risk: Retrieved content used without validation in prompts",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="LLM01",
+                            cwe_id="CWE-94",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_vector_db_injection(self, node: ast.Call) -> None:
+        """AIML040: Detect vector database injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for vector database operations
+        if isinstance(node.func, ast.Attribute):
+            vector_methods = ["similarity_search", "query", "search", "find_similar"]
+            if node.func.attr in vector_methods:
+                violation = RuleViolation(
+                    rule_id="AIML040",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Vector database injection risk: Vector search results used without validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_knowledge_base_tampering(self, node: ast.Call) -> None:
+        """AIML041: Detect knowledge base tampering."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for knowledge base access
+        if isinstance(node.func, ast.Attribute):
+            kb_methods = ["get_knowledge", "query_kb", "search_kb", "get_facts"]
+            if node.func.attr in kb_methods:
+                violation = RuleViolation(
+                    rule_id="AIML041",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Knowledge base tampering risk: KB content used without integrity verification",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_citation_manipulation(self, node: ast.Call) -> None:
+        """AIML042: Detect citation manipulation."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for citation/reference extraction
+        if isinstance(node.func, ast.Attribute):
+            citation_methods = ["get_citations", "get_references", "get_sources", "extract_citations"]
+            if node.func.attr in citation_methods:
+                violation = RuleViolation(
+                    rule_id="AIML042",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Citation manipulation risk: Citation data used without verification",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_search_poisoning(self, node: ast.Call) -> None:
+        """AIML043: Detect search result poisoning."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for web/search results
+        if isinstance(node.func, ast.Attribute):
+            search_methods = ["search", "google_search", "web_search", "get_results"]
+            if node.func.attr in search_methods:
+                violation = RuleViolation(
+                    rule_id="AIML043",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Search result poisoning risk: Search results used without validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_user_profile_injection(self, node: ast.Call) -> None:
+        """AIML044: Detect user profile injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for user profile access
+        if isinstance(node.func, ast.Attribute):
+            profile_methods = ["get_profile", "get_user_data", "get_user_info", "load_profile"]
+            if node.func.attr in profile_methods:
+                violation = RuleViolation(
+                    rule_id="AIML044",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="User profile injection risk: User-controlled profile data used in prompts",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_conversation_history_injection(self, node: ast.Call) -> None:
+        """AIML045: Detect conversation history injection."""
+        if not self.has_llm_framework:
+            return
+        
+        # Check for conversation history access
+        if isinstance(node.func, ast.Attribute):
+            history_methods = ["get_history", "load_history", "get_messages", "get_conversation"]
+            if node.func.attr in history_methods:
+                violation = RuleViolation(
+                    rule_id="AIML045",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Conversation history injection risk: Chat history used without sanitization",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
         if isinstance(node.func, ast.Attribute):
@@ -1445,6 +2420,328 @@ AIML_SECURITY_RULES = [
         cwe_mapping="CWE-94",
         owasp_mapping="LLM01",
         tags={"ai", "llm", "injection", "unicode", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML023",
+        name="rot13-obfuscation",
+        description="Detects ROT13/Caesar cipher obfuscation in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="ROT13/Caesar cipher obfuscation detected: encoded malicious content in prompt",
+        explanation="ROT13 or Caesar cipher obfuscation can be used to hide malicious instructions from detection",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "obfuscation", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML024",
+        name="invisible-char-injection",
+        description="Detects invisible character injection (zero-width spaces) in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Invisible character injection detected: zero-width characters in prompt",
+        explanation="Zero-width and invisible characters can be used to hide malicious instructions in prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "invisible", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML025",
+        name="bidi-override-attack",
+        description="Detects Unicode bidirectional override attacks in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Unicode bidirectional override detected: bidi control characters in prompt",
+        explanation="Unicode bidirectional text control characters can manipulate text rendering to hide malicious content",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "unicode", "bidi", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML026",
+        name="template-literal-injection",
+        description="Detects template literal injection in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Template literal injection detected: template syntax with dangerous code execution patterns",
+        explanation="Template literal injection can allow code execution through template engines in LLM-generated content",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "template", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML027",
+        name="fstring-injection",
+        description="Detects F-string injection in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="F-string injection in prompt: unvalidated user input in f-string can lead to injection",
+        explanation="F-string formatting with unvalidated user input can lead to prompt injection vulnerabilities",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "fstring", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML028",
+        name="variable-substitution-attack",
+        description="Detects variable substitution attacks in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Variable substitution attack detected: shell/environment variable substitution in prompt",
+        explanation="Variable substitution patterns can be exploited to execute commands or access environment variables",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "substitution", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML029",
+        name="context-window-overflow",
+        description="Detects context window overflow attempts in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Context window overflow detected: extremely long prompt",
+        explanation="Extremely long prompts can overflow the context window causing DoS or bypassing security controls",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-400",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "dos", "overflow", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML030",
+        name="attention-manipulation",
+        description="Detects attention mechanism manipulation attempts in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Attention manipulation detected: emphasis markers combined with instruction override attempts",
+        explanation="Attention manipulation using emphasis markers can be combined with instruction overrides to bypass security",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "attention", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML031",
+        name="url-based-injection",
+        description="Detects URL-based injection through fetched web content",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="URL-based injection risk: External content fetched without sanitization",
+        explanation="Content fetched from URLs can contain malicious prompts designed to manipulate LLM behavior",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "url", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML032",
+        name="document-poisoning",
+        description="Detects document poisoning through PDF/DOCX injection",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Document poisoning risk: Document content parsed without validation",
+        explanation="Maliciously crafted documents can contain hidden instructions to manipulate LLM behavior",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "document", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML033",
+        name="image-injection",
+        description="Detects image-based prompt injection through OCR manipulation",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Image-based injection risk: OCR text extracted without validation",
+        explanation="Text extracted from images via OCR can contain malicious prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "image", "ocr", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML034",
+        name="api-response-injection",
+        description="Detects API response injection from third-party data",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="API response injection risk: Third-party API data used without sanitization",
+        explanation="Responses from third-party APIs can be manipulated to inject malicious prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "api", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML035",
+        name="database-injection",
+        description="Detects database content injection in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Database injection risk: Database content used without validation",
+        explanation="Database content can be tampered with to inject malicious prompts into LLM applications",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "database", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML036",
+        name="file-upload-injection",
+        description="Detects file upload injection vectors in LLM applications",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="File upload injection risk: Uploaded file content used without validation",
+        explanation="Files uploaded by users can contain malicious content designed to inject prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "file", "upload", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML037",
+        name="email-injection",
+        description="Detects email content injection in LLM prompts",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Email injection risk: Email content used without sanitization",
+        explanation="Email content can be crafted to inject malicious prompts into LLM applications",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "email", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML038",
+        name="social-scraping-injection",
+        description="Detects social media scraping injection",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Social scraping injection risk: Social media content used without validation",
+        explanation="Social media content can be manipulated to inject malicious prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "social", "scraping", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML039",
+        name="rag-poisoning",
+        description="Detects RAG (Retrieval Augmented Generation) poisoning attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="RAG poisoning risk: Retrieved content used without validation",
+        explanation="RAG systems can be poisoned by injecting malicious content into retrieval databases",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "rag", "retrieval", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML040",
+        name="vector-db-injection",
+        description="Detects vector database injection attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Vector database injection risk: Vector search results used without validation",
+        explanation="Vector databases can be poisoned to return malicious content in similarity searches",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "vector", "database", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML041",
+        name="knowledge-base-tampering",
+        description="Detects knowledge base tampering risks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Knowledge base tampering risk: KB content used without integrity verification",
+        explanation="Knowledge bases can be tampered with to inject malicious information",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "knowledge", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML042",
+        name="citation-manipulation",
+        description="Detects citation manipulation in LLM applications",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.LOW,
+        message_template="Citation manipulation risk: Citation data used without verification",
+        explanation="Citation and reference data can be manipulated to inject malicious content",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "citation", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML043",
+        name="search-result-poisoning",
+        description="Detects search result poisoning attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="Search result poisoning risk: Search results used without validation",
+        explanation="Search results can be poisoned to inject malicious content into LLM prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "search", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML044",
+        name="user-profile-injection",
+        description="Detects user profile injection attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.MEDIUM,
+        message_template="User profile injection risk: User-controlled profile data used in prompts",
+        explanation="User profile data can be manipulated to inject malicious prompts",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "profile", "security"},
+        references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
+    ),
+    Rule(
+        rule_id="AIML045",
+        name="conversation-history-injection",
+        description="Detects conversation history injection attacks",
+        category=RuleCategory.SECURITY,
+        severity=RuleSeverity.HIGH,
+        message_template="Conversation history injection risk: Chat history used without sanitization",
+        explanation="Conversation history can be manipulated to inject malicious prompts into subsequent interactions",
+        fix_applicability=FixApplicability.SAFE,
+        cwe_mapping="CWE-94",
+        owasp_mapping="LLM01",
+        tags={"ai", "llm", "injection", "indirect", "history", "security"},
         references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
 ]
