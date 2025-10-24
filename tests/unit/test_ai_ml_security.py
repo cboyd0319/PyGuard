@@ -514,12 +514,13 @@ class TestAIMLSecurityRules:
         Phase 2.2: 35 checks (AIML191-AIML225)
         Phase 2.3: 35 checks (AIML226-AIML260)
         Phase 2.4: 20 checks (AIML261-AIML280)
-        Phase 3.1.1: 15 checks (AIML281-AIML295) - Computer Vision Image Processing
+        Phase 3.1: 35 checks (AIML281-AIML315) - Computer Vision Security
+        Phase 3.2: 35 checks (AIML316-AIML350) - Natural Language Processing Security
         
         Note: AIML013-AIML022 (10 rules) from Phase 1.1.1 are not yet added to the rules list.
-        When those are added, this count should be 295.
+        When those are added, this count should be 350.
         """
-        assert len(AIML_SECURITY_RULES) == 305
+        assert len(AIML_SECURITY_RULES) == 340  # Updated for Phase 3.2 (35 new NLP checks)
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
