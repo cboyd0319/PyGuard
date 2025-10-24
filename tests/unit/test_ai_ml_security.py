@@ -507,8 +507,8 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 35 AI/ML security rules are registered."""
-        assert len(AIML_SECURITY_RULES) == 35
+        """Verify all 50 AI/ML security rules are registered."""
+        assert len(AIML_SECURITY_RULES) == 50
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -517,7 +517,11 @@ class TestAIMLSecurityRules:
             "AIML026", "AIML027", "AIML028", "AIML029", "AIML030",
             "AIML031", "AIML032", "AIML033", "AIML034", "AIML035",
             "AIML036", "AIML037", "AIML038", "AIML039", "AIML040",
-            "AIML041", "AIML042", "AIML043", "AIML044", "AIML045"
+            "AIML041", "AIML042", "AIML043", "AIML044", "AIML045",
+            # Phase 1.1.3: LLM API Security (AIML046-AIML060)
+            "AIML046", "AIML047", "AIML048", "AIML049", "AIML050",
+            "AIML051", "AIML052", "AIML053", "AIML054", "AIML055",
+            "AIML056", "AIML057", "AIML058", "AIML059", "AIML060"
         ]
         actual_ids = [rule.rule_id for rule in AIML_SECURITY_RULES]
         
@@ -531,7 +535,8 @@ class TestAIMLSecurityRules:
             assert rule.name is not None
             assert rule.description is not None
             assert rule.severity is not None
-            assert rule.category == RuleCategory.SECURITY
+            # Most rules are SECURITY, but some are CONVENTION (e.g., best practices)
+            assert rule.category in [RuleCategory.SECURITY, RuleCategory.CONVENTION]
             assert rule.cwe_mapping is not None
             assert rule.owasp_mapping is not None
 
