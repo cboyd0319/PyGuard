@@ -278,8 +278,28 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - Lambda ML inference risks - AIML458
 - Cloud Functions ML serving gaps - AIML459
 - Serverless ML vulnerabilities - AIML460
+- Prompt leaking attacks - AIML461
+- Training data extraction - AIML462
+- Memorization exploitation - AIML463
+- Copyright infringement detection - AIML464
+- Generated code security (Copilot-style) - AIML465
+- Jailbreak detection - AIML466
+- Toxicity generation risks - AIML467
+- Bias amplification detection - AIML468
+- Hallucination exploitation - AIML469
+- Output filtering bypass - AIML470
+- Stable Diffusion prompt injection - AIML471
+- DALL-E manipulation - AIML472
+- Midjourney prompt engineering - AIML473
+- GAN mode collapse exploitation - AIML474
+- VAE latent space manipulation - AIML475
+- Diffusion model backdoors - AIML476
+- Video generation injection (Runway, Gen-2) - AIML477
+- 3D generation vulnerabilities (Point-E, Shap-E) - AIML478
+- Music generation risks (Jukebox, MusicLM) - AIML479
+- Audio generation injection (AudioLM, Whisper) - AIML480
 
-Total Security Checks: 450 AI/ML rules (v0.8.1 - Phase 4.4 Complete: Cloud & Infrastructure Security)
+Total Security Checks: 470 AI/ML rules (v0.8.2 - Phase 5.1 Complete: Generative AI Security)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -1779,6 +1799,69 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML460: Serverless ML vulnerabilities
         self._check_serverless_ml_vulnerabilities(node)
+        
+        # Phase 5.1: Generative AI Security (20 checks - AIML461-480)
+        # Phase 5.1.1: Text Generation Security (10 checks - AIML461-470)
+        # AIML461: Prompt leaking attacks
+        self._check_prompt_leaking_attacks(node)
+        
+        # AIML462: Training data extraction
+        self._check_training_data_extraction(node)
+        
+        # AIML463: Memorization exploitation
+        self._check_memorization_exploitation(node)
+        
+        # AIML464: Copyright infringement detection
+        self._check_copyright_infringement(node)
+        
+        # AIML465: Generated code security (Copilot-style)
+        self._check_generated_code_security(node)
+        
+        # AIML466: Jailbreak detection
+        self._check_jailbreak_detection(node)
+        
+        # AIML467: Toxicity generation risks
+        self._check_toxicity_generation(node)
+        
+        # AIML468: Bias amplification detection
+        self._check_bias_amplification(node)
+        
+        # AIML469: Hallucination exploitation
+        self._check_hallucination_exploitation(node)
+        
+        # AIML470: Output filtering bypass
+        self._check_output_filtering_bypass(node)
+        
+        # Phase 5.1.2: Image/Video Generation (10 checks - AIML471-480)
+        # AIML471: Stable Diffusion prompt injection
+        self._check_stable_diffusion_prompt_injection(node)
+        
+        # AIML472: DALL-E manipulation
+        self._check_dalle_manipulation(node)
+        
+        # AIML473: Midjourney prompt engineering
+        self._check_midjourney_prompt_engineering(node)
+        
+        # AIML474: GAN mode collapse exploitation
+        self._check_gan_mode_collapse(node)
+        
+        # AIML475: VAE latent space manipulation
+        self._check_vae_latent_manipulation(node)
+        
+        # AIML476: Diffusion model backdoors
+        self._check_diffusion_model_backdoors(node)
+        
+        # AIML477: Video generation injection (Runway, Gen-2)
+        self._check_video_generation_injection(node)
+        
+        # AIML478: 3D generation vulnerabilities (Point-E, Shap-E)
+        self._check_3d_generation_vulnerabilities(node)
+        
+        # AIML479: Music generation risks (Jukebox, MusicLM)
+        self._check_music_generation_risks(node)
+        
+        # AIML480: Audio generation injection (AudioLM, Whisper)
+        self._check_audio_generation_injection(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -14922,6 +15005,587 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         )
                         self.violations.append(violation)
 
+    # Phase 5.1: Generative AI Security Detection Methods (AIML461-AIML480)
+    # Phase 5.1.1: Text Generation Security (AIML461-AIML470)
+    
+    def _check_prompt_leaking_attacks(self, node: ast.Call) -> None:
+        """AIML461: Detect prompt leaking attacks in LLM applications."""
+        # Get multiple lines for multi-line function calls
+        start_line = max(0, node.lineno - 1)
+        end_line = min(len(self.lines), getattr(node, "end_lineno", node.lineno))
+        full_text = " ".join(self.lines[start_line:end_line]).lower()
+        
+        # Check for LLM calls that might be vulnerable to prompt leaking
+        if any(x in full_text for x in ["chat", "completion", "generate", "predict"]):
+            # Check if there's system prompt handling
+            has_system_prompt = any(x in full_text for x in ["system", "instruction"])
+            if has_system_prompt:
+                # Check for prompt protection measures
+                has_protection = any(x in full_text for x in ["protect", "guard", "validate", "filter"])
+                if not has_protection:
+                    violation = RuleViolation(
+                        rule_id="AIML461",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="LLM prompt leaking - implement prompt protection to prevent system prompt extraction",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_training_data_extraction(self, node: ast.Call) -> None:
+        """AIML462: Detect training data extraction vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for LLM calls with high temperature or no output filtering
+        if any(x in line_text for x in ["temperature", "top_p", "generate"]):
+            # Check for output filtering
+            has_filtering = any(x in line_text for x in ["filter", "sanitize", "validate"])
+            if not has_filtering and "temperature" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML462",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="LLM training data extraction - implement output filtering to prevent training data leakage",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM06",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_memorization_exploitation(self, node: ast.Call) -> None:
+        """AIML463: Detect memorization exploitation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for prompts that might exploit memorization
+        if any(x in line_text for x in ["repeat", "recite", "verbatim", "exact"]):
+            if any(x in line_text for x in ["generate", "completion", "chat"]):
+                violation = RuleViolation(
+                    rule_id="AIML463",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="LLM memorization exploitation - implement output validation to prevent memorized content extraction",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM06",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_copyright_infringement(self, node: ast.Call) -> None:
+        """AIML464: Detect copyright infringement risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for content generation without copyright filtering
+        if any(x in line_text for x in ["generate", "create", "write"]):
+            if any(x in line_text for x in ["story", "article", "book", "code", "song"]):
+                # Check for copyright filtering
+                has_copyright_check = any(x in line_text for x in ["copyright", "license", "attribution"])
+                if not has_copyright_check:
+                    violation = RuleViolation(
+                        rule_id="AIML464",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="LLM copyright infringement - implement content filtering to prevent copyrighted content generation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="LLM09",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_generated_code_security(self, node: ast.Call) -> None:
+        """AIML465: Detect generated code security risks (Copilot-style)."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for code generation followed by execution
+        if any(x in line_text for x in ["generate", "complete"]):
+            if any(x in line_text for x in ["code", "function", "script"]):
+                # Check for security validation
+                has_validation = any(x in line_text for x in ["validate", "scan", "check", "lint"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML465",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="LLM code generation - validate and sanitize generated code before execution",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM08",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_jailbreak_detection(self, node: ast.Call) -> None:
+        """AIML466: Detect jailbreak attempts in LLM applications."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for user input being passed to LLM without jailbreak detection
+        if any(x in line_text for x in ["user", "input", "prompt"]):
+            if any(x in line_text for x in ["generate", "completion", "chat"]):
+                # Check for jailbreak detection
+                has_jailbreak_detection = any(x in line_text for x in ["jailbreak", "safety", "guardrail", "moderate"])
+                if not has_jailbreak_detection:
+                    violation = RuleViolation(
+                        rule_id="AIML466",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="LLM jailbreak - implement input filtering to prevent jailbreak attempts",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-863",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_toxicity_generation(self, node: ast.Call) -> None:
+        """AIML467: Detect toxicity generation risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for content generation without moderation
+        if any(x in line_text for x in ["generate", "create", "complete"]):
+            # Check for content moderation
+            has_moderation = any(x in line_text for x in ["moderate", "filter", "toxicity", "safety"])
+            if not has_moderation:
+                violation = RuleViolation(
+                    rule_id="AIML467",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="LLM toxicity generation - implement content moderation to prevent toxic output",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM09",
+                    cwe_id="CWE-1284",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bias_amplification(self, node: ast.Call) -> None:
+        """AIML468: Detect bias amplification risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for content generation without bias detection
+        if any(x in line_text for x in ["generate", "predict", "classify"]):
+            # Check for bias detection
+            has_bias_detection = any(x in line_text for x in ["bias", "fairness", "equity"])
+            if not has_bias_detection:
+                violation = RuleViolation(
+                    rule_id="AIML468",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="LLM bias amplification - implement bias detection and mitigation strategies",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="LLM09",
+                    cwe_id="CWE-1229",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_hallucination_exploitation(self, node: ast.Call) -> None:
+        """AIML469: Detect hallucination exploitation risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for factual content generation without verification
+        if any(x in line_text for x in ["generate", "answer", "explain"]):
+            if any(x in line_text for x in ["fact", "data", "statistic", "research"]):
+                # Check for fact-checking
+                has_verification = any(x in line_text for x in ["verify", "source", "cite", "reference"])
+                if not has_verification:
+                    violation = RuleViolation(
+                        rule_id="AIML469",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="LLM hallucination exploitation - implement fact-checking and source verification",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="LLM09",
+                        cwe_id="CWE-754",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_output_filtering_bypass(self, node: ast.Call) -> None:
+        """AIML470: Detect output filtering bypass attempts."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for output handling without robust filtering
+        if any(x in line_text for x in ["response", "output", "result"]):
+            if any(x in line_text for x in ["generate", "complete", "chat"]):
+                # Check for defense-in-depth filtering
+                has_robust_filtering = any(x in line_text for x in ["multi", "layer", "defense", "robust"])
+                if not has_robust_filtering:
+                    violation = RuleViolation(
+                        rule_id="AIML470",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="LLM output filtering - implement robust content filtering that cannot be bypassed",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-116",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    # Phase 5.1.2: Image/Video Generation (AIML471-AIML480)
+    
+    def _check_stable_diffusion_prompt_injection(self, node: ast.Call) -> None:
+        """AIML471: Detect Stable Diffusion prompt injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Stable Diffusion image generation without input sanitization
+        if any(x in line_text for x in ["stablediffusion", "stable_diffusion", "diffusion"]):
+            if any(x in line_text for x in ["generate", "create", "prompt"]):
+                # Check for input sanitization
+                has_sanitization = any(x in line_text for x in ["sanitize", "validate", "filter"])
+                if not has_sanitization:
+                    violation = RuleViolation(
+                        rule_id="AIML471",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Stable Diffusion prompt injection - sanitize user inputs in image generation prompts",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_dalle_manipulation(self, node: ast.Call) -> None:
+        """AIML472: Detect DALL-E manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DALL-E usage without content moderation
+        if any(x in line_text for x in ["dalle", "dall-e", "dall_e"]):
+            if any(x in line_text for x in ["generate", "create", "image"]):
+                # Check for content moderation
+                has_moderation = any(x in line_text for x in ["moderate", "filter", "safety"])
+                if not has_moderation:
+                    violation = RuleViolation(
+                        rule_id="AIML472",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="DALL-E manipulation - implement prompt filtering and content moderation",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM09",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_midjourney_prompt_engineering(self, node: ast.Call) -> None:
+        """AIML473: Detect Midjourney prompt engineering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Midjourney usage without prompt validation
+        if any(x in line_text for x in ["midjourney", "mid_journey"]):
+            # Check for prompt validation
+            has_validation = any(x in line_text for x in ["validate", "check", "verify"])
+            if not has_validation:
+                violation = RuleViolation(
+                    rule_id="AIML473",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Midjourney prompt engineering - validate prompts to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="LLM01",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_gan_mode_collapse(self, node: ast.Call) -> None:
+        """AIML474: Detect GAN mode collapse exploitation."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for GAN training without mode collapse monitoring
+        if "gan" in line_text and any(x in line_text for x in ["train", "fit"]):
+            # Check for mode collapse monitoring
+            has_monitoring = any(x in line_text for x in ["monitor", "diversity", "metric"])
+            if not has_monitoring:
+                violation = RuleViolation(
+                    rule_id="AIML474",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="GAN mode collapse - monitor training for mode collapse and implement diversity metrics",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_vae_latent_manipulation(self, node: ast.Call) -> None:
+        """AIML475: Detect VAE latent space manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for VAE latent vector operations without validation
+        if "vae" in line_text or "variational" in line_text:
+            if any(x in line_text for x in ["latent", "encode", "decode"]):
+                # Check for input validation
+                has_validation = any(x in line_text for x in ["validate", "check", "clamp", "clip"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML475",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="VAE latent manipulation - implement input validation on latent vectors",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML01",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_diffusion_model_backdoors(self, node: ast.Call) -> None:
+        """AIML476: Detect diffusion model backdoor vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for diffusion model loading without integrity verification
+        if "diffusion" in line_text and any(x in line_text for x in ["load", "from_pretrained"]):
+            # Check for integrity verification
+            has_verification = any(x in line_text for x in ["verify", "checksum", "hash", "signature"])
+            if not has_verification:
+                violation = RuleViolation(
+                    rule_id="AIML476",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Diffusion model backdoors - validate model integrity and scan for backdoors",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-506",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_video_generation_injection(self, node: ast.Call) -> None:
+        """AIML477: Detect video generation injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for video generation without prompt sanitization
+        if any(x in line_text for x in ["runway", "gen-2", "gen2", "video"]):
+            if any(x in line_text for x in ["generate", "create", "prompt"]):
+                # Check for sanitization
+                has_sanitization = any(x in line_text for x in ["sanitize", "validate", "filter"])
+                if not has_sanitization:
+                    violation = RuleViolation(
+                        rule_id="AIML477",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Video generation injection - sanitize prompts and validate generated content",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_3d_generation_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML478: Detect 3D generation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for 3D model generation without validation
+        if any(x in line_text for x in ["point-e", "point_e", "shap-e", "shap_e", "3d"]):
+            if any(x in line_text for x in ["generate", "create", "model"]):
+                # Check for output validation
+                has_validation = any(x in line_text for x in ["validate", "check", "verify", "scan"])
+                if not has_validation:
+                    violation = RuleViolation(
+                        rule_id="AIML478",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="3D generation - validate generated 3D models for malicious content",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-20",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_music_generation_risks(self, node: ast.Call) -> None:
+        """AIML479: Detect music generation copyright risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for music generation without copyright protection
+        if any(x in line_text for x in ["jukebox", "musiclm", "music_lm", "music"]):
+            if any(x in line_text for x in ["generate", "create", "compose"]):
+                # Check for copyright protection
+                has_copyright_check = any(x in line_text for x in ["copyright", "watermark", "license"])
+                if not has_copyright_check:
+                    violation = RuleViolation(
+                        rule_id="AIML479",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.LOW,
+                        message="Music generation - implement copyright protection and content filtering",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data=None,
+                        owasp_id="LLM09",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_audio_generation_injection(self, node: ast.Call) -> None:
+        """AIML480: Detect audio generation injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for audio generation without input validation
+        if any(x in line_text for x in ["audiolm", "audio_lm", "whisper", "audio"]):
+            if any(x in line_text for x in ["generate", "synthesize", "create"]):
+                # Check for input validation and sanitization
+                has_sanitization = any(x in line_text for x in ["sanitize", "validate", "filter"])
+                if not has_sanitization:
+                    violation = RuleViolation(
+                        rule_id="AIML480",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Audio generation injection - validate inputs and sanitize generated audio",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="LLM01",
+                        cwe_id="CWE-94",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -16270,4 +16934,27 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML458", name="lambda-ml-inference-risks", description="Lambda ML inference risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Lambda ML inference - configure timeout, memory limits, and VPC", explanation="Lambda ML functions should have proper resource limits and VPC configuration", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "lambda", "aws", "inference"}, references=["https://docs.aws.amazon.com/lambda/latest/dg/lambda-security.html"]),
     Rule(rule_id="AIML459", name="cloud-functions-ml-serving-gaps", description="Cloud Functions ML serving gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Cloud Functions ML serving - implement authentication and IAM", explanation="Cloud Functions ML serving should use proper authentication and IAM", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-306", owasp_mapping="A07", tags={"ai", "ml", "cloud-functions", "google", "serving"}, references=["https://cloud.google.com/functions/docs/securing"]),
     Rule(rule_id="AIML460", name="serverless-ml-vulnerabilities", description="Serverless ML vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Serverless ML - implement rate limiting and resource quotas", explanation="Serverless ML deployments should have rate limiting and resource quotas", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-770", owasp_mapping="ML09", tags={"ai", "ml", "serverless", "faas", "rate-limit"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    # Phase 5.1: Generative AI Security (20 rules - AIML461-480)
+    # Phase 5.1.1: Text Generation Security (10 rules - AIML461-470)
+    Rule(rule_id="AIML461", name="prompt-leaking-attacks", description="Prompt leaking attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="LLM prompt leaking - implement prompt protection to prevent system prompt extraction", explanation="LLM applications should protect system prompts from being leaked through carefully crafted user inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="LLM01", tags={"ai", "llm", "prompt", "leaking", "extraction"}, references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/", "https://arxiv.org/abs/2306.05499"]),
+    Rule(rule_id="AIML462", name="training-data-extraction", description="Training data extraction", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="LLM training data extraction - implement output filtering to prevent training data leakage", explanation="LLM applications should filter outputs to prevent extraction of memorized training data", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="LLM06", tags={"ai", "llm", "training", "extraction", "privacy"}, references=["https://arxiv.org/abs/2012.07805", "https://owasp.org/www-project-top-10-for-large-language-model-applications/"]),
+    Rule(rule_id="AIML463", name="memorization-exploitation", description="Memorization exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="LLM memorization exploitation - implement output validation to prevent memorized content extraction", explanation="LLM applications should validate outputs to prevent exploitation of memorized training data", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-200", owasp_mapping="LLM06", tags={"ai", "llm", "memorization", "exploitation", "privacy"}, references=["https://arxiv.org/abs/2202.07646", "https://www.usenix.org/conference/usenixsecurity21/presentation/carlini-extraction"]),
+    Rule(rule_id="AIML464", name="copyright-infringement", description="Copyright infringement detection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LLM copyright infringement - implement content filtering to prevent copyrighted content generation", explanation="LLM applications should filter outputs to prevent generation of copyrighted or licensed content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="LLM09", tags={"ai", "llm", "copyright", "legal", "compliance"}, references=["https://arxiv.org/abs/2305.15728", "https://openai.com/blog/chatgpt-plugins"]),
+    Rule(rule_id="AIML465", name="generated-code-security", description="Generated code security (Copilot-style)", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="LLM code generation - validate and sanitize generated code before execution", explanation="LLM-generated code should be validated for security vulnerabilities before execution", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM08", tags={"ai", "llm", "code-generation", "security", "copilot"}, references=["https://arxiv.org/abs/2108.09293", "https://github.blog/2023-04-17-new-code-scanning-rules-for-github-copilot/"]),
+    Rule(rule_id="AIML466", name="jailbreak-detection", description="Jailbreak detection", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="LLM jailbreak - implement input filtering to prevent jailbreak attempts", explanation="LLM applications should detect and block jailbreak attempts that bypass safety guardrails", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-863", owasp_mapping="LLM01", tags={"ai", "llm", "jailbreak", "safety", "guardrails"}, references=["https://arxiv.org/abs/2308.03825", "https://www.jailbreakchat.com/"]),
+    Rule(rule_id="AIML467", name="toxicity-generation", description="Toxicity generation risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LLM toxicity generation - implement content moderation to prevent toxic output", explanation="LLM applications should use content moderation APIs to prevent generation of toxic or harmful content", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-1284", owasp_mapping="LLM09", tags={"ai", "llm", "toxicity", "safety", "moderation"}, references=["https://platform.openai.com/docs/guides/moderation", "https://www.anthropic.com/product"]),
+    Rule(rule_id="AIML468", name="bias-amplification", description="Bias amplification detection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LLM bias amplification - implement bias detection and mitigation strategies", explanation="LLM applications should monitor and mitigate bias amplification in generated content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1229", owasp_mapping="LLM09", tags={"ai", "llm", "bias", "fairness", "ethics"}, references=["https://arxiv.org/abs/2203.11933", "https://www.nist.gov/itl/ai-risk-management-framework"]),
+    Rule(rule_id="AIML469", name="hallucination-exploitation", description="Hallucination exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LLM hallucination exploitation - implement fact-checking and source verification", explanation="LLM applications should validate factual claims and provide source verification to prevent hallucination exploitation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="LLM09", tags={"ai", "llm", "hallucination", "verification", "accuracy"}, references=["https://arxiv.org/abs/2305.14552", "https://www.anthropic.com/index/core-views-on-ai-safety"]),
+    Rule(rule_id="AIML470", name="output-filtering-bypass", description="Output filtering bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="LLM output filtering - implement robust content filtering that cannot be bypassed", explanation="LLM output filtering should use defense-in-depth approach to prevent bypass attempts", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-116", owasp_mapping="LLM01", tags={"ai", "llm", "filtering", "bypass", "security"}, references=["https://arxiv.org/abs/2308.03825", "https://owasp.org/www-project-top-10-for-large-language-model-applications/"]),
+    # Phase 5.1.2: Image/Video Generation (10 rules - AIML471-480)
+    Rule(rule_id="AIML471", name="stable-diffusion-prompt-injection", description="Stable Diffusion prompt injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Stable Diffusion prompt injection - sanitize user inputs in image generation prompts", explanation="Stable Diffusion applications should sanitize user inputs to prevent prompt injection attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "image-generation", "stable-diffusion", "prompt", "injection"}, references=["https://arxiv.org/abs/2211.09699", "https://stability.ai/safety"]),
+    Rule(rule_id="AIML472", name="dalle-manipulation", description="DALL-E manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DALL-E manipulation - implement prompt filtering and content moderation", explanation="DALL-E applications should filter prompts and moderate generated images", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM09", tags={"ai", "image-generation", "dalle", "openai", "moderation"}, references=["https://openai.com/dall-e-2-safety-system", "https://arxiv.org/abs/2204.06125"]),
+    Rule(rule_id="AIML473", name="midjourney-prompt-engineering", description="Midjourney prompt engineering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Midjourney prompt engineering - validate prompts to prevent manipulation", explanation="Midjourney applications should validate prompts to prevent malicious prompt engineering", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="LLM01", tags={"ai", "image-generation", "midjourney", "prompt", "validation"}, references=["https://docs.midjourney.com/docs/community-guidelines"]),
+    Rule(rule_id="AIML474", name="gan-mode-collapse", description="GAN mode collapse exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="GAN mode collapse - monitor training for mode collapse and implement diversity metrics", explanation="GAN applications should monitor training for mode collapse and implement diversity metrics", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML09", tags={"ai", "gan", "training", "mode-collapse", "monitoring"}, references=["https://arxiv.org/abs/1611.02163", "https://arxiv.org/abs/1809.11096"]),
+    Rule(rule_id="AIML475", name="vae-latent-manipulation", description="VAE latent space manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="VAE latent manipulation - implement input validation on latent vectors", explanation="VAE applications should validate latent vector inputs to prevent adversarial manipulation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML01", tags={"ai", "vae", "latent-space", "manipulation", "validation"}, references=["https://arxiv.org/abs/1312.6114", "https://arxiv.org/abs/1906.02691"]),
+    Rule(rule_id="AIML476", name="diffusion-model-backdoors", description="Diffusion model backdoors", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Diffusion model backdoors - validate model integrity and scan for backdoors", explanation="Diffusion models should be validated for backdoors before deployment", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-506", owasp_mapping="ML03", tags={"ai", "diffusion", "backdoor", "model-security", "validation"}, references=["https://arxiv.org/abs/2302.01316", "https://arxiv.org/abs/2211.01590"]),
+    Rule(rule_id="AIML477", name="video-generation-injection", description="Video generation injection (Runway, Gen-2)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Video generation injection - sanitize prompts and validate generated content", explanation="Video generation applications should sanitize prompts and validate outputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "video-generation", "runway", "gen2", "injection"}, references=["https://research.runwayml.com/gen2", "https://arxiv.org/abs/2302.08453"]),
+    Rule(rule_id="AIML478", name="3d-generation-vulnerabilities", description="3D generation vulnerabilities (Point-E, Shap-E)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="3D generation - validate generated 3D models for malicious content", explanation="3D generation applications should validate outputs for embedded malicious content", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "3d-generation", "point-e", "shap-e", "validation"}, references=["https://arxiv.org/abs/2212.08751", "https://github.com/openai/shap-e"]),
+    Rule(rule_id="AIML479", name="music-generation-risks", description="Music generation risks (Jukebox, MusicLM)", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Music generation - implement copyright protection and content filtering", explanation="Music generation applications should filter for copyrighted content and implement watermarking", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="LLM09", tags={"ai", "music-generation", "jukebox", "musiclm", "copyright"}, references=["https://arxiv.org/abs/2005.00341", "https://google-research.github.io/seanet/musiclm/examples/"]),
+    Rule(rule_id="AIML480", name="audio-generation-injection", description="Audio generation injection (AudioLM, Whisper)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Audio generation injection - validate inputs and sanitize generated audio", explanation="Audio generation applications should validate inputs and sanitize outputs to prevent malicious audio generation", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="LLM01", tags={"ai", "audio-generation", "audiolm", "whisper", "injection"}, references=["https://arxiv.org/abs/2209.03143", "https://github.com/openai/whisper"]),
 ]
