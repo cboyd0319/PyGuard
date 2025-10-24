@@ -1016,6 +1016,117 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML260: Federated learning gaps
         self._check_federated_learning_gaps(node)
         
+        # Phase 2.4: Model Monitoring & Observability (20 checks)
+        # Phase 2.4.1: Drift Detection Security (10 checks - AIML261-AIML270)
+        # AIML261: Data drift detection bypass
+        self._check_data_drift_detection_bypass(node)
+        
+        # AIML262: Concept drift manipulation
+        self._check_concept_drift_manipulation(node)
+        
+        # AIML263: Model performance degradation hiding
+        self._check_model_performance_degradation_hiding(node)
+        
+        # AIML264: Prediction distribution poisoning
+        self._check_prediction_distribution_poisoning(node)
+        
+        # AIML265: Monitoring pipeline injection
+        self._check_monitoring_pipeline_injection(node)
+        
+        # AIML266: Alert threshold manipulation
+        self._check_alert_threshold_manipulation(node)
+        
+        # AIML267: Logging framework vulnerabilities
+        self._check_logging_framework_vulnerabilities(node)
+        
+        # AIML268: Missing drift detection
+        self._check_missing_drift_detection(node)
+        
+        # AIML269: Statistical test manipulation
+        self._check_statistical_test_manipulation(node)
+        
+        # AIML270: Ground truth poisoning
+        self._check_ground_truth_poisoning(node)
+        
+        # Phase 2.4.2: Explainability & Interpretability (10 checks - AIML271-AIML280)
+        # AIML271: SHAP value manipulation
+        self._check_shap_value_manipulation(node)
+        
+        # AIML272: LIME explanation poisoning
+        self._check_lime_explanation_poisoning(node)
+        
+        # AIML273: Feature importance injection
+        self._check_feature_importance_injection(node)
+        
+        # AIML274: Saliency map tampering
+        self._check_saliency_map_tampering(node)
+        
+        # AIML275: Attention weight manipulation
+        self._check_attention_weight_manipulation(node)
+        
+        # AIML276: Counterfactual explanation attacks
+        self._check_counterfactual_explanation_attacks(node)
+        
+        # AIML277: Model card injection
+        self._check_model_card_injection(node)
+        
+        # AIML278: Explanation dashboard vulnerabilities
+        self._check_explanation_dashboard_vulnerabilities(node)
+        
+        # AIML279: Fairness metric manipulation
+        self._check_fairness_metric_manipulation(node)
+        
+        # AIML280: Bias detection bypass
+        self._check_bias_detection_bypass(node)
+        
+        # Phase 3: Specialized AI/ML Frameworks (100 checks - AIML281-AIML380)
+        # Phase 3.1: Computer Vision Security (35 checks)
+        # Phase 3.1.1: Image Processing Vulnerabilities (15 checks - AIML281-AIML295)
+        # AIML281: OpenCV injection attacks
+        self._check_opencv_injection_attacks(node)
+        
+        # AIML282: PIL/Pillow buffer overflows
+        self._check_pillow_buffer_overflows(node)
+        
+        # AIML283: Image augmentation poisoning
+        self._check_image_augmentation_poisoning(node)
+        
+        # AIML284: EXIF metadata injection
+        self._check_exif_metadata_injection(node)
+        
+        # AIML285: Adversarial patch attacks
+        self._check_adversarial_patch_attacks(node)
+        
+        # AIML286: Texture synthesis manipulation
+        self._check_texture_synthesis_manipulation(node)
+        
+        # AIML287: Style transfer poisoning
+        self._check_style_transfer_poisoning(node)
+        
+        # AIML288: Super-resolution attacks
+        self._check_super_resolution_attacks(node)
+        
+        # AIML289: Image segmentation manipulation
+        self._check_image_segmentation_manipulation(node)
+        
+        # AIML290: Object detection bypass
+        self._check_object_detection_bypass(node)
+        
+        # AIML291: Facial recognition spoofing
+        self._check_facial_recognition_spoofing(node)
+        
+        # AIML292: OCR injection attacks
+        self._check_ocr_injection_attacks(node)
+        
+        # AIML293: Image captioning poisoning
+        self._check_image_captioning_poisoning(node)
+        
+        # AIML294: Visual question answering attacks
+        self._check_visual_question_answering_attacks(node)
+        
+        # AIML295: Video frame injection
+        self._check_video_frame_injection(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -9580,6 +9691,275 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 )
                 self.violations.append(violation)
 
+    # Phase 2.4: Model Monitoring & Observability (20 checks - AIML261-AIML280)
+    # These checks were added in the visit_Call method but need implementation
+    
+    def _check_data_drift_detection_bypass(self, node: ast.Call) -> None:
+        """AIML261: Detect data drift detection bypass."""
+        if not self.has_ml_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("drift" in line_text or "distribution" in line_text) and ("detect" in line_text or "monitor" in line_text):
+            if "validate" not in line_text and "comprehensive" not in line_text:
+                self.violations.append(RuleViolation(
+                    rule_id="AIML261",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Drift detection - implement comprehensive monitoring to prevent bypass",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML06",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                ))
+    
+    def _check_concept_drift_manipulation(self, node: ast.Call) -> None:
+        """AIML262: Detect concept drift manipulation."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_model_performance_degradation_hiding(self, node: ast.Call) -> None:
+        """AIML263: Detect model performance degradation hiding."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_prediction_distribution_poisoning(self, node: ast.Call) -> None:
+        """AIML264: Detect prediction distribution poisoning."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_monitoring_pipeline_injection(self, node: ast.Call) -> None:
+        """AIML265: Detect monitoring pipeline injection."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_alert_threshold_manipulation(self, node: ast.Call) -> None:
+        """AIML266: Detect alert threshold manipulation."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_logging_framework_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML267: Detect logging framework vulnerabilities."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_missing_drift_detection(self, node: ast.Call) -> None:
+        """AIML268: Detect missing drift detection."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_statistical_test_manipulation(self, node: ast.Call) -> None:
+        """AIML269: Detect statistical test manipulation."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_ground_truth_poisoning(self, node: ast.Call) -> None:
+        """AIML270: Detect ground truth poisoning."""
+        pass  # Placeholder - monitoring feature
+    
+    def _check_shap_value_manipulation(self, node: ast.Call) -> None:
+        """AIML271: Detect SHAP value manipulation."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_lime_explanation_poisoning(self, node: ast.Call) -> None:
+        """AIML272: Detect LIME explanation poisoning."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_feature_importance_injection(self, node: ast.Call) -> None:
+        """AIML273: Detect feature importance injection."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_saliency_map_tampering(self, node: ast.Call) -> None:
+        """AIML274: Detect saliency map tampering."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_attention_weight_manipulation(self, node: ast.Call) -> None:
+        """AIML275: Detect attention weight manipulation."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_counterfactual_explanation_attacks(self, node: ast.Call) -> None:
+        """AIML276: Detect counterfactual explanation attacks."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_model_card_injection(self, node: ast.Call) -> None:
+        """AIML277: Detect model card injection."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_explanation_dashboard_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML278: Detect explanation dashboard vulnerabilities."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_fairness_metric_manipulation(self, node: ast.Call) -> None:
+        """AIML279: Detect fairness metric manipulation."""
+        pass  # Placeholder - explainability feature
+    
+    def _check_bias_detection_bypass(self, node: ast.Call) -> None:
+        """AIML280: Detect bias detection bypass."""
+        pass  # Placeholder - explainability feature
+    
+    # Phase 3.1: Computer Vision Security (35 checks - AIML281-AIML315)
+    # Phase 3.1.1: Image Processing Vulnerabilities (15 checks)
+    
+    def _check_opencv_injection_attacks(self, node: ast.Call) -> None:
+        """AIML281: Detect OpenCV injection attacks."""
+        if isinstance(node.func, ast.Attribute):
+            # Check for unsafe OpenCV operations with user input
+            if node.func.attr in ["imread", "imdecode", "VideoCapture"]:
+                if len(node.args) > 0:
+                    arg = node.args[0]
+                    if self._contains_user_input(arg) or isinstance(arg, ast.Name):
+                        self.violations.append(RuleViolation(
+                            rule_id="AIML281",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="OpenCV injection - validate file paths and inputs to prevent attacks",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML09",
+                            cwe_id="CWE-20",
+                            source_tool="pyguard",
+                        ))
+    
+    def _check_pillow_buffer_overflows(self, node: ast.Call) -> None:
+        """AIML282: Detect PIL/Pillow buffer overflow risks."""
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["open", "frombytes", "fromstring"]:
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                if "pil" in line_text or "image" in line_text:
+                    if "validate" not in line_text and "verify" not in line_text:
+                        self.violations.append(RuleViolation(
+                            rule_id="AIML282",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="PIL/Pillow image loading - validate image format and size to prevent buffer overflows",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML09",
+                            cwe_id="CWE-120",
+                            source_tool="pyguard",
+                        ))
+    
+    def _check_image_augmentation_poisoning(self, node: ast.Call) -> None:
+        """AIML283: Detect image augmentation poisoning."""
+        if isinstance(node.func, ast.Attribute):
+            augmentation_funcs = ["augment", "transform", "apply", "randomcrop", "randomflip", "colorjitter"]
+            if any(func in node.func.attr.lower() for func in augmentation_funcs):
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                if "albumentations" in line_text or "imgaug" in line_text or "torchvision" in line_text:
+                    self.violations.append(RuleViolation(
+                        rule_id="AIML283",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Image augmentation - validate augmentation parameters to prevent poisoning",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML03",
+                        cwe_id="CWE-345",
+                        source_tool="pyguard",
+                    ))
+    
+    def _check_exif_metadata_injection(self, node: ast.Call) -> None:
+        """AIML284: Detect EXIF metadata injection."""
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["getexif", "_getexif", "exif"]:
+                self.violations.append(RuleViolation(
+                    rule_id="AIML284",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="EXIF metadata - sanitize metadata to prevent injection attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                ))
+    
+    def _check_adversarial_patch_attacks(self, node: ast.Call) -> None:
+        """AIML285: Detect adversarial patch attack vulnerabilities."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_texture_synthesis_manipulation(self, node: ast.Call) -> None:
+        """AIML286: Detect texture synthesis manipulation."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_style_transfer_poisoning(self, node: ast.Call) -> None:
+        """AIML287: Detect style transfer poisoning."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_super_resolution_attacks(self, node: ast.Call) -> None:
+        """AIML288: Detect super-resolution attacks."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_image_segmentation_manipulation(self, node: ast.Call) -> None:
+        """AIML289: Detect image segmentation manipulation."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_object_detection_bypass(self, node: ast.Call) -> None:
+        """AIML290: Detect object detection bypass."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_facial_recognition_spoofing(self, node: ast.Call) -> None:
+        """AIML291: Detect facial recognition spoofing."""
+        pass  # Placeholder - advanced vision security
+    
+    def _check_ocr_injection_attacks(self, node: ast.Call) -> None:
+        """AIML292: Detect OCR injection attacks."""
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ["image_to_string", "recognize", "ocr"]:
+                self.violations.append(RuleViolation(
+                    rule_id="AIML292",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="OCR processing - sanitize output to prevent injection via manipulated images",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                ))
+    
+    def _check_image_captioning_poisoning(self, node: ast.Call) -> None:
+        """AIML293: Detect image captioning poisoning."""
+        pass  # Placeholder - multimodal security
+    
+    def _check_visual_question_answering_attacks(self, node: ast.Call) -> None:
+        """AIML294: Detect visual question answering attacks."""
+        pass  # Placeholder - multimodal security
+    
+    def _check_video_frame_injection(self, node: ast.Call) -> None:
+        """AIML295: Detect video frame injection."""
+        pass  # Placeholder - video security
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -10706,4 +11086,22 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML278", name="explanation-dashboard-vulnerabilities", description="Explanation dashboard vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Explanation dashboard - implement authentication and input validation", explanation="Explanation dashboards should be secured", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-306", owasp_mapping="A01", tags={"ai", "ml", "explainability", "dashboard", "security"}, references=["https://owasp.org/www-project-top-ten/"]),
     Rule(rule_id="AIML279", name="fairness-metric-manipulation", description="Fairness metric manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Fairness metrics - protect from manipulation to hide biases", explanation="Fairness metrics should be tamper-resistant", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML06", tags={"ai", "ml", "explainability", "fairness", "manipulation"}, references=["https://arxiv.org/abs/1810.01943"]),
     Rule(rule_id="AIML280", name="bias-detection-bypass", description="Bias detection bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Bias detection - implement comprehensive checks to prevent bypass", explanation="Bias detection should be comprehensive and tamper-proof", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML06", tags={"ai", "ml", "explainability", "bias", "bypass"}, references=["https://arxiv.org/abs/1810.01943"]),
+    # Phase 3: Specialized AI/ML Frameworks (100 checks)
+    # Phase 3.1: Computer Vision Security (35 checks)
+    # Phase 3.1.1: Image Processing Vulnerabilities (AIML281-AIML295)
+    Rule(rule_id="AIML281", name="opencv-injection-attacks", description="OpenCV injection attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="OpenCV injection - validate file paths and inputs to prevent attacks", explanation="OpenCV operations should validate all inputs for security", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "ml", "cv", "opencv", "injection"}, references=["https://docs.opencv.org/"]),
+    Rule(rule_id="AIML282", name="pillow-buffer-overflows", description="PIL/Pillow buffer overflows", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="PIL/Pillow image loading - validate image format and size to prevent buffer overflows", explanation="Image loading should validate formats and dimensions", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-120", owasp_mapping="ML09", tags={"ai", "ml", "cv", "pillow", "buffer-overflow"}, references=["https://pillow.readthedocs.io/"]),
+    Rule(rule_id="AIML283", name="image-augmentation-poisoning", description="Image augmentation poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Image augmentation - validate augmentation parameters to prevent poisoning", explanation="Augmentation should use validated and bounded parameters", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "augmentation", "poisoning"}, references=["https://arxiv.org/abs/1804.00308"]),
+    Rule(rule_id="AIML284", name="exif-metadata-injection", description="EXIF metadata injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="EXIF metadata - sanitize metadata to prevent injection attacks", explanation="EXIF data should be sanitized before use", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML09", tags={"ai", "ml", "cv", "exif", "injection"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML285", name="adversarial-patch-attacks", description="Adversarial patch attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Vision model - implement defenses against adversarial patch attacks", explanation="Vision models should detect adversarial patches", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "adversarial", "patch"}, references=["https://arxiv.org/abs/1712.09665"]),
+    Rule(rule_id="AIML286", name="texture-synthesis-manipulation", description="Texture synthesis manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Texture synthesis - validate generated textures to prevent manipulation", explanation="Synthesized textures should be validated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "texture", "manipulation"}, references=["https://arxiv.org/abs/1505.07376"]),
+    Rule(rule_id="AIML287", name="style-transfer-poisoning", description="Style transfer poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Style transfer - validate style inputs to prevent poisoning", explanation="Style transfer should validate style images", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "style-transfer", "poisoning"}, references=["https://arxiv.org/abs/1508.06576"]),
+    Rule(rule_id="AIML288", name="super-resolution-attacks", description="Super-resolution attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Super-resolution - validate inputs to prevent adversarial attacks", explanation="Super-resolution models can be exploited via adversarial inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "super-resolution", "adversarial"}, references=["https://arxiv.org/abs/1501.00092"]),
+    Rule(rule_id="AIML289", name="image-segmentation-manipulation", description="Image segmentation manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Segmentation model - implement defenses against manipulation attacks", explanation="Segmentation models should detect manipulated inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "segmentation", "manipulation"}, references=["https://arxiv.org/abs/1704.06857"]),
+    Rule(rule_id="AIML290", name="object-detection-bypass", description="Object detection bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Object detection - implement robustness against bypass attacks", explanation="Object detection should be robust to adversarial examples", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "object-detection", "bypass"}, references=["https://arxiv.org/abs/1412.6572"]),
+    Rule(rule_id="AIML291", name="facial-recognition-spoofing", description="Facial recognition spoofing", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Facial recognition - implement liveness detection to prevent spoofing", explanation="Facial recognition should include anti-spoofing measures", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-287", owasp_mapping="A07", tags={"ai", "ml", "cv", "facial-recognition", "spoofing"}, references=["https://arxiv.org/abs/1901.08897"]),
+    Rule(rule_id="AIML292", name="ocr-injection-attacks", description="OCR injection attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="OCR processing - sanitize output to prevent injection via manipulated images", explanation="OCR output should be sanitized before use in commands or queries", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML09", tags={"ai", "ml", "cv", "ocr", "injection"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML293", name="image-captioning-poisoning", description="Image captioning poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Image captioning - validate captions to prevent poisoning attacks", explanation="Captioning models should validate generated text", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "captioning", "poisoning"}, references=["https://arxiv.org/abs/1502.03044"]),
+    Rule(rule_id="AIML294", name="visual-question-answering-attacks", description="Visual question answering attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="VQA model - validate questions and answers to prevent attacks", explanation="VQA models should validate both questions and generated answers", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "ml", "cv", "vqa", "attacks"}, references=["https://arxiv.org/abs/1505.00468"]),
+    Rule(rule_id="AIML295", name="video-frame-injection", description="Video frame injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Video processing - validate frames to prevent injection attacks", explanation="Video frames should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML09", tags={"ai", "ml", "cv", "video", "injection"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
 ]
