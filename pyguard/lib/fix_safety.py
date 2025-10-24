@@ -214,6 +214,80 @@ class FixSafetyClassifier:
             "Use command_subprocess fix with --unsafe-fixes flag.",
         )
 
+        # ===== AI/ML SECURITY FIXES =====
+        # Safe AI/ML security fixes
+        self._add_safe_fix(
+            "torch_load_weights_only",
+            "security",
+            "Add weights_only=True to torch.load()",
+            "Direct parameter addition, prevents arbitrary code execution via pickle",
+        )
+
+        self._add_safe_fix(
+            "from_pretrained_trust",
+            "security",
+            "Add trust_remote_code=False to from_pretrained()",
+            "Direct parameter addition, prevents arbitrary code execution from models",
+        )
+
+        self._add_safe_fix(
+            "api_key_exposure",
+            "security",
+            "Move hardcoded API keys to environment variables",
+            "Replaces hardcoded values with os.getenv(), prevents credential exposure",
+        )
+
+        self._add_safe_fix(
+            "gpu_memory_limits",
+            "security",
+            "Add GPU memory limits to prevent exhaustion",
+            "Adds configuration without changing logic, prevents DoS attacks",
+        )
+
+        self._add_safe_fix(
+            "llm_rate_limiting",
+            "security",
+            "Add rate limiting to LLM API calls",
+            "Adds protective parameter without changing logic, prevents cost overflow",
+        )
+
+        self._add_safe_fix(
+            "model_versioning",
+            "security",
+            "Replace 'latest' model tags with specific versions",
+            "Comment-based suggestion for reproducibility",
+        )
+
+        # Unsafe AI/ML security fixes
+        self._add_unsafe_fix(
+            "pickle_to_safetensors",
+            "security",
+            "Replace pickle with safetensors for model serialization",
+            "Changes serialization format (API breaking), requires safetensors dependency",
+        )
+
+        self._add_unsafe_fix(
+            "training_data_validation",
+            "security",
+            "Add training data validation to prevent poisoning",
+            "Modifies training pipeline, may affect training behavior",
+        )
+
+        # Warning-only AI/ML fixes
+        self._add_warning_only_fix(
+            "output_sanitization",
+            "security",
+            "Add output sanitization to LLM responses",
+            "Complex transformation requiring context analysis. Manual implementation recommended.",
+        )
+
+        self._add_warning_only_fix(
+            "prompt_injection_basic",
+            "security",
+            "Add basic prompt injection prevention",
+            "Complex transformation requiring AST-based context analysis. Manual implementation recommended.",
+        )
+
     def _add_safe_fix(self, fix_id: str, category: str, description: str, reasoning: str) -> None:
         """Add a SAFE fix classification."""
         self._classifications[fix_id] = FixClassification(
