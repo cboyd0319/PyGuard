@@ -198,8 +198,33 @@ Phase 3.4: Specialized ML Libraries (AIML371-380):
 - Graph structure poisoning - AIML378
 - Node feature injection - AIML379
 - Message passing attacks - AIML380
+- Untrusted notebook execution - AIML381
+- Output cell code injection - AIML382
+- Matplotlib backend exploitation - AIML383
+- IPython magic command injection - AIML384
+- Kernel manipulation attacks - AIML385
+- Widget state poisoning - AIML386
+- Display object injection - AIML387
+- Markdown cell XSS - AIML388
+- LaTeX injection in outputs - AIML389
+- SVG code execution - AIML390
+- HTML display risks - AIML391
+- JavaScript execution in notebooks - AIML392
+- nbviewer security gaps - AIML393
+- Binder configuration injection - AIML394
+- JupyterHub authentication bypass - AIML395
+- Notebook sharing credential leakage - AIML396
+- Git integration risks (.ipynb in repos) - AIML397
+- Colab notebook sharing vulnerabilities - AIML398
+- Kaggle notebook injection - AIML399
+- Paperspace Gradient risks - AIML400
+- Model checkpoints in notebooks - AIML401
+- Credentials in notebook metadata - AIML402
+- Large model loading (DoS) - AIML403
+- GPU memory exhaustion in notebooks - AIML404
+- Dataset downloading vulnerabilities - AIML405
 
-Total Security Checks: 380 (v0.7.7 - Phase 3 Complete: Specialized Frameworks Domination)
+Total Security Checks: 405 (v0.7.8 - Phase 4.1 Complete: Jupyter & Notebook Security)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -1433,6 +1458,90 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML380: Message passing attacks
         self._check_message_passing_attacks(node)
+        
+        # Phase 4: AI/ML Supply Chain & Infrastructure Security (80 checks - AIML381-460)
+        # Phase 4.1: Jupyter & Notebook Security (25 checks - AIML381-405)
+        
+        # Phase 4.1.1: Notebook Execution Risks (12 checks - AIML381-392)
+        
+        # AIML381: Untrusted notebook execution
+        self._check_untrusted_notebook_execution(node)
+        
+        # AIML382: Output cell code injection
+        self._check_output_cell_code_injection(node)
+        
+        # AIML383: Matplotlib backend exploitation
+        self._check_matplotlib_backend_exploitation(node)
+        
+        # AIML384: IPython magic command injection
+        self._check_ipython_magic_injection(node)
+        
+        # AIML385: Kernel manipulation attacks
+        self._check_kernel_manipulation_attacks(node)
+        
+        # AIML386: Widget state poisoning
+        self._check_widget_state_poisoning(node)
+        
+        # AIML387: Display object injection
+        self._check_display_object_injection(node)
+        
+        # AIML388: Markdown cell XSS
+        self._check_markdown_cell_xss(node)
+        
+        # AIML389: LaTeX injection in outputs
+        self._check_latex_injection(node)
+        
+        # AIML390: SVG code execution
+        self._check_svg_code_execution(node)
+        
+        # AIML391: HTML display risks
+        self._check_html_display_risks(node)
+        
+        # AIML392: JavaScript execution in notebooks
+        self._check_javascript_execution_notebooks(node)
+        
+        # Phase 4.1.2: Collaboration & Sharing Risks (8 checks - AIML393-400)
+        
+        # AIML393: nbviewer security gaps
+        self._check_nbviewer_security_gaps(node)
+        
+        # AIML394: Binder configuration injection
+        self._check_binder_config_injection(node)
+        
+        # AIML395: JupyterHub authentication bypass
+        self._check_jupyterhub_auth_bypass(node)
+        
+        # AIML396: Notebook sharing credential leakage
+        self._check_notebook_credential_leakage(node)
+        
+        # AIML397: Git integration risks
+        self._check_git_ipynb_risks(node)
+        
+        # AIML398: Colab notebook sharing vulnerabilities
+        self._check_colab_sharing_vulnerabilities(node)
+        
+        # AIML399: Kaggle notebook injection
+        self._check_kaggle_notebook_injection(node)
+        
+        # AIML400: Paperspace Gradient risks
+        self._check_paperspace_gradient_risks(node)
+        
+        # Phase 4.1.3: ML-Specific Notebook Risks (5 checks - AIML401-405)
+        
+        # AIML401: Model checkpoints in notebooks
+        self._check_model_checkpoints_notebooks(node)
+        
+        # AIML402: Credentials in notebook metadata
+        self._check_credentials_notebook_metadata(node)
+        
+        # AIML403: Large model loading (DoS)
+        self._check_large_model_loading_dos(node)
+        
+        # AIML404: GPU memory exhaustion in notebooks
+        self._check_gpu_memory_exhaustion_notebooks(node)
+        
+        # AIML405: Dataset downloading vulnerabilities
+        self._check_dataset_download_vulnerabilities(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -12412,6 +12521,656 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     source_tool="pyguard",
                 )
                 self.violations.append(violation)
+    
+    # Phase 4.1: Jupyter & Notebook Security Detection Methods (AIML381-405)
+    
+    def _check_untrusted_notebook_execution(self, node: ast.Call) -> None:
+        """AIML381: Detect untrusted notebook execution."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for notebook execution from untrusted sources
+        if any(x in line_text for x in ["nbformat", "nbclient", "execute", "run_cell"]):
+            if any(x in line_text for x in ["untrusted", "download", "http", "url", "fetch", "remote"]):
+                violation = RuleViolation(
+                    rule_id="AIML381",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Executing untrusted notebook - validate source and content before execution",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_output_cell_code_injection(self, node: ast.Call) -> None:
+        """AIML382: Detect output cell code injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for display/output with untrusted data
+        if any(x in line_text for x in ["display(", "output(", "render(", "show("]):
+            if not any(x in line_text for x in ["sanitize", "escape", "safe"]):
+                violation = RuleViolation(
+                    rule_id="AIML382",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Output cell may contain executable code - sanitize notebook outputs",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-79",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_matplotlib_backend_exploitation(self, node: ast.Call) -> None:
+        """AIML383: Detect Matplotlib backend exploitation risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for matplotlib.use() with unsafe backends
+        if "matplotlib" in line_text and "use(" in line_text:
+            if any(x in line_text for x in ["'webagg'", '"webagg"', "'qt5agg'", '"qt5agg"']):
+                violation = RuleViolation(
+                    rule_id="AIML383",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Matplotlib backend configuration - use safe backend to prevent exploitation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ipython_magic_injection(self, node: ast.Call) -> None:
+        """AIML384: Detect IPython magic command injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for IPython magic with user input
+        if ("run_line_magic" in line_text or "run_cell_magic" in line_text or "%" in line_text):
+            if any(x in line_text for x in ["user_input", "request", "input(", "argv", "sys.argv"]):
+                violation = RuleViolation(
+                    rule_id="AIML384",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="IPython magic with user input - validate commands to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-78",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_kernel_manipulation_attacks(self, node: ast.Call) -> None:
+        """AIML385: Detect kernel manipulation attacks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for kernel operations
+        if any(x in line_text for x in ["kernel", "ipykernel", "kernelmanager"]):
+            if any(x in line_text for x in ["restart", "interrupt", "shutdown", "execute"]):
+                violation = RuleViolation(
+                    rule_id="AIML385",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Jupyter kernel manipulation - validate kernel operations",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_widget_state_poisoning(self, node: ast.Call) -> None:
+        """AIML386: Detect widget state poisoning."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ipywidgets without validation
+        if "widget" in line_text or "ipywidgets" in line_text:
+            if "state" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML386",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Jupyter widget state - validate state data to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_display_object_injection(self, node: ast.Call) -> None:
+        """AIML387: Detect display object injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for IPython display with untrusted data
+        if any(x in line_text for x in ["display.display(", "display.html(", "display.javascript("]):
+            if not any(x in line_text for x in ["sanitize", "escape", "safe"]):
+                violation = RuleViolation(
+                    rule_id="AIML387",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Display object with untrusted data - sanitize before rendering",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-79",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_markdown_cell_xss(self, node: ast.Call) -> None:
+        """AIML388: Detect Markdown cell XSS."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Markdown rendering with user input
+        if "markdown" in line_text or "display.markdown(" in line_text:
+            if any(x in line_text for x in ["user_input", "request", "input(", "f\"", "f'"]):
+                violation = RuleViolation(
+                    rule_id="AIML388",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Markdown cell with user input - sanitize to prevent XSS",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-79",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_latex_injection(self, node: ast.Call) -> None:
+        """AIML389: Detect LaTeX injection in outputs."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for LaTeX rendering with user input
+        if "latex" in line_text or "display.latex(" in line_text:
+            if any(x in line_text for x in ["user_input", "request", "input(", "f\"", "f'"]):
+                violation = RuleViolation(
+                    rule_id="AIML389",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="LaTeX rendering with user input - sanitize to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_svg_code_execution(self, node: ast.Call) -> None:
+        """AIML390: Detect SVG code execution risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for SVG rendering with untrusted data
+        if "svg" in line_text or "display.svg(" in line_text:
+            if not any(x in line_text for x in ["sanitize", "escape", "safe"]):
+                violation = RuleViolation(
+                    rule_id="AIML390",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="SVG output - sanitize to prevent JavaScript execution",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-79",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_html_display_risks(self, node: ast.Call) -> None:
+        """AIML391: Detect HTML display risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for HTML display with untrusted content
+        if "html(" in line_text or "display.html(" in line_text:
+            if not any(x in line_text for x in ["sanitize", "escape", "safe", "bleach"]):
+                violation = RuleViolation(
+                    rule_id="AIML391",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="HTML display with untrusted content - sanitize to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-79",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_javascript_execution_notebooks(self, node: ast.Call) -> None:
+        """AIML392: Detect JavaScript execution in notebooks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for JavaScript in notebooks
+        if any(x in line_text for x in ["display.javascript(", "%%javascript", "javascript(", "js("]):
+            violation = RuleViolation(
+                rule_id="AIML392",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.CRITICAL,
+                message="JavaScript in notebook - avoid or sanitize to prevent malicious execution",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="A03",
+                cwe_id="CWE-79",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_nbviewer_security_gaps(self, node: ast.Call) -> None:
+        """AIML393: Detect nbviewer security gaps."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for nbviewer usage
+        if "nbviewer" in line_text or "nb_viewer" in line_text:
+            violation = RuleViolation(
+                rule_id="AIML393",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="nbviewer sharing - ensure notebooks are safe before public sharing",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="A03",
+                cwe_id="CWE-79",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_binder_config_injection(self, node: ast.Call) -> None:
+        """AIML394: Detect Binder configuration injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Binder configuration
+        if any(x in line_text for x in ["binder", "repo2docker", "binderhub"]):
+            if any(x in line_text for x in ["postbuild", "start", "environment.yml", "apt.txt"]):
+                violation = RuleViolation(
+                    rule_id="AIML394",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Binder configuration - validate repo2docker config to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_jupyterhub_auth_bypass(self, node: ast.Call) -> None:
+        """AIML395: Detect JupyterHub authentication bypass."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for JupyterHub authentication
+        if "jupyterhub" in line_text and "auth" in line_text:
+            if any(x in line_text for x in ["bypass", "skip", "disable", "allow_all"]):
+                violation = RuleViolation(
+                    rule_id="AIML395",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="JupyterHub authentication - implement proper access controls",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-287",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_notebook_credential_leakage(self, node: ast.Call) -> None:
+        """AIML396: Detect notebook sharing credential leakage."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for credentials in notebooks
+        if any(x in line_text for x in ["api_key", "password", "secret", "token", "credential"]):
+            if not any(x in line_text for x in ["os.environ", "getenv", "config", "env."]):
+                violation = RuleViolation(
+                    rule_id="AIML396",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Notebook sharing - check for hardcoded credentials before sharing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-798",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_git_ipynb_risks(self, node: ast.Call) -> None:
+        """AIML397: Detect Git integration risks with .ipynb files."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for git operations with notebooks
+        if str(self.file_path).endswith(".ipynb") or ".ipynb" in line_text:
+            if any(x in line_text for x in ["git.add", "git.commit", "git.push"]):
+                violation = RuleViolation(
+                    rule_id="AIML397",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Notebook in git repository - review outputs and metadata for sensitive data",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A02",
+                    cwe_id="CWE-312",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_colab_sharing_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML398: Detect Colab notebook sharing vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Colab sharing operations
+        if "colab" in line_text:
+            if any(x in line_text for x in ["share", "mount", "drive.mount"]):
+                violation = RuleViolation(
+                    rule_id="AIML398",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Google Colab sharing - validate permissions and clean sensitive data",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A01",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_kaggle_notebook_injection(self, node: ast.Call) -> None:
+        """AIML399: Detect Kaggle notebook injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Kaggle notebook operations
+        if "kaggle" in line_text:
+            if any(x in line_text for x in ["download", "load", "import", "execute"]):
+                violation = RuleViolation(
+                    rule_id="AIML399",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Kaggle notebook - validate external code before execution",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_paperspace_gradient_risks(self, node: ast.Call) -> None:
+        """AIML400: Detect Paperspace Gradient risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Paperspace operations
+        if "paperspace" in line_text or "gradient" in line_text:
+            if any(x in line_text for x in ["notebook", "config", "setup"]):
+                violation = RuleViolation(
+                    rule_id="AIML400",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Paperspace Gradient - validate notebook environment and dependencies",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A05",
+                    cwe_id="CWE-1188",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_checkpoints_notebooks(self, node: ast.Call) -> None:
+        """AIML401: Detect model checkpoints in notebooks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for model checkpoints being saved in notebooks
+        if any(x in line_text for x in ["torch.save", "model.save", "checkpoint"]):
+            if str(self.file_path).endswith(".ipynb") or "notebook" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML401",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model checkpoint in notebook - extract to separate file and use secure loading",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-502",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_credentials_notebook_metadata(self, node: ast.Call) -> None:
+        """AIML402: Detect credentials in notebook metadata."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for metadata operations with credentials
+        if "metadata" in line_text:
+            if any(x in line_text for x in ["api_key", "password", "secret", "token"]):
+                violation = RuleViolation(
+                    rule_id="AIML402",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Credentials in notebook metadata - remove before committing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-798",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_large_model_loading_dos(self, node: ast.Call) -> None:
+        """AIML403: Detect large model loading (DoS)."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for loading large models without memory limits
+        if any(x in line_text for x in ["torch.load", "load_model", "from_pretrained"]):
+            if not any(x in line_text for x in ["max_memory", "device_map", "low_cpu_mem_usage"]):
+                violation = RuleViolation(
+                    rule_id="AIML403",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Large model loading - implement memory limits to prevent DoS",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_gpu_memory_exhaustion_notebooks(self, node: ast.Call) -> None:
+        """AIML404: Detect GPU memory exhaustion in notebooks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for GPU operations without memory management
+        if any(x in line_text for x in [".cuda(", ".to('cuda')", ".to(device"]):
+            if not any(x in line_text for x in ["torch.cuda.empty_cache", "max_memory", "memory_limit"]):
+                violation = RuleViolation(
+                    rule_id="AIML404",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="GPU operations - implement memory limits and cleanup",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_dataset_download_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML405: Detect dataset downloading vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for dataset downloads without validation
+        if any(x in line_text for x in ["download_dataset", "load_dataset", "datasets.load"]):
+            if not any(x in line_text for x in ["verify", "checksum", "hash", "signature"]):
+                violation = RuleViolation(
+                    rule_id="AIML405",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Dataset download - validate source and verify integrity",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     # Helper methods
     
@@ -13658,4 +14417,37 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML378", name="graph-structure-poisoning", description="Graph structure poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Graph structure poisoning risk - validate graph topology from untrusted sources", explanation="Graph structures vulnerable to poisoning through malicious topology", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "graph", "poisoning"}, references=["https://arxiv.org/abs/1806.02371"]),
     Rule(rule_id="AIML379", name="node-feature-injection", description="Node feature injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Node feature injection risk - sanitize node features before use", explanation="Node features vulnerable to adversarial injection attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "node-features", "injection"}, references=["https://arxiv.org/abs/1806.02371"]),
     Rule(rule_id="AIML380", name="message-passing-attacks", description="Message passing attack vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Message passing attack risk - bound message values to prevent overflow", explanation="GNN message passing vulnerable to overflow and poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "message-passing", "attack"}, references=["https://arxiv.org/abs/1806.02371"]),
+    
+    # Phase 4: AI/ML Supply Chain & Infrastructure Security (AIML381-460)
+    # Phase 4.1: Jupyter & Notebook Security (25 checks - AIML381-405)
+    # Phase 4.1.1: Notebook Execution Risks (12 checks - AIML381-392)
+    Rule(rule_id="AIML381", name="untrusted-notebook-execution", description="Untrusted notebook execution", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Executing untrusted notebook - validate source and content before execution", explanation="Executing untrusted notebooks can lead to arbitrary code execution", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "notebook", "execution"}, references=["https://jupyter-notebook.readthedocs.io/en/stable/security.html"]),
+    Rule(rule_id="AIML382", name="output-cell-code-injection", description="Output cell code injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Output cell may contain executable code - sanitize notebook outputs", explanation="Notebook output cells can contain malicious JavaScript or HTML", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "notebook", "output-injection"}, references=["https://jupyter-notebook.readthedocs.io/en/stable/security.html"]),
+    Rule(rule_id="AIML383", name="matplotlib-backend-exploitation", description="Matplotlib backend exploitation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Matplotlib backend configuration - use safe backend to prevent exploitation", explanation="Matplotlib backends can be exploited in notebook environments", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="ML09", tags={"ai", "ml", "jupyter", "matplotlib", "backend"}, references=["https://matplotlib.org/stable/users/explain/backends.html"]),
+    Rule(rule_id="AIML384", name="ipython-magic-injection", description="IPython magic command injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="IPython magic with user input - validate commands to prevent injection", explanation="IPython magic commands with untrusted input enable code execution", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-78", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "ipython", "magic"}, references=["https://ipython.readthedocs.io/en/stable/interactive/magics.html"]),
+    Rule(rule_id="AIML385", name="kernel-manipulation-attacks", description="Kernel manipulation attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Jupyter kernel manipulation - validate kernel operations", explanation="Jupyter kernels can be manipulated to execute malicious code", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "kernel", "manipulation"}, references=["https://jupyter-client.readthedocs.io/en/stable/"]),
+    Rule(rule_id="AIML386", name="widget-state-poisoning", description="Widget state poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Jupyter widget state - validate state data to prevent poisoning", explanation="Jupyter widget state can be poisoned through untrusted notebooks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "jupyter", "widget", "poisoning"}, references=["https://ipywidgets.readthedocs.io/"]),
+    Rule(rule_id="AIML387", name="display-object-injection", description="Display object injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Display object with untrusted data - sanitize before rendering", explanation="Display objects can inject malicious content in notebook outputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "display", "injection"}, references=["https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html"]),
+    Rule(rule_id="AIML388", name="markdown-cell-xss", description="Markdown cell XSS", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Markdown cell with user input - sanitize to prevent XSS", explanation="Markdown cells can contain XSS payloads via HTML injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "markdown", "xss"}, references=["https://jupyter-notebook.readthedocs.io/en/stable/security.html"]),
+    Rule(rule_id="AIML389", name="latex-injection", description="LaTeX injection in outputs", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="LaTeX rendering with user input - sanitize to prevent injection", explanation="LaTeX in notebook outputs can execute arbitrary commands", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "latex", "injection"}, references=["https://en.wikipedia.org/wiki/LaTeX_injection"]),
+    Rule(rule_id="AIML390", name="svg-code-execution", description="SVG code execution", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="SVG output - sanitize to prevent JavaScript execution", explanation="SVG images can contain embedded JavaScript for code execution", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "svg", "execution"}, references=["https://owasp.org/www-community/attacks/SVG_Embedding"]),
+    Rule(rule_id="AIML391", name="html-display-risks", description="HTML display risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="HTML display with untrusted content - sanitize to prevent injection", explanation="HTML display objects can inject malicious scripts", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "html", "display"}, references=["https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html#IPython.display.HTML"]),
+    Rule(rule_id="AIML392", name="javascript-execution-notebooks", description="JavaScript execution in notebooks", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="JavaScript in notebook - avoid or sanitize to prevent malicious execution", explanation="JavaScript execution in notebooks enables XSS and data exfiltration", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "javascript", "execution"}, references=["https://jupyter-notebook.readthedocs.io/en/stable/security.html"]),
+    
+    # Phase 4.1.2: Collaboration & Sharing Risks (8 checks - AIML393-400)
+    Rule(rule_id="AIML393", name="nbviewer-security-gaps", description="nbviewer security gaps", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="nbviewer sharing - ensure notebooks are safe before public sharing", explanation="nbviewer can execute malicious notebooks if not properly sanitized", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-79", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "nbviewer", "sharing"}, references=["https://nbviewer.jupyter.org/"]),
+    Rule(rule_id="AIML394", name="binder-config-injection", description="Binder configuration injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Binder configuration - validate repo2docker config to prevent injection", explanation="Binder configuration files can inject malicious commands", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "binder", "injection"}, references=["https://mybinder.readthedocs.io/en/latest/using/config_files.html"]),
+    Rule(rule_id="AIML395", name="jupyterhub-auth-bypass", description="JupyterHub authentication bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="JupyterHub authentication - implement proper access controls", explanation="JupyterHub authentication bypasses can expose sensitive notebooks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-287", owasp_mapping="A07", tags={"ai", "ml", "jupyter", "jupyterhub", "auth"}, references=["https://jupyterhub.readthedocs.io/en/stable/reference/authenticators.html"]),
+    Rule(rule_id="AIML396", name="notebook-credential-leakage", description="Notebook sharing credential leakage", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Notebook sharing - check for hardcoded credentials before sharing", explanation="Shared notebooks often contain leaked credentials and API keys", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-798", owasp_mapping="A07", tags={"ai", "ml", "jupyter", "credentials", "sharing"}, references=["https://jupyter-notebook.readthedocs.io/en/stable/security.html"]),
+    Rule(rule_id="AIML397", name="git-ipynb-risks", description="Git integration risks (.ipynb in repos)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Notebook in git repository - review outputs and metadata for sensitive data", explanation="Notebooks in git repos often contain leaked secrets in outputs/metadata", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-312", owasp_mapping="A02", tags={"ai", "ml", "jupyter", "git", "metadata"}, references=["https://docs.github.com/en/code-security/secret-scanning"]),
+    Rule(rule_id="AIML398", name="colab-sharing-vulnerabilities", description="Colab notebook sharing vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Google Colab sharing - validate permissions and clean sensitive data", explanation="Colab notebooks may expose sensitive data through sharing links", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-200", owasp_mapping="A01", tags={"ai", "ml", "jupyter", "colab", "sharing"}, references=["https://research.google.com/colaboratory/faq.html"]),
+    Rule(rule_id="AIML399", name="kaggle-notebook-injection", description="Kaggle notebook injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Kaggle notebook - validate external code before execution", explanation="Kaggle notebooks can contain malicious code from competitions", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="A03", tags={"ai", "ml", "jupyter", "kaggle", "injection"}, references=["https://www.kaggle.com/code"]),
+    Rule(rule_id="AIML400", name="paperspace-gradient-risks", description="Paperspace Gradient risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Paperspace Gradient - validate notebook environment and dependencies", explanation="Paperspace notebooks may have insecure default configurations", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-1188", owasp_mapping="A05", tags={"ai", "ml", "jupyter", "paperspace", "config"}, references=["https://docs.paperspace.com/gradient/"]),
+    
+    # Phase 4.1.3: ML-Specific Notebook Risks (5 checks - AIML401-405)
+    Rule(rule_id="AIML401", name="model-checkpoints-notebooks", description="Model checkpoints in notebooks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model checkpoint in notebook - extract to separate file and use secure loading", explanation="Model checkpoints in notebooks create large files and security risks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "jupyter", "checkpoint", "model"}, references=["https://pytorch.org/tutorials/beginner/saving_loading_models.html"]),
+    Rule(rule_id="AIML402", name="credentials-notebook-metadata", description="Credentials in notebook metadata", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="Credentials in notebook metadata - remove before committing", explanation="Notebook metadata can store credentials that persist in version control", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-798", owasp_mapping="A07", tags={"ai", "ml", "jupyter", "metadata", "credentials"}, references=["https://nbformat.readthedocs.io/en/latest/format_description.html"]),
+    Rule(rule_id="AIML403", name="large-model-loading-dos", description="Large model loading (DoS)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Large model loading - implement memory limits to prevent DoS", explanation="Loading large models in notebooks can cause memory exhaustion", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "jupyter", "model", "dos"}, references=["https://pytorch.org/docs/stable/notes/large_scale_deployments.html"]),
+    Rule(rule_id="AIML404", name="gpu-memory-exhaustion-notebooks", description="GPU memory exhaustion in notebooks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="GPU operations - implement memory limits and cleanup", explanation="GPU memory exhaustion in notebooks can cause kernel crashes", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "jupyter", "gpu", "memory"}, references=["https://pytorch.org/docs/stable/notes/cuda.html#best-practices"]),
+    Rule(rule_id="AIML405", name="dataset-download-vulnerabilities", description="Dataset downloading vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Dataset download - validate source and verify integrity", explanation="Downloading datasets in notebooks from untrusted sources risks data poisoning", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML03", tags={"ai", "ml", "jupyter", "dataset", "download"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
 ]
