@@ -507,7 +507,7 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 270 AI/ML security rules are registered (Phase 1 + Phase 2.1 + Phase 2.2 + Phase 2.3 + Phase 2.4).
+        """Verify all AI/ML security rules are registered.
         
         Phase 1: 160 checks (AIML011-AIML160, plus AIML001-AIML010 baseline)
         Phase 2.1: 30 checks (AIML161-AIML190)
@@ -516,11 +516,16 @@ class TestAIMLSecurityRules:
         Phase 2.4: 20 checks (AIML261-AIML280)
         Phase 3.1: 35 checks (AIML281-AIML315) - Computer Vision Security
         Phase 3.2: 35 checks (AIML316-AIML350) - Natural Language Processing Security
+        Phase 3.3: 20 checks (AIML351-AIML370) - Reinforcement Learning Security
+        Phase 3.4: 10 checks (AIML371-AIML380) - Specialized ML Libraries
+        Phase 4.1: 25 checks (AIML381-AIML405) - Jupyter & Notebook Security
+        Phase 4.2: 25 checks (AIML406-AIML430) - Dataset & Data Pipeline Security
+        Phase 4.3: 20 checks (AIML431-AIML450) - Model Registry & Versioning Security
+        Phase 4.4: 10 checks (AIML451-AIML460) - Cloud & Infrastructure Security
         
-        Note: AIML013-AIML022 (10 rules) from Phase 1.1.1 are not yet added to the rules list.
-        When those are added, this count should be 350.
+        Total: 450 checks (v0.8.1 - Phase 4.4 Complete)
         """
-        assert len(AIML_SECURITY_RULES) == 370  # Updated for Phase 3.4 (10 new specialized ML library checks)
+        assert len(AIML_SECURITY_RULES) == 450  # Updated for Phase 4.4 (10 new cloud security checks)
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -1626,3 +1631,300 @@ openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert not any(v.rule_id == "AIML022" for v in violations)
+
+
+class TestAIML451SageMakerNotebookInjection:
+    """Test AWS SageMaker notebook injection detection."""
+
+    def test_detect_sagemaker_notebook_without_security(self):
+        """Detect SageMaker notebook creation without security controls."""
+        code = """
+import boto3
+sagemaker = boto3.client('sagemaker')
+response = sagemaker.create_notebook_instance(
+    NotebookInstanceName='my-notebook',
+    InstanceType='ml.t2.medium'
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML451" for v in violations)
+        assert any(v.severity == RuleSeverity.HIGH for v in violations)
+
+    def test_detect_sagemaker_start_without_controls(self):
+        """Detect SageMaker notebook start without security."""
+        code = """
+import sagemaker
+notebook_instance = sagemaker.start_notebook_instance(name='my-notebook')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML451" for v in violations)
+
+    def test_safe_sagemaker_with_security(self):
+        """SageMaker with security controls should not trigger."""
+        code = """
+import boto3
+sagemaker = boto3.client('sagemaker')
+response = sagemaker.create_notebook_instance(
+    NotebookInstanceName='my-notebook',
+    InstanceType='ml.t2.medium',
+    RootAccess='Disabled',
+    DirectInternetAccess='Disabled',
+    VolumeEncryption=True
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML451" for v in violations)
+
+
+class TestAIML452AzureMLWorkspaceTampering:
+    """Test Azure ML workspace tampering detection."""
+
+    def test_detect_azure_workspace_without_auth(self):
+        """Detect Azure ML workspace without authentication."""
+        code = """
+from azureml.core import Workspace
+ws = Workspace.create(name='my-workspace', subscription_id='xxx')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML452" for v in violations)
+
+    def test_safe_azure_workspace_with_auth(self):
+        """Azure ML workspace with authentication should not trigger."""
+        code = """
+from azureml.core import Workspace
+from azureml.core.authentication import InteractiveLoginAuthentication
+auth = InteractiveLoginAuthentication()
+ws = Workspace.create(name='my-workspace', auth=auth)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML452" for v in violations)
+
+
+class TestAIML453VertexAIPipelineManipulation:
+    """Test Google Vertex AI pipeline manipulation detection."""
+
+    def test_detect_vertex_pipeline_without_security(self):
+        """Detect Vertex AI pipeline without security config."""
+        code = """
+from google.cloud import aiplatform
+pipeline_job = aiplatform.PipelineJob.create(display_name='my-pipeline')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML453" for v in violations)
+
+    def test_safe_vertex_pipeline_with_security(self):
+        """Vertex AI pipeline with security should not trigger."""
+        code = """
+from google.cloud import aiplatform
+pipeline_job = aiplatform.PipelineJob.create(
+    display_name='my-pipeline',
+    service_account='sa@project.iam.gserviceaccount.com',
+    encryption_spec_key_name='projects/my-project/locations/us-central1/keyRings/my-kr/cryptoKeys/my-key'
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML453" for v in violations)
+
+
+class TestAIML454DatabricksMLRuntimeRisks:
+    """Test Databricks ML runtime risks detection."""
+
+    def test_detect_hardcoded_databricks_token(self):
+        """Detect hardcoded Databricks token."""
+        code = """
+import mlflow
+mlflow.set_tracking_uri('databricks')
+mlflow.set_experiment_tag('token', 'dapi1234567890abcdef')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML454" for v in violations)
+        assert any(v.severity == RuleSeverity.CRITICAL for v in violations)
+
+    def test_safe_databricks_with_secrets(self):
+        """Databricks using secrets API should not trigger."""
+        code = """
+import mlflow
+from dbutils import secrets
+token = secrets.get(scope='my-scope', key='databricks-token')
+mlflow.set_tracking_uri('databricks')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML454" for v in violations)
+
+
+class TestAIML455SnowflakeMLVulnerabilities:
+    """Test Snowflake ML vulnerabilities detection."""
+
+    def test_detect_snowflake_model_without_validation(self):
+        """Detect Snowflake model registration without validation."""
+        code = """
+from snowflake.ml import registry
+model = registry.register_model(name='my-model', version='1.0')
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML455" for v in violations)
+
+    def test_safe_snowflake_with_validation(self):
+        """Snowflake model with validation should not trigger."""
+        code = """
+from snowflake.ml import registry
+validated_model = validate(model)
+model = registry.register_model(name='my-model', validate=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML455" for v in violations)
+
+
+class TestAIML456BigQueryMLInjection:
+    """Test BigQuery ML injection detection."""
+
+    def test_detect_bigquery_ml_string_formatting(self):
+        """Detect BigQuery ML with string formatting (SQL injection risk)."""
+        code = """
+from google.cloud import bigquery
+client = bigquery.Client()
+user_input = request.args.get('model_name')
+query = f"CREATE MODEL {user_input} OPTIONS(model_type='linear_reg')"
+client.query(query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML456" for v in violations)
+        assert any(v.severity == RuleSeverity.HIGH for v in violations)
+
+    def test_safe_bigquery_ml_parameterized(self):
+        """BigQuery ML with safe queries should not trigger."""
+        code = """
+from google.cloud import bigquery
+client = bigquery.Client()
+query = "CREATE MODEL my_model OPTIONS(model_type='linear_reg')"
+client.query(query)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML456" for v in violations)
+
+
+class TestAIML457RedshiftMLTampering:
+    """Test Redshift ML tampering detection."""
+
+    def test_detect_redshift_ml_injection(self):
+        """Detect Redshift ML with SQL injection risk."""
+        code = """
+import psycopg2
+conn = psycopg2.connect("dbname=mydb")
+cursor = conn.cursor()
+model_name = user_input
+cursor.execute(f"CREATE MODEL {model_name} FROM training_data TARGET prediction")
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML457" for v in violations)
+
+    def test_safe_redshift_ml_query(self):
+        """Redshift ML with safe queries should not trigger."""
+        code = """
+import psycopg2
+conn = psycopg2.connect("dbname=mydb")
+cursor = conn.cursor()
+cursor.execute("CREATE MODEL my_model FROM training_data TARGET prediction")
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML457" for v in violations)
+
+
+class TestAIML458LambdaMLInferenceRisks:
+    """Test Lambda ML inference risks detection."""
+
+    def test_detect_lambda_ml_without_limits(self):
+        """Detect Lambda ML inference without resource limits."""
+        code = """
+import boto3
+lambda_client = boto3.client('lambda')
+response = lambda_client.invoke(
+    FunctionName='my-ml-model-inference',
+    Payload=model_input
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML458" for v in violations)
+
+    def test_safe_lambda_with_limits(self):
+        """Lambda ML with resource limits should not trigger."""
+        code = """
+import boto3
+lambda_client = boto3.client('lambda')
+response = lambda_client.invoke(
+    FunctionName='my-ml-model-inference',
+    Payload=model_input,
+    Timeout=30,
+    MemorySize=512,
+    VpcConfig={'SubnetIds': ['subnet-xxx'], 'SecurityGroupIds': ['sg-xxx']}
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML458" for v in violations)
+
+
+class TestAIML459CloudFunctionsMLServingGaps:
+    """Test Cloud Functions ML serving gaps detection."""
+
+    def test_detect_cloud_function_without_auth(self):
+        """Detect Cloud Functions ML serving without authentication."""
+        code = """
+from google.cloud import functions
+def ml_predict(request):
+    model = load_model()
+    prediction = model.predict(request.json)
+    return prediction
+
+cloud_function = functions.deploy('ml-predict', handler=ml_predict)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML459" for v in violations)
+
+    def test_safe_cloud_function_with_auth(self):
+        """Cloud Functions with authentication should not trigger."""
+        code = """
+from google.cloud import functions
+from google.auth import iam
+def ml_predict(request):
+    auth = iam.verify_token(request.headers['Authorization'])
+    model = load_model()
+    prediction = model.predict(request.json)
+    return prediction
+
+cloud_function = functions.deploy('ml-predict', handler=ml_predict, auth='required', iam=True)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML459" for v in violations)
+
+
+class TestAIML460ServerlessMLVulnerabilities:
+    """Test serverless ML vulnerabilities detection."""
+
+    def test_detect_serverless_ml_without_rate_limit(self):
+        """Detect serverless ML deployment without rate limiting."""
+        code = """
+from serverless import deploy
+function = deploy(
+    name='ml-inference',
+    handler='predict',
+    runtime='python3.9'
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert any(v.rule_id == "AIML460" for v in violations)
+
+    def test_safe_serverless_with_rate_limit(self):
+        """Serverless ML with rate limiting should not trigger."""
+        code = """
+from serverless import deploy
+function = deploy(
+    name='ml-inference',
+    handler='predict',
+    runtime='python3.9',
+    rate_limit=100,
+    throttle=True,
+    quota={'daily': 10000}
+)
+"""
+        violations = analyze_ai_ml_security(Path("test.py"), code)
+        assert not any(v.rule_id == "AIML460" for v in violations)
