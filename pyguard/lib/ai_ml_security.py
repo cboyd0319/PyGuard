@@ -1189,6 +1189,115 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML315: Batch normalization attacks
         self._check_batch_normalization_attacks(node)
         
+        # Phase 3.2: Natural Language Processing Security (35 checks - AIML316-AIML350)
+        # Phase 3.2.1: Text Processing Security (15 checks - AIML316-AIML330)
+        # AIML316: Tokenization injection
+        self._check_tokenization_injection(node)
+        
+        # AIML317: Subword tokenization bypass
+        self._check_subword_tokenization_bypass(node)
+        
+        # AIML318: BPE manipulation
+        self._check_bpe_manipulation(node)
+        
+        # AIML319: WordPiece attack vectors
+        self._check_wordpiece_attack_vectors(node)
+        
+        # AIML320: SentencePiece vulnerabilities
+        self._check_sentencepiece_vulnerabilities(node)
+        
+        # AIML321: Text normalization bypass
+        self._check_text_normalization_bypass(node)
+        
+        # AIML322: Stop word removal manipulation
+        self._check_stopword_removal_manipulation(node)
+        
+        # AIML323: Stemming/lemmatization attacks
+        self._check_stemming_lemmatization_attacks(node)
+        
+        # AIML324: Named entity recognition injection
+        self._check_ner_injection(node)
+        
+        # AIML325: POS tagging manipulation
+        self._check_pos_tagging_manipulation(node)
+        
+        # AIML326: Dependency parsing poisoning
+        self._check_dependency_parsing_poisoning(node)
+        
+        # AIML327: Sentiment analysis bias
+        self._check_sentiment_analysis_bias(node)
+        
+        # AIML328: Text classification backdoors
+        self._check_text_classification_backdoors(node)
+        
+        # AIML329: Sequence labeling attacks
+        self._check_sequence_labeling_attacks(node)
+        
+        # AIML330: Coreference resolution manipulation
+        self._check_coreference_resolution_manipulation(node)
+        
+        # Phase 3.2.2: Transformer Architectures (12 checks - AIML331-AIML342)
+        # AIML331: BERT fine-tuning injection
+        self._check_bert_finetuning_injection(node)
+        
+        # AIML332: GPT prompt engineering attacks
+        self._check_gpt_prompt_engineering_attacks(node)
+        
+        # AIML333: T5 encoder-decoder manipulation
+        self._check_t5_encoder_decoder_manipulation(node)
+        
+        # AIML334: BART denoising poisoning
+        self._check_bart_denoising_poisoning(node)
+        
+        # AIML335: RoBERTa masked language modeling
+        self._check_roberta_masked_lm(node)
+        
+        # AIML336: ELECTRA discriminator/generator attacks
+        self._check_electra_attacks(node)
+        
+        # AIML337: XLNet permutation language modeling
+        self._check_xlnet_permutation_lm(node)
+        
+        # AIML338: ALBERT parameter sharing risks
+        self._check_albert_parameter_sharing_risks(node)
+        
+        # AIML339: DistilBERT knowledge distillation
+        self._check_distilbert_knowledge_distillation(node)
+        
+        # AIML340: DeBERTa disentangled attention
+        self._check_deberta_disentangled_attention(node)
+        
+        # AIML341: Longformer sliding window attacks
+        self._check_longformer_sliding_window_attacks(node)
+        
+        # AIML342: BigBird sparse attention manipulation
+        self._check_bigbird_sparse_attention_manipulation(node)
+        
+        # Phase 3.2.3: Embeddings & Representations (8 checks - AIML343-AIML350)
+        # AIML343: Word2Vec poisoning
+        self._check_word2vec_poisoning(node)
+        
+        # AIML344: GloVe embedding manipulation
+        self._check_glove_embedding_manipulation(node)
+        
+        # AIML345: FastText subword attacks
+        self._check_fasttext_subword_attacks(node)
+        
+        # AIML346: ELMo contextualized embedding injection
+        self._check_elmo_contextualized_embedding_injection(node)
+        
+        # AIML347: Sentence-BERT manipulation
+        self._check_sentence_bert_manipulation(node)
+        
+        # AIML348: Universal Sentence Encoder risks
+        self._check_universal_sentence_encoder_risks(node)
+        
+        # AIML349: Doc2Vec document poisoning
+        self._check_doc2vec_document_poisoning(node)
+        
+        # AIML350: Graph embedding attacks
+        self._check_graph_embedding_attacks(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -10409,6 +10518,981 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 )
                 self.violations.append(violation)
 
+    # Phase 3.2: Natural Language Processing Security (35 checks - AIML316-AIML350)
+    
+    # Phase 3.2.1: Text Processing Security (15 checks - AIML316-AIML330)
+    
+    def _check_tokenization_injection(self, node: ast.Call) -> None:
+        """AIML316: Detect tokenization injection vulnerabilities."""
+        if not self.has_transformers and not self.has_llm_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for tokenization without validation
+        if any(keyword in line_text for keyword in ["tokenize", "encode", "tokenizer("]):
+            if "validate" not in line_text and ("user" in line_text or "input" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML316",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Tokenization - validate input text to prevent injection attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_subword_tokenization_bypass(self, node: ast.Call) -> None:
+        """AIML317: Detect subword tokenization bypass vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for subword tokenization without sanitization
+        if "subword" in line_text or "split" in line_text:
+            if "sanitize" not in line_text and "tokenize" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML317",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Subword tokenization - sanitize inputs to prevent bypass attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bpe_manipulation(self, node: ast.Call) -> None:
+        """AIML318: Detect BPE (Byte Pair Encoding) manipulation vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for BPE operations without validation
+        if "bpe" in line_text or "byte_pair" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML318",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="BPE encoding - validate encoding parameters to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_wordpiece_attack_vectors(self, node: ast.Call) -> None:
+        """AIML319: Detect WordPiece attack vectors."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for WordPiece tokenization without security measures
+        if "wordpiece" in line_text:
+            if "validate" not in line_text and "tokenize" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML319",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="WordPiece tokenization - validate tokens to prevent attack vectors",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_sentencepiece_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML320: Detect SentencePiece vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for SentencePiece operations
+        if "sentencepiece" in line_text or "spm" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML320",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="SentencePiece - validate model and inputs to prevent vulnerabilities",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_text_normalization_bypass(self, node: ast.Call) -> None:
+        """AIML321: Detect text normalization bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for text normalization
+        if any(keyword in line_text for keyword in ["normalize", "lower", "upper", "strip"]):
+            if "unicode" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML321",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Text normalization - validate Unicode handling to prevent bypass",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_stopword_removal_manipulation(self, node: ast.Call) -> None:
+        """AIML322: Detect stop word removal manipulation."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for stop word operations
+        if "stopword" in line_text or "stop_word" in line_text:
+            if "custom" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML322",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Stop word removal - validate custom stop word lists to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_stemming_lemmatization_attacks(self, node: ast.Call) -> None:
+        """AIML323: Detect stemming/lemmatization attacks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for stemming/lemmatization
+        if any(keyword in line_text for keyword in ["stem", "lemma", "lemmatize", "porter", "snowball"]):
+            if "validate" not in line_text and "model" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML323",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Stemming/lemmatization - validate models to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ner_injection(self, node: ast.Call) -> None:
+        """AIML324: Detect named entity recognition injection."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for NER operations
+        if "ner" in line_text or "named_entity" in line_text or "entity_recognition" in line_text:
+            if "validate" not in line_text and ("user" in line_text or "input" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML324",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="NER - validate inputs to prevent entity injection attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_pos_tagging_manipulation(self, node: ast.Call) -> None:
+        """AIML325: Detect POS tagging manipulation."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for POS tagging
+        if "pos_tag" in line_text or "part_of_speech" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML325",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="POS tagging - validate tags to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_dependency_parsing_poisoning(self, node: ast.Call) -> None:
+        """AIML326: Detect dependency parsing poisoning."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for dependency parsing
+        if "dependency" in line_text and "parse" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML326",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Dependency parsing - validate parse trees to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_sentiment_analysis_bias(self, node: ast.Call) -> None:
+        """AIML327: Detect sentiment analysis bias."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for sentiment analysis
+        if "sentiment" in line_text:
+            if "bias" not in line_text and "fairness" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML327",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Sentiment analysis - validate for bias and fairness",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML06",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_text_classification_backdoors(self, node: ast.Call) -> None:
+        """AIML328: Detect text classification backdoors."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for text classification
+        if "classify" in line_text or "classification" in line_text:
+            if "text" in line_text and "backdoor" not in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML328",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Text classification - validate training data to prevent backdoor attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-912",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_sequence_labeling_attacks(self, node: ast.Call) -> None:
+        """AIML329: Detect sequence labeling attacks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for sequence labeling
+        if "sequence" in line_text and ("label" in line_text or "tag" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML329",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Sequence labeling - validate labels to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_coreference_resolution_manipulation(self, node: ast.Call) -> None:
+        """AIML330: Detect coreference resolution manipulation."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for coreference resolution
+        if "coref" in line_text or "coreference" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML330",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Coreference resolution - validate resolutions to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    # Phase 3.2.2: Transformer Architectures (12 checks - AIML331-AIML342)
+    
+    def _check_bert_finetuning_injection(self, node: ast.Call) -> None:
+        """AIML331: Detect BERT fine-tuning injection vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for BERT fine-tuning
+        if "bert" in line_text and ("finetune" in line_text or "fine_tune" in line_text or "train" in line_text):
+            if "validate" not in line_text and "data" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML331",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="BERT fine-tuning - validate training data to prevent injection attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_gpt_prompt_engineering_attacks(self, node: ast.Call) -> None:
+        """AIML332: Detect GPT prompt engineering attacks."""
+        if not self.has_transformers and not self.has_llm_framework:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for GPT usage
+        if "gpt" in line_text and ("prompt" in line_text or "generate" in line_text):
+            if "sanitize" not in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML332",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="GPT prompt engineering - sanitize prompts to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML01",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_t5_encoder_decoder_manipulation(self, node: ast.Call) -> None:
+        """AIML333: Detect T5 encoder-decoder manipulation."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for T5 usage
+        if "t5" in line_text and ("encoder" in line_text or "decoder" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML333",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="T5 encoder-decoder - validate inputs to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bart_denoising_poisoning(self, node: ast.Call) -> None:
+        """AIML334: Detect BART denoising poisoning."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for BART usage
+        if "bart" in line_text and ("denoise" in line_text or "train" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML334",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="BART denoising - validate training data to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_roberta_masked_lm(self, node: ast.Call) -> None:
+        """AIML335: Detect RoBERTa masked language modeling vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for RoBERTa usage
+        if "roberta" in line_text and ("mask" in line_text or "mlm" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML335",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="RoBERTa MLM - validate masked tokens to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_electra_attacks(self, node: ast.Call) -> None:
+        """AIML336: Detect ELECTRA discriminator/generator attacks."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ELECTRA usage
+        if "electra" in line_text and ("discriminator" in line_text or "generator" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML336",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ELECTRA - validate discriminator/generator to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_xlnet_permutation_lm(self, node: ast.Call) -> None:
+        """AIML337: Detect XLNet permutation language modeling vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for XLNet usage
+        if "xlnet" in line_text and "permutation" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML337",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="XLNet permutation LM - validate permutations to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_albert_parameter_sharing_risks(self, node: ast.Call) -> None:
+        """AIML338: Detect ALBERT parameter sharing risks."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ALBERT usage
+        if "albert" in line_text and "parameter" in line_text:
+            if "validate" not in line_text and "sharing" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML338",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="ALBERT parameter sharing - validate shared parameters for security",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_distilbert_knowledge_distillation(self, node: ast.Call) -> None:
+        """AIML339: Detect DistilBERT knowledge distillation vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DistilBERT usage
+        if "distilbert" in line_text or ("distil" in line_text and "bert" in line_text):
+            if "validate" not in line_text and "teacher" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML339",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="DistilBERT - validate teacher model to prevent vulnerability inheritance",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_deberta_disentangled_attention(self, node: ast.Call) -> None:
+        """AIML340: Detect DeBERTa disentangled attention vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DeBERTa usage
+        if "deberta" in line_text and "attention" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML340",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="DeBERTa disentangled attention - validate attention mechanisms",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_longformer_sliding_window_attacks(self, node: ast.Call) -> None:
+        """AIML341: Detect Longformer sliding window attacks."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Longformer usage
+        if "longformer" in line_text and "window" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML341",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Longformer sliding window - validate window size to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bigbird_sparse_attention_manipulation(self, node: ast.Call) -> None:
+        """AIML342: Detect BigBird sparse attention manipulation."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for BigBird usage
+        if "bigbird" in line_text and ("sparse" in line_text or "attention" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML342",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="BigBird sparse attention - validate attention patterns to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML04",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    # Phase 3.2.3: Embeddings & Representations (8 checks - AIML343-AIML350)
+    
+    def _check_word2vec_poisoning(self, node: ast.Call) -> None:
+        """AIML343: Detect Word2Vec poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Word2Vec usage
+        if "word2vec" in line_text or "w2v" in line_text:
+            if "train" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML343",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Word2Vec - validate training corpus to prevent poisoning attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_glove_embedding_manipulation(self, node: ast.Call) -> None:
+        """AIML344: Detect GloVe embedding manipulation."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for GloVe usage
+        if "glove" in line_text:
+            if "load" in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML344",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="GloVe embeddings - verify integrity before loading to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_fasttext_subword_attacks(self, node: ast.Call) -> None:
+        """AIML345: Detect FastText subword attacks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for FastText usage
+        if "fasttext" in line_text:
+            if "subword" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML345",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="FastText subword - validate subword embeddings to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_elmo_contextualized_embedding_injection(self, node: ast.Call) -> None:
+        """AIML346: Detect ELMo contextualized embedding injection."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for ELMo usage
+        if "elmo" in line_text:
+            if "context" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML346",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ELMo embeddings - validate context to prevent injection attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-74",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_sentence_bert_manipulation(self, node: ast.Call) -> None:
+        """AIML347: Detect Sentence-BERT manipulation."""
+        if not self.has_transformers:
+            return
+        
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Sentence-BERT usage
+        if "sentence" in line_text and "bert" in line_text:
+            if "encode" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML347",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Sentence-BERT - validate sentence encodings to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_universal_sentence_encoder_risks(self, node: ast.Call) -> None:
+        """AIML348: Detect Universal Sentence Encoder risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Universal Sentence Encoder usage
+        if "universal" in line_text and "sentence" in line_text and "encoder" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML348",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Universal Sentence Encoder - validate inputs to prevent risks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_doc2vec_document_poisoning(self, node: ast.Call) -> None:
+        """AIML349: Detect Doc2Vec document poisoning."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Doc2Vec usage
+        if "doc2vec" in line_text or "d2v" in line_text:
+            if "train" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML349",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Doc2Vec - validate document corpus to prevent poisoning attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_graph_embedding_attacks(self, node: ast.Call) -> None:
+        """AIML350: Detect graph embedding attacks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for graph embedding usage
+        if "graph" in line_text and "embed" in line_text:
+            if "validate" not in line_text and ("node" in line_text or "edge" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML350",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Graph embeddings - validate graph structure to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+
     # Helper methods
     
     def _contains_user_input(self, node: ast.expr) -> bool:
@@ -11575,4 +12659,43 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML313", name="pooling-layer-manipulation", description="Pooling layer manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Pooling layers - validate pooling parameters to prevent manipulation", explanation="Pooling operations can be exploited for adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "cv", "pooling", "manipulation"}, references=["https://arxiv.org/abs/1412.6806"]),
     Rule(rule_id="AIML314", name="dropout-bypass-techniques", description="Dropout bypass techniques", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dropout layers - ensure proper training/inference mode to prevent bypass", explanation="Dropout can be bypassed by manipulating training/inference mode", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-754", owasp_mapping="ML03", tags={"ai", "ml", "cv", "dropout", "bypass"}, references=["https://arxiv.org/abs/1207.0580"]),
     Rule(rule_id="AIML315", name="batch-normalization-attacks", description="Batch normalization attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Batch normalization - validate statistics to prevent poisoning attacks", explanation="Batch norm statistics can be poisoned during training", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "cv", "batchnorm", "poisoning"}, references=["https://arxiv.org/abs/1502.03167"]),
+    # Phase 3.2: Natural Language Processing Security (35 checks - AIML316-AIML350)
+    # Phase 3.2.1: Text Processing Security (AIML316-AIML330)
+    Rule(rule_id="AIML316", name="tokenization-injection", description="Tokenization injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Tokenization - validate input text to prevent injection attacks", explanation="Tokenization should validate inputs to prevent malicious token injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML01", tags={"ai", "ml", "nlp", "tokenization", "injection"}, references=["https://owasp.org/www-project-machine-learning-security-top-10/"]),
+    Rule(rule_id="AIML317", name="subword-tokenization-bypass", description="Subword tokenization bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Subword tokenization - sanitize inputs to prevent bypass attacks", explanation="Subword tokenization can be bypassed with crafted inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML01", tags={"ai", "ml", "nlp", "subword", "bypass"}, references=["https://aclanthology.org/2020.emnlp-main.463/"]),
+    Rule(rule_id="AIML318", name="bpe-manipulation", description="BPE manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="BPE encoding - validate encoding parameters to prevent manipulation", explanation="Byte Pair Encoding can be manipulated through parameter tampering", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "bpe", "manipulation"}, references=["https://arxiv.org/abs/1508.07909"]),
+    Rule(rule_id="AIML319", name="wordpiece-attack-vectors", description="WordPiece attack vectors", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="WordPiece tokenization - validate tokens to prevent attack vectors", explanation="WordPiece tokenization vulnerable to adversarial token sequences", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "wordpiece", "attack"}, references=["https://arxiv.org/abs/1609.08144"]),
+    Rule(rule_id="AIML320", name="sentencepiece-vulnerabilities", description="SentencePiece vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="SentencePiece - validate model and inputs to prevent vulnerabilities", explanation="SentencePiece models should be validated for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "sentencepiece", "vulnerability"}, references=["https://arxiv.org/abs/1808.06226"]),
+    Rule(rule_id="AIML321", name="text-normalization-bypass", description="Text normalization bypass", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Text normalization - validate Unicode handling to prevent bypass", explanation="Text normalization can be bypassed using Unicode tricks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-20", owasp_mapping="ML01", tags={"ai", "ml", "nlp", "normalization", "bypass"}, references=["https://unicode.org/reports/tr15/"]),
+    Rule(rule_id="AIML322", name="stopword-removal-manipulation", description="Stop word removal manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Stop word removal - validate custom stop word lists to prevent manipulation", explanation="Custom stop word lists can be manipulated to affect model behavior", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "stopwords", "manipulation"}, references=["https://nlp.stanford.edu/IR-book/html/htmledition/dropping-common-terms-stop-words-1.html"]),
+    Rule(rule_id="AIML323", name="stemming-lemmatization-attacks", description="Stemming/lemmatization attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Stemming/lemmatization - validate models to prevent attacks", explanation="Stemming and lemmatization models can be manipulated", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "stemming", "lemmatization"}, references=["https://nlp.stanford.edu/IR-book/html/htmledition/stemming-and-lemmatization-1.html"]),
+    Rule(rule_id="AIML324", name="ner-injection", description="NER injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="NER - validate inputs to prevent entity injection attacks", explanation="Named Entity Recognition can be manipulated with crafted inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML01", tags={"ai", "ml", "nlp", "ner", "injection"}, references=["https://arxiv.org/abs/2004.05986"]),
+    Rule(rule_id="AIML325", name="pos-tagging-manipulation", description="POS tagging manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="POS tagging - validate tags to prevent manipulation", explanation="Part-of-speech tags can be manipulated through adversarial inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "pos", "manipulation"}, references=["https://aclanthology.org/N19-1165/"]),
+    Rule(rule_id="AIML326", name="dependency-parsing-poisoning", description="Dependency parsing poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dependency parsing - validate parse trees to prevent poisoning", explanation="Dependency parsing can be poisoned through crafted sentences", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "dependency", "poisoning"}, references=["https://arxiv.org/abs/1901.10513"]),
+    Rule(rule_id="AIML327", name="sentiment-analysis-bias", description="Sentiment analysis bias", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Sentiment analysis - validate for bias and fairness", explanation="Sentiment models should be validated for demographic bias", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-754", owasp_mapping="ML06", tags={"ai", "ml", "nlp", "sentiment", "bias"}, references=["https://arxiv.org/abs/1805.04508"]),
+    Rule(rule_id="AIML328", name="text-classification-backdoors", description="Text classification backdoors", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Text classification - validate training data to prevent backdoor attacks", explanation="Text classifiers vulnerable to backdoor poisoning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-912", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "classification", "backdoor"}, references=["https://arxiv.org/abs/1809.00152"]),
+    Rule(rule_id="AIML329", name="sequence-labeling-attacks", description="Sequence labeling attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Sequence labeling - validate labels to prevent attacks", explanation="Sequence labeling models can be manipulated through adversarial sequences", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "sequence", "attack"}, references=["https://arxiv.org/abs/1908.05616"]),
+    Rule(rule_id="AIML330", name="coreference-resolution-manipulation", description="Coreference resolution manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Coreference resolution - validate resolutions to prevent manipulation", explanation="Coreference resolution can be manipulated to change meaning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "coreference", "manipulation"}, references=["https://arxiv.org/abs/1906.07045"]),
+    # Phase 3.2.2: Transformer Architectures (AIML331-AIML342)
+    Rule(rule_id="AIML331", name="bert-finetuning-injection", description="BERT fine-tuning injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="BERT fine-tuning - validate training data to prevent injection attacks", explanation="BERT fine-tuning vulnerable to data poisoning", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "bert", "finetuning"}, references=["https://arxiv.org/abs/1810.04805"]),
+    Rule(rule_id="AIML332", name="gpt-prompt-engineering-attacks", description="GPT prompt engineering attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="GPT prompt engineering - sanitize prompts to prevent attacks", explanation="GPT models vulnerable to prompt injection and jailbreaking", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML01", tags={"ai", "ml", "nlp", "gpt", "prompt"}, references=["https://arxiv.org/abs/2302.12173"]),
+    Rule(rule_id="AIML333", name="t5-encoder-decoder-manipulation", description="T5 encoder-decoder manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="T5 encoder-decoder - validate inputs to prevent manipulation", explanation="T5 encoder-decoder architecture vulnerable to input manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "t5", "manipulation"}, references=["https://arxiv.org/abs/1910.10683"]),
+    Rule(rule_id="AIML334", name="bart-denoising-poisoning", description="BART denoising poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="BART denoising - validate training data to prevent poisoning", explanation="BART denoising can be poisoned through corrupted training data", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "bart", "poisoning"}, references=["https://arxiv.org/abs/1910.13461"]),
+    Rule(rule_id="AIML335", name="roberta-masked-lm", description="RoBERTa masked LM", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="RoBERTa MLM - validate masked tokens to prevent manipulation", explanation="RoBERTa masked language modeling vulnerable to token manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "roberta", "mlm"}, references=["https://arxiv.org/abs/1907.11692"]),
+    Rule(rule_id="AIML336", name="electra-attacks", description="ELECTRA attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ELECTRA - validate discriminator/generator to prevent attacks", explanation="ELECTRA's discriminator-generator architecture vulnerable to adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "electra", "attack"}, references=["https://arxiv.org/abs/2003.10555"]),
+    Rule(rule_id="AIML337", name="xlnet-permutation-lm", description="XLNet permutation LM", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="XLNet permutation LM - validate permutations to prevent manipulation", explanation="XLNet permutation language modeling can be manipulated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "xlnet", "permutation"}, references=["https://arxiv.org/abs/1906.08237"]),
+    Rule(rule_id="AIML338", name="albert-parameter-sharing-risks", description="ALBERT parameter sharing risks", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="ALBERT parameter sharing - validate shared parameters for security", explanation="ALBERT's parameter sharing can propagate vulnerabilities across layers", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "albert", "parameter"}, references=["https://arxiv.org/abs/1909.11942"]),
+    Rule(rule_id="AIML339", name="distilbert-knowledge-distillation", description="DistilBERT knowledge distillation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DistilBERT - validate teacher model to prevent vulnerability inheritance", explanation="DistilBERT can inherit vulnerabilities from teacher model", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "distilbert", "distillation"}, references=["https://arxiv.org/abs/1910.01108"]),
+    Rule(rule_id="AIML340", name="deberta-disentangled-attention", description="DeBERTa disentangled attention", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DeBERTa disentangled attention - validate attention mechanisms", explanation="DeBERTa's disentangled attention vulnerable to manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "nlp", "deberta", "attention"}, references=["https://arxiv.org/abs/2006.03654"]),
+    Rule(rule_id="AIML341", name="longformer-sliding-window-attacks", description="Longformer sliding window attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Longformer sliding window - validate window size to prevent attacks", explanation="Longformer's sliding window mechanism vulnerable to resource exhaustion", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "nlp", "longformer", "window"}, references=["https://arxiv.org/abs/2004.05150"]),
+    Rule(rule_id="AIML342", name="bigbird-sparse-attention-manipulation", description="BigBird sparse attention manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="BigBird sparse attention - validate attention patterns to prevent manipulation", explanation="BigBird's sparse attention patterns can be manipulated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML04", tags={"ai", "ml", "nlp", "bigbird", "attention"}, references=["https://arxiv.org/abs/2007.14062"]),
+    # Phase 3.2.3: Embeddings & Representations (AIML343-AIML350)
+    Rule(rule_id="AIML343", name="word2vec-poisoning", description="Word2Vec poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Word2Vec - validate training corpus to prevent poisoning attacks", explanation="Word2Vec embeddings can be poisoned through corrupted training data", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "word2vec", "poisoning"}, references=["https://arxiv.org/abs/1301.3781"]),
+    Rule(rule_id="AIML344", name="glove-embedding-manipulation", description="GloVe embedding manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="GloVe embeddings - verify integrity before loading to prevent manipulation", explanation="GloVe embeddings should be verified for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "glove", "manipulation"}, references=["https://nlp.stanford.edu/projects/glove/"]),
+    Rule(rule_id="AIML345", name="fasttext-subword-attacks", description="FastText subword attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="FastText subword - validate subword embeddings to prevent attacks", explanation="FastText subword embeddings vulnerable to adversarial subwords", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "fasttext", "subword"}, references=["https://arxiv.org/abs/1607.04606"]),
+    Rule(rule_id="AIML346", name="elmo-contextualized-embedding-injection", description="ELMo contextualized embedding injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ELMo embeddings - validate context to prevent injection attacks", explanation="ELMo contextualized embeddings vulnerable to context injection", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-74", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "elmo", "injection"}, references=["https://arxiv.org/abs/1802.05365"]),
+    Rule(rule_id="AIML347", name="sentence-bert-manipulation", description="Sentence-BERT manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Sentence-BERT - validate sentence encodings to prevent manipulation", explanation="Sentence-BERT encodings can be manipulated through adversarial sentences", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "sbert", "manipulation"}, references=["https://arxiv.org/abs/1908.10084"]),
+    Rule(rule_id="AIML348", name="universal-sentence-encoder-risks", description="Universal Sentence Encoder risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Universal Sentence Encoder - validate inputs to prevent risks", explanation="Universal Sentence Encoder vulnerable to adversarial inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "use", "risk"}, references=["https://arxiv.org/abs/1803.11175"]),
+    Rule(rule_id="AIML349", name="doc2vec-document-poisoning", description="Doc2Vec document poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Doc2Vec - validate document corpus to prevent poisoning attacks", explanation="Doc2Vec embeddings can be poisoned through document injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "doc2vec", "poisoning"}, references=["https://arxiv.org/abs/1405.4053"]),
+    Rule(rule_id="AIML350", name="graph-embedding-attacks", description="Graph embedding attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Graph embeddings - validate graph structure to prevent attacks", explanation="Graph embeddings vulnerable to graph structure manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "graph", "embedding"}, references=["https://arxiv.org/abs/1709.05584"]),
 ]
