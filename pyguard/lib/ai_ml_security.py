@@ -165,7 +165,41 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 160 (v0.7.0 - AI/ML Security Dominance Plan Phase 1 Complete - Milestone 1)
+Phase 3.3: Reinforcement Learning Security (AIML351-370):
+- Q-learning poisoning - AIML351
+- DQN replay buffer manipulation - AIML352
+- Policy gradient attacks - AIML353
+- Actor-critic tampering - AIML354
+- PPO injection - AIML355
+- A3C risks - AIML356
+- DDPG attacks - AIML357
+- SAC vulnerabilities - AIML358
+- TD3 manipulation - AIML359
+- TRPO bypass - AIML360
+- Reward function poisoning - AIML361
+- Reward shaping attacks - AIML362
+- OpenAI Gym environment injection - AIML363
+- Gymnasium API manipulation - AIML364
+- Custom environment backdoors - AIML365
+- State space poisoning - AIML366
+- Action space tampering - AIML367
+- Observation function attacks - AIML368
+- Reward function manipulation - AIML369
+- Multi-agent RL vulnerabilities - AIML370
+
+Phase 3.4: Specialized ML Libraries (AIML371-380):
+- Optuna trial manipulation - AIML371
+- Ray Tune search space poisoning - AIML372
+- Hyperopt objective injection - AIML373
+- Auto-sklearn pipeline tampering - AIML374
+- AutoKeras architecture injection - AIML375
+- PyTorch Geometric injection - AIML376
+- DGL manipulation - AIML377
+- Graph structure poisoning - AIML378
+- Node feature injection - AIML379
+- Message passing attacks - AIML380
+
+Total Security Checks: 380 (v0.7.7 - Phase 3 Complete: Specialized Frameworks Domination)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -1297,6 +1331,108 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML350: Graph embedding attacks
         self._check_graph_embedding_attacks(node)
+        
+        # Phase 3.3: Reinforcement Learning Security (20 checks - AIML351-370)
+        
+        # Phase 3.3.1: RL Algorithm Vulnerabilities (12 checks - AIML351-362)
+        
+        # AIML351: Q-learning poisoning
+        self._check_q_learning_poisoning(node)
+        
+        # AIML352: DQN replay buffer manipulation
+        self._check_dqn_replay_buffer_manipulation(node)
+        
+        # AIML353: Policy gradient attacks
+        self._check_policy_gradient_attacks(node)
+        
+        # AIML354: Actor-critic tampering
+        self._check_actor_critic_tampering(node)
+        
+        # AIML355: PPO (Proximal Policy Optimization) injection
+        self._check_ppo_injection(node)
+        
+        # AIML356: A3C (Asynchronous Actor-Critic) risks
+        self._check_a3c_risks(node)
+        
+        # AIML357: DDPG (Deep Deterministic Policy Gradient) attacks
+        self._check_ddpg_attacks(node)
+        
+        # AIML358: SAC (Soft Actor-Critic) vulnerabilities
+        self._check_sac_vulnerabilities(node)
+        
+        # AIML359: TD3 (Twin Delayed DDPG) manipulation
+        self._check_td3_manipulation(node)
+        
+        # AIML360: TRPO (Trust Region Policy Optimization) bypass
+        self._check_trpo_bypass(node)
+        
+        # AIML361: Reward function poisoning
+        self._check_reward_function_poisoning(node)
+        
+        # AIML362: Reward shaping attacks
+        self._check_reward_shaping_attacks(node)
+        
+        # Phase 3.3.2: RL Environment Security (8 checks - AIML363-370)
+        
+        # AIML363: OpenAI Gym environment injection
+        self._check_gym_environment_injection(node)
+        
+        # AIML364: Gymnasium API manipulation
+        self._check_gymnasium_api_manipulation(node)
+        
+        # AIML365: Custom environment backdoors
+        self._check_custom_environment_backdoors(node)
+        
+        # AIML366: State space poisoning
+        self._check_state_space_poisoning(node)
+        
+        # AIML367: Action space tampering
+        self._check_action_space_tampering(node)
+        
+        # AIML368: Observation function attacks
+        self._check_observation_function_attacks(node)
+        
+        # AIML369: Reward function manipulation
+        self._check_reward_function_manipulation(node)
+        
+        # AIML370: Multi-agent RL vulnerabilities
+        self._check_multiagent_rl_vulnerabilities(node)
+        
+        # Phase 3.4: Specialized ML Libraries (10 checks - AIML371-380)
+        
+        # Phase 3.4.1: AutoML & Hyperparameter Tuning (5 checks - AIML371-375)
+        
+        # AIML371: Optuna trial manipulation
+        self._check_optuna_trial_manipulation(node)
+        
+        # AIML372: Ray Tune search space poisoning
+        self._check_ray_tune_search_space_poisoning(node)
+        
+        # AIML373: Hyperopt objective injection
+        self._check_hyperopt_objective_injection(node)
+        
+        # AIML374: Auto-sklearn pipeline tampering
+        self._check_autosklearn_pipeline_tampering(node)
+        
+        # AIML375: AutoKeras architecture injection
+        self._check_autokeras_architecture_injection(node)
+        
+        # Phase 3.4.2: Graph Neural Networks (5 checks - AIML376-380)
+        
+        # AIML376: PyTorch Geometric injection
+        self._check_pytorch_geometric_injection(node)
+        
+        # AIML377: DGL (Deep Graph Library) manipulation
+        self._check_dgl_manipulation(node)
+        
+        # AIML378: Graph structure poisoning
+        self._check_graph_structure_poisoning(node)
+        
+        # AIML379: Node feature injection
+        self._check_node_feature_injection(node)
+        
+        # AIML380: Message passing attacks
+        self._check_message_passing_attacks(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -11492,6 +11628,790 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     source_tool="pyguard",
                 )
                 self.violations.append(violation)
+    
+    # Phase 3.3: Reinforcement Learning Security (AIML351-370)
+    
+    def _check_q_learning_poisoning(self, node: ast.Call) -> None:
+        """AIML351: Detect Q-learning poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Q-learning without validation
+        if ("q_table" in line_text or "q_value" in line_text or "q[" in line_text):
+            if "validate" not in line_text and "update" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML351",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Q-learning poisoning risk - validate Q-value updates to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_dqn_replay_buffer_manipulation(self, node: ast.Call) -> None:
+        """AIML352: Detect DQN replay buffer manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for replay buffer without validation
+        if ("replay" in line_text and "buffer" in line_text) or "memory.add" in line_text:
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML352",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="DQN replay buffer manipulation risk - validate experiences before adding to buffer",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_policy_gradient_attacks(self, node: ast.Call) -> None:
+        """AIML353: Detect policy gradient attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for policy gradient without robustness checks
+        if "policy" in line_text and "gradient" in line_text:
+            if "clip" not in line_text and "bound" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML353",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Policy gradient attack risk - add gradient clipping to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_actor_critic_tampering(self, node: ast.Call) -> None:
+        """AIML354: Detect actor-critic tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for actor-critic without integrity checks
+        if ("actor" in line_text or "critic" in line_text) and "update" in line_text:
+            if "validate" not in line_text and ("state" in line_text or "action" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML354",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Actor-critic tampering risk - validate network updates to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ppo_injection(self, node: ast.Call) -> None:
+        """AIML355: Detect PPO injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for PPO without proper clipping
+        if "ppo" in line_text or ("proximal" in line_text and "policy" in line_text):
+            if "clip" not in line_text and "ratio" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML355",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="PPO injection risk - ensure proper probability ratio clipping",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_a3c_risks(self, node: ast.Call) -> None:
+        """AIML356: Detect A3C asynchronous training risks."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for A3C without synchronization validation
+        if "a3c" in line_text or ("async" in line_text and "actor" in line_text):
+            if "lock" not in line_text and "sync" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML356",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="A3C risk - validate asynchronous updates to prevent race conditions",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-362",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ddpg_attacks(self, node: ast.Call) -> None:
+        """AIML357: Detect DDPG attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DDPG without action bounds
+        if "ddpg" in line_text or ("deterministic" in line_text and "policy" in line_text):
+            if "clip" not in line_text and "action" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML357",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="DDPG attack risk - clip actions to valid bounds to prevent exploitation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_sac_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML358: Detect SAC vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for SAC without entropy regularization validation
+        if "sac" in line_text or ("soft" in line_text and "actor" in line_text):
+            if "entropy" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML358",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="SAC vulnerability - validate entropy coefficient to prevent exploitation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_td3_manipulation(self, node: ast.Call) -> None:
+        """AIML359: Detect TD3 manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for TD3 without proper noise handling
+        if "td3" in line_text or ("twin" in line_text and "delayed" in line_text):
+            if "noise" in line_text and "clip" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML359",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="TD3 manipulation risk - clip target policy noise to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_trpo_bypass(self, node: ast.Call) -> None:
+        """AIML360: Detect TRPO bypass vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for TRPO without trust region validation
+        if "trpo" in line_text or ("trust" in line_text and "region" in line_text):
+            if "kl" in line_text and "constraint" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML360",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="TRPO bypass risk - enforce KL divergence constraint to prevent policy deviation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_reward_function_poisoning(self, node: ast.Call) -> None:
+        """AIML361: Detect reward function poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for reward function without validation
+        if "reward" in line_text and ("return" in line_text or "=" in line_text):
+            if "validate" not in line_text and "clip" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML361",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Reward function poisoning risk - validate and clip reward values",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_reward_shaping_attacks(self, node: ast.Call) -> None:
+        """AIML362: Detect reward shaping attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for reward shaping without bounds
+        if "reward" in line_text and ("shap" in line_text or "bonus" in line_text or "penalty" in line_text):
+            if "bound" not in line_text and "limit" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML362",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Reward shaping attack risk - bound shaped rewards to prevent exploitation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_gym_environment_injection(self, node: ast.Call) -> None:
+        """AIML363: Detect OpenAI Gym environment injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for gym.make with untrusted input
+        if "gym.make" in line_text or "env = gym" in line_text:
+            if "validate" not in line_text and ("input" in line_text or "user" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML363",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Gym environment injection risk - validate environment ID before creation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_gymnasium_api_manipulation(self, node: ast.Call) -> None:
+        """AIML364: Detect Gymnasium API manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for gymnasium with unvalidated parameters
+        if "gymnasium" in line_text or "gym.make" in line_text:
+            if "kwargs" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML364",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Gymnasium API manipulation risk - validate environment kwargs",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_custom_environment_backdoors(self, node: ast.Call) -> None:
+        """AIML365: Detect custom environment backdoor vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for custom env without validation
+        if ("class" in line_text and "env" in line_text) or "gym.env" in line_text:
+            if "step" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML365",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Custom environment backdoor risk - validate environment behavior",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-506",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_state_space_poisoning(self, node: ast.Call) -> None:
+        """AIML366: Detect state space poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for state space without bounds
+        if "observation_space" in line_text or "state_space" in line_text:
+            if "bound" not in line_text and "limit" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML366",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="State space poisoning risk - enforce observation space bounds",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_action_space_tampering(self, node: ast.Call) -> None:
+        """AIML367: Detect action space tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for action space without validation
+        if "action_space" in line_text:
+            if "validate" not in line_text and ("sample" in line_text or "contains" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML367",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Action space tampering risk - validate actions against defined space",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_observation_function_attacks(self, node: ast.Call) -> None:
+        """AIML368: Detect observation function attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for observation function without sanitization
+        if "observation" in line_text or "_get_obs" in line_text:
+            if "sanitize" not in line_text and "return" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML368",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Observation function attack risk - sanitize observations before return",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_reward_function_manipulation(self, node: ast.Call) -> None:
+        """AIML369: Detect reward function manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for reward function in environment without bounds
+        if ("def" in line_text and "reward" in line_text) or "_compute_reward" in line_text:
+            if "clip" not in line_text and "bound" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML369",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Reward function manipulation risk - clip reward values to prevent gaming",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_multiagent_rl_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML370: Detect multi-agent RL vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for multi-agent without adversarial robustness
+        if "multi" in line_text and "agent" in line_text:
+            if "adversarial" not in line_text and "robust" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML370",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Multi-agent RL vulnerability - implement adversarial robustness checks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    # Phase 3.4: Specialized ML Libraries (AIML371-380)
+    
+    def _check_optuna_trial_manipulation(self, node: ast.Call) -> None:
+        """AIML371: Detect Optuna trial manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Optuna trial without validation
+        if "optuna" in line_text and ("trial" in line_text or "suggest" in line_text):
+            if "validate" not in line_text and ("param" in line_text or "hyperparam" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML371",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Optuna trial manipulation risk - validate hyperparameter suggestions",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ray_tune_search_space_poisoning(self, node: ast.Call) -> None:
+        """AIML372: Detect Ray Tune search space poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Ray Tune without search space validation
+        if ("ray.tune" in line_text or "tune.run" in line_text):
+            if "config" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML372",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Ray Tune search space poisoning risk - validate search configuration",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_hyperopt_objective_injection(self, node: ast.Call) -> None:
+        """AIML373: Detect Hyperopt objective function injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Hyperopt objective without validation
+        if "hyperopt" in line_text and ("fmin" in line_text or "objective" in line_text):
+            if "validate" not in line_text and "space" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML373",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Hyperopt objective injection risk - validate search space and objective",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_autosklearn_pipeline_tampering(self, node: ast.Call) -> None:
+        """AIML374: Detect Auto-sklearn pipeline tampering vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for Auto-sklearn without pipeline validation
+        if ("autosklearn" in line_text or "auto-sklearn" in line_text):
+            if "pipeline" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML374",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Auto-sklearn pipeline tampering risk - validate generated pipelines",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_autokeras_architecture_injection(self, node: ast.Call) -> None:
+        """AIML375: Detect AutoKeras architecture injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for AutoKeras without architecture validation
+        if "autokeras" in line_text:
+            if ("search" in line_text or "automodel" in line_text) and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML375",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="AutoKeras architecture injection risk - validate generated architectures",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_pytorch_geometric_injection(self, node: ast.Call) -> None:
+        """AIML376: Detect PyTorch Geometric injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for PyG without data validation
+        if ("torch_geometric" in line_text or "pyg" in line_text):
+            if "data" in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML376",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="PyTorch Geometric injection risk - validate graph data before processing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_dgl_manipulation(self, node: ast.Call) -> None:
+        """AIML377: Detect DGL manipulation vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for DGL without graph validation
+        if "dgl" in line_text:
+            if ("graph" in line_text or "heterograph" in line_text) and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML377",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="DGL manipulation risk - validate graph structure before use",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_graph_structure_poisoning(self, node: ast.Call) -> None:
+        """AIML378: Detect graph structure poisoning vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for graph construction without validation
+        if ("add_edge" in line_text or "add_node" in line_text or "graph(" in line_text):
+            if "validate" not in line_text and ("untrusted" in line_text or "user" in line_text or "external" in line_text):
+                violation = RuleViolation(
+                    rule_id="AIML378",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Graph structure poisoning risk - validate graph topology from untrusted sources",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_node_feature_injection(self, node: ast.Call) -> None:
+        """AIML379: Detect node feature injection vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for node features without sanitization
+        if ("node" in line_text and "feature" in line_text) or "ndata" in line_text:
+            if "sanitize" not in line_text and "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML379",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Node feature injection risk - sanitize node features before use",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_message_passing_attacks(self, node: ast.Call) -> None:
+        """AIML380: Detect message passing attack vulnerabilities."""
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        # Check for message passing without bounds
+        if "message" in line_text and "pass" in line_text:
+            if "bound" not in line_text and "clip" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML380",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Message passing attack risk - bound message values to prevent overflow",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     # Helper methods
     
@@ -12698,4 +13618,44 @@ AIML_SECURITY_RULES = [
     Rule(rule_id="AIML348", name="universal-sentence-encoder-risks", description="Universal Sentence Encoder risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Universal Sentence Encoder - validate inputs to prevent risks", explanation="Universal Sentence Encoder vulnerable to adversarial inputs", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "use", "risk"}, references=["https://arxiv.org/abs/1803.11175"]),
     Rule(rule_id="AIML349", name="doc2vec-document-poisoning", description="Doc2Vec document poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Doc2Vec - validate document corpus to prevent poisoning attacks", explanation="Doc2Vec embeddings can be poisoned through document injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "doc2vec", "poisoning"}, references=["https://arxiv.org/abs/1405.4053"]),
     Rule(rule_id="AIML350", name="graph-embedding-attacks", description="Graph embedding attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Graph embeddings - validate graph structure to prevent attacks", explanation="Graph embeddings vulnerable to graph structure manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "nlp", "graph", "embedding"}, references=["https://arxiv.org/abs/1709.05584"]),
+    
+    # Phase 3.3: Reinforcement Learning Security (AIML351-370)
+    # Phase 3.3.1: RL Algorithm Vulnerabilities (12 checks)
+    Rule(rule_id="AIML351", name="q-learning-poisoning", description="Q-learning poisoning vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Q-learning poisoning risk - validate Q-value updates to prevent manipulation", explanation="Q-learning algorithms vulnerable to poisoning through manipulated Q-value updates", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "rl", "q-learning", "poisoning"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML352", name="dqn-replay-buffer-manipulation", description="DQN replay buffer manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="DQN replay buffer manipulation risk - validate experiences before adding to buffer", explanation="DQN replay buffers can be poisoned with malicious experiences", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "dqn", "replay-buffer"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML353", name="policy-gradient-attacks", description="Policy gradient attack vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Policy gradient attack risk - add gradient clipping to prevent manipulation", explanation="Policy gradient methods vulnerable to adversarial gradient manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "policy-gradient", "attack"}, references=["https://arxiv.org/abs/1702.02284"]),
+    Rule(rule_id="AIML354", name="actor-critic-tampering", description="Actor-critic tampering vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Actor-critic tampering risk - validate network updates to prevent manipulation", explanation="Actor-critic methods vulnerable to network parameter tampering", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "rl", "actor-critic", "tampering"}, references=["https://arxiv.org/abs/1509.02971"]),
+    Rule(rule_id="AIML355", name="ppo-injection", description="PPO injection vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="PPO injection risk - ensure proper probability ratio clipping", explanation="PPO algorithms vulnerable to probability ratio manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "ppo", "injection"}, references=["https://arxiv.org/abs/1707.06347"]),
+    Rule(rule_id="AIML356", name="a3c-risks", description="A3C asynchronous training risks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="A3C risk - validate asynchronous updates to prevent race conditions", explanation="A3C vulnerable to race conditions in asynchronous gradient updates", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-362", owasp_mapping="ML03", tags={"ai", "ml", "rl", "a3c", "async"}, references=["https://arxiv.org/abs/1602.01783"]),
+    Rule(rule_id="AIML357", name="ddpg-attacks", description="DDPG attack vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DDPG attack risk - clip actions to valid bounds to prevent exploitation", explanation="DDPG vulnerable to action space exploitation without proper clipping", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "ddpg", "attack"}, references=["https://arxiv.org/abs/1509.02971"]),
+    Rule(rule_id="AIML358", name="sac-vulnerabilities", description="SAC vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="SAC vulnerability - validate entropy coefficient to prevent exploitation", explanation="SAC vulnerable to entropy coefficient manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "sac", "vulnerability"}, references=["https://arxiv.org/abs/1801.01290"]),
+    Rule(rule_id="AIML359", name="td3-manipulation", description="TD3 manipulation vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TD3 manipulation risk - clip target policy noise to prevent attacks", explanation="TD3 vulnerable to target policy noise manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "td3", "manipulation"}, references=["https://arxiv.org/abs/1802.09477"]),
+    Rule(rule_id="AIML360", name="trpo-bypass", description="TRPO bypass vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TRPO bypass risk - enforce KL divergence constraint to prevent policy deviation", explanation="TRPO vulnerable to trust region constraint bypass", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "trpo", "bypass"}, references=["https://arxiv.org/abs/1502.05477"]),
+    Rule(rule_id="AIML361", name="reward-function-poisoning", description="Reward function poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Reward function poisoning risk - validate and clip reward values", explanation="Reward functions vulnerable to poisoning through manipulated values", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "reward", "poisoning"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML362", name="reward-shaping-attacks", description="Reward shaping attack vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Reward shaping attack risk - bound shaped rewards to prevent exploitation", explanation="Reward shaping vulnerable to exploitation without proper bounds", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "reward-shaping", "attack"}, references=["https://people.eecs.berkeley.edu/~pabbeel/papers/reward_shaping.pdf"]),
+    
+    # Phase 3.3.2: RL Environment Security (8 checks)
+    Rule(rule_id="AIML363", name="gym-environment-injection", description="OpenAI Gym environment injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Gym environment injection risk - validate environment ID before creation", explanation="Gym environments vulnerable to injection through untrusted environment IDs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "rl", "gym", "injection"}, references=["https://github.com/openai/gym"]),
+    Rule(rule_id="AIML364", name="gymnasium-api-manipulation", description="Gymnasium API manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Gymnasium API manipulation risk - validate environment kwargs", explanation="Gymnasium API vulnerable to manipulation through unvalidated parameters", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "gymnasium", "manipulation"}, references=["https://github.com/Farama-Foundation/Gymnasium"]),
+    Rule(rule_id="AIML365", name="custom-environment-backdoors", description="Custom environment backdoors", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Custom environment backdoor risk - validate environment behavior", explanation="Custom RL environments vulnerable to backdoor insertion", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-506", owasp_mapping="ML03", tags={"ai", "ml", "rl", "custom-env", "backdoor"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML366", name="state-space-poisoning", description="State space poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="State space poisoning risk - enforce observation space bounds", explanation="State spaces vulnerable to poisoning without proper bounds", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "state-space", "poisoning"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML367", name="action-space-tampering", description="Action space tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Action space tampering risk - validate actions against defined space", explanation="Action spaces vulnerable to tampering without validation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "action-space", "tampering"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML368", name="observation-function-attacks", description="Observation function attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Observation function attack risk - sanitize observations before return", explanation="Observation functions vulnerable to attacks without sanitization", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "observation", "attack"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML369", name="reward-function-manipulation", description="Reward function manipulation in environments", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Reward function manipulation risk - clip reward values to prevent gaming", explanation="Environment reward functions vulnerable to manipulation for reward gaming", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "reward", "manipulation"}, references=["https://arxiv.org/abs/1906.11852"]),
+    Rule(rule_id="AIML370", name="multiagent-rl-vulnerabilities", description="Multi-agent RL vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Multi-agent RL vulnerability - implement adversarial robustness checks", explanation="Multi-agent RL systems vulnerable to adversarial agents", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "rl", "multi-agent", "vulnerability"}, references=["https://arxiv.org/abs/1911.10635"]),
+    
+    # Phase 3.4: Specialized ML Libraries (AIML371-380)
+    # Phase 3.4.1: AutoML & Hyperparameter Tuning (5 checks)
+    Rule(rule_id="AIML371", name="optuna-trial-manipulation", description="Optuna trial manipulation vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Optuna trial manipulation risk - validate hyperparameter suggestions", explanation="Optuna trials vulnerable to malicious hyperparameter manipulation", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "automl", "optuna", "manipulation"}, references=["https://optuna.org/"]),
+    Rule(rule_id="AIML372", name="ray-tune-search-space-poisoning", description="Ray Tune search space poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Ray Tune search space poisoning risk - validate search configuration", explanation="Ray Tune search spaces vulnerable to poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "automl", "ray-tune", "poisoning"}, references=["https://docs.ray.io/en/latest/tune/index.html"]),
+    Rule(rule_id="AIML373", name="hyperopt-objective-injection", description="Hyperopt objective injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Hyperopt objective injection risk - validate search space and objective", explanation="Hyperopt objectives vulnerable to code injection attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML03", tags={"ai", "ml", "automl", "hyperopt", "injection"}, references=["http://hyperopt.github.io/hyperopt/"]),
+    Rule(rule_id="AIML374", name="autosklearn-pipeline-tampering", description="Auto-sklearn pipeline tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Auto-sklearn pipeline tampering risk - validate generated pipelines", explanation="Auto-sklearn pipelines vulnerable to component tampering", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "automl", "auto-sklearn", "tampering"}, references=["https://automl.github.io/auto-sklearn/"]),
+    Rule(rule_id="AIML375", name="autokeras-architecture-injection", description="AutoKeras architecture injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="AutoKeras architecture injection risk - validate generated architectures", explanation="AutoKeras architectures vulnerable to malicious layer injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML03", tags={"ai", "ml", "automl", "autokeras", "injection"}, references=["https://autokeras.com/"]),
+    
+    # Phase 3.4.2: Graph Neural Networks (5 checks)
+    Rule(rule_id="AIML376", name="pytorch-geometric-injection", description="PyTorch Geometric injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="PyTorch Geometric injection risk - validate graph data before processing", explanation="PyTorch Geometric vulnerable to malicious graph data injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "pytorch-geometric", "injection"}, references=["https://pytorch-geometric.readthedocs.io/"]),
+    Rule(rule_id="AIML377", name="dgl-manipulation", description="DGL manipulation vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="DGL manipulation risk - validate graph structure before use", explanation="DGL graphs vulnerable to structure manipulation attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "dgl", "manipulation"}, references=["https://www.dgl.ai/"]),
+    Rule(rule_id="AIML378", name="graph-structure-poisoning", description="Graph structure poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Graph structure poisoning risk - validate graph topology from untrusted sources", explanation="Graph structures vulnerable to poisoning through malicious topology", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "graph", "poisoning"}, references=["https://arxiv.org/abs/1806.02371"]),
+    Rule(rule_id="AIML379", name="node-feature-injection", description="Node feature injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Node feature injection risk - sanitize node features before use", explanation="Node features vulnerable to adversarial injection attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "node-features", "injection"}, references=["https://arxiv.org/abs/1806.02371"]),
+    Rule(rule_id="AIML380", name="message-passing-attacks", description="Message passing attack vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Message passing attack risk - bound message values to prevent overflow", explanation="GNN message passing vulnerable to overflow and poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML03", tags={"ai", "ml", "gnn", "message-passing", "attack"}, references=["https://arxiv.org/abs/1806.02371"]),
 ]
