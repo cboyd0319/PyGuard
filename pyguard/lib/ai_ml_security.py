@@ -66,6 +66,46 @@ Security Areas Covered:
 - Sensitive data leakage in responses - AIML068
 - PII disclosure from training data - AIML069
 - Copyright violation risks (memorized content) - AIML070
+- torch.load() without weights_only=True - AIML071
+- Unsafe pickle in torch.save/load - AIML072
+- Missing model integrity verification - AIML073
+- Untrusted model URL loading - AIML074
+- Model poisoning in state_dict - AIML075
+- Custom layer/module injection - AIML076
+- Unsafe torch.jit.load() - AIML077
+- TorchScript deserialization risks - AIML078
+- ONNX model tampering - AIML079
+- Model metadata injection - AIML080
+- Missing GPU memory limits - AIML081
+- Tensor size attacks (memory exhaustion) - AIML082
+- Quantization vulnerabilities - AIML083
+- Mixed precision attacks - AIML084
+- Model zoo trust verification - AIML085
+- SavedModel arbitrary code execution - AIML086
+- HDF5 deserialization attacks - AIML087
+- Custom object injection in model.load - AIML088
+- TensorFlow Hub model trust - AIML089
+- Graph execution injection - AIML090
+- Checkpoint poisoning - AIML091
+- Keras Lambda layer code injection - AIML092
+- Custom metric/loss function tampering - AIML093
+- TF Lite model manipulation - AIML094
+- TensorBoard log injection - AIML095
+- Model serving vulnerabilities (TF Serving) - AIML096
+- GraphDef manipulation - AIML097
+- Operation injection attacks - AIML098
+- Resource exhaustion via model architecture - AIML099
+- TFRecord poisoning - AIML100
+- from_pretrained() trust issues - AIML101
+- Model card credential leakage - AIML102
+- Tokenizer vulnerabilities - AIML103
+- Pipeline injection attacks - AIML104
+- Dataset poisoning (Hugging Face Datasets) - AIML105
+- Missing model signature verification - AIML106
+- Arbitrary file loading in model config - AIML107
+- Space app injection (Gradio/Streamlit) - AIML108
+- Model repository tampering - AIML109
+- Private model access control - AIML110
 - Model inversion attack vectors
 - Training data poisoning risks
 - Adversarial input acceptance
@@ -76,7 +116,7 @@ Security Areas Covered:
 - GPU memory leakage
 - Federated learning privacy risks
 
-Total Security Checks: 70 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.1.4 Complete)
+Total Security Checks: 110 (v0.7.0 - AI/ML Security Dominance Plan Phase 1.2 Complete)
 
 References:
 - OWASP LLM Top 10 | https://owasp.org/www-project-top-10-for-large-language-model-applications/ | Critical
@@ -334,6 +374,130 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # AIML070: Copyright violation risks (memorized content)
         self._check_copyright_violation_risk(node)
+        
+        # Phase 1.2: Model Serialization & Loading (40 checks)
+        # Phase 1.2.1: PyTorch Model Security (15 checks - AIML071-AIML085)
+        # AIML071: torch.load() without weights_only=True
+        self._check_torch_load_unsafe(node)
+        
+        # AIML072: Unsafe pickle in torch.save/load
+        self._check_torch_pickle_unsafe(node)
+        
+        # AIML073: Missing model integrity verification
+        self._check_missing_model_integrity(node)
+        
+        # AIML074: Untrusted model URL loading
+        self._check_untrusted_model_url(node)
+        
+        # AIML075: Model poisoning in state_dict
+        self._check_state_dict_poisoning(node)
+        
+        # AIML076: Custom layer/module injection
+        self._check_custom_module_injection(node)
+        
+        # AIML077: Unsafe torch.jit.load()
+        self._check_torch_jit_unsafe(node)
+        
+        # AIML078: TorchScript deserialization risks
+        self._check_torchscript_deserialization(node)
+        
+        # AIML079: ONNX model tampering
+        self._check_onnx_tampering(node)
+        
+        # AIML080: Model metadata injection
+        self._check_model_metadata_injection(node)
+        
+        # AIML081: Missing GPU memory limits
+        self._check_missing_gpu_limits(node)
+        
+        # AIML082: Tensor size attacks
+        self._check_tensor_size_attacks(node)
+        
+        # AIML083: Quantization vulnerabilities
+        self._check_quantization_vulnerabilities(node)
+        
+        # AIML084: Mixed precision attacks
+        self._check_mixed_precision_attacks(node)
+        
+        # AIML085: Model zoo trust verification
+        self._check_model_zoo_trust(node)
+        
+        # Phase 1.2.2: TensorFlow/Keras Security (15 checks - AIML086-AIML100)
+        # AIML086: SavedModel arbitrary code execution
+        self._check_savedmodel_unsafe(node)
+        
+        # AIML087: HDF5 deserialization attacks
+        self._check_hdf5_deserialization(node)
+        
+        # AIML088: Custom object injection in model.load
+        self._check_keras_custom_object_injection(node)
+        
+        # AIML089: TensorFlow Hub model trust
+        self._check_tf_hub_trust(node)
+        
+        # AIML090: Graph execution injection
+        self._check_graph_execution_injection(node)
+        
+        # AIML091: Checkpoint poisoning
+        self._check_checkpoint_poisoning(node)
+        
+        # AIML092: Keras Lambda layer code injection
+        self._check_keras_lambda_injection(node)
+        
+        # AIML093: Custom metric/loss function tampering
+        self._check_custom_metric_tampering(node)
+        
+        # AIML094: TF Lite model manipulation
+        self._check_tflite_manipulation(node)
+        
+        # AIML095: TensorBoard log injection
+        self._check_tensorboard_injection(node)
+        
+        # AIML096: Model serving vulnerabilities (TF Serving)
+        self._check_tf_serving_vulnerabilities(node)
+        
+        # AIML097: GraphDef manipulation
+        self._check_graphdef_manipulation(node)
+        
+        # AIML098: Operation injection attacks
+        self._check_operation_injection(node)
+        
+        # AIML099: Resource exhaustion via model architecture
+        self._check_resource_exhaustion_model(node)
+        
+        # AIML100: TFRecord poisoning
+        self._check_tfrecord_poisoning(node)
+        
+        # Phase 1.2.3: Hugging Face & Transformers (10 checks - AIML101-AIML110)
+        # AIML101: from_pretrained() trust issues
+        self._check_from_pretrained_trust(node)
+        
+        # AIML102: Model card credential leakage
+        self._check_model_card_credentials(node)
+        
+        # AIML103: Tokenizer vulnerabilities
+        self._check_tokenizer_vulnerabilities(node)
+        
+        # AIML104: Pipeline injection attacks
+        self._check_pipeline_injection(node)
+        
+        # AIML105: Dataset poisoning (Hugging Face Datasets)
+        self._check_hf_dataset_poisoning(node)
+        
+        # AIML106: Missing model signature verification
+        self._check_missing_model_signature(node)
+        
+        # AIML107: Arbitrary file loading in model config
+        self._check_arbitrary_file_in_config(node)
+        
+        # AIML108: Space app injection (Gradio/Streamlit)
+        self._check_space_app_injection(node)
+        
+        # AIML109: Model repository tampering
+        self._check_model_repo_tampering(node)
+        
+        # AIML110: Private model access control
+        self._check_private_model_access(node)
         
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
@@ -2912,6 +3076,1130 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                                 source_tool="pyguard",
                             )
                             self.violations.append(violation)
+    
+    # Phase 1.2: Model Serialization & Loading (40 checks)
+    # Phase 1.2.1: PyTorch Model Security (15 checks - AIML071-AIML085)
+    
+    def _check_torch_load_unsafe(self, node: ast.Call) -> None:
+        """AIML071: Detect torch.load() without weights_only=True."""
+        if not self.has_pytorch:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "load":
+            # Check if this is torch.load
+            if hasattr(node.func.value, 'id') and node.func.value.id == "torch":
+                # Check for weights_only parameter
+                has_weights_only = any(
+                    kw.arg == "weights_only" and isinstance(kw.value, ast.Constant) and kw.value.value is True
+                    for kw in node.keywords
+                )
+                
+                if not has_weights_only:
+                    violation = RuleViolation(
+                        rule_id="AIML071",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="torch.load() without weights_only=True - arbitrary code execution risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-502",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_torch_pickle_unsafe(self, node: ast.Call) -> None:
+        """AIML072: Detect unsafe pickle in torch.save/load."""
+        if not self.has_pytorch:
+            return
+        
+        # Check for pickle.load with torch models
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["save", "load"]:
+            if hasattr(node.func.value, 'id') and node.func.value.id in ["torch", "pickle"]:
+                violation = RuleViolation(
+                    rule_id="AIML072",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Unsafe pickle usage with PyTorch - use safetensors or weights_only=True",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-502",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_missing_model_integrity(self, node: ast.Call) -> None:
+        """AIML073: Detect missing model integrity verification."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for model loading without checksum verification
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load", "load_model", "from_pretrained"]:
+            # Look for missing hash/checksum parameters
+            has_verification = any(
+                kw.arg in ["sha256", "checksum", "hash", "revision", "etag"]
+                for kw in node.keywords
+            )
+            
+            if not has_verification:
+                violation = RuleViolation(
+                    rule_id="AIML073",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model loading without integrity verification - use checksums or revisions",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_untrusted_model_url(self, node: ast.Call) -> None:
+        """AIML074: Detect untrusted model URL loading."""
+        if not (self.has_pytorch or self.has_tensorflow or self.has_transformers):
+            return
+        
+        # Check for URL-based model loading
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                if arg.value.startswith(("http://", "https://", "ftp://")):
+                    violation = RuleViolation(
+                        rule_id="AIML074",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Loading model from URL - supply chain attack risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-494",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_state_dict_poisoning(self, node: ast.Call) -> None:
+        """AIML075: Detect model poisoning in state_dict."""
+        if not self.has_pytorch:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "load_state_dict":
+            violation = RuleViolation(
+                rule_id="AIML075",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="load_state_dict() - validate state dict to prevent model poisoning",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_custom_module_injection(self, node: ast.Call) -> None:
+        """AIML076: Detect custom layer/module injection."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for custom modules/layers being loaded
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["register_module", "add_module", "register_buffer"]:
+            violation = RuleViolation(
+                rule_id="AIML076",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Custom module registration - validate to prevent code injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_torch_jit_unsafe(self, node: ast.Call) -> None:
+        """AIML077: Detect unsafe torch.jit.load()."""
+        if not self.has_pytorch:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "load":
+            # Check if this is torch.jit.load
+            if (hasattr(node.func.value, 'attr') and node.func.value.attr == "jit" and
+                hasattr(node.func.value.value, 'id') and node.func.value.value.id == "torch"):
+                violation = RuleViolation(
+                    rule_id="AIML077",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="torch.jit.load() - arbitrary code execution risk via TorchScript",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-502",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_torchscript_deserialization(self, node: ast.Call) -> None:
+        """AIML078: Detect TorchScript deserialization risks."""
+        if not self.has_pytorch:
+            return
+        
+        # Check for TorchScript operations
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["script", "trace", "load"]:
+            if hasattr(node.func.value, 'attr') and node.func.value.attr == "jit":
+                violation = RuleViolation(
+                    rule_id="AIML078",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TorchScript deserialization - validate input to prevent attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-502",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_onnx_tampering(self, node: ast.Call) -> None:
+        """AIML079: Detect ONNX model tampering."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for ONNX model loading
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load", "load_model"]:
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    if arg.value.endswith(".onnx"):
+                        violation = RuleViolation(
+                            rule_id="AIML079",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="ONNX model loading - verify model integrity to prevent tampering",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-494",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_model_metadata_injection(self, node: ast.Call) -> None:
+        """AIML080: Detect model metadata injection."""
+        if not (self.has_pytorch or self.has_tensorflow or self.has_transformers):
+            return
+        
+        # Check for metadata loading
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load_config", "config", "metadata"]:
+            violation = RuleViolation(
+                rule_id="AIML080",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Model metadata loading - validate to prevent injection attacks",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_missing_gpu_limits(self, node: ast.Call) -> None:
+        """AIML081: Detect missing GPU memory limits."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for GPU operations without memory limits
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["cuda", "to"]:
+            # Check if device is being set to GPU without memory limits
+            has_memory_limit = any(
+                kw.arg in ["max_memory", "device_map", "max_split_size_mb"]
+                for kw in node.keywords
+            )
+            
+            if not has_memory_limit:
+                violation = RuleViolation(
+                    rule_id="AIML081",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="GPU usage without memory limits - resource exhaustion risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_tensor_size_attacks(self, node: ast.Call) -> None:
+        """AIML082: Detect tensor size attacks (memory exhaustion)."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for tensor operations with user-controlled sizes
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["zeros", "ones", "empty", "randn", "rand"]:
+            # Check if size is from user input (not a constant)
+            for arg in node.args:
+                if not isinstance(arg, ast.Constant):
+                    violation = RuleViolation(
+                        rule_id="AIML082",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Tensor creation with dynamic size - memory exhaustion risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML09",
+                        cwe_id="CWE-400",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_quantization_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML083: Detect quantization vulnerabilities."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for quantization operations
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["quantize", "quantize_dynamic", "quantize_per_tensor"]:
+            violation = RuleViolation(
+                rule_id="AIML083",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.LOW,
+                message="Model quantization - validate to prevent accuracy degradation attacks",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_mixed_precision_attacks(self, node: ast.Call) -> None:
+        """AIML084: Detect mixed precision attacks."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for mixed precision training/inference
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["autocast", "amp"]:
+            violation = RuleViolation(
+                rule_id="AIML084",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.LOW,
+                message="Mixed precision mode - validate precision settings to prevent attacks",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_model_zoo_trust(self, node: ast.Call) -> None:
+        """AIML085: Detect model zoo trust verification."""
+        if not (self.has_pytorch or self.has_tensorflow):
+            return
+        
+        # Check for model zoo downloads
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load_state_dict_from_url", "hub.load"]:
+            violation = RuleViolation(
+                rule_id="AIML085",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Model zoo download - verify model source and integrity",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-494",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    # Phase 1.2.2: TensorFlow/Keras Security (15 checks - AIML086-AIML100)
+    
+    def _check_savedmodel_unsafe(self, node: ast.Call) -> None:
+        """AIML086: Detect SavedModel arbitrary code execution."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load_model", "load"]:
+            # Check for TensorFlow SavedModel loading
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    violation = RuleViolation(
+                        rule_id="AIML086",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="TensorFlow SavedModel loading - arbitrary code execution risk",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="ML05",
+                        cwe_id="CWE-502",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+                    break
+    
+    def _check_hdf5_deserialization(self, node: ast.Call) -> None:
+        """AIML087: Detect HDF5 deserialization attacks."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "load":
+            # Check for .h5 or .hdf5 files
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    if arg.value.endswith((".h5", ".hdf5", ".keras")):
+                        violation = RuleViolation(
+                            rule_id="AIML087",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="HDF5/Keras model loading - deserialization attack risk",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-502",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_keras_custom_object_injection(self, node: ast.Call) -> None:
+        """AIML088: Detect custom object injection in model.load."""
+        if not self.has_tensorflow:
+            return
+        
+        # Check for custom_objects parameter
+        for keyword in node.keywords:
+            if keyword.arg == "custom_objects":
+                violation = RuleViolation(
+                    rule_id="AIML088",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Custom objects in Keras model - validate to prevent code injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_tf_hub_trust(self, node: ast.Call) -> None:
+        """AIML089: Detect TensorFlow Hub model trust."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load", "KerasLayer"]:
+            # Check if loading from TF Hub
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    if "tfhub.dev" in arg.value or "hub" in arg.value:
+                        violation = RuleViolation(
+                            rule_id="AIML089",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="TensorFlow Hub model loading - verify model source and integrity",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-494",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_graph_execution_injection(self, node: ast.Call) -> None:
+        """AIML090: Detect graph execution injection."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["graph", "GraphDef", "import_graph_def"]:
+            violation = RuleViolation(
+                rule_id="AIML090",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="TensorFlow graph operation - validate to prevent injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_checkpoint_poisoning(self, node: ast.Call) -> None:
+        """AIML091: Detect checkpoint poisoning."""
+        if not (self.has_tensorflow or self.has_pytorch):
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["restore", "load_checkpoint", "from_checkpoint"]:
+            violation = RuleViolation(
+                rule_id="AIML091",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Checkpoint loading - verify integrity to prevent poisoning",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_keras_lambda_injection(self, node: ast.Call) -> None:
+        """AIML092: Detect Keras Lambda layer code injection."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Name) and node.func.id == "Lambda":
+            violation = RuleViolation(
+                rule_id="AIML092",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Keras Lambda layer - code injection risk with untrusted input",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_custom_metric_tampering(self, node: ast.Call) -> None:
+        """AIML093: Detect custom metric/loss function tampering."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["compile"]:
+            # Check for custom metrics or loss functions
+            for keyword in node.keywords:
+                if keyword.arg in ["metrics", "loss"]:
+                    if not isinstance(keyword.value, (ast.Constant, ast.List)):
+                        violation = RuleViolation(
+                            rule_id="AIML093",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="Custom metrics/loss functions - validate to prevent tampering",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.MANUAL,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-345",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_tflite_manipulation(self, node: ast.Call) -> None:
+        """AIML094: Detect TF Lite model manipulation."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["Interpreter", "load_model"]:
+            # Check for .tflite files
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    if arg.value.endswith(".tflite"):
+                        violation = RuleViolation(
+                            rule_id="AIML094",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="TF Lite model loading - verify integrity to prevent manipulation",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-494",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_tensorboard_injection(self, node: ast.Call) -> None:
+        """AIML095: Detect TensorBoard log injection."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["SummaryWriter", "FileWriter"]:
+            violation = RuleViolation(
+                rule_id="AIML095",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.LOW,
+                message="TensorBoard logging - sanitize data to prevent log injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-117",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_tf_serving_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML096: Detect model serving vulnerabilities (TF Serving)."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["export_saved_model", "export"]:
+            violation = RuleViolation(
+                rule_id="AIML096",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Model export for serving - ensure proper access controls",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML09",
+                cwe_id="CWE-285",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_graphdef_manipulation(self, node: ast.Call) -> None:
+        """AIML097: Detect GraphDef manipulation."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["ParseFromString", "import_graph_def"]:
+            violation = RuleViolation(
+                rule_id="AIML097",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="GraphDef parsing - validate to prevent manipulation",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-502",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_operation_injection(self, node: ast.Call) -> None:
+        """AIML098: Detect operation injection attacks."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["add_op", "register_op"]:
+            violation = RuleViolation(
+                rule_id="AIML098",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Operation registration - validate to prevent injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_resource_exhaustion_model(self, node: ast.Call) -> None:
+        """AIML099: Detect resource exhaustion via model architecture."""
+        if not (self.has_tensorflow or self.has_pytorch):
+            return
+        
+        # Check for operations that could cause resource exhaustion
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["Sequential", "Model"]:
+            violation = RuleViolation(
+                rule_id="AIML099",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Model architecture creation - validate complexity to prevent DoS",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML09",
+                cwe_id="CWE-400",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_tfrecord_poisoning(self, node: ast.Call) -> None:
+        """AIML100: Detect TFRecord poisoning."""
+        if not self.has_tensorflow:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["TFRecordReader", "TFRecordDataset"]:
+            violation = RuleViolation(
+                rule_id="AIML100",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="TFRecord loading - validate data to prevent poisoning",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    # Phase 1.2.3: Hugging Face & Transformers (10 checks - AIML101-AIML110)
+    
+    def _check_from_pretrained_trust(self, node: ast.Call) -> None:
+        """AIML101: Detect from_pretrained() trust issues."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "from_pretrained":
+            # Check for trust_remote_code parameter
+            has_trust_param = any(
+                kw.arg == "trust_remote_code" and isinstance(kw.value, ast.Constant) and kw.value.value is False
+                for kw in node.keywords
+            )
+            
+            if not has_trust_param:
+                violation = RuleViolation(
+                    rule_id="AIML101",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="from_pretrained() without trust_remote_code=False - arbitrary code execution risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_card_credentials(self, node: ast.Call) -> None:
+        """AIML102: Detect model card credential leakage."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["push_to_hub", "create_model_card"]:
+            # Check for token parameter
+            for keyword in node.keywords:
+                if keyword.arg in ["token", "use_auth_token"]:
+                    if isinstance(keyword.value, ast.Constant):
+                        violation = RuleViolation(
+                            rule_id="AIML102",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="Hardcoded token in model card - credential leakage risk",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-798",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+                        break
+    
+    def _check_tokenizer_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML103: Detect tokenizer vulnerabilities."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["tokenize", "encode", "batch_encode"]:
+            # Check for truncation/max_length parameters
+            has_limits = any(
+                kw.arg in ["max_length", "truncation"]
+                for kw in node.keywords
+            )
+            
+            if not has_limits:
+                violation = RuleViolation(
+                    rule_id="AIML103",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Tokenizer without limits - DoS risk from long inputs",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_pipeline_injection(self, node: ast.Call) -> None:
+        """AIML104: Detect pipeline injection attacks."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Name) and node.func.id == "pipeline":
+            violation = RuleViolation(
+                rule_id="AIML104",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Transformers pipeline - validate task and model to prevent injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-94",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_hf_dataset_poisoning(self, node: ast.Call) -> None:
+        """AIML105: Detect dataset poisoning (Hugging Face Datasets)."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["load_dataset", "load_from_disk"]:
+            violation = RuleViolation(
+                rule_id="AIML105",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Dataset loading - validate source to prevent poisoning",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-345",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_missing_model_signature(self, node: ast.Call) -> None:
+        """AIML106: Detect missing model signature verification."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "from_pretrained":
+            # Check for revision or commit hash
+            has_version = any(
+                kw.arg in ["revision", "commit_hash"]
+                for kw in node.keywords
+            )
+            
+            if not has_version:
+                violation = RuleViolation(
+                    rule_id="AIML106",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model loading without version pinning - supply chain attack risk",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_arbitrary_file_in_config(self, node: ast.Call) -> None:
+        """AIML107: Detect arbitrary file loading in model config."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["from_json_file", "from_dict"]:
+            violation = RuleViolation(
+                rule_id="AIML107",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.HIGH,
+                message="Config loading from file - arbitrary file access risk",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-22",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_space_app_injection(self, node: ast.Call) -> None:
+        """AIML108: Detect Space app injection (Gradio/Streamlit)."""
+        if not self.has_transformers:
+            return
+        
+        # Check for Gradio/Streamlit interfaces
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["Interface", "launch"]:
+            violation = RuleViolation(
+                rule_id="AIML108",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Gradio/Streamlit interface - validate inputs to prevent injection",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.MANUAL,
+                fix_data=None,
+                owasp_id="ML09",
+                cwe_id="CWE-20",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_model_repo_tampering(self, node: ast.Call) -> None:
+        """AIML109: Detect model repository tampering."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["clone_from", "Repository"]:
+            violation = RuleViolation(
+                rule_id="AIML109",
+                category=RuleCategory.SECURITY,
+                severity=RuleSeverity.MEDIUM,
+                message="Model repository cloning - verify source to prevent tampering",
+                line_number=node.lineno,
+                column=node.col_offset,
+                end_line_number=getattr(node, "end_lineno", node.lineno),
+                end_column=getattr(node, "end_col_offset", node.col_offset),
+                file_path=str(self.file_path),
+                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                fix_applicability=FixApplicability.SAFE,
+                fix_data=None,
+                owasp_id="ML05",
+                cwe_id="CWE-494",
+                source_tool="pyguard",
+            )
+            self.violations.append(violation)
+    
+    def _check_private_model_access(self, node: ast.Call) -> None:
+        """AIML110: Detect private model access control."""
+        if not self.has_transformers:
+            return
+        
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "from_pretrained":
+            # Check for private models without proper authentication
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    # Look for model names that might be private
+                    if "/" in arg.value:  # org/model format
+                        has_auth = any(
+                            kw.arg in ["token", "use_auth_token"]
+                            for kw in node.keywords
+                        )
+                        
+                        if not has_auth:
+                            violation = RuleViolation(
+                                rule_id="AIML110",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.LOW,
+                                message="Model loading without authentication - consider access controls",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data=None,
+                                owasp_id="ML05",
+                                cwe_id="CWE-285",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+                        break
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
@@ -4048,4 +5336,48 @@ AIML_SECURITY_RULES = [
         tags={"ai", "llm", "output", "copyright", "legal", "best-practice"},
         references=["https://owasp.org/www-project-top-10-for-large-language-model-applications/"],
     ),
+    # Phase 1.2: Model Serialization & Loading (40 checks)
+    # Phase 1.2.1: PyTorch Model Security (AIML071-AIML085)
+    Rule(rule_id="AIML071", name="torch-load-unsafe", description="torch.load() without weights_only=True", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="torch.load() without weights_only=True - arbitrary code execution risk", explanation="Loading PyTorch models without weights_only=True allows arbitrary code execution via pickle", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "pytorch", "serialization", "security"}, references=["https://pytorch.org/docs/stable/generated/torch.load.html"]),
+    Rule(rule_id="AIML072", name="torch-pickle-unsafe", description="Unsafe pickle in torch.save/load", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Unsafe pickle usage with PyTorch - use safetensors or weights_only=True", explanation="Pickle deserialization in PyTorch can execute arbitrary code", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "pytorch", "pickle", "security"}, references=["https://pytorch.org/docs/stable/notes/serialization.html"]),
+    Rule(rule_id="AIML073", name="missing-model-integrity", description="Missing model integrity verification", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model loading without integrity verification - use checksums or revisions", explanation="Models should be verified with checksums to prevent tampering", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "integrity", "security"}, references=["https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload"]),
+    Rule(rule_id="AIML074", name="untrusted-model-url", description="Untrusted model URL loading", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Loading model from URL - supply chain attack risk", explanation="Loading models from URLs exposes to supply chain attacks", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "supply-chain", "security"}, references=["https://owasp.org/www-community/attacks/Supply_Chain_Attack"]),
+    Rule(rule_id="AIML075", name="state-dict-poisoning", description="Model poisoning in state_dict", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="load_state_dict() - validate state dict to prevent model poisoning", explanation="State dicts should be validated to prevent model poisoning attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "pytorch", "poisoning", "security"}, references=["https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict"]),
+    Rule(rule_id="AIML076", name="custom-module-injection", description="Custom layer/module injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Custom module registration - validate to prevent code injection", explanation="Custom modules can inject malicious code into models", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "module", "injection", "security"}, references=["https://pytorch.org/docs/stable/nn.html"]),
+    Rule(rule_id="AIML077", name="torch-jit-unsafe", description="Unsafe torch.jit.load()", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="torch.jit.load() - arbitrary code execution risk via TorchScript", explanation="TorchScript loading can execute arbitrary code", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "pytorch", "torchscript", "security"}, references=["https://pytorch.org/docs/stable/jit.html"]),
+    Rule(rule_id="AIML078", name="torchscript-deserialization", description="TorchScript deserialization risks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="TorchScript deserialization - validate input to prevent attacks", explanation="TorchScript deserialization should be validated", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "pytorch", "deserialization", "security"}, references=["https://pytorch.org/docs/stable/jit.html"]),
+    Rule(rule_id="AIML079", name="onnx-tampering", description="ONNX model tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="ONNX model loading - verify model integrity to prevent tampering", explanation="ONNX models should be verified for integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "onnx", "tampering", "security"}, references=["https://onnx.ai/"]),
+    Rule(rule_id="AIML080", name="model-metadata-injection", description="Model metadata injection", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model metadata loading - validate to prevent injection attacks", explanation="Model metadata can contain malicious code", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "metadata", "injection", "security"}, references=["https://owasp.org/www-community/attacks/Code_Injection"]),
+    Rule(rule_id="AIML081", name="missing-gpu-limits", description="Missing GPU memory limits", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="GPU usage without memory limits - resource exhaustion risk", explanation="GPU operations should have memory limits to prevent DoS", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "gpu", "dos", "security"}, references=["https://pytorch.org/docs/stable/notes/cuda.html"]),
+    Rule(rule_id="AIML082", name="tensor-size-attacks", description="Tensor size attacks (memory exhaustion)", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Tensor creation with dynamic size - memory exhaustion risk", explanation="Dynamic tensor sizes can cause memory exhaustion", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "tensor", "dos", "security"}, references=["https://pytorch.org/docs/stable/tensors.html"]),
+    Rule(rule_id="AIML083", name="quantization-vulnerabilities", description="Quantization vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Model quantization - validate to prevent accuracy degradation attacks", explanation="Quantization can be exploited to degrade model accuracy", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "quantization", "security"}, references=["https://pytorch.org/docs/stable/quantization.html"]),
+    Rule(rule_id="AIML084", name="mixed-precision-attacks", description="Mixed precision attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Mixed precision mode - validate precision settings to prevent attacks", explanation="Mixed precision can be exploited in adversarial attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "precision", "security"}, references=["https://pytorch.org/docs/stable/amp.html"]),
+    Rule(rule_id="AIML085", name="model-zoo-trust", description="Model zoo trust verification", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model zoo download - verify model source and integrity", explanation="Model zoo downloads should verify source and integrity", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "model-zoo", "security"}, references=["https://pytorch.org/vision/stable/models.html"]),
+    # Phase 1.2.2: TensorFlow/Keras Security (AIML086-AIML100)
+    Rule(rule_id="AIML086", name="savedmodel-unsafe", description="SavedModel arbitrary code execution", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="TensorFlow SavedModel loading - arbitrary code execution risk", explanation="SavedModel can execute arbitrary code during loading", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "tensorflow", "savedmodel", "security"}, references=["https://www.tensorflow.org/guide/saved_model"]),
+    Rule(rule_id="AIML087", name="hdf5-deserialization", description="HDF5 deserialization attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="HDF5/Keras model loading - deserialization attack risk", explanation="HDF5 files can contain malicious serialized objects", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "keras", "hdf5", "security"}, references=["https://keras.io/api/models/model_saving_apis/"]),
+    Rule(rule_id="AIML088", name="keras-custom-object-injection", description="Custom object injection in model.load", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Custom objects in Keras model - validate to prevent code injection", explanation="Custom objects can inject malicious code", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "keras", "injection", "security"}, references=["https://keras.io/guides/serialization_and_saving/"]),
+    Rule(rule_id="AIML089", name="tf-hub-trust", description="TensorFlow Hub model trust", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TensorFlow Hub model loading - verify model source and integrity", explanation="TF Hub models should be verified for trust", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "tensorflow", "hub", "security"}, references=["https://www.tensorflow.org/hub"]),
+    Rule(rule_id="AIML090", name="graph-execution-injection", description="Graph execution injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="TensorFlow graph operation - validate to prevent injection", explanation="Graph operations can be exploited for code injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "tensorflow", "graph", "security"}, references=["https://www.tensorflow.org/guide/intro_to_graphs"]),
+    Rule(rule_id="AIML091", name="checkpoint-poisoning", description="Checkpoint poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Checkpoint loading - verify integrity to prevent poisoning", explanation="Checkpoints can be poisoned with malicious weights", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "checkpoint", "poisoning", "security"}, references=["https://www.tensorflow.org/guide/checkpoint"]),
+    Rule(rule_id="AIML092", name="keras-lambda-injection", description="Keras Lambda layer code injection", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Keras Lambda layer - code injection risk with untrusted input", explanation="Lambda layers can execute arbitrary code", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "keras", "lambda", "security"}, references=["https://keras.io/api/layers/core_layers/lambda/"]),
+    Rule(rule_id="AIML093", name="custom-metric-tampering", description="Custom metric/loss function tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Custom metrics/loss functions - validate to prevent tampering", explanation="Custom metrics can be tampered to hide attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "metrics", "tampering", "security"}, references=["https://keras.io/api/metrics/"]),
+    Rule(rule_id="AIML094", name="tflite-manipulation", description="TF Lite model manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TF Lite model loading - verify integrity to prevent manipulation", explanation="TF Lite models can be manipulated", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "tflite", "manipulation", "security"}, references=["https://www.tensorflow.org/lite"]),
+    Rule(rule_id="AIML095", name="tensorboard-injection", description="TensorBoard log injection", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="TensorBoard logging - sanitize data to prevent log injection", explanation="TensorBoard logs can be injected with malicious data", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-117", owasp_mapping="ML05", tags={"ai", "ml", "tensorboard", "injection", "security"}, references=["https://www.tensorflow.org/tensorboard"]),
+    Rule(rule_id="AIML096", name="tf-serving-vulnerabilities", description="Model serving vulnerabilities (TF Serving)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model export for serving - ensure proper access controls", explanation="Model serving requires proper access controls", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML09", tags={"ai", "ml", "serving", "access-control", "security"}, references=["https://www.tensorflow.org/tfx/guide/serving"]),
+    Rule(rule_id="AIML097", name="graphdef-manipulation", description="GraphDef manipulation", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="GraphDef parsing - validate to prevent manipulation", explanation="GraphDef can be manipulated for attacks", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-502", owasp_mapping="ML05", tags={"ai", "ml", "graphdef", "manipulation", "security"}, references=["https://www.tensorflow.org/api_docs/python/tf/compat/v1/GraphDef"]),
+    Rule(rule_id="AIML098", name="operation-injection", description="Operation injection attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Operation registration - validate to prevent injection", explanation="Custom operations can inject malicious code", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "operation", "injection", "security"}, references=["https://www.tensorflow.org/guide/create_op"]),
+    Rule(rule_id="AIML099", name="resource-exhaustion-model", description="Resource exhaustion via model architecture", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model architecture creation - validate complexity to prevent DoS", explanation="Complex model architectures can cause resource exhaustion", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "dos", "resource", "security"}, references=["https://owasp.org/www-community/attacks/Denial_of_Service"]),
+    Rule(rule_id="AIML100", name="tfrecord-poisoning", description="TFRecord poisoning", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="TFRecord loading - validate data to prevent poisoning", explanation="TFRecords can be poisoned with malicious data", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "tfrecord", "poisoning", "security"}, references=["https://www.tensorflow.org/tutorials/load_data/tfrecord"]),
+    # Phase 1.2.3: Hugging Face & Transformers (AIML101-AIML110)
+    Rule(rule_id="AIML101", name="from-pretrained-trust", description="from_pretrained() trust issues", category=RuleCategory.SECURITY, severity=RuleSeverity.CRITICAL, message_template="from_pretrained() without trust_remote_code=False - arbitrary code execution risk", explanation="from_pretrained with trust_remote_code=True can execute arbitrary code", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "transformers", "trust", "security"}, references=["https://huggingface.co/docs/transformers/main_classes/model"]),
+    Rule(rule_id="AIML102", name="model-card-credentials", description="Model card credential leakage", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Hardcoded token in model card - credential leakage risk", explanation="Tokens should not be hardcoded in model cards", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-798", owasp_mapping="ML05", tags={"ai", "ml", "credentials", "leakage", "security"}, references=["https://huggingface.co/docs/hub/security-tokens"]),
+    Rule(rule_id="AIML103", name="tokenizer-vulnerabilities", description="Tokenizer vulnerabilities", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Tokenizer without limits - DoS risk from long inputs", explanation="Tokenizers should have length limits to prevent DoS", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-400", owasp_mapping="ML09", tags={"ai", "ml", "tokenizer", "dos", "security"}, references=["https://huggingface.co/docs/transformers/main_classes/tokenizer"]),
+    Rule(rule_id="AIML104", name="pipeline-injection", description="Pipeline injection attacks", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Transformers pipeline - validate task and model to prevent injection", explanation="Pipelines should validate inputs to prevent injection", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-94", owasp_mapping="ML05", tags={"ai", "ml", "pipeline", "injection", "security"}, references=["https://huggingface.co/docs/transformers/main_classes/pipelines"]),
+    Rule(rule_id="AIML105", name="hf-dataset-poisoning", description="Dataset poisoning (Hugging Face Datasets)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Dataset loading - validate source to prevent poisoning", explanation="Datasets can be poisoned with malicious data", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-345", owasp_mapping="ML05", tags={"ai", "ml", "dataset", "poisoning", "security"}, references=["https://huggingface.co/docs/datasets/"]),
+    Rule(rule_id="AIML106", name="missing-model-signature", description="Missing model signature verification", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model loading without version pinning - supply chain attack risk", explanation="Models should be pinned to specific versions", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "version", "supply-chain", "security"}, references=["https://huggingface.co/docs/hub/security"]),
+    Rule(rule_id="AIML107", name="arbitrary-file-in-config", description="Arbitrary file loading in model config", category=RuleCategory.SECURITY, severity=RuleSeverity.HIGH, message_template="Config loading from file - arbitrary file access risk", explanation="Config files can load arbitrary files", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-22", owasp_mapping="ML05", tags={"ai", "ml", "config", "file-access", "security"}, references=["https://huggingface.co/docs/transformers/main_classes/configuration"]),
+    Rule(rule_id="AIML108", name="space-app-injection", description="Space app injection (Gradio/Streamlit)", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Gradio/Streamlit interface - validate inputs to prevent injection", explanation="Space apps should validate user inputs", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-20", owasp_mapping="ML09", tags={"ai", "ml", "gradio", "streamlit", "security"}, references=["https://huggingface.co/docs/hub/spaces"]),
+    Rule(rule_id="AIML109", name="model-repo-tampering", description="Model repository tampering", category=RuleCategory.SECURITY, severity=RuleSeverity.MEDIUM, message_template="Model repository cloning - verify source to prevent tampering", explanation="Model repositories can be tampered with", fix_applicability=FixApplicability.SAFE, cwe_mapping="CWE-494", owasp_mapping="ML05", tags={"ai", "ml", "repository", "tampering", "security"}, references=["https://huggingface.co/docs/hub/repositories"]),
+    Rule(rule_id="AIML110", name="private-model-access", description="Private model access control", category=RuleCategory.SECURITY, severity=RuleSeverity.LOW, message_template="Model loading without authentication - consider access controls", explanation="Private models should use proper authentication", fix_applicability=FixApplicability.MANUAL, cwe_mapping="CWE-285", owasp_mapping="ML05", tags={"ai", "ml", "access-control", "authentication", "security"}, references=["https://huggingface.co/docs/hub/security-tokens"]),
 ]

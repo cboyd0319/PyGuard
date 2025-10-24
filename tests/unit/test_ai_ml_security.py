@@ -507,8 +507,8 @@ class TestAIMLSecurityRules:
     """Test AI/ML security rules registration."""
 
     def test_rules_registered(self):
-        """Verify all 60 AI/ML security rules are registered."""
-        assert len(AIML_SECURITY_RULES) == 60
+        """Verify all 100 AI/ML security rules are registered."""
+        assert len(AIML_SECURITY_RULES) == 100
         
         expected_ids = [
             "AIML001", "AIML002", "AIML003", "AIML004", "AIML005",
@@ -524,7 +524,18 @@ class TestAIMLSecurityRules:
             "AIML056", "AIML057", "AIML058", "AIML059", "AIML060",
             # Phase 1.1.4: Output Validation & Filtering (AIML061-AIML070)
             "AIML061", "AIML062", "AIML063", "AIML064", "AIML065",
-            "AIML066", "AIML067", "AIML068", "AIML069", "AIML070"
+            "AIML066", "AIML067", "AIML068", "AIML069", "AIML070",
+            # Phase 1.2.1: PyTorch Model Security (AIML071-AIML085)
+            "AIML071", "AIML072", "AIML073", "AIML074", "AIML075",
+            "AIML076", "AIML077", "AIML078", "AIML079", "AIML080",
+            "AIML081", "AIML082", "AIML083", "AIML084", "AIML085",
+            # Phase 1.2.2: TensorFlow/Keras Security (AIML086-AIML100)
+            "AIML086", "AIML087", "AIML088", "AIML089", "AIML090",
+            "AIML091", "AIML092", "AIML093", "AIML094", "AIML095",
+            "AIML096", "AIML097", "AIML098", "AIML099", "AIML100",
+            # Phase 1.2.3: Hugging Face & Transformers (AIML101-AIML110)
+            "AIML101", "AIML102", "AIML103", "AIML104", "AIML105",
+            "AIML106", "AIML107", "AIML108", "AIML109", "AIML110",
         ]
         actual_ids = [rule.rule_id for rule in AIML_SECURITY_RULES]
         
