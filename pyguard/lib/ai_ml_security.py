@@ -907,6 +907,115 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML225: Hyperparameter logging risks
         self._check_hyperparameter_logging_risks(node)
         
+        # Phase 2.3: Model Deployment & Serving (35 checks)
+        # Phase 2.3.1: Model Serving Vulnerabilities (15 checks - AIML226-AIML240)
+        # AIML226: TorchServe vulnerabilities
+        self._check_torchserve_vulnerabilities(node)
+        
+        # AIML227: TensorFlow Serving injection
+        self._check_tensorflow_serving_injection(node)
+        
+        # AIML228: ONNX Runtime risks
+        self._check_onnx_runtime_risks(node)
+        
+        # AIML229: Triton Inference Server gaps
+        self._check_triton_inference_server_gaps(node)
+        
+        # AIML230: BentoML security issues
+        self._check_bentoml_security_issues(node)
+        
+        # AIML231: Ray Serve vulnerabilities
+        self._check_ray_serve_vulnerabilities(node)
+        
+        # AIML232: Seldon Core risks
+        self._check_seldon_core_risks(node)
+        
+        # AIML233: KServe weaknesses
+        self._check_kserve_weaknesses(node)
+        
+        # AIML234: Model batching attacks
+        self._check_model_batching_attacks(node)
+        
+        # AIML235: Dynamic batching poisoning
+        self._check_dynamic_batching_poisoning(node)
+        
+        # AIML236: Model versioning bypass
+        self._check_model_versioning_bypass(node)
+        
+        # AIML237: A/B testing manipulation
+        self._check_ab_testing_manipulation(node)
+        
+        # AIML238: Canary deployment risks
+        self._check_canary_deployment_risks(node)
+        
+        # AIML239: Blue-green deployment gaps
+        self._check_blue_green_deployment_gaps(node)
+        
+        # AIML240: Shadow deployment leakage
+        self._check_shadow_deployment_leakage(node)
+        
+        # Phase 2.3.2: API & Endpoint Security (12 checks - AIML241-AIML252)
+        # AIML241: Missing authentication on inference API
+        self._check_missing_authentication_inference_api(node)
+        
+        # AIML242: Model endpoint enumeration
+        self._check_model_endpoint_enumeration(node)
+        
+        # AIML243: Batch inference injection
+        self._check_batch_inference_injection(node)
+        
+        # AIML244: Streaming inference attacks
+        self._check_streaming_inference_attacks(node)
+        
+        # AIML245: Model cache poisoning
+        self._check_model_cache_poisoning(node)
+        
+        # AIML246: Prediction logging risks (PII)
+        self._check_prediction_logging_risks(node)
+        
+        # AIML247: Model warm-up vulnerabilities
+        self._check_model_warmup_vulnerabilities(node)
+        
+        # AIML248: Health check information disclosure
+        self._check_health_check_information_disclosure(node)
+        
+        # AIML249: Metrics endpoint exposure
+        self._check_metrics_endpoint_exposure(node)
+        
+        # AIML250: Model metadata leakage
+        self._check_model_metadata_leakage(node)
+        
+        # AIML251: Feature flag manipulation
+        self._check_feature_flag_manipulation(node)
+        
+        # AIML252: Circuit breaker bypass
+        self._check_circuit_breaker_bypass(node)
+        
+        # Phase 2.3.3: Edge & Mobile Deployment (8 checks - AIML253-AIML260)
+        # AIML253: TFLite model tampering
+        self._check_tflite_model_tampering(node)
+        
+        # AIML254: Core ML injection
+        self._check_coreml_injection(node)
+        
+        # AIML255: ONNX mobile risks
+        self._check_onnx_mobile_risks(node)
+        
+        # AIML256: Quantized model vulnerabilities
+        self._check_quantized_model_vulnerabilities(node)
+        
+        # AIML257: Model pruning attacks
+        self._check_model_pruning_attacks(node)
+        
+        # AIML258: Knowledge distillation risks
+        self._check_knowledge_distillation_risks(node)
+        
+        # AIML259: On-device training weaknesses
+        self._check_on_device_training_weaknesses(node)
+        
+        # AIML260: Federated learning gaps
+        self._check_federated_learning_gaps(node)
+        
         # AIML007: Insecure model serialization
         self._check_insecure_serialization(node)
         
@@ -8197,6 +8306,1035 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         source_tool="pyguard",
                     )
                     self.violations.append(violation)
+
+    # Phase 2.3: Model Deployment & Serving (35 checks)
+    # Phase 2.3.1: Model Serving Vulnerabilities (15 checks - AIML226-AIML240)
+    
+    def _check_torchserve_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML226: Detect TorchServe vulnerabilities."""
+        if not self.has_pytorch:
+            return
+        
+        # Check for TorchServe usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "torchserve" in line_text or "torch-model-archiver" in line_text:
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML226",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TorchServe deployment - validate model and handler code",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_tensorflow_serving_injection(self, node: ast.Call) -> None:
+        """AIML227: Detect TensorFlow Serving injection risks."""
+        if not self.has_tensorflow:
+            return
+        
+        # Check for TensorFlow Serving
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "tensorflow_serving" in line_text.replace("-", "_") or "tf_serving" in line_text:
+            if "validate" not in line_text and "sanitize" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML227",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TensorFlow Serving - validate input data to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_onnx_runtime_risks(self, node: ast.Call) -> None:
+        """AIML228: Detect ONNX Runtime risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for ONNX Runtime usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "onnxruntime" in line_text.replace("_", "").replace("-", "") or "ort" in line_text:
+            if isinstance(node.func, ast.Attribute):
+                if "inferenc" in node.func.attr.lower() or "run" in node.func.attr:
+                    if "validate" not in line_text:
+                        violation = RuleViolation(
+                            rule_id="AIML228",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="ONNX Runtime inference - validate input shapes and types",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="ML05",
+                            cwe_id="CWE-20",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_triton_inference_server_gaps(self, node: ast.Call) -> None:
+        """AIML229: Detect Triton Inference Server security gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for Triton usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "triton" in line_text and ("inference" in line_text or "server" in line_text):
+            if "auth" not in line_text and "secure" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML229",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Triton Inference Server - implement authentication and encryption",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-306",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_bentoml_security_issues(self, node: ast.Call) -> None:
+        """AIML230: Detect BentoML security issues."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for BentoML usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "bentoml" in line_text or "bento" in line_text:
+            if isinstance(node.func, ast.Attribute):
+                if "serve" in node.func.attr.lower() or "api" in node.func.attr.lower():
+                    if "auth" not in line_text and "validate" not in line_text:
+                        violation = RuleViolation(
+                            rule_id="AIML230",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.MEDIUM,
+                            message="BentoML service - add authentication and input validation",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="A07",
+                            cwe_id="CWE-306",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_ray_serve_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML231: Detect Ray Serve vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for Ray Serve usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "ray" in line_text and "serve" in line_text:
+            if "auth" not in line_text and "secure" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML231",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Ray Serve deployment - implement authentication and security",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-306",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_seldon_core_risks(self, node: ast.Call) -> None:
+        """AIML232: Detect Seldon Core risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for Seldon Core usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "seldon" in line_text:
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML232",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Seldon Core deployment - validate model and input data",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_kserve_weaknesses(self, node: ast.Call) -> None:
+        """AIML233: Detect KServe weaknesses."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for KServe usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "kserve" in line_text or "kfserving" in line_text:
+            if "auth" not in line_text and "secure" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML233",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="KServe deployment - implement authentication and security policies",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-306",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_batching_attacks(self, node: ast.Call) -> None:
+        """AIML234: Detect model batching attack risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for batching operations
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "batch" in line_text and ("inference" in line_text or "predict" in line_text):
+            if "validate" not in line_text and "limit" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML234",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model batching - validate batch size to prevent resource exhaustion",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_dynamic_batching_poisoning(self, node: ast.Call) -> None:
+        """AIML235: Detect dynamic batching poisoning."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for dynamic batching
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "dynamic" in line_text and "batch" in line_text:
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML235",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Dynamic batching - validate batch composition to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_versioning_bypass(self, node: ast.Call) -> None:
+        """AIML236: Detect model versioning bypass risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model loading without version
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("load" in line_text or "get" in line_text) and "model" in line_text:
+            if "version" not in line_text and "tag" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML236",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Model loading - specify version to prevent unintended model usage",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_ab_testing_manipulation(self, node: ast.Call) -> None:
+        """AIML237: Detect A/B testing manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for A/B testing
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("a/b" in line_text or "ab_test" in line_text or "abtest" in line_text):
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML237",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="A/B testing - validate assignment logic to prevent manipulation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_canary_deployment_risks(self, node: ast.Call) -> None:
+        """AIML238: Detect canary deployment risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for canary deployments
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "canary" in line_text:
+            if "validate" not in line_text and "monitor" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML238",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Canary deployment - implement monitoring and validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_blue_green_deployment_gaps(self, node: ast.Call) -> None:
+        """AIML239: Detect blue-green deployment gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for blue-green deployments
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("blue" in line_text and "green" in line_text) or "bluegreen" in line_text:
+            if "validate" not in line_text and "rollback" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML239",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Blue-green deployment - ensure rollback capability and validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_shadow_deployment_leakage(self, node: ast.Call) -> None:
+        """AIML240: Detect shadow deployment information leakage."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for shadow deployments
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "shadow" in line_text and ("deploy" in line_text or "model" in line_text):
+            if "log" in line_text and "sanitize" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML240",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Shadow deployment - sanitize logs to prevent information leakage",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A02",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    # Phase 2.3.2: API & Endpoint Security (12 checks - AIML241-AIML252)
+    
+    def _check_missing_authentication_inference_api(self, node: ast.Call) -> None:
+        """AIML241: Detect missing authentication on inference API."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for API route definitions
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("route" in line_text or "endpoint" in line_text or "api" in line_text) and ("predict" in line_text or "inference" in line_text):
+            if "auth" not in line_text and "token" not in line_text and "key" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML241",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.CRITICAL,
+                    message="Inference API - add authentication to prevent unauthorized access",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A07",
+                    cwe_id="CWE-306",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_endpoint_enumeration(self, node: ast.Call) -> None:
+        """AIML242: Detect model endpoint enumeration risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model listing endpoints
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("list" in line_text or "get_all" in line_text) and ("model" in line_text or "endpoint" in line_text):
+            if "auth" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML242",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model endpoint enumeration - restrict access to model listing",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A01",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_batch_inference_injection(self, node: ast.Call) -> None:
+        """AIML243: Detect batch inference injection risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for batch inference
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "batch" in line_text and ("predict" in line_text or "inference" in line_text):
+            if "validate" not in line_text and "sanitize" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML243",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Batch inference - validate each input to prevent injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_streaming_inference_attacks(self, node: ast.Call) -> None:
+        """AIML244: Detect streaming inference attack risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for streaming inference
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "stream" in line_text and ("predict" in line_text or "inference" in line_text):
+            if "validate" not in line_text and "rate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML244",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Streaming inference - implement rate limiting and validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-400",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_cache_poisoning(self, node: ast.Call) -> None:
+        """AIML245: Detect model cache poisoning risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model caching
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "cache" in line_text and "model" in line_text:
+            if "validate" not in line_text and "ttl" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML245",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model cache - implement validation and TTL to prevent poisoning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_prediction_logging_risks(self, node: ast.Call) -> None:
+        """AIML246: Detect prediction logging PII risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for prediction logging
+        if isinstance(node.func, ast.Attribute):
+            if "log" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "predict" in line_text or "inference" in line_text or "output" in line_text:
+                    if "sanitize" not in line_text and "redact" not in line_text:
+                        violation = RuleViolation(
+                            rule_id="AIML246",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="Prediction logging - sanitize to prevent PII leakage",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            end_line_number=getattr(node, "end_lineno", node.lineno),
+                            end_column=getattr(node, "end_col_offset", node.col_offset),
+                            file_path=str(self.file_path),
+                            code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data=None,
+                            owasp_id="A02",
+                            cwe_id="CWE-532",
+                            source_tool="pyguard",
+                        )
+                        self.violations.append(violation)
+    
+    def _check_model_warmup_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML247: Detect model warm-up vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model warm-up
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "warmup" in line_text.replace("-", "").replace("_", "") or "warm_up" in line_text:
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML247",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Model warm-up - validate warm-up data to prevent exploitation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_health_check_information_disclosure(self, node: ast.Call) -> None:
+        """AIML248: Detect health check information disclosure."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for health check endpoints
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "health" in line_text or "readiness" in line_text or "liveness" in line_text:
+            if "version" in line_text or "model" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML248",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Health check - avoid exposing sensitive model information",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A01",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_metrics_endpoint_exposure(self, node: ast.Call) -> None:
+        """AIML249: Detect metrics endpoint exposure."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for metrics endpoints
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "metrics" in line_text and ("endpoint" in line_text or "route" in line_text):
+            if "auth" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML249",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Metrics endpoint - restrict access with authentication",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="A01",
+                    cwe_id="CWE-200",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_metadata_leakage(self, node: ast.Call) -> None:
+        """AIML250: Detect model metadata leakage."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model metadata exposure
+        if isinstance(node.func, ast.Attribute):
+            if "metadata" in node.func.attr.lower() or "info" in node.func.attr.lower():
+                line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+                
+                if "model" in line_text and ("return" in line_text or "response" in line_text):
+                    violation = RuleViolation(
+                        rule_id="AIML250",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Model metadata - avoid exposing sensitive model information",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        end_line_number=getattr(node, "end_lineno", node.lineno),
+                        end_column=getattr(node, "end_col_offset", node.col_offset),
+                        file_path=str(self.file_path),
+                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data=None,
+                        owasp_id="A01",
+                        cwe_id="CWE-200",
+                        source_tool="pyguard",
+                    )
+                    self.violations.append(violation)
+    
+    def _check_feature_flag_manipulation(self, node: ast.Call) -> None:
+        """AIML251: Detect feature flag manipulation."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for feature flags
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "feature" in line_text and ("flag" in line_text or "toggle" in line_text):
+            if "user" in line_text or "input" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML251",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Feature flag - prevent user manipulation of model behavior flags",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_circuit_breaker_bypass(self, node: ast.Call) -> None:
+        """AIML252: Detect circuit breaker bypass risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for circuit breaker usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "circuit" in line_text and "breaker" in line_text:
+            if "validate" not in line_text and "enforce" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML252",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.LOW,
+                    message="Circuit breaker - ensure proper enforcement to prevent bypass",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-754",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    # Phase 2.3.3: Edge & Mobile Deployment (8 checks - AIML253-AIML260)
+    
+    def _check_tflite_model_tampering(self, node: ast.Call) -> None:
+        """AIML253: Detect TFLite model tampering."""
+        if not self.has_tensorflow:
+            return
+        
+        # Check for TFLite usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "tflite" in line_text:
+            if "validate" not in line_text and "verify" not in line_text and "checksum" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML253",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TFLite model - verify integrity with checksums to prevent tampering",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_coreml_injection(self, node: ast.Call) -> None:
+        """AIML254: Detect Core ML injection risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for Core ML usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "coreml" in line_text:
+            if "validate" not in line_text and "verify" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML254",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Core ML model - validate model source and integrity",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-94",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_onnx_mobile_risks(self, node: ast.Call) -> None:
+        """AIML255: Detect ONNX mobile deployment risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for ONNX mobile usage
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "onnx" in line_text and ("mobile" in line_text or "edge" in line_text):
+            if "validate" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML255",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="ONNX mobile - validate model integrity and input data",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-20",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_quantized_model_vulnerabilities(self, node: ast.Call) -> None:
+        """AIML256: Detect quantized model vulnerabilities."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model quantization
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "quantiz" in line_text:
+            if "validate" not in line_text and "test" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML256",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Quantized model - validate accuracy and behavior to prevent degradation attacks",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_model_pruning_attacks(self, node: ast.Call) -> None:
+        """AIML257: Detect model pruning attack risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for model pruning
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "prun" in line_text:
+            if "validate" not in line_text and "test" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML257",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Model pruning - validate pruned model to prevent backdoor retention",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_knowledge_distillation_risks(self, node: ast.Call) -> None:
+        """AIML258: Detect knowledge distillation risks."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for knowledge distillation
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "distill" in line_text:
+            if "validate" not in line_text and "teacher" in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML258",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="Knowledge distillation - validate teacher model to prevent poisoning transfer",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML05",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_on_device_training_weaknesses(self, node: ast.Call) -> None:
+        """AIML259: Detect on-device training weaknesses."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for on-device training
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if ("on" in line_text and "device" in line_text and "train" in line_text) or "ondevice" in line_text:
+            if "validate" not in line_text and "secure" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML259",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.MEDIUM,
+                    message="On-device training - validate training data and model updates",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
+    
+    def _check_federated_learning_gaps(self, node: ast.Call) -> None:
+        """AIML260: Detect federated learning security gaps."""
+        if not self.has_ml_framework:
+            return
+        
+        # Check for federated learning
+        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        
+        if "federated" in line_text and ("learn" in line_text or "train" in line_text):
+            if "validate" not in line_text and "secure" not in line_text:
+                violation = RuleViolation(
+                    rule_id="AIML260",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Federated learning - implement secure aggregation and client validation",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     def _check_insecure_serialization(self, node: ast.Call) -> None:
         """AIML007: Detect insecure model serialization."""
