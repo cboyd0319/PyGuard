@@ -15170,13 +15170,33 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
     
     def _check_training_data_extraction(self, node: ast.Call) -> None:
         """AIML462: Detect training data extraction vulnerabilities."""
-        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        # Check if this is a model.generate() or similar call
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr.lower()
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id.lower()
         
-        # Check for LLM calls with high temperature or no output filtering
-        if any(x in line_text for x in ["temperature", "top_p", "generate"]):
-            # Check for output filtering
-            has_filtering = any(x in line_text for x in ["filter", "sanitize", "validate"])
-            if not has_filtering and "temperature" in line_text:
+        # Check for LLM generation calls
+        if func_name in ["generate", "completion", "create", "chat"]:
+            # Check for high temperature in arguments
+            has_high_temp = False
+            has_filtering = False
+            
+            for keyword in node.keywords:
+                key = keyword.arg if keyword.arg else ""
+                # Check for temperature parameter
+                if key == "temperature":
+                    if isinstance(keyword.value, ast.Constant):
+                        # High temperature (> 0.7) increases risk
+                        if isinstance(keyword.value.value, (int, float)) and keyword.value.value > 0.7:
+                            has_high_temp = True
+                # Check for output filtering indicators
+                if key in ["filter", "sanitize", "validate"]:
+                    has_filtering = True
+            
+            # Trigger if high temperature without filtering
+            if has_high_temp and not has_filtering:
                 violation = RuleViolation(
                     rule_id="AIML462",
                     category=RuleCategory.SECURITY,
@@ -15198,29 +15218,79 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
     
     def _check_memorization_exploitation(self, node: ast.Call) -> None:
         """AIML463: Detect memorization exploitation vulnerabilities."""
-        line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
+        # Check for generate/completion calls
+        func_name = ""
+        if isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr.lower()
+        elif isinstance(node.func, ast.Name):
+            func_name = node.func.id.lower()
         
-        # Check for prompts that might exploit memorization
-        if any(x in line_text for x in ["repeat", "recite", "verbatim", "exact"]):
-            if any(x in line_text for x in ["generate", "completion", "chat"]):
-                violation = RuleViolation(
-                    rule_id="AIML463",
-                    category=RuleCategory.SECURITY,
-                    severity=RuleSeverity.HIGH,
-                    message="LLM memorization exploitation - implement output validation to prevent memorized content extraction",
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    end_line_number=getattr(node, "end_lineno", node.lineno),
-                    end_column=getattr(node, "end_col_offset", node.col_offset),
-                    file_path=str(self.file_path),
-                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
-                    fix_applicability=FixApplicability.SAFE,
-                    fix_data=None,
-                    owasp_id="LLM06",
-                    cwe_id="CWE-200",
-                    source_tool="pyguard",
-                )
-                self.violations.append(violation)
+        if func_name in ["generate", "completion", "create", "chat"]:
+            # Check arguments for prompts with memorization exploitation keywords
+            # Check positional arguments
+            for arg in node.args:
+                if isinstance(arg, ast.Name):
+                    # Variable name might indicate prompt with memorization keywords
+                    # Check assignment statements in the file for this variable
+                    var_name = arg.id
+                    for line in self.lines:
+                        line_lower = line.lower()
+                        if var_name.lower() in line_lower and any(x in line_lower for x in ["repeat", "recite", "verbatim", "exact"]):
+                            violation = RuleViolation(
+                                rule_id="AIML463",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.HIGH,
+                                message="LLM memorization exploitation - implement output validation to prevent memorized content extraction",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="LLM06",
+                                cwe_id="CWE-200",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
+                            break
+            
+            # Check keyword arguments
+            for keyword in node.keywords:
+                key = keyword.arg if keyword.arg else ""
+                if key in ["prompt", "text", "input"]:
+                    # Get the prompt value or variable
+                    if isinstance(keyword.value, ast.BinOp):
+                        # Check for string concatenation with "repeat", "verbatim", etc.
+                        line_text = ast.get_source_segment(self.source_code, keyword.value) if hasattr(self, 'source_code') else ""
+                        if not line_text:
+                            # Fallback to line-based check
+                            start_line = keyword.value.lineno - 1
+                            end_line = getattr(keyword.value, 'end_lineno', keyword.value.lineno)
+                            line_text = '\n'.join(self.lines[start_line:end_line]).lower()
+                        else:
+                            line_text = line_text.lower()
+                        
+                        if any(x in line_text for x in ["repeat", "recite", "verbatim", "exact"]):
+                            violation = RuleViolation(
+                                rule_id="AIML463",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.HIGH,
+                                message="LLM memorization exploitation - implement output validation to prevent memorized content extraction",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                end_line_number=getattr(node, "end_lineno", node.lineno),
+                                end_column=getattr(node, "end_col_offset", node.col_offset),
+                                file_path=str(self.file_path),
+                                code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data=None,
+                                owasp_id="LLM06",
+                                cwe_id="CWE-200",
+                                source_tool="pyguard",
+                            )
+                            self.violations.append(violation)
     
     def _check_copyright_infringement(self, node: ast.Call) -> None:
         """AIML464: Detect copyright infringement risks."""
@@ -16185,10 +16255,13 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
         # Check for client selection in federated learning
-        if any(x in line_text for x in ["select_clients", "client_selection", "sample_clients"]):
-            # Check for secure sampling
-            has_secure = any(x in line_text for x in ["secure", "random", "reputation", "verified"])
-            if not has_secure:
+        # Match patterns like: random.sample(all_clients, ...), selected_clients = ...
+        if any(x in line_text for x in ["select_clients", "client_selection", "sample_clients", "all_clients", "_clients"]):
+            # Check for secure/reputation-based sampling
+            has_reputation = any(x in line_text for x in ["reputation", "verified", "validated", "reputation_based"])
+            # random.sample without reputation is vulnerable
+            is_random_sample = "random.sample" in line_text and not has_reputation
+            if is_random_sample or (not has_reputation and "selected_clients" in line_text):
                 violation = RuleViolation(
                     rule_id="AIML497",
                     category=RuleCategory.SECURITY,
@@ -16298,10 +16371,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
         # Check for DP with inadequate noise
-        if any(x in line_text for x in ["add_noise", "laplace", "gaussian", "dp_noise"]):
-            # Check for proper noise calibration
-            has_calibration = any(x in line_text for x in ["sensitivity", "scale", "sigma", "calibrate", "composition"])
-            if not has_calibration:
+        if any(x in line_text for x in ["add_noise", "laplace", "gaussian", "dp_noise", "random.normal", "noisy_gradient"]):
+            # Check for proper noise calibration (very small values like 0.01 are too small)
+            has_calibration = any(x in line_text for x in ["sensitivity", "scale", "sigma", "calibrate", "composition", "epsilon", "privacy_budget"])
+            # Detect obviously insufficient noise (0.01 or smaller)
+            has_insufficient_noise = any(x in line_text for x in ["0.01", "0.001", "0.0001"])
+            if not has_calibration or has_insufficient_noise:
                 violation = RuleViolation(
                     rule_id="AIML501",
                     category=RuleCategory.SECURITY,
@@ -16466,9 +16541,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
         # Check for SMPC usage
-        if any(x in line_text for x in ["mpc", "smpc", "multi_party", "secret_sharing"]):
+        if any(x in line_text for x in ["mpc", "smpc", "multi_party", "secret_shar", "mpc_compute", "secure_computation"]):
             # Check for malicious security
-            has_malicious_security = any(x in line_text for x in ["malicious", "actively_secure", "verifiable"])
+            has_malicious_security = any(x in line_text for x in ["malicious", "actively_secure", "verifiable", "malicious_secure"])
             if not has_malicious_security:
                 violation = RuleViolation(
                     rule_id="AIML507",
