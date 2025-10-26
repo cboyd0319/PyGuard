@@ -2099,6 +2099,26 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         self.generic_visit(node)
 
+    def _check_context_for_keywords(self, line_number: int, keywords: List[str], window: int = 3) -> bool:
+        """
+        Helper to check if any keywords appear in surrounding lines.
+        
+        Args:
+            line_number: The line number to check around (1-indexed)
+            keywords: List of keywords to search for
+            window: Number of lines to check before and after (default: 3)
+        
+        Returns:
+            True if any keyword is found in the context window
+        """
+        start_line = max(0, line_number - window - 1)  # Convert to 0-indexed
+        end_line = min(len(self.lines), line_number + window)
+        
+        context_lines = self.lines[start_line:end_line]
+        context_text = " ".join(context_lines).lower()
+        
+        return any(keyword in context_text for keyword in keywords)
+
     def _check_prompt_injection(self, node: ast.Call) -> None:
         """AIML001: Detect prompt injection vulnerabilities in LLM applications."""
         if not self.has_llm_framework:
@@ -15302,8 +15322,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for content generation without copyright filtering
         if any(x in line_text for x in ["generate", "create", "write"]):
             if any(x in line_text for x in ["story", "article", "book", "code", "song"]):
-                # Check for copyright filtering
-                has_copyright_check = any(x in line_text for x in ["copyright", "license", "attribution"])
+                # Check for copyright filtering in current line or surrounding context
+                has_copyright_check = (
+                    any(x in line_text for x in ["copyright", "license", "attribution", "original"]) or
+                    self._check_context_for_keywords(node.lineno, ["copyright", "copyright_check", "license", "attribution"])
+                )
                 if not has_copyright_check:
                     violation = RuleViolation(
                         rule_id="AIML464",
