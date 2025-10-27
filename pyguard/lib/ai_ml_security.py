@@ -2081,6 +2081,9 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # AIML003: Training data poisoning
         self._check_training_data_poisoning(node)
         
+        # AIML506: Differential privacy parameter manipulation (assignments)
+        self._check_dp_parameter_assignment(node)
+        
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -2095,6 +2098,26 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         self._check_federated_learning(node)
         
         self.generic_visit(node)
+
+    def _check_context_for_keywords(self, line_number: int, keywords: List[str], window: int = 3) -> bool:
+        """
+        Helper to check if any keywords appear in surrounding lines.
+        
+        Args:
+            line_number: The line number to check around (1-indexed)
+            keywords: List of keywords to search for
+            window: Number of lines to check before and after (default: 3)
+        
+        Returns:
+            True if any keyword is found in the context window
+        """
+        start_line = max(0, line_number - window - 1)  # Convert to 0-indexed
+        end_line = min(len(self.lines), line_number + window)
+        
+        context_lines = self.lines[start_line:end_line]
+        context_text = " ".join(context_lines).lower()
+        
+        return any(keyword in context_text for keyword in keywords)
 
     def _check_prompt_injection(self, node: ast.Call) -> None:
         """AIML001: Detect prompt injection vulnerabilities in LLM applications."""
@@ -15299,8 +15322,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for content generation without copyright filtering
         if any(x in line_text for x in ["generate", "create", "write"]):
             if any(x in line_text for x in ["story", "article", "book", "code", "song"]):
-                # Check for copyright filtering
-                has_copyright_check = any(x in line_text for x in ["copyright", "license", "attribution"])
+                # Check for copyright filtering in current line or surrounding context
+                has_copyright_check = (
+                    any(x in line_text for x in ["copyright", "license", "attribution", "original"]) or
+                    self._check_context_for_keywords(node.lineno, ["copyright", "copyright_check", "license", "attribution"])
+                )
                 if not has_copyright_check:
                     violation = RuleViolation(
                         rule_id="AIML464",
@@ -16313,30 +16339,32 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML499: Detect Byzantine client detection bypass vulnerabilities."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
-        # Check for federated learning without Byzantine detection
-        if any(x in line_text for x in ["federated", "fl_train", "fed_learning"]):
-            if any(x in line_text for x in ["client", "participant", "node"]):
-                # Check for Byzantine detection
-                has_detection = any(x in line_text for x in ["byzantine", "outlier", "detect", "filter", "krum"])
-                if not has_detection:
-                    violation = RuleViolation(
-                        rule_id="AIML499",
-                        category=RuleCategory.SECURITY,
-                        severity=RuleSeverity.HIGH,
-                        message="Byzantine client detection bypass - implement outlier detection and Byzantine-robust algorithms (Krum, Median)",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        end_line_number=getattr(node, "end_lineno", node.lineno),
-                        end_column=getattr(node, "end_col_offset", node.col_offset),
-                        file_path=str(self.file_path),
-                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
-                        fix_applicability=FixApplicability.SAFE,
-                        fix_data=None,
-                        owasp_id="ML03",
-                        cwe_id="CWE-345",
-                        source_tool="pyguard",
-                    )
-                    self.violations.append(violation)
+        # Check for gradient aggregation without Byzantine detection
+        is_aggregation = any(x in line_text for x in ["aggregate", "aggregation", "federated", "fl_train", "fed_learning"])
+        has_gradient = any(x in line_text for x in ["gradient", "client", "participant", "node", "worker"])
+        
+        if is_aggregation and has_gradient:
+            # Check for Byzantine detection mechanisms
+            has_detection = any(x in line_text for x in ["byzantine", "outlier", "detect", "filter", "krum", "median", "trimmed"])
+            if not has_detection:
+                violation = RuleViolation(
+                    rule_id="AIML499",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="Byzantine client detection bypass - implement outlier detection and Byzantine-robust algorithms (Krum, Median)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.SAFE,
+                    fix_data=None,
+                    owasp_id="ML03",
+                    cwe_id="CWE-345",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     def _check_privacy_budget_exploitation(self, node: ast.Call) -> None:
         """AIML500: Detect privacy budget exploitation vulnerabilities."""
@@ -16428,10 +16456,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML503: Detect homomorphic encryption weaknesses."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
-        # Check for homomorphic encryption usage
-        if any(x in line_text for x in ["homomorphic", "fhe", "ckks", "bfv", "tfhe"]):
-            # Check for key management
-            has_key_mgmt = any(x in line_text for x in ["key", "context", "params", "setup"])
+        # Check for homomorphic encryption usage (keywords or specific libraries like seal.encrypt)
+        is_he_usage = any(x in line_text for x in ["homomorphic", "fhe", "ckks", "bfv", "tfhe", "seal.encrypt", "pyfhel", "tenseal"])
+        
+        if is_he_usage:
+            # Check for key management (context, keygen, key_manager, etc.)
+            has_key_mgmt = any(x in line_text for x in ["keygen", "keygenerat", "context", "sealcontext", "key_manager", "key_management"])
             if not has_key_mgmt:
                 violation = RuleViolation(
                     rule_id="AIML503",
@@ -16456,39 +16486,48 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML504: Detect TEE gaps in federated learning."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
-        # Check for federated learning without TEE
-        if any(x in line_text for x in ["federated", "fl_", "distributed_training"]):
-            if any(x in line_text for x in ["train", "compute", "process"]):
-                # Check for TEE usage
-                has_tee = any(x in line_text for x in ["sgx", "trustzone", "tee", "enclave", "attestation"])
-                if not has_tee:
-                    violation = RuleViolation(
-                        rule_id="AIML504",
-                        category=RuleCategory.SECURITY,
-                        severity=RuleSeverity.HIGH,
-                        message="TEE gaps - implement SGX/TrustZone integration and remote attestation for federated learning",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        end_line_number=getattr(node, "end_lineno", node.lineno),
-                        end_column=getattr(node, "end_col_offset", node.col_offset),
-                        file_path=str(self.file_path),
-                        code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
-                        fix_applicability=FixApplicability.MANUAL,
-                        fix_data=None,
-                        owasp_id="ML09",
-                        cwe_id="CWE-494",
-                        source_tool="pyguard",
-                    )
-                    self.violations.append(violation)
+        # Check for TEE/enclave usage without attestation
+        has_tee_usage = any(x in line_text for x in ["sgx", "enclave", "trustzone", "tee", "load_enclave", "sgx_enclave"])
+        
+        if has_tee_usage:
+            # Check for remote attestation
+            has_attestation = any(x in line_text for x in ["attestation", "verify", "quote", "measurement", "remote_attestation"])
+            if not has_attestation:
+                violation = RuleViolation(
+                    rule_id="AIML504",
+                    category=RuleCategory.SECURITY,
+                    severity=RuleSeverity.HIGH,
+                    message="TEE gaps - implement SGX/TrustZone integration and remote attestation for federated learning",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                    file_path=str(self.file_path),
+                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                    fix_applicability=FixApplicability.MANUAL,
+                    fix_data=None,
+                    owasp_id="ML09",
+                    cwe_id="CWE-494",
+                    source_tool="pyguard",
+                )
+                self.violations.append(violation)
 
     def _check_split_learning_injection(self, node: ast.Call) -> None:
         """AIML505: Detect split learning injection vulnerabilities."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
-        # Check for split learning
-        if any(x in line_text for x in ["split_learning", "splitnn", "cut_layer"]):
-            # Check for activation protection
-            has_protection = any(x in line_text for x in ["encrypt", "protect", "secure", "validate"])
+        # Check for split learning patterns (explicit keywords or client/server model forwarding)
+        is_split_learning = (
+            any(x in line_text for x in ["split_learning", "splitnn", "cut_layer"]) or
+            ("client" in line_text and "server" in line_text and "forward" in line_text) or
+            ("client_activations" in line_text) or
+            ("client_model.forward" in line_text) or
+            ("server_model.forward" in line_text and "activations" in line_text)
+        )
+        
+        if is_split_learning:
+            # Check for activation protection/validation
+            has_protection = any(x in line_text for x in ["encrypt", "protect", "secure", "validate", "validation", "verify"])
             if not has_protection:
                 violation = RuleViolation(
                     rule_id="AIML505",
@@ -16535,6 +16574,41 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     source_tool="pyguard",
                 )
                 self.violations.append(violation)
+
+    def _check_dp_parameter_assignment(self, node: ast.Assign) -> None:
+        """AIML506: Detect hardcoded DP parameters in assignments."""
+        # Check each target of the assignment
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                var_name = target.id.lower()
+                
+                # Check if this is a DP parameter (epsilon or delta)
+                if var_name in ["epsilon", "delta"]:
+                    # Check if it's assigned a hardcoded constant value
+                    if isinstance(node.value, ast.Constant):
+                        value = node.value.value
+                        # Check for common hardcoded privacy budget values
+                        if isinstance(value, (int, float)):
+                            # Flag hardcoded epsilon/delta values
+                            if 0.01 <= value <= 10.0:  # Common DP parameter range
+                                violation = RuleViolation(
+                                    rule_id="AIML506",
+                                    category=RuleCategory.SECURITY,
+                                    severity=RuleSeverity.MEDIUM,
+                                    message="DP parameter manipulation - avoid hardcoded epsilon/delta and implement adaptive privacy budget allocation",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    end_line_number=getattr(node, "end_lineno", node.lineno),
+                                    end_column=getattr(node, "end_col_offset", node.col_offset),
+                                    file_path=str(self.file_path),
+                                    code_snippet=self.lines[node.lineno - 1] if node.lineno <= len(self.lines) else "",
+                                    fix_applicability=FixApplicability.SAFE,
+                                    fix_data=None,
+                                    owasp_id="ML09",
+                                    cwe_id="CWE-798",
+                                    source_tool="pyguard",
+                                )
+                                self.violations.append(violation)
 
     def _check_smpc_risks(self, node: ast.Call) -> None:
         """AIML507: Detect SMPC risks."""
@@ -16596,10 +16670,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         """AIML509: Detect encrypted inference vulnerabilities."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
-        # Check for encrypted inference
-        if any(x in line_text for x in ["encrypted_inference", "fhe_inference", "homomorphic_inference"]):
+        # Check for encrypted inference (explicit keywords or encryption + prediction patterns)
+        is_encrypted_inference = (
+            any(x in line_text for x in ["encrypted_inference", "fhe_inference", "homomorphic_inference"]) or
+            (any(x in line_text for x in ["he_encrypt", "encrypt", "encrypted"]) and any(x in line_text for x in ["predict", "inference", "model."]))
+        )
+        
+        if is_encrypted_inference:
             # Check for key management
-            has_key_mgmt = any(x in line_text for x in ["key_manager", "context", "params", "integrity"])
+            has_key_mgmt = any(x in line_text for x in ["key_manager", "keymanager", "sealcontext", "context", "keygen"])
             if not has_key_mgmt:
                 violation = RuleViolation(
                     rule_id="AIML509",
