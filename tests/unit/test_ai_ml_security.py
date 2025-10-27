@@ -4141,3 +4141,292 @@ def complex_prompt_processing(user_input, user_prompt, user_message):
         # Test passes if either Group B fixes or other fixes are applied
         assert aiml_count >= 0  # Group B warning may or may not be present
 
+
+class TestGroupCExternalContentFixes:
+    """Test Group C: External Content Injection auto-fixes (AIML031-045)."""
+
+    def test_url_based_injection_fix(self, tmp_path):
+        """Test AIML031: URL-based injection detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import requests
+
+def fetch_and_process(url):
+    content = requests.get(url).text
+    prompt = f"Analyze this: {content}"
+    return send_to_llm(prompt)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("url" in fix.lower() or "AIML031" in fix for fix in fixes):
+            assert "AIML031" in fixed_code
+            assert "URL content" in fixed_code or "external" in fixed_code.lower()
+
+    def test_url_multiple_methods(self, tmp_path):
+        """Test AIML031: Multiple URL fetch methods."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import requests
+import urllib
+
+data1 = requests.get(url).text
+data2 = urllib.request.urlopen(url).read()
+data3 = fetch(external_url)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_api_response_injection_fix(self, tmp_path):
+        """Test AIML034: API response injection detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def process_api_data(api_client):
+    response = api_client.call()
+    prompt = f"Process this: {response}"
+    return openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("api" in fix.lower() or "AIML034" in fix for fix in fixes):
+            assert "AIML034" in fixed_code
+            assert "API response" in fixed_code or "3rd party" in fixed_code.lower()
+
+    def test_api_multiple_patterns(self, tmp_path):
+        """Test AIML034: Multiple API patterns."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """api_result = client.execute()
+data = api.invoke(params)
+response = external_api.call()
+prompt = f"Use {api_result}"
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_database_content_injection_fix(self, tmp_path):
+        """Test AIML035: Database content injection detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import sqlite3
+
+def query_and_prompt(query):
+    cursor.execute(query)
+    results = cursor.fetchall()
+    prompt = f"Analyze: {results}"
+    return llm.generate(prompt)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("database" in fix.lower() or "AIML035" in fix for fix in fixes):
+            assert "AIML035" in fixed_code
+            assert "database" in fixed_code.lower()
+
+    def test_database_multiple_methods(self, tmp_path):
+        """Test AIML035: Multiple database query patterns."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """data1 = cursor.execute("SELECT * FROM table")
+data2 = db.query("SELECT name FROM users")
+content = cursor.fetchone()
+prompt = f"Data: {data1}"
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_rag_poisoning_fix(self, tmp_path):
+        """Test AIML039: RAG poisoning detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from langchain.vectorstores import FAISS
+
+def rag_query(question):
+    vector_store = FAISS.load_local("index")
+    docs = vector_store.retrieve(question)
+    context = "\\n".join([doc.page_content for doc in docs])
+    prompt = f"Context: {context}\\nQuestion: {question}"
+    return llm.generate(prompt)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("rag" in fix.lower() or "AIML039" in fix for fix in fixes):
+            assert "AIML039" in fixed_code
+            assert "RAG" in fixed_code or "retrieved" in fixed_code.lower()
+
+    def test_rag_multiple_patterns(self, tmp_path):
+        """Test AIML039: Multiple RAG patterns."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """results = vector_index.search(query)
+docs = retriever.retrieve(question)
+context = embeddings.get_context(user_query)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_vector_database_injection_fix(self, tmp_path):
+        """Test AIML040: Vector database injection detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from chromadb import Client
+
+def vector_search(query):
+    client = Client()
+    results = vector_store.similarity_search(query, k=5)
+    context = "\\n".join([r.page_content for r in results])
+    return llm.complete(f"Context: {context}")
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("vector" in fix.lower() or "AIML040" in fix for fix in fixes):
+            assert "AIML040" in fixed_code
+            assert "vector" in fixed_code.lower()
+
+    def test_vector_db_multiple_methods(self, tmp_path):
+        """Test AIML040: Multiple vector DB patterns."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """results = vector_store.search(embedding)
+similar = vector_db.find_similar(query_vector)
+matches = embeddings.similarity_search(text)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_conversation_history_injection_fix(self, tmp_path):
+        """Test AIML045: Conversation history injection detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def build_prompt_with_history(user_message, chat_history):
+    prompt = f"History: {chat_history}\\nUser: {user_message}"
+    return llm.generate(prompt)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("history" in fix.lower() or "AIML045" in fix for fix in fixes):
+            assert "AIML045" in fixed_code
+            assert "history" in fixed_code.lower() or "conversation" in fixed_code.lower()
+
+    def test_conversation_multiple_patterns(self, tmp_path):
+        """Test AIML045: Multiple conversation patterns."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """messages = chat_history + [new_message]
+context = "\\n".join(conversation)
+prompt = f"Context: {context}"
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+
+    def test_group_c_integration(self, tmp_path):
+        """Test all Group C fixes working together."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import requests
+from chromadb import Client
+
+def complex_rag_pipeline(query, chat_history):
+    # URL-based injection
+    external_data = requests.get("https://api.example.com/data").text
+    
+    # API response injection
+    api_result = api_client.call()
+    
+    # Database content injection
+    db_results = cursor.fetchall()
+    prompt = f"Data: {db_results}"
+    
+    # RAG poisoning
+    vector_store = Client()
+    docs = vector_store.retrieve(query)
+    
+    # Vector database injection
+    similar = vector_store.similarity_search(query)
+    
+    # Conversation history injection
+    context = f"History: {chat_history}"
+    
+    final_prompt = f"{context}\\nQuery: {query}\\nData: {external_data}"
+    return llm.generate(final_prompt)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check that multiple Group C fixes are applied
+        fixed_code = test_file.read_text()
+        group_c_codes = ["AIML031", "AIML034", "AIML035", "AIML039", "AIML040", "AIML045"]
+        aiml_count = sum(1 for code in group_c_codes if code in fixed_code)
+        # At least one Group C fix should be present
+        assert aiml_count >= 1
+

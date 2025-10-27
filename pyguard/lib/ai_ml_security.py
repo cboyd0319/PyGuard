@@ -18349,6 +18349,14 @@ class AIMLSecurityFixer:
         content = self._fix_template_literal_injection(content)
         content = self._fix_fstring_injection(content)
         content = self._fix_variable_substitution(content)
+        
+        # Stage 5: External content injection (Group C - Indirect Prompt Injection)
+        content = self._fix_url_based_injection(content)
+        content = self._fix_api_response_injection(content)
+        content = self._fix_database_content_injection(content)
+        content = self._fix_rag_poisoning(content)
+        content = self._fix_vector_database_injection(content)
+        content = self._fix_conversation_history_injection(content)
 
         # Apply unsafe fixes (only if allowed)
         if self.allow_unsafe:
@@ -19941,6 +19949,341 @@ class AIMLSecurityFixer:
                 content = "\n".join(fixed_lines)
                 self.logger.info(
                     f"Applied safe fix ({fix_id}): Added variable substitution validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_url_based_injection(self, content: str) -> str:
+        """
+        Validate URL-based content before using in prompts.
+
+        Classification: SAFE
+        - Detects external web content used in prompts
+        - Warns about content sanitization
+        - Recommends validation before LLM input
+
+        Before: prompt = f"Analyze: {requests.get(url).text}"
+        After:  # Validate and sanitize URL content before use
+
+        Reference: AIML031, CWE-94, OWASP LLM01
+        """
+        fix_id = "url_based_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for URL/web content fetching patterns
+        url_patterns = ['requests.get', 'requests.post', 'urllib', '.fetch(', '.download(', '.retrieve(']
+        
+        if any(pattern in content for pattern in url_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in url_patterns):
+                    if not line.strip().startswith("#"):
+                        # Add URL content validation warning
+                        fixed_lines.append(
+                            "# PyGuard: Validate and sanitize external URL content before LLM use [AIML031]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Malicious content from URLs can inject prompts or manipulate LLM behavior"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added URL content validation warning [AIML031]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added URL content validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_api_response_injection(self, content: str) -> str:
+        """
+        Validate API responses before using in prompts.
+
+        Classification: SAFE
+        - Detects 3rd party API data used in prompts
+        - Warns about response validation
+        - Recommends sanitization of external data
+
+        Before: prompt = f"Process: {api_client.call()}"
+        After:  # Validate API response data before LLM use
+
+        Reference: AIML034, CWE-94, OWASP LLM01
+        """
+        fix_id = "api_response_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for API call patterns
+        api_patterns = ['.call(', '.invoke(', '.execute(']
+        api_keywords = ['_api', 'api_', '_client', 'client_', '_service', 'service_']
+        
+        if any(pattern in content for pattern in api_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in api_patterns):
+                    # Check if this looks like an API call (variable names or method names with api/client/service)
+                    line_lower = line.lower()
+                    if any(keyword in line_lower for keyword in api_keywords) or 'api' in line_lower or 'client' in line_lower:
+                        if not line.strip().startswith("#"):
+                            # Add API response validation warning
+                            fixed_lines.append(
+                                "# PyGuard: Validate and sanitize 3rd party API responses [AIML034]"
+                            )
+                            fixed_lines.append(
+                                "# Risk: External API data can contain injection payloads or malicious content"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added API response validation warning [AIML034]"
+                                )
+                                modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added API response validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_database_content_injection(self, content: str) -> str:
+        """
+        Validate database content before using in prompts.
+
+        Classification: SAFE
+        - Detects database query results in prompts
+        - Warns about content validation
+        - Recommends sanitization of DB data
+
+        Before: prompt = f"Analyze: {cursor.fetchall()}"
+        After:  # Validate and sanitize database content
+
+        Reference: AIML035, CWE-94, OWASP LLM01
+        """
+        fix_id = "database_content_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for database operation patterns
+        db_patterns = ['.execute(', '.query(', '.fetchall(', '.fetchone(']
+        db_keywords = ['cursor', 'db.', 'database']
+        
+        if any(pattern in content for pattern in db_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in db_patterns):
+                    # Check if this is a database operation
+                    if any(keyword in line.lower() for keyword in db_keywords):
+                        if not line.strip().startswith("#"):
+                            # Add database content validation warning
+                            fixed_lines.append(
+                                "# PyGuard: Validate and sanitize database content before LLM use [AIML035]"
+                            )
+                            fixed_lines.append(
+                                "# Risk: Database content can be poisoned to inject malicious prompts"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added database content validation warning [AIML035]"
+                                )
+                                modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added database content validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_rag_poisoning(self, content: str) -> str:
+        """
+        Validate RAG retrieved content before using in prompts.
+
+        Classification: SAFE
+        - Detects RAG retrieval operations
+        - Warns about document validation
+        - Recommends verification of retrieved content
+
+        Before: context = vector_store.retrieve(query); prompt = f"Use: {context}"
+        After:  # Validate retrieved documents for injection
+
+        Reference: AIML039, CWE-94, OWASP LLM01
+        """
+        fix_id = "rag_poisoning"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for RAG/retrieval patterns
+        rag_patterns = ['.retrieve(', '.search(', '.query(', 'get_context', 'get_relevant']
+        
+        if any(pattern in content for pattern in rag_patterns):
+            # Check for vector/retrieval context
+            if any(keyword in content.lower() for keyword in ['vector', 'index', 'retriev', 'rag', 'embed']):
+                lines = content.split("\n")
+                fixed_lines = []
+                modified = False
+
+                for line in lines:
+                    if any(pattern in line for pattern in rag_patterns):
+                        if not line.strip().startswith("#"):
+                            # Add RAG validation warning
+                            fixed_lines.append(
+                                "# PyGuard: Validate RAG retrieved content for injection attacks [AIML039]"
+                            )
+                            fixed_lines.append(
+                                "# Risk: Poisoned documents in vector stores can manipulate LLM behavior"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added RAG content validation warning [AIML039]"
+                                )
+                                modified = True
+                    
+                    fixed_lines.append(line)
+
+                if modified:
+                    content = "\n".join(fixed_lines)
+                    self.logger.info(
+                        f"Applied safe fix ({fix_id}): Added RAG content validation",
+                        category="AI/ML Security",
+                    )
+
+        return content
+
+    def _fix_vector_database_injection(self, content: str) -> str:
+        """
+        Validate vector database search results.
+
+        Classification: SAFE
+        - Detects vector similarity searches
+        - Warns about result validation
+        - Recommends verification of embeddings
+
+        Before: results = vector_db.similarity_search(query)
+        After:  # Validate vector search results
+
+        Reference: AIML040, CWE-94, OWASP LLM01
+        """
+        fix_id = "vector_database_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for vector database patterns
+        vector_patterns = ['similarity_search', '.search(', '.find_similar(', 'vector_store', 'vector_db']
+        
+        if any(pattern in content for pattern in vector_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in vector_patterns):
+                    if not line.strip().startswith("#"):
+                        # Add vector DB validation warning
+                        fixed_lines.append(
+                            "# PyGuard: Validate vector database search results for injection [AIML040]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Malicious embeddings can poison similarity search results"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added vector database validation warning [AIML040]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added vector database validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_conversation_history_injection(self, content: str) -> str:
+        """
+        Validate conversation history before using in prompts.
+
+        Classification: SAFE
+        - Detects conversation history usage
+        - Warns about state validation
+        - Recommends sanitization of chat history
+
+        Before: prompt = f"History: {chat_history}"
+        After:  # Validate conversation history for injection
+
+        Reference: AIML045, CWE-94, OWASP LLM01
+        """
+        fix_id = "conversation_history_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for conversation/chat history patterns
+        history_patterns = ['history', 'chat_history', 'conversation', 'messages', 'context']
+        
+        if any(pattern in content.lower() for pattern in history_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line.lower() for pattern in history_patterns):
+                    # Check if used in assignment or string formatting
+                    if any(op in line for op in ['=', 'f"', "f'", '.format(', '+']):
+                        if not line.strip().startswith("#"):
+                            # Add conversation history validation warning
+                            fixed_lines.append(
+                                "# PyGuard: Validate conversation history for injection attacks [AIML045]"
+                            )
+                            fixed_lines.append(
+                                "# Risk: Malicious messages in history can manipulate future LLM responses"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added conversation history validation warning [AIML045]"
+                                )
+                                modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added conversation history validation",
                     category="AI/ML Security",
                 )
 
