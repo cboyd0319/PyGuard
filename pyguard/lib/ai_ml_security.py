@@ -18368,6 +18368,17 @@ class AIMLSecurityFixer:
         content = self._fix_hardcoded_model_names(content)
         content = self._fix_token_counting_bypass(content)
         content = self._fix_cost_overflow_attacks(content)
+        
+        # Stage 7: Output Validation & Filtering (Group E - Output Security)
+        content = self._fix_code_execution_in_response(content)
+        content = self._fix_sql_injection_generated(content)
+        content = self._fix_command_injection_generated(content)
+        content = self._fix_arbitrary_file_access(content)
+        content = self._fix_xss_generated_html(content)
+        content = self._fix_path_traversal_generated(content)
+        content = self._fix_sensitive_data_leakage(content)
+        content = self._fix_pii_disclosure_training(content)
+        content = self._fix_copyright_violation_risks(content)
 
         # Apply unsafe fixes (only if allowed)
         if self.allow_unsafe:
@@ -18717,14 +18728,664 @@ class AIMLSecurityFixer:
         - Adds validation layer
 
         Before: result = llm_response.content
-        After:  result = html.escape(llm_response.content)
+        After:  # PyGuard: Sanitize LLM output before use [AIML061]
 
         Reference: AIML061, CWE-79, OWASP LLM02
         """
         fix_id = "output_sanitization"
-        # This is a complex transformation that requires context
-        # For now, return content unchanged
-        # TODO: Implement in future iteration
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for LLM response usage patterns without sanitization
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_', 'llm_output', 'model_response', 'chat_response'
+        ]
+        
+        if any(pattern in content for pattern in llm_output_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for LLM output usage
+                if any(pattern in line for pattern in llm_output_patterns):
+                    # Check if it's being used directly without sanitization
+                    if not any(san in line for san in ['escape', 'sanitize', 'validate', 'filter']):
+                        # Add sanitization warning
+                        fixed_lines.append(
+                            "# PyGuard: Sanitize LLM output before use to prevent injection [AIML061]"
+                        )
+                        fixed_lines.append(
+                            "# Consider: html.escape(), validate patterns, or filter dangerous content"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added output sanitization warning [AIML061]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added output sanitization warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_code_execution_in_response(self, content: str) -> str:
+        """
+        Prevent code execution in LLM responses.
+
+        Classification: SAFE
+        - Detects eval/exec on LLM output
+        - Warns about dynamic code execution risks
+
+        Before: exec(llm_response.content)
+        After:  # PyGuard: CRITICAL - Never execute LLM-generated code [AIML062]
+
+        Reference: AIML062, CWE-94, OWASP LLM02
+        """
+        fix_id = "code_execution_in_response"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for dangerous code execution on LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_', 'llm_output', 'model_response'
+        ]
+        
+        dangerous_operations = ['eval(', 'exec(', 'compile(']
+        
+        if any(op in content for op in dangerous_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for dangerous operations on LLM output
+                if any(op in line for op in dangerous_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add critical security warning
+                        fixed_lines.append(
+                            "# PyGuard: CRITICAL - Never execute LLM-generated code directly [AIML062]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Arbitrary code execution, system compromise, data exfiltration"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Use sandboxing, whitelist operations, or validate thoroughly"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added code execution prevention warning [AIML062]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added code execution warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_sql_injection_generated(self, content: str) -> str:
+        """
+        Prevent SQL injection via LLM-generated queries.
+
+        Classification: SAFE
+        - Detects SQL execution from LLM output
+        - Warns about parameterization requirements
+
+        Before: cursor.execute(llm_generated_query)
+        After:  # PyGuard: Use parameterized queries, never execute LLM SQL [AIML063]
+
+        Reference: AIML063, CWE-89, OWASP LLM02
+        """
+        fix_id = "sql_injection_generated"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for SQL execution with LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_query', 'llm_sql', 'model_response'
+        ]
+        
+        sql_operations = ['cursor.execute', '.execute(', 'db.execute', 'session.execute']
+        
+        if any(op in content for op in sql_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for SQL execution with LLM output
+                if any(op in line for op in sql_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add SQL injection warning
+                        fixed_lines.append(
+                            "# PyGuard: CRITICAL - Never execute LLM-generated SQL directly [AIML063]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: SQL injection, data breach, unauthorized access"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Use parameterized queries, validate structure, whitelist operations"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added SQL injection prevention warning [AIML063]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added SQL injection warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_xss_generated_html(self, content: str) -> str:
+        """
+        Prevent XSS via LLM-generated HTML.
+
+        Classification: SAFE
+        - Detects HTML rendering from LLM output
+        - Warns about XSS prevention requirements
+
+        Before: return render_template_string(llm_response)
+        After:  # PyGuard: Escape HTML from LLM to prevent XSS [AIML064]
+
+        Reference: AIML064, CWE-79, OWASP LLM02
+        """
+        fix_id = "xss_generated_html"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for HTML rendering with LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_html', 'llm_output', 'model_response'
+        ]
+        
+        html_operations = [
+            'render_template', 'render_template_string', '.innerHTML',
+            'unsafe_allow_html=True', 'markdown.markdown'
+        ]
+        
+        if any(op in content for op in html_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for HTML rendering with LLM output
+                if any(op in line for op in html_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add XSS prevention warning
+                        fixed_lines.append(
+                            "# PyGuard: Escape HTML from LLM to prevent XSS attacks [AIML064]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Cross-site scripting, session hijacking, credential theft"
+                        )
+                        fixed_lines.append(
+                            "# Solution: html.escape(), use safe templating, sanitize HTML"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added XSS prevention warning [AIML064]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added XSS prevention warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_command_injection_generated(self, content: str) -> str:
+        """
+        Prevent command injection via LLM-generated scripts.
+
+        Classification: SAFE
+        - Detects shell execution from LLM output
+        - Warns about command injection risks
+
+        Before: subprocess.run(llm_command, shell=True)
+        After:  # PyGuard: Never execute LLM-generated shell commands [AIML065]
+
+        Reference: AIML065, CWE-78, OWASP LLM02
+        """
+        fix_id = "command_injection_generated"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for shell command execution with LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_command', 'llm_cmd', 'model_response'
+        ]
+        
+        shell_operations = [
+            'subprocess.', 'os.system', 'os.popen', 'shell=True',
+            'exec_command', 'run_command'
+        ]
+        
+        if any(op in content for op in shell_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for shell execution with LLM output
+                if any(op in line for op in shell_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add command injection warning
+                        fixed_lines.append(
+                            "# PyGuard: CRITICAL - Never execute LLM-generated shell commands [AIML065]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Command injection, system compromise, privilege escalation"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Whitelist commands, validate input, use safe APIs"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added command injection prevention warning [AIML065]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added command injection warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_path_traversal_generated(self, content: str) -> str:
+        """
+        Prevent path traversal in LLM-generated file paths.
+
+        Classification: SAFE
+        - Detects file operations with LLM paths
+        - Warns about path validation requirements
+
+        Before: open(llm_path, 'r')
+        After:  # PyGuard: Validate file paths from LLM [AIML066]
+
+        Reference: AIML066, CWE-22, OWASP LLM02
+        """
+        fix_id = "path_traversal_generated"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for file operations with LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_path', 'llm_file', 'model_response'
+        ]
+        
+        file_operations = ['open(', 'Path(', 'os.path.join', 'read_file', 'write_file']
+        
+        if any(op in content for op in file_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for file operations with LLM output
+                if any(op in line for op in file_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add path traversal warning
+                        fixed_lines.append(
+                            "# PyGuard: Validate file paths from LLM to prevent traversal [AIML066]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Path traversal, unauthorized file access, directory traversal"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Normalize paths, check base directory, whitelist locations"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added path traversal prevention warning [AIML066]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added path traversal warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_arbitrary_file_access(self, content: str) -> str:
+        """
+        Prevent arbitrary file access via LLM-generated code.
+
+        Classification: SAFE
+        - Detects file operations from LLM code
+        - Warns about access control requirements
+
+        Before: exec(llm_code)  # code contains file operations
+        After:  # PyGuard: Control file access in LLM-generated code [AIML067]
+
+        Reference: AIML067, CWE-73, OWASP LLM02
+        """
+        fix_id = "arbitrary_file_access"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for file operations in LLM-generated code
+        llm_code_patterns = [
+            'exec(', 'eval(', 'compile('
+        ]
+        
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_code', 'llm_code', 'model_response'
+        ]
+        
+        if any(pattern in content for pattern in llm_code_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for code execution with LLM output
+                if any(pattern in line for pattern in llm_code_patterns):
+                    if any(llm_pattern in line for llm_pattern in llm_output_patterns):
+                        # Add file access control warning
+                        fixed_lines.append(
+                            "# PyGuard: Control file access in LLM-generated code [AIML067]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Arbitrary file read/write, data exfiltration, system compromise"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Sandbox execution, whitelist file operations, monitor access"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added arbitrary file access prevention warning [AIML067]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added file access control warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_sensitive_data_leakage(self, content: str) -> str:
+        """
+        Prevent sensitive data leakage in LLM responses.
+
+        Classification: SAFE
+        - Detects logging/storage of LLM output
+        - Warns about PII/credential exposure
+
+        Before: logger.info(llm_response.content)
+        After:  # PyGuard: Filter sensitive data from LLM output [AIML068]
+
+        Reference: AIML068, CWE-200, OWASP LLM02
+        """
+        fix_id = "sensitive_data_leakage"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for logging/storage of LLM output
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'llm_output', 'model_response'
+        ]
+        
+        logging_operations = [
+            'logger.', 'logging.', 'print(', 'log.', 'db.save', 'db.insert'
+        ]
+        
+        if any(op in content for op in logging_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for logging/storage of LLM output
+                if any(op in line for op in logging_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add data leakage warning
+                        fixed_lines.append(
+                            "# PyGuard: Filter sensitive data from LLM output before logging [AIML068]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: PII disclosure, credential leakage, compliance violations"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Redact PII, filter credentials, use secure logging"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added sensitive data leakage prevention warning [AIML068]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added data leakage warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_pii_disclosure_training(self, content: str) -> str:
+        """
+        Prevent PII disclosure from LLM training data.
+
+        Classification: SAFE
+        - Detects unfiltered LLM responses
+        - Warns about PII detection requirements
+
+        Before: return llm_response.content
+        After:  # PyGuard: Scan for PII in LLM responses [AIML069]
+
+        Reference: AIML069, CWE-359, OWASP LLM02
+        """
+        fix_id = "pii_disclosure_training"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for unfiltered LLM responses being returned/stored
+        llm_output_patterns = [
+            'return.*response.content', 'return.*llm_response',
+            'return.*completion.text', 'return.*model_response'
+        ]
+        
+        if any(re.search(pattern, content) for pattern in llm_output_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for returning LLM output without PII scanning
+                if 'return' in line and any(pattern in line for pattern in [
+                    'response.content', 'llm_response', 'completion.text', 'model_response'
+                ]):
+                    if 'pii' not in line.lower() and 'redact' not in line.lower():
+                        # Add PII detection warning
+                        fixed_lines.append(
+                            "# PyGuard: Scan for PII in LLM responses before returning [AIML069]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: PII disclosure, GDPR violations, privacy breaches"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Use PII detection, redact sensitive info, implement filters"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added PII disclosure prevention warning [AIML069]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added PII detection warning",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_copyright_violation_risks(self, content: str) -> str:
+        """
+        Prevent copyright violation risks from LLM memorized content.
+
+        Classification: SAFE
+        - Detects unvalidated LLM content usage
+        - Warns about copyright checking requirements
+
+        Before: publish(llm_content)
+        After:  # PyGuard: Check for copyrighted content in LLM output [AIML070]
+
+        Reference: AIML070, OWASP LLM02
+        """
+        fix_id = "copyright_violation_risks"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Look for publishing/distributing LLM content
+        llm_output_patterns = [
+            'response.content', 'llm_response', 'completion.text',
+            'generated_content', 'llm_output', 'model_response'
+        ]
+        
+        publishing_operations = [
+            'publish', 'distribute', 'save_article', 'create_post',
+            'upload', 'share', 'write_file'
+        ]
+        
+        if any(op in content.lower() for op in publishing_operations):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if line.strip().startswith("#"):
+                    fixed_lines.append(line)
+                    continue
+
+                # Check for publishing LLM content
+                if any(op in line.lower() for op in publishing_operations):
+                    if any(pattern in line for pattern in llm_output_patterns):
+                        # Add copyright warning
+                        fixed_lines.append(
+                            "# PyGuard: Check for copyrighted content in LLM output [AIML070]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: Copyright infringement, legal liability, DMCA violations"
+                        )
+                        fixed_lines.append(
+                            "# Solution: Check originality, use plagiarism detection, add disclaimers"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added copyright violation prevention warning [AIML070]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added copyright check warning",
+                    category="AI/ML Security",
+                )
+
         return content
 
     def _fix_model_versioning(self, content: str) -> str:
