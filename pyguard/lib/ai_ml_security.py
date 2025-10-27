@@ -15354,8 +15354,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for code generation followed by execution
         if any(x in line_text for x in ["generate", "complete"]):
             if any(x in line_text for x in ["code", "function", "script"]):
-                # Check for security validation
-                has_validation = any(x in line_text for x in ["validate", "scan", "check", "lint"])
+                # Check for security validation in current line OR surrounding context
+                has_validation = (
+                    any(x in line_text for x in ["validate", "scan", "check", "lint"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["validate_security", "scan_vulnerabilities", "code_validator", "validate", "scan", "check"],
+                        window=3
+                    )
+                )
                 if not has_validation:
                     violation = RuleViolation(
                         rule_id="AIML465",
@@ -15383,8 +15390,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for user input being passed to LLM without jailbreak detection
         if any(x in line_text for x in ["user", "input", "prompt"]):
             if any(x in line_text for x in ["generate", "completion", "chat"]):
-                # Check for jailbreak detection
-                has_jailbreak_detection = any(x in line_text for x in ["jailbreak", "safety", "guardrail", "moderate"])
+                # Check for jailbreak detection in current line OR surrounding context
+                has_jailbreak_detection = (
+                    any(x in line_text for x in ["jailbreak", "safety", "guardrail", "moderate"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["detect_jailbreak", "jailbreak_detection", "safety_filter", "input_guardrail", "jailbreak", "safety"],
+                        window=3
+                    )
+                )
                 if not has_jailbreak_detection:
                     violation = RuleViolation(
                         rule_id="AIML466",
@@ -15411,8 +15425,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # Check for content generation without moderation
         if any(x in line_text for x in ["generate", "create", "complete"]):
-            # Check for content moderation
-            has_moderation = any(x in line_text for x in ["moderate", "filter", "toxicity", "safety"])
+            # Check for content moderation in current line OR surrounding context
+            has_moderation = (
+                any(x in line_text for x in ["moderate", "filter", "toxicity", "safety"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["moderate_content", "toxicity_check", "content_moderation", "safety_filter", "moderate", "toxicity"],
+                    window=3
+                )
+            )
             if not has_moderation:
                 violation = RuleViolation(
                     rule_id="AIML467",
@@ -15439,8 +15460,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # Check for content generation without bias detection
         if any(x in line_text for x in ["generate", "predict", "classify"]):
-            # Check for bias detection
-            has_bias_detection = any(x in line_text for x in ["bias", "fairness", "equity"])
+            # Check for bias detection in current line OR surrounding context
+            has_bias_detection = (
+                any(x in line_text for x in ["bias", "fairness", "equity"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["check_bias", "bias_check", "fairness_check", "demographic_parity", "bias", "fairness"],
+                    window=3
+                )
+            )
             if not has_bias_detection:
                 violation = RuleViolation(
                     rule_id="AIML468",
@@ -15468,8 +15496,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for factual content generation without verification
         if any(x in line_text for x in ["generate", "answer", "explain"]):
             if any(x in line_text for x in ["fact", "data", "statistic", "research"]):
-                # Check for fact-checking
-                has_verification = any(x in line_text for x in ["verify", "source", "cite", "reference"])
+                # Check for fact-checking in current line OR surrounding context
+                has_verification = (
+                    any(x in line_text for x in ["verify", "source", "cite", "reference"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["verify_sources", "fact_check", "verify_accuracy", "ground_truth", "verify", "sources"],
+                        window=3
+                    )
+                )
                 if not has_verification:
                     violation = RuleViolation(
                         rule_id="AIML469",
@@ -15497,8 +15532,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for output handling without robust filtering
         if any(x in line_text for x in ["response", "output", "result"]):
             if any(x in line_text for x in ["generate", "complete", "chat"]):
-                # Check for defense-in-depth filtering
-                has_robust_filtering = any(x in line_text for x in ["multi", "layer", "defense", "robust"])
+                # Check for defense-in-depth filtering in current line OR surrounding context
+                has_robust_filtering = (
+                    any(x in line_text for x in ["multi", "layer", "defense", "robust"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["multi_layer_filter", "output_filter", "content_filter", "filter", "sanitize"],
+                        window=3
+                    )
+                )
                 if not has_robust_filtering:
                     violation = RuleViolation(
                         rule_id="AIML470",
@@ -15557,8 +15599,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for DALL-E usage without content moderation
         if any(x in line_text for x in ["dalle", "dall-e", "dall_e"]):
             if any(x in line_text for x in ["generate", "create", "image"]):
-                # Check for content moderation
-                has_moderation = any(x in line_text for x in ["moderate", "filter", "safety"])
+                # Check for content moderation in current line OR surrounding context
+                has_moderation = (
+                    any(x in line_text for x in ["moderate", "filter", "safety"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["moderate_image", "content_moderation", "image_filter", "moderate", "filter"],
+                        window=3
+                    )
+                )
                 if not has_moderation:
                     violation = RuleViolation(
                         rule_id="AIML472",
@@ -15642,8 +15691,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for VAE latent vector operations without validation
         if "vae" in line_text or "variational" in line_text:
             if any(x in line_text for x in ["latent", "encode", "decode"]):
-                # Check for input validation
-                has_validation = any(x in line_text for x in ["validate", "check", "clamp", "clip"])
+                # Check for input validation in current line OR surrounding context
+                has_validation = (
+                    any(x in line_text for x in ["validate", "check", "clamp", "clip"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["validate_latent", "validated_latent", "latent_validation", "validate", "verify"],
+                        window=3
+                    )
+                )
                 if not has_validation:
                     violation = RuleViolation(
                         rule_id="AIML475",
@@ -15728,8 +15784,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for 3D model generation without validation
         if any(x in line_text for x in ["point-e", "point_e", "shap-e", "shap_e", "3d"]):
             if any(x in line_text for x in ["generate", "create", "model"]):
-                # Check for output validation
-                has_validation = any(x in line_text for x in ["validate", "check", "verify", "scan"])
+                # Check for output validation in current line OR surrounding context
+                has_validation = (
+                    any(x in line_text for x in ["validate", "check", "verify", "scan"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["validate_3d_model", "validated", "model_validation", "validate", "verify"],
+                        window=3
+                    )
+                )
                 if not has_validation:
                     violation = RuleViolation(
                         rule_id="AIML478",
@@ -15757,8 +15820,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for music generation without copyright protection
         if any(x in line_text for x in ["jukebox", "musiclm", "music_lm", "music"]):
             if any(x in line_text for x in ["generate", "create", "compose"]):
-                # Check for copyright protection
-                has_copyright_check = any(x in line_text for x in ["copyright", "watermark", "license"])
+                # Check for copyright protection in current line OR surrounding context
+                has_copyright_check = (
+                    any(x in line_text for x in ["copyright", "watermark", "license"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["apply_watermark", "watermarked", "copyright_check", "watermark", "copyright"],
+                        window=3
+                    )
+                )
                 if not has_copyright_check:
                     violation = RuleViolation(
                         rule_id="AIML479",
@@ -15817,8 +15887,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for CLIP usage without integrity verification
         if any(x in line_text for x in ["clip", "contrastive"]):
             if any(x in line_text for x in ["model", "encode", "embed"]):
-                # Check for integrity verification
-                has_verification = any(x in line_text for x in ["verify", "validate", "check_integrity"])
+                # Check for integrity verification in current line OR surrounding context
+                has_verification = (
+                    any(x in line_text for x in ["verify", "validate", "check_integrity"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["verify_model_integrity", "model_verification", "integrity_check", "verify", "validate"],
+                        window=3
+                    )
+                )
                 if not has_verification:
                     violation = RuleViolation(
                         rule_id="AIML481",
@@ -16020,8 +16097,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for CoCa usage without caption validation
         if any(x in line_text for x in ["coca", "caption"]):
             if any(x in line_text for x in ["generate", "create", "produce"]):
-                # Check for caption validation
-                has_validation = any(x in line_text for x in ["validate", "filter", "sanitize"])
+                # Check for caption validation in current line OR surrounding context
+                has_validation = (
+                    any(x in line_text for x in ["validate", "filter", "sanitize"]) or
+                    self._check_context_for_keywords(
+                        node.lineno,
+                        ["validate_caption", "validated_caption", "caption_validation", "validate", "filter"],
+                        window=3
+                    )
+                )
                 if not has_validation:
                     violation = RuleViolation(
                         rule_id="AIML488",
@@ -16490,8 +16574,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         has_tee_usage = any(x in line_text for x in ["sgx", "enclave", "trustzone", "tee", "load_enclave", "sgx_enclave"])
         
         if has_tee_usage:
-            # Check for remote attestation
-            has_attestation = any(x in line_text for x in ["attestation", "verify", "quote", "measurement", "remote_attestation"])
+            # Check for remote attestation in current line OR surrounding context
+            has_attestation = (
+                any(x in line_text for x in ["attestation", "verify", "quote", "measurement", "remote_attestation"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["remote_attestation", "get_remote_attestation", "verify_attestation", "attestation", "measurement"],
+                    window=3
+                )
+            )
             if not has_attestation:
                 violation = RuleViolation(
                     rule_id="AIML504",
@@ -16526,8 +16617,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         )
         
         if is_split_learning:
-            # Check for activation protection/validation
-            has_protection = any(x in line_text for x in ["encrypt", "protect", "secure", "validate", "validation", "verify"])
+            # Check for activation protection/validation in current line OR surrounding context
+            has_protection = (
+                any(x in line_text for x in ["encrypt", "protect", "secure", "validate", "validation", "verify"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["validate_activations", "gradient_verification", "activation_protection", "validate", "verify"],
+                    window=3
+                )
+            )
             if not has_protection:
                 violation = RuleViolation(
                     rule_id="AIML505",
@@ -16644,8 +16742,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # Check for TEE usage
         if any(x in line_text for x in ["sgx", "enclave", "tee", "trustzone"]):
-            # Check for side-channel mitigation
-            has_mitigation = any(x in line_text for x in ["mitigation", "constant_time", "oblivious", "side_channel"])
+            # Check for side-channel mitigation in current line OR surrounding context
+            has_mitigation = (
+                any(x in line_text for x in ["mitigation", "constant_time", "oblivious", "side_channel"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["side_channel_mitigation", "enable_oblivious_ram", "constant_time", "verify_enclave_measurement", "mitigation"],
+                    window=3
+                )
+            )
             if not has_mitigation:
                 violation = RuleViolation(
                     rule_id="AIML508",
@@ -16677,8 +16782,15 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         )
         
         if is_encrypted_inference:
-            # Check for key management
-            has_key_mgmt = any(x in line_text for x in ["key_manager", "keymanager", "sealcontext", "context", "keygen"])
+            # Check for key management in current line OR surrounding context
+            has_key_mgmt = (
+                any(x in line_text for x in ["key_manager", "keymanager", "sealcontext", "context", "keygen"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["securekeymanager", "key_manager", "get_public_key", "verify_ciphertext_integrity", "key_rotation"],
+                    window=3
+                )
+            )
             if not has_key_mgmt:
                 violation = RuleViolation(
                     rule_id="AIML509",
@@ -16705,8 +16817,16 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         # Check for ZKP usage
         if any(x in line_text for x in ["zkp", "zero_knowledge", "proof", "zk_snark", "zk_stark"]):
-            # Check for soundness verification
-            has_verification = any(x in line_text for x in ["verify", "soundness", "challenge", "commitment"])
+            # Check for soundness verification in current line OR surrounding context
+            # Focus on soundness checks, not just generic verify
+            has_verification = (
+                any(x in line_text for x in ["soundness", "check_soundness"]) or
+                self._check_context_for_keywords(
+                    node.lineno,
+                    ["check_soundness", "soundness_verification", "soundness=true", "assert verified"],
+                    window=3
+                )
+            )
             if not has_verification:
                 violation = RuleViolation(
                     rule_id="AIML510",
