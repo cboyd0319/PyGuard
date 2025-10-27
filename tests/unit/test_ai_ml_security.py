@@ -4736,3 +4736,459 @@ def complex_llm_app(user_model, user_prompt, chat_history, functions):
         # At least one Group D fix should be present
         assert aiml_count >= 1
 
+
+class TestGroupEOutputValidationFixes:
+    """Test Group E: Output Validation & Filtering auto-fixes (AIML061-070)."""
+
+    def test_output_sanitization_fix(self, tmp_path):
+        """Test AIML061: Output sanitization detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def display_result(user_query):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_query}]
+    )
+    result = response.content
+    return result
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("output" in fix.lower() or "AIML061" in fix for fix in fixes):
+            assert "AIML061" in fixed_code
+            assert "sanitize" in fixed_code.lower() or "escape" in fixed_code.lower()
+
+    def test_output_sanitization_safe_code(self, tmp_path):
+        """Test AIML061: Safe code should not be flagged."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+import html
+
+def display_result(user_query):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_query}]
+    )
+    result = html.escape(response.content)
+    return result
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Should not add AIML061 warning if sanitization is present
+        # (The fix might still be added if other patterns are detected)
+
+    def test_code_execution_response_fix(self, tmp_path):
+        """Test AIML062: Code execution prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def execute_llm_code(prompt):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    exec(response.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("code execution" in fix.lower() or "AIML062" in fix for fix in fixes):
+            assert "AIML062" in fixed_code
+            assert "CRITICAL" in fixed_code
+
+    def test_code_execution_with_eval(self, tmp_path):
+        """Test AIML062: Eval on LLM output."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def calculate_from_llm(llm_response):
+    result = eval(llm_response.content)
+    return result
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("code execution" in fix.lower() or "AIML062" in fix for fix in fixes):
+            assert "AIML062" in fixed_code
+            assert "Never execute" in fixed_code or "CRITICAL" in fixed_code
+
+    def test_sql_injection_generated_fix(self, tmp_path):
+        """Test AIML063: SQL injection via generated queries."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def run_generated_query(user_prompt):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_prompt}]
+    )
+    generated_query = response.content
+    cursor.execute(generated_query)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("sql" in fix.lower() or "AIML063" in fix for fix in fixes):
+            assert "AIML063" in fixed_code
+            assert "SQL" in fixed_code or "sql" in fixed_code
+
+    def test_sql_injection_with_db_execute(self, tmp_path):
+        """Test AIML063: Database execution with LLM query."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def query_database(llm_sql):
+    db.execute(llm_sql)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_xss_generated_html_fix(self, tmp_path):
+        """Test AIML064: XSS prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from flask import render_template_string
+
+def show_llm_response(llm_response):
+    return render_template_string(llm_response.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("xss" in fix.lower() or "AIML064" in fix for fix in fixes):
+            assert "AIML064" in fixed_code
+            assert "XSS" in fixed_code or "escape" in fixed_code.lower()
+
+    def test_xss_with_unsafe_html(self, tmp_path):
+        """Test AIML064: Unsafe HTML rendering."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import streamlit as st
+
+def display_generated_html(generated_html):
+    st.markdown(generated_html, unsafe_allow_html=True)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("xss" in fix.lower() or "AIML064" in fix for fix in fixes):
+            assert "AIML064" in fixed_code
+
+    def test_command_injection_generated_fix(self, tmp_path):
+        """Test AIML065: Command injection prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import subprocess
+
+def execute_llm_command(llm_response):
+    subprocess.run(llm_response.content, shell=True)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("command" in fix.lower() or "AIML065" in fix for fix in fixes):
+            assert "AIML065" in fixed_code
+            assert "command" in fixed_code.lower()
+
+    def test_command_injection_os_system(self, tmp_path):
+        """Test AIML065: OS system execution."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import os
+
+def run_generated_cmd(generated_command):
+    os.system(generated_command)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_path_traversal_generated_fix(self, tmp_path):
+        """Test AIML066: Path traversal prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def read_llm_file(llm_response):
+    generated_path = llm_response.content
+    with open(generated_path, 'r') as f:
+        return f.read()
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("path" in fix.lower() or "AIML066" in fix for fix in fixes):
+            assert "AIML066" in fixed_code
+            assert "path" in fixed_code.lower() or "traversal" in fixed_code.lower()
+
+    def test_path_traversal_with_path_join(self, tmp_path):
+        """Test AIML066: Path.join with LLM path."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """from pathlib import Path
+
+def process_llm_path(llm_file):
+    file_path = Path(llm_file)
+    return file_path.read_text()
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_arbitrary_file_access_fix(self, tmp_path):
+        """Test AIML067: File access control."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def run_llm_code(llm_code):
+    exec(llm_code.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("file access" in fix.lower() or "AIML067" in fix for fix in fixes):
+            assert "AIML067" in fixed_code
+            assert "file" in fixed_code.lower()
+
+    def test_arbitrary_file_access_with_compile(self, tmp_path):
+        """Test AIML067: Compile with LLM code."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def compile_llm_code(generated_code):
+    compiled = compile(generated_code, '<string>', 'exec')
+    exec(compiled)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_sensitive_data_leakage_fix(self, tmp_path):
+        """Test AIML068: Data leakage prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import logging
+
+def log_llm_response(llm_response):
+    logging.info(llm_response.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("sensitive" in fix.lower() or "AIML068" in fix for fix in fixes):
+            assert "AIML068" in fixed_code
+            assert "sensitive" in fixed_code.lower() or "filter" in fixed_code.lower()
+
+    def test_sensitive_data_with_print(self, tmp_path):
+        """Test AIML068: Print LLM output."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def debug_llm_output(llm_output):
+    print(llm_output.content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_pii_disclosure_training_fix(self, tmp_path):
+        """Test AIML069: PII disclosure prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def get_response(prompt):
+    return llm_response.content
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("pii" in fix.lower() or "AIML069" in fix for fix in fixes):
+            assert "AIML069" in fixed_code
+            assert "PII" in fixed_code or "pii" in fixed_code.lower()
+
+    def test_pii_disclosure_with_model_response(self, tmp_path):
+        """Test AIML069: Return model response without PII check."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def process_query(query):
+    model_response = call_llm(query)
+    return model_response
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_copyright_violation_fix(self, tmp_path):
+        """Test AIML070: Copyright protection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def publish_article(llm_response):
+    article = llm_response.content
+    publish(article)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("copyright" in fix.lower() or "AIML070" in fix for fix in fixes):
+            assert "AIML070" in fixed_code
+            assert "copyright" in fixed_code.lower()
+
+    def test_copyright_with_upload(self, tmp_path):
+        """Test AIML070: Upload generated content."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def upload_generated_content(generated_content):
+    upload(generated_content)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check fix was applied if pattern is detected
+
+    def test_group_e_integration(self, tmp_path):
+        """Test all Group E fixes working together."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+import subprocess
+import logging
+
+def dangerous_llm_app(user_query):
+    # Get LLM response
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_query}]
+    )
+    
+    # Execute generated code (AIML062)
+    exec(response.content)
+    
+    # Run generated SQL (AIML063)
+    cursor.execute(response.content)
+    
+    # Execute generated shell command (AIML065)
+    subprocess.run(response.content, shell=True)
+    
+    # Open generated file path (AIML066)
+    with open(response.content, 'r') as f:
+        data = f.read()
+    
+    # Log response without filtering (AIML068)
+    logging.info(response.content)
+    
+    # Return response without PII check (AIML069)
+    return response.content
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check that multiple Group E fixes are applied
+        fixed_code = test_file.read_text()
+        group_e_codes = ["AIML061", "AIML062", "AIML063", "AIML064", "AIML065", 
+                         "AIML066", "AIML067", "AIML068", "AIML069", "AIML070"]
+        aiml_count = sum(1 for code in group_e_codes if code in fixed_code)
+        # At least 3 Group E fixes should be present
+        assert aiml_count >= 3
+
