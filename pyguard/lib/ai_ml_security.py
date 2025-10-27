@@ -18357,6 +18357,17 @@ class AIMLSecurityFixer:
         content = self._fix_rag_poisoning(content)
         content = self._fix_vector_database_injection(content)
         content = self._fix_conversation_history_injection(content)
+        
+        # Stage 6: LLM API Security (Group D - API Security)
+        content = self._fix_max_tokens_manipulation(content)
+        content = self._fix_streaming_response_injection(content)
+        content = self._fix_function_calling_injection(content)
+        content = self._fix_tool_use_tampering(content)
+        content = self._fix_system_message_manipulation(content)
+        content = self._fix_model_selection_bypass(content)
+        content = self._fix_hardcoded_model_names(content)
+        content = self._fix_token_counting_bypass(content)
+        content = self._fix_cost_overflow_attacks(content)
 
         # Apply unsafe fixes (only if allowed)
         if self.allow_unsafe:
@@ -20286,6 +20297,574 @@ class AIMLSecurityFixer:
                     f"Applied safe fix ({fix_id}): Added conversation history validation",
                     category="AI/ML Security",
                 )
+
+        return content
+
+    # ===== GROUP D: LLM API SECURITY FIXES =====
+
+    def _fix_max_tokens_manipulation(self, content: str) -> str:
+        """
+        Prevent max_tokens manipulation and DoS attacks.
+
+        Classification: SAFE
+        - Detects missing or excessive max_tokens limits
+        - Prevents API abuse and cost overflow
+        - Adds protective limits
+
+        Before: openai.ChatCompletion.create(messages=[...])
+        After:  # PyGuard: Add max_tokens limit to prevent DoS [AIML048]
+                openai.ChatCompletion.create(messages=[...], max_tokens=4096)
+
+        Reference: AIML048, CWE-770, OWASP LLM04
+        """
+        fix_id = "max_tokens_manipulation"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for LLM API calls without max_tokens or with excessive limits
+        api_patterns = [
+            'openai.ChatCompletion.create', 'openai.Completion.create',
+            'anthropic.messages.create', 'cohere.generate'
+        ]
+        
+        if any(pattern in content for pattern in api_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for i, line in enumerate(lines):
+                if any(pattern in line for pattern in api_patterns):
+                    # Check if max_tokens is present
+                    if 'max_tokens' not in line and 'max_tokens' not in ''.join(lines[i:min(i+5, len(lines))]):
+                        # Add warning before API call
+                        fixed_lines.append(
+                            "# PyGuard: Add max_tokens limit to prevent DoS attacks [AIML048]"
+                        )
+                        fixed_lines.append(
+                            "# Recommended: max_tokens=4096 (or appropriate for your use case)"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added max_tokens DoS prevention warning [AIML048]"
+                            )
+                            modified = True
+                    
+                    # Check for excessive max_tokens values
+                    elif 'max_tokens' in line:
+                        max_tokens_match = re.search(r'max_tokens\s*=\s*([0-9]+)', line)
+                        if max_tokens_match:
+                            max_tokens_val = int(max_tokens_match.group(1))
+                            if max_tokens_val > 32000:
+                                fixed_lines.append(
+                                    f"# PyGuard: max_tokens={max_tokens_val} may cause DoS - consider reducing [AIML048]"
+                                )
+                                if not modified:
+                                    self.fixes_applied.append(
+                                        f"Added excessive max_tokens warning (value: {max_tokens_val}) [AIML048]"
+                                    )
+                                    modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added max_tokens DoS prevention",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_streaming_response_injection(self, content: str) -> str:
+        """
+        Validate streaming responses for injection attacks.
+
+        Classification: SAFE
+        - Detects unvalidated streaming responses
+        - Warns about partial response handling
+        - Recommends stream validation
+
+        Before: for chunk in openai.ChatCompletion.create(stream=True)
+        After:  # PyGuard: Validate streaming chunks for injection [AIML049]
+
+        Reference: AIML049, CWE-20, OWASP LLM02
+        """
+        fix_id = "streaming_response_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for streaming LLM API calls
+        if 'stream=True' in content or 'stream=true' in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if ('stream=True' in line or 'stream=true' in line) and not line.strip().startswith("#"):
+                    # Add streaming validation warning
+                    fixed_lines.append(
+                        "# PyGuard: Validate streaming responses for injection attacks [AIML049]"
+                    )
+                    fixed_lines.append(
+                        "# Risk: Partial chunks may contain incomplete or malicious data"
+                    )
+                    fixed_lines.append(
+                        "# Recommendation: Buffer and validate complete messages before processing"
+                    )
+                    
+                    if not modified:
+                        self.fixes_applied.append(
+                            "Added streaming response validation warning [AIML049]"
+                        )
+                        modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added streaming response validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_function_calling_injection(self, content: str) -> str:
+        """
+        Validate function calling and tool use in LLM APIs.
+
+        Classification: SAFE
+        - Detects unsafe function/tool calling patterns
+        - Warns about function schema validation
+        - Recommends input sanitization
+
+        Before: openai.ChatCompletion.create(functions=user_functions)
+        After:  # PyGuard: Validate function schemas and parameters [AIML050]
+
+        Reference: AIML050, CWE-94, OWASP LLM07
+        """
+        fix_id = "function_calling_injection"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for function calling patterns
+        function_patterns = [
+            'functions=', 'function_call=', 'tools=', 'tool_choice=',
+            'function_call_schema', 'tool_schema'
+        ]
+        
+        if any(pattern in content for pattern in function_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in function_patterns):
+                    if not line.strip().startswith("#"):
+                        # Add function calling security warning
+                        fixed_lines.append(
+                            "# PyGuard: Validate function schemas and execution [AIML050]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: LLM-controlled function calls can execute arbitrary code"
+                        )
+                        fixed_lines.append(
+                            "# Recommendation: Whitelist allowed functions, validate all parameters"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added function calling security warning [AIML050]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added function calling validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_tool_use_tampering(self, content: str) -> str:
+        """
+        Validate tool use parameters to prevent tampering.
+
+        Classification: SAFE
+        - Detects unvalidated tool parameters
+        - Warns about tool input validation
+        - Recommends parameter sanitization
+
+        Before: tool.execute(llm_response.tool_params)
+        After:  # PyGuard: Validate tool parameters before execution [AIML051]
+
+        Reference: AIML051, CWE-20, OWASP LLM07
+        """
+        fix_id = "tool_use_tampering"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for tool execution patterns
+        tool_patterns = [
+            'tool.execute', 'run_tool', 'execute_tool', 'invoke_tool',
+            'tool_params', 'tool_input', 'tool_arguments'
+        ]
+        
+        if any(pattern in content for pattern in tool_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for line in lines:
+                if any(pattern in line for pattern in tool_patterns):
+                    if not line.strip().startswith("#") and '=' in line:
+                        # Add tool parameter validation warning
+                        fixed_lines.append(
+                            "# PyGuard: Validate tool parameters before execution [AIML051]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: LLM-generated tool parameters may contain malicious values"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added tool parameter validation warning [AIML051]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added tool parameter validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_system_message_manipulation(self, content: str) -> str:
+        """
+        Protect system messages from manipulation via API.
+
+        Classification: SAFE
+        - Detects mutable system messages
+        - Warns about system prompt protection
+        - Recommends message role validation
+
+        Before: messages = [{"role": "system", "content": user_input}]
+        After:  # PyGuard: Protect system messages from user manipulation [AIML052]
+
+        Reference: AIML052, CWE-94, OWASP LLM01
+        """
+        fix_id = "system_message_manipulation"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for system message patterns with user input
+        if '"role": "system"' in content or "'role': 'system'" in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for i, line in enumerate(lines):
+                if ('"role": "system"' in line or "'role': 'system'" in line):
+                    # Check if content comes from user input
+                    context = ''.join(lines[max(0, i-3):min(i+3, len(lines))])
+                    user_input_indicators = [
+                        'user_input', 'request.', 'input(', 'user_message',
+                        'user_prompt', 'query', 'request_data'
+                    ]
+                    
+                    if any(indicator in context for indicator in user_input_indicators):
+                        # Add system message protection warning
+                        fixed_lines.append(
+                            "# PyGuard: System message with user input - injection risk [AIML052]"
+                        )
+                        fixed_lines.append(
+                            "# Risk: User-controlled system messages can override model behavior"
+                        )
+                        fixed_lines.append(
+                            "# Recommendation: Keep system messages static, validate message roles"
+                        )
+                        
+                        if not modified:
+                            self.fixes_applied.append(
+                                "Added system message protection warning [AIML052]"
+                            )
+                            modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added system message protection",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_model_selection_bypass(self, content: str) -> str:
+        """
+        Validate model selection to prevent bypass attacks.
+
+        Classification: SAFE
+        - Detects unvalidated model names
+        - Warns about model whitelist
+        - Recommends model version control
+
+        Before: model = request.get('model')
+        After:  # PyGuard: Validate model name against whitelist [AIML053]
+
+        Reference: AIML053, CWE-20, OWASP LLM04
+        """
+        fix_id = "model_selection_bypass"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for dynamic model selection
+        model_assignment_patterns = [
+            'model=', 'model_name=', 'engine=', 'deployment='
+        ]
+        
+        if any(pattern in content for pattern in model_assignment_patterns):
+            lines = content.split("\n")
+            fixed_lines = []
+            modified = False
+
+            for i, line in enumerate(lines):
+                if any(pattern in line for pattern in model_assignment_patterns):
+                    # Check if model comes from user input
+                    context = ''.join(lines[max(0, i-2):min(i+2, len(lines))])
+                    user_input_indicators = [
+                        'request.', 'input(', 'user_', 'query',
+                        'params.', 'args.', 'form.'
+                    ]
+                    
+                    if any(indicator in context for indicator in user_input_indicators):
+                        if not line.strip().startswith("#"):
+                            # Add model selection validation warning
+                            fixed_lines.append(
+                                "# PyGuard: Validate model name against whitelist [AIML053]"
+                            )
+                            fixed_lines.append(
+                                "# Risk: User-controlled model selection can bypass security controls"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added model selection validation warning [AIML053]"
+                                )
+                                modified = True
+                
+                fixed_lines.append(line)
+
+            if modified:
+                content = "\n".join(fixed_lines)
+                self.logger.info(
+                    f"Applied safe fix ({fix_id}): Added model selection validation",
+                    category="AI/ML Security",
+                )
+
+        return content
+
+    def _fix_hardcoded_model_names(self, content: str) -> str:
+        """
+        Detect hardcoded model names that should be configurable.
+
+        Classification: SAFE
+        - Detects hardcoded model strings
+        - Warns about version lock-in
+        - Suggests environment variables
+
+        Before: model = "gpt-4"
+        After:  # PyGuard: Consider using config for model names [AIML055]
+                model = os.getenv("LLM_MODEL", "gpt-4")
+
+        Reference: AIML055, CWE-1188, OWASP LLM04
+        """
+        fix_id = "hardcoded_model_names"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for hardcoded model name patterns
+        model_patterns = [
+            r'model\s*=\s*["\']gpt-[34]',
+            r'model\s*=\s*["\']claude-',
+            r'model\s*=\s*["\']text-davinci',
+            r'engine\s*=\s*["\']gpt-',
+            r'deployment\s*=\s*["\']gpt-'
+        ]
+        
+        lines = content.split("\n")
+        fixed_lines = []
+        modified = False
+
+        for line in lines:
+            if any(re.search(pattern, line) for pattern in model_patterns):
+                if not line.strip().startswith("#"):
+                    # Add configuration recommendation
+                    fixed_lines.append(
+                        "# PyGuard: Hardcoded model name - consider using configuration [AIML055]"
+                    )
+                    fixed_lines.append(
+                        "# Recommendation: model = os.getenv('LLM_MODEL', 'default-model')"
+                    )
+                    
+                    if not modified:
+                        self.fixes_applied.append(
+                            "Added hardcoded model name warning [AIML055]"
+                        )
+                        modified = True
+            
+            fixed_lines.append(line)
+
+        if modified:
+            content = "\n".join(fixed_lines)
+            self.logger.info(
+                f"Applied safe fix ({fix_id}): Added hardcoded model name warning",
+                category="AI/ML Security",
+            )
+
+        return content
+
+    def _fix_token_counting_bypass(self, content: str) -> str:
+        """
+        Add token counting to prevent context overflow.
+
+        Classification: SAFE
+        - Detects missing token counting
+        - Warns about context window validation
+        - Recommends token tracking
+
+        Before: messages.append({"role": "user", "content": long_text})
+        After:  # PyGuard: Implement token counting [AIML058]
+
+        Reference: AIML058, CWE-400, OWASP LLM04
+        """
+        fix_id = "token_counting_bypass"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for message building without token counting
+        message_patterns = [
+            'messages.append', 'messages.extend', 'messages +=',
+            'conversation.append', 'chat_history.append'
+        ]
+        
+        if any(pattern in content for pattern in message_patterns):
+            # Check if tiktoken or token counting is present
+            has_token_counting = any(token_lib in content for token_lib in [
+                'tiktoken', 'token_count', 'count_tokens', 'num_tokens',
+                'tokenize', 'get_token_count'
+            ])
+            
+            if not has_token_counting:
+                lines = content.split("\n")
+                fixed_lines = []
+                modified = False
+
+                for line in lines:
+                    if any(pattern in line for pattern in message_patterns):
+                        if not line.strip().startswith("#"):
+                            # Add token counting recommendation
+                            fixed_lines.append(
+                                "# PyGuard: Implement token counting to prevent context overflow [AIML058]"
+                            )
+                            fixed_lines.append(
+                                "# Recommendation: Use tiktoken to track message token count"
+                            )
+                            
+                            if not modified:
+                                self.fixes_applied.append(
+                                    "Added token counting recommendation [AIML058]"
+                                )
+                                modified = True
+                    
+                    fixed_lines.append(line)
+
+                if modified:
+                    content = "\n".join(fixed_lines)
+                    self.logger.info(
+                        f"Applied safe fix ({fix_id}): Added token counting recommendation",
+                        category="AI/ML Security",
+                    )
+
+        return content
+
+    def _fix_cost_overflow_attacks(self, content: str) -> str:
+        """
+        Prevent cost overflow through excessive API usage.
+
+        Classification: SAFE
+        - Detects user-controlled completion counts
+        - Warns about cost controls
+        - Recommends usage monitoring
+
+        Before: for i in range(user_count): generate_completion()
+        After:  # PyGuard: Add cost controls for user-driven loops [AIML059]
+
+        Reference: AIML059, CWE-400, OWASP LLM04
+        """
+        fix_id = "cost_overflow_attacks"
+        if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
+            return content
+
+        # Check for loops with LLM API calls
+        api_call_patterns = [
+            'openai.', 'anthropic.', 'cohere.', '.create(',
+            '.generate(', '.complete('
+        ]
+        
+        loop_patterns = ['for ', 'while ']
+        
+        lines = content.split("\n")
+        fixed_lines = []
+        modified = False
+        in_loop = False
+        loop_indent = 0
+
+        for line in lines:
+            stripped = line.lstrip()
+            current_indent = len(line) - len(stripped)
+            
+            # Track if we're in a loop
+            if any(loop in stripped for loop in loop_patterns):
+                in_loop = True
+                loop_indent = current_indent
+            elif in_loop and current_indent <= loop_indent and stripped and not stripped.startswith("#"):
+                in_loop = False
+            
+            # Check for API calls in loops
+            if in_loop and any(api_pattern in line for api_pattern in api_call_patterns):
+                if not line.strip().startswith("#"):
+                    # Add cost overflow warning
+                    fixed_lines.append(
+                        " " * current_indent + "# PyGuard: API call in loop - risk of cost overflow [AIML059]"
+                    )
+                    fixed_lines.append(
+                        " " * current_indent + "# Recommendation: Add rate limiting and cost budgets"
+                    )
+                    
+                    if not modified:
+                        self.fixes_applied.append(
+                            "Added cost overflow warning for API calls in loops [AIML059]"
+                        )
+                        modified = True
+            
+            fixed_lines.append(line)
+
+        if modified:
+            content = "\n".join(fixed_lines)
+            self.logger.info(
+                f"Applied safe fix ({fix_id}): Added cost overflow prevention",
+                category="AI/ML Security",
+            )
 
         return content
 

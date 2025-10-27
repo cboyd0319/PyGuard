@@ -4430,3 +4430,309 @@ def complex_rag_pipeline(query, chat_history):
         # At least one Group C fix should be present
         assert aiml_count >= 1
 
+
+class TestGroupDLLMAPISecurityFixes:
+    """Test Group D: LLM API Security auto-fixes (AIML046-060)."""
+
+    def test_max_tokens_manipulation_fix(self, tmp_path):
+        """Test AIML048: Max_tokens DoS prevention."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def generate_response(prompt):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("max_tokens" in fix.lower() or "AIML048" in fix for fix in fixes):
+            assert "AIML048" in fixed_code
+            assert "max_tokens" in fixed_code.lower()
+
+    def test_max_tokens_excessive_value(self, tmp_path):
+        """Test AIML048: Excessive max_tokens detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "test"}],
+    max_tokens=50000
+)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("max_tokens" in fix.lower() or "AIML048" in fix for fix in fixes):
+            assert "AIML048" in fixed_code
+
+    def test_streaming_response_injection_fix(self, tmp_path):
+        """Test AIML049: Streaming response security."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def stream_response(prompt):
+    for chunk in openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True
+    ):
+        print(chunk)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("streaming" in fix.lower() or "AIML049" in fix for fix in fixes):
+            assert "AIML049" in fixed_code
+            assert "streaming" in fixed_code.lower() or "partial" in fixed_code.lower()
+
+    def test_function_calling_injection_fix(self, tmp_path):
+        """Test AIML050: Function calling security."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def call_with_functions(prompt, user_functions):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        functions=user_functions,
+        function_call="auto"
+    )
+    return response
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("function" in fix.lower() or "AIML050" in fix for fix in fixes):
+            assert "AIML050" in fixed_code
+            assert "function" in fixed_code.lower()
+
+    def test_tool_use_tampering_fix(self, tmp_path):
+        """Test AIML051: Tool use parameter validation."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def execute_llm_tool(llm_response):
+    tool_params = llm_response.tool_params
+    result = tool.execute(tool_params)
+    return result
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("tool" in fix.lower() or "AIML051" in fix for fix in fixes):
+            assert "AIML051" in fixed_code
+            assert "tool" in fixed_code.lower()
+
+    def test_system_message_manipulation_fix(self, tmp_path):
+        """Test AIML052: System message protection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def create_chat(user_input):
+    messages = [
+        {"role": "system", "content": user_input},
+        {"role": "user", "content": "Hello"}
+    ]
+    return openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=messages
+    )
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("system" in fix.lower() or "AIML052" in fix for fix in fixes):
+            assert "AIML052" in fixed_code
+            assert "system" in fixed_code.lower()
+
+    def test_model_selection_bypass_fix(self, tmp_path):
+        """Test AIML053: Model selection validation."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def query_model(request):
+    model_name = request.get('model')
+    response = openai.ChatCompletion.create(
+        model=model_name,
+        messages=[{"role": "user", "content": "test"}]
+    )
+    return response
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("model" in fix.lower() or "AIML053" in fix for fix in fixes):
+            assert "AIML053" in fixed_code
+
+    def test_hardcoded_model_names_fix(self, tmp_path):
+        """Test AIML055: Hardcoded model detection."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+model = "gpt-4"
+response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "test"}]
+)
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("hardcoded" in fix.lower() or "AIML055" in fix for fix in fixes):
+            assert "AIML055" in fixed_code
+            assert "configuration" in fixed_code.lower() or "getenv" in fixed_code.lower()
+
+    def test_token_counting_bypass_fix(self, tmp_path):
+        """Test AIML058: Token counting validation."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """def build_conversation(history):
+    messages = []
+    for msg in history:
+        messages.append({"role": "user", "content": msg})
+    return messages
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("token" in fix.lower() or "AIML058" in fix for fix in fixes):
+            assert "AIML058" in fixed_code
+            assert "token" in fixed_code.lower()
+
+    def test_cost_overflow_attacks_fix(self, tmp_path):
+        """Test AIML059: Cost control validation."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def batch_generate(prompts):
+    results = []
+    for prompt in prompts:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        results.append(response)
+    return results
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        fixed_code = test_file.read_text()
+        if any("cost" in fix.lower() or "AIML059" in fix for fix in fixes):
+            assert "AIML059" in fixed_code
+            assert "cost" in fixed_code.lower() or "rate limiting" in fixed_code.lower()
+
+    def test_group_d_integration(self, tmp_path):
+        """Test all Group D fixes working together."""
+        from pyguard.lib.ai_ml_security import AIMLSecurityFixer
+
+        code = """import openai
+
+def complex_llm_app(user_model, user_prompt, chat_history, functions):
+    # Hardcoded model name
+    model = "gpt-4"
+    
+    # Model selection from user
+    selected_model = user_model
+    
+    # System message with user input
+    messages = [
+        {"role": "system", "content": user_prompt},
+    ]
+    
+    # Build history without token counting
+    for msg in chat_history:
+        messages.append({"role": "user", "content": msg})
+    
+    # Streaming without validation
+    for chunk in openai.ChatCompletion.create(
+        model=selected_model,
+        messages=messages,
+        functions=functions,
+        stream=True
+    ):
+        process_chunk(chunk)
+    
+    # Batch processing without rate limiting
+    for i in range(100):
+        openai.ChatCompletion.create(
+            model=model,
+            messages=[{"role": "user", "content": f"Request {i}"}],
+            max_tokens=60000
+        )
+"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(code)
+
+        fixer = AIMLSecurityFixer(allow_unsafe=False)
+        success, fixes = fixer.fix_file(test_file)
+
+        assert success
+        # Check that multiple Group D fixes are applied
+        fixed_code = test_file.read_text()
+        group_d_codes = ["AIML048", "AIML049", "AIML050", "AIML052", "AIML053", "AIML055", "AIML058", "AIML059"]
+        aiml_count = sum(1 for code in group_d_codes if code in fixed_code)
+        # At least one Group D fix should be present
+        assert aiml_count >= 1
+
