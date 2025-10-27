@@ -338,6 +338,92 @@ class FixSafetyClassifier:
             "Complex transformation requiring AST-based context analysis. Manual implementation recommended.",
         )
 
+        # Group B: Context & Token Manipulation (AIML019-028) - Safe warning-only fixes
+        self._add_warning_only_fix(
+            "escape_sequence_injection",
+            "security",
+            "Detect escape sequence injection in prompts",
+            "Adds warnings for newline/control character injection patterns",
+        )
+
+        self._add_warning_only_fix(
+            "token_stuffing",
+            "security",
+            "Detect token stuffing attacks",
+            "Adds warnings for context window exhaustion patterns",
+        )
+
+        self._add_warning_only_fix(
+            "recursive_prompt_injection",
+            "security",
+            "Detect recursive prompt injection",
+            "Adds warnings for nested prompt instruction patterns",
+        )
+
+        self._add_warning_only_fix(
+            "template_literal_injection",
+            "security",
+            "Detect template literal injection",
+            "Adds warnings for unsafe template substitution patterns",
+        )
+
+        self._add_warning_only_fix(
+            "fstring_injection",
+            "security",
+            "Detect f-string injection",
+            "Adds warnings for f-strings with user input",
+        )
+
+        self._add_warning_only_fix(
+            "variable_substitution",
+            "security",
+            "Detect variable substitution attacks",
+            "Adds warnings for unvalidated variable replacement in prompts",
+        )
+
+        # Group C: External Content Injection (AIML031-045) - Safe warning-only fixes
+        self._add_warning_only_fix(
+            "url_based_injection",
+            "security",
+            "Detect URL-based content injection",
+            "Adds warnings for unvalidated external web content in prompts",
+        )
+
+        self._add_warning_only_fix(
+            "api_response_injection",
+            "security",
+            "Detect API response injection",
+            "Adds warnings for unvalidated 3rd party API data in prompts",
+        )
+
+        self._add_warning_only_fix(
+            "database_content_injection",
+            "security",
+            "Detect database content injection",
+            "Adds warnings for unvalidated database query results in prompts",
+        )
+
+        self._add_warning_only_fix(
+            "rag_poisoning",
+            "security",
+            "Detect RAG poisoning risks",
+            "Adds warnings for unvalidated retrieval-augmented generation content",
+        )
+
+        self._add_warning_only_fix(
+            "vector_database_injection",
+            "security",
+            "Detect vector database injection",
+            "Adds warnings for unvalidated vector similarity search results",
+        )
+
+        self._add_warning_only_fix(
+            "conversation_history_injection",
+            "security",
+            "Detect conversation history injection",
+            "Adds warnings for unvalidated chat history in prompts",
+        )
+
     def _add_safe_fix(self, fix_id: str, category: str, description: str, reasoning: str) -> None:
         """Add a SAFE fix classification."""
         self._classifications[fix_id] = FixClassification(
@@ -442,7 +528,7 @@ class FixSafetyClassifier:
         elif classification.safety == FixSafety.UNSAFE:
             return allow_unsafe
         else:  # WARNING_ONLY
-            return False  # Never apply warning-only fixes automatically
+            return True  # Apply warning-only fixes (only add comments, safe)
 
     def get_all_safe_fixes(self) -> Set[str]:
         """Get IDs of all SAFE fixes."""
