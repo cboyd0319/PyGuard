@@ -424,6 +424,70 @@ class FixSafetyClassifier:
             "Adds warnings for unvalidated chat history in prompts",
         )
 
+        # Group D: LLM API Security (AIML046-060) - Safe warning-only fixes
+        self._add_warning_only_fix(
+            "max_tokens_manipulation",
+            "security",
+            "Detect missing or excessive max_tokens limits",
+            "Adds warnings to prevent DoS via unbounded token generation",
+        )
+
+        self._add_warning_only_fix(
+            "streaming_response_injection",
+            "security",
+            "Detect unvalidated streaming responses",
+            "Adds warnings for streaming API calls without chunk validation",
+        )
+
+        self._add_warning_only_fix(
+            "function_calling_injection",
+            "security",
+            "Detect unsafe function calling patterns",
+            "Adds warnings for LLM-controlled function execution risks",
+        )
+
+        self._add_warning_only_fix(
+            "tool_use_tampering",
+            "security",
+            "Detect unvalidated tool parameters",
+            "Adds warnings for LLM-generated tool parameter risks",
+        )
+
+        self._add_warning_only_fix(
+            "system_message_manipulation",
+            "security",
+            "Detect system message manipulation risks",
+            "Adds warnings for user-controlled system prompts",
+        )
+
+        self._add_warning_only_fix(
+            "model_selection_bypass",
+            "security",
+            "Detect unvalidated model selection",
+            "Adds warnings for user-controlled model names",
+        )
+
+        self._add_warning_only_fix(
+            "hardcoded_model_names",
+            "security",
+            "Detect hardcoded model names",
+            "Adds warnings to use configuration for model names",
+        )
+
+        self._add_warning_only_fix(
+            "token_counting_bypass",
+            "security",
+            "Detect missing token counting",
+            "Adds warnings to implement token tracking for context management",
+        )
+
+        self._add_warning_only_fix(
+            "cost_overflow_attacks",
+            "security",
+            "Detect cost overflow risks",
+            "Adds warnings for API calls in loops without rate limiting",
+        )
+
     def _add_safe_fix(self, fix_id: str, category: str, description: str, reasoning: str) -> None:
         """Add a SAFE fix classification."""
         self._classifications[fix_id] = FixClassification(
