@@ -9,7 +9,7 @@ References:
 """
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 from typing import Any

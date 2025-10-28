@@ -11,10 +11,10 @@ References:
 """
 
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
-from datetime import UTC
 
 
 @dataclass
@@ -186,7 +186,7 @@ class MCPIntegration:
         Returns:
             MCPResponse with local analysis
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         # Simple pattern matching for demonstration
         recommendations = []

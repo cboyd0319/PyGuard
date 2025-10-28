@@ -4,13 +4,13 @@ import argparse
 from pathlib import Path
 import sys
 
+from pyguard import __version__
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.git_hooks import GitHooksManager
 
 
 def main():
     """Main CLI entry point for git hooks management."""
-    from pyguard import __version__
 
     parser = argparse.ArgumentParser(
         description="PyGuard Git Hooks Manager",

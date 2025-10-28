@@ -4,7 +4,7 @@ Core utilities for PyGuard.
 Provides logging, backup management, diff generation, and file operations.
 """
 
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 import difflib
 import json
 import logging

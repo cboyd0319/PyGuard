@@ -25,7 +25,7 @@ Example:
 
 import ast
 from dataclasses import dataclass
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 import re

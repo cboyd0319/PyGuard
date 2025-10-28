@@ -5,11 +5,14 @@ Enhanced with world-class UI using Rich library for beautiful, beginner-friendly
 """
 
 import argparse
+from collections import Counter
+from dataclasses import asdict
 from pathlib import Path
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
+from pyguard import __version__
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.compliance_tracker import ComplianceTracker
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
@@ -65,7 +68,7 @@ class PyGuardCLI:
         """Lazy load notebook analyzer."""
         if self._notebook_analyzer is None:
             try:
-                from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
+                from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer  # noqa: PLC0415
 
                 self._notebook_analyzer = NotebookSecurityAnalyzer()
             except ImportError:
@@ -295,7 +298,6 @@ class PyGuardCLI:
 
         else:
             # Just scan for issues (ALL types: security, quality, patterns)
-            from dataclasses import asdict
 
             all_issues = []
             security_issues = []
@@ -388,7 +390,6 @@ class PyGuardCLI:
         # Generate SARIF report
         if generate_sarif:
             sarif_path = Path("pyguard-report.sarif")
-            from pyguard import __version__
 
             sarif_report = self.sarif_reporter.generate_report(
                 issues=results.get("all_issues", []),
@@ -411,7 +412,6 @@ class PyGuardCLI:
 
 def main():
     """Main CLI entry point."""
-    from pyguard import __version__
 
     parser = argparse.ArgumentParser(
         description="PyGuard - Python QA and Auto-Fix Tool",
@@ -604,7 +604,6 @@ def main():
                 cli.ui.console.print(f"[red]Found {len(findings)} hardcoded secrets:[/red]")
 
                 # Group by secret type
-                from collections import Counter
 
                 types = Counter(f.secret_type for f in findings)
                 for secret_type, count in types.items():
@@ -801,11 +800,11 @@ def main():
 
     # Watch mode
     if args.watch:
-        from pyguard.lib.watch import run_watch_mode
+        from pyguard.lib.watch import run_watch_mode  # noqa: PLC0415
 
         def analyze_file(file_path: Path):
             """Analyze a single file in watch mode."""
-            from rich.console import Console
+            from rich.console import Console  # noqa: PLC0415
 
             console = Console()
             console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
