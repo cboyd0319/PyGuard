@@ -592,7 +592,9 @@ class FixSafetyClassifier:
         elif classification.safety == FixSafety.UNSAFE:
             return allow_unsafe
         else:  # WARNING_ONLY
-            return True  # Apply warning-only fixes (only add comments, safe)
+            # WARNING_ONLY fixes should never be automatically applied
+            # They only add warnings/comments for manual intervention
+            return False
 
     def get_all_safe_fixes(self) -> Set[str]:
         """Get IDs of all SAFE fixes."""
