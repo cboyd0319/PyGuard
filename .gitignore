@@ -100,6 +100,8 @@ package-lock.json
 # Allow example notebooks
 !examples/*.ipynb
 !examples/**/*.ipynb
+# Allow test fixture notebooks
+!tests/fixtures/**/*.ipynb
 
 # Package
 *.whl
