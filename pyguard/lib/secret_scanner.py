@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import json
 import re
 import subprocess
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass
@@ -27,7 +27,7 @@ class SecretScanner:
     Fast secret scanning using ripgrep with comprehensive patterns.
     """
 
-    SECRET_PATTERNS = {
+    SECRET_PATTERNS: ClassVar[Any] = {
         "AWS Access Key": r"AKIA[0-9A-Z]{16}",
         "AWS Secret Key": r'aws_secret_access_key\s*=\s*[\'"][A-Za-z0-9/+=]{40}[\'"]',
         "Generic API Key": r'api[_-]?key\s*[=:]\s*[\'"][a-zA-Z0-9_\-]{20,}[\'"]',

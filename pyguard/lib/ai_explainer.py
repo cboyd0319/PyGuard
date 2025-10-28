@@ -13,7 +13,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -59,7 +59,7 @@ class AIExplainer:
     """
 
     # Comprehensive explanation templates
-    EXPLANATIONS = {
+    EXPLANATIONS: ClassVar[dict[str, SecurityExplanation]] = {
         "SQL_INJECTION": SecurityExplanation(
             vulnerability_name="SQL Injection",
             severity="CRITICAL",

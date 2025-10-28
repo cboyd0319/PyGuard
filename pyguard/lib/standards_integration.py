@@ -27,7 +27,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -439,7 +439,7 @@ class SANSTop25Mapper:
     """
 
     # SANS CWE Top 25 2024 (Official Rankings)
-    SANS_TOP_25_2024 = {
+    SANS_TOP_25_2024: ClassVar[Any] = {
         1: ("CWE-787", "Out-of-bounds Write"),
         2: ("CWE-79", "Cross-site Scripting"),
         3: ("CWE-89", "SQL Injection"),
@@ -550,7 +550,7 @@ class CERTSecureCodingMapper:
     """
 
     # CERT Python Secure Coding Rules
-    CERT_PYTHON_RULES = {
+    CERT_PYTHON_RULES: ClassVar[Any] = {
         "IDS01-PY": "Normalize strings before validation",
         "IDS08-PY": "Sanitize untrusted data passed to eval/exec",
         "STR02-PY": "Sanitize data within services",
@@ -631,7 +631,7 @@ class IEEE12207Mapper:
     """
 
     # IEEE 12207 Process Areas relevant to code quality
-    IEEE_PROCESSES = {
+    IEEE_PROCESSES: ClassVar[Any] = {
         "6.4.3": "Software Construction - Implementation and unit testing",
         "6.4.4": "Software Integration",
         "6.4.5": "Software Qualification Testing",
@@ -708,7 +708,7 @@ class MitreATTACKMapper:
     """
 
     # ATT&CK Techniques relevant to application security
-    ATTACK_TECHNIQUES = {
+    ATTACK_TECHNIQUES: ClassVar[Any] = {
         "T1059": "Command and Scripting Interpreter",
         "T1055": "Process Injection",
         "T1203": "Exploitation for Client Execution",

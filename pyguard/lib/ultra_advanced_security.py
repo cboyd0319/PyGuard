@@ -25,6 +25,7 @@ References:
 import ast
 from dataclasses import dataclass
 import re
+from typing import Any, ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger
@@ -53,7 +54,7 @@ class GraphQLInjectionDetector:
     concatenated into queries without proper sanitization.
     """
 
-    GRAPHQL_PATTERNS = [
+    GRAPHQL_PATTERNS: ClassVar[Any] = [
         (r'query\s*=\s*["\'][^"\']*["\'].*?\+', "String concatenation in GraphQL query"),
         (r'query\s*=\s*f["\']', "F-string formatting in GraphQL query"),
         (r'["\'][^"\']*["\']\.format\(', "Format method in GraphQL query"),
@@ -109,7 +110,7 @@ class SSTIDetector(ast.NodeVisitor):
     code if user input is directly rendered in templates.
     """
 
-    TEMPLATE_ENGINES = {
+    TEMPLATE_ENGINES: ClassVar[Any] = {
         "jinja2": ["Template", "Environment"],
         "mako": ["Template"],
         "django": ["Template"],
@@ -216,7 +217,7 @@ class JWTSecurityDetector:
     - Using symmetric keys for public APIs
     """
 
-    JWT_ISSUES = [
+    JWT_ISSUES: ClassVar[Any] = [
         (r'algorithm\s*=\s*["\']none["\']', 'JWT with "none" algorithm is insecure'),
         (r"verify_signature\s*=\s*False", "JWT signature verification disabled"),
         (r"verify\s*=\s*False", "JWT verification disabled"),
@@ -272,8 +273,14 @@ class APIRateLimitDetector(ast.NodeVisitor):
     APIs without rate limiting can be abused for DoS attacks or resource exhaustion.
     """
 
-    API_DECORATORS = {"@app.route", "@api.route", "@router.get", "@router.post", "@endpoint"}
-    RATE_LIMIT_DECORATORS = {"@limiter", "@rate_limit", "@throttle", "@limit"}
+    API_DECORATORS: ClassVar[Any] = {
+        "@app.route",
+        "@api.route",
+        "@router.get",
+        "@router.post",
+        "@endpoint",
+    }
+    RATE_LIMIT_DECORATORS: ClassVar[Any] = {"@limiter", "@rate_limit", "@throttle", "@limit"}
 
     def __init__(self, source_lines: list[str]):
         """Initialize API rate limit detector."""
@@ -362,7 +369,7 @@ class ContainerEscapeDetector:
     - Insecure volume mounts
     """
 
-    CONTAINER_RISKS = [
+    CONTAINER_RISKS: ClassVar[Any] = [
         (r"--privileged", "Privileged container mode enables escape"),
         (r"privileged:\s*true", "Privileged mode in docker-compose"),
         (r"user:\s*root", "Container running as root user"),
@@ -514,7 +521,7 @@ class CachePoisoningDetector:
     without proper sanitization.
     """
 
-    CACHE_PATTERNS = [
+    CACHE_PATTERNS: ClassVar[Any] = [
         (r"@cache.*\(.*request\.", "Caching with request data in key"),
         (r"cache\.set\([^,]*request\.", "Cache key includes request data"),
         (r"cache_key\s*=\s*.*\+.*request\.", "Concatenating request data into cache key"),

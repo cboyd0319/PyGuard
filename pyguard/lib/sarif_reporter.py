@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 import uuid
 
 from pyguard.lib.core import PyGuardLogger
@@ -47,7 +47,7 @@ class SARIFReporter:
     )
 
     # Severity mapping from PyGuard to SARIF levels
-    SEVERITY_MAP = {
+    SEVERITY_MAP: ClassVar[Any] = {
         "HIGH": "error",
         "CRITICAL": "error",
         "MEDIUM": "warning",

@@ -108,7 +108,7 @@ import json
 import math
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, ClassVar
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -197,7 +197,7 @@ class NotebookSecurityAnalyzer:
     """
 
     # Dangerous magic commands - Enhanced to 14+ patterns (Category 3)
-    DANGEROUS_MAGICS = {
+    DANGEROUS_MAGICS: ClassVar[Any] = {
         # System command execution
         "%system": "Direct system command execution",
         "!": "Shell command execution",
@@ -224,7 +224,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Patterns for secrets in notebooks - Comprehensive 50+ patterns
-    SECRET_PATTERNS = {
+    SECRET_PATTERNS: ClassVar[Any] = {
         # Generic patterns
         r"(?i)(password|passwd|pwd)\s*=\s*['\"]([^'\"]{8,})": "Hardcoded password",
         r"(?i)(api[_-]?key|apikey)\s*=\s*['\"]([^'\"]{16,})": "API key",
@@ -298,7 +298,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # PII detection patterns - Enhanced to 14+ patterns
-    PII_PATTERNS = {
+    PII_PATTERNS: ClassVar[Any] = {
         # Identity numbers
         r"\b\d{3}-\d{2}-\d{4}\b": "Social Security Number (SSN)",
         r"\b[A-Z]{1,2}\d{6,8}[A-Z]?\b": "Passport number pattern",
@@ -322,7 +322,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Risky ML/Data Science operations - Enhanced with 22+ patterns (Category 2)
-    ML_SECURITY_PATTERNS = {
+    ML_SECURITY_PATTERNS: ClassVar[Any] = {
         # Pickle-based deserialization (CRITICAL)
         r"pickle\.loads?\(": "Unsafe pickle deserialization (model poisoning risk)",
         r"joblib\.load\(": "Joblib model loading (verify source)",
@@ -357,7 +357,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # XSS-prone output patterns - Enhanced to 16+ patterns (Category 7)
-    XSS_PATTERNS = {
+    XSS_PATTERNS: ClassVar[Any] = {
         # HTML/JavaScript rendering
         r"IPython\.display\.HTML\(": "Raw HTML display (XSS risk)",
         r"display\(HTML\(": "HTML display (XSS risk)",
@@ -386,7 +386,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Network & Data Exfiltration patterns (Category 4) - Enhanced to 18+ patterns
-    NETWORK_EXFILTRATION_PATTERNS = {
+    NETWORK_EXFILTRATION_PATTERNS: ClassVar[Any] = {
         # HTTP/HTTPS exfiltration
         r"requests\.(post|put|patch)\(": "HTTP POST/PUT/PATCH to external domain (data exfiltration risk)",
         r"urllib\.request\.urlopen\(": "Direct URL access (data exfiltration risk)",
@@ -425,7 +425,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Resource Exhaustion & DoS patterns (Category 11)
-    RESOURCE_EXHAUSTION_PATTERNS = {
+    RESOURCE_EXHAUSTION_PATTERNS: ClassVar[Any] = {
         r"while\s+True\s*:": "Infinite loop detected (DoS risk)",
         r"for\s+.*\s+in\s+itertools\.count\(": "Infinite iterator (DoS risk)",
         r"\[0\]\s*\*\s*10\*\*\d{2,}": "Large memory allocation (memory exhaustion)",
@@ -435,7 +435,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Advanced Code Injection patterns (Category 1 - additional patterns)
-    ADVANCED_CODE_INJECTION_PATTERNS = {
+    ADVANCED_CODE_INJECTION_PATTERNS: ClassVar[Any] = {
         r"getattr\(.*,\s*['\"]__.*__['\"]": "Attribute access to dunder methods (escape risk)",
         r"setattr\(.*,\s*['\"]__": "Attribute setting to dunder methods (injection risk)",
         r"type\(.*\).__bases__": "Type manipulation via __bases__ (escape risk)",
@@ -446,7 +446,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Advanced ML/AI Security patterns (Category 13 - additional patterns)
-    ADVANCED_ML_PATTERNS = {
+    ADVANCED_ML_PATTERNS: ClassVar[Any] = {
         r"input\(['\"]": "Accepting user input (potential adversarial input risk in ML context)",
         r"requests\.get.*model": "Downloading models from URLs (supply chain risk)",
         r"\.predict\(": "Model prediction (ensure input validation)",
@@ -458,7 +458,7 @@ class NotebookSecurityAnalyzer:
     }
 
     # Compliance & Licensing patterns (Category 12) - NEW
-    COMPLIANCE_LICENSING_PATTERNS = {
+    COMPLIANCE_LICENSING_PATTERNS: ClassVar[Any] = {
         # GPL licenses (copyleft restrictions)
         r"from\s+.*\s+import.*#.*GPL": "GPL-licensed dependency (check license compatibility)",
         r"import\s+.*#.*GPL": "GPL-licensed import (license compliance)",
