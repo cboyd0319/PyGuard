@@ -64,6 +64,7 @@ References:
 """
 
 import ast
+from pathlib import Path
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -253,8 +254,6 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
         owasp_id: str,
     ):
         """Create a rule violation."""
-        from pathlib import Path
-
         violation = RuleViolation(
             rule_id=rule_id,
             category=RuleCategory.SECURITY,

@@ -33,6 +33,7 @@ References:
 """
 
 import ast
+from pathlib import Path
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -639,8 +640,6 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
         """Create a rule violation."""
         line_num = node.lineno if hasattr(node, "lineno") else 0
         col_offset = node.col_offset if hasattr(node, "col_offset") else 0
-
-        from pathlib import Path
 
         violation = RuleViolation(
             rule_id=rule_id,

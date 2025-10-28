@@ -287,8 +287,6 @@ class ComprehensionChecker:
 
     def _create_rules(self) -> list[Rule]:
         """Create comprehension rules."""
-        from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
-
         return [
             Rule(
                 rule_id="C400",

@@ -186,7 +186,6 @@ class MCPIntegration:
         Returns:
             MCPResponse with local analysis
         """
-        from datetime import datetime
 
         # Simple pattern matching for demonstration
         recommendations = []

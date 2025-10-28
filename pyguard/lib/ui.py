@@ -11,6 +11,7 @@ References:
 - Web Content Accessibility Guidelines | https://www.w3.org/WAI/WCAG21 | High | Accessibility standards
 """
 
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -64,7 +65,6 @@ class EnhancedConsole:
             theme: UI theme configuration
         """
         # Configure console with proper encoding for Windows compatibility
-        import sys
 
         self.is_windows = sys.platform == "win32"
         self.console = Console(

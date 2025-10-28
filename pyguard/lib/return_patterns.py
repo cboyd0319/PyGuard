@@ -7,7 +7,7 @@ Implements Ruff RET rules for detecting suboptimal return patterns.
 import ast
 from pathlib import Path
 
-from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
+from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity, RuleViolation
 
 
 class ReturnPatternVisitor(ast.NodeVisitor):
@@ -303,7 +303,6 @@ class ReturnPatternChecker:
 
     def _create_rules(self) -> list[Rule]:
         """Create return pattern rules."""
-        from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
 
         return [
             Rule(

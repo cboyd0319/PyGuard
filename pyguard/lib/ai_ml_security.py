@@ -341,8 +341,10 @@ References:
 """
 
 import ast
-from pathlib import Path
+import base64
+import codecs
 import re
+from pathlib import Path
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -2913,16 +2915,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
 
         # Base64 pattern detection
         # Look for Base64-like strings (alphanumeric + / and + with = padding)
-        import re
-
         base64_pattern = r"[A-Za-z0-9+/]{20,}={0,2}"
         matches = re.findall(base64_pattern, text)
 
         if matches:
             # Try to decode and check for malicious patterns
             try:
-                import base64
-
                 for match in matches:
                     try:
                         decoded = base64.b64decode(match).decode("utf-8", errors="ignore")
@@ -2993,8 +2991,6 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for ROT13 encoded text by looking for patterns
         # ROT13 characteristic: high concentration of unusual letter patterns
         # Simple heuristic: check if decoding with ROT13 produces more common English words
-        import codecs
-
         try:
             # Try ROT13 decode
             decoded = codecs.decode(text, "rot_13")

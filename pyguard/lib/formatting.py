@@ -281,7 +281,6 @@ class WhitespaceFixer:
             Tuple of (fixed content, number of fixes)
         """
         # Replace 3+ consecutive blank lines with 2
-        import re
 
         original_content = content
         content = re.sub(r"\n\n\n+", "\n\n\n", content)
