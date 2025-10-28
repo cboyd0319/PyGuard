@@ -100,8 +100,15 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _check_subprocess_security(self, node: ast.Call, func_node: ast.AsyncFunctionDef) -> None:
-        """ASYNCIO001: Check for insecure subprocess usage with shell=True."""
+    def _check_subprocess_security(
+        self, node: ast.Call, _func_node: ast.AsyncFunctionDef
+    ) -> None:
+        """ASYNCIO001: Check for insecure subprocess usage with shell=True.
+        
+        Args:
+            node: Call node to check
+            _func_node: Function node (reserved for context analysis)
+        """
         func_name = None
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("create_subprocess_shell", "create_subprocess_exec"):
@@ -135,7 +142,13 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _check_event_loop_injection(self, node: ast.Call, func_node) -> None:
+    def _check_event_loop_injection(self, node: ast.Call, _func_node) -> None:
+        """ASYNCIO002: Check for event loop manipulation in regular functions.
+        
+        Args:
+            node: Call node to check
+            _func_node: Function node (reserved for context analysis)
+        """
         """ASYNCIO002: Check for event loop injection vulnerabilities."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "set_event_loop":
@@ -180,7 +193,13 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
-    def _check_future_tampering(self, node: ast.Call, func_node: ast.AsyncFunctionDef) -> None:
+    def _check_future_tampering(self, node: ast.Call, _func_node: ast.AsyncFunctionDef) -> None:
+        """Check for Future object tampering.
+        
+        Args:
+            node: Call node to check
+            _func_node: Function node (reserved for context analysis)
+        """
         """ASYNCIO004: Check for Future result tampering."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "set_result":
@@ -289,7 +308,13 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         )
                     )
 
-    def _check_queue_poisoning(self, node: ast.Call, func_node: ast.AsyncFunctionDef) -> None:
+    def _check_queue_poisoning(self, node: ast.Call, _func_node: ast.AsyncFunctionDef) -> None:
+        """Check for queue poisoning vulnerabilities.
+        
+        Args:
+            node: Call node to check
+            _func_node: Function node (reserved for context analysis)
+        """
         """ASYNCIO009: Check for Queue.put() with untrusted data."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("put", "put_nowait"):
@@ -331,7 +356,13 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                                 )
                             )
 
-    def _check_executor_security(self, node: ast.Call, func_node: ast.AsyncFunctionDef) -> None:
+    def _check_executor_security(self, node: ast.Call, _func_node: ast.AsyncFunctionDef) -> None:
+        """Check for executor security issues.
+        
+        Args:
+            node: Call node to check
+            _func_node: Function node (reserved for context analysis)
+        """
         """ASYNCIO011: Check for run_in_executor with untrusted function."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "run_in_executor":

@@ -215,7 +215,7 @@ class HTMLReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
-        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], fixes: list[dict[str, Any]]
+        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], _fixes: list[dict[str, Any]]
     ) -> str:
         """
         Generate HTML report.
@@ -223,6 +223,8 @@ class HTMLReporter:
         Args:
             metrics: Analysis metrics
             issues: List of issues found
+            _fixes: List of fixes applied (reserved for future enhancement)
+
             fixes: List of fixes applied
 
         Returns:

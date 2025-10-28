@@ -84,8 +84,13 @@ class LoggingPatternVisitor(ast.NodeVisitor):
         self._check_redundant_exc_info(node, method_name)
         self._check_string_concat(node, method_name)
 
-    def _check_string_formatting(self, node: ast.Call, method_name: str) -> None:
-        """Check for string formatting in logging calls."""
+    def _check_string_formatting(self, node: ast.Call, _method_name: str) -> None:
+        """Check for string formatting in logging calls.
+        
+        Args:
+            node: Call node to check
+            _method_name: Logging method name (reserved for context)
+        """
         if not node.args:
             return
 
@@ -146,8 +151,13 @@ class LoggingPatternVisitor(ast.NodeVisitor):
             return self._contains_string(node.left) or self._contains_string(node.right)
         return False
 
-    def _check_string_concat(self, node: ast.Call, method_name: str) -> None:
-        """Check for string concatenation in logging."""
+    def _check_string_concat(self, node: ast.Call, _method_name: str) -> None:
+        """Check for string concatenation in logging.
+        
+        Args:
+            node: Call node to check
+            _method_name: Logging method name (reserved for context)
+        """
         if not node.args:
             return
 

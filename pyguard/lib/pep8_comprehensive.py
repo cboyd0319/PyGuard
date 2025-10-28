@@ -208,11 +208,17 @@ class PEP8Checker:
         return "".join(fixed_lines), fixes
 
     def _fix_continuation_indent(
-        self, line: str, line_num: int, lines: list[str], bracket_stack: list[tuple]
+        self, line: str, line_num: int, _lines: list[str], bracket_stack: list[tuple]
     ) -> tuple[str, bool]:
         """
         Fix continuation line indentation issues.
-
+        
+        Args:
+            line: Line to fix
+            line_num: Line number
+            _lines: All lines (reserved for context)
+            bracket_stack: Stack of open brackets
+        
         Returns:
             Tuple of (fixed_line, was_fixed)
         """
@@ -714,8 +720,13 @@ class PEP8Checker:
     # E4xx: Import Checks
     # ========================================================================
 
-    def _check_imports(self, content: str, lines: list[str]) -> None:
-        """Check import issues (E4xx codes)."""
+    def _check_imports(self, _content: str, lines: list[str]) -> None:
+        """Check import issues (E4xx codes).
+        
+        Args:
+            _content: Full file content (reserved for context)
+            lines: Lines of code
+        """
         for line_num, line in enumerate(lines, 1):
             stripped = line.strip()
 

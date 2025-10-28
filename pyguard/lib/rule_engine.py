@@ -112,13 +112,13 @@ class Rule:
         """
         raise NotImplementedError("Subclasses must implement detect()")
 
-    def fix(self, code: str, violation: RuleViolation) -> str | None:
+    def fix(self, _code: str, _violation: RuleViolation) -> str | None:
         """
         Apply automatic fix for a violation.
 
         Args:
-            code: Original source code
-            violation: The violation to fix
+            _code: Original source code (reserved)
+            _violation: The violation to fix (reserved)
 
         Returns:
             Fixed code, or None if fix not applicable

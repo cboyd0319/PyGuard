@@ -57,13 +57,13 @@ class CodeFeatureExtractor:
         """Initialize feature extractor."""
         self.logger = PyGuardLogger()
 
-    def extract_features(self, code: str, file_path: str = "") -> dict[str, float]:
+    def extract_features(self, code: str, file_path: str = "") -> dict[str, float]:  # noqa: ARG002
         """
         Extract numerical features from code.
 
         Args:
             code: Source code to analyze
-            file_path: Optional file path for context
+            file_path: Optional file path for context (reserved for future use)
 
         Returns:
             Dictionary of feature names to values
@@ -181,7 +181,7 @@ class MLRiskScorer:
         self.extractor = CodeFeatureExtractor()
 
     def calculate_risk_score(
-        self, code: str, file_path: str = "", existing_issues: list | None = None
+        self, code: str, file_path: str = "", _existing_issues: list | None = None
     ) -> RiskScore:
         """
         Calculate comprehensive risk score for code.
@@ -189,6 +189,8 @@ class MLRiskScorer:
         Args:
             code: Source code to analyze
             file_path: Optional file path
+            _existing_issues: Existing issues (reserved for enhancement)
+
             existing_issues: List of already detected issues
 
         Returns:
