@@ -701,8 +701,12 @@ class NotebookSecurityAnalyzer:
 
         for line_num, line in enumerate(lines, 1):
             # Skip PyGuard-generated comments to avoid false positives
-            if line.strip().startswith("# PyGuard") or line.strip().startswith("# CWE-") or \
-               line.strip().startswith("# SECURITY:") or line.strip().startswith("# WARNING: PII detected"):
+            if (
+                line.strip().startswith("# PyGuard")
+                or line.strip().startswith("# CWE-")
+                or line.strip().startswith("# SECURITY:")
+                or line.strip().startswith("# WARNING: PII detected")
+            ):
                 continue
 
             for pattern, description in self.PII_PATTERNS.items():
@@ -1218,9 +1222,9 @@ class NotebookSecurityAnalyzer:
     def _check_secrets(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for hardcoded secrets in cell code."""
         lines = cell.source.split("\n")
-        seen_secrets: dict[
-            tuple[int, str], dict[str, Any]
-        ] = {}  # Track secrets to avoid duplicates
+        seen_secrets: dict[tuple[int, str], dict[str, Any]] = (
+            {}
+        )  # Track secrets to avoid duplicates
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():
@@ -2861,9 +2865,7 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                     "precision": (
                         "high"
                         if issue.confidence >= 0.9
-                        else "medium"
-                        if issue.confidence >= 0.7
-                        else "low"
+                        else "medium" if issue.confidence >= 0.7 else "low"
                     ),
                     "tags": _get_tags_for_issue(issue),
                 },
@@ -2931,16 +2933,12 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                 "fix_quality": (
                     "excellent"
                     if issue.confidence >= 0.95
-                    else "good"
-                    if issue.confidence >= 0.85
-                    else "fair"
+                    else "good" if issue.confidence >= 0.85 else "fair"
                 ),
                 "semantic_risk": (
                     "low"
                     if issue.confidence >= 0.9
-                    else "medium"
-                    if issue.confidence >= 0.7
-                    else "high"
+                    else "medium" if issue.confidence >= 0.7 else "high"
                 ),
             },
         }

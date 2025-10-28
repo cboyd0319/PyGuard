@@ -1,8 +1,8 @@
 """Tests for formatting module."""
 
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer

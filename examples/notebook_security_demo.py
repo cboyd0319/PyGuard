@@ -12,8 +12,8 @@ Usage:
 """
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from pyguard.lib.notebook_security import (
     NotebookFixer,

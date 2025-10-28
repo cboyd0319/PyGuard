@@ -8,8 +8,8 @@ These tests verify:
 - Documentation completeness
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 import yaml

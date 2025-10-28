@@ -5,8 +5,8 @@ Tests all 10 XSS detection rules across multiple frameworks.
 """
 
 import ast
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from pyguard.lib.xss_detection import (
     XSSDetector,
