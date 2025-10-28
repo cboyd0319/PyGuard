@@ -126,7 +126,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
 
     def _check_missing_input_validation(self, node: ast.Call) -> None:
         """Check for missing input validation before prediction (SKL009)."""
-        func_name = self._get_func_name(node)
+        # func_name = self._get_func_name(node)  # Reserved for future use
         
         # Only check if sklearn is imported
         if not self.has_sklearn_import:

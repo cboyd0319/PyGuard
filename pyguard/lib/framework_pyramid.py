@@ -15,13 +15,11 @@ Week 15-16 Implementation: 15 Pyramid-specific security checks
 """
 
 import ast
-import re
-from dataclasses import dataclass
-from typing import List, Set, Optional
+from typing import List, Optional
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger
-from pyguard.lib.rule_engine import Rule, RuleCategory, RuleSeverity, FixApplicability
+from pyguard.lib.rule_engine import Rule, RuleCategory, RuleSeverity
 
 
 # =============================================================================
@@ -304,7 +302,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
         # Check decorators for view_config
         has_view_config = False
         has_permission = False
-        has_csrf_check = True  # Default is True, check if disabled
+        # has_csrf_check = True  # Default is True, check if disabled (not used)
         permission_name = None
 
         for decorator in node.decorator_list:
@@ -332,15 +330,15 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     code_snippet=self._get_code_snippet(decorator),
-                                    fix_suggestion=f"Use specific permission like 'view_user_profile' or 'edit_admin_settings'",
+                                    fix_suggestion="Use specific permission like 'view_user_profile' or 'edit_admin_settings'",
                                     cwe_id="CWE-732",
                                     owasp_id="ASVS-4.1.2",
                                 )
                             )
                     
                     # PYRAMID012: Check for CSRF disabled
-                    if "require_csrf" in kwargs and kwargs["require_csrf"] == False:
-                        has_csrf_check = False
+                    if "require_csrf" in kwargs and not kwargs["require_csrf"]:
+                        # has_csrf_check = False  # Not used
                         self.issues.append(
                             SecurityIssue(
                                 severity="CRITICAL",
@@ -365,7 +363,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                                 SecurityIssue(
                                     severity="MEDIUM",
                                     category="Pyramid Renderer",
-                                    message=f"Renderer security risk: JSON renderer may expose sensitive data",
+                                    message="Renderer security risk: JSON renderer may expose sensitive data",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     code_snippet=self._get_code_snippet(decorator),
@@ -384,7 +382,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                                 SecurityIssue(
                                     severity="MEDIUM",
                                     category="Pyramid Route",
-                                    message=f"Route pattern with parameter - ensure validation in view",
+                                    message="Route pattern with parameter - ensure validation in view",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     code_snippet=self._get_code_snippet(decorator),

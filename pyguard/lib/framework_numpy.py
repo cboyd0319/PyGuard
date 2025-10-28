@@ -57,6 +57,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         self.has_numpy_import = False
         self.numpy_aliases: Set[str] = {"numpy", "np"}
         self.random_calls: Set[str] = set()
+        self.user_controlled_vars: Set[str] = set()  # Track variables from user input
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track NumPy imports."""
@@ -71,6 +72,34 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         """Track NumPy imports."""
         if node.module and node.module.startswith("numpy"):
             self.has_numpy_import = True
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Track assignments from user input."""
+        # Check if the value comes from user input
+        if isinstance(node.value, ast.Call):
+            # Check if it's a call to request.args.get(), input(), etc.
+            if isinstance(node.value.func, ast.Attribute):
+                # Pattern: request.args.get(), request.form.get(), etc.
+                if (isinstance(node.value.func.value, ast.Attribute) and
+                    isinstance(node.value.func.value.value, ast.Name) and
+                    node.value.func.value.value.id in ["request", "req"]):
+                    # Track all targets of this assignment
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            self.user_controlled_vars.add(target.id)
+            elif isinstance(node.value.func, ast.Name):
+                # Pattern: input(), raw_input()
+                if node.value.func.id in ["input", "raw_input"]:
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            self.user_controlled_vars.add(target.id)
+        elif isinstance(node.value, ast.Subscript):
+            # Pattern: request.json['key'], request.args['key'], etc.
+            if self._is_user_controlled(node.value):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        self.user_controlled_vars.add(target.id)
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -136,12 +165,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if not has_safe_pickle:
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY003", "Unsafe Pickle Deserialization in NumPy",
-                        RuleSeverity.CRITICAL,
-                        "numpy.load() allows pickle deserialization by default, which can execute arbitrary code. "
+                        rule_id="NUMPY003",
+                        message="numpy.load() allows pickle deserialization by default, which can execute arbitrary code. "
                         "Set allow_pickle=False unless absolutely necessary.",
-                        "Set allow_pickle=False: np.load(file, allow_pickle=False)",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Set allow_pickle=False: np.load(file, allow_pickle=False)",
                         cwe_id="CWE-502",
                         owasp_id="A08:2021 – Software and Data Integrity Failures"
                     )
@@ -168,12 +200,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if is_security_context:
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY006", "Insecure Random Number Generation",
-                        RuleSeverity.HIGH,
-                        "NumPy random functions are not cryptographically secure. "
+                        rule_id="NUMPY006",
+                        message="NumPy random functions are not cryptographically secure. "
                         "Use secrets module or numpy.random.Generator with cryptographic backend for security-sensitive operations.",
-                        "Use: import secrets; key = secrets.token_bytes(32)",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Use: import secrets; key = secrets.token_bytes(32)",
                         cwe_id="CWE-338",
                         owasp_id="A02:2021 – Cryptographic Failures"
                     )
@@ -198,12 +233,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY004", "Potential Memory Exhaustion",
-                        RuleSeverity.MEDIUM,
-                        "Creating arrays with user-controlled sizes can lead to memory exhaustion attacks. "
+                        rule_id="NUMPY004",
+                        message="Creating arrays with user-controlled sizes can lead to memory exhaustion attacks. "
                         "Validate and limit array sizes.",
-                        "Add size validation: if size > MAX_SIZE: raise ValueError('Array too large')",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Add size validation: if size > MAX_SIZE: raise ValueError('Array too large')",
                         cwe_id="CWE-770",
                         owasp_id="A04:2021 – Insecure Design"
                     )
@@ -225,12 +263,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY015", "Insecure File I/O Operation",
-                        RuleSeverity.HIGH,
-                        "Loading data from user-controlled file paths can lead to path traversal attacks. "
+                        rule_id="NUMPY015",
+                        message="Loading data from user-controlled file paths can lead to path traversal attacks. "
                         "Validate file paths and use allow-lists.",
-                        "Validate paths: from pathlib import Path; Path(filename).resolve().is_relative_to(SAFE_DIR)",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Validate paths: from pathlib import Path; Path(filename).resolve().is_relative_to(SAFE_DIR)",
                         cwe_id="CWE-22",
                         owasp_id="A01:2021 – Broken Access Control"
                     )
@@ -248,12 +289,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                 if isinstance(target_dtype, str) and target_dtype in ["int8", "int16", "uint8", "uint16", "float16"]:
                     self.violations.append(
                         RuleViolation(
-                            node, "NUMPY008", "Unsafe Dtype Casting",
-                            RuleSeverity.MEDIUM,
-                            f"Casting to {target_dtype} can cause integer overflow or precision loss. "
+                            rule_id="NUMPY008",
+                            message=f"Casting to {target_dtype} can cause integer overflow or precision loss. "
                             "Validate data range before casting.",
-                            "Check range: assert arr.min() >= dtype_min and arr.max() <= dtype_max",
-                            RuleCategory.SECURITY,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_suggestion="Check range: assert arr.min() >= dtype_min and arr.max() <= dtype_max",
                             cwe_id="CWE-190",
                             owasp_id="A04:2021 – Insecure Design"
                         )
@@ -271,12 +315,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if left_is_array or right_is_array:
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY002", "Potential Integer Overflow",
-                        RuleSeverity.MEDIUM,
-                        "Integer operations on NumPy arrays can overflow silently. "
+                        rule_id="NUMPY002",
+                        message="Integer operations on NumPy arrays can overflow silently. "
                         "Use appropriate dtypes and validate ranges.",
-                        "Use np.clip() or check for overflow: result = np.multiply(a, b, dtype=np.int64)",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Use np.clip() or check for overflow: result = np.multiply(a, b, dtype=np.int64)",
                         cwe_id="CWE-190",
                         owasp_id="A04:2021 – Insecure Design"
                     )
@@ -289,12 +336,15 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.slice):
                 self.violations.append(
                     RuleViolation(
-                        node, "NUMPY010", "Unvalidated Array Indexing",
-                        RuleSeverity.MEDIUM,
-                        "Array indexing with user-controlled values can cause out-of-bounds access. "
+                        rule_id="NUMPY010",
+                        message="Array indexing with user-controlled values can cause out-of-bounds access. "
                         "Validate indices before use.",
-                        "Validate: if 0 <= index < len(array): arr[index]",
-                        RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_suggestion="Validate: if 0 <= index < len(array): arr[index]",
                         cwe_id="CWE-129",
                         owasp_id="A04:2021 – Insecure Design"
                     )
@@ -342,6 +392,9 @@ class NumPySecurityVisitor(ast.NodeVisitor):
     def _is_user_controlled(self, node: ast.AST) -> bool:
         """Check if value comes from user input (heuristic)."""
         if isinstance(node, ast.Name):
+            # Check if variable is tracked as user-controlled
+            if node.id in self.user_controlled_vars:
+                return True
             # Common variable names for user input
             user_input_keywords = [
                 "request", "input", "user", "param", "arg", "query",

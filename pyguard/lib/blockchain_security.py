@@ -457,10 +457,10 @@ class BlockchainSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ["transact", "send_transaction", "sendTransaction"]:
                 # Check if gas is specified
-                has_gas_param = False
+                # has_gas_param = False  # Not used - checking inline instead
                 for keyword in node.keywords:
                     if keyword.arg in ["gas", "gas_limit", "gasLimit"]:
-                        has_gas_param = True
+                        # has_gas_param = True  # Not needed
                         # Check for hardcoded gas values
                         if isinstance(keyword.value, ast.Constant):
                             violation = RuleViolation(

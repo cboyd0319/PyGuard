@@ -168,7 +168,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             return
             
         # Check for sensitive data stored in plain text files
-        value_str = str(node.value.value) if hasattr(node.value, 'value') else ''
+        # value_str = str(node.value.value) if hasattr(node.value, 'value') else ''  # Reserved for future use
         
         # Look for patterns indicating sensitive data storage
         sensitive_patterns = [
@@ -910,7 +910,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         Severity: CRITICAL
         OWASP IoT: I2 - Insecure Network Services
         """
-        func_name = self._get_function_name(node)
+        # func_name = self._get_function_name(node)  # Reserved for future use
         
         # Check for suspicious network operations
         suspicious_patterns = [
