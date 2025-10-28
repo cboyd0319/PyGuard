@@ -7,7 +7,7 @@ Implements Ruff C4 rules for detecting opportunities to use comprehensions.
 import ast
 from pathlib import Path
 
-from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
+from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity, RuleViolation
 
 
 class ComprehensionVisitor(ast.NodeVisitor):

@@ -4,6 +4,7 @@ Code formatting fixes for Python.
 Integrates with black, isort, autopep8 for automated formatting.
 """
 
+import re
 from pathlib import Path
 import subprocess
 from typing import Any
