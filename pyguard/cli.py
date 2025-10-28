@@ -570,7 +570,10 @@ def main():
                 if not skip and ".ipynb_checkpoints" not in str(nb_file):
                     notebook_files.append(nb_file)
         else:
-            pass
+            # Path doesn't exist or is not a regular file/directory
+            cli.ui.console.print(
+                f"[yellow]Warning: {path_str} is not a Python file, notebook, or directory.[/yellow]"
+            )
 
     if not all_files and not notebook_files:
         cli.ui.print_error(
