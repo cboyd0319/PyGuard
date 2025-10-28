@@ -5,7 +5,7 @@ Extracts compliance references from code comments for audit trails.
 """
 
 import subprocess
-from typing import List, Dict
+from typing import Any
 
 
 class ComplianceTracker:
@@ -14,7 +14,7 @@ class ComplianceTracker:
     """
 
     @staticmethod
-    def find_compliance_annotations(path: str) -> Dict[str, List[Dict]]:
+    def find_compliance_annotations(path: str) -> dict[str, list[dict[str, Any]]]:
         """
         Find OWASP and CWE references in code comments.
 
@@ -24,7 +24,12 @@ class ComplianceTracker:
         Returns:
             Dictionary of compliance annotations by type
         """
-        annotations: dict[str, list[str]] = {'OWASP': [], 'CWE': [], 'NIST': [], 'PCI-DSS': []}
+        annotations: dict[str, list[dict[str, Any]]] = {
+            'OWASP': [],
+            'CWE': [],
+            'NIST': [],
+            'PCI-DSS': [],
+        }
 
         try:
             # Find OWASP references

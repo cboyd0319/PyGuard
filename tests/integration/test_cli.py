@@ -38,7 +38,7 @@ class TestCLIIntegration:
             text=True,
         )
         assert result.returncode == 0
-        assert result.stdout.strip() == "0.5.0"
+        assert result.stdout.strip() == "0.6.0"
 
     def test_version_consistency(self):
         """Test that version is consistent across all files."""

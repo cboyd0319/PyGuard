@@ -422,7 +422,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def __init__(self, source_code: str):
         """Initialize the business logic security visitor."""
         self.issues: List[SecurityIssue] = []
-        self.source_lines = source_code.splitlines()
+        self.source_lines: List[str] = source_code.splitlines()
         self.logger = PyGuardLogger()
         
         # Track state for analysis
@@ -436,7 +436,8 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            line: str = self.source_lines[node.lineno - 1]
+            return line.strip()
         return ""
 
     def _get_call_name(self, node: ast.Call) -> str:

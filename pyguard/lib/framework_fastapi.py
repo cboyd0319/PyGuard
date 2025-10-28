@@ -387,8 +387,8 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if isinstance(stmt.func, ast.Attribute):
                         if stmt.func.attr in ("execute", "raw", "exec"):
                             # Check if any query param is in the call
-                            for arg in stmt.args:
-                                if isinstance(arg, (ast.JoinedStr, ast.BinOp)):
+                            for call_arg in stmt.args:
+                                if isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
                                     self.violations.append(
                                         RuleViolation(
                                             rule_id="FASTAPI003",
@@ -589,6 +589,8 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
     def _check_pydantic_validation_bypass(self, node: ast.Call) -> None:
         """Check for Pydantic validation bypasses."""
+        if not isinstance(node.func, ast.Attribute):
+            return
         method_name = node.func.attr
         self.violations.append(
             RuleViolation(
@@ -701,7 +703,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                     if isinstance(keyword.value, ast.List):
                                         for elt in keyword.value.elts:
                                             if isinstance(elt, ast.Constant):
-                                                if elt.value and elt.value.lower() == "none":
+                                                if isinstance(elt.value, str) and elt.value.lower() == "none":
                                                     self.violations.append(
                                                         RuleViolation(
                                                             rule_id="FASTAPI014",
@@ -818,13 +820,13 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             func_name = self._get_name(stmt.func.value)
                             if func_name and func_name.lower() in ("requests", "httpx", "urllib"):
                                 # Check if URL param is used directly
-                                for arg in stmt.args:
-                                    if isinstance(arg, ast.Name):
-                                        if arg.id in url_params:
+                                for call_arg in stmt.args:
+                                    if isinstance(call_arg, ast.Name):
+                                        if call_arg.id in url_params:
                                             self.violations.append(
                                                 RuleViolation(
                                                     rule_id="FASTAPI018",
-                                                    message=f"Potential SSRF: URL parameter '{arg.id}' used in HTTP request without validation (CWE-918)",
+                                                    message=f"Potential SSRF: URL parameter '{call_arg.id}' used in HTTP request without validation (CWE-918)",
                                                     line_number=stmt.lineno,
                                                     column=stmt.col_offset,
                                                     severity=RuleSeverity.HIGH,
@@ -832,12 +834,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                                     file_path=self.file_path,
                                                     fix_applicability=FixApplicability.MANUAL,
                                                     fix_data={
-                                                        "parameter": arg.id,
+                                                        "parameter": call_arg.id,
                                                         "suggestion": "Validate URL against allowlist or use URL parsing to check scheme/host",
                                                     },
                                                 )
                                             )
-                                    elif isinstance(arg, (ast.JoinedStr, ast.BinOp)):
+                                    elif isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
                                         # f-string or string concatenation with URL param
                                         self.violations.append(
                                             RuleViolation(

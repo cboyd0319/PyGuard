@@ -788,7 +788,7 @@ class AuthSecurityChecker:
         """Apply auto-fixes for authentication and authorization issues."""
         code = self.file_ops.read_file(file_path)
         if not code:
-            return code
+            return code or ""
 
         # Apply safe fixes only (marked as FixApplicability.SAFE)
         for violation in violations:

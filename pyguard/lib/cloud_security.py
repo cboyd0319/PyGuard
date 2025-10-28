@@ -116,12 +116,6 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         self._check_serverless_cold_start(node)
         
         self.generic_visit(node)
-        self._check_docker_secrets(node)
-        
-        # Check for Kubernetes secrets mishandling
-        self._check_k8s_secrets(node)
-        
-        self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for cloud API misuse and security issues."""
@@ -314,7 +308,10 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     if keyword.arg == "ACL":
                         if isinstance(keyword.value, ast.Constant):
                             acl_value = keyword.value.value
-                            if acl_value in ("public-read", "public-read-write"):
+                            # Convert bytes to string if needed
+                            if isinstance(acl_value, bytes):
+                                acl_value = acl_value.decode('utf-8', errors='ignore')
+                            if isinstance(acl_value, str) and acl_value in ("public-read", "public-read-write"):
                                 self.violations.append(
                                     RuleViolation(
                                     file_path=self.file_path,
@@ -340,7 +337,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             if "put_" in node.func.attr and "policy" in node.func.attr.lower():
                 # Look for PolicyDocument argument
                 for keyword in node.keywords:
-                    if "Policy" in keyword.arg:
+                    if keyword.arg and "Policy" in keyword.arg:
                         # Check if policy contains wildcard actions
                         policy_str = ast.unparse(keyword.value)
                         if '"Action": "*"' in policy_str or "'Action': '*'" in policy_str:

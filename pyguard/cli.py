@@ -8,7 +8,10 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
@@ -51,10 +54,10 @@ class PyGuardCLI:
         self.naming_fixer = NamingConventionFixer()
         
         # Initialize notebook analyzer (lazy load)
-        self._notebook_analyzer = None
+        self._notebook_analyzer: Optional["NotebookSecurityAnalyzer"] = None
     
     @property
-    def notebook_analyzer(self):
+    def notebook_analyzer(self) -> Optional["NotebookSecurityAnalyzer"]:
         """Lazy load notebook analyzer."""
         if self._notebook_analyzer is None:
             try:
@@ -837,12 +840,14 @@ def main():
                             "cell_type": finding.cell_type,
                         }
                         if "all_issues" not in results:
-                            results["all_issues"] = []
-                        results["all_issues"].append(issue)
+                            results["all_issues"] = []  # type: ignore[assignment]
+                        results["all_issues"].append(issue)  # type: ignore[attr-defined]
                         
                         # Update counters
                         if finding.severity == "CRITICAL" or finding.severity == "HIGH":
-                            results["security_issues"] = results.get("security_issues", 0) + 1
+                            security_count = results.get("security_issues", 0)
+                            if isinstance(security_count, int):
+                                results["security_issues"] = security_count + 1  # type: ignore[assignment]
             
             # Print notebook summary
             cli.ui.console.print()
