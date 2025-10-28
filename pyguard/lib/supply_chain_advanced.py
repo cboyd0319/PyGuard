@@ -507,13 +507,13 @@ def analyze_requirements_file_advanced(file_path: Path) -> list[RuleViolation]:
 
         seen_packages = set()
         for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
+            stripped_line = line.strip()
+            if not stripped_line or stripped_line.startswith("#"):
                 continue
 
             # SUPPLY010: Check for license compliance issues
             # (Simplified - would need actual license data in production)
-            if re.match(r"(gpl|lgpl|agpl)", line, re.IGNORECASE):
+            if re.match(r"(gpl|lgpl|agpl)", stripped_line, re.IGNORECASE):
                 violations.append(
                     RuleViolation(
                         rule_id="SUPPLY010",

@@ -306,12 +306,12 @@ class DependencyConfusionDetector:
         lines = content.split("\n")
 
         for _line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
+            stripped_line = line.strip()
+            if not stripped_line or stripped_line.startswith("#"):
                 continue
 
             # Extract package name
-            package_name = line.split("==")[0].split(">=")[0].split("~=")[0].strip()
+            package_name = stripped_line.split("==")[0].split(">=")[0].split("~=")[0].strip()
 
             # Check if it looks like a private package
             for pattern in self.PRIVATE_PACKAGE_INDICATORS:

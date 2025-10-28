@@ -2403,9 +2403,11 @@ class NotebookFixer:
         if fixes_applied:
             # Create backup first
             backup_path = notebook_path.with_suffix(".ipynb.backup")
-            with open(backup_path, "w", encoding="utf-8") as f:
-                with open(notebook_path, encoding="utf-8") as orig:
-                    f.write(orig.read())
+            with (
+                open(notebook_path, encoding="utf-8") as orig,
+                open(backup_path, "w", encoding="utf-8") as f,
+            ):
+                f.write(orig.read())
 
             with open(notebook_path, "w", encoding="utf-8") as f:
                 json.dump(notebook_data, f, indent=2)

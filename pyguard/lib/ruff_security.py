@@ -1096,11 +1096,9 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                 if func_name in ("os.chmod", "pathlib.Path.chmod"):
                     # Check if mode argument is overly permissive
                     if parent.args:
-                        mode_arg = (
-                            parent.args[0]
-                            if func_name == "os.chmod" and len(parent.args) > 1
-                            else parent.args[0]
-                        )
+                        # os.chmod(path, mode) - mode is args[1]
+                        # Path.chmod(mode) - mode is args[0]
+                        mode_arg = parent.args[1] if func_name == "os.chmod" and len(parent.args) > 1 else parent.args[0]
                         if isinstance(mode_arg, ast.Constant):
                             # Check for overly permissive modes like 0o777, 0o666
                             mode_value = mode_arg.value

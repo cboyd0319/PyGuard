@@ -145,40 +145,41 @@ class APISecurityFixer:
                 fixed_lines.append(line)
                 continue
 
+            fixed_line = line
             # Fix jwt.decode() with HS256 or none
-            if "jwt.decode(" in line:
+            if "jwt.decode(" in fixed_line:
                 # Replace HS256 with RS256
-                if "'HS256'" in line or '"HS256"' in line:
-                    line = line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
+                if "'HS256'" in fixed_line or '"HS256"' in fixed_line:
+                    fixed_line = fixed_line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
                     if not modified:
                         self.fixes_applied.append("JWT algorithm: HS256 → RS256 (API006)")
                         modified = True
 
                 # Remove 'none' algorithm
-                if "'none'" in line or '"none"' in line:
-                    line = line.replace("'none'", "'RS256'").replace('"none"', '"RS256"')
+                if "'none'" in fixed_line or '"none"' in fixed_line:
+                    fixed_line = fixed_line.replace("'none'", "'RS256'").replace('"none"', '"RS256"')
                     if not modified:
                         self.fixes_applied.append("JWT algorithm: none → RS256 (API006)")
                         modified = True
 
                 # Add algorithms parameter if missing
-                if "algorithms=" not in line and "jwt.decode(" in line:
+                if "algorithms=" not in fixed_line and "jwt.decode(" in fixed_line:
                     # Find the closing parenthesis
-                    if line.rstrip().endswith(")"):
+                    if fixed_line.rstrip().endswith(")"):
                         # Insert before the closing paren
-                        line = line.rstrip()[:-1] + ", algorithms=['RS256'])"
+                        fixed_line = fixed_line.rstrip()[:-1] + ", algorithms=['RS256'])"
                         if not modified:
                             self.fixes_applied.append("JWT: Added algorithms parameter (API006)")
                             modified = True
 
             # Fix jwt.encode() with weak algorithms
-            if "jwt.encode(" in line and ("'HS256'" in line or '"HS256"' in line):
-                line = line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
+            if "jwt.encode(" in fixed_line and ("'HS256'" in fixed_line or '"HS256"' in fixed_line):
+                fixed_line = fixed_line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
                 if not modified:
                     self.fixes_applied.append("JWT encode algorithm: HS256 → RS256 (API006)")
                     modified = True
 
-            fixed_lines.append(line)
+            fixed_lines.append(fixed_line)
 
         return "\n".join(fixed_lines)
 
@@ -242,26 +243,27 @@ class APISecurityFixer:
         fixed_lines = []
 
         for line in lines:
+            fixed_line = line
             # Replace xml.etree imports with defusedxml
-            if "from xml.etree" in line or "import xml.etree" in line:
+            if "from xml.etree" in fixed_line or "import xml.etree" in fixed_line:
                 if "defusedxml" not in content:
                     # Add defusedxml import
-                    line = "from defusedxml.ElementTree import parse, fromstring  # PyGuard: XXE protection"
+                    fixed_line = "from defusedxml.ElementTree import parse, fromstring  # PyGuard: XXE protection"
                     if not modified:
                         self.fixes_applied.append(
                             "XML: Replaced xml.etree with defusedxml (API012)"
                         )
                         modified = True
             # Replace xml.etree.ElementTree.parse with defusedxml
-            elif "ET.parse(" in line or "ElementTree.parse(" in line:
+            elif "ET.parse(" in fixed_line or "ElementTree.parse(" in fixed_line:
                 if "defusedxml" not in content:
                     # If defusedxml import not added, add comment
-                    line = line + "  # TODO: Use defusedxml instead of xml.etree"
+                    fixed_line = fixed_line + "  # TODO: Use defusedxml instead of xml.etree"
                     if not modified:
                         self.fixes_applied.append("XML: Added XXE protection comment (API012)")
                         modified = True
 
-            fixed_lines.append(line)
+            fixed_lines.append(fixed_line)
 
         return "\n".join(fixed_lines)
 
