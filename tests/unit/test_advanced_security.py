@@ -1,6 +1,5 @@
 """Tests for advanced security analysis module."""
 
-import pytest
 
 from pyguard.lib.advanced_security import (
     AdvancedSecurityAnalyzer,

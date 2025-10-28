@@ -9,9 +9,7 @@ Comprehensive test suite following PyTest Architect Agent principles:
 - Deterministic test execution
 """
 
-import ast
 import pytest
-from pathlib import Path
 from pyguard.lib.logging_patterns import (
     LoggingChecker,
     LoggingIssue,

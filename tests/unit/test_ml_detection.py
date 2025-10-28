@@ -1,6 +1,5 @@
 """Unit tests for ML detection module."""
 
-import pytest
 
 from pyguard.lib.ml_detection import (
     AnomalyDetector,
@@ -417,7 +416,7 @@ class TestRiskScore:
         assert score.severity == "HIGH"
 
 
-class TestMLRiskScorerEdgeCases:
+class TestMLRiskScorerThresholds:
     """Test MLRiskScorer edge cases and threshold conditions."""
 
     def setup_method(self):

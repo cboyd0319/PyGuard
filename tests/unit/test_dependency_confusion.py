@@ -11,10 +11,8 @@ Test Coverage Requirements (per Security Dominance Plan):
 Total Tests: 100+ (exceeds minimum requirement of 38 per check × 7 checks)
 """
 
-import pytest
 from pathlib import Path
 import tempfile
-import shutil
 
 from pyguard.lib.dependency_confusion import (
     analyze_dependency_confusion,
@@ -106,7 +104,7 @@ subprocess.call(f'pip install {package}'.split())
 """
         # Note: Dynamic package names in f-strings are hard to detect
         # This tests that we don't crash on f-strings
-        violations = analyze_dependency_confusion(Path("test.py"), code)
+        analyze_dependency_confusion(Path("test.py"), code)
         # May or may not detect - depends on static analysis capability
 
     def test_detect_typo_with_version_specifier(self):
@@ -214,7 +212,7 @@ class TestMaliciousPatternDetection:
 import subprocess
 subprocess.call(['pip', 'install', 'tensorflow-nightly'])
 """
-        violations = analyze_dependency_confusion(Path("test.py"), code)
+        analyze_dependency_confusion(Path("test.py"), code)
         # Note: tensorflow-nightly is actually legitimate
         # This tests the pattern matching logic
 
@@ -285,7 +283,7 @@ import subprocess
 subprocess.call(['pip', 'install', 'torch-nightly'])
 """
         # Test that code doesn't crash
-        violations = analyze_dependency_confusion(Path("test.py"), code)
+        analyze_dependency_confusion(Path("test.py"), code)
         # Implementation decision: may or may not flag legitimate nightlies
 
 
@@ -623,7 +621,7 @@ class TestPerformance:
 import subprocess
 subprocess.call(['pip', 'install', 'reqests'])
 """
-        result = benchmark(lambda: analyze_dependency_confusion(Path("test.py"), code))
+        benchmark(lambda: analyze_dependency_confusion(Path("test.py"), code))
         # Benchmark completes - performance is tracked
 
     def test_performance_medium_file(self, benchmark):
@@ -632,7 +630,7 @@ subprocess.call(['pip', 'install', 'reqests'])
 import subprocess
 subprocess.call(['pip', 'install', 'numpy'])
 """ * 50  # 150 lines
-        result = benchmark(lambda: analyze_dependency_confusion(Path("test.py"), code))
+        benchmark(lambda: analyze_dependency_confusion(Path("test.py"), code))
         # Benchmark completes - performance is tracked
 
     def test_performance_requirements_file(self, benchmark):
@@ -647,7 +645,7 @@ subprocess.call(['pip', 'install', 'numpy'])
             temp_path = Path(f.name)
         
         try:
-            result = benchmark(lambda: analyze_requirements_file(temp_path))
+            benchmark(lambda: analyze_requirements_file(temp_path))
             # Benchmark completes - performance is tracked
         finally:
             temp_path.unlink()

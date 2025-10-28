@@ -208,7 +208,7 @@ cursor.execute(query)
         violations = analyze_advanced_injection(code)
         # Note: This will still trigger because we detect the pattern
         # In real implementation, we'd need to track the whitelist validation
-        order_by = [v for v in violations if v.rule_id == "INJECT017"]
+        [v for v in violations if v.rule_id == "INJECT017"]
         # For now, we accept this as a limitation requiring manual review
         assert True  # Test documents the limitation
 
@@ -351,7 +351,7 @@ import defusedxml.ElementTree as ET
 
 tree = ET.fromstring(user_xml)
 """
-        violations = analyze_advanced_injection(code)
+        analyze_advanced_injection(code)
         # Note: Current implementation doesn't special-case defusedxml
         # This documents a known limitation
         assert True  # Test documents expected behavior

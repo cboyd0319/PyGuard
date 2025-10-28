@@ -1,9 +1,7 @@
 """Unit tests for enhanced security fixes with real code transformations."""
 
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
-import pytest
 
 from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 
@@ -351,10 +349,10 @@ if value == None:
         assert "fixes_applied" in stats
         assert "allow_unsafe" in stats
 
-        assert stats["allow_unsafe"] == False
+        assert not stats["allow_unsafe"]
 
         stats_unsafe = self.fixer_unsafe.get_fix_statistics()
-        assert stats_unsafe["allow_unsafe"] == True
+        assert stats_unsafe["allow_unsafe"]
 
     def test_file_not_found(self):
         """Test handling of non-existent file."""

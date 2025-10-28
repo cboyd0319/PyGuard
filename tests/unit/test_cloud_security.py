@@ -11,15 +11,12 @@ Test Coverage Requirements (from Security Dominance Plan):
 Total: 38+ tests minimum
 """
 
-import ast
-import pytest
 from pathlib import Path
 from pyguard.lib.cloud_security import (
     check_cloud_security,
-    CloudSecurityVisitor,
     CLOUD_SECURITY_RULES,
 )
-from pyguard.lib.rule_engine import RuleSeverity, RuleCategory
+from pyguard.lib.rule_engine import RuleSeverity
 
 
 class TestAWSCredentialDetection:
@@ -489,21 +486,21 @@ class TestPerformance:
     def test_performance_small_file(self, benchmark):
         """Check performance on small file (100 lines)."""
         code = "import os\n" * 50 + "import boto3\n" * 50
-        result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
+        benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <5ms
         assert benchmark.stats['mean'] < 0.005
 
     def test_performance_medium_file(self, benchmark):
         """Check performance on medium file (1000 lines)."""
         code = "import os\n" * 500 + "import boto3\n" * 500
-        result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
+        benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <50ms
         assert benchmark.stats['mean'] < 0.050
 
     def test_performance_large_file(self, benchmark):
         """Check performance on large file (10000 lines)."""
         code = "import os\n" * 5000 + "import boto3\n" * 5000
-        result = benchmark(lambda: check_cloud_security(Path("test.py"), code))
+        benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <500ms
         assert benchmark.stats['mean'] < 0.500
 
@@ -588,7 +585,7 @@ terraform {
 '''
 """
         # This test verifies we're checking string content for patterns
-        violations = check_cloud_security(Path("test.py"), code)
+        check_cloud_security(Path("test.py"), code)
         # Note: Current implementation focuses on Python code patterns
         # This is an example of what could be added
 

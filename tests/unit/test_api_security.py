@@ -11,10 +11,9 @@ Comprehensive test suite covering:
 Total: 100+ tests for production-quality coverage
 """
 
-import pytest
 from pathlib import Path
 
-from pyguard.lib.api_security import analyze_api_security, APISecurityVisitor
+from pyguard.lib.api_security import analyze_api_security
 from pyguard.lib.rule_engine import RuleSeverity
 
 
@@ -1471,14 +1470,14 @@ class TestPerformance:
     def test_small_file_performance(self, benchmark):
         """Benchmark on 100-line file."""
         code = "\n".join(["def func(): pass"] * 50)
-        result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
+        benchmark(lambda: analyze_api_security(Path("test.py"), code))
         # Should complete quickly
         assert benchmark.stats['mean'] < 0.050  # <50ms
 
     def test_medium_file_performance(self, benchmark):
         """Benchmark on 1000-line file."""
         code = "\n".join(["def func(): pass"] * 500)
-        result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
+        benchmark(lambda: analyze_api_security(Path("test.py"), code))
         assert benchmark.stats['mean'] < 0.200  # <200ms
 
     def test_api_heavy_file_performance(self, benchmark):
@@ -1491,7 +1490,7 @@ def endpoint{i}():
     return {{'data': {i}}}
 """)
         code = "from flask import Flask\napp = Flask(__name__)\n" + "\n".join(routes)
-        result = benchmark(lambda: analyze_api_security(Path("test.py"), code))
+        benchmark(lambda: analyze_api_security(Path("test.py"), code))
         assert benchmark.stats['mean'] < 0.300  # <300ms for 50 routes
 
 

@@ -1,8 +1,6 @@
 """Tests for PIE patterns module."""
 
-from pathlib import Path
 
-import pytest
 
 from pyguard.lib.pie_patterns import PIE_RULES, PIEPatternChecker
 

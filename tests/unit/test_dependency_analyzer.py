@@ -1,7 +1,5 @@
 """Tests for dependency analyzer module."""
 
-import pytest
-from pathlib import Path
 from pyguard.lib.dependency_analyzer import (
     DependencyGraphAnalyzer,
     analyze_project_dependencies,

@@ -2,8 +2,7 @@
 Tests for datetime_patterns module (DTZ rules).
 """
 
-import pytest
-from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
+from pyguard.lib.datetime_patterns import DatetimeChecker
 
 
 class TestDatetimeBasics:

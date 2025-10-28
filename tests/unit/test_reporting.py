@@ -3,9 +3,7 @@ Tests for reporting module.
 """
 
 import json
-from pathlib import Path
 
-import pytest
 
 from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, JSONReporter, HTMLReporter
 

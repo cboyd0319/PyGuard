@@ -189,7 +189,7 @@ def get_user(user_id):
         results = cli.run_security_fixes([test_file], create_backup=False)
 
         # Verify that unsafe SQL injection fix WAS applied
-        content = test_file.read_text()
+        test_file.read_text()
         # The fix should have changed the code (though exact fix depends on implementation)
         # At minimum, the original vulnerable pattern should be modified
         # Note: The actual transformation may vary based on the fixer implementation

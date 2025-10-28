@@ -878,7 +878,7 @@ arg2)
             checker = PEP8Checker()
             violations = checker.check_file(path)
 
-            e127_violations = [v for v in violations if v.rule_id == "E127"]
+            [v for v in violations if v.rule_id == "E127"]
             # Note: E127 is tricky and may not always trigger
             # This test documents expected behavior
         finally:
@@ -953,7 +953,7 @@ arg2)
 
             # Read back fixed content
             with open(path, "r") as f:
-                fixed_content = f.read()
+                f.read()
 
             # Re-check for violations
             violations_after = checker.check_file(path)
@@ -1319,7 +1319,7 @@ if condition:
             violations = checker.check_file(path)
 
             # Should have no E704-E706 violations
-            statement_violations = [v for v in violations if v.rule_id in ["E704", "E705", "E706"]]
+            [v for v in violations if v.rule_id in ["E704", "E705", "E706"]]
             # Allow E705 for simple one-liners but E704/E706 should be 0
             e704_e706 = [v for v in violations if v.rule_id in ["E704", "E706"]]
             assert len(e704_e706) == 0
@@ -1409,7 +1409,7 @@ result = function_call(
             violations = checker.check_file(path)
 
             # Should have minimal or no W503/W504 violations
-            line_break_violations = [v for v in violations if v.rule_id in ["W503", "W504"]]
+            [v for v in violations if v.rule_id in ["W503", "W504"]]
             # Allow some W504 for the discouraged style, but W503 should be 0
             w503_violations = [v for v in violations if v.rule_id == "W503"]
             assert len(w503_violations) == 0

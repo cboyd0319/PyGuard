@@ -2,12 +2,9 @@
 Tests for bugbear-style common mistake detection.
 """
 
-import ast
-from pathlib import Path
 
-import pytest
 
-from pyguard.lib.bugbear import BugbearChecker, BugbearVisitor, BUGBEAR_RULES
+from pyguard.lib.bugbear import BugbearChecker, BUGBEAR_RULES
 
 
 class TestBugbearChecker:

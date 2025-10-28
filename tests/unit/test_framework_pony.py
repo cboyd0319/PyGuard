@@ -6,11 +6,9 @@ Covers 12+ security checks for entity security, query security,
 database connection security, and generator expression security.
 """
 
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_pony import (
-    PonySecurityVisitor,
     analyze_pony_security,
 )
 

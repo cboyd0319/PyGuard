@@ -2,8 +2,7 @@
 Tests for async_patterns module (ASYNC rules).
 """
 
-import pytest
-from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
+from pyguard.lib.async_patterns import AsyncChecker
 
 
 class TestAsyncBasics:

@@ -10,10 +10,8 @@ Test Structure:
 - Edge cases and false positive prevention
 """
 
-import ast
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.framework_quart import analyze_quart, QUART_RULES
 from pyguard.lib.rule_engine import RuleSeverity

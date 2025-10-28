@@ -1,7 +1,5 @@
 """Tests for refurb patterns module."""
 
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -331,7 +329,7 @@ result = isinstance(obj, str)
         file_path.write_text(code)
 
         checker = RefurbPatternChecker()
-        violations = checker.check_file(file_path)
+        checker.check_file(file_path)
 
         # This check just passes through, no violation expected
         # (the rule just marks it as potentially combinable in the future)

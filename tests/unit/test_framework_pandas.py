@@ -19,7 +19,6 @@ Testing Strategy:
 
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.framework_pandas import (
     PANDAS_RULES,

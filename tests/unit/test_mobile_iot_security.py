@@ -13,15 +13,12 @@ Total IoT Checks: 10 (IOT001-IOT010)
 Total: 20 security checks × 38 tests = 760+ tests minimum
 """
 
-import ast
-import pytest
 from pathlib import Path
 from pyguard.lib.mobile_iot_security import (
     analyze_mobile_iot_security,
-    MobileIoTSecurityVisitor,
     MOBILE_IOT_RULES,
 )
-from pyguard.lib.rule_engine import RuleSeverity, RuleCategory
+from pyguard.lib.rule_engine import RuleSeverity
 
 
 class TestMOBILE001InsecureDataStorage:
@@ -648,21 +645,21 @@ class TestPerformance:
     def test_performance_small_file(self, benchmark):
         """Benchmark on small file (100 lines)."""
         code = "import os\npassword = os.getenv('PASSWORD')\n" * 50
-        result = benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
+        benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <5ms
         assert benchmark.stats.stats.mean < 0.005 or True  # Allow flexibility
 
     def test_performance_medium_file(self, benchmark):
         """Benchmark on medium file (1000 lines)."""
         code = "import os\napi_key = os.getenv('API_KEY')\n" * 500
-        result = benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
+        benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <50ms
         assert benchmark.stats.stats.mean < 0.050 or True  # Allow flexibility
 
     def test_performance_large_file(self, benchmark):
         """Benchmark on large file (10000 lines)."""
         code = "import os\ndevice_id = os.getenv('DEVICE_ID')\n" * 5000
-        result = benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
+        benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <500ms
         assert benchmark.stats.stats.mean < 0.500 or True  # Allow flexibility
 

@@ -12,8 +12,6 @@ Tests intelligent auto-fix capabilities for:
 - XSS vulnerabilities
 """
 
-import pytest
-from pathlib import Path
 from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
 
 

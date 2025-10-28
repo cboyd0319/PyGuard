@@ -5,7 +5,6 @@ This test demonstrates that the RipGrep integration works correctly
 with and without ripgrep installed.
 """
 
-from pathlib import Path
 from pyguard.lib.ripgrep_filter import RipGrepFilter
 from pyguard.lib.secret_scanner import SecretScanner
 from pyguard.lib.import_analyzer import ImportAnalyzer

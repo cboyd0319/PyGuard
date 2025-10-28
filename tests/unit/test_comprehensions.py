@@ -2,8 +2,7 @@
 Unit tests for comprehensions module.
 """
 
-import pytest
-from pyguard.lib.comprehensions import ComprehensionChecker, ComprehensionVisitor
+from pyguard.lib.comprehensions import ComprehensionChecker
 
 
 class TestComprehensionChecker:

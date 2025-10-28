@@ -1,6 +1,5 @@
 """Tests for AI-powered explanation system."""
 
-import pytest
 
 from pyguard.lib.ai_explainer import (
     AIExplainer,

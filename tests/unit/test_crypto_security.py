@@ -13,11 +13,9 @@ Total: 15 checks × 38 tests = 570 tests minimum
 This file implements core tests for all 15 CRYPTO rules.
 """
 
-import ast
 import pytest
 
 from pyguard.lib.crypto_security import (
-    CryptoSecurityVisitor,
     analyze_crypto_security,
     create_crypto_security_rules,
 )
@@ -200,7 +198,7 @@ cipher = AES.new(key=key, mode=AES.MODE_GCM)
 """
         violations = analyze_crypto_security(code)
         # Note: AES key detection depends on constant value analysis
-        weak_key_violations = [v for v in violations if v.rule_id == "CRYPTO002"]
+        [v for v in violations if v.rule_id == "CRYPTO002"]
         # May not detect variable-length keys without data flow analysis
 
     # SAFE CODE TESTS
@@ -506,7 +504,7 @@ IV = b'fixed_iv_value__'
 cipher = AES.new(key, mode=AES.MODE_CBC, IV=IV)
 """
         violations = analyze_crypto_security(code)
-        iv_violations = [v for v in violations if v.rule_id == "CRYPTO006"]
+        [v for v in violations if v.rule_id == "CRYPTO006"]
         # May not detect if IV is a variable (needs data flow analysis)
 
     # SAFE CODE TESTS
@@ -549,7 +547,7 @@ def hash_password(password):
 """
         violations = analyze_crypto_security(code)
         # Note: This check needs refinement - b'' is technically a salt but empty
-        salt_violations = [v for v in violations if v.rule_id == "CRYPTO007"]
+        [v for v in violations if v.rule_id == "CRYPTO007"]
 
     # SAFE CODE TESTS
 
@@ -758,7 +756,7 @@ context = ssl.SSLContext()
 context.cert_reqs = ssl.CERT_NONE
 """
         violations = analyze_crypto_security(code)
-        cert_violations = [v for v in violations if v.rule_id == "CRYPTO014"]
+        [v for v in violations if v.rule_id == "CRYPTO014"]
         # Note: This requires tracking context.cert_reqs assignment
 
     # SAFE CODE TESTS
@@ -839,7 +837,7 @@ class TestPerformance:
 import hashlib
 hash_value = hashlib.sha256(data).hexdigest()
 """ * 50
-        result = benchmark(lambda: analyze_crypto_security(code))
+        benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <5ms
         # Note: benchmark.stats returns a dict, not an object with .mean
         mean_time = benchmark.stats['mean']
@@ -853,7 +851,7 @@ from Crypto.Cipher import AES
 hash_value = hashlib.sha256(data).hexdigest()
 cipher = AES.new(key, AES.MODE_GCM)
 """ * 250
-        result = benchmark(lambda: analyze_crypto_security(code))
+        benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <50ms
         mean_time = benchmark.stats['mean']
         assert mean_time < 0.050
@@ -872,7 +870,7 @@ def secure_encrypt(data, key):
     cipher = AES.new(key, AES.MODE_GCM)
     return cipher.encrypt(data)
 """ * 1000
-        result = benchmark(lambda: analyze_crypto_security(code))
+        benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <500ms
         mean_time = benchmark.stats['mean']
         assert mean_time < 0.500

@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.supply_chain import (
     Dependency,
@@ -362,7 +361,7 @@ class TestVulnerabilitySeverityCounting:
 
     def test_count_all_severity_levels(self):
         """Test counting vulnerabilities at all severity levels."""
-        analyzer = SupplyChainAnalyzer()
+        SupplyChainAnalyzer()
         
         # Create mock dependencies with different risk levels
         deps = [
@@ -412,7 +411,7 @@ class TestVulnerabilitySeverityCounting:
         assert low == 1
 
 
-class TestDependencyParser:
+class TestDependencyParserFormats:
     """Test dependency parsing from various file formats."""
 
     def test_parse_requirements_txt_empty_file(self, temp_dir):
@@ -572,7 +571,7 @@ class TestVulnerabilityCheckerAdvanced:
         assert result == 1
 
 
-class TestSupplyChainAnalyzer:
+class TestSupplyChainAnalyzerMain:
     """Test the main supply chain analyzer."""
 
     def test_analyze_project_no_files(self, temp_dir):

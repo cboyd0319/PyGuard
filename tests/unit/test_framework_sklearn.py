@@ -6,12 +6,9 @@ Covers 8+ security checks for ML model security, training pipeline security,
 prediction security, and data science application security.
 """
 
-import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_sklearn import (
-    SklearnSecurityVisitor,
     analyze_sklearn_security,
 )
 

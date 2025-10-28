@@ -7,14 +7,12 @@ worker security, and async task patterns.
 """
 
 import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_celery import (
     CelerySecurityVisitor,
     analyze_celery_security,
 )
-from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleSeverity
 
 
 class TestCeleryPickleSerialization:
@@ -45,7 +43,7 @@ app = Celery('tasks')
 app.conf.accept_content = ['json', 'pickle']
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        pickle_violations = [v for v in violations if v.rule_id == "CELERY001"]
+        [v for v in violations if v.rule_id == "CELERY001"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -77,7 +75,7 @@ def delete_user(user_id):
     User.objects.get(id=user_id).delete()
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        auth_violations = [v for v in violations if v.rule_id == "CELERY003"]
+        [v for v in violations if v.rule_id == "CELERY003"]
         # May or may not detect based on heuristics
         assert isinstance(violations, list)
 
@@ -109,7 +107,7 @@ def execute_code(code_string):
     return result
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        injection_violations = [v for v in violations if v.rule_id == "CELERY004"]
+        [v for v in violations if v.rule_id == "CELERY004"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -123,7 +121,7 @@ def run_command(cmd):
     exec(cmd)
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        injection_violations = [v for v in violations if v.rule_id == "CELERY004"]
+        [v for v in violations if v.rule_id == "CELERY004"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -138,7 +136,7 @@ def process_number(value):
     return num * 2
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        injection_violations = [v for v in violations if v.rule_id == "CELERY004"]
+        [v for v in violations if v.rule_id == "CELERY004"]
         # Should not flag validated/converted arguments
         assert True  # Passes if no exception
 
@@ -154,7 +152,7 @@ from celery import Celery
 app = Celery('tasks', broker='redis://:mypassword@localhost:6379/0')
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        redis_violations = [v for v in violations if v.rule_id == "CELERY005"]
+        [v for v in violations if v.rule_id == "CELERY005"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -167,7 +165,7 @@ BROKER_URL = 'redis://:secretpass@localhost:6379/0'
 app = Celery('tasks', broker=BROKER_URL)
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        redis_violations = [v for v in violations if v.rule_id == "CELERY005"]
+        [v for v in violations if v.rule_id == "CELERY005"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -196,7 +194,7 @@ backend_host = os.getenv('BACKEND_HOST')
 app = Celery('tasks', backend=f'redis://{backend_host}:6379/0')
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        backend_violations = [v for v in violations if v.rule_id == "CELERY006"]
+        [v for v in violations if v.rule_id == "CELERY006"]
         # May detect f-string with env var
         assert isinstance(violations, list)
 
@@ -208,7 +206,7 @@ from celery import Celery
 app = Celery('tasks', backend='redis://localhost:6379/0')
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        backend_violations = [v for v in violations if v.rule_id == "CELERY006"]
+        [v for v in violations if v.rule_id == "CELERY006"]
         # Should not flag static URLs
         assert True
 
@@ -227,7 +225,7 @@ def install_package(pkg_name):
     subprocess.run(['sudo', 'apt-get', 'install', pkg_name])
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        priv_violations = [v for v in violations if v.rule_id == "CELERY007"]
+        [v for v in violations if v.rule_id == "CELERY007"]
         # May detect based on heuristics
         assert isinstance(violations, list)
 
@@ -242,7 +240,7 @@ def list_files():
     subprocess.run(['ls', '-la'])
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        priv_violations = [v for v in violations if v.rule_id == "CELERY007"]
+        [v for v in violations if v.rule_id == "CELERY007"]
         # ls without sudo should not trigger
         assert True
 
@@ -274,7 +272,7 @@ def api_call(endpoint):
     make_request(endpoint)
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        rate_violations = [v for v in violations if v.rule_id == "CELERY008"]
+        [v for v in violations if v.rule_id == "CELERY008"]
         # Should not flag rate-limited tasks
         assert True
 
@@ -292,7 +290,7 @@ def unreliable_task():
     risky_operation()
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        retry_violations = [v for v in violations if v.rule_id == "CELERY009"]
+        [v for v in violations if v.rule_id == "CELERY009"]
         # Should detect max_retries=None
         assert isinstance(violations, list)
 
@@ -306,7 +304,7 @@ def network_request():
     fetch_data()
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        retry_violations = [v for v in violations if v.rule_id == "CELERY009"]
+        [v for v in violations if v.rule_id == "CELERY009"]
         # Limited retries should be fine
         assert True
 
@@ -342,7 +340,7 @@ def build_pipeline(tasks):
     pipeline.apply_async()
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        chain_violations = [v for v in violations if v.rule_id == "CELERY011"]
+        [v for v in violations if v.rule_id == "CELERY011"]
         # Should detect eval in chain construction
         # Detection may vary based on implementation
         assert isinstance(violations, list)
@@ -363,7 +361,7 @@ def step_two(prev):
 pipeline = chain(step_one.s(), step_two.s())
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        chain_violations = [v for v in violations if v.rule_id == "CELERY011"]
+        [v for v in violations if v.rule_id == "CELERY011"]
         # Static chains should be safe
         assert True
 
@@ -398,7 +396,7 @@ from celery import Celery
 app = Celery('tasks', broker='amqp://guest:guest@localhost:5672//')
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        broker_violations = [v for v in violations if v.rule_id == "CELERY015"]
+        [v for v in violations if v.rule_id == "CELERY015"]
         # Should detect amqp:// instead of amqps://
         # Detection may vary based on implementation
         assert isinstance(violations, list)
@@ -430,7 +428,7 @@ def configure_routes(user_input):
     app.conf.task_routes = {user_input: {'queue': 'high_priority'}}
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        routing_violations = [v for v in violations if v.rule_id == "CELERY016"]
+        [v for v in violations if v.rule_id == "CELERY016"]
         # May detect dynamic routing
         assert isinstance(violations, list)
 
@@ -454,7 +452,7 @@ def add_periodic_task(task_name):
     }
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        beat_violations = [v for v in violations if v.rule_id == "CELERY017"]
+        [v for v in violations if v.rule_id == "CELERY017"]
         # Should detect dynamic task name
         assert isinstance(violations, list)
 
@@ -492,7 +490,7 @@ def shutdown_workers():
     app.control.shutdown()
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        rpc_violations = [v for v in violations if v.rule_id == "CELERY019"]
+        [v for v in violations if v.rule_id == "CELERY019"]
         # Should detect control methods
         # Detection may vary based on implementation
         assert isinstance(violations, list)
@@ -510,7 +508,7 @@ app = Celery('tasks')
 app.conf.task_protocol = 1
 """
         violations = analyze_celery_security(Path("test.py"), code)
-        protocol_violations = [v for v in violations if v.rule_id == "CELERY020"]
+        [v for v in violations if v.rule_id == "CELERY020"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 

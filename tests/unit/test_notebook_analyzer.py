@@ -2,6 +2,7 @@
 Tests for Jupyter Notebook Security Analyzer.
 """
 
+import ast
 import json
 import pytest
 from pathlib import Path
@@ -605,16 +606,11 @@ def test_import_without_nbformat():
             NotebookSecurityAnalyzer()
 
 
-# Import ast for tests
-import ast
-
-
 class TestNotebookAnalysisResult:
     """Test NotebookAnalysisResult class."""
     
     def test_analysis_result_basic(self):
         """Test basic NotebookAnalysisResult functionality."""
-        from pyguard.lib.notebook_analyzer import NotebookIssue
         
         # Create mock findings with different severities
         findings = [
@@ -652,7 +648,7 @@ class TestNotebookAnalysisResult:
         
         assert result.cell_count == 3
         assert result.code_cell_count == 2
-        assert result.execution_count_valid == True
+        assert result.execution_count_valid
     
     def test_analysis_result_invalid_json(self, tmp_path):
         """Test NotebookAnalysisResult handles invalid JSON gracefully."""
@@ -668,7 +664,6 @@ class TestNotebookAnalysisResult:
     
     def test_analysis_result_nonexistent_path(self):
         """Test NotebookAnalysisResult with nonexistent path."""
-        from pathlib import Path
         fake_path = Path("/nonexistent/path.ipynb")
         
         result = NotebookAnalysisResult([], fake_path)
@@ -724,10 +719,10 @@ class TestNBFORMAT_AVAILABLE:
         
         # If we can import nbformat, flag should be True
         try:
-            import nbformat
-            assert NBFORMAT_AVAILABLE == True
+            import nbformat  # noqa: F401
+            assert NBFORMAT_AVAILABLE
         except ImportError:
-            assert NBFORMAT_AVAILABLE == False
+            assert not NBFORMAT_AVAILABLE
 
 
 class TestNotebookAnalyzerSARIF:

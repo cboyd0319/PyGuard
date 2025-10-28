@@ -5,7 +5,6 @@ Unit tests for Compliance Tracker module.
 import subprocess
 from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
 
 from pyguard.lib.compliance_tracker import ComplianceTracker
 

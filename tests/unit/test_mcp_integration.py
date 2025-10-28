@@ -1,6 +1,5 @@
 """Unit tests for MCP integration module."""
 
-import pytest
 
 from pyguard.lib.mcp_integration import (
     MCPIntegration,

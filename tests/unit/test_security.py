@@ -1,6 +1,5 @@
 """Comprehensive unit tests for security fixer module."""
 
-from pathlib import Path
 
 import pytest
 
@@ -56,7 +55,7 @@ class TestFixHardcodedPasswords:
     )
     def test_fix_hardcoded_passwords_ignores_safe_patterns(self, code):
         """Test that safe patterns don't trigger warnings."""
-        result = self.fixer._fix_hardcoded_passwords(code)
+        self.fixer._fix_hardcoded_passwords(code)
         # Empty or special values shouldn't add warnings
         if '""' in code or '"None"' in code or '"null"' in code:
             assert len(self.fixer.fixes_applied) == 0
@@ -315,7 +314,7 @@ class TestFixEvalExec:
     def test_fix_eval_exec_ignores_comments(self):
         """Test that commented code is not modified."""
         code = "# result = eval(user_input)"
-        result = self.fixer._fix_eval_exec(code)
+        self.fixer._fix_eval_exec(code)
         # Comment should not get another warning
         assert len(self.fixer.fixes_applied) == 0
 
@@ -679,8 +678,6 @@ class TestSecurityFixerProperties:
 
     def test_fixer_preserves_safe_patterns(self):
         """Property: Fixer never modifies known safe patterns."""
-        from hypothesis import given
-        from hypothesis import strategies as st
         
         # Safe patterns that should never be modified
         safe_patterns = [
@@ -748,8 +745,6 @@ class TestSecurityFixerProperties:
 
     def test_yaml_fixer_preserves_safe_yaml(self):
         """Property: YAML fixer doesn't modify safe_load calls."""
-        from hypothesis import given
-        from hypothesis import strategies as st
         
         safe_yaml_patterns = [
             "data = yaml.safe_load(file)",
@@ -765,8 +760,6 @@ class TestSecurityFixerProperties:
 
     def test_weak_crypto_preserves_strong_algorithms(self):
         """Property: Weak crypto fixer doesn't flag strong algorithms."""
-        from hypothesis import given
-        from hypothesis import strategies as st
         
         strong_patterns = [
             "hash = hashlib.sha256(data)",

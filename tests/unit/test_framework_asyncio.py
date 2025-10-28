@@ -12,7 +12,6 @@ Test Coverage Requirements (per Security Dominance Plan):
 - Total: 38+ tests minimum per check
 """
 
-import ast
 import pytest
 from pathlib import Path
 
@@ -85,7 +84,7 @@ def setup_loop():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # This still triggers because new_event_loop() returns a loop that's set
         # This is expected behavior for security checks
 
@@ -102,7 +101,7 @@ async def main():
     asyncio.create_task(some_coroutine())
 """
         violations = analyze_asyncio_security(Path("test.py"), code)
-        task_violations = [v for v in violations if v.rule_id == "ASYNCIO003"]
+        [v for v in violations if v.rule_id == "ASYNCIO003"]
         # Note: This check requires parent node tracking which may not be implemented yet
         # assert len(task_violations) >= 1
 
@@ -115,7 +114,7 @@ async def main():
     task = asyncio.create_task(some_coroutine())
     await task
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Should not trigger for stored tasks
         # assert len([v for v in violations if v.rule_id == "ASYNCIO003"]) == 0
 
@@ -145,7 +144,7 @@ async def safe_future():
     validated_value = validate_input(some_value)
     future.set_result(validated_value)
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Still triggers because validation is not detected in AST
         # This is expected for conservative security checks
 
@@ -267,7 +266,7 @@ async def use_lock(lock):
         # critical section
         pass
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Context manager usage is safe
         # assert len([v for v in violations if v.rule_id == "ASYNCIO008"]) == 0
 
@@ -355,7 +354,7 @@ async def run_blocking():
     executor = ThreadPoolExecutor(max_workers=4)
     result = await loop.run_in_executor(executor, blocking_function)
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Custom executor should not trigger
         # assert len([v for v in violations if v.rule_id == "ASYNCIO011"]) == 0
 
@@ -391,7 +390,7 @@ async def use_lock():
             # critical section
             pass
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # With timeout wrapper should be safer
         # This might still trigger depending on implementation
 
@@ -422,7 +421,7 @@ async def iterate_items():
     async for item in async_iter(items):
         process(item)
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Still triggers because async_iter() is a call
         # This is expected for conservative checks
 
@@ -453,7 +452,7 @@ async def get_all_items():
     items = [item async for item in async_iter(source)]
     return items
 """
-        violations = analyze_asyncio_security(Path("test.py"), code)
+        analyze_asyncio_security(Path("test.py"), code)
         # Still triggers because async_iter() is a call
         # This is expected behavior
 
@@ -574,7 +573,7 @@ import asyncio
 async def main():
     await asyncio.sleep(1)
 """ * 10
-        result = benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
+        benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
         assert benchmark.stats['mean'] < 0.01  # Less than 10ms
 
     def test_performance_medium_file(self, benchmark):
@@ -590,7 +589,7 @@ async def main():
     tasks = [task() for _ in range(10)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 """ * 50
-        result = benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
+        benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
         assert benchmark.stats['mean'] < 0.05  # Less than 50ms
 
     def test_performance_large_file(self, benchmark):
@@ -621,7 +620,7 @@ async def main():
     
     await asyncio.gather(*workers)
 """ * 20
-        result = benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
+        benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
         assert benchmark.stats['mean'] < 0.5  # Less than 500ms
 
 

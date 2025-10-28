@@ -10,9 +10,6 @@ Tests cover:
 Following pytest best practices with AAA pattern and proper isolation.
 """
 
-import importlib
-import sys
-from typing import Any, List
 
 import pytest
 

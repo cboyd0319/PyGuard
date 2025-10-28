@@ -1,11 +1,10 @@
 """Tests for git hooks CLI."""
 
 import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 from pyguard.git_hooks_cli import main
 

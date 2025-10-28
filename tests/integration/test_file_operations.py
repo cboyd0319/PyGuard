@@ -1,6 +1,5 @@
 """Integration tests for file operations."""
 
-from pathlib import Path
 
 import pytest
 

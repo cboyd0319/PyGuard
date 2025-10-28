@@ -1,13 +1,8 @@
 """Tests for debugging pattern detection."""
 
-import ast
-from pathlib import Path
-import tempfile
-import pytest
 
 from pyguard.lib.debugging_patterns import (
     DebuggingPatternChecker,
-    DebuggingPatternVisitor,
     DEBUGGING_RULES,
 )
 from pyguard.lib.rule_engine import RuleCategory, RuleSeverity

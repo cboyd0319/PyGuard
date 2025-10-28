@@ -6,11 +6,9 @@ Covers 15+ security checks for async ORM query security, model security,
 connection pool security, and async database operations.
 """
 
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_tortoise import (
-    TortoiseSecurityVisitor,
     analyze_tortoise_security,
 )
 

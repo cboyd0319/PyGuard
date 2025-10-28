@@ -4,10 +4,8 @@ Unit tests for Secret Scanner module.
 
 import json
 import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
 
 from pyguard.lib.secret_scanner import SecretFinding, SecretScanner
 
@@ -155,7 +153,7 @@ class TestSecretScanner:
 
             m = mock_open()
             with patch('builtins.open', m):
-                findings = SecretScanner.scan_secrets('/test/path', export_sarif=True)
+                SecretScanner.scan_secrets('/test/path', export_sarif=True)
 
             # Verify SARIF file was created
             assert m.called

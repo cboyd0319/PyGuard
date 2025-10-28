@@ -8,7 +8,6 @@ import ast
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.xss_detection import (
     XSSDetector,
@@ -426,7 +425,7 @@ def view(request):
 user_data = input('Enter data: ')
 """
         tree = ast.parse(code)
-        detector = XSSDetector(Path("test.py"), code)
+        XSSDetector(Path("test.py"), code)
 
         for node in ast.walk(tree):
             if isinstance(node, ast.Name) and node.id == "user_data":

@@ -15,7 +15,7 @@ Usage:
 import json
 import tempfile
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 import pytest
 
@@ -30,7 +30,6 @@ except ImportError:
 from pyguard.lib.notebook_security import (
     NotebookSecurityAnalyzer,
     NotebookIssue,
-    scan_notebook,
 )
 
 
@@ -181,7 +180,7 @@ class TestSecretDetectionProperties:
             
             # If entropy is high enough, should detect it
             # Note: Not all high-entropy strings are secrets, but API key pattern should help
-            secret_issues = [i for i in issues if 'secret' in i.category.lower() or 'entropy' in i.category.lower()]
+            [i for i in issues if 'secret' in i.category.lower() or 'entropy' in i.category.lower()]
             
             # This is probabilistic - very high entropy should usually be caught
             if len(random_string) >= 32 and len(set(random_string)) > 20:
@@ -328,7 +327,7 @@ class TestPerformanceProperties:
             analyzer = NotebookSecurityAnalyzer()
             
             start = time.perf_counter()
-            issues = analyzer.analyze_notebook(notebook_path)
+            analyzer.analyze_notebook(notebook_path)
             elapsed = time.perf_counter() - start
             
             # Should complete in reasonable time

@@ -1,13 +1,10 @@
 """Unit tests for AST analyzer module."""
 
-import pytest
 
 from pyguard.lib.ast_analyzer import (
     ASTAnalyzer,
     CodeQualityIssue,
-    CodeQualityVisitor,
     SecurityIssue,
-    SecurityVisitor,
 )
 
 

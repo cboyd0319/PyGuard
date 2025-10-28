@@ -10,10 +10,8 @@ Test Structure:
 - Edge cases and false positive prevention
 """
 
-import ast
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.framework_bottle import analyze_bottle, BOTTLE_RULES
 from pyguard.lib.rule_engine import RuleSeverity
@@ -504,7 +502,7 @@ def users():
 '''
         violations = analyze_bottle(Path("test.py"), code)
         # Should detect CSRF on POST
-        csrf_violations = [v for v in violations if v.rule_id == "BOTTLE006"]
+        [v for v in violations if v.rule_id == "BOTTLE006"]
         # Note: route() decorator doesn't use @post directly, so might not detect
         # This is expected behavior - only detects @post, @put, @delete decorators
 

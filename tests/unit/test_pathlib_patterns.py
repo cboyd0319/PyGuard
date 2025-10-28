@@ -2,8 +2,7 @@
 Tests for pathlib_patterns module (PTH rules).
 """
 
-import pytest
-from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
+from pyguard.lib.pathlib_patterns import PathlibChecker
 
 
 class TestPathlibBasics:

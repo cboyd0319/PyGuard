@@ -6,12 +6,9 @@ Covers 12+ security checks for ORM query security, model security,
 database connection security, and data validation.
 """
 
-import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_peewee import (
-    PeeweeSecurityVisitor,
     analyze_peewee_security,
 )
 
@@ -190,7 +187,7 @@ from playhouse.pool import PooledMySQLDatabase
 # Using connection pooling which auto-reconnects
 db = PooledMySQLDatabase('my_db')
 """
-        violations = analyze_peewee_security(Path("test.py"), code)
+        analyze_peewee_security(Path("test.py"), code)
         # This is a simplified test - in practice, reconnect behavior is inherent
         # Since we can't easily detect class inheritance without full type analysis,
         # we'll skip this specific check for now or mark it as a known limitation
@@ -361,7 +358,7 @@ class User(Model):
         database = db
 """
         # Should not raise errors
-        violations = analyze_peewee_security(Path("test.py"), code)
+        analyze_peewee_security(Path("test.py"), code)
         # No violations expected for just defining a model
         assert True  # Test passes if no exceptions
 

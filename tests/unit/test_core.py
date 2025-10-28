@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 

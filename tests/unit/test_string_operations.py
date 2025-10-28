@@ -6,7 +6,6 @@ import ast
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.string_operations import (
     StringIssue,
@@ -115,7 +114,7 @@ message = "Hello"
 result = "World"
 name = "Alice"
 """
-        tree = ast.parse(code)
+        ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
 
@@ -128,7 +127,7 @@ message = 'Hello'
 result = 'World'
 name = 'Alice'
 """
-        tree = ast.parse(code)
+        ast.parse(code)
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
 
