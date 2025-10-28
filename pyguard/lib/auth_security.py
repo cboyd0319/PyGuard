@@ -104,7 +104,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
     def _check_weak_session_id(self, node: ast.Assign, _var_name: str) -> None:
         """Check for weak session ID generation (AUTH001).
-        
+
         Args:
             node: Assignment node to check
             _var_name: Variable name (reserved for future use)

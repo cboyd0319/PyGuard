@@ -219,7 +219,7 @@ class EnhancedNotebookFixer(NotebookFixer):
 
         # Try to identify the secret variable name
         # Pattern to match variable assignment (not an actual password)
-        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"
+        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"  # noqa: S105 - Regex pattern, not a password
         matches = list(re.finditer(secret_pattern, source))
 
         if matches:
@@ -282,7 +282,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced code injection fix with AST transformation.
-        
+
         Args:
             source: Source code to fix
             _issue: Issue details (reserved for context)
@@ -332,7 +332,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced deserialization fix.
-        
+
         Args:
             source: Source code to fix
             _issue: Issue details (reserved for context)

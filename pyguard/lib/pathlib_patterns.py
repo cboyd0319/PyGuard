@@ -154,7 +154,7 @@ class PathlibPatternVisitor(ast.NodeVisitor):
 
     def _check_open_call(self, _node: ast.Call) -> None:
         """Check for open() calls that could use Path methods.
-        
+
         Args:
             _node: Call node (disabled - too many false positives)
         """
