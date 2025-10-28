@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 import json
 from pathlib import Path
 import re
+from typing import Any, ClassVar
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -250,7 +251,7 @@ class VulnerabilityChecker:
     """
 
     # Known vulnerable package patterns (examples - would be much larger in production)
-    KNOWN_VULNERABILITIES = {
+    KNOWN_VULNERABILITIES: ClassVar[Any] = {
         "requests": {
             "<2.20.0": ["CVE-2018-18074: HTTPS certificate validation bypass"],
             "<2.31.0": ["CVE-2023-32681: Proxy-Authorization header leak"],
@@ -274,7 +275,7 @@ class VulnerabilityChecker:
     }
 
     # Packages with known security concerns
-    RISKY_PACKAGES = {
+    RISKY_PACKAGES: ClassVar[Any] = {
         "pickle5": "HIGH - Uses pickle which can execute arbitrary code",
         "exec": "CRITICAL - Named 'exec' - likely malicious or poorly named",
         "importlib-resources": "LOW - Consider using native importlib.resources in Python 3.9+",

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
+from typing import Any, ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -43,7 +44,7 @@ class BackupFileDetector:
     CWE-530: Exposure of Backup File to an Unauthorized Control Sphere
     """
 
-    BACKUP_EXTENSIONS = {
+    BACKUP_EXTENSIONS: ClassVar[set[str]] = {
         ".bak",
         ".backup",
         ".old",
@@ -57,7 +58,7 @@ class BackupFileDetector:
         ".copy",
     }
 
-    SENSITIVE_PATTERNS = {
+    SENSITIVE_PATTERNS: ClassVar[dict[str, str]] = {
         r"\.env$": "Environment file with secrets",
         r"\.env\.local$": "Local environment file",
         r"\.env\.production$": "Production environment file",
@@ -142,7 +143,7 @@ class MassAssignmentDetector:
     CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes
     """
 
-    VULNERABLE_PATTERNS = [
+    VULNERABLE_PATTERNS: ClassVar[Any] = [
         r"\.update\(\s*request\.",  # model.update(request.data)
         r"\.update\(\s*\*\*request\.",  # model.update(**request.json)
         r"for\s+key\s+in\s+request\.",  # for key in request.data
@@ -196,7 +197,7 @@ class ClickjackingDetector:
     CWE-1021: Improper Restriction of Rendered UI Layers or Frames
     """
 
-    FRAMEWORK_PATTERNS = {
+    FRAMEWORK_PATTERNS: ClassVar[Any] = {
         "flask": [
             (r"from flask import Flask", "Flask application"),
             (r"@app\.route", "Flask route"),
@@ -274,7 +275,7 @@ class DependencyConfusionDetector:
     - CWE-494: Download of Code Without Integrity Check
     """
 
-    PRIVATE_PACKAGE_INDICATORS = [
+    PRIVATE_PACKAGE_INDICATORS: ClassVar[Any] = [
         r"^@[a-z0-9-]+/",  # Scoped packages
         r"^internal-",
         r"^private-",
@@ -342,7 +343,7 @@ class MemoryDisclosureDetector:
     CWE-212: Improper Removal of Sensitive Information Before Storage or Transfer
     """
 
-    MEMORY_PATTERNS = [
+    MEMORY_PATTERNS: ClassVar[Any] = [
         (r"traceback\.print_exc\(\)", "Exception traceback in production"),
         (r"sys\.exc_info\(\)", "Exception info exposure"),
         (r"__dict__", "Object dictionary exposure"),
@@ -403,7 +404,7 @@ class AuthenticationBypassDetector:
     - SANS CWE Top 25 #14: CWE-287
     """
 
-    BYPASS_PATTERNS = [
+    BYPASS_PATTERNS: ClassVar[Any] = [
         (r"if\s+True\s*:", "Hardcoded True condition bypasses authentication"),
         (r"if\s+1\s*:", "Hardcoded 1 condition bypasses authentication"),
         (r"if\s+False\s*:\s*#.*auth", "Disabled authentication check"),
@@ -462,7 +463,7 @@ class AuthorizationBypassDetector:
     - SANS CWE Top 25 #25: CWE-863
     """
 
-    IDOR_PATTERNS = [
+    IDOR_PATTERNS: ClassVar[Any] = [
         (r"\.get\(id\)", "Direct object access without authorization check"),
         (r"\.get\(request\..*id", "User-supplied ID without ownership verification"),
         (r"\.filter_by\(id=.*request", "Database query with user-supplied ID"),
@@ -528,7 +529,7 @@ class InsecureSessionManagementDetector:
     - OWASP Top 10 2021 A07: Identification and Authentication Failures
     """
 
-    SESSION_PATTERNS = [
+    SESSION_PATTERNS: ClassVar[Any] = [
         (r"session\[.+\]\s*=\s*request\.", "Session data from untrusted input"),
         (r"session\.permanent\s*=\s*True", "Permanent session without timeout"),
         (r"session_id\s*=\s*.*random\.", "Weak session ID generation"),
@@ -585,7 +586,7 @@ class ResourceLeakDetector:
     - CERT Secure Coding FIO51-PY
     """
 
-    RESOURCE_PATTERNS = [
+    RESOURCE_PATTERNS: ClassVar[Any] = [
         (r"open\([^)]+\)(?!.*with)", "File opened without context manager"),
         (r"socket\.socket\(", "Socket opened without proper closure"),
         (r"subprocess\.Popen\(", "Process without proper cleanup"),
@@ -646,7 +647,7 @@ class UncontrolledResourceConsumptionDetector:
     - OWASP ASVS v5.0 Section 5.1.5: Input Validation
     """
 
-    DOS_PATTERNS = [
+    DOS_PATTERNS: ClassVar[Any] = [
         (r"\.read\(\)(?!\s*\d+)", "Read without size limit"),
         (r"\.readlines\(\)", "Read all lines without limit"),
         (r"while\s+True:.*read", "Infinite loop with read"),
@@ -703,7 +704,7 @@ class ImproperCertificateValidationDetector:
     - SANS CWE Top 25 (emerging)
     """
 
-    CERT_PATTERNS = [
+    CERT_PATTERNS: ClassVar[Any] = [
         (r"verify\s*=\s*False", "SSL certificate verification disabled"),
         (r"ssl\._create_unverified_context", "Unverified SSL context"),
         (r"CERT_NONE", "Certificate verification disabled"),
@@ -759,7 +760,7 @@ class CryptographicNonceMisuseDetector:
     - OWASP ASVS v5.0 Section 6.2: Cryptography
     """
 
-    NONCE_PATTERNS = [
+    NONCE_PATTERNS: ClassVar[Any] = [
         (r"iv\s*=\s*b['\"]\\x00", "Hardcoded IV (all zeros)"),
         (r"nonce\s*=\s*b['\"]", "Hardcoded nonce"),
         (r"iv\s*=\s*['\"]", "Hardcoded IV string"),

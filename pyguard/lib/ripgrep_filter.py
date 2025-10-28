@@ -6,6 +6,7 @@ Dramatically improves performance for large codebases.
 """
 
 import subprocess
+from typing import Any, ClassVar
 
 
 class RipGrepFilter:
@@ -14,7 +15,7 @@ class RipGrepFilter:
     """
 
     # High-risk patterns that warrant AST analysis
-    SECURITY_PATTERNS = [
+    SECURITY_PATTERNS: ClassVar[Any] = [
         r"\beval\s*\(",
         r"\bexec\s*\(",
         r"\bcompile\s*\(",

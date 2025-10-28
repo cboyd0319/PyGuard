@@ -14,6 +14,7 @@ References:
 """
 
 from dataclasses import dataclass
+from typing import Any, ClassVar
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -71,7 +72,7 @@ class KnowledgeBase:
     """
 
     # OWASP Top 10 2021 (latest)
-    OWASP_TOP_10_2021 = {
+    OWASP_TOP_10_2021: ClassVar[Any] = {
         "A01": {
             "name": "Broken Access Control",
             "cwes": ["CWE-22", "CWE-23", "CWE-35", "CWE-59", "CWE-200", "CWE-201", "CWE-219"],
@@ -125,7 +126,7 @@ class KnowledgeBase:
     }
 
     # CWE Top 25 Most Dangerous Software Weaknesses (2023)
-    CWE_TOP_25_2023 = {
+    CWE_TOP_25_2023: ClassVar[Any] = {
         "CWE-787": {
             "name": "Out-of-bounds Write",
             "rank": 1,
