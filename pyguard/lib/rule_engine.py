@@ -52,6 +52,7 @@ class FixApplicability(Enum):
     SAFE = "safe"  # Alias for AUTOMATIC - safe to apply automatically
     SUGGESTED = "suggested"  # User should review before applying
     MANUAL = "manual"  # Requires manual intervention
+    UNSAFE = "unsafe"  # Fix available but unsafe to auto-apply (requires careful review)
     NONE = "none"  # No automated fix available
 
 
@@ -130,6 +131,16 @@ class Rule:
             return self.message_template.format(**kwargs)
         except KeyError:
             return self.message_template
+
+    @property
+    def cwe_id(self) -> Optional[str]:
+        """Alias for cwe_mapping for backward compatibility."""
+        return self.cwe_mapping
+
+    @property
+    def owasp_category(self) -> Optional[str]:
+        """Alias for owasp_mapping for backward compatibility."""
+        return self.owasp_mapping
 
 
 class RuleRegistry:

@@ -444,8 +444,8 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
-            parts = []
-            current = node.func
+            parts: list[str] = []
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.insert(0, current.attr)
                 current = current.value

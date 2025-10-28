@@ -100,7 +100,7 @@ class ImportAnalyzer:
                 timeout=60,
             )
 
-            imports = Counter()
+            imports: Counter[str] = Counter()
 
             for line in result.stdout.strip().split('\n'):
                 if line:

@@ -255,7 +255,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
             parts = []
-            current = node.func
+            current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value

@@ -183,7 +183,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         original_source = source
         fixed_source = source
         explanation = ""
-        references = []
+        references: list[str] = []
         confidence = 0.8
         
         # Apply fix based on category
