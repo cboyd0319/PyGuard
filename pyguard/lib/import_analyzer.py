@@ -38,7 +38,8 @@ class ImportAnalyzer:
                     "$2$3",
                     path,
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )
@@ -94,7 +95,8 @@ class ImportAnalyzer:
                     "$1$2",
                     path,
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )

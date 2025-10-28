@@ -185,7 +185,7 @@ except:
             path = Path(f.name)
 
         fixer = CodeSimplificationFixer()
-        success, fixes = fixer.fix_file(path)
+        success, _fixes = fixer.fix_file(path)
 
         assert success
         # Note: fixes may be detected but not auto-applied (detection-only mode)
@@ -380,15 +380,15 @@ def complex_function(data):
         result = x + y + z
     else:
         return None
-    
+
     # SIM118: dict.keys() unnecessary
     if "key" in data.keys():
         pass
-    
+
     # SIM300: Negated comparison
     if not (x != y):
         pass
-    
+
     # SIM110: Use all()
     for item in items:
         if not check(item):

@@ -10,11 +10,12 @@ Comprehensive test suite following PyTest Architect Agent principles:
 """
 
 import pytest
+
 from pyguard.lib.logging_patterns import (
     LoggingChecker,
     LoggingIssue,
     LoggingPatternVisitor,
-    check_file
+    check_file,
 )
 
 
@@ -276,7 +277,7 @@ class TestLoggingIssueDataclass:
     """Test LoggingIssue dataclass properties and edge cases."""
 
     @pytest.mark.parametrize(
-        "rule_id,line,col,message,severity,category",
+        ("rule_id", "line", "col", "message", "severity", "category"),
         [
             ("LOG001", 1, 0, "Test message", "MEDIUM", "logging"),
             ("LOG999", 100, 50, "Edge case", "HIGH", "custom"),
@@ -360,7 +361,7 @@ class TestLoggingCheckerEdgeCases:
     """Test edge cases and boundary conditions for LoggingChecker."""
 
     @pytest.mark.parametrize(
-        "code,expected_issue_count",
+        ("code", "expected_issue_count"),
         [
             ("", 0),  # Empty code
             ("# Just a comment", 0),  # Comment only
@@ -867,12 +868,12 @@ class TestStringConcatenationDetection:
     """Test string concatenation detection in detail."""
 
     @pytest.mark.parametrize(
-        "code_snippet,should_detect",
+        ("code_snippet", "should_detect"),
         [
             ('logging.info("prefix " + var)', True),
             ('logging.info(var + " suffix")', True),
             ('logging.info("a" + "b" + var)', True),
-            ('logging.info(var1 + var2)', False),  # Both variables, not string concat
+            ("logging.info(var1 + var2)", False),  # Both variables, not string concat
             ('logging.info("Message %s", var)', False),  # Lazy formatting
         ],
         ids=["prefix_concat", "suffix_concat", "multiple_concat", "var_only", "lazy_ok"],
@@ -891,12 +892,14 @@ import logging
 
         # Assert
         if should_detect:
-            assert any(issue.rule_id == "LOG005" for issue in issues), \
+            assert any(issue.rule_id == "LOG005" for issue in issues), (
                 f"Expected LOG005 for: {code_snippet}"
+            )
         else:
             # May have other issues, but not LOG005
-            assert not any(issue.rule_id == "LOG005" for issue in issues), \
+            assert not any(issue.rule_id == "LOG005" for issue in issues), (
                 f"Unexpected LOG005 for: {code_snippet}"
+            )
 
 
 class TestLoggingNoArgs:

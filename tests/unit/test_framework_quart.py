@@ -12,8 +12,7 @@ Test Structure:
 
 from pathlib import Path
 
-
-from pyguard.lib.framework_quart import analyze_quart, QUART_RULES
+from pyguard.lib.framework_quart import QUART_RULES, analyze_quart
 from pyguard.lib.rule_engine import RuleSeverity
 
 
@@ -22,7 +21,7 @@ class TestQuartAsyncRequestContext:
 
     def test_detect_request_access_non_async_function(self):
         """Detect request accessed in non-async function."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -31,7 +30,7 @@ app = Quart(__name__)
 def get_data():
     user_input = request.args.get("q")
     return {"result": user_input}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART001" for v in violations)
@@ -39,7 +38,7 @@ def get_data():
 
     def test_safe_async_request_access(self):
         """Safe code: Request accessed in async function."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -48,7 +47,7 @@ app = Quart(__name__)
 async def get_data():
     user_input = await request.args.get("q")
     return {"result": user_input}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         context_violations = [v for v in violations if v.rule_id == "QUART001"]
         assert len(context_violations) == 0
@@ -59,7 +58,7 @@ class TestQuartWebSocketAuth:
 
     def test_detect_websocket_without_auth_check(self):
         """Detect WebSocket route without authentication."""
-        code = '''
+        code = """
 from quart import Quart, websocket
 
 app = Quart(__name__)
@@ -69,7 +68,7 @@ async def ws():
     while True:
         data = await websocket.receive()
         await websocket.send(data)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART002" for v in violations)
@@ -77,7 +76,7 @@ async def ws():
 
     def test_safe_websocket_with_auth_check(self):
         """Safe code: WebSocket with authentication check."""
-        code = '''
+        code = """
 from quart import Quart, websocket
 
 app = Quart(__name__)
@@ -91,14 +90,14 @@ async def ws():
     while True:
         data = await websocket.receive()
         await websocket.send(data)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         ws_auth_violations = [v for v in violations if v.rule_id == "QUART002"]
         assert len(ws_auth_violations) == 0
 
     def test_safe_websocket_with_authenticate_call(self):
         """Safe code: WebSocket with authenticate() call."""
-        code = '''
+        code = """
 from quart import Quart, websocket
 
 app = Quart(__name__)
@@ -109,7 +108,7 @@ async def ws():
     while True:
         data = await websocket.receive()
         await websocket.send(data)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         ws_auth_violations = [v for v in violations if v.rule_id == "QUART002"]
         assert len(ws_auth_violations) == 0
@@ -120,7 +119,7 @@ class TestQuartBackgroundTaskSecurity:
 
     def test_detect_background_task_with_form_input(self):
         """Detect background task receiving form input without validation."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -130,7 +129,7 @@ async def process_data():
     form_data = await request.form
     app.add_background_task(process_user_data, form_data)
     return {"status": "processing"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART003" for v in violations)
@@ -138,7 +137,7 @@ async def process_data():
 
     def test_detect_background_task_with_json_input(self):
         """Detect background task receiving JSON input without validation."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -148,14 +147,14 @@ async def process_api():
     json_data = await request.json
     app.add_background_task(process_data, json_data)
     return {"status": "ok"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART003" for v in violations)
 
     def test_safe_background_task_with_validated_data(self):
         """Safe code: Background task with validated data."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -166,7 +165,7 @@ async def process_data():
     validated_data = validate_input(form_data)
     app.add_background_task(process_user_data, validated_data)
     return {"status": "processing"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         task_violations = [v for v in violations if v.rule_id == "QUART003"]
         assert len(task_violations) == 0
@@ -177,7 +176,7 @@ class TestQuartSessionManagement:
 
     def test_detect_session_modified_non_async(self):
         """Detect session modification in non-async context."""
-        code = '''
+        code = """
 from quart import Quart, session
 
 app = Quart(__name__)
@@ -186,7 +185,7 @@ app = Quart(__name__)
 def login():
     session["user_id"] = 123
     return {"status": "logged in"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART004" for v in violations)
@@ -194,7 +193,7 @@ def login():
 
     def test_safe_session_in_async_context(self):
         """Safe code: Session modified in async context."""
-        code = '''
+        code = """
 from quart import Quart, session
 
 app = Quart(__name__)
@@ -203,7 +202,7 @@ app = Quart(__name__)
 async def login():
     session["user_id"] = 123
     return {"status": "logged in"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         session_violations = [v for v in violations if v.rule_id == "QUART004"]
         assert len(session_violations) == 0
@@ -214,13 +213,13 @@ class TestQuartCORSConfiguration:
 
     def test_detect_cors_wildcard_origin(self):
         """Detect CORS configured with wildcard origin."""
-        code = '''
+        code = """
 from quart import Quart
 from quart_cors import cors
 
 app = Quart(__name__)
 app = cors(app, origins="*")
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART005" for v in violations)
@@ -228,26 +227,26 @@ app = cors(app, origins="*")
 
     def test_detect_cors_no_origin_specified(self):
         """Detect CORS without origin specification."""
-        code = '''
+        code = """
 from quart import Quart
 from quart_cors import cors
 
 app = Quart(__name__)
 app = cors(app)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART005" for v in violations)
 
     def test_safe_cors_with_specific_origins(self):
         """Safe code: CORS with specific origins."""
-        code = '''
+        code = """
 from quart import Quart
 from quart_cors import cors
 
 app = Quart(__name__)
 app = cors(app, origins=["https://example.com", "https://app.example.com"])
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         cors_violations = [v for v in violations if v.rule_id == "QUART005"]
         assert len(cors_violations) == 0
@@ -258,7 +257,7 @@ class TestQuartFileUploadSecurity:
 
     def test_detect_file_save_without_validation(self):
         """Detect file save without filename validation."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -269,7 +268,7 @@ async def upload_file():
     file = files["file"]
     await file.save(f"/uploads/{file.filename}")
     return {"status": "uploaded"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART006" for v in violations)
@@ -277,7 +276,7 @@ async def upload_file():
 
     def test_safe_file_save_with_secure_filename(self):
         """Safe code: File save with secure_filename()."""
-        code = '''
+        code = """
 from quart import Quart, request
 from werkzeug.utils import secure_filename
 
@@ -290,7 +289,7 @@ async def upload_file():
     filename = secure_filename(file.filename)
     await file.save(f"/uploads/{filename}")
     return {"status": "uploaded"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         upload_violations = [v for v in violations if v.rule_id == "QUART006"]
         assert len(upload_violations) == 0
@@ -301,7 +300,7 @@ class TestQuartTemplateRendering:
 
     def test_detect_render_template_string_with_form_input(self):
         """Detect render_template_string with form input (SSTI risk)."""
-        code = '''
+        code = """
 from quart import Quart, request, render_template_string
 
 app = Quart(__name__)
@@ -310,7 +309,7 @@ app = Quart(__name__)
 async def render_page():
     template = await request.form.get("template")
     return await render_template_string(template)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART007" for v in violations)
@@ -318,7 +317,7 @@ async def render_page():
 
     def test_detect_render_template_string_with_args(self):
         """Detect render_template_string with query args."""
-        code = '''
+        code = """
 from quart import Quart, request, render_template_string
 
 app = Quart(__name__)
@@ -327,14 +326,14 @@ app = Quart(__name__)
 async def render_page():
     template = request.args.get("tmpl")
     return await render_template_string(template)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART007" for v in violations)
 
     def test_safe_render_template_with_file(self):
         """Safe code: render_template with template file."""
-        code = '''
+        code = """
 from quart import Quart, request, render_template
 
 app = Quart(__name__)
@@ -343,7 +342,7 @@ app = Quart(__name__)
 async def render_page():
     data = await request.form.get("data")
     return await render_template("page.html", data=data)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         template_violations = [v for v in violations if v.rule_id == "QUART007"]
         assert len(template_violations) == 0
@@ -354,7 +353,7 @@ class TestQuartCookieSecurity:
 
     def test_detect_cookie_without_secure_flag(self):
         """Detect cookie set without secure flag."""
-        code = '''
+        code = """
 from quart import Quart, make_response
 
 app = Quart(__name__)
@@ -364,7 +363,7 @@ async def login():
     response = await make_response("OK")
     response.set_cookie("session_id", "abc123")
     return response
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART008" for v in violations)
@@ -372,7 +371,7 @@ async def login():
 
     def test_detect_cookie_without_httponly_flag(self):
         """Detect cookie set without httponly flag."""
-        code = '''
+        code = """
 from quart import Quart, make_response
 
 app = Quart(__name__)
@@ -382,7 +381,7 @@ async def login():
     response = await make_response("OK")
     response.set_cookie("session_id", "abc123", secure=True)
     return response
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART009" for v in violations)
@@ -390,7 +389,7 @@ async def login():
 
     def test_detect_cookie_without_samesite(self):
         """Detect cookie set without samesite attribute."""
-        code = '''
+        code = """
 from quart import Quart, make_response
 
 app = Quart(__name__)
@@ -400,7 +399,7 @@ async def login():
     response = await make_response("OK")
     response.set_cookie("session_id", "abc123", secure=True, httponly=True)
     return response
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART010" for v in violations)
@@ -408,7 +407,7 @@ async def login():
 
     def test_safe_cookie_with_all_flags(self):
         """Safe code: Cookie with all security flags."""
-        code = '''
+        code = """
 from quart import Quart, make_response
 
 app = Quart(__name__)
@@ -423,9 +422,11 @@ async def login():
         samesite="Strict"
     )
     return response
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
-        cookie_violations = [v for v in violations if v.rule_id in ["QUART008", "QUART009", "QUART010"]]
+        cookie_violations = [
+            v for v in violations if v.rule_id in ["QUART008", "QUART009", "QUART010"]
+        ]
         assert len(cookie_violations) == 0
 
 
@@ -434,7 +435,7 @@ class TestQuartCSRFProtection:
 
     def test_detect_post_route_without_csrf(self):
         """Detect POST route without CSRF protection."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -444,7 +445,7 @@ async def update_data():
     data = await request.form
     update_database(data)
     return {"status": "updated"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART011" for v in violations)
@@ -452,7 +453,7 @@ async def update_data():
 
     def test_detect_put_route_without_csrf(self):
         """Detect PUT route without CSRF protection."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -462,14 +463,14 @@ async def update_resource(id):
     data = await request.json
     update_resource_db(id, data)
     return {"status": "updated"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART011" for v in violations)
 
     def test_detect_delete_route_without_csrf(self):
         """Detect DELETE route without CSRF protection."""
-        code = '''
+        code = """
 from quart import Quart
 
 app = Quart(__name__)
@@ -478,14 +479,14 @@ app = Quart(__name__)
 async def delete_resource(id):
     delete_from_db(id)
     return {"status": "deleted"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART011" for v in violations)
 
     def test_safe_post_route_with_csrf_check(self):
         """Safe code: POST route with CSRF token validation."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -497,7 +498,7 @@ async def update_data():
     data = await request.form
     update_database(data)
     return {"status": "updated"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         csrf_violations = [v for v in violations if v.rule_id == "QUART011"]
         assert len(csrf_violations) == 0
@@ -508,7 +509,7 @@ class TestQuartAuthenticationDecorator:
 
     def test_detect_route_accessing_password_without_auth(self):
         """Detect route accessing password without authentication."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -517,7 +518,7 @@ app = Quart(__name__)
 async def get_users():
     users = await db.query("SELECT id, username, password FROM users")
     return {"users": users}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART012" for v in violations)
@@ -525,7 +526,7 @@ async def get_users():
 
     def test_detect_route_accessing_token_without_auth(self):
         """Detect route accessing token without authentication."""
-        code = '''
+        code = """
 from quart import Quart
 
 app = Quart(__name__)
@@ -534,14 +535,14 @@ app = Quart(__name__)
 async def get_tokens():
     tokens = await db.query("SELECT api_key FROM api_tokens")
     return {"tokens": tokens}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "QUART012" for v in violations)
 
     def test_safe_route_with_auth_decorator(self):
         """Safe code: Route with authentication decorator."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -551,14 +552,14 @@ app = Quart(__name__)
 async def get_users():
     users = await db.query("SELECT id, username, password FROM users")
     return {"users": users}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         auth_violations = [v for v in violations if v.rule_id == "QUART012"]
         assert len(auth_violations) == 0
 
     def test_safe_route_with_auth_required_decorator(self):
         """Safe code: Route with auth_required decorator."""
-        code = '''
+        code = """
 from quart import Quart
 
 app = Quart(__name__)
@@ -568,7 +569,7 @@ app = Quart(__name__)
 async def get_secrets():
     secrets = await db.query("SELECT secret FROM secrets")
     return {"secrets": secrets}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         auth_violations = [v for v in violations if v.rule_id == "QUART012"]
         assert len(auth_violations) == 0
@@ -608,16 +609,16 @@ class TestQuartEdgeCases:
 
     def test_no_violations_for_non_quart_code(self):
         """No violations for code without Quart imports."""
-        code = '''
+        code = """
 def process_data(data):
     return {"result": data}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) == 0
 
     def test_no_violations_for_safe_quart_app(self):
         """No violations for properly secured Quart app."""
-        code = '''
+        code = """
 from quart import Quart, request, render_template
 from werkzeug.utils import secure_filename
 
@@ -630,13 +631,13 @@ async def index():
 @app.route("/data")
 async def get_data():
     return {"status": "ok"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         assert len(violations) == 0
 
     def test_multiple_violations_in_single_function(self):
         """Detect multiple violations in a single function."""
-        code = '''
+        code = """
 from quart import Quart, request, render_template_string
 
 app = Quart(__name__)
@@ -646,14 +647,14 @@ async def process():
     template = await request.form.get("template")
     result = await render_template_string(template)
     return result
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should detect: CSRF missing + SSTI risk
         assert len(violations) >= 2
 
     def test_safe_get_route_no_csrf_required(self):
         """Safe code: GET routes don't require CSRF protection."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -663,7 +664,7 @@ async def get_data():
     query = request.args.get("q")
     results = search(query)
     return {"results": results}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         csrf_violations = [v for v in violations if v.rule_id == "QUART011"]
         assert len(csrf_violations) == 0
@@ -674,7 +675,7 @@ class TestQuartRealWorldPatterns:
 
     def test_api_endpoint_with_json_response(self):
         """Test typical API endpoint pattern."""
-        code = '''
+        code = """
 from quart import Quart, request, jsonify
 
 app = Quart(__name__)
@@ -690,7 +691,7 @@ async def users():
     else:
         users = await get_all_users()
         return jsonify(users)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should detect CSRF on POST
         csrf_violations = [v for v in violations if v.rule_id == "QUART011"]
@@ -698,7 +699,7 @@ async def users():
 
     def test_websocket_chat_application(self):
         """Test WebSocket chat application pattern."""
-        code = '''
+        code = """
 from quart import Quart, websocket
 
 app = Quart(__name__)
@@ -709,12 +710,12 @@ async def chat():
     if not verify_token(token):
         await websocket.close(1008)
         return
-    
+
     while True:
         message = await websocket.receive()
         sanitized = sanitize_message(message)
         await websocket.send(sanitized)
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should not detect violations - properly secured
         ws_violations = [v for v in violations if v.rule_id == "QUART002"]
@@ -722,7 +723,7 @@ async def chat():
 
     def test_file_upload_api(self):
         """Test file upload API endpoint."""
-        code = '''
+        code = """
 from quart import Quart, request
 from werkzeug.utils import secure_filename
 
@@ -733,13 +734,13 @@ app = Quart(__name__)
 async def upload():
     csrf_token = await request.form.get("csrf")
     validate_csrf(csrf_token)
-    
+
     files = await request.files
     file = files["file"]
     filename = secure_filename(file.filename)
     await file.save(f"/uploads/{filename}")
     return {"status": "uploaded", "filename": filename}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should not detect violations - properly secured
         major_violations = [v for v in violations if v.rule_id in ["QUART006", "QUART011"]]
@@ -751,7 +752,7 @@ class TestQuartAsyncPatterns:
 
     def test_async_database_query_pattern(self):
         """Test async database query patterns."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -761,7 +762,7 @@ async def get_user(user_id):
     query = "SELECT * FROM users WHERE id = ?"
     user = await db.fetch_one(query, user_id)
     return {"user": user}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should not detect SQL injection - using parameters
         sql_violations = [v for v in violations if "injection" in v.message.lower()]
@@ -769,7 +770,7 @@ async def get_user(user_id):
 
     def test_async_background_task_pattern(self):
         """Test async background task pattern."""
-        code = '''
+        code = """
 from quart import Quart, request
 
 app = Quart(__name__)
@@ -780,7 +781,7 @@ async def process():
     validated = validate_and_sanitize(data)
     app.add_background_task(async_process, validated)
     return {"status": "processing"}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should detect CSRF but not background task issue
         task_violations = [v for v in violations if v.rule_id == "QUART003"]
@@ -788,7 +789,7 @@ async def process():
 
     def test_async_context_manager_pattern(self):
         """Test async context manager pattern."""
-        code = '''
+        code = """
 from quart import Quart
 
 app = Quart(__name__)
@@ -798,7 +799,7 @@ async def get_data():
     async with db.transaction():
         result = await db.query("SELECT * FROM data")
         return {"data": result}
-'''
+"""
         violations = analyze_quart(Path("test.py"), code)
         # Should not detect any violations for safe async patterns
         assert len(violations) == 0

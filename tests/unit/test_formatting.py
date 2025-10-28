@@ -1,8 +1,8 @@
 """Tests for formatting module."""
 
+from pathlib import Path
 import subprocess
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
@@ -104,7 +104,7 @@ class TestFormattingFixer:
         test_file = self.create_temp_file("x=1")
 
         # Act
-        success, output = self.fixer.format_with_black(test_file, line_length=120)
+        success, _output = self.fixer.format_with_black(test_file, line_length=120)
 
         # Assert
         assert success is True
@@ -135,7 +135,7 @@ class TestFormattingFixer:
         test_file = self.create_temp_file("x=1")
 
         # Act
-        success, output = self.fixer.format_with_autopep8(test_file, aggressive=2)
+        success, _output = self.fixer.format_with_autopep8(test_file, aggressive=2)
 
         # Assert
         assert success is True
@@ -177,7 +177,7 @@ class TestFormattingFixer:
         test_file = self.create_temp_file("import os\nimport sys")
 
         # Act
-        success, output = self.fixer.sort_imports_with_isort(test_file)
+        success, _output = self.fixer.sort_imports_with_isort(test_file)
 
         # Assert
         assert success is True

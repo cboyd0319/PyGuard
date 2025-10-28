@@ -1,12 +1,14 @@
 """Tests for custom rules engine."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from pyguard.lib.custom_rules import (
     CustomRule,
     CustomRuleEngine,
-    check_no_global_variables,
     check_function_length,
+    check_no_global_variables,
     create_rule_engine_from_config,
 )
 

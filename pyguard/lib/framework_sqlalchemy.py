@@ -306,10 +306,14 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
 
-                if any(
-                    db_word in var_name
-                    for db_word in ["connection", "conn_str", "db_url", "database_url"]
-                ) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                if (
+                    any(
+                        db_word in var_name
+                        for db_word in ["connection", "conn_str", "db_url", "database_url"]
+                    )
+                    and isinstance(node.value, ast.Constant)
+                    and isinstance(node.value.value, str)
+                ):
                     if re.search(r"(password=|pwd=|:[^:@]+@)", node.value.value, re.I):
                         violation = RuleViolation(
                             rule_id="SQLA003",

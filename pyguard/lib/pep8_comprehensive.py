@@ -229,10 +229,8 @@ class PEP8Checker:
         if not line.strip().startswith((")", "]", "}")):
             # Fix under-indentation (E121, E122, E128) - only if significantly wrong
             if (
-                (indent < expected_indent
-                and line_num > open_line_num)
-                or indent > expected_indent + 4
-            ):
+                indent < expected_indent and line_num > open_line_num
+            ) or indent > expected_indent + 4:
                 fixed_line = " " * expected_indent + line.lstrip()
                 return fixed_line, True
 
@@ -256,12 +254,9 @@ class PEP8Checker:
             elif char in ")]}" and bracket_stack:
                 open_char, _, _, _ = bracket_stack[-1]
                 if (
-                    (char == ")"
-                    and open_char == "(")
-                    or (char == "]"
-                    and open_char == "[")
-                    or (char == "}"
-                    and open_char == "{")
+                    (char == ")" and open_char == "(")
+                    or (char == "]" and open_char == "[")
+                    or (char == "}" and open_char == "{")
                 ):
                     bracket_stack.pop()
             col += 1
@@ -894,9 +889,11 @@ class PEP8Checker:
                             )
 
                     # E712: Comparison to True/False should be 'if cond:' or 'if not cond:'
-                    elif isinstance(comparator, ast.Constant) and isinstance(
-                        comparator.value, bool
-                    ) and isinstance(op, (ast.Eq, ast.NotEq)):
+                    elif (
+                        isinstance(comparator, ast.Constant)
+                        and isinstance(comparator.value, bool)
+                        and isinstance(op, (ast.Eq, ast.NotEq))
+                    ):
                         self.checker._add_violation(
                             "E712",
                             node.lineno,

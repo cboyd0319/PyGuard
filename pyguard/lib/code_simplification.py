@@ -345,11 +345,15 @@ class SimplificationVisitor(ast.NodeVisitor):
                         )
 
             # SIM118: Use 'key in dict' instead of 'key in dict.keys()'
-            if isinstance(op, ast.In) and isinstance(comparator, ast.Call) and (
-                isinstance(comparator.func, ast.Attribute)
-                and comparator.func.attr
-                == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
-                and len(comparator.args) == 0
+            if (
+                isinstance(op, ast.In)
+                and isinstance(comparator, ast.Call)
+                and (
+                    isinstance(comparator.func, ast.Attribute)
+                    and comparator.func.attr
+                    == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                    and len(comparator.args) == 0
+                )
             ):
                 self.issues.append(
                     SimplificationIssue(

@@ -156,12 +156,12 @@ class SecurityFixer:
         # Warn about random.random() in security contexts
         lines = content.split("\n")
         for i, line in enumerate(lines):
-            if "random." in line and any(
-                word in line.lower() for word in ["password", "token", "key", "secret"]
-            ) and "# SECURITY:" not in line:
-                lines[i] = (
-                    f"{line}  # SECURITY: Use secrets module for cryptographic randomness"
-                )
+            if (
+                "random." in line
+                and any(word in line.lower() for word in ["password", "token", "key", "secret"])
+                and "# SECURITY:" not in line
+            ):
+                lines[i] = f"{line}  # SECURITY: Use secrets module for cryptographic randomness"
                 self.fixes_applied.append("Added warning about insecure random usage")
 
         return "\n".join(lines)
@@ -237,9 +237,11 @@ class SecurityFixer:
         if "os.path.join" in content:
             lines = content.split("\n")
             for i, line in enumerate(lines):
-                if "os.path.join" in line and any(
-                    var in line for var in ["input", "request", "user", "param"]
-                ) and "# PATH TRAVERSAL" not in line:
+                if (
+                    "os.path.join" in line
+                    and any(var in line for var in ["input", "request", "user", "param"])
+                    and "# PATH TRAVERSAL" not in line
+                ):
                     lines[i] = f"{line}  # PATH TRAVERSAL RISK: Validate and sanitize paths"
                     self.fixes_applied.append("Added path traversal warning")
             content = "\n".join(lines)

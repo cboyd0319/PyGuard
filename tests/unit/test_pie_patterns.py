@@ -1,7 +1,5 @@
 """Tests for PIE patterns module."""
 
-
-
 from pyguard.lib.pie_patterns import PIE_RULES, PIEPatternChecker
 
 
@@ -112,7 +110,7 @@ def func(value):
 class ProperClass:
     def __init__(self, val):
         self.val = val
-    
+
     def method(self):
         return self.val * 2
 """
@@ -565,24 +563,25 @@ def func(:  # Invalid syntax
     def test_exception_handling_in_check(self, tmp_path, monkeypatch):
         """Test that unexpected exceptions are handled gracefully."""
         checker = PIEPatternChecker()
-        
+
         # Mock ast.parse to raise an exception
         import ast
+
         original_parse = ast.parse
-        
+
         def mock_parse(*args, **kwargs):
             raise RuntimeError("Unexpected error")
-        
+
         monkeypatch.setattr(ast, "parse", mock_parse)
-        
+
         file_path = tmp_path / "test.py"
         file_path.write_text("x = 1")
-        
+
         violations = checker.check_file(file_path)
-        
+
         # Should return empty list, not raise exception
         assert violations == []
-        
+
         # Restore original
         monkeypatch.setattr(ast, "parse", original_parse)
 
@@ -591,10 +590,10 @@ def func(:  # Invalid syntax
         # Create a file that will trigger an exception during fixing
         # Use a non-existent file
         file_path = tmp_path / "nonexistent.py"
-        
+
         checker = PIEPatternChecker()
         success, count = checker.fix_file(file_path)
-        
+
         # Should return False for non-existent file, not raise exception
         assert success is False
         assert count == 0

@@ -1,10 +1,9 @@
 """Sample correct Python code following best practices."""
 
 import secrets
-from typing import List, Optional
 
-import yaml
 from argon2 import PasswordHasher
+import yaml
 
 
 # Secure password handling
@@ -44,7 +43,7 @@ def hash_password(password: str) -> str:
 
 
 # Proper default arguments
-def append_to_list(item: str, my_list: Optional[List] = None) -> List:
+def append_to_list(item: str, my_list: list | None = None) -> list:
     """Append item to list with proper default handling."""
     if my_list is None:
         my_list = []
@@ -57,14 +56,13 @@ def risky_operation():
     """Perform risky operation with proper error handling."""
     try:
         result = 1 / 0
-    except ZeroDivisionError as e:
-        print(f"Error: {e}")
+    except ZeroDivisionError:
         return None
     return result
 
 
 # Proper None comparison
-def check_value(x: Optional[str]) -> str:
+def check_value(x: str | None) -> str:
     """Check if value is None."""
     if x is None:
         return "None found"
@@ -72,7 +70,7 @@ def check_value(x: Optional[str]) -> str:
 
 
 # Proper isinstance check
-def process_string(value) -> Optional[str]:
+def process_string(value) -> str | None:
     """Process string value."""
     if isinstance(value, str):
         return value.upper()

@@ -1,7 +1,7 @@
 """Tests for PEP 8 comprehensive checking and fixing."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -80,7 +80,7 @@ class TestIndentationChecks:
             assert fixes > 0
 
             # Read fixed content
-            with open(path, "r") as f:
+            with open(path) as f:
                 fixed = f.read()
 
             # Should not contain tabs in indentation
@@ -162,7 +162,7 @@ class TestWhitespaceChecks:
             assert success
             assert fixes > 0
 
-            with open(path, "r") as f:
+            with open(path) as f:
                 fixed = f.read()
 
             # Should fix whitespace
@@ -360,7 +360,7 @@ class TestStatementChecks:
             assert success
             assert fixes > 0
 
-            with open(path, "r") as f:
+            with open(path) as f:
                 fixed = f.read()
 
             # Semicolons should be removed
@@ -442,7 +442,7 @@ class TestWarningChecks:
             assert success
             assert fixes > 0
 
-            with open(path, "r") as f:
+            with open(path) as f:
                 lines = f.readlines()
 
             # No line should have trailing whitespace (except newline)
@@ -467,7 +467,7 @@ class TestWarningChecks:
             assert success
             assert fixes > 0
 
-            with open(path, "r") as f:
+            with open(path) as f:
                 content = f.read()
 
             # Should end with newline
@@ -484,7 +484,7 @@ class TestIntegration:
         code = """import os, sys
 x = 1;
 func( arg )
-y = 2  
+y = 2
 """
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -509,7 +509,7 @@ y = 2
         """Test fixing multiple violation types."""
         code = """import os, sys
 x = 1;
-y = 2  
+y = 2
 """
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -952,7 +952,7 @@ arg2)
             assert fixes > 0
 
             # Read back fixed content
-            with open(path, "r") as f:
+            with open(path) as f:
                 f.read()
 
             # Re-check for violations

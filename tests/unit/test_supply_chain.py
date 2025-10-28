@@ -1,13 +1,12 @@
 """Tests for supply chain security analysis module."""
 
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.supply_chain import (
+    SBOM,
     Dependency,
     DependencyParser,
-    SBOM,
     SupplyChainAnalyzer,
     VulnerabilityChecker,
 )
@@ -312,6 +311,7 @@ class TestVersionComparisons:
     def test_version_comparison_less_than(self):
         """Test version < operator."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         assert checker._version_matches("1.0.0", "<2.0.0")
         assert not checker._version_matches("2.0.0", "<1.0.0")
@@ -319,6 +319,7 @@ class TestVersionComparisons:
     def test_version_comparison_less_equal(self):
         """Test version <= operator."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         assert checker._version_matches("1.0.0", "<=2.0.0")
         assert checker._version_matches("2.0.0", "<=2.0.0")
@@ -327,6 +328,7 @@ class TestVersionComparisons:
     def test_version_comparison_greater_than(self):
         """Test version > operator."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         assert checker._version_matches("2.0.0", ">1.0.0")
         assert not checker._version_matches("1.0.0", ">2.0.0")
@@ -334,6 +336,7 @@ class TestVersionComparisons:
     def test_version_comparison_greater_equal(self):
         """Test version >= operator."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         assert checker._version_matches("2.0.0", ">=1.0.0")
         assert checker._version_matches("2.0.0", ">=2.0.0")
@@ -342,6 +345,7 @@ class TestVersionComparisons:
     def test_version_comparison_invalid_spec(self):
         """Test version comparison with invalid spec."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         # Should return False for invalid specs
         result = checker._version_matches("1.0.0", "invalid")
@@ -350,6 +354,7 @@ class TestVersionComparisons:
     def test_version_comparison_exception(self):
         """Test version comparison handles exceptions."""
         from pyguard.lib.supply_chain import VulnerabilityChecker
+
         checker = VulnerabilityChecker()
         # Malformed version strings should not crash
         result = checker._version_matches("not-a-version", ">=1.0.0")
@@ -362,7 +367,7 @@ class TestVulnerabilitySeverityCounting:
     def test_count_all_severity_levels(self):
         """Test counting vulnerabilities at all severity levels."""
         SupplyChainAnalyzer()
-        
+
         # Create mock dependencies with different risk levels
         deps = [
             Dependency(
@@ -398,13 +403,13 @@ class TestVulnerabilitySeverityCounting:
                 vulnerabilities=[],
             ),
         ]
-        
+
         # Manually count (simulating the logic)
         critical = sum(1 for d in deps if d.risk_level == "CRITICAL")
         high = sum(1 for d in deps if d.risk_level == "HIGH")
         medium = sum(1 for d in deps if d.risk_level == "MEDIUM")
         low = sum(1 for d in deps if d.risk_level == "LOW")
-        
+
         assert critical == 1
         assert high == 1
         assert medium == 1
@@ -418,10 +423,10 @@ class TestDependencyParserFormats:
         """Test parsing empty requirements.txt."""
         req_file = temp_dir / "requirements.txt"
         req_file.write_text("")
-        
+
         parser = DependencyParser()
         deps = parser.parse_requirements_txt(req_file)
-        
+
         assert deps == []
 
     def test_parse_requirements_txt_with_comments(self, temp_dir):
@@ -433,10 +438,10 @@ requests==2.28.0
 # Another comment
 flask>=2.0.0
 """)
-        
+
         parser = DependencyParser()
         deps = parser.parse_requirements_txt(req_file)
-        
+
         assert len(deps) == 2
         assert deps[0].name == "requests"
         assert deps[0].version == "2.28.0"
@@ -450,10 +455,10 @@ flask>=2.0.0
 pytest
 black
 """)
-        
+
         parser = DependencyParser()
         deps = parser.parse_requirements_txt(req_file)
-        
+
         assert len(deps) == 2
         assert deps[0].name == "pytest"
         assert deps[0].version == "unknown"
@@ -464,10 +469,10 @@ black
         """Test parsing empty pyproject.toml."""
         toml_file = temp_dir / "pyproject.toml"
         toml_file.write_text("")
-        
+
         parser = DependencyParser()
         deps = parser.parse_pyproject_toml(toml_file)
-        
+
         assert deps == []
 
     def test_parse_pyproject_toml_with_dependencies(self, temp_dir):
@@ -478,10 +483,10 @@ black
     "requests>=2.28.0"
     "flask==2.0.0"
 """)
-        
+
         parser = DependencyParser()
         deps = parser.parse_pyproject_toml(toml_file)
-        
+
         assert len(deps) == 2
         assert deps[0].name == "requests"
         assert deps[0].version == "2.28.0"
@@ -490,10 +495,10 @@ black
         """Test parsing empty Pipfile."""
         pipfile = temp_dir / "Pipfile"
         pipfile.write_text("")
-        
+
         parser = DependencyParser()
         deps = parser.parse_pipfile(pipfile)
-        
+
         assert deps == []
 
     def test_parse_pipfile_with_packages(self, temp_dir):
@@ -507,10 +512,10 @@ flask = ">=2.0.0"
 [dev-packages]
 pytest = "*"
 """)
-        
+
         parser = DependencyParser()
         deps = parser.parse_pipfile(pipfile)
-        
+
         assert len(deps) >= 1
         # Should parse at least requests
         assert any(d.name == "requests" and d.version == "2.28.0" for d in deps)
@@ -524,7 +529,7 @@ class TestVulnerabilityCheckerAdvanced:
         checker = VulnerabilityChecker()
         vulns = ["CRITICAL: CVE-2023-12345 - Remote code execution"]
         risk = checker._assess_risk(vulns)
-        
+
         assert risk == "CRITICAL"
 
     def test_assess_risk_high_with_code_execution(self):
@@ -532,7 +537,7 @@ class TestVulnerabilityCheckerAdvanced:
         checker = VulnerabilityChecker()
         vulns = ["HIGH: Arbitrary code execution possible"]
         risk = checker._assess_risk(vulns)
-        
+
         assert risk == "HIGH"
 
     def test_assess_risk_medium(self):
@@ -540,7 +545,7 @@ class TestVulnerabilityCheckerAdvanced:
         checker = VulnerabilityChecker()
         vulns = ["MEDIUM: Information disclosure"]
         risk = checker._assess_risk(vulns)
-        
+
         assert risk == "MEDIUM"
 
     def test_assess_risk_low(self):
@@ -548,24 +553,24 @@ class TestVulnerabilityCheckerAdvanced:
         checker = VulnerabilityChecker()
         vulns = ["LOW: Minor issue"]
         risk = checker._assess_risk(vulns)
-        
+
         assert risk == "LOW"
 
     def test_version_matches_unknown_version(self):
         """Test version matching with unknown version."""
         checker = VulnerabilityChecker()
         result = checker._version_matches("unknown", ">=1.0.0")
-        
+
         assert result is False
 
     def test_compare_versions_padding(self):
         """Test version comparison with different length versions."""
         checker = VulnerabilityChecker()
-        
+
         # Test that 1.0 is treated as 1.0.0
         result = checker._compare_versions("1.0", "1.0.0")
         assert result == 0
-        
+
         # Test that 2.1 > 2.0.9
         result = checker._compare_versions("2.1", "2.0.9")
         assert result == 1
@@ -578,7 +583,7 @@ class TestSupplyChainAnalyzerMain:
         """Test analyzing a project with no dependency files."""
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)
-        
+
         # Should return SBOM with no dependencies
         assert result.total_dependencies == 0
 
@@ -586,10 +591,10 @@ class TestSupplyChainAnalyzerMain:
         """Test analyzing a project with requirements.txt."""
         req_file = temp_dir / "requirements.txt"
         req_file.write_text("requests==2.28.0\nflask==2.0.0")
-        
+
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)
-        
+
         assert result.total_dependencies >= 2
         assert len(result.dependencies) >= 2
 
@@ -600,10 +605,10 @@ class TestSupplyChainAnalyzerMain:
 [project.dependencies]
     "requests>=2.28.0"
 """)
-        
+
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)
-        
+
         assert result.total_dependencies >= 1
 
     def test_analyze_project_with_pipfile(self, temp_dir):
@@ -613,22 +618,22 @@ class TestSupplyChainAnalyzerMain:
 [packages]
 requests = "==2.28.0"
 """)
-        
+
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)
-        
+
         assert result.total_dependencies >= 1
 
     def test_generate_sbom_file_cyclonedx(self, temp_dir):
         """Test generating SBOM file in CycloneDX format."""
         req_file = temp_dir / "requirements.txt"
         req_file.write_text("requests==2.28.0")
-        
+
         output_file = temp_dir / "sbom.json"
-        
+
         analyzer = SupplyChainAnalyzer()
         analyzer.generate_sbom_file(temp_dir, output_file, format="cyclonedx")
-        
+
         assert output_file.exists()
         content = output_file.read_text()
         assert "CycloneDX" in content
@@ -638,12 +643,12 @@ requests = "==2.28.0"
         """Test generating SBOM file in JSON format."""
         req_file = temp_dir / "requirements.txt"
         req_file.write_text("flask==2.0.0")
-        
+
         output_file = temp_dir / "sbom.json"
-        
+
         analyzer = SupplyChainAnalyzer()
         analyzer.generate_sbom_file(temp_dir, output_file, format="json")
-        
+
         assert output_file.exists()
         content = output_file.read_text()
         assert "flask" in content
@@ -655,9 +660,9 @@ requests = "==2.28.0"
             Dependency(name="requests", version="unknown", source="pypi"),
             Dependency(name="requests", version="2.28.0", source="pypi"),
         ]
-        
+
         unique = analyzer._deduplicate_dependencies(deps)
-        
+
         assert len(unique) == 1
         assert unique[0].version == "2.28.0"
 
@@ -676,7 +681,7 @@ class TestSBOMFormats:
                 hash_sha256="abc123",
             )
         ]
-        
+
         sbom = SBOM(
             project_name="test-project",
             project_version="1.0.0",
@@ -684,19 +689,19 @@ class TestSBOMFormats:
             dependencies=deps,
             total_dependencies=1,
         )
-        
+
         cyclone_dx = sbom.to_cyclonedx()
-        
+
         assert cyclone_dx["bomFormat"] == "CycloneDX"
         assert cyclone_dx["specVersion"] == "1.4"
         assert cyclone_dx["metadata"]["component"]["name"] == "test-project"
         assert len(cyclone_dx["components"]) == 1
         assert cyclone_dx["components"][0]["name"] == "requests"
         assert cyclone_dx["components"][0]["version"] == "2.28.0"
-        
+
         # Check hashes
         assert len(cyclone_dx["components"][0]["hashes"]) == 1
         assert cyclone_dx["components"][0]["hashes"][0]["alg"] == "SHA-256"
-        
+
         # Check licenses
         assert len(cyclone_dx["components"][0]["licenses"]) == 1

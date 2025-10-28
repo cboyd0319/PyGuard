@@ -12,6 +12,7 @@ Total: 80+ tests for production-quality auto-fix coverage
 """
 
 import pytest
+
 from pyguard.lib.api_security_fixes import APISecurityFixer
 
 
@@ -50,7 +51,7 @@ token = jwt.decode(payload, secret, algorithms=['none'])
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         assert "'none'" not in file_path.read_text()
@@ -67,7 +68,7 @@ token = jwt.decode(payload, secret)
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -122,7 +123,7 @@ def api_endpoint():
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -141,7 +142,7 @@ def api_endpoint():
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         assert "'TRACK'" not in file_path.read_text()
@@ -178,7 +179,7 @@ app = GraphQLApp(schema, introspection=True)
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         assert "introspection=False" in file_path.read_text()
@@ -212,7 +213,7 @@ tree = ET.parse('file.xml')
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -250,7 +251,7 @@ data = pickle.loads(user_input)
         file_path.write_text(code)
 
         fixer = APISecurityFixer()
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -305,7 +306,7 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -334,7 +335,7 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=False)
-        success, fixes = fixer.fix_file(file_path)
+        _success, _fixes = fixer.fix_file(file_path)
 
         # Without unsafe flag, wildcard should remain
         assert "'*'" in file_path.read_text()
@@ -356,7 +357,7 @@ class User(models.Model):
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -397,7 +398,7 @@ def create_item():
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -420,7 +421,7 @@ response = requests.get(f'https://api.example.com/data?api_key={key}')
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -444,7 +445,7 @@ def redirect_user(url):
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -471,7 +472,7 @@ def index():
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -513,7 +514,7 @@ response = requests.get(user_provided_url)
         file_path.write_text(code)
 
         fixer = APISecurityFixer(allow_unsafe=True)
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
 
         assert success
         fixed_code = file_path.read_text()
@@ -595,7 +596,7 @@ class TestEdgeCases:
 
         fixer = APISecurityFixer()
         # Should not crash
-        success, fixes = fixer.fix_file(file_path)
+        success, _fixes = fixer.fix_file(file_path)
         # May succeed or fail, but shouldn't crash
         assert isinstance(success, bool)
 
@@ -695,6 +696,7 @@ token = jwt.decode(payload, secret, algorithms=['HS256'])
         fixed_code = file_path.read_text()
         # Should be able to parse as valid Python
         import ast
+
         ast.parse(fixed_code)  # Should not raise SyntaxError
 
     def test_fixed_jwt_passes_validation(self, tmp_path):

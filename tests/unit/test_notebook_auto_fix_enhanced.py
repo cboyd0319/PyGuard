@@ -14,7 +14,6 @@ Following pytest best practices with AAA pattern, parametrization, and proper mo
 
 import json
 from pathlib import Path
-from typing import List
 from unittest.mock import patch
 
 import pytest
@@ -114,7 +113,7 @@ class TestFixNotebookWithValidation:
         return notebook_path
 
     @pytest.fixture
-    def sample_issues(self) -> List[NotebookIssue]:
+    def sample_issues(self) -> list[NotebookIssue]:
         """Create sample notebook issues."""
         return [
             NotebookIssue(
@@ -142,7 +141,7 @@ class TestFixNotebookWithValidation:
         with patch("pyguard.lib.notebook_auto_fix_enhanced.datetime") as mock_datetime:
             mock_datetime.now.return_value.strftime.return_value = "20250101_120000"
             try:
-                success, fixes, metadata = fixer.fix_notebook_with_validation(
+                _success, _fixes, _metadata = fixer.fix_notebook_with_validation(
                     temp_notebook, sample_issues, validate=False
                 )
             except Exception:
@@ -150,9 +149,7 @@ class TestFixNotebookWithValidation:
                 pass
 
         # Assert - check backup was attempted to be created
-        temp_notebook.with_suffix(
-            ".ipynb.backup.20250101_120000"
-        )
+        temp_notebook.with_suffix(".ipynb.backup.20250101_120000")
         # Note: Backup creation happens in the method, we're verifying the logic
 
     def test_fix_notebook_with_empty_issues(self, temp_notebook):
@@ -166,7 +163,7 @@ class TestFixNotebookWithValidation:
             success, fixes, metadata = fixer.fix_notebook_with_validation(
                 temp_notebook, issues, validate=False
             )
-            
+
             # Assert
             assert success is True or success is False  # Method may handle empty issues differently
             assert isinstance(fixes, list)
@@ -185,7 +182,7 @@ class TestFixNotebookWithValidation:
             success, fixes, metadata = fixer.fix_notebook_with_validation(
                 temp_notebook, sample_issues, validate=False
             )
-            
+
             # Assert
             assert isinstance(success, bool)
             assert isinstance(fixes, list)
@@ -202,9 +199,7 @@ class TestFixNotebookWithValidation:
 
         # Act & Assert
         with pytest.raises((FileNotFoundError, IOError)):
-            fixer.fix_notebook_with_validation(
-                nonexistent_path, sample_issues, validate=False
-            )
+            fixer.fix_notebook_with_validation(nonexistent_path, sample_issues, validate=False)
 
 
 class TestExplanationLevels:
@@ -389,12 +384,12 @@ class TestApplyFixWithMetadata:
             confidence=0.9,
             auto_fixable=True,
         )
-        
+
         # Act
         result = fixer._apply_fix_with_metadata(
             cells, issue, Path("/tmp/test.ipynb"), "20250101_120000"
         )
-        
+
         # Assert
         assert result is None
 
@@ -417,12 +412,12 @@ class TestApplyFixWithMetadata:
             confidence=0.9,
             auto_fixable=True,
         )
-        
+
         # Act
         result = fixer._apply_fix_with_metadata(
             cells, issue, Path("/tmp/test.ipynb"), "20250101_120000"
         )
-        
+
         # Assert
         assert result is None
 
@@ -445,12 +440,12 @@ class TestApplyFixWithMetadata:
             confidence=0.5,
             auto_fixable=True,
         )
-        
+
         # Act
         result = fixer._apply_fix_with_metadata(
             cells, issue, Path("/tmp/test.ipynb"), "20250101_120000"
         )
-        
+
         # Assert
         assert result is None
 
@@ -473,12 +468,12 @@ class TestApplyFixWithMetadata:
             confidence=0.95,
             auto_fixable=True,
         )
-        
+
         # Act
         result = fixer._apply_fix_with_metadata(
             cells, issue, Path("/tmp/test.ipynb"), "20250101_120000"
         )
-        
+
         # Assert
         assert result is not None
         assert result.category == "Unsafe Deserialization"
@@ -507,10 +502,10 @@ class TestFixSecretEnhanced:
             confidence=0.9,
             auto_fixable=True,
         )
-        
+
         # Act
         fixed, explanation, references, confidence = fixer._fix_secret_enhanced(source, issue)
-        
+
         # Assert
         assert "os.getenv" in fixed
         assert "API_KEY" in fixed
@@ -538,10 +533,10 @@ class TestFixSecretEnhanced:
             confidence=0.9,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_secret_enhanced(source, issue)
-        
+        fixed, _explanation, _references, confidence = fixer._fix_secret_enhanced(source, issue)
+
         # Assert
         assert "export PASSWORD=" in fixed
         assert "PASSWORD" in fixed
@@ -566,10 +561,10 @@ class TestFixSecretEnhanced:
             confidence=0.9,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_secret_enhanced(source, issue)
-        
+        fixed, _explanation, _references, confidence = fixer._fix_secret_enhanced(source, issue)
+
         # Assert
         assert "12-factor app principle" in fixed
         assert confidence == 0.9
@@ -593,10 +588,10 @@ class TestFixSecretEnhanced:
             confidence=0.5,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_secret_enhanced(source, issue)
-        
+        fixed, _explanation, _references, confidence = fixer._fix_secret_enhanced(source, issue)
+
         # Assert
         assert confidence == 0.7 or fixed == source
 
@@ -619,10 +614,10 @@ class TestFixSecretEnhanced:
             confidence=0.7,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_secret_enhanced(source, issue)
-        
+        fixed, _explanation, _references, confidence = fixer._fix_secret_enhanced(source, issue)
+
         # Assert
         assert fixed == source or confidence < 0.8
 
@@ -649,10 +644,12 @@ class TestFixCodeInjectionEnhanced:
             confidence=0.95,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(source, issue)
-        
+        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(
+            source, issue
+        )
+
         # Assert
         assert "ast.literal_eval" in fixed
         assert "import ast" in fixed
@@ -679,10 +676,12 @@ class TestFixCodeInjectionEnhanced:
             confidence=0.95,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(source, issue)
-        
+        fixed, _explanation, _references, _confidence = fixer._fix_code_injection_enhanced(
+            source, issue
+        )
+
         # Assert
         assert "ast.literal_eval" in fixed
         assert fixed.count("import ast") == 1  # Should not duplicate import
@@ -706,10 +705,12 @@ class TestFixCodeInjectionEnhanced:
             confidence=0.95,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(source, issue)
-        
+        fixed, explanation, _references, _confidence = fixer._fix_code_injection_enhanced(
+            source, issue
+        )
+
         # Assert
         assert "only evaluates Python literals" in explanation
         assert "ast.literal_eval" in fixed
@@ -733,10 +734,12 @@ class TestFixCodeInjectionEnhanced:
             confidence=0.8,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(source, issue)
-        
+        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(
+            source, issue
+        )
+
         # Assert
         assert "safe_globals" in fixed
         assert "sandboxed" in explanation.lower()
@@ -762,10 +765,12 @@ class TestFixCodeInjectionEnhanced:
             confidence=0.3,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_code_injection_enhanced(source, issue)
-        
+        fixed, _explanation, references, confidence = fixer._fix_code_injection_enhanced(
+            source, issue
+        )
+
         # Assert
         assert fixed == source
         assert confidence == 0.0
@@ -794,10 +799,12 @@ class TestFixDeserializationEnhanced:
             confidence=0.95,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_deserialization_enhanced(source, issue)
-        
+        fixed, explanation, references, confidence = fixer._fix_deserialization_enhanced(
+            source, issue
+        )
+
         # Assert
         assert "yaml.safe_load" in fixed
         assert "yaml.load(" not in fixed or "safe_load" in fixed
@@ -824,10 +831,12 @@ class TestFixDeserializationEnhanced:
             confidence=0.5,
             auto_fixable=True,
         )
-        
+
         # Act
-        fixed, explanation, references, confidence = fixer._fix_deserialization_enhanced(source, issue)
-        
+        fixed, _explanation, references, confidence = fixer._fix_deserialization_enhanced(
+            source, issue
+        )
+
         # Assert
         assert fixed == source
         assert confidence == 0.0
@@ -856,12 +865,18 @@ class TestFixReproducibilityEnhanced:
             confidence=0.85,
             auto_fixable=True,
         )
-        
+
         # Mock the _add_seed_setting method since it's from parent class
-        with patch.object(fixer, '_add_seed_setting', return_value="import torch\ntorch.manual_seed(42)\nmodel = torch.nn.Linear(10, 1)"):
+        with patch.object(
+            fixer,
+            "_add_seed_setting",
+            return_value="import torch\ntorch.manual_seed(42)\nmodel = torch.nn.Linear(10, 1)",
+        ):
             # Act
-            fixed, explanation, references, confidence = fixer._fix_reproducibility_enhanced(source, issue)
-        
+            fixed, explanation, references, confidence = fixer._fix_reproducibility_enhanced(
+                source, issue
+            )
+
         # Assert
         assert fixed != source
         assert "PyTorch" in explanation
@@ -887,12 +902,18 @@ class TestFixReproducibilityEnhanced:
             confidence=0.85,
             auto_fixable=True,
         )
-        
+
         # Mock the _add_seed_setting method
-        with patch.object(fixer, '_add_seed_setting', return_value="import numpy as np\nnp.random.seed(42)\ndata = np.random.rand(100)"):
+        with patch.object(
+            fixer,
+            "_add_seed_setting",
+            return_value="import numpy as np\nnp.random.seed(42)\ndata = np.random.rand(100)",
+        ):
             # Act
-            fixed, explanation, references, confidence = fixer._fix_reproducibility_enhanced(source, issue)
-        
+            fixed, explanation, _references, _confidence = fixer._fix_reproducibility_enhanced(
+                source, issue
+            )
+
         # Assert
         assert fixed != source
         assert "NumPy" in explanation
@@ -916,12 +937,18 @@ class TestFixReproducibilityEnhanced:
             confidence=0.85,
             auto_fixable=True,
         )
-        
+
         # Mock the _add_seed_setting method
-        with patch.object(fixer, '_add_seed_setting', return_value="import tensorflow as tf\ntf.random.set_seed(42)"):
+        with patch.object(
+            fixer,
+            "_add_seed_setting",
+            return_value="import tensorflow as tf\ntf.random.set_seed(42)",
+        ):
             # Act
-            fixed, explanation, references, confidence = fixer._fix_reproducibility_enhanced(source, issue)
-        
+            fixed, explanation, _references, _confidence = fixer._fix_reproducibility_enhanced(
+                source, issue
+            )
+
         # Assert
         assert fixed != source
         assert "TensorFlow" in explanation
@@ -945,12 +972,14 @@ class TestFixReproducibilityEnhanced:
             confidence=0.3,
             auto_fixable=True,
         )
-        
+
         # Mock the _add_seed_setting method to return unchanged source
-        with patch.object(fixer, '_add_seed_setting', return_value=source):
+        with patch.object(fixer, "_add_seed_setting", return_value=source):
             # Act
-            fixed, explanation, references, confidence = fixer._fix_reproducibility_enhanced(source, issue)
-        
+            fixed, _explanation, _references, confidence = fixer._fix_reproducibility_enhanced(
+                source, issue
+            )
+
         # Assert
         assert fixed == source
         assert confidence == 0.0
@@ -971,10 +1000,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is None
 
@@ -983,10 +1012,10 @@ class TestValidateFixes:
         # Arrange
         fixer = EnhancedNotebookFixer()
         notebook_data = {"metadata": {}}  # Missing cells
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is not None
         assert "missing cells" in result.lower()
@@ -1003,10 +1032,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is not None
         assert "syntax error" in result.lower()
@@ -1023,10 +1052,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is None
 
@@ -1042,10 +1071,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is None
 
@@ -1061,10 +1090,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is None
 
@@ -1080,10 +1109,10 @@ class TestValidateFixes:
                 }
             ]
         }
-        
+
         # Act
         result = fixer._validate_fixes(notebook_data)
-        
+
         # Assert
         assert result is not None
         assert "validation error" in result.lower()
@@ -1112,10 +1141,10 @@ class TestGenerateRollbackScript:
                 references=["CWE-001"],
             )
         ]
-        
+
         # Act
         script = fixer._generate_rollback_script(notebook_path, backup_path, fix_metadata)
-        
+
         # Assert
         assert "#!/bin/bash" in script
         assert "PyGuard Rollback Script" in script
@@ -1156,10 +1185,10 @@ class TestGenerateRollbackScript:
                 references=[],
             ),
         ]
-        
+
         # Act
         script = fixer._generate_rollback_script(notebook_path, backup_path, fix_metadata)
-        
+
         # Assert
         assert "FIX-001" in script
         assert "FIX-002" in script
@@ -1174,10 +1203,10 @@ class TestGenerateRollbackScript:
         notebook_path = Path("/tmp/test.ipynb")
         backup_path = Path("/tmp/test.ipynb.backup.20250101")
         fix_metadata = []
-        
+
         # Act
         script = fixer._generate_rollback_script(notebook_path, backup_path, fix_metadata)
-        
+
         # Assert
         assert "#!/bin/bash" in script
         assert "PyGuard Rollback Script" in script

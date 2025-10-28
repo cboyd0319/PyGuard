@@ -265,7 +265,6 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 and node.value.func.value.id == "os"
                 and node.value.func.attr in ("getenv", "environ")
             ):
-
                 # Check if secret-like names are used
                 for target in node.targets:
                     if isinstance(target, ast.Name):

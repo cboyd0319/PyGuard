@@ -185,23 +185,23 @@ from sklearn.model_selection import GridSearchCV
 def vulnerable_ml_pipeline(user_data, user_model_path):
     # SKL001: Unsafe model loading
     model = pickle.load(open(user_model_path, 'rb'))
-    
+
     # SKL012: Grid search without limits
     grid_search = GridSearchCV(RandomForestClassifier(), {'max_depth': [5, 10, 15]})
-    
+
     # SKL009: Prediction without validation
     predictions = model.predict(user_data)
-    
+
     return predictions
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
-        
+
         # Should detect multiple issues
         assert len(violations) >= 3
-        
+
         rule_ids = {v.rule_id for v in violations}
         expected_rules = {"SKL001", "SKL009", "SKL012"}
-        
+
         # At least some of the expected vulnerabilities should be detected
         assert len(rule_ids.intersection(expected_rules)) >= 2
 
@@ -246,7 +246,7 @@ def outer_function():
     def inner_function(data):
         model = joblib.load('model.joblib')
         return model.predict(data)
-    
+
     return inner_function
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
@@ -270,10 +270,10 @@ model = pickle.load(open('model.pkl', 'rb'))
 predictions = model.predict(user_data)
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
-        
+
         critical_violations = [v for v in violations if v.severity == "CRITICAL"]
         medium_violations = [v for v in violations if v.severity == "MEDIUM"]
-        
+
         assert len(critical_violations) >= 1
         assert len(medium_violations) >= 1
 
@@ -288,7 +288,7 @@ model = joblib.load('model.joblib')
 grid_search = GridSearchCV(RandomForestClassifier(), {})
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
-        
+
         for violation in violations:
             assert violation.rule_id is not None
             assert violation.rule_id.startswith("SKL")
@@ -302,8 +302,7 @@ scaler = StandardScaler()
 scaled = scaler.transform(data)
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
-        
+
         for violation in violations:
             assert violation.suggestion is not None
             assert len(violation.suggestion) > 0
-

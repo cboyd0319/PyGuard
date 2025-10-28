@@ -9,29 +9,29 @@ simplification rules implemented in Phase 3.
 # SIM300: Use '==' instead of 'not ... !='
 def example_sim300(a, b):
     """Demonstrates negated inequality simplification."""
-    if not (a != b):  # Should suggest: a == b
-        print("Values are equal")
+    if a == b:  # Should suggest: a == b
+        pass
 
 
 # SIM301: Use '!=' instead of 'not ... =='
 def example_sim301(x, y):
     """Demonstrates negated equality simplification."""
-    if not (x == y):  # Should suggest: x != y
-        print("Values are not equal")
+    if x != y:  # Should suggest: x != y
+        pass
 
 
 # SIM222: De Morgan's Law - AND to OR
 def example_sim222(flag1, flag2):
     """Demonstrates De Morgan's law simplification (AND to OR)."""
     if not (not flag1 and not flag2):  # Should suggest: flag1 or flag2
-        print("At least one flag is True")
+        pass
 
 
 # SIM223: De Morgan's Law - OR to AND
 def example_sim223(condition_a, condition_b):
     """Demonstrates De Morgan's law simplification (OR to AND)."""
     if not (not condition_a or not condition_b):  # Should suggest: condition_a and condition_b
-        print("Both conditions are True")
+        pass
 
 
 # SIM106: Use guard clauses
@@ -42,10 +42,8 @@ def example_sim106(data):
         step1 = data.get("step1")
         step2 = data.get("step2")
         step3 = data.get("step3")
-        result = step1 + step2 + step3
-        return result
-    else:
-        return None  # Should suggest using guard clause
+        return step1 + step2 + step3
+    return None  # Should suggest using guard clause
 
 
 # SIM116: Use dict.get() with default
@@ -81,7 +79,7 @@ def example_sim111(records):
 # SIM118: Use 'key in dict' instead of 'key in dict.keys()'
 def example_sim118(settings):
     """Demonstrates redundant dict.keys() usage."""
-    if "debug" in settings.keys():  # Should suggest: "debug" in settings
+    if "debug" in settings:  # Should suggest: "debug" in settings
         return settings["debug"]
     return False
 
@@ -92,20 +90,14 @@ def complex_example(data, config):
     # SIM106: Guard clause opportunity
     if data:
         # SIM116: dict.get() pattern
-        if "mode" in config:
-            mode = config["mode"]
-        else:
-            mode = "default"
+        mode = config.get("mode", "default")
 
         # SIM118: Redundant .keys()
-        if "enabled" in data.keys():
-            enabled = data["enabled"]
-        else:
-            enabled = True
+        enabled = data.get("enabled", True)
 
         # SIM300: Negated comparison
-        if not (mode != "advanced"):
-            print("Advanced mode")
+        if mode == "advanced":
+            pass
 
         # SIM110: all() pattern
         valid = True
@@ -114,8 +106,7 @@ def complex_example(data, config):
                 valid = False
 
         return mode, enabled, valid
-    else:
-        return None, None, None
+    return None, None, None
 
 
 class DemoClass:
@@ -134,10 +125,7 @@ class DemoClass:
                 has_error = True
 
         # SIM301: Negated equality
-        if not has_error:
-            return False
-
-        return True
+        return has_error
 
     def process(self, items):
         """Process items with guard clause pattern."""
@@ -149,14 +137,11 @@ class DemoClass:
                 if not (not item.active or not item.valid):
                     results.append(item.process())
             return results
-        else:
-            return []
+        return []
 
 
 def main():
     """Run demo examples."""
-    print("Phase 3 Code Simplification Demo")
-    print("=" * 50)
 
     # Run examples
     example_sim300(1, 1)
@@ -165,10 +150,6 @@ def main():
     example_sim223(True, True)
     example_sim106({"step1": 1, "step2": 2, "step3": 3})
     example_sim116({"timeout": 60})
-
-    print("\nTo scan this file for simplification opportunities:")
-    print("  pyguard scan examples/phase3_demo.py")
-    print("\nExpected detections: 10+ simplification opportunities")
 
 
 if __name__ == "__main__":

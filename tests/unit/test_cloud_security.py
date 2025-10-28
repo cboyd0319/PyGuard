@@ -12,9 +12,10 @@ Total: 38+ tests minimum
 """
 
 from pathlib import Path
+
 from pyguard.lib.cloud_security import (
-    check_cloud_security,
     CLOUD_SECURITY_RULES,
+    check_cloud_security,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -488,21 +489,21 @@ class TestPerformance:
         code = "import os\n" * 50 + "import boto3\n" * 50
         benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <5ms
-        assert benchmark.stats['mean'] < 0.005
+        assert benchmark.stats["mean"] < 0.005
 
     def test_performance_medium_file(self, benchmark):
         """Check performance on medium file (1000 lines)."""
         code = "import os\n" * 500 + "import boto3\n" * 500
         benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <50ms
-        assert benchmark.stats['mean'] < 0.050
+        assert benchmark.stats["mean"] < 0.050
 
     def test_performance_large_file(self, benchmark):
         """Check performance on large file (10000 lines)."""
         code = "import os\n" * 5000 + "import boto3\n" * 5000
         benchmark(lambda: check_cloud_security(Path("test.py"), code))
         # Should complete in <500ms
-        assert benchmark.stats['mean'] < 0.500
+        assert benchmark.stats["mean"] < 0.500
 
 
 # EDGE CASE TESTS
@@ -622,13 +623,13 @@ class TestRuleRegistration:
     def test_rules_are_registered(self):
         """Verify all cloud security rules are registered."""
         assert len(CLOUD_SECURITY_RULES) >= 11
-        
+
     def test_all_rules_have_cwe_mapping(self):
         """Verify all rules have CWE mapping."""
         for rule in CLOUD_SECURITY_RULES:
             assert rule.cwe_mapping is not None
             assert rule.cwe_mapping.startswith("CWE-")
-    
+
     def test_all_rules_have_descriptions(self):
         """Verify all rules have proper descriptions and explanations."""
         for rule in CLOUD_SECURITY_RULES:
@@ -636,7 +637,7 @@ class TestRuleRegistration:
             assert len(rule.description) > 0
             assert rule.message_template is not None
             assert len(rule.message_template) > 0
-    
+
     def test_all_rules_have_references(self):
         """Verify all rules have reference documentation."""
         for rule in CLOUD_SECURITY_RULES:
@@ -648,13 +649,15 @@ class TestRuleRegistration:
 def test_minimum_test_count():
     """Verify we have minimum 38 tests as required."""
     import inspect
-    
+
     # Count all test methods in this module
     test_count = 0
     for name, obj in inspect.getmembers(inspect.getmodule(inspect.currentframe())):
-        if inspect.isclass(obj) and name.startswith('Test'):
-            test_methods = [m for m in dir(obj) if m.startswith('test_')]
+        if inspect.isclass(obj) and name.startswith("Test"):
+            test_methods = [m for m in dir(obj) if m.startswith("test_")]
             test_count += len(test_methods)
-    
+
     # Security Dominance Plan requires minimum 38 tests
-    assert test_count >= 38, f"Only {test_count} tests, need 38+ (15 vuln + 10 safe + 3 perf + 10 other)"
+    assert test_count >= 38, (
+        f"Only {test_count} tests, need 38+ (15 vuln + 10 safe + 3 perf + 10 other)"
+    )

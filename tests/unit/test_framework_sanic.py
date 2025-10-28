@@ -12,8 +12,7 @@ Test Structure:
 
 from pathlib import Path
 
-
-from pyguard.lib.framework_sanic import analyze_sanic_security, SANIC_RULES
+from pyguard.lib.framework_sanic import SANIC_RULES, analyze_sanic_security
 from pyguard.lib.rule_engine import RuleSeverity
 
 
@@ -22,7 +21,7 @@ class TestSanicRouteParameterInjection:
 
     def test_detect_route_param_in_sql_query_format(self):
         """Detect route parameter used in SQL query with format()."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -32,7 +31,7 @@ async def get_user(request, user_id):
     query = "SELECT * FROM users WHERE id = {}".format(user_id)
     result = await db.execute(query)
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC001" for v in violations)
@@ -40,7 +39,7 @@ async def get_user(request, user_id):
 
     def test_detect_route_param_in_sql_query_fstring(self):
         """Detect route parameter used in SQL query with f-string."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -50,14 +49,14 @@ async def get_user(request, user_id):
     query = f"SELECT * FROM users WHERE id = {user_id}"
     result = await db.execute(query)
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC001" for v in violations)
 
     def test_detect_route_param_in_raw_query(self):
         """Detect route parameter in raw SQL query."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -67,14 +66,14 @@ async def search(request, category):
     query = "SELECT * FROM products WHERE category = '{}'".format(category)
     result = await db.raw(query)
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC001" for v in violations)
 
     def test_safe_route_with_parameterized_query(self):
         """Safe code: Route parameter used with parameterized query."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -84,7 +83,7 @@ async def get_user(request, user_id):
     query = "SELECT * FROM users WHERE id = ?"
     result = await db.execute(query, (user_id,))
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         sql_injection_violations = [v for v in violations if v.rule_id == "SANIC001"]
         assert len(sql_injection_violations) == 0
@@ -95,7 +94,7 @@ class TestSanicMissingAuthentication:
 
     def test_detect_password_route_without_auth(self):
         """Detect password change route without authentication."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -106,7 +105,7 @@ async def change_password(request):
     user_id = request.json.get("user_id")
     await db.update_password(user_id, new_password)
     return response.json({"status": "success"})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC002" for v in violations)
@@ -114,7 +113,7 @@ async def change_password(request):
 
     def test_detect_admin_route_without_auth(self):
         """Detect admin route without authentication."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -123,14 +122,14 @@ app = Sanic("test")
 async def delete_user(request, user_id):
     await db.delete_user(user_id)
     return response.json({"status": "deleted"})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC002" for v in violations)
 
     def test_detect_token_endpoint_without_auth(self):
         """Detect token generation endpoint without auth."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -140,14 +139,14 @@ async def generate_token(request):
     user = request.json.get("user")
     token = create_token(user)
     return response.json({"token": token})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC002" for v in violations)
 
     def test_safe_route_with_auth_decorator(self):
         """Safe code: Sensitive route with auth decorator."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -159,14 +158,14 @@ async def change_password(request):
     user_id = request.token.user_id
     await db.update_password(user_id, new_password)
     return response.json({"status": "success"})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         auth_violations = [v for v in violations if v.rule_id == "SANIC002"]
         assert len(auth_violations) == 0
 
     def test_safe_route_with_auth_check(self):
         """Safe code: Route with authentication check in body."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -178,7 +177,7 @@ async def delete_user(request):
     user_id = request.json.get("user_id")
     await db.delete_user(user_id)
     return response.json({"status": "deleted"})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         auth_violations = [v for v in violations if v.rule_id == "SANIC002"]
         assert len(auth_violations) == 0
@@ -189,7 +188,7 @@ class TestSanicRequestStreamVulnerabilities:
 
     def test_detect_stream_without_size_limit(self):
         """Detect request.stream usage without size validation."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -200,7 +199,7 @@ async def upload(request):
     async for chunk in request.stream:
         data += chunk
     return response.json({"size": len(data)})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC003" for v in violations)
@@ -208,7 +207,7 @@ async def upload(request):
 
     def test_safe_stream_with_size_check(self):
         """Safe code: Request stream with size limit validation."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -222,7 +221,7 @@ async def upload(request):
         if len(data) > max_size:
             return response.json({"error": "file too large"}, status=413)
     return response.json({"size": len(data)})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         stream_violations = [v for v in violations if v.rule_id == "SANIC003"]
         assert len(stream_violations) == 0
@@ -233,7 +232,7 @@ class TestSanicWebSocketAuthentication:
 
     def test_detect_websocket_without_auth(self):
         """Detect WebSocket route without authentication check."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -243,15 +242,18 @@ async def websocket_handler(request, ws):
     while True:
         data = await ws.recv()
         await ws.send(data)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC004" for v in violations)
-        assert any("websocket" in v.message.lower() and "authentication" in v.message.lower() for v in violations)
+        assert any(
+            "websocket" in v.message.lower() and "authentication" in v.message.lower()
+            for v in violations
+        )
 
     def test_safe_websocket_with_auth(self):
         """Safe code: WebSocket with authentication check."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -264,7 +266,7 @@ async def websocket_handler(request, ws):
     while True:
         data = await ws.recv()
         await ws.send(data)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         ws_auth_violations = [v for v in violations if v.rule_id == "SANIC004"]
         assert len(ws_auth_violations) == 0
@@ -275,7 +277,7 @@ class TestSanicWebSocketOriginValidation:
 
     def test_detect_websocket_without_origin_check(self):
         """Detect WebSocket without origin validation."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -285,7 +287,7 @@ async def websocket_handler(request, ws):
     while True:
         data = await ws.recv()
         await ws.send(data)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC005" for v in violations)
@@ -293,7 +295,7 @@ async def websocket_handler(request, ws):
 
     def test_safe_websocket_with_origin_check(self):
         """Safe code: WebSocket with origin validation."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -307,7 +309,7 @@ async def websocket_handler(request, ws):
     while True:
         data = await ws.recv()
         await ws.send(data)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         origin_violations = [v for v in violations if v.rule_id == "SANIC005"]
         assert len(origin_violations) == 0
@@ -318,7 +320,7 @@ class TestSanicMiddlewareOrder:
 
     def test_detect_auth_middleware_without_priority(self):
         """Detect auth middleware without priority configuration."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -327,7 +329,7 @@ app = Sanic("test")
 async def auth_middleware(request):
     if not request.headers.get("Authorization"):
         return response.json({"error": "unauthorized"}, status=401)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC006" for v in violations)
@@ -335,7 +337,7 @@ async def auth_middleware(request):
 
     def test_safe_middleware_with_priority(self):
         """Safe code: Security middleware with priority."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -344,7 +346,7 @@ app = Sanic("test")
 async def security_middleware(request):
     if not request.headers.get("Authorization"):
         return response.json({"error": "unauthorized"}, status=401)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         middleware_violations = [v for v in violations if v.rule_id == "SANIC006"]
         assert len(middleware_violations) == 0
@@ -355,7 +357,7 @@ class TestSanicAsyncViewInjection:
 
     def test_detect_await_with_request_json(self):
         """Detect await using request.json without validation."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -365,14 +367,14 @@ async def process_data(request):
     data = request.json
     result = await external_api_call(data)
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC007" for v in violations)
 
     def test_safe_await_with_validation(self):
         """Safe code: Async operation with input validation."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -384,7 +386,7 @@ async def process_data(request):
         return response.json({"error": "invalid input"}, status=400)
     result = await external_api_call(data)
     return response.json(result)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         async_violations = [v for v in violations if v.rule_id == "SANIC007"]
         assert len(async_violations) == 0
@@ -395,7 +397,7 @@ class TestSanicCookieSecurity:
 
     def test_detect_cookie_without_secure_flag(self):
         """Detect cookie missing secure flag."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -405,7 +407,7 @@ async def login(request):
     resp = response.json({"status": "logged in"})
     resp.add_cookie("session", "abc123", httponly=True)
     return resp
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC008" for v in violations)
@@ -413,7 +415,7 @@ async def login(request):
 
     def test_detect_cookie_without_httponly_flag(self):
         """Detect cookie missing httponly flag."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -423,7 +425,7 @@ async def login(request):
     resp = response.json({"status": "logged in"})
     resp.add_cookie("session", "abc123", secure=True)
     return resp
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC008" for v in violations)
@@ -431,7 +433,7 @@ async def login(request):
 
     def test_detect_cookie_without_samesite(self):
         """Detect cookie missing samesite flag."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -441,7 +443,7 @@ async def login(request):
     resp = response.json({"status": "logged in"})
     resp.add_cookie("session", "abc123", secure=True, httponly=True)
     return resp
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC008" for v in violations)
@@ -449,7 +451,7 @@ async def login(request):
 
     def test_safe_cookie_with_all_flags(self):
         """Safe code: Cookie with all security flags."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -459,7 +461,7 @@ async def login(request):
     resp = response.json({"status": "logged in"})
     resp.add_cookie("session", "abc123", secure=True, httponly=True, samesite="Strict")
     return resp
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         cookie_violations = [v for v in violations if v.rule_id == "SANIC008"]
         assert len(cookie_violations) == 0
@@ -470,13 +472,13 @@ class TestSanicStaticFileExposure:
 
     def test_detect_static_serving_config_dir(self):
         """Detect static file handler serving config directory."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 app.static("/files", "./config")
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC009" for v in violations)
@@ -484,26 +486,26 @@ app.static("/files", "./config")
 
     def test_detect_static_serving_env_file(self):
         """Detect static file handler serving .env directory."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 app.static("/data", "./.env")
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC009" for v in violations)
 
     def test_safe_static_serving_public_dir(self):
         """Safe code: Static file handler serving public directory."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 app.static("/static", "./public")
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         static_violations = [v for v in violations if v.rule_id == "SANIC009"]
         assert len(static_violations) == 0
@@ -514,7 +516,7 @@ class TestSanicBackgroundTaskSecurity:
 
     def test_detect_add_task_without_context(self):
         """Detect background task that may lack exception handling."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -523,7 +525,7 @@ app = Sanic("test")
 async def trigger(request):
     app.add_task(background_job())
     return response.json({"status": "triggered"})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC010" for v in violations)
@@ -534,13 +536,13 @@ class TestSanicCORSConfiguration:
 
     def test_detect_cors_wildcard_origin(self):
         """Detect CORS configured with wildcard origin."""
-        code = '''
+        code = """
 from sanic import Sanic
 from sanic_cors import CORS
 
 app = Sanic("test")
 CORS(app, origins="*")
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC011" for v in violations)
@@ -548,13 +550,13 @@ CORS(app, origins="*")
 
     def test_safe_cors_specific_origins(self):
         """Safe code: CORS with specific origins."""
-        code = '''
+        code = """
 from sanic import Sanic
 from sanic_cors import CORS
 
 app = Sanic("test")
 CORS(app, origins=["https://example.com", "https://app.example.com"])
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         cors_violations = [v for v in violations if v.rule_id == "SANIC011"]
         assert len(cors_violations) == 0
@@ -565,7 +567,7 @@ class TestSanicSignalHandlerSecurity:
 
     def test_detect_signal_with_request_data(self):
         """Detect signal handler that processes request data."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -574,7 +576,7 @@ app = Sanic("test")
 async def on_request_start(request):
     data = request.json
     await process_data(data)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC012" for v in violations)
@@ -585,7 +587,7 @@ class TestSanicListenerSecurity:
 
     def test_detect_listener_with_password(self):
         """Detect listener that may expose passwords."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -594,7 +596,7 @@ app = Sanic("test")
 async def setup(app, loop):
     password = "admin123"
     await connect_db(password)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC013" for v in violations)
@@ -602,7 +604,7 @@ async def setup(app, loop):
 
     def test_detect_listener_with_secret(self):
         """Detect listener with hardcoded secret."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
@@ -611,7 +613,7 @@ app = Sanic("test")
 async def setup(app, loop):
     secret_key = "my-secret-key-123"
     app.ctx.jwt_secret = secret_key
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC013" for v in violations)
@@ -622,14 +624,14 @@ class TestSanicSSLTLSConfiguration:
 
     def test_detect_app_run_on_port_80_without_ssl(self):
         """Detect app.run() on port 80 without SSL."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC014" for v in violations)
@@ -637,28 +639,28 @@ if __name__ == "__main__":
 
     def test_detect_app_run_on_port_8000_without_ssl(self):
         """Detect app.run() on port 8000 without SSL."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 if __name__ == "__main__":
     app.run(port=8000)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         assert len(violations) >= 1
         assert any(v.rule_id == "SANIC014" for v in violations)
 
     def test_safe_app_run_with_ssl(self):
         """Safe code: app.run() with SSL configuration."""
-        code = '''
+        code = """
 from sanic import Sanic
 
 app = Sanic("test")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=443, ssl=ssl_context)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         ssl_violations = [v for v in violations if v.rule_id == "SANIC014"]
         assert len(ssl_violations) == 0
@@ -672,10 +674,20 @@ class TestSanicRuleMetadata:
         assert len(SANIC_RULES) == 14
         rule_ids = [rule.rule_id for rule in SANIC_RULES]
         expected_ids = [
-            "SANIC001", "SANIC002", "SANIC003", "SANIC004",
-            "SANIC005", "SANIC006", "SANIC007", "SANIC008",
-            "SANIC009", "SANIC010", "SANIC011", "SANIC012",
-            "SANIC013", "SANIC014"
+            "SANIC001",
+            "SANIC002",
+            "SANIC003",
+            "SANIC004",
+            "SANIC005",
+            "SANIC006",
+            "SANIC007",
+            "SANIC008",
+            "SANIC009",
+            "SANIC010",
+            "SANIC011",
+            "SANIC012",
+            "SANIC013",
+            "SANIC014",
         ]
         for expected_id in expected_ids:
             assert expected_id in rule_ids
@@ -694,12 +706,9 @@ class TestSanicRuleMetadata:
 
     def test_sanic_critical_rules_exist(self):
         """Verify critical Sanic rules exist."""
-        high_severity_rules = [
-            rule for rule in SANIC_RULES
-            if rule.severity == RuleSeverity.HIGH
-        ]
+        high_severity_rules = [rule for rule in SANIC_RULES if rule.severity == RuleSeverity.HIGH]
         assert len(high_severity_rules) >= 4
-        
+
         critical_rule_ids = [rule.rule_id for rule in high_severity_rules]
         assert "SANIC001" in critical_rule_ids  # SQL injection
         assert "SANIC002" in critical_rule_ids  # Missing auth
@@ -711,11 +720,11 @@ class TestSanicEdgeCases:
 
     def test_no_violations_without_sanic_import(self):
         """No violations should be detected without Sanic import."""
-        code = '''
+        code = """
 def get_user(user_id):
     query = f"SELECT * FROM users WHERE id = {user_id}"
     return db.execute(query)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should have no Sanic-specific violations
         sanic_violations = [v for v in violations if v.rule_id.startswith("SANIC")]
@@ -723,18 +732,18 @@ def get_user(user_id):
 
     def test_syntax_error_handling(self):
         """Analyzer should handle syntax errors gracefully."""
-        code = '''
+        code = """
 from sanic import Sanic
 app = Sanic("test"
 @app.route("/test")
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should return empty list on syntax error
         assert isinstance(violations, list)
 
     def test_complex_decorator_patterns(self):
         """Handle complex decorator patterns."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -745,14 +754,14 @@ app = Sanic("test")
 @cache(timeout=60)
 async def get_data(request):
     return response.json({"data": []})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should not crash on complex decorators
         assert isinstance(violations, list)
 
     def test_blueprint_usage(self):
         """Handle Blueprint usage correctly."""
-        code = '''
+        code = """
 from sanic import Sanic, Blueprint, response
 
 app = Sanic("test")
@@ -763,14 +772,14 @@ async def get_users(request):
     return response.json([])
 
 app.blueprint(bp)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should handle blueprints without errors
         assert isinstance(violations, list)
 
     def test_multiple_route_methods(self):
         """Handle multiple HTTP methods on same route."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("test")
@@ -778,7 +787,7 @@ app = Sanic("test")
 @app.route("/resource", methods=["GET", "POST", "PUT", "DELETE"])
 async def resource_handler(request):
     return response.json({"method": request.method})
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should handle multi-method routes
         assert isinstance(violations, list)
@@ -789,7 +798,7 @@ class TestSanicIntegration:
 
     def test_complete_secure_application(self):
         """Complete secure Sanic application should have no violations."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 from sanic_cors import CORS
 
@@ -809,22 +818,22 @@ async def auth_middleware(request):
 async def create_data(request):
     if not request.ctx.user:
         return response.json({"error": "unauthorized"}, status=401)
-    
+
     data = request.json
     if not isinstance(data, dict):
         return response.json({"error": "invalid input"}, status=400)
-    
+
     # Use parameterized query
     query = "INSERT INTO data (value) VALUES (?)"
     result = await db.execute(query, (data.get("value"),))
-    
+
     resp = response.json({"id": result.lastrowid})
     resp.add_cookie("session", "token", secure=True, httponly=True, samesite="Strict")
     return resp
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=443, ssl=ssl_context)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Well-secured app should have minimal violations
         high_severity = [v for v in violations if v.severity == RuleSeverity.HIGH]
@@ -832,7 +841,7 @@ if __name__ == "__main__":
 
     def test_insecure_application_multiple_violations(self):
         """Insecure Sanic application should detect multiple violations."""
-        code = '''
+        code = """
 from sanic import Sanic, response
 
 app = Sanic("insecure_app")
@@ -854,11 +863,11 @@ async def websocket_handler(request, ws):
 if __name__ == "__main__":
     # No SSL on production port
     app.run(port=80)
-'''
+"""
         violations = analyze_sanic_security(Path("test.py"), code)
         # Should detect multiple vulnerabilities
         assert len(violations) >= 4
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "SANIC001" in rule_ids  # SQL injection
         assert "SANIC002" in rule_ids  # Missing auth

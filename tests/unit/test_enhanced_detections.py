@@ -1,8 +1,7 @@
 """Unit tests for enhanced detections module."""
 
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.enhanced_detections import (
     AuthenticationBypassDetector,
@@ -430,7 +429,7 @@ def process_data(data):
 """
         # Act
         issues = self.detector.scan_code(code, "utils.py")
-        
+
         # Assert - should not flag clickjacking issues when no framework is present
         assert len(issues) == 0
 

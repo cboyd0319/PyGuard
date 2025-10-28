@@ -1,7 +1,5 @@
 """Tests for import rules module."""
 
-
-
 from pyguard.lib.import_rules import IMPORT_RULES, ImportRulesChecker
 
 
@@ -186,24 +184,25 @@ from __future__ import (
     def test_exception_handling_in_check(self, tmp_path, monkeypatch):
         """Test that unexpected exceptions are handled gracefully."""
         checker = ImportRulesChecker()
-        
+
         # Mock ast.parse to raise an exception
         import ast
+
         original_parse = ast.parse
-        
+
         def mock_parse(*args, **kwargs):
             raise RuntimeError("Unexpected error")
-        
+
         monkeypatch.setattr(ast, "parse", mock_parse)
-        
+
         file_path = tmp_path / "test.py"
         file_path.write_text("import sys")
-        
+
         violations = checker.check_file(file_path)
-        
+
         # Should return empty list, not raise exception
         assert violations == []
-        
+
         # Restore original
         monkeypatch.setattr(ast, "parse", original_parse)
 
@@ -244,10 +243,10 @@ from django.db import models
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
-        
+
         checker = ImportRulesChecker()
         violations = checker.check_file(file_path)
-        
+
         # Should handle third-party imports
         assert isinstance(violations, list)
 
@@ -260,9 +259,9 @@ import sys
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
-        
+
         checker = ImportRulesChecker()
         violations = checker.check_file(file_path)
-        
+
         # Should detect ordering issue (relative import before sys)
         assert isinstance(violations, list)

@@ -20,7 +20,6 @@ Testing Strategy:
 
 from pathlib import Path
 
-
 from pyguard.lib.framework_django import (
     DJANGO_RULES,
     DjangoRulesChecker,
@@ -51,7 +50,7 @@ def get_data(user_id):
 
         assert len(violations) > 0
         assert any(v.rule_id == "DJ001" for v in violations)
-        dj001 = [v for v in violations if v.rule_id == "DJ001"][0]
+        dj001 = next(v for v in violations if v.rule_id == "DJ001")
         assert dj001.severity == RuleSeverity.HIGH
         assert dj001.category == RuleCategory.SECURITY
 
@@ -100,7 +99,7 @@ from django.db import models
 
 class Product(models.Model):
     name = models.CharField(max_length=100)
-    
+
     def __str__(self):
         return self.name
 """
@@ -119,10 +118,10 @@ from django.db import models
 
 class Article(models.Model):
     title = models.CharField(max_length=200)
-    
+
     class Meta:
         verbose_name = "Article"
-    
+
     def __str__(self):
         return self.title
 """
@@ -141,10 +140,10 @@ from django.db import models
 
 class Article(models.Model):
     title = models.CharField(max_length=200)
-    
+
     class Meta:
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return self.title
 """
@@ -180,7 +179,7 @@ from django import forms
 
 class ContactForm(forms.Form):
     email = forms.EmailField()
-    
+
     def clean_email(self):
         return self.cleaned_data['email']
 """
@@ -207,7 +206,7 @@ SECRET_KEY = "super-secret-key-123"
 
         assert len(violations) > 0
         assert any(v.rule_id == "DJ010" for v in violations)
-        dj010 = [v for v in violations if v.rule_id == "DJ010"][0]
+        dj010 = next(v for v in violations if v.rule_id == "DJ010")
         assert dj010.severity == RuleSeverity.CRITICAL
 
     def test_secret_key_from_env_no_violation(self, tmp_path):
@@ -241,7 +240,7 @@ DEBUG = True
 
         assert len(violations) > 0
         assert any(v.rule_id == "DJ013" for v in violations)
-        dj013 = [v for v in violations if v.rule_id == "DJ013"][0]
+        dj013 = next(v for v in violations if v.rule_id == "DJ013")
         assert dj013.severity == RuleSeverity.CRITICAL
 
     def test_debug_false_no_violation(self, tmp_path):
@@ -324,9 +323,9 @@ class TestDjangoVisitor:
         """Test DjangoVisitor initialization."""
         code = "from django.db import models\n"
         file_path = tmp_path / "test.py"
-        
+
         visitor = DjangoVisitor(file_path, code)
-        
+
         assert visitor.file_path == file_path
         assert visitor.code == code
         assert visitor.is_django_file is True
@@ -336,30 +335,30 @@ class TestDjangoVisitor:
         """Test visitor with non-Django file."""
         code = "import os\n"
         file_path = tmp_path / "test.py"
-        
+
         visitor = DjangoVisitor(file_path, code)
-        
+
         assert visitor.is_django_file is False
 
     def test_detect_django_imports_from_statement(self):
         """Test detection of 'from django' imports."""
         code = "from django.conf import settings\n"
         visitor = DjangoVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_django_imports(code) is True
 
     def test_detect_django_imports_import_statement(self):
         """Test detection of 'import django' statements."""
         code = "import django\n"
         visitor = DjangoVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_django_imports(code) is True
 
     def test_detect_no_django_imports(self):
         """Test detection when no Django imports present."""
         code = "import os\nimport sys\n"
         visitor = DjangoVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_django_imports(code) is False
 
 
@@ -410,7 +409,7 @@ SECRET_KEY = "hardcoded-secret"
 
 class Product(models.Model):
     name = models.CharField(max_length=100)
-    
+
     class Meta:
         verbose_name = "Product"
 """
@@ -446,7 +445,7 @@ from django.db import models
 class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    
+
     def __str__(self):
         return f"商品: {self.name}"
 """

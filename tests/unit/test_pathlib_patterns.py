@@ -369,7 +369,7 @@ def calculate(x, y):
     def test_check_file_function_error(self):
         """Test check_file function with nonexistent file."""
         from pyguard.lib.pathlib_patterns import check_file
-        
+
         # Should handle error gracefully
         issues = check_file("/nonexistent/file.py")
         assert issues == []
@@ -377,7 +377,7 @@ def calculate(x, y):
     def test_check_file_function_success(self, tmp_path):
         """Test check_file function with valid file."""
         from pyguard.lib.pathlib_patterns import check_file
-        
+
         code = """
 import os
 if os.path.exists("/tmp"):
@@ -385,7 +385,7 @@ if os.path.exists("/tmp"):
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         issues = check_file(str(test_file))
         assert len(issues) > 0
 

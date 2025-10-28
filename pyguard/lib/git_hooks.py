@@ -329,7 +329,12 @@ exit 0
         try:
             # Run hook in test mode (dry run)
             result = subprocess.run(
-                [str(hook_path)], check=False, cwd=self.repo_path, capture_output=True, text=True, timeout=60
+                [str(hook_path)],
+                check=False,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                timeout=60,
             )
 
             if result.returncode == 0:

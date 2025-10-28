@@ -1,8 +1,7 @@
 """Tests for Ruff S (Security) rules implementation."""
 
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.ruff_security import check_ruff_security
 
@@ -588,10 +587,10 @@ def process_data(data_file: Path):
     '''Process data safely.'''
     with open(data_file) as f:
         data = json.load(f)
-    
+
     # Use secure hash
     hash_value = hashlib.sha256(data.encode()).hexdigest()
-    
+
     return hash_value
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:

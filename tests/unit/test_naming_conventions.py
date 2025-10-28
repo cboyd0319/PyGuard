@@ -237,7 +237,7 @@ def MyFunction(CamelArg):
             path = Path(f.name)
 
         fixer = NamingConventionFixer()
-        success, fixes = fixer.fix_file(path)
+        success, _fixes = fixer.fix_file(path)
 
         assert success
         # Note: naming fixes are detection-only, not auto-applied
@@ -283,7 +283,7 @@ def broken(
     def test_visitor_empty_name_check(self):
         """Test visitor handles empty names."""
         visitor = NamingConventionVisitor([])
-        
+
         # Test is_camel_case with empty string
         assert not visitor._is_camel_case("")
         assert not visitor._is_camel_case("   ")
@@ -291,11 +291,11 @@ def broken(
     def test_visitor_out_of_range_line(self):
         """Test visitor handles out of range line numbers."""
         visitor = NamingConventionVisitor(["line1", "line2"])
-        
+
         # Create a mock node with invalid line number
         class MockNode:
             lineno = 100  # Out of range
-        
+
         snippet = visitor._get_code_snippet(MockNode())
         assert snippet == ""
 
@@ -318,7 +318,7 @@ async def camelCaseAsync():
 
         assert len(visitor.issues) >= 2
         assert any(
-            "snake_case" in issue.message and issue.name == "MyAsyncFunction" 
+            "snake_case" in issue.message and issue.name == "MyAsyncFunction"
             for issue in visitor.issues
         )
         assert any(issue.rule_id == "N802" for issue in visitor.issues)
@@ -337,10 +337,7 @@ async def fetch_data():
         visitor.visit(tree)
 
         # Should have no issues for these correctly named functions
-        naming_issues = [
-            i for i in visitor.issues 
-            if i.name in ["async_function", "fetch_data"]
-        ]
+        naming_issues = [i for i in visitor.issues if i.name in ["async_function", "fetch_data"]]
         assert len(naming_issues) == 0
 
 
@@ -394,7 +391,7 @@ class MyClass:
         # Should detect all three ambiguous names in class context
         ambiguous = [i for i in visitor.issues if i.rule_id == "E741"]
         assert len(ambiguous) >= 1  # At least one detected
-        
+
     def test_detect_ambiguous_in_assignment(self):
         """Test detection of ambiguous names in assignments."""
         code = """

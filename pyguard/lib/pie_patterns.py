@@ -379,9 +379,10 @@ class PIEPatternVisitor(ast.NodeVisitor):
         """Detect for-loop related code smells (PIE805, PIE811)."""
         # PIE805: Prefer 'next()' over for loop with single iteration
         # Check if loop has only one iteration (has break as first statement)
-        if len(node.body) > 0 and (isinstance(node.body[0], ast.Break) or (
-            len(node.body) == 2 and isinstance(node.body[1], ast.Break)
-        )):
+        if len(node.body) > 0 and (
+            isinstance(node.body[0], ast.Break)
+            or (len(node.body) == 2 and isinstance(node.body[1], ast.Break))
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="PIE805",

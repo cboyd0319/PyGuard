@@ -5,9 +5,8 @@ Tests all 10 XSS detection rules across multiple frameworks.
 """
 
 import ast
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.xss_detection import (
     XSSDetector,
@@ -333,7 +332,7 @@ def view(request):
     # XSS003: mark_safe with user input
     user_html = request.GET.get('html')
     safe_html = mark_safe(user_html)
-    
+
     # XSS007: HttpResponse with user input
     return HttpResponse(safe_html)
 """
@@ -478,8 +477,8 @@ def view(request):
     # XSS003: mark_safe with user input
     user_input = request.POST.get('data')
     html = mark_safe(user_input)
-    
-    # XSS007: HttpResponse with user input  
+
+    # XSS007: HttpResponse with user input
     return HttpResponse(html)
 """
         tree = ast.parse(code)

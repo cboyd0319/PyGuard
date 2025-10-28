@@ -19,7 +19,6 @@ Testing Strategy:
 
 from pathlib import Path
 
-
 from pyguard.lib.framework_pandas import (
     PANDAS_RULES,
     PandasRulesChecker,
@@ -47,7 +46,7 @@ df.sort_values(by='col', inplace=True)
 
         assert len(violations) > 0
         assert any(v.rule_id == "PD002" for v in violations)
-        pd002 = [v for v in violations if v.rule_id == "PD002"][0]
+        pd002 = next(v for v in violations if v.rule_id == "PD002")
         assert pd002.severity == RuleSeverity.LOW
         assert pd002.category == RuleCategory.STYLE
 
@@ -103,7 +102,7 @@ result = df1.append(df2)
 
         assert len(violations) > 0
         assert any(v.rule_id == "PD003" for v in violations)
-        pd003 = [v for v in violations if v.rule_id == "PD003"][0]
+        pd003 = next(v for v in violations if v.rule_id == "PD003")
         assert "concat" in pd003.message.lower()
 
     def test_detect_deprecated_ix(self, tmp_path):
@@ -126,7 +125,7 @@ result = df.ix(0, 'col')
         # In real pandas, .ix is a property, not a method
         # So we test that when it's called, it's detected
         if any(v.rule_id == "PD003" for v in violations):
-            pd003 = [v for v in violations if v.rule_id == "PD003"][0]
+            pd003 = next(v for v in violations if v.rule_id == "PD003")
             assert "loc" in pd003.message or "iloc" in pd003.message
 
     def test_modern_concat_no_violation(self, tmp_path):
@@ -163,7 +162,7 @@ for idx, row in df.iterrows():
 
         assert len(violations) > 0
         assert any(v.rule_id == "PD007" for v in violations)
-        pd007 = [v for v in violations if v.rule_id == "PD007"][0]
+        pd007 = next(v for v in violations if v.rule_id == "PD007")
         assert pd007.severity == RuleSeverity.MEDIUM
         assert pd007.category == RuleCategory.PERFORMANCE
 
@@ -346,9 +345,9 @@ class TestPandasVisitor:
         """Test PandasVisitor initialization."""
         code = "import pandas as pd\n"
         file_path = tmp_path / "test.py"
-        
+
         visitor = PandasVisitor(file_path, code)
-        
+
         assert visitor.file_path == file_path
         assert visitor.code == code
         assert visitor.is_pandas_file is True
@@ -358,30 +357,30 @@ class TestPandasVisitor:
         """Test visitor with non-pandas file."""
         code = "import os\n"
         file_path = tmp_path / "test.py"
-        
+
         visitor = PandasVisitor(file_path, code)
-        
+
         assert visitor.is_pandas_file is False
 
     def test_detect_pandas_import_pandas(self):
         """Test detection of 'import pandas' statement."""
         code = "import pandas\n"
         visitor = PandasVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_pandas(code) is True
 
     def test_detect_pandas_from_pandas(self):
         """Test detection of 'from pandas' statement."""
         code = "from pandas import DataFrame\n"
         visitor = PandasVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_pandas(code) is True
 
     def test_detect_no_pandas(self):
         """Test detection when no pandas imports present."""
         code = "import numpy as np\n"
         visitor = PandasVisitor(Path("test.py"), code)
-        
+
         assert visitor._detect_pandas(code) is False
 
 

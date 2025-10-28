@@ -335,7 +335,7 @@ app.run(debug=True)
             assert "debug mode" in " ".join(fixes).lower()
 
             # Verify the fix was applied
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 fixed_content = f.read()
             assert "debug=False" in fixed_content
             assert "debug=True" not in fixed_content
@@ -362,7 +362,7 @@ app.secret_key = "dev"
             assert "secret_key" in " ".join(fixes).lower()
 
             # Verify the fix was applied
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 fixed_content = f.read()
             assert "os.environ.get" in fixed_content
             assert "import os" in fixed_content

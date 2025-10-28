@@ -17,9 +17,9 @@ Tests all 10 blockchain security checks (BLOCKCHAIN001-BLOCKCHAIN010) including:
 from pathlib import Path
 
 from pyguard.lib.blockchain_security import (
-    analyze_blockchain_security,
-    BlockchainSecurityVisitor,
     BLOCKCHAIN_RULES,
+    BlockchainSecurityVisitor,
+    analyze_blockchain_security,
 )
 
 
@@ -37,7 +37,7 @@ def withdraw(amount):
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
         assert len([v for v in violations if v.rule_id == "BLOCKCHAIN001"]) >= 1
-        
+
     def test_detect_reentrancy_with_send(self):
         """Detect reentrancy vulnerability with .send()."""
         code = """
@@ -49,7 +49,7 @@ def transfer_funds(to_address, amount):
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
         assert len([v for v in violations if v.rule_id == "BLOCKCHAIN001"]) >= 1
-        
+
     def test_detect_reentrancy_with_delegatecall(self):
         """Detect reentrancy with delegatecall."""
         code = """
@@ -450,6 +450,7 @@ from web3 import Web3
 """
         visitor = BlockchainSecurityVisitor(Path("test.py"), code)
         import ast
+
         tree = ast.parse(code)
         visitor.visit(tree)
         assert visitor.has_web3 is True
@@ -461,6 +462,7 @@ from eth_account import Account
 """
         visitor = BlockchainSecurityVisitor(Path("test.py"), code)
         import ast
+
         tree = ast.parse(code)
         visitor.visit(tree)
         assert visitor.has_eth_account is True
@@ -476,6 +478,7 @@ def approve(spender, value):
 """
         visitor = BlockchainSecurityVisitor(Path("test.py"), code)
         import ast
+
         tree = ast.parse(code)
         visitor.visit(tree)
         assert "transfer" in visitor.contract_functions
@@ -554,5 +557,5 @@ def risky_function():
         violations = analyze_blockchain_security(Path("test.py"), code)
         # Should detect multiple issues: private key, reentrancy, random, overflow
         assert len(violations) >= 3
-        rule_ids = set(v.rule_id for v in violations)
+        rule_ids = {v.rule_id for v in violations}
         assert "BLOCKCHAIN006" in rule_ids  # Private key

@@ -357,7 +357,7 @@ import subprocess
 
 # Installing with hash verification
 subprocess.run([
-    'pip', 'install', 
+    'pip', 'install',
     'requests==2.28.0',
     '--require-hashes',
     '--hash=sha256:abc123...'
@@ -467,10 +467,10 @@ import hashlib
 def build_and_deploy():
     # Build Docker image
     subprocess.run(['docker', 'build', '-t', 'myapp', '.'])
-    
+
     # Push to registry
     subprocess.run(['docker', 'push', 'myregistry/myapp:latest'])
-    
+
     # Deploy
     kubectl_cmd = os.getenv('KUBECTL_COMMAND')
     subprocess.run(kubectl_cmd, shell=True)
@@ -489,11 +489,11 @@ import hashlib
 def build_package():
     # Build wheel
     subprocess.run(['python', 'setup.py', 'bdist_wheel'])
-    
+
     # Generate hash
     with open('dist/package.whl', 'rb') as f:
         package_hash = hashlib.sha256(f.read()).hexdigest()
-        
+
     print(f"Package hash: {package_hash}")
 """
         violations = analyze_supply_chain_advanced(Path("build.py"), code)
@@ -558,7 +558,7 @@ import hashlib
 import subprocess
 
 """ + "\n".join([f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(50)])
-        
+
         result = benchmark(lambda: analyze_supply_chain_advanced(Path("test.py"), code))
         assert isinstance(result, list)
 
@@ -570,7 +570,7 @@ import subprocess
 import os
 
 """ + "\n".join([f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(200)])
-        
+
         result = benchmark(lambda: analyze_supply_chain_advanced(Path("test.py"), code))
         assert isinstance(result, list)
 
@@ -588,13 +588,15 @@ def secure_build():
     # SHA256 is fine for checksums
     with open('file.txt', 'rb') as f:
         checksum = hashlib.sha256(f.read()).hexdigest()
-    
+
     # Validated subprocess call
     subprocess.run(['ls', '-la'], check=True)
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
         # Should not flag legitimate secure patterns
-        weak_hash_violations = [v for v in violations if "md5" in v.message.lower() or "sha1" in v.message.lower()]
+        weak_hash_violations = [
+            v for v in violations if "md5" in v.message.lower() or "sha1" in v.message.lower()
+        ]
         assert len(weak_hash_violations) == 0
 
     def test_test_code_exemptions(self):

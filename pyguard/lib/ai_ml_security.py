@@ -8583,8 +8583,10 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for preprocessor state loading
-        if isinstance(node.func, ast.Attribute) and "load" in node.func.attr.lower() and (
-            "scaler" in str(node).lower() or "encoder" in str(node).lower()
+        if (
+            isinstance(node.func, ast.Attribute)
+            and "load" in node.func.attr.lower()
+            and ("scaler" in str(node).lower() or "encoder" in str(node).lower())
         ):
             line_text = (
                 self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
@@ -8699,8 +8701,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
 
         # Check for feature retrieval without validation
         if isinstance(node.func, ast.Attribute) and (
-            "get_features" in node.func.attr.lower()
-            or "fetch_features" in node.func.attr.lower()
+            "get_features" in node.func.attr.lower() or "fetch_features" in node.func.attr.lower()
         ):
             # Check if validation is present
             line_text = (
@@ -8889,8 +8890,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         ):
             # Check for lineage metadata
             has_lineage = any(
-                kw.arg in ["lineage", "source", "provenance", "metadata"]
-                for kw in node.keywords
+                kw.arg in ["lineage", "source", "provenance", "metadata"] for kw in node.keywords
             )
 
             if not has_lineage:
@@ -9002,8 +9002,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
 
         # Check for feature updates without versioning
         if isinstance(node.func, ast.Attribute) and (
-            "update_feature" in node.func.attr.lower()
-            or "modify_feature" in node.func.attr.lower()
+            "update_feature" in node.func.attr.lower() or "modify_feature" in node.func.attr.lower()
         ):
             # Check for version parameter
             has_version = any(kw.arg in ["version", "revision"] for kw in node.keywords)
@@ -9150,8 +9149,10 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for schema updates
-        if isinstance(node.func, ast.Attribute) and "schema" in node.func.attr.lower() and (
-            "update" in node.func.attr.lower() or "evolve" in node.func.attr.lower()
+        if (
+            isinstance(node.func, ast.Attribute)
+            and "schema" in node.func.attr.lower()
+            and ("update" in node.func.attr.lower() or "evolve" in node.func.attr.lower())
         ):
             # Check for validation
             line_text = (
@@ -9555,10 +9556,14 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         if (
-            "model" in line_text
-            and "parallel" in line_text
-            and ("partition" in line_text or "shard" in line_text)
-        ) and "validate" not in line_text and "verify" not in line_text:
+            (
+                "model" in line_text
+                and "parallel" in line_text
+                and ("partition" in line_text or "shard" in line_text)
+            )
+            and "validate" not in line_text
+            and "verify" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML200",
                 category=RuleCategory.SECURITY,
@@ -9817,9 +9822,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for custom CUDA kernel usage
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
-        if "cuda" in line_text and (
-            "kernel" in line_text or "jit" in line_text or "load" in line_text
-        ) and "validate" not in line_text and "verify" not in line_text:
+        if (
+            "cuda" in line_text
+            and ("kernel" in line_text or "jit" in line_text or "load" in line_text)
+            and "validate" not in line_text
+            and "verify" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML207",
                 category=RuleCategory.SECURITY,
@@ -10159,9 +10167,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         line_number=getattr(node, "lineno", 0),
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                        end_column=getattr(
-                            node, "end_col_offset", getattr(node, "col_offset", 0)
-                        ),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
                         file_path=self.file_path,
                         code_snippet=(
                             self.lines[getattr(node, "lineno", 1) - 1]
@@ -10238,9 +10244,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         line_number=getattr(node, "lineno", 0),
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                        end_column=getattr(
-                            node, "end_col_offset", getattr(node, "col_offset", 0)
-                        ),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
                         file_path=self.file_path,
                         code_snippet=(
                             self.lines[getattr(node, "lineno", 1) - 1]
@@ -10313,9 +10317,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         line_number=getattr(node, "lineno", 0),
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                        end_column=getattr(
-                            node, "end_col_offset", getattr(node, "col_offset", 0)
-                        ),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
                         file_path=self.file_path,
                         code_snippet=(
                             self.lines[getattr(node, "lineno", 1) - 1]
@@ -11036,9 +11038,13 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for API route definitions
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
-        if ("route" in line_text or "endpoint" in line_text or "api" in line_text) and (
-            "predict" in line_text or "inference" in line_text
-        ) and "auth" not in line_text and "token" not in line_text and "key" not in line_text:
+        if (
+            ("route" in line_text or "endpoint" in line_text or "api" in line_text)
+            and ("predict" in line_text or "inference" in line_text)
+            and "auth" not in line_text
+            and "token" not in line_text
+            and "key" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML241",
                 category=RuleCategory.SECURITY,
@@ -11070,9 +11076,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for model listing endpoints
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
-        if ("list" in line_text or "get_all" in line_text) and (
-            "model" in line_text or "endpoint" in line_text
-        ) and "auth" not in line_text:
+        if (
+            ("list" in line_text or "get_all" in line_text)
+            and ("model" in line_text or "endpoint" in line_text)
+            and "auth" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML242",
                 category=RuleCategory.SECURITY,
@@ -11216,9 +11224,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                         line_number=getattr(node, "lineno", 0),
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                        end_column=getattr(
-                            node, "end_col_offset", getattr(node, "col_offset", 0)
-                        ),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
                         file_path=self.file_path,
                         code_snippet=(
                             self.lines[getattr(node, "lineno", 1) - 1]
@@ -11644,9 +11650,14 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for on-device training
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
-        if ((
-            "on" in line_text and "device" in line_text and "train" in line_text
-        ) or "ondevice" in line_text) and "validate" not in line_text and "secure" not in line_text:
+        if (
+            (
+                ("on" in line_text and "device" in line_text and "train" in line_text)
+                or "ondevice" in line_text
+            )
+            and "validate" not in line_text
+            and "secure" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML259",
                 category=RuleCategory.SECURITY,
@@ -11916,8 +11927,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             for child in ast.walk(node):
                 if isinstance(child, ast.Call):
                     if isinstance(child.func, ast.Attribute) and any(
-                        x in child.func.attr.lower()
-                        for x in ["fairness", "bias", "demographic"]
+                        x in child.func.attr.lower() for x in ["fairness", "bias", "demographic"]
                     ):
                         has_fairness_check = True
                         break
@@ -12473,10 +12483,14 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for diffusion model operations
-        if "stable" in line_text and "diffusion" in line_text and (
-            "sanitize" not in line_text
-            and "validate" not in line_text
-            and "filter" not in line_text
+        if (
+            "stable" in line_text
+            and "diffusion" in line_text
+            and (
+                "sanitize" not in line_text
+                and "validate" not in line_text
+                and "filter" not in line_text
+            )
         ):
             violation = RuleViolation(
                 rule_id="AIML300",
@@ -12758,10 +12772,14 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
 
         # Check for batch normalization operations
         if (
-            "batchnorm" in line_text
-            or "batch_norm" in line_text
-            or ("bn" in line_text and "layer" in line_text)
-        ) and "validate" not in line_text and "statistics" in line_text:
+            (
+                "batchnorm" in line_text
+                or "batch_norm" in line_text
+                or ("bn" in line_text and "layer" in line_text)
+            )
+            and "validate" not in line_text
+            and "statistics" in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML315",
                 category=RuleCategory.SECURITY,
@@ -13018,9 +13036,14 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for stemming/lemmatization
-        if any(
-            keyword in line_text for keyword in ["stem", "lemma", "lemmatize", "porter", "snowball"]
-        ) and "validate" not in line_text and "model" in line_text:
+        if (
+            any(
+                keyword in line_text
+                for keyword in ["stem", "lemma", "lemmatize", "porter", "snowball"]
+            )
+            and "validate" not in line_text
+            and "model" in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML323",
                 category=RuleCategory.SECURITY,
@@ -13264,9 +13287,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for BERT fine-tuning
-        if "bert" in line_text and (
-            "finetune" in line_text or "fine_tune" in line_text or "train" in line_text
-        ) and "validate" not in line_text and "data" in line_text:
+        if (
+            "bert" in line_text
+            and ("finetune" in line_text or "fine_tune" in line_text or "train" in line_text)
+            and "validate" not in line_text
+            and "data" in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML331",
                 category=RuleCategory.SECURITY,
@@ -14237,9 +14263,12 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for reward shaping without bounds
-        if "reward" in line_text and (
-            "shap" in line_text or "bonus" in line_text or "penalty" in line_text
-        ) and "bound" not in line_text and "limit" not in line_text:
+        if (
+            "reward" in line_text
+            and ("shap" in line_text or "bonus" in line_text or "penalty" in line_text)
+            and "bound" not in line_text
+            and "limit" not in line_text
+        ):
             violation = RuleViolation(
                 rule_id="AIML362",
                 category=RuleCategory.SECURITY,
@@ -15724,9 +15753,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for dataset search/download operations
-        if "dataset" in line_text and any(
-            x in line_text for x in ["search", "google", "download_url"]
-        ) and not any(x in line_text for x in ["verify", "validate", "checksum"]):
+        if (
+            "dataset" in line_text
+            and any(x in line_text for x in ["search", "google", "download_url"])
+            and not any(x in line_text for x in ["verify", "validate", "checksum"])
+        ):
             violation = RuleViolation(
                 rule_id="AIML411",
                 category=RuleCategory.SECURITY,
@@ -15874,8 +15905,10 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for DataLoader with untrusted data
-        if "dataloader(" in line_text and "num_workers" in line_text and not any(
-            x in line_text for x in ["validate", "secure"]
+        if (
+            "dataloader(" in line_text
+            and "num_workers" in line_text
+            and not any(x in line_text for x in ["validate", "secure"])
         ):
             violation = RuleViolation(
                 rule_id="AIML416",
@@ -17401,10 +17434,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 # Check for temperature parameter
                 if key == "temperature" and isinstance(keyword.value, ast.Constant):
                     # High temperature (> 0.7) increases risk
-                    if (
-                        isinstance(keyword.value.value, (int, float))
-                        and keyword.value.value > 0.7
-                    ):
+                    if isinstance(keyword.value.value, (int, float)) and keyword.value.value > 0.7:
                         has_high_temp = True
                 # Check for output filtering indicators
                 if key in ["filter", "sanitize", "validate"]:
@@ -26779,10 +26809,9 @@ class AIMLSecurityFixer:
                 if "torch.load(" in line and "weights_only" not in line:
                     # Check if it's in a string
                     stripped = line.strip()
-                    if (
-                        stripped.startswith(("'", '"'))
-                        or ("torch.load(" in stripped
-                        and any(stripped.count(q) % 2 == 1 for q in ('"', "'")))
+                    if stripped.startswith(("'", '"')) or (
+                        "torch.load(" in stripped
+                        and any(stripped.count(q) % 2 == 1 for q in ('"', "'"))
                     ):
                         fixed_lines.append(line)
                         continue
@@ -27667,22 +27696,25 @@ class AIMLSecurityFixer:
                     continue
 
                 # Check for returning LLM output without PII scanning
-                if "return" in line and any(
-                    pattern in line
-                    for pattern in [
-                        "response.content",
-                        "llm_response",
-                        "completion.text",
-                        "model_response",
-                    ]
-                ) and "pii" not in line.lower() and "redact" not in line.lower():
+                if (
+                    "return" in line
+                    and any(
+                        pattern in line
+                        for pattern in [
+                            "response.content",
+                            "llm_response",
+                            "completion.text",
+                            "model_response",
+                        ]
+                    )
+                    and "pii" not in line.lower()
+                    and "redact" not in line.lower()
+                ):
                     # Add PII detection warning
                     fixed_lines.append(
                         "# PyGuard: Scan for PII in LLM responses before returning [AIML069]"
                     )
-                    fixed_lines.append(
-                        "# Risk: PII disclosure, GDPR violations, privacy breaches"
-                    )
+                    fixed_lines.append("# Risk: PII disclosure, GDPR violations, privacy breaches")
                     fixed_lines.append(
                         "# Solution: Use PII detection, redact sensitive info, implement filters"
                     )
@@ -28379,9 +28411,11 @@ class AIMLSecurityFixer:
 
             for line in lines:
                 # Check for f-strings with user input
-                if ('f"' in line or "f'" in line) and any(
-                    var in line for var in ["user", "input", "prompt", "message"]
-                ) and not line.strip().startswith("#"):
+                if (
+                    ('f"' in line or "f'" in line)
+                    and any(var in line for var in ["user", "input", "prompt", "message"])
+                    and not line.strip().startswith("#")
+                ):
                     # Add delimiter validation warning
                     fixed_lines.append(
                         "# PyGuard: Validate input doesn't contain instruction delimiters [AIML014]"

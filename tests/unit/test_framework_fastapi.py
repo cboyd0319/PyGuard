@@ -5,8 +5,9 @@ Tests detection and auto-fixing of FastAPI security vulnerabilities.
 """
 
 import ast
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pyguard.lib.framework_fastapi import (
     FASTAPI_API_KEY_IN_URL_RULE,
@@ -21,8 +22,8 @@ from pyguard.lib.framework_fastapi import (
     FASTAPI_MIDDLEWARE_ORDERING_RULE,
     FASTAPI_MISSING_API_AUTH_TOKEN_RULE,
     FASTAPI_MISSING_AUTH_RULE,
-    FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE,
     FASTAPI_OAUTH2_HTTP_RULE,
+    FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE,
     FASTAPI_REDIS_CACHE_POISONING_RULE,
     FASTAPI_WEBSOCKET_ORIGIN_RULE,
     FastAPISecurityChecker,
@@ -160,7 +161,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     def test_detect_query_injection(self):
         """Test detection of query parameter injection.
-        
+
         TODO: This check requires data flow analysis to track query parameters
         through to their usage in SQL/command execution. Currently disabled
         until we implement taint tracking for FastAPI routes.
@@ -185,7 +186,7 @@ async def search(term: str = Query(...)):
         # assert len(violations) == 1
         # assert violations[0].severity == RuleSeverity.HIGH
         # assert "injection" in violations[0].message.lower()
-        
+
         # For now, this test passes but doesn't check anything
         # This is a known limitation documented in the Security Dominance Plan
         pass
@@ -502,7 +503,9 @@ def set_cookie(response: Response):
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
 
-        violations = [v for v in visitor.violations if v.rule_id in ("FASTAPI011", "FASTAPI012", "FASTAPI013")]
+        violations = [
+            v for v in visitor.violations if v.rule_id in ("FASTAPI011", "FASTAPI012", "FASTAPI013")
+        ]
         assert len(violations) == 0
 
     def test_multiple_violations_in_same_file(self):
@@ -740,7 +743,9 @@ async def verify_token(token: str):
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
 
-        violations = [v for v in visitor.violations if v.rule_id in ("FASTAPI014", "FASTAPI015", "FASTAPI016")]
+        violations = [
+            v for v in visitor.violations if v.rule_id in ("FASTAPI014", "FASTAPI015", "FASTAPI016")
+        ]
         assert len(violations) == 0
 
     def test_safe_jwt_decode_with_rs256(self):
@@ -832,7 +837,7 @@ async def verify_no_verify(token: str):
         violations_014 = [v for v in visitor.violations if v.rule_id == "FASTAPI014"]
         violations_015 = [v for v in visitor.violations if v.rule_id == "FASTAPI015"]
         violations_016 = [v for v in visitor.violations if v.rule_id == "FASTAPI016"]
-        
+
         assert len(violations_014) == 1  # none algorithm
         assert len(violations_015) == 1  # missing algorithms
         assert len(violations_016) == 1  # verify_signature=False
@@ -1246,7 +1251,7 @@ async def stream_events(user_input: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI021"]
         # Note: This check looks for EventSource in function name, may need adjustment
         assert len(violations) >= 0  # Detection logic may need refinement
@@ -1271,7 +1276,7 @@ async def stream_events(user_input: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI021"]
         assert len(violations) == 0
 
@@ -1294,7 +1299,7 @@ async def value_error_handler(request: Request, exc: ValueError):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI023"]
         assert len(violations) >= 0  # Check detects exception in return
 
@@ -1316,7 +1321,7 @@ async def value_error_handler(request: Request, exc: ValueError):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI023"]
         assert len(violations) == 0
 
@@ -1335,7 +1340,7 @@ async def submit_form(username: str = Form()):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI028"]
         assert len(violations) == 1
         assert "username" in violations[0].message
@@ -1354,7 +1359,7 @@ async def submit_form(username: str = Form(min_length=3, max_length=20)):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI028"]
         assert len(violations) == 0
 
@@ -1372,7 +1377,7 @@ async def submit_form(email: str = Form(regex=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI028"]
         assert len(violations) == 0
 
@@ -1395,7 +1400,7 @@ async def get_user(user_id: int):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI030"]
         assert len(violations) == 1
 
@@ -1417,7 +1422,7 @@ async def search_users(name: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI030"]
         assert len(violations) == 1
 
@@ -1439,7 +1444,7 @@ async def get_user(user_id: int):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI030"]
         assert len(violations) == 0
 
@@ -1460,7 +1465,7 @@ async def get_user(user_id: int, session: AsyncSession):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI030"]
         assert len(violations) == 0
 
@@ -1480,7 +1485,7 @@ client = TestClient(app)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("main.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI032"]
         assert len(violations) == 1
         assert "TestClient" in violations[0].message
@@ -1498,7 +1503,7 @@ client = TestClient(app)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test_main.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI032"]
         assert len(violations) == 0
 
@@ -1514,7 +1519,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("main.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI033"]
         # Should detect both the StaticFiles call and the mount call
         assert len(violations) >= 1
@@ -1531,7 +1536,7 @@ files = StaticFiles(directory="/var/www/static")
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("main.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI033"]
         assert len(violations) == 1
 
@@ -1539,14 +1544,14 @@ files = StaticFiles(directory="/var/www/static")
         """Verify new rules are properly registered."""
         from pyguard.lib.framework_fastapi import (
             FASTAPI_MISSING_CSRF_RULE,
-            FASTAPI_TESTCLIENT_PRODUCTION_RULE,
             FASTAPI_STATIC_FILE_TRAVERSAL_RULE,
+            FASTAPI_TESTCLIENT_PRODUCTION_RULE,
         )
-        
+
         assert FASTAPI_MISSING_CSRF_RULE.rule_id == "FASTAPI031"
         assert FASTAPI_TESTCLIENT_PRODUCTION_RULE.rule_id == "FASTAPI032"
         assert FASTAPI_STATIC_FILE_TRAVERSAL_RULE.rule_id == "FASTAPI033"
-        
+
         # Verify CWE mappings
         assert "CWE-352" in FASTAPI_MISSING_CSRF_RULE.references[0]
         assert "CWE-489" in FASTAPI_TESTCLIENT_PRODUCTION_RULE.references[0]
@@ -1555,7 +1560,7 @@ files = StaticFiles(directory="/var/www/static")
 
 class TestFastAPINewSecurityChecks:
     """Tests for the 10 new FastAPI security checks added for Security Dominance Plan."""
-    
+
     # FASTAPI024: Middleware Ordering Issues
     def test_detect_middleware_ordering_auth(self):
         """Test detection of auth middleware ordering issues."""
@@ -1569,12 +1574,12 @@ app.add_middleware(AuthenticationMiddleware)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI024"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.MEDIUM
         assert "ordering" in violations[0].message.lower()
-    
+
     def test_detect_middleware_ordering_cors(self):
         """Test detection of CORS middleware ordering."""
         code = """
@@ -1586,11 +1591,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"])
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         # Should detect both CORS misconfiguration and ordering warning
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI024"]
         assert len(violations) >= 0  # May warn about ordering
-    
+
     def test_detect_middleware_ordering_security(self):
         """Test detection of security middleware."""
         code = """
@@ -1602,11 +1607,11 @@ app.add_middleware(SecurityMiddleware, config={"tls": True})
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI024"]
         assert len(violations) == 1
         assert "security" in violations[0].message.lower()
-    
+
     def test_no_violation_non_security_middleware(self):
         """Test no violation for non-security middleware."""
         code = """
@@ -1618,10 +1623,10 @@ app.add_middleware(LoggingMiddleware)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI024"]
         assert len(violations) == 0
-    
+
     # FASTAPI025: Dependency Override Security
     def test_detect_dependency_override_production(self):
         """Test detection of dependency overrides in production code."""
@@ -1634,12 +1639,12 @@ app.dependency_overrides[get_db] = get_test_db
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("main.py"), code)  # Not a test file
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI025"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "override" in violations[0].message.lower()
-    
+
     def test_no_violation_dependency_override_test(self):
         """Test no violation for dependency overrides in test files."""
         code = """
@@ -1651,10 +1656,10 @@ app.dependency_overrides[get_db] = get_test_db
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test_main.py"), code)  # Test file
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI025"]
         assert len(violations) == 0
-    
+
     def test_detect_dependency_override_assignment(self):
         """Test detection of dependency override dict assignment."""
         code = """
@@ -1666,12 +1671,14 @@ overrides = app.dependency_overrides
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("app.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI025"]
         assert len(violations) == 1
-    
+
     # FASTAPI026: Redis Cache Poisoning
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_redis_cache_poisoning_fstring(self):
         """Test detection of Redis cache poisoning with f-strings."""
         code = """
@@ -1688,13 +1695,15 @@ async def get_user(user_id: str, redis_client: redis.Redis):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI026"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "cache" in violations[0].message.lower()
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_redis_cache_poisoning_concat(self):
         """Test detection of Redis cache poisoning with string concatenation."""
         code = """
@@ -1711,10 +1720,10 @@ async def get_item(item_id: str, redis: redis.Redis):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI026"]
         assert len(violations) == 1
-    
+
     def test_detect_redis_hset_poisoning(self):
         """Test detection of Redis HSET cache poisoning."""
         code = """
@@ -1727,10 +1736,10 @@ r.hset(f"hash:{user_data}", "field", "value")
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI026"]
         assert len(violations) == 1
-    
+
     def test_no_violation_redis_safe_key(self):
         """Test no violation for safe Redis keys."""
         code = """
@@ -1742,10 +1751,10 @@ r.set("static:key", "value")
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI026"]
         assert len(violations) == 0
-    
+
     # FASTAPI027: Mass Assignment
     def test_detect_mass_assignment_request_data(self):
         """Test detection of mass assignment from request data."""
@@ -1767,12 +1776,12 @@ async def create_user(request_data: dict):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI027"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "mass assignment" in violations[0].message.lower()
-    
+
     def test_detect_mass_assignment_body(self):
         """Test detection of mass assignment from request body."""
         code = """
@@ -1788,10 +1797,10 @@ def process(body: dict):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI027"]
         assert len(violations) == 1
-    
+
     def test_detect_mass_assignment_payload(self):
         """Test detection of mass assignment from payload."""
         code = """
@@ -1807,10 +1816,10 @@ def update_config(payload: dict):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI027"]
         assert len(violations) == 1
-    
+
     def test_no_violation_explicit_fields(self):
         """Test no violation for explicit field assignment."""
         code = """
@@ -1825,10 +1834,10 @@ def create(data: dict):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI027"]
         assert len(violations) == 0
-    
+
     # FASTAPI029: Insecure HTTP Methods
     def test_detect_insecure_trace_method(self):
         """Test detection of TRACE method."""
@@ -1844,12 +1853,12 @@ async def trace_handler():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI029"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.MEDIUM
         assert "TRACE" in violations[0].message.upper()
-    
+
     def test_detect_insecure_options_method(self):
         """Test detection of OPTIONS method."""
         code = """
@@ -1864,11 +1873,11 @@ async def options_handler():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI029"]
         assert len(violations) == 1
         assert "OPTIONS" in violations[0].message.upper()
-    
+
     def test_no_violation_safe_http_methods(self):
         """Test no violation for safe HTTP methods."""
         code = """
@@ -1887,10 +1896,10 @@ async def create_user():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI029"]
         assert len(violations) == 0
-    
+
     # FASTAPI034: Missing API Auth Tokens
     def test_detect_missing_api_token_auth(self):
         """Test detection of missing API token validation."""
@@ -1907,12 +1916,12 @@ async def get_users():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI034"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "token" in violations[0].message.lower()
-    
+
     def test_detect_missing_api_token_post(self):
         """Test detection of missing API token on POST."""
         code = """
@@ -1928,10 +1937,10 @@ async def create_item(name: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI034"]
         assert len(violations) >= 1  # May also trigger FASTAPI001
-    
+
     def test_no_violation_api_token_with_depends(self):
         """Test no violation when using Depends for auth."""
         code = """
@@ -1946,10 +1955,10 @@ async def get_users(token = Depends(verify_token)):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI034"]
         assert len(violations) == 0
-    
+
     def test_no_violation_non_api_route(self):
         """Test no violation for non-API routes."""
         code = """
@@ -1964,10 +1973,10 @@ async def health_check():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI034"]
         assert len(violations) == 0
-    
+
     # FASTAPI035: JWT Secret Weakness
     def test_detect_jwt_secret_too_short(self):
         """Test detection of short JWT secret."""
@@ -1981,12 +1990,12 @@ JWT_SECRET = "short"  # Too short (<32 chars)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI035"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "short" in violations[0].message.lower()
-    
+
     def test_detect_jwt_secret_weak_value(self):
         """Test detection of common weak secrets."""
         code = """
@@ -1997,11 +2006,11 @@ TOKEN_SECRET = "secret"  # Common weak value
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI035"]
         assert len(violations) >= 1  # May detect both short and weak
         assert any(v.severity == RuleSeverity.CRITICAL for v in violations)
-    
+
     def test_detect_jwt_secret_password(self):
         """Test detection of 'password' as secret."""
         code = """
@@ -2010,10 +2019,10 @@ SECRET_KEY = "password"
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI035"]
         assert len(violations) >= 1  # May detect both short and weak
-    
+
     def test_detect_jwt_secret_changeme(self):
         """Test detection of 'changeme' as secret."""
         code = """
@@ -2022,10 +2031,10 @@ JWT_SECRET = "changeme"
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI035"]
         assert len(violations) >= 1  # May detect both short and weak
-    
+
     def test_no_violation_jwt_secret_strong(self):
         """Test no violation for strong JWT secret."""
         code = """
@@ -2034,10 +2043,10 @@ JWT_SECRET = "a" * 32  # 32+ characters
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI035"]
         assert len(violations) == 0
-    
+
     # FASTAPI036: OAuth Redirect Validation
     def test_detect_missing_oauth_redirect_validation(self):
         """Test detection of missing redirect_uri validation."""
@@ -2054,12 +2063,12 @@ async def oauth_callback(redirect_uri: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI036"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "redirect" in violations[0].message.lower()
-    
+
     def test_detect_missing_redirect_validation(self):
         """Test detection of missing redirect validation in callback."""
         code = """
@@ -2075,10 +2084,10 @@ async def auth_redirect(target: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI036"]
         assert len(violations) == 1
-    
+
     def test_no_violation_oauth_with_validation(self):
         """Test no violation when redirect_uri is validated."""
         code = """
@@ -2095,10 +2104,10 @@ async def oauth_callback(redirect_uri: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI036"]
         assert len(violations) == 0
-    
+
     def test_no_violation_non_oauth_route(self):
         """Test no violation for non-OAuth routes."""
         code = """
@@ -2113,12 +2122,14 @@ async def get_users():
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI036"]
         assert len(violations) == 0
-    
+
     # FASTAPI037: GraphQL Injection
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_graphql_injection_fstring(self):
         """Test detection of GraphQL injection with f-strings."""
         code = """
@@ -2136,13 +2147,15 @@ async def graphql_endpoint(query: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI037"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.CRITICAL
         assert "graphql" in violations[0].message.lower()
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_graphql_injection_concat(self):
         """Test detection of GraphQL injection with concatenation."""
         code = """
@@ -2155,11 +2168,13 @@ def run_query(user_input: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI037"]
         assert len(violations) == 1
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_graphql_execute_sync_injection(self):
         """Test detection of GraphQL injection in execute_sync."""
         code = """
@@ -2172,10 +2187,10 @@ def run(param: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI037"]
         assert len(violations) == 1
-    
+
     def test_no_violation_graphql_safe_query(self):
         """Test no violation for safe GraphQL queries."""
         code = """
@@ -2187,12 +2202,14 @@ graphql.execute(query, schema)
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI037"]
         assert len(violations) == 0
-    
+
     # FASTAPI038: API Key in URL
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_api_key_in_url_fstring(self):
         """Test detection of API key in URL with f-strings."""
         code = """
@@ -2208,13 +2225,15 @@ async def call_external_api(api_key: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI038"]
         assert len(violations) == 1
         assert violations[0].severity == RuleSeverity.HIGH
         assert "key" in violations[0].message.lower()
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_token_in_url(self):
         """Test detection of token in URL."""
         code = """
@@ -2227,11 +2246,13 @@ def fetch_data(auth_token: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI038"]
         assert len(violations) == 1
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_secret_in_url(self):
         """Test detection of secret in URL."""
         code = """
@@ -2244,11 +2265,13 @@ async def call_api(client_secret: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI038"]
         assert len(violations) == 1
-    
-    @pytest.mark.skip(reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)")
+
+    @pytest.mark.skip(
+        reason="Requires data flow analysis - variable assigned then used (deferred per Security Dominance Plan)"
+    )
     def test_detect_password_in_url(self):
         """Test detection of password in URL."""
         code = """
@@ -2261,10 +2284,10 @@ def login(user_password: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI038"]
         assert len(violations) == 1
-    
+
     def test_no_violation_api_key_safe_usage(self):
         """Test no violation when API key is not in URL."""
         code = """
@@ -2277,10 +2300,10 @@ async def call_api(api_key: str):
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         violations = [v for v in visitor.violations if v.rule_id == "FASTAPI038"]
         assert len(violations) == 0
-    
+
     def test_new_rules_registered(self):
         """Verify all 10 new rules are properly registered."""
         assert FASTAPI_MIDDLEWARE_ORDERING_RULE.rule_id == "FASTAPI024"
@@ -2293,7 +2316,7 @@ async def call_api(api_key: str):
         assert FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE.rule_id == "FASTAPI036"
         assert FASTAPI_GRAPHQL_INJECTION_RULE.rule_id == "FASTAPI037"
         assert FASTAPI_API_KEY_IN_URL_RULE.rule_id == "FASTAPI038"
-        
+
         # Verify CWE mappings
         assert "CWE-863" in FASTAPI_MIDDLEWARE_ORDERING_RULE.references[0]
         assert "CWE-94" in FASTAPI_DEPENDENCY_OVERRIDE_RULE.references[0]
@@ -2305,5 +2328,3 @@ async def call_api(api_key: str):
         assert "CWE-601" in FASTAPI_OAUTH_REDIRECT_VALIDATION_RULE.references[0]
         assert "CWE-943" in FASTAPI_GRAPHQL_INJECTION_RULE.references[0]
         assert "CWE-598" in FASTAPI_API_KEY_IN_URL_RULE.references[0]
-
-

@@ -348,7 +348,7 @@ dt = datetime.now(timezone.utc)
     def test_check_file_function_error(self):
         """Test check_file function with nonexistent file."""
         from pyguard.lib.datetime_patterns import check_file
-        
+
         # Should handle error gracefully
         issues = check_file("/nonexistent/file.py")
         assert issues == []
@@ -356,14 +356,14 @@ dt = datetime.now(timezone.utc)
     def test_check_file_function_success(self, tmp_path):
         """Test check_file function with valid file."""
         from pyguard.lib.datetime_patterns import check_file
-        
+
         code = """
 from datetime import datetime
 dt = datetime.now()
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         issues = check_file(str(test_file))
         assert len(issues) > 0
 
@@ -375,7 +375,7 @@ dt = datetime.now()
 """
         checker = DatetimeChecker()
         checker.check_code(code)
-        
+
         issues = checker.get_issues()
         assert len(issues) > 0
 

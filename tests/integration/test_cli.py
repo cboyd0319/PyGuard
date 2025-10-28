@@ -1,8 +1,8 @@
 """Integration tests for PyGuard CLI."""
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -23,6 +23,7 @@ class TestCLIIntegration:
         """Test CLI help command."""
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--help"],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,
@@ -34,6 +35,7 @@ class TestCLIIntegration:
         """Test CLI version command."""
         result = subprocess.run(
             [sys.executable, "-c", "import pyguard; print(pyguard.__version__)"],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -71,9 +73,9 @@ class TestCLIIntegration:
         readme_version = readme_match.group(1)
 
         # Assert all versions match
-        assert (
-            init_version == pyproject_version == dockerfile_version == readme_version
-        ), f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
+        assert init_version == pyproject_version == dockerfile_version == readme_version, (
+            f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
+        )
 
 
 class TestEndToEnd:
@@ -240,6 +242,7 @@ def load_config(file):
         """Test that --unsafe-fixes flag appears in help."""
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--help"],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,

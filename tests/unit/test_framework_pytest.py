@@ -9,7 +9,6 @@ Comprehensive test suite following PyTest Architect Agent principles:
 - Deterministic test execution
 """
 
-
 import pytest
 
 from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker, PytestVisitor
@@ -136,7 +135,7 @@ class TestPytestVisitorInit:
         assert visitor.is_test_file is False
 
     @pytest.mark.parametrize(
-        "code,expected_is_test",
+        ("code", "expected_is_test"),
         [
             ("import pytest", True),
             ("from pytest import fixture", True),
@@ -745,7 +744,7 @@ import pytest
 class TestFeature:
     def test_method(self):
         assert True
-    
+
     def test_with_fixture(self, my_fixture):
         assert my_fixture is not None
 """

@@ -1,10 +1,12 @@
 """Tests for git hooks CLI."""
 
+from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from pyguard.git_hooks_cli import main
 
@@ -29,17 +31,17 @@ class TestGitHooksCLI(unittest.TestCase):
     @patch("sys.argv", ["pyguard-hooks", "--version"])
     def test_version_flag(self):
         """Test --version flag."""
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
         # argparse exits with 0 for --version
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
 
     @patch("sys.argv", ["pyguard-hooks"])
     def test_no_command_shows_help(self):
         """Test that no command shows help and exits."""
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
 
     @patch("sys.argv", ["pyguard-hooks", "install", "--path", "/tmp/fake-repo"])
     @patch("pyguard.lib.git_hooks.GitHooksManager.install_hook")
@@ -48,10 +50,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test install command with success."""
         mock_install.return_value = True
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_install.assert_called_once_with("pre-commit", False)
         mock_logger_info.assert_called()
 
@@ -62,10 +64,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test install command with failure."""
         mock_install.return_value = False
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
         mock_install.assert_called_once_with("pre-commit", True)
         mock_logger_error.assert_called()
 
@@ -78,10 +80,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test install command raising ValueError."""
         mock_install.side_effect = ValueError("Test error")
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
         mock_logger_error.assert_called()
 
     @patch("sys.argv", ["pyguard-hooks", "uninstall", "--path", "/tmp/fake-repo"])
@@ -91,10 +93,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test uninstall command with success."""
         mock_uninstall.return_value = True
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_uninstall.assert_called_once_with("pre-commit")
         mock_logger_info.assert_called()
 
@@ -107,10 +109,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test uninstall command with failure."""
         mock_uninstall.return_value = False
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
         mock_uninstall.assert_called_once_with("pre-push")
         mock_logger_error.assert_called()
 
@@ -121,10 +123,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test list command with no hooks installed."""
         mock_list.return_value = []
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_list.assert_called_once()
         mock_logger_info.assert_called()
 
@@ -148,13 +150,13 @@ class TestGitHooksCLI(unittest.TestCase):
             },
         ]
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_list.assert_called_once()
         # Should be called multiple times (once for header, once for each hook)
-        self.assertGreaterEqual(mock_logger_info.call_count, 3)
+        assert mock_logger_info.call_count >= 3
 
     @patch("sys.argv", ["pyguard-hooks", "validate", "--path", "/tmp/fake-repo"])
     @patch("pyguard.lib.git_hooks.GitHooksManager.validate_hook")
@@ -163,10 +165,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test validate command with valid hook."""
         mock_validate.return_value = {"valid": True, "issues": []}
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_validate.assert_called_once_with("pre-commit")
         mock_logger_info.assert_called()
 
@@ -182,10 +184,10 @@ class TestGitHooksCLI(unittest.TestCase):
             "issues": ["Hook is not executable", "Hook content invalid"],
         }
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
         mock_validate.assert_called_once_with("pre-push")
         mock_logger_error.assert_called()
 
@@ -196,10 +198,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test test command with success."""
         mock_test.return_value = True
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 0)
+        assert cm.value.code == 0
         mock_test.assert_called_once_with("pre-commit")
         mock_logger_info.assert_called()
 
@@ -210,10 +212,10 @@ class TestGitHooksCLI(unittest.TestCase):
         """Test test command with failure."""
         mock_test.return_value = False
 
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main()
 
-        self.assertEqual(cm.exception.code, 1)
+        assert cm.value.code == 1
         mock_test.assert_called_once_with("pre-push")
         mock_logger_error.assert_called()
 

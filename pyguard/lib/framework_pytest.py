@@ -50,16 +50,13 @@ class PytestVisitor(ast.NodeVisitor):
 
         is_test_func = node.name.startswith("test_")
         is_fixture = any(
-            (isinstance(dec, ast.Name)
-            and dec.id == "fixture")
+            (isinstance(dec, ast.Name) and dec.id == "fixture")
             or (isinstance(dec, ast.Attribute) and dec.attr == "fixture")
             or (
                 isinstance(dec, ast.Call)
                 and (
-                    (isinstance(dec.func, ast.Name)
-                    and dec.func.id == "fixture")
-                    or (isinstance(dec.func, ast.Attribute)
-                    and dec.func.attr == "fixture")
+                    (isinstance(dec.func, ast.Name) and dec.func.id == "fixture")
+                    or (isinstance(dec.func, ast.Attribute) and dec.func.attr == "fixture")
                 )
             )
             for dec in node.decorator_list

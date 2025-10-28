@@ -1,6 +1,5 @@
 """Tests for Pylint rules module."""
 
-
 import pytest
 
 from pyguard.lib.pylint_rules import PYLINT_RULES, PylintRulesChecker
@@ -293,10 +292,11 @@ def abstract_method():
         assert any(v.rule_id == "PLE0711" for v in violations)
 
     @pytest.mark.parametrize(
-        "code,expected_rule",
+        ("code", "expected_rule"),
         [
             # Too many returns
-            ("""
+            (
+                """
 def func(x):
     if x == 1: return 1
     if x == 2: return 2
@@ -306,15 +306,20 @@ def func(x):
     if x == 6: return 6
     if x == 7: return 7
     return 0
-""", "PLR0911"),
+""",
+                "PLR0911",
+            ),
             # Too many args
             ("def func(a, b, c, d, e, f): pass", "PLR0913"),
             # Global statement
-            ("""
+            (
+                """
 def func():
     global x
     x = 1
-""", "PLW0603"),
+""",
+                "PLW0603",
+            ),
             # Assert on tuple
             ('assert (1, 2), "msg"', "PLW0129"),
             # NotImplemented exception
@@ -330,8 +335,9 @@ def func():
         checker = PylintRulesChecker()
         violations = checker.check_file(file_path)
 
-        assert any(v.rule_id == expected_rule for v in violations), \
+        assert any(v.rule_id == expected_rule for v in violations), (
             f"Expected {expected_rule} in {[v.rule_id for v in violations]}"
+        )
 
     def test_checker_handles_syntax_errors(self, tmp_path):
         """Test graceful handling of syntax errors."""
@@ -371,7 +377,7 @@ class ComplexClass:
         self.attr6 = 6
         self.attr7 = 7
         self.attr8 = 8
-    
+
     def complex_method(self, a, b, c, d, e, f):
         if a == 1: return 1
         if b == 2: return 2
@@ -409,7 +415,7 @@ class CleanClass:
         self.value = 0
         self.name = ""
         self.data = []
-    
+
     def increment(self):
         self.value += 1
 """
@@ -434,11 +440,11 @@ def func(a, b, c, d, e, f):
         file_path.write_text(code)
 
         checker = PylintRulesChecker()
-        
+
         # Verify checker has check_file method
-        assert hasattr(checker, 'check_file')
+        assert hasattr(checker, "check_file")
         assert callable(checker.check_file)
-        
+
         # Run check
         violations = checker.check_file(file_path)
         assert isinstance(violations, list)

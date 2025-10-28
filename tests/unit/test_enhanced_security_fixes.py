@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 
 

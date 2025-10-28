@@ -8,8 +8,8 @@ These tests verify:
 - Documentation completeness
 """
 
-import re
 from pathlib import Path
+import re
 
 import pytest
 import yaml
@@ -64,9 +64,9 @@ class TestWorkflowValidation:
                 workflow = yaml.safe_load(f)
 
             # YAML 'on' keyword can be parsed as True (boolean)
-            assert (
-                "on" in workflow or True in workflow
-            ), f"{workflow_file.name} missing 'on' (trigger) field"
+            assert "on" in workflow or True in workflow, (
+                f"{workflow_file.name} missing 'on' (trigger) field"
+            )
 
     def test_workflows_use_pinned_actions(self, workflow_files):
         """Test workflows use SHA-pinned or versioned actions."""
@@ -118,7 +118,7 @@ class TestWorkflowValidation:
                 )
 
                 assert has_job_permissions, (
-                    f"{workflow_file.name} should declare permissions " f"at workflow or job level"
+                    f"{workflow_file.name} should declare permissions at workflow or job level"
                 )
 
     def test_workflows_minimize_permissions(self, workflow_files):
@@ -130,9 +130,9 @@ class TestWorkflowValidation:
                 content = f.read()
 
             for perm in dangerous_permissions:
-                assert (
-                    perm not in content
-                ), f"{workflow_file.name} uses overly broad permission: {perm}"
+                assert perm not in content, (
+                    f"{workflow_file.name} uses overly broad permission: {perm}"
+                )
 
     def test_workflows_have_error_handling(self, workflow_files):
         """Test workflows have appropriate error handling."""
@@ -143,7 +143,7 @@ class TestWorkflowValidation:
             if "jobs" not in workflow:
                 continue
 
-            for job_name, job_config in workflow["jobs"].items():
+            for _job_name, job_config in workflow["jobs"].items():
                 if not isinstance(job_config, dict) or "steps" not in job_config:
                     continue
 
@@ -172,9 +172,9 @@ class TestWorkflowValidation:
             with open(workflow_file) as f:
                 content = f.read()
 
-            assert (
-                "upload-sarif" in content or "codeql-action/upload-sarif" in content
-            ), f"{workflow_file.name} should upload SARIF results"
+            assert "upload-sarif" in content or "codeql-action/upload-sarif" in content, (
+                f"{workflow_file.name} should upload SARIF results"
+            )
 
     def test_workflows_have_job_names(self, workflow_files):
         """Test all jobs have descriptive names."""
@@ -190,9 +190,9 @@ class TestWorkflowValidation:
                     continue
 
                 # Job should have a name field
-                assert (
-                    "name" in job_config or "runs-on" in job_config
-                ), f"{workflow_file.name}: Job '{job_id}' should have 'name' field"
+                assert "name" in job_config or "runs-on" in job_config, (
+                    f"{workflow_file.name}: Job '{job_id}' should have 'name' field"
+                )
 
     def test_workflows_have_step_names(self, workflow_files):
         """Test critical steps have descriptive names."""
@@ -203,11 +203,11 @@ class TestWorkflowValidation:
             if "jobs" not in workflow:
                 continue
 
-            for job_name, job_config in workflow["jobs"].items():
+            for _job_name, job_config in workflow["jobs"].items():
                 if not isinstance(job_config, dict) or "steps" not in job_config:
                     continue
 
-                for i, step in enumerate(job_config["steps"]):
+                for _i, step in enumerate(job_config["steps"]):
                     if not isinstance(step, dict):
                         continue
 
@@ -264,9 +264,9 @@ class TestWorkflowValidation:
             ]
 
             for dep in deprecated:
-                assert (
-                    dep not in content
-                ), f"{workflow_file.name} uses deprecated action version: {dep}"
+                assert dep not in content, (
+                    f"{workflow_file.name} uses deprecated action version: {dep}"
+                )
 
 
 class TestActionYmlValidation:
@@ -331,9 +331,9 @@ class TestActionYmlValidation:
         for input_name, input_config in action["inputs"].items():
             # Non-required inputs should have defaults
             if not input_config.get("required", False):
-                assert (
-                    "default" in input_config
-                ), f"Non-required input '{input_name}' should have default value"
+                assert "default" in input_config, (
+                    f"Non-required input '{input_name}' should have default value"
+                )
 
     def test_action_outputs_have_descriptions(self, action_file):
         """Test all outputs have descriptions."""
@@ -405,9 +405,9 @@ class TestWorkflowDocumentation:
 
         # At least 80% should be documented
         coverage = documented_count / total_count if total_count > 0 else 0
-        assert (
-            coverage >= 0.8
-        ), f"Only {documented_count}/{total_count} workflows documented in README"
+        assert coverage >= 0.8, (
+            f"Only {documented_count}/{total_count} workflows documented in README"
+        )
 
     def test_example_workflows_exist(self):
         """Test example workflows directory exists with examples."""

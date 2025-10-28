@@ -2,9 +2,7 @@
 Tests for bugbear-style common mistake detection.
 """
 
-
-
-from pyguard.lib.bugbear import BugbearChecker, BUGBEAR_RULES
+from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker
 
 
 class TestBugbearChecker:
@@ -442,19 +440,19 @@ def bad_function(items=[]):  # B006
 def good_function(items=None):
     if items is None:
         items = []
-    
+
     try:
         result = process(items)
     except ValueError as e:
         logger.error(f"Failed: {e}")
         result = None
-    
+
     return result
 
 class GoodClass:
     def __eq__(self, other):
         return self.value == other.value
-    
+
     def __hash__(self):
         return hash(self.value)
 """

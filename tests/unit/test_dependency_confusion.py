@@ -3,7 +3,7 @@ Comprehensive test suite for dependency confusion detection.
 
 Test Coverage Requirements (per Security Dominance Plan):
 - Minimum 15 vulnerable code patterns per check
-- Minimum 10 safe code patterns per check  
+- Minimum 10 safe code patterns per check
 - Integration tests for real-world scenarios
 - Performance benchmarks (<10ms per file)
 - Edge case coverage
@@ -15,9 +15,9 @@ from pathlib import Path
 import tempfile
 
 from pyguard.lib.dependency_confusion import (
+    DependencyConfusionVisitor,
     analyze_dependency_confusion,
     analyze_requirements_file,
-    DependencyConfusionVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -411,11 +411,11 @@ class TestRequirementsFileAnalysis:
 
     def test_detect_insecure_http_protocol(self):
         """Detect HTTP URLs in requirements (DEP_CONF005)."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('http://insecure-repo.com/package.whl\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("http://insecure-repo.com/package.whl\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             assert len(violations) >= 1
@@ -426,11 +426,11 @@ class TestRequirementsFileAnalysis:
 
     def test_detect_missing_version_pin(self):
         """Detect unpinned versions (DEP_CONF006)."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('requests\n')  # No version pin
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("requests\n")  # No version pin
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             assert len(violations) >= 1
@@ -440,11 +440,11 @@ class TestRequirementsFileAnalysis:
 
     def test_detect_missing_hash_verification(self):
         """Detect missing integrity hashes (DEP_CONF007)."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('requests==2.28.0\n')  # Pinned but no hash
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("requests==2.28.0\n")  # Pinned but no hash
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             assert len(violations) >= 1
@@ -454,11 +454,11 @@ class TestRequirementsFileAnalysis:
 
     def test_safe_pinned_version(self):
         """Pinned versions should not trigger DEP_CONF006."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('requests==2.28.0\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("requests==2.28.0\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             unpinned = [v for v in violations if v.rule_id == "DEP_CONF006"]
@@ -468,11 +468,11 @@ class TestRequirementsFileAnalysis:
 
     def test_safe_https_protocol(self):
         """HTTPS URLs should not trigger DEP_CONF005."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('https://secure-repo.com/package.whl\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("https://secure-repo.com/package.whl\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             http_violations = [v for v in violations if v.rule_id == "DEP_CONF005"]
@@ -482,11 +482,11 @@ class TestRequirementsFileAnalysis:
 
     def test_safe_with_hash(self):
         """Requirements with hashes should not trigger DEP_CONF007."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('requests==2.28.0 --hash=sha256:abc123\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("requests==2.28.0 --hash=sha256:abc123\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             hash_violations = [v for v in violations if v.rule_id == "DEP_CONF007"]
@@ -496,29 +496,31 @@ class TestRequirementsFileAnalysis:
 
     def test_skip_comments(self):
         """Comments should be ignored."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('# http://insecure.com\n')
-            f.write('# This is a comment\n')
-            f.write('requests==2.28.0\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("# http://insecure.com\n")
+            f.write("# This is a comment\n")
+            f.write("requests==2.28.0\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             # Comment lines should not trigger violations
-            http_violations = [v for v in violations if v.rule_id == "DEP_CONF005" and v.line_number <= 2]
+            http_violations = [
+                v for v in violations if v.rule_id == "DEP_CONF005" and v.line_number <= 2
+            ]
             assert len(http_violations) == 0
         finally:
             temp_path.unlink()
 
     def test_skip_empty_lines(self):
         """Empty lines should be ignored."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
-            f.write('\n\n')
-            f.write('requests==2.28.0\n')
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
+            f.write("\n\n")
+            f.write("requests==2.28.0\n")
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             # Should only analyze non-empty lines
@@ -593,7 +595,7 @@ class TestLevenshteinDistance:
     def test_levenshtein_two_char_difference(self):
         """Distance for character swap is 1 in our implementation (uses min-cost edits)."""
         visitor = DependencyConfusionVisitor(Path("test.py"), "")
-        # 'requests' -> 'requets': The Levenshtein algorithm finds the minimum 
+        # 'requests' -> 'requets': The Levenshtein algorithm finds the minimum
         # edit distance, which for this case is 1 (substitute e with u or vice versa)
         # Different algorithms may give different results for transpositions
         distance = visitor._levenshtein_distance("requests", "requets")
@@ -626,24 +628,25 @@ subprocess.call(['pip', 'install', 'reqests'])
 
     def test_performance_medium_file(self, benchmark):
         """Performance on medium file (100 lines)."""
-        code = """
+        code = (
+            """
 import subprocess
 subprocess.call(['pip', 'install', 'numpy'])
-""" * 50  # 150 lines
+"""
+            * 50
+        )  # 150 lines
         benchmark(lambda: analyze_dependency_confusion(Path("test.py"), code))
         # Benchmark completes - performance is tracked
 
     def test_performance_requirements_file(self, benchmark):
         """Performance on requirements.txt with 50 packages."""
-        requirements_content = '\n'.join([
-            f'package{i}==1.0.0' for i in range(50)
-        ])
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
+        requirements_content = "\n".join([f"package{i}==1.0.0" for i in range(50)])
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
             f.write(requirements_content)
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             benchmark(lambda: analyze_requirements_file(temp_path))
             # Benchmark completes - performance is tracked
@@ -676,14 +679,14 @@ subprocess.call(['pip', 'install', 'flaks'])
 requests==2.28.0
 numpy==1.23.0
 pandas>=1.4.0
-django  
+django
 http://insecure.com/package.whl
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='requirements.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix="requirements.txt", delete=False) as f:
             f.write(requirements)
             f.flush()
             temp_path = Path(f.name)
-        
+
         try:
             violations = analyze_requirements_file(temp_path)
             # Should detect: HTTP, missing pin for django, missing hashes
@@ -704,7 +707,7 @@ import sys
 def install_production_dependencies():
     # Install from requirements.txt (safe)
     subprocess.call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
-    
+
     # Install well-known packages (safe)
     safe_packages = ['numpy', 'pandas', 'requests', 'django', 'flask']
     for package in safe_packages:
@@ -754,12 +757,12 @@ subprocess.call(['pip', 'install', 'numpY'])
     def test_severity_levels_appropriate(self):
         """Verify severity levels are appropriate for each rule."""
         test_cases = [
-            ("DEP_CONF001", RuleSeverity.HIGH, "numpY"),      # Typosquatting
+            ("DEP_CONF001", RuleSeverity.HIGH, "numpY"),  # Typosquatting
             ("DEP_CONF002", RuleSeverity.CRITICAL, "package-nightly"),  # Malicious
             ("DEP_CONF003", RuleSeverity.HIGH, "internal-package"),  # Namespace
             ("DEP_CONF004", RuleSeverity.MEDIUM, "pkg-with-many-dashes-here"),  # Suspicious
         ]
-        
+
         for rule_id, expected_severity, package in test_cases:
             code = f"""
 import subprocess

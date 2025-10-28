@@ -38,8 +38,8 @@ def hello():
         violations = analyze_advanced_injection(code)
         ssti_violations = [v for v in violations if v.rule_id == "INJECT001"]
         assert len(ssti_violations) >= 1
-        assert any('SSTI' in v.message for v in ssti_violations)
-        assert any(v.cwe_id == 'CWE-94' for v in ssti_violations)
+        assert any("SSTI" in v.message for v in ssti_violations)
+        assert any(v.cwe_id == "CWE-94" for v in ssti_violations)
 
     def test_jinja2_template_render_with_user_input(self):
         """Detect Jinja2 Template() with user input."""
@@ -144,7 +144,7 @@ cursor.execute(query)
         violations = analyze_advanced_injection(code)
         blind_sql = [v for v in violations if v.rule_id == "INJECT016"]
         assert len(blind_sql) >= 1
-        assert any('blind' in v.message.lower() for v in blind_sql)
+        assert any("blind" in v.message.lower() for v in blind_sql)
 
     def test_detect_waitfor_delay_sql_injection(self):
         """Detect MSSQL WAITFOR DELAY blind SQL injection."""
@@ -195,7 +195,7 @@ cursor.execute(query)
         violations = analyze_advanced_injection(code)
         order_by = [v for v in violations if v.rule_id == "INJECT017"]
         assert len(order_by) >= 1
-        assert any('ORDER BY' in v.message for v in order_by)
+        assert any("ORDER BY" in v.message for v in order_by)
 
     def test_safe_order_by_with_whitelist(self):
         """ORDER BY with whitelist validation should not trigger."""
@@ -225,7 +225,7 @@ db.collection.find({'$where': user_query})
         violations = analyze_advanced_injection(code)
         mongo_violations = [v for v in violations if v.rule_id == "INJECT018"]
         assert len(mongo_violations) >= 1
-        assert any('$where' in v.message for v in mongo_violations)
+        assert any("$where" in v.message for v in mongo_violations)
 
     def test_detect_mongodb_nosql_injection(self):
         """Detect MongoDB NoSQL injection with user input."""
@@ -294,7 +294,7 @@ data = yaml.load(user_input)
         violations = analyze_advanced_injection(code)
         yaml_violations = [v for v in violations if v.rule_id == "INJECT026"]
         assert len(yaml_violations) >= 1
-        assert any('unsafe' in v.message.lower() for v in yaml_violations)
+        assert any("unsafe" in v.message.lower() for v in yaml_violations)
 
     def test_detect_yaml_unsafe_load(self):
         """Detect yaml.unsafe_load() explicitly."""
@@ -342,7 +342,7 @@ tree = ET.fromstring(user_xml)
         violations = analyze_advanced_injection(code)
         xxe_violations = [v for v in violations if v.rule_id == "INJECT027"]
         assert len(xxe_violations) >= 1
-        assert any('XXE' in v.message for v in xxe_violations)
+        assert any("XXE" in v.message for v in xxe_violations)
 
     def test_safe_xml_with_defused(self):
         """Using defusedxml should be safe."""
@@ -368,7 +368,7 @@ with open(filename, 'r') as f:
         violations = analyze_advanced_injection(code)
         path_traversal = [v for v in violations if v.rule_id == "INJECT028"]
         assert len(path_traversal) >= 1
-        assert any('traversal' in v.message.lower() for v in path_traversal)
+        assert any("traversal" in v.message.lower() for v in path_traversal)
 
     def test_detect_path_traversal_in_path_join(self):
         """Detect path traversal in os.path.join."""
@@ -483,7 +483,9 @@ with zipfile.ZipFile('archive.zip') as z:
         violations = analyze_advanced_injection(code)
         zip_slip = [v for v in violations if v.rule_id == "INJECT034"]
         assert len(zip_slip) >= 1
-        assert any('slip' in v.message.lower() or 'traversal' in v.message.lower() for v in zip_slip)
+        assert any(
+            "slip" in v.message.lower() or "traversal" in v.message.lower() for v in zip_slip
+        )
 
     def test_detect_tarfile_extraction_vulnerability(self):
         """Detect tarfile extraction vulnerability."""
@@ -510,7 +512,7 @@ subprocess.run(command, shell=True)
         violations = analyze_advanced_injection(code)
         shell_violations = [v for v in violations if v.rule_id == "INJECT035"]
         assert len(shell_violations) >= 1
-        assert any('shell' in v.message.lower() for v in shell_violations)
+        assert any("shell" in v.message.lower() for v in shell_violations)
 
     def test_safe_subprocess_shell_false(self):
         """subprocess with shell=False should be safer."""
@@ -536,7 +538,7 @@ os.system(f'cat {filename}')
         violations = analyze_advanced_injection(code)
         os_system = [v for v in violations if v.rule_id == "INJECT036"]
         assert len(os_system) >= 1
-        assert any('os.system' in v.message for v in os_system)
+        assert any("os.system" in v.message for v in os_system)
 
     def test_detect_os_popen_with_user_input(self):
         """Detect os.popen() with user input."""
@@ -576,19 +578,19 @@ from flask import render_template_string, request
 def process():
     # YAML injection
     config = yaml.load(request.form['config'])
-    
+
     # Template injection
     template = request.args.get('template')
     output = render_template_string(template)
-    
+
     # Command injection
     command = request.form['cmd']
     subprocess.run(command, shell=True)
-    
+
     return output
 """
         violations = analyze_advanced_injection(code)
-        
+
         # Should detect at least 3 different injection types
         rule_ids = {v.rule_id for v in violations}
         assert "INJECT001" in rule_ids  # Template injection
@@ -604,20 +606,20 @@ from flask import render_template
 def safe_processing():
     # Safe YAML
     config = yaml.safe_load(open('config.yaml'))
-    
+
     # Safe template
     output = render_template('index.html', data=config)
-    
+
     # Safe subprocess
     import subprocess
     subprocess.run(['echo', 'hello'], shell=False)
-    
+
     return output
 """
         violations = analyze_advanced_injection(code)
-        
+
         # Should have minimal or no violations
-        critical_violations = [v for v in violations if v.severity.value == 'CRITICAL']
+        critical_violations = [v for v in violations if v.severity.value == "CRITICAL"]
         assert len(critical_violations) == 0
 
     def test_cwe_owasp_mapping_present(self):
@@ -628,14 +630,14 @@ import yaml
 data = yaml.load(request.data)
 """
         violations = analyze_advanced_injection(code)
-        
+
         assert len(violations) > 0
         for violation in violations:
             assert violation.cwe_id is not None
             assert violation.owasp_id is not None
-            assert 'CWE-' in violation.cwe_id
-            assert 'OWASP' in violation.owasp_id
+            assert "CWE-" in violation.cwe_id
+            assert "OWASP" in violation.owasp_id
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

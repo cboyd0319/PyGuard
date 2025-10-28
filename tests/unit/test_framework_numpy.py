@@ -6,8 +6,9 @@ Covers 15 security checks for array operations, memory safety,
 numerical computation security, and data science application security.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pyguard.lib.framework_numpy import (
     analyze_numpy_security,
@@ -408,19 +409,17 @@ class TestNumPyRuleMetadata:
     def test_numpy_rules_registered(self):
         """Verify all NUMPY rules are registered."""
         from pyguard.lib.framework_numpy import NUMPY_RULES
-        
+
         assert len(NUMPY_RULES) == 15
         rule_ids = {rule.rule_id for rule in NUMPY_RULES}
-        
-        expected_ids = {
-            f"NUMPY{str(i).zfill(3)}" for i in range(1, 16)
-        }
+
+        expected_ids = {f"NUMPY{str(i).zfill(3)}" for i in range(1, 16)}
         assert rule_ids == expected_ids
 
     def test_numpy_rules_have_cwe_mapping(self):
         """Verify all rules have CWE mappings."""
         from pyguard.lib.framework_numpy import NUMPY_RULES
-        
+
         for rule in NUMPY_RULES:
             assert rule.cwe_mapping is not None
             assert rule.cwe_mapping.startswith("CWE-")
@@ -428,14 +427,14 @@ class TestNumPyRuleMetadata:
     def test_numpy_rules_have_owasp_mapping(self):
         """Verify all rules have OWASP mappings."""
         from pyguard.lib.framework_numpy import NUMPY_RULES
-        
+
         for rule in NUMPY_RULES:
             assert rule.owasp_mapping is not None
 
     def test_numpy_rules_have_severity(self):
         """Verify all rules have severity levels."""
         from pyguard.lib.framework_numpy import NUMPY_RULES
-        
+
         for rule in NUMPY_RULES:
             assert rule.severity in [
                 RuleSeverity.CRITICAL,
@@ -447,7 +446,7 @@ class TestNumPyRuleMetadata:
     def test_numpy_critical_rules_exist(self):
         """Verify critical severity rules exist."""
         from pyguard.lib.framework_numpy import NUMPY_RULES
-        
+
         critical_rules = [r for r in NUMPY_RULES if r.severity == RuleSeverity.CRITICAL]
         assert len(critical_rules) >= 1
         # NUMPY003 (pickle deserialization) should be critical
@@ -465,10 +464,11 @@ import numpy as np
 data = np.zeros(100)
 """
         import time
+
         start = time.time()
         analyze_numpy_security(Path("test.py"), code)
         elapsed = time.time() - start
-        
+
         assert elapsed < 0.1  # Should complete in <100ms
 
     def test_performance_medium_file(self):
@@ -476,12 +476,13 @@ data = np.zeros(100)
         code = """
 import numpy as np
 """ + "\n".join([f"data{i} = np.zeros(100)" for i in range(100)])
-        
+
         import time
+
         start = time.time()
         analyze_numpy_security(Path("test.py"), code)
         elapsed = time.time() - start
-        
+
         assert elapsed < 1.0  # Should complete in <1 second
 
     def test_no_false_positives_on_safe_code(self):

@@ -12,7 +12,6 @@ Tests world-class security detection capabilities including:
 - Business logic flaws
 """
 
-
 from pyguard.lib.ultra_advanced_security import (
     APIRateLimitDetector,
     BusinessLogicDetector,

@@ -26,7 +26,7 @@ import tornado.web
 class MyHandler(tornado.web.RequestHandler):
     def check_xsrf_cookie(self):
         pass  # XSRF protection disabled
-        
+
     def post(self):
         self.write("OK")
 """
@@ -74,7 +74,7 @@ import tornado.websocket
 class ChatHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("WebSocket opened")
-        
+
     def on_message(self, message):
         self.write_message("Echo: " + message)
 """
@@ -91,7 +91,7 @@ import tornado.websocket
 class ChatHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return origin in ["https://example.com"]
-        
+
     def open(self):
         print("WebSocket opened")
 """
@@ -376,7 +376,7 @@ import tornado.web
 class SecureHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Strict-Transport-Security", "max-age=31536000")
-        
+
     def get(self):
         self.write("Secure content")
 """
@@ -669,12 +669,17 @@ class MainHandler(tornado.web.RequestHandler):
         code = """
 import tornado.web
 
-""" + "\n".join([f"""
+""" + "\n".join(
+            [
+                f"""
 class Handler{i}(tornado.web.RequestHandler):
     def get(self):
         self.write("Handler {i}")
-""" for i in range(50)])
-        
+"""
+                for i in range(50)
+            ]
+        )
+
         result = benchmark(lambda: analyze_tornado_security(Path("test.py"), code))
         assert isinstance(result, list)
 
@@ -683,11 +688,16 @@ class Handler{i}(tornado.web.RequestHandler):
         code = """
 import tornado.web
 
-""" + "\n".join([f"""
+""" + "\n".join(
+            [
+                f"""
 class Handler{i}(tornado.web.RequestHandler):
     def get(self):
         self.write("Handler {i}")
-""" for i in range(200)])
-        
+"""
+                for i in range(200)
+            ]
+        )
+
         result = benchmark(lambda: analyze_tornado_security(Path("test.py"), code))
         assert isinstance(result, list)

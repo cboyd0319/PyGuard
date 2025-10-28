@@ -13,8 +13,8 @@ Tests cover:
 """
 
 import ast
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -543,7 +543,7 @@ app = Flask(__name__)
 def login():
     username = request.form['username']
     password = request.form['password']
-    
+
     # Timing attack vulnerability
     if password == get_stored_password(username):
         # Session fixation vulnerability
@@ -559,7 +559,7 @@ def login():
         # Should detect both timing attack and session fixation
         timing_violations = [v for v in visitor.violations if v.rule_id == "AUTH003"]
         fixation_violations = [v for v in visitor.violations if v.rule_id == "AUTH004"]
-        
+
         assert len(timing_violations) >= 1
         assert len(fixation_violations) == 1
 
@@ -603,7 +603,7 @@ def login(credentials: dict):
 
         # Should detect missing JWT expiration (but NOT missing auth on login route - that's expected)
         jwt_violations = [v for v in visitor.violations if v.rule_id == "AUTH007"]
-        
+
         assert len(jwt_violations) == 1, f"Expected 1 JWT violation, got {len(jwt_violations)}"
 
 

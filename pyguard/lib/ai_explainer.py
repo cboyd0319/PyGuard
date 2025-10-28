@@ -130,7 +130,7 @@ class AIExplainer:
                 "5. Run with minimal privileges"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n" "filename = request.GET['file']\n" "os.system(f'cat {filename}')"
+                "# VULNERABLE\nfilename = request.GET['file']\nos.system(f'cat {filename}')"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -170,7 +170,7 @@ class AIExplainer:
                 "4. If unavoidable, use sandboxed environments"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n" "user_code = request.GET['code']\n" "result = eval(user_code)"
+                "# VULNERABLE\nuser_code = request.GET['code']\nresult = eval(user_code)"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -212,7 +212,7 @@ class AIExplainer:
                 "4. Rotate any exposed credentials immediately"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n" "API_KEY = 'sk-1234567890abcdef'\n" "password = 'SuperSecret123'"
+                "# VULNERABLE\nAPI_KEY = 'sk-1234567890abcdef'\npassword = 'SuperSecret123'"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -299,9 +299,7 @@ class AIExplainer:
                 "5. Use HttpOnly cookies"
             ),
             example_vulnerable=(
-                "# VULNERABLE\n"
-                "username = request.GET['name']\n"
-                "return f'<h1>Hello {username}</h1>'"
+                "# VULNERABLE\nusername = request.GET['name']\nreturn f'<h1>Hello {username}</h1>'"
             ),
             example_secure=(
                 "# SECURE (Flask)\n"
@@ -416,7 +414,6 @@ class AIExplainer:
         return self._generate_fix_rationale(
             original_code, fixed_code, vulnerability_type, explanation
         )
-
 
     def _adjust_explanation_level(
         self, explanation: SecurityExplanation, level: str

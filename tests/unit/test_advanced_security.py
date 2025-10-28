@@ -1,6 +1,5 @@
 """Tests for advanced security analysis module."""
 
-
 from pyguard.lib.advanced_security import (
     AdvancedSecurityAnalyzer,
     IntegerSecurityAnalyzer,
@@ -225,88 +224,93 @@ result = pattern.match(user_input)
 
 class TestTaintAnalyzerEdgeCases:
     """Test edge cases for TaintAnalyzer."""
-    
+
     def test_get_call_name_with_ast_name(self):
         """Test _get_call_name handles ast.Name nodes."""
         import ast
+
         code = "result = simple_function()"
         tree = ast.parse(code)
         source_lines = code.split("\n")
-        
+
         analyzer = TaintAnalyzer(source_lines)
         call_node = tree.body[0].value
-        
+
         # This should return the function name
         func_name = analyzer._get_call_name(call_node)
         assert func_name == "simple_function"
-    
+
     def test_get_call_name_with_nested_attributes(self):
         """Test _get_call_name handles deeply nested attributes."""
         import ast
+
         code = "result = module.submodule.function()"
         tree = ast.parse(code)
         source_lines = code.split("\n")
-        
+
         analyzer = TaintAnalyzer(source_lines)
         call_node = tree.body[0].value
-        
+
         func_name = analyzer._get_call_name(call_node)
         assert "function" in func_name
-    
+
     def test_get_code_snippet_invalid_line_number(self):
         """Test _get_code_snippet handles invalid line numbers."""
         import ast
+
         code = "x = 1"
         source_lines = code.split("\n")
-        
+
         analyzer = TaintAnalyzer(source_lines)
-        
+
         # Create a mock node with invalid line number
         node = ast.parse(code).body[0]
         node.lineno = 999  # Way out of range
-        
+
         snippet = analyzer._get_code_snippet(node)
         assert snippet == ""
 
 
 class TestRaceConditionDetectorEdgeCases:
     """Test edge cases for RaceConditionDetector."""
-    
+
     def test_get_code_snippet_out_of_bounds(self):
         """Test _get_code_snippet handles out of bounds line numbers."""
         import ast
+
         code = "x = 1"
         source_lines = code.split("\n")
-        
+
         detector = RaceConditionDetector(source_lines)
-        
+
         # Create a mock node with invalid line number
         node = ast.parse(code).body[0]
         node.lineno = 100  # Out of range
-        
+
         snippet = detector._get_code_snippet(node)
         assert snippet == ""
-    
+
     def test_get_call_name_unknown_node_type(self):
         """Test _get_call_name returns empty string for unknown node types."""
         import ast
+
         code = "x = 1 + 2"
         source_lines = code.split("\n")
-        
+
         detector = RaceConditionDetector(source_lines)
-        
+
         # Create a node that's not a Call node
         tree = ast.parse(code)
         binop_node = tree.body[0].value
-        
+
         # Mock the binop as a call with weird structure
         class WeirdCall:
             func = binop_node
-        
+
         # This should return empty string
         result = detector._get_call_name(WeirdCall())
         assert result == ""
-    
+
     def test_toctou_with_different_line_gap(self):
         """Test TOCTOU detection with various line gaps."""
         code = """
@@ -329,11 +333,12 @@ if os.path.exists(file_path):
 """
         source_lines = code.strip().split("\n")
         detector = RaceConditionDetector(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         detector.visit(tree)
-        
+
         # Should not detect TOCTOU if lines are too far apart (>10 lines)
         # Actually might still detect if within 10 lines, this tests the boundary
         assert isinstance(detector.issues, list)
@@ -341,36 +346,38 @@ if os.path.exists(file_path):
 
 class TestIntegerSecurityAnalyzerEdgeCases:
     """Test edge cases for IntegerSecurityAnalyzer."""
-    
+
     def test_get_code_snippet_invalid_line(self):
         """Test _get_code_snippet handles invalid line numbers."""
         import ast
+
         code = "x = 1"
         source_lines = code.split("\n")
-        
+
         analyzer = IntegerSecurityAnalyzer(source_lines)
-        
+
         # Create a mock node with invalid line number
         node = ast.parse(code).body[0]
         node.lineno = 500  # Out of bounds
-        
+
         snippet = analyzer._get_code_snippet(node)
         assert snippet == ""
-    
+
     def test_multiplication_with_constants(self):
         """Test that multiplication with constants doesn't trigger warning."""
         code = "result = 5 * 10"
         source_lines = code.split("\n")
         analyzer = IntegerSecurityAnalyzer(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
         analyzer.visit(tree)
-        
+
         # Multiplication of constants should not trigger issue
         # (though parent context might still matter)
         assert isinstance(analyzer.issues, list)
-    
+
     def test_multiplication_in_subscript_context(self):
         """Test multiplication in array indexing context."""
         code = """
@@ -380,24 +387,25 @@ element = arr[size]
 """
         source_lines = code.strip().split("\n")
         analyzer = IntegerSecurityAnalyzer(source_lines)
-        
+
         import ast
+
         tree = ast.parse(code)
-        
+
         # Add parent references for context
         for parent_node in ast.walk(tree):
             for child in ast.iter_child_nodes(parent_node):
-                setattr(child, 'parent', parent_node)
-        
+                child.parent = parent_node
+
         analyzer.visit(tree)
-        
+
         # Should detect potential integer overflow
         assert isinstance(analyzer.issues, list)
 
 
 class TestAdvancedSecurityAnalyzerIntegration:
     """Test AdvancedSecurityAnalyzer integration."""
-    
+
     def test_analyzer_with_multiple_issues(self):
         """Test analyzer detects multiple types of issues."""
         code = """
@@ -422,7 +430,7 @@ buffer = [0] * size
 """
         analyzer = AdvancedSecurityAnalyzer()
         issues = analyzer.analyze_code(code)
-        
+
         # Should detect multiple issue types
         assert isinstance(issues, list)
         assert len(issues) > 0

@@ -29,7 +29,8 @@ class TestCoverageAnalyzer:
             # Find all source Python files
             src_result = subprocess.run(
                 ["rg", "--files", "--type", "py", src_dir],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )
@@ -39,7 +40,8 @@ class TestCoverageAnalyzer:
             # Find all test files
             test_result = subprocess.run(
                 ["rg", "--files", "--type", "py", test_dir],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )

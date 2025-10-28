@@ -144,8 +144,7 @@ class PylintVisitor(ast.NodeVisitor):
                     if isinstance(stmt, ast.Assign):
                         for target in stmt.targets:
                             if isinstance(target, ast.Attribute) and (
-                                isinstance(target.value, ast.Name)
-                                and target.value.id == "self"
+                                isinstance(target.value, ast.Name) and target.value.id == "self"
                             ):
                                 instance_attrs.add(target.attr)
 

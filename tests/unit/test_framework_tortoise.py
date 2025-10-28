@@ -186,7 +186,7 @@ from tortoise import Tortoise, models
 async def query():
     query = f"SELECT * FROM users WHERE id = {user_id}"
     await Tortoise.get_connection().execute_query(query)
-    
+
     users = await User.all().prefetch_related('posts')
 """
         violations = analyze_tortoise_security(Path("test.py"), code)

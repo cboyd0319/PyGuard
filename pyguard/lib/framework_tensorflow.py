@@ -509,7 +509,9 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                 return True
             if "user_path" in var_name or "user_file" in var_name or "user_input" in var_name:
                 return True
-            return bool("user_data" in var_name or "user_shape" in var_name or "user_model" in var_name)
+            return bool(
+                "user_data" in var_name or "user_shape" in var_name or "user_model" in var_name
+            )
         if isinstance(node, (ast.Attribute, ast.Subscript)):
             return self._is_user_controlled(node.value)
         return False

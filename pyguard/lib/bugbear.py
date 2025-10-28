@@ -172,17 +172,21 @@ class BugbearVisitor(ast.NodeVisitor):
 
         # B018: Useless expression - statement has no effect
         for stmt in node.body:
-            if isinstance(stmt, ast.Expr) and not isinstance(
-                stmt.value,
-                (
-                    ast.Call,
-                    ast.Yield,
-                    ast.YieldFrom,
-                    ast.Await,
-                    ast.JoinedStr,
-                    ast.FormattedValue,
-                ),
-            ) and isinstance(stmt.value, ast.Constant):
+            if (
+                isinstance(stmt, ast.Expr)
+                and not isinstance(
+                    stmt.value,
+                    (
+                        ast.Call,
+                        ast.Yield,
+                        ast.YieldFrom,
+                        ast.Await,
+                        ast.JoinedStr,
+                        ast.FormattedValue,
+                    ),
+                )
+                and isinstance(stmt.value, ast.Constant)
+            ):
                 # Skip docstrings
                 if stmt is node.body[0]:
                     continue
@@ -291,11 +295,15 @@ class BugbearVisitor(ast.NodeVisitor):
 
         # B013: Redundant tuple in exception clause
         if (
-            isinstance(node.func, ast.Name)
-            and node.func.id == "except"
-            and node.args
-            and len(node.args) == 1
-        ) and isinstance(node.args[0], ast.Tuple) and len(node.args[0].elts) == 1:
+            (
+                isinstance(node.func, ast.Name)
+                and node.func.id == "except"
+                and node.args
+                and len(node.args) == 1
+            )
+            and isinstance(node.args[0], ast.Tuple)
+            and len(node.args[0].elts) == 1
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="B013",

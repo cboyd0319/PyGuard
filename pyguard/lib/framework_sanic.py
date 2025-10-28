@@ -202,11 +202,15 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     if child.func.attr in ("execute", "raw", "query"):
                         for arg in child.args:
                             # Direct formatting in the call
-                            if isinstance(arg, ast.JoinedStr) or (
-                                isinstance(arg, ast.Call)
-                                and isinstance(arg.func, ast.Attribute)
-                                and arg.func.attr == "format"
-                            ) or (isinstance(arg, ast.Name) and arg.id in formatted_vars):
+                            if (
+                                isinstance(arg, ast.JoinedStr)
+                                or (
+                                    isinstance(arg, ast.Call)
+                                    and isinstance(arg.func, ast.Attribute)
+                                    and arg.func.attr == "format"
+                                )
+                                or (isinstance(arg, ast.Name) and arg.id in formatted_vars)
+                            ):
                                 self.violations.append(
                                     RuleViolation(
                                         rule_id="SANIC001",
@@ -232,8 +236,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     has_auth_decorator = True
             elif isinstance(decorator, ast.Call):
                 if isinstance(decorator.func, ast.Name) and (
-                    "auth" in decorator.func.id.lower()
-                    or "protected" in decorator.func.id.lower()
+                    "auth" in decorator.func.id.lower() or "protected" in decorator.func.id.lower()
                 ):
                     has_auth_decorator = True
 
@@ -281,9 +284,13 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                         # Check if any comparator mentions size-related variables
                         for comp in stmt.comparators:
                             comp_is_size = False
-                            if (isinstance(comp, ast.Name) and any(
-                                keyword in comp.id.lower() for keyword in ["size", "limit", "max"]
-                            )) or (
+                            if (
+                                isinstance(comp, ast.Name)
+                                and any(
+                                    keyword in comp.id.lower()
+                                    for keyword in ["size", "limit", "max"]
+                                )
+                            ) or (
                                 isinstance(comp, ast.Constant)
                                 and isinstance(comp.value, int)
                                 and comp.value > 1000

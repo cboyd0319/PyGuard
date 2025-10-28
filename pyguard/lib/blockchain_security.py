@@ -243,7 +243,6 @@ class BlockchainSecurityVisitor(ast.NodeVisitor):
                 token_word in func_name.lower()
                 for token_word in ["transfer", "mint", "burn", "balance", "allowance", "approve"]
             ):
-
                 # Check for unchecked arithmetic
                 for arg in node.args:
                     if isinstance(arg, ast.BinOp) and isinstance(
@@ -409,7 +408,6 @@ class BlockchainSecurityVisitor(ast.NodeVisitor):
                     key_word in var_name
                     for key_word in ["private_key", "privkey", "secret_key", "wallet_key"]
                 ):
-
                     # Check if value is a string literal
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         # Check for hex pattern (typical for private keys)
@@ -450,7 +448,6 @@ class BlockchainSecurityVisitor(ast.NodeVisitor):
                     seed_word in var_name
                     for seed_word in ["mnemonic", "seed", "seed_phrase", "recovery", "bip39"]
                 ):
-
                     # Check if value is a string with multiple words (typical for seed phrases)
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         words = node.value.value.split()

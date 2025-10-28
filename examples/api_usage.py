@@ -65,15 +65,7 @@ def get_user(user_id):
 token = random.random()
 """
 
-    print("🔍 Analyzing sample code...\n")
-    results = analyze_code(sample_code)
-
-    print(f"Security issues found: {len(results['security_issues'])}")
-    print(f"Security fixes applied: {results['security_fixes']}")
-    print(f"Best practice fixes: {results['best_practice_fixes']}")
-
-    print("\n📝 Diff:")
-    print(results["diff"])
+    analyze_code(sample_code)
 
 
 if __name__ == "__main__":

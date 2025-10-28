@@ -1394,7 +1394,7 @@ class ModernHTMLReporter:
         <section class="metrics-grid" aria-label="Analysis metrics summary" id="main-content" role="region">
             <div class="metric-card" role="group" aria-labelledby="metric-1">
                 <h3 id="metric-1">Total Files</h3>
-                <div class="value" aria-label="{metrics.get('total_files', 0)} files">{metrics.get('total_files', 0)}</div>
+                <div class="value" aria-label="{metrics.get("total_files", 0)} files">{metrics.get("total_files", 0)}</div>
                 <div class="label">Analyzed</div>
             </div>
             <div class="metric-card danger" role="group" aria-labelledby="metric-2">
@@ -1419,7 +1419,7 @@ class ModernHTMLReporter:
             </div>
             <div class="metric-card info" role="group" aria-labelledby="metric-6">
                 <h3 id="metric-6">Analysis Time</h3>
-                <div class="value" aria-label="{metrics.get('analysis_time_seconds', 0):.2f} seconds">{metrics.get('analysis_time_seconds', 0):.2f}s</div>
+                <div class="value" aria-label="{metrics.get("analysis_time_seconds", 0):.2f} seconds">{metrics.get("analysis_time_seconds", 0):.2f}s</div>
                 <div class="label">Total Duration</div>
             </div>
         </section>

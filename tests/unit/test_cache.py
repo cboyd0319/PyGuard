@@ -1,8 +1,7 @@
 """Unit tests for cache module."""
 
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.cache import AnalysisCache, ConfigCache
 
@@ -193,6 +192,7 @@ class TestAnalysisCacheEdgeCases:
     def teardown_method(self):
         """Clean up test fixtures."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_cache_with_corrupted_cache_file(self):
@@ -201,10 +201,10 @@ class TestAnalysisCacheEdgeCases:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         cache_file = self.cache_dir / "analysis_cache.json"
         cache_file.write_text("corrupted json {]")
-        
+
         # Create new cache instance - should handle corruption gracefully
         cache = AnalysisCache(cache_dir=self.cache_dir)
-        
+
         # Cache should be empty
         stats = cache.get_stats()
         assert stats["entries"] == 0
@@ -213,14 +213,15 @@ class TestAnalysisCacheEdgeCases:
         """Test cache save error handling."""
         test_file = Path(self.temp_dir) / "test.py"
         test_file.write_text("print('test')")
-        
+
         # Add entry
         self.cache.set(test_file, {"data": "test"})
-        
+
         # Make cache directory read-only to trigger save error
         import stat
+
         self.cache_dir.chmod(stat.S_IRUSR | stat.S_IXUSR)
-        
+
         try:
             # Try to save - should handle error gracefully
             self.cache._save_cache()
@@ -231,23 +232,23 @@ class TestAnalysisCacheEdgeCases:
     def test_cache_expiration(self):
         """Test cache entry expiration based on age."""
         from freezegun import freeze_time
-        
+
         test_file = Path(self.temp_dir) / "test.py"
         test_file.write_text("print('test')")
-        
+
         # Create cache with very short max age (1 second = 1/3600 hours)
-        cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1/3600)
-        
+        cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1 / 3600)
+
         # Add entry at time T
         with freeze_time("2025-01-01 00:00:00"):
             cache.set(test_file, {"data": "test"})
             assert cache.is_cached(test_file)
-        
+
         # Advance time past expiration (1.5 seconds)
         with freeze_time("2025-01-01 00:00:01.5"):
             # Trigger cleanup by checking cache
             cache._clean_expired()
-            
+
             # Entry should be expired
             assert not cache.is_cached(test_file)
 
@@ -255,17 +256,17 @@ class TestAnalysisCacheEdgeCases:
         """Test cache handles entries with data attribute correctly."""
         test_file = Path(self.temp_dir) / "test.py"
         test_file.write_text("print('test')")
-        
+
         # Set data
         data = {"result": "value"}
         self.cache.set(test_file, data)
-        
+
         # Save and reload
         self.cache._save_cache()
-        
+
         # Create new instance
         new_cache = AnalysisCache(cache_dir=self.cache_dir)
-        
+
         # Should load with data attribute
         cached_data = new_cache.get(test_file)
         assert cached_data == data
@@ -273,14 +274,14 @@ class TestAnalysisCacheEdgeCases:
     def test_cache_invalidate_nonexistent_file(self):
         """Test invalidating a file that's not in cache."""
         fake_file = Path(self.temp_dir) / "nonexistent.py"
-        
+
         # Should not raise error
         self.cache.invalidate(fake_file)
 
     def test_cache_get_file_hash_nonexistent(self):
         """Test getting file hash for nonexistent file."""
         fake_file = Path(self.temp_dir) / "nonexistent.py"
-        
+
         # Should return None
         hash_value = self.cache.get_file_hash(fake_file)
         assert hash_value is None
@@ -288,26 +289,26 @@ class TestAnalysisCacheEdgeCases:
     def test_cache_with_multiple_expired_entries(self):
         """Test cleaning multiple expired entries."""
         from freezegun import freeze_time
-        
+
         # Create cache with short expiration (1 second = 1/3600 hours)
-        cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1/3600)
-        
+        cache = AnalysisCache(cache_dir=self.cache_dir, max_age_hours=1 / 3600)
+
         # Add multiple entries at time T
         with freeze_time("2025-01-01 00:00:00"):
             for i in range(5):
                 test_file = Path(self.temp_dir) / f"test{i}.py"
                 test_file.write_text(f"print('{i}')")
                 cache.set(test_file, {"data": i})
-            
+
             # Verify all are cached
             stats = cache.get_stats()
             assert stats["entries"] == 5
-        
+
         # Advance time past expiration (1.5 seconds)
         with freeze_time("2025-01-01 00:00:01.5"):
             # Clean expired
             cache._clean_expired()
-            
+
             # All should be gone
             stats = cache.get_stats()
             assert stats["entries"] == 0
@@ -324,12 +325,13 @@ class TestConfigCacheEdgeCases:
     def teardown_method(self):
         """Clean up test fixtures."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_config_cache_nonexistent_file(self):
         """Test getting config for nonexistent file."""
         fake_file = Path(self.temp_dir) / "nonexistent.toml"
-        
+
         # Should return None
         assert self.cache.get(fake_file) is None
 
@@ -337,10 +339,10 @@ class TestConfigCacheEdgeCases:
         """Test setting None value in config cache."""
         config_file = Path(self.temp_dir) / "config.toml"
         config_file.write_text("[settings]")
-        
+
         # Set None value
         self.cache.set(config_file, None)
-        
+
         # Should be able to retrieve None
         assert self.cache.get(config_file) is None
 
@@ -353,7 +355,7 @@ class TestConfigCacheEdgeCases:
             config = {"settings": {"value": i}}
             self.cache.set(config_file, config)
             configs.append((config_file, config))
-        
+
         # Verify all are cached correctly
         for config_file, expected_config in configs:
             cached_config = self.cache.get(config_file)
@@ -363,12 +365,12 @@ class TestConfigCacheEdgeCases:
         """Test overwriting cached config."""
         config_file = Path(self.temp_dir) / "config.toml"
         config_file.write_text("[settings]")
-        
+
         # Set initial config
         config1 = {"settings": {"value": 1}}
         self.cache.set(config_file, config1)
         assert self.cache.get(config_file) == config1
-        
+
         # Overwrite with new config
         config2 = {"settings": {"value": 2}}
         self.cache.set(config_file, config2)
@@ -387,6 +389,7 @@ class TestCacheErrorHandling:
     def teardown_method(self):
         """Clean up test fixtures."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_save_cache_with_exception(self, monkeypatch):
@@ -398,7 +401,7 @@ class TestCacheErrorHandling:
 
         # Mock open to raise exception
         def mock_open(*args, **kwargs):
-            raise IOError("Disk full")
+            raise OSError("Disk full")
 
         monkeypatch.setattr("builtins.open", mock_open)
 
@@ -422,6 +425,7 @@ class TestCacheErrorHandling:
 
     def test_get_stats_with_exception(self, monkeypatch):
         """Test get_stats handles exceptions gracefully."""
+
         # Mock stat to raise exception
         def mock_stat(*args, **kwargs):
             raise OSError("Permission denied")
@@ -444,6 +448,7 @@ class TestConfigCacheErrorHandling:
     def teardown_method(self):
         """Clean up test fixtures."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_with_exception(self, monkeypatch):

@@ -4,8 +4,7 @@ Tests for reporting module.
 
 import json
 
-
-from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, JSONReporter, HTMLReporter
+from pyguard.lib.reporting import AnalysisMetrics, ConsoleReporter, HTMLReporter, JSONReporter
 
 
 class TestAnalysisMetrics:
@@ -185,7 +184,7 @@ class TestJSONReporter:
         assert output_file.exists()
 
         # Verify file content
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             loaded = json.load(f)
             assert "summary" in loaded
             assert "issues" in loaded
@@ -286,7 +285,7 @@ class TestHTMLReporter:
         assert output_file.exists()
 
         # Verify file content
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             content = f.read()
             assert "<html" in content.lower()
             assert "PyGuard" in content
@@ -434,14 +433,14 @@ class TestConsoleReporterAdvanced:
     def test_print_issue_details(self, capsys):
         """Test printing individual issue details."""
         reporter = ConsoleReporter(use_color=False)
-        
+
         reporter.print_issue_details(
             severity="HIGH",
             category="Security",
             message="SQL injection vulnerability",
             file_path="test.py",
             line_number=42,
-            fix_suggestion="Use parameterized queries"
+            fix_suggestion="Use parameterized queries",
         )
 
         captured = capsys.readouterr()
@@ -455,14 +454,14 @@ class TestConsoleReporterAdvanced:
     def test_print_issue_details_no_fix(self, capsys):
         """Test printing issue details without fix suggestion."""
         reporter = ConsoleReporter(use_color=False)
-        
+
         reporter.print_issue_details(
             severity="MEDIUM",
             category="Style",
             message="Line too long",
             file_path="long.py",
             line_number=10,
-            fix_suggestion=None
+            fix_suggestion=None,
         )
 
         captured = capsys.readouterr()
@@ -549,11 +548,11 @@ class TestJSONReporterAdvanced:
         )
 
         report = reporter.generate_report(metrics, [], [])
-        
+
         # Try to write to a directory (should fail)
         output_dir = tmp_path / "subdir"
         output_dir.mkdir()
-        
+
         # Should handle error gracefully, not crash
         reporter.save_report(report, output_dir)  # Trying to write to a directory
 
@@ -578,10 +577,10 @@ class TestHTMLReporterAdvanced:
         )
 
         html = reporter.generate_report(metrics, [], [])
-        
+
         # Try to write to a directory (should fail)
         output_dir = tmp_path / "subdir"
         output_dir.mkdir()
-        
+
         # Should handle error gracefully, not crash
         reporter.save_report(html, output_dir)  # Trying to write to a directory

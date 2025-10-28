@@ -1,8 +1,8 @@
 """Tests for performance profiler module."""
 
 from pyguard.lib.performance_profiler import (
-    PerformanceProfiler,
     PerformanceOptimizationSuggester,
+    PerformanceProfiler,
     analyze_performance,
 )
 

@@ -1,6 +1,7 @@
 """Tests for CI/CD integration module."""
 
 import pytest
+
 from pyguard.lib.ci_integration import (
     CIIntegrationGenerator,
     PreCommitHookGenerator,

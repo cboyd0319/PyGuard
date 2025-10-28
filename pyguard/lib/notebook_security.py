@@ -1205,9 +1205,9 @@ class NotebookSecurityAnalyzer:
     def _check_secrets(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for hardcoded secrets in cell code."""
         lines = cell.source.split("\n")
-        seen_secrets: dict[tuple[int, str], dict[str, Any]] = (
-            {}
-        )  # Track secrets to avoid duplicates
+        seen_secrets: dict[
+            tuple[int, str], dict[str, Any]
+        ] = {}  # Track secrets to avoid duplicates
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():
@@ -2092,7 +2092,11 @@ class NotebookSecurityAnalyzer:
                 if re.search(pattern, line):
                     # Determine severity based on pattern
                     severity = "LOW"
-                    if "cryptography" in pattern.lower() or "export" in description.lower() or "gpl" in pattern.lower():
+                    if (
+                        "cryptography" in pattern.lower()
+                        or "export" in description.lower()
+                        or "gpl" in pattern.lower()
+                    ):
                         severity = "MEDIUM"
 
                     issues.append(
@@ -2435,18 +2439,13 @@ class NotebookFixer:
                             and node.func.value.id == "torch"
                             and node.func.attr == "load"
                         ):
-
                             # Check if weights_only is already present
-                            has_weights_only = any(
-                                kw.arg == "weights_only" for kw in node.keywords
-                            )
+                            has_weights_only = any(kw.arg == "weights_only" for kw in node.keywords)
 
                             if not has_weights_only:
                                 # Add weights_only=True keyword argument
                                 node.keywords.append(
-                                    ast.keyword(
-                                        arg="weights_only", value=ast.Constant(value=True)
-                                    )
+                                    ast.keyword(arg="weights_only", value=ast.Constant(value=True))
                                 )
 
                                 # Add map_location for safety
@@ -2621,9 +2620,7 @@ class NotebookFixer:
             )
 
         if "Python random" in message and "random.seed" not in source:
-            seed_additions.append(
-                "random.seed(42)  # Set Python random seed for reproducibility"
-            )
+            seed_additions.append("random.seed(42)  # Set Python random seed for reproducibility")
 
         if seed_additions:
             # Add seeds at the beginning of the cell (after imports ideally)
@@ -2834,7 +2831,9 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                     "precision": (
                         "high"
                         if issue.confidence >= 0.9
-                        else "medium" if issue.confidence >= 0.7 else "low"
+                        else "medium"
+                        if issue.confidence >= 0.7
+                        else "low"
                     ),
                     "tags": _get_tags_for_issue(issue),
                 },
@@ -2902,12 +2901,16 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                 "fix_quality": (
                     "excellent"
                     if issue.confidence >= 0.95
-                    else "good" if issue.confidence >= 0.85 else "fair"
+                    else "good"
+                    if issue.confidence >= 0.85
+                    else "fair"
                 ),
                 "semantic_risk": (
                     "low"
                     if issue.confidence >= 0.9
-                    else "medium" if issue.confidence >= 0.7 else "high"
+                    else "medium"
+                    if issue.confidence >= 0.7
+                    else "high"
                 ),
             },
         }
@@ -2982,7 +2985,6 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
             }
         ],
     }
-
 
 
 def _get_rule_id_from_issue(issue: NotebookIssue) -> str:

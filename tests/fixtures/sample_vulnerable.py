@@ -17,8 +17,7 @@ session_id = str(random.randint(1000, 9999))
 
 # SQL Injection vulnerability (HIGH severity)
 def get_user(user_id):
-    query = "SELECT * FROM users WHERE id = " + user_id
-    return query
+    return "SELECT * FROM users WHERE id = " + user_id
 
 
 # Command injection (HIGH severity)

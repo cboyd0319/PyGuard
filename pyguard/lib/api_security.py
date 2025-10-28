@@ -825,7 +825,10 @@ class APISecurityVisitor(ast.NodeVisitor):
 
                 if isinstance(node.func.value, ast.Name):
                     # Check if the module variable is from defusedxml
-                    if node.func.value.id in self.defusedxml_imports or "defusedxml" in node.func.value.id.lower():
+                    if (
+                        node.func.value.id in self.defusedxml_imports
+                        or "defusedxml" in node.func.value.id.lower()
+                    ):
                         using_defusedxml = True
 
                     # Check for XMLParser creation with resolve_entities=False
