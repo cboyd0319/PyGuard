@@ -2418,6 +2418,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         ]
         
         lower_text = text.lower()
+        matched = False
         for pattern in multilang_patterns:
             # Handle tuple patterns (pattern, case_insensitive)
             if isinstance(pattern, tuple):
@@ -2430,13 +2431,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     if pattern_text in text:
                         matched = True
                         break
-            else:
+            elif isinstance(pattern, str):
                 # Direct string match (for non-Latin scripts)
                 if pattern in text:
                     matched = True
                     break
-        else:
-            matched = False
         
         if matched:
             violation = RuleViolation(
@@ -4531,7 +4530,8 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             for keyword in node.keywords:
                 if keyword.arg == "temperature":
                     if isinstance(keyword.value, ast.Constant):
-                        if keyword.value.value > 1.5:
+                        temp_value = keyword.value.value
+                        if isinstance(temp_value, (int, float)) and temp_value > 1.5:
                             violation = RuleViolation(
                                 rule_id="AIML069",
                                 category=RuleCategory.SECURITY,
@@ -4570,7 +4570,8 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
             for keyword in node.keywords:
                 if keyword.arg in ["max_tokens", "max_length"]:
                     if isinstance(keyword.value, ast.Constant):
-                        if keyword.value.value > 2000:
+                        max_val = keyword.value.value
+                        if isinstance(max_val, int) and max_val > 2000:
                             violation = RuleViolation(
                                 rule_id="AIML070",
                                 category=RuleCategory.CONVENTION,
@@ -4774,8 +4775,8 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         
         if isinstance(node.func, ast.Attribute) and node.func.attr == "load":
             # Check if this is torch.jit.load
-            if (hasattr(node.func.value, 'attr') and node.func.value.attr == "jit" and
-                hasattr(node.func.value.value, 'id') and node.func.value.value.id == "torch"):
+            if (isinstance(node.func.value, ast.Attribute) and node.func.value.attr == "jit" and
+                isinstance(node.func.value.value, ast.Name) and node.func.value.value.id == "torch"):
                 violation = RuleViolation(
                     rule_id="AIML077",
                     category=RuleCategory.SECURITY,

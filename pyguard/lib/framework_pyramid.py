@@ -240,7 +240,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
     def __init__(self, source_code: str):
         """Initialize the Pyramid security visitor."""
         self.issues: List[SecurityIssue] = []
-        self.source_lines = source_code.splitlines()
+        self.source_lines: List[str] = source_code.splitlines()
         self.logger = PyGuardLogger()
         
         # Track Pyramid-specific constructs
@@ -253,7 +253,8 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
         if hasattr(node, "lineno") and 0 < node.lineno <= len(self.source_lines):
-            return self.source_lines[node.lineno - 1].strip()
+            line: str = self.source_lines[node.lineno - 1]
+            return line.strip()
         return ""
 
     def _get_decorator_name(self, decorator: ast.AST) -> str:
@@ -629,7 +630,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             elif len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):
                 pattern = node.args[1].value
             
-            if pattern and "/api" in pattern and "/v" not in pattern:
+            if pattern and isinstance(pattern, str) and "/api" in pattern and "/v" not in pattern:
                 self.issues.append(
                     SecurityIssue(
                         severity="LOW",

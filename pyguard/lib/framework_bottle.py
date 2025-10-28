@@ -170,7 +170,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                 if keyword.value.attr in ("forms", "query", "params", "json"):
                     # This is less severe - passing user data to template is common
                     # Only flag if variable name suggests raw HTML injection
-                    if any(dangerous in keyword.arg.lower() for dangerous in ["html", "raw", "content", "body"]):
+                    if keyword.arg and any(dangerous in keyword.arg.lower() for dangerous in ["html", "raw", "content", "body"]):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="BOTTLE002",

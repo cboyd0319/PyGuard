@@ -52,7 +52,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
     def __init__(self, file_path: Path, code: str):
         self.file_path = file_path
         self.code = code
-        self.lines = code.splitlines()
+        self.lines: List[str] = code.splitlines()
         self.violations: List[RuleViolation] = []
         self.has_asyncio_import = False
         self.async_functions: Set[str] = set()
@@ -471,7 +471,8 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             if hasattr(node, 'lineno'):
                 line_idx = node.lineno - 1
                 if 0 <= line_idx < len(self.lines):
-                    return self.lines[line_idx].strip()
+                    line: str = self.lines[line_idx]
+                    return line.strip()
         except Exception:
             pass
         return ""

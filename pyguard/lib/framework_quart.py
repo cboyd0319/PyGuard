@@ -139,22 +139,25 @@ class QuartSecurityVisitor(ast.NodeVisitor):
     def _check_async_request_context(self, node: ast.AsyncFunctionDef) -> None:
         """Check for async request context issues (QUART001)."""
         # Check if the function accesses request without proper context
+        # Note: This function is called for AsyncFunctionDef nodes, so the context is already async
+        # The check here is for nested non-async functions that access request
         for child in ast.walk(node):
-            if isinstance(child, ast.Attribute):
-                # Check for direct request access outside async context
-                if child.attr == "request" and not isinstance(node, ast.AsyncFunctionDef):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="QUART001",
-                            category=RuleCategory.SECURITY,
-                            message="Request accessed outside async context in Quart",
-                            severity=RuleSeverity.HIGH,
-                            line_number=child.lineno,
-                            column=child.col_offset,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
+            if isinstance(child, ast.FunctionDef) and not isinstance(child, ast.AsyncFunctionDef):
+                # Check for request access in nested non-async functions
+                for subchild in ast.walk(child):
+                    if isinstance(subchild, ast.Attribute) and subchild.attr == "request":
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="QUART001",
+                                category=RuleCategory.SECURITY,
+                                message="Request accessed outside async context in Quart",
+                                severity=RuleSeverity.HIGH,
+                                line_number=subchild.lineno,
+                                column=subchild.col_offset,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
                         )
-                    )
 
     def _check_websocket_auth(self, node: ast.FunctionDef) -> None:
         """Check for WebSocket authentication issues (QUART002)."""

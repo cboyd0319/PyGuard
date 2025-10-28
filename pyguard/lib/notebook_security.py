@@ -1233,7 +1233,7 @@ class NotebookSecurityAnalyzer:
         """Check for hardcoded secrets in cell code."""
         issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
-        seen_secrets: dict[tuple[int, str], int] = {}  # Track secrets to avoid duplicates: {(line_num, value): priority}
+        seen_secrets: dict[tuple[int, str], dict[str, Any]] = {}  # Track secrets to avoid duplicates
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():

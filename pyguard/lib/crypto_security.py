@@ -131,7 +131,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
             return f"{self._get_attr_chain(node.value)}.{node.attr}"
         return node.attr
 
-    def _get_keyword_arg(self, node: ast.Call, keyword: str) -> ast.AST:
+    def _get_keyword_arg(self, node: ast.Call, keyword: str) -> ast.AST | None:
         """Get keyword argument value from call node."""
         for kw in node.keywords:
             if kw.arg == keyword:
@@ -412,7 +412,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
             # Check if handling sensitive data
             sensitive_indicators = ['password', 'secret', 'key', 'token', 'credential', 'ssn', 'credit']
             source = ast.get_source_segment(self.source_code, node) if hasattr(ast, 'get_source_segment') else ''
-            is_sensitive = any(indicator in source.lower() for indicator in sensitive_indicators)
+            is_sensitive = source and any(indicator in source.lower() for indicator in sensitive_indicators)
             
             if is_sensitive and not has_encryption:
                 # Note: This is a heuristic check, may need refinement

@@ -210,11 +210,15 @@ class APISecurityVisitor(ast.NodeVisitor):
                     elif isinstance(keyword.value, ast.List):
                         for elt in keyword.value.elts:
                             if isinstance(elt, ast.Constant):
-                                if elt.value == "HS256" or elt.value == "none":
-                                    algo_value = elt.value
+                                elt_val = elt.value
+                                # Handle bytes
+                                if isinstance(elt_val, bytes):
+                                    elt_val = elt_val.decode('utf-8', errors='ignore')
+                                if elt_val == "HS256" or elt_val == "none":
+                                    algo_value = elt_val
                                     break
 
-            if algo_value in ("HS256", "none"):
+            if algo_value and isinstance(algo_value, str) and algo_value in ("HS256", "none"):
                 self.violations.append(
                     RuleViolation(
                         rule_id="API006",
@@ -528,14 +532,21 @@ class APISecurityVisitor(ast.NodeVisitor):
                         if keyword.arg == "algorithms" or keyword.arg == "algorithm":
                             if isinstance(keyword.value, ast.Constant):
                                 algo_value = keyword.value.value
+                                # Handle bytes
+                                if isinstance(algo_value, bytes):
+                                    algo_value = algo_value.decode('utf-8', errors='ignore')
                             elif isinstance(keyword.value, ast.List):
                                 for elt in keyword.value.elts:
                                     if isinstance(elt, ast.Constant):
-                                        if elt.value == "HS256" or elt.value == "none":
-                                            algo_value = elt.value
+                                        elt_val = elt.value
+                                        # Handle bytes
+                                        if isinstance(elt_val, bytes):
+                                            elt_val = elt_val.decode('utf-8', errors='ignore')
+                                        if elt_val == "HS256" or elt_val == "none":
+                                            algo_value = elt_val
                                             break
 
-                    if algo_value in ("HS256", "none"):
+                    if algo_value and isinstance(algo_value, str) and algo_value in ("HS256", "none"):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="API006",
@@ -668,7 +679,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     # Check if security headers are configured
                     if isinstance(node.value, ast.Dict):
                         keys = [
-                            k.value if isinstance(k, ast.Constant) else None
+                            k.value if isinstance(k, ast.Constant) and isinstance(k.value, str) else None
                             for k in node.value.keys
                         ]
                         security_headers = {
@@ -678,7 +689,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                             "X-Content-Type-Options",
                         }
                         configured_headers = {
-                            k for k in keys if k and any(h in k for h in security_headers)
+                            k for k in keys if k and isinstance(k, str) and any(h in k for h in security_headers)
                         }
 
                         if not configured_headers:

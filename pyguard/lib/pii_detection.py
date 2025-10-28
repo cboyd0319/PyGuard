@@ -222,8 +222,18 @@ class PIIDetectionVisitor(ast.NodeVisitor):
                 for key, value in zip(node.value.keys, node.value.values):
                     if isinstance(value, ast.Constant):
                         # Get key name for context
-                        key_name = key.value if isinstance(key, ast.Constant) else "unknown"
-                        value_str = str(value.value)
+                        if isinstance(key, ast.Constant):
+                            if isinstance(key.value, bytes):
+                                key_name = key.value.decode('utf-8', errors='ignore')
+                            else:
+                                key_name = str(key.value)
+                        else:
+                            key_name = "unknown"
+                        # Handle both str and bytes values
+                        if isinstance(value.value, bytes):
+                            value_str = value.value.decode('utf-8', errors='ignore')
+                        else:
+                            value_str = str(value.value)
                         self._check_pii_patterns(node, f"{var_name}['{key_name}']", value_str)
 
         self.generic_visit(node)
@@ -267,10 +277,6 @@ class PIIDetectionVisitor(ast.NodeVisitor):
 
     def _check_pii_patterns(self, node: ast.AST, var_name: str, value: str) -> None:
         """Check for various PII patterns in a value."""
-        # Skip if value is just an integer (not a string) - avoids false positives on IDs
-        if isinstance(value, int):
-            return
-            
         # Check for SSN
         if SSN_PATTERN.search(value):
             self._add_violation(
@@ -482,9 +488,9 @@ class PIIDetectionVisitor(ast.NodeVisitor):
             return False
 
         # Luhn algorithm
-        def luhn_checksum(card_number):
+        def luhn_checksum(card_number: str) -> int:
             """Calculate Luhn checksum."""
-            digits_list = [int(d) for d in str(card_number)]
+            digits_list = [int(d) for d in card_number]
             # Reverse the digits for processing
             digits_list = digits_list[::-1]
             # Double every second digit

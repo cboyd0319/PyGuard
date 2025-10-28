@@ -736,16 +736,16 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             # Get the client object name if available
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
-                    client_name = node.func.value.id
-                    self.mqtt_clients_with_auth.add(client_name)
+                    mqtt_client_name = node.func.value.id
+                    self.mqtt_clients_with_auth.add(mqtt_client_name)
             return
         
         if func_name == 'tls_set':
             # Get the client object name if available
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
-                    client_name = node.func.value.id
-                    self.mqtt_clients_with_tls.add(client_name)
+                    mqtt_client_name = node.func.value.id
+                    self.mqtt_clients_with_tls.add(mqtt_client_name)
             return
         
         # Check for MQTT connections
