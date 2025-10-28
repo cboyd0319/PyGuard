@@ -1548,7 +1548,7 @@ class TestMainFunctionAlternative:
                             notebooks = args[0]
                             assert all(".ipynb_checkpoints" not in str(nb) for nb in notebooks)
 
-    def test_main_with_non_existent_path(self, tmp_path):
+    def test_main_with_non_existent_path(self, tmp_path, capsys):
         """Test main with a non-existent path (should print warning)."""
         # Create a path that doesn't exist
         non_existent = tmp_path / "does_not_exist.txt"
@@ -1556,21 +1556,19 @@ class TestMainFunctionAlternative:
         python_file.write_text("x = 1")
 
         with patch("sys.argv", ["pyguard", str(non_existent), str(python_file)]):
-            with patch("builtins.print") as mock_print:
-                with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
-                    with patch.object(PyGuardCLI, "print_results"):
-                        main()
-                        # Check that warning was printed
-                        # Find the call with the warning message
-                        warning_calls = [
-                            call
-                            for call in mock_print.call_args_list
-                            if len(call.args) > 0 and "Warning:" in str(call.args[0])
-                        ]
-                        assert len(warning_calls) > 0
-                        assert "not a Python file, notebook, or directory" in str(
-                            warning_calls[0].args[0]
-                        )
+            with patch.object(PyGuardCLI, "run_full_analysis", return_value={}):
+                with patch.object(PyGuardCLI, "print_results"):
+                    main()
+                    # Check that warning was printed
+                    captured = capsys.readouterr()
+                    # Strip ANSI codes and normalize whitespace for easier assertion
+                    import re
+                    clean_output = re.sub(r'\x1b\[[0-9;]*m', '', captured.out)
+                    clean_output = ' '.join(clean_output.split())  # Normalize whitespace
+                    assert "Warning:" in clean_output
+                    assert "not a Python file" in clean_output
+                    assert "notebook" in clean_output
+                    assert "directory" in clean_output
 
     def test_main_notebook_analyzer_import_error(self):
         """Test that notebook analyzer handles ImportError gracefully."""

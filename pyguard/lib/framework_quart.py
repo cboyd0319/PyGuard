@@ -153,6 +153,11 @@ class QuartSecurityVisitor(ast.NodeVisitor):
             elif node.func.attr == "save":
                 self._check_file_upload_security(node)
 
+        # Check for directly imported render_template_string
+        elif isinstance(node.func, ast.Name):
+            if node.func.id in ("render_template_string", "render_template"):
+                self._check_template_rendering(node)
+
         # Check for CORS configuration
         if isinstance(node.func, ast.Name) and node.func.id.lower() == "cors":
             self._check_cors_configuration(node)
@@ -386,8 +391,16 @@ class QuartSecurityVisitor(ast.NodeVisitor):
     def _check_template_rendering(self, node: ast.Call) -> None:
         """Check for template rendering security issues (QUART007)."""
         # Check for render_template_string with user input
+        is_render_template_string = False
+
         if isinstance(node.func, ast.Attribute) and node.func.attr == "render_template_string":
+            is_render_template_string = True
+        elif isinstance(node.func, ast.Name) and node.func.id == "render_template_string":
+            is_render_template_string = True
+
+        if is_render_template_string:
             for arg in node.args:
+                # Check if arg is direct user input (request.form, request.args, etc.)
                 if isinstance(arg, ast.Attribute):
                     if arg.attr in ("form", "args", "data", "json"):
                         self.violations.append(
@@ -402,6 +415,20 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                                 fix_applicability=FixApplicability.SAFE,
                             )
                         )
+                # Check if arg is a tainted variable (assigned from user input)
+                elif isinstance(arg, ast.Name) and arg.id in self.tainted_vars:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="QUART007",
+                            category=RuleCategory.SECURITY,
+                            message="Template string rendering with user input (SSTI risk)",
+                            severity=RuleSeverity.CRITICAL,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
 
     def _check_cookie_security(self, node: ast.Call) -> None:
         """Check for cookie security flags (QUART008)."""
@@ -485,6 +512,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                 method = decorator.func.attr
+                # Check direct method decorators like @app.post(), @app.put(), etc.
                 if method in ("post", "put", "delete", "patch") and not has_csrf_check:
                     self.violations.append(
                         RuleViolation(
@@ -498,6 +526,31 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.UNSAFE,
                         )
                     )
+                # Check @app.route() with methods=["POST", ...] keyword argument
+                elif method == "route":
+                    for keyword in decorator.keywords:
+                        if keyword.arg == "methods":
+                            methods_value = keyword.value
+                            # Check if methods is a list containing unsafe methods
+                            if isinstance(methods_value, ast.List):
+                                for elt in methods_value.elts:
+                                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                        method_name = elt.value.upper()
+                                        if method_name in ("POST", "PUT", "DELETE", "PATCH"):
+                                            if not has_csrf_check:
+                                                self.violations.append(
+                                                    RuleViolation(
+                                                        rule_id="QUART011",
+                                                        category=RuleCategory.SECURITY,
+                                                        message=f"Route with {method_name} method missing CSRF protection",
+                                                        severity=RuleSeverity.HIGH,
+                                                        line_number=node.lineno,
+                                                        column=node.col_offset,
+                                                        file_path=self.file_path,
+                                                        fix_applicability=FixApplicability.UNSAFE,
+                                                    )
+                                                )
+                                                break  # Only report once per route
 
     def _check_missing_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for authentication decorator issues (QUART012)."""
@@ -565,6 +618,10 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         if isinstance(node, ast.Await):
             # Handle await request.form
             return self._is_user_input(node.value)
+        if isinstance(node, ast.Call):
+            # Handle method calls like request.form.get(), request.args.get(), etc.
+            if isinstance(node.func, ast.Attribute):
+                return self._is_user_input(node.func)
         return False
 
 
