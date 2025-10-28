@@ -9,7 +9,7 @@ References:
 """
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 import json
 from pathlib import Path
 from typing import Any
@@ -169,7 +169,7 @@ class JSONReporter:
         """
         return {
             "pyguard_version": "0.2.0",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "summary": asdict(metrics),
             "issues": issues,
             "fixes": fixes,
@@ -336,7 +336,7 @@ class HTMLReporter:
 <body>
     <div class="header">
         <h1>🐍 PyGuard Analysis Report</h1>
-        <p>Generated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}</p>
+        <p>Generated: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}</p>
     </div>
 
     <div class="metrics">

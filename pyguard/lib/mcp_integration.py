@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
+from datetime import UTC
 
 
 @dataclass
@@ -211,7 +212,7 @@ class MCPIntegration:
             },
             confidence=confidence,
             source="local_kb",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             recommendations=recommendations,
         )
 

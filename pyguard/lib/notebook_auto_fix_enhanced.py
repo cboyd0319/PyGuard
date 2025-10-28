@@ -25,7 +25,7 @@ Example:
 
 import ast
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 import json
 from pathlib import Path
 import re
@@ -88,7 +88,7 @@ class EnhancedNotebookFixer(NotebookFixer):
             Tuple of (success, fixes_applied, fix_metadata)
         """
         # First, create timestamped backup
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_path = notebook_path.with_suffix(f".ipynb.backup.{timestamp}")
 
         # Load notebook
@@ -399,7 +399,7 @@ class EnhancedNotebookFixer(NotebookFixer):
             "#!/bin/bash",
             "#",
             "# PyGuard Rollback Script",
-            f"# Generated: {datetime.now(timezone.utc).isoformat()}",
+            f"# Generated: {datetime.now(UTC).isoformat()}",
             "#",
             "# This script will restore the notebook to its pre-fix state.",
             "#",
