@@ -147,3 +147,4 @@ osv-results.*
 safety-results.*
 pip-audit-results.*
 
+pyguard.lib.framework_fastapi
