@@ -89,12 +89,19 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign):
         """Track variable assignments from user input sources."""
-        # Check if the value being assigned contains user input
+        # Check if the value being assigned contains user input or tainted variables
         if self._has_user_input(node.value):
             # Mark all target variables as tainted
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     self.tainted_variables.add(target.id)
+        self.generic_visit(node)
+    
+    def visit_AnnAssign(self, node: ast.AnnAssign):
+        """Track annotated variable assignments from user input sources."""
+        if node.value and self._has_user_input(node.value):
+            if isinstance(node.target, ast.Name):
+                self.tainted_variables.add(node.target.id)
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import):
@@ -246,9 +253,22 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
         is_template_call = 'render_template_string' in func_name or 'Template' in func_name
         
         if uses_jinja or is_template_call:
-            # Check for render_template_string or Template().render() with user input
-            if 'render_template_string' in func_name or ('Template' in func_name and 'render' in func_name):
-                # Check if template string comes from user input
+            # Check for render_template_string or Template() with user input
+            if 'render_template_string' in func_name:
+                # render_template_string with user input
+                if node.args and self._has_user_input(node.args[0]):
+                    self._create_violation(
+                        node, "INJECT001", "Jinja2 SSTI Vulnerability",
+                        "Template string from user input can lead to Server-Side Template Injection (SSTI). "
+                        "Attackers can execute arbitrary Python code through template expressions.",
+                        "Never use user input as template source. Use render_template() with predefined templates. "
+                        "If dynamic templates are needed, use template sandboxing and strict whitelist validation.",
+                        RuleSeverity.CRITICAL,
+                        "CWE-94",
+                        "OWASP Top 10 2021 (A03:2021)"
+                    )
+            elif 'Template' in func_name:
+                # Template() constructor with user input (dangerous even before calling .render())
                 if node.args and self._has_user_input(node.args[0]):
                     self._create_violation(
                         node, "INJECT001", "Jinja2 SSTI Vulnerability",
@@ -343,7 +363,25 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
             # Look for time-based patterns: SLEEP(), WAITFOR DELAY, pg_sleep()
             if node.args:
                 for arg in node.args:
-                    if isinstance(arg, (ast.Constant, ast.JoinedStr)):
+                    # Check if argument is a tainted variable (contains user input)
+                    if isinstance(arg, ast.Name) and arg.id in self.tainted_variables:
+                        # For tainted variables, we need to check if they contain SQL time functions
+                        # This requires tracking the actual string values, but for now we flag any
+                        # tainted variable passed to execute/query as potentially dangerous
+                        # A more sophisticated approach would be to track string content through assignments
+                        self._create_violation(
+                            node, "INJECT016", "Potential Blind SQL Injection",
+                            "SQL query with user input may enable blind SQL injection. "
+                            "Attackers can extract data using timing attacks with SLEEP/WAITFOR/pg_sleep.",
+                            "Use parameterized queries. Never concatenate user input into SQL. "
+                            "Use ORM frameworks or prepared statements with bound parameters.",
+                            RuleSeverity.CRITICAL,
+                            "CWE-89",
+                            "OWASP Top 10 2021 (A03:2021)"
+                        )
+                        break
+                    # Check string literals and f-strings for time-based SQL patterns
+                    elif isinstance(arg, (ast.Constant, ast.JoinedStr)):
                         arg_str = self._extract_string_value(arg)
                         if arg_str:
                             time_funcs = ['SLEEP(', 'WAITFOR DELAY', 'pg_sleep(', 'BENCHMARK(']
@@ -353,17 +391,33 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
                                     "Time-based SQL functions with user input indicate blind SQL injection vulnerability. "
                                     "Attackers can extract data using timing attacks.",
                                     "Use parameterized queries. Never concatenate user input into SQL. "
-                                    "Validate and sanitize all user inputs.",
+                                    "Use ORM frameworks or prepared statements with bound parameters.",
                                     RuleSeverity.CRITICAL,
                                     "CWE-89",
                                     "OWASP Top 10 2021 (A03:2021)"
                                 )
+                                break
 
     def _check_order_by_injection(self, node: ast.Call, func_name: str):
         """INJECT017: Detect SQL injection in ORDER BY clause."""
         if 'execute' in func_name or 'query' in func_name:
             if node.args:
                 for arg in node.args:
+                    # Check if argument is a tainted variable
+                    if isinstance(arg, ast.Name) and arg.id in self.tainted_variables:
+                        # Flag tainted variables passed to SQL execute/query
+                        self._create_violation(
+                            node, "INJECT017", "SQL Injection in ORDER BY Clause",
+                            "ORDER BY with user input enables SQL injection. "
+                            "Attackers can manipulate sort order or extract data.",
+                            "Use whitelist validation for column names. "
+                            "Map user input to predefined safe column names.",
+                            RuleSeverity.HIGH,
+                            "CWE-89",
+                            "OWASP Top 10 2021 (A03:2021)"
+                        )
+                        break
+                    # Check string literals for ORDER BY patterns
                     arg_str = self._extract_string_value(arg)
                     if arg_str and 'ORDER BY' in arg_str.upper() and self._has_user_input(arg):
                         self._create_violation(
@@ -376,6 +430,7 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
                             "CWE-89",
                             "OWASP Top 10 2021 (A03:2021)"
                         )
+                        break
 
     def _check_mongodb_injection(self, node: ast.Call, func_name: str):
         """INJECT018-INJECT019: Detect MongoDB injection attacks."""
