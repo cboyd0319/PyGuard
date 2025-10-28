@@ -219,7 +219,7 @@ class EnhancedNotebookFixer(NotebookFixer):
 
         # Try to identify the secret variable name
         # Pattern to match variable assignment (not an actual password)
-        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"
+        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"  # noqa: S105 - Regex pattern, not a password
         matches = list(re.finditer(secret_pattern, source))
 
         if matches:
