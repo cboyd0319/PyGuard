@@ -123,7 +123,7 @@ class SecretScanner:
     @staticmethod
     def _export_to_sarif(findings: List[SecretFinding], output_path: str):
         """Export findings to SARIF format for GitHub Code Scanning."""
-        from typing import Any, Dict, List as ListType
+        from typing import Any, Dict
         
         sarif: Dict[str, Any] = {
             "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
