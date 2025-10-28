@@ -751,7 +751,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         # Check for MQTT connections
         if 'mqtt' in func_name.lower() or (self.has_mqtt and 'connect' in func_name.lower()):
             # Get the client object name
-            client_name = None
+            client_name: str | None = None
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
                     client_name = node.func.value.id

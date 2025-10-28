@@ -531,14 +531,14 @@ class AIExplainer:
             original_code=original_code,
             fixed_code=fixed_code,
             fix_type="automated_security_fix",
-            why_this_fix=template["why"],
-            alternatives=template["alternatives"],
-            trade_offs=template["trade_offs"],
-            security_impact=template["security_impact"],
-            performance_impact=template["performance_impact"],
+            why_this_fix=str(template["why"]),
+            alternatives=list(template["alternatives"]) if isinstance(template["alternatives"], list) else [str(template["alternatives"])],
+            trade_offs=str(template["trade_offs"]),
+            security_impact=str(template["security_impact"]),
+            performance_impact=str(template["performance_impact"]),
         )
 
-    def generate_learning_content(self, vulnerability_type: str) -> Dict[str, str]:
+    def generate_learning_content(self, vulnerability_type: str) -> Dict[str, Any]:
         """
         Generate educational content for a vulnerability type.
 
