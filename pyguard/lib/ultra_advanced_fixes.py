@@ -22,9 +22,8 @@ References:
 - CWE Top 25 2024 | https://cwe.mitre.org/top25/ | High | Common weaknesses
 """
 
-import re
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -41,9 +40,9 @@ class UltraAdvancedSecurityFixer:
         """Initialize ultra-advanced security fixer."""
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
-        self.fixes_applied: List[str] = []
+        self.fixes_applied: list[str] = []
 
-    def fix_graphql_injection(self, content: str) -> Tuple[str, bool]:
+    def fix_graphql_injection(self, content: str) -> tuple[str, bool]:
         """
         Fix GraphQL injection by converting to parameterized queries.
 
@@ -94,7 +93,7 @@ class UltraAdvancedSecurityFixer:
 
         return "\n".join(fixed_lines), modified
 
-    def fix_jwt_security(self, content: str) -> Tuple[str, bool]:
+    def fix_jwt_security(self, content: str) -> tuple[str, bool]:
         """
         Fix JWT security issues.
 
@@ -147,7 +146,7 @@ class UltraAdvancedSecurityFixer:
 
         return content, modified
 
-    def fix_ssti_vulnerabilities(self, content: str) -> Tuple[str, bool]:
+    def fix_ssti_vulnerabilities(self, content: str) -> tuple[str, bool]:
         """
         Fix Server-Side Template Injection vulnerabilities.
 
@@ -196,7 +195,7 @@ class UltraAdvancedSecurityFixer:
 
         return "\n".join(fixed_lines), modified
 
-    def fix_api_rate_limiting(self, content: str) -> Tuple[str, bool]:
+    def fix_api_rate_limiting(self, content: str) -> tuple[str, bool]:
         """
         Add rate limiting to API endpoints.
 
@@ -254,7 +253,7 @@ class UltraAdvancedSecurityFixer:
 
         return "\n".join(fixed_lines), modified
 
-    def fix_weak_cryptography(self, content: str) -> Tuple[str, bool]:
+    def fix_weak_cryptography(self, content: str) -> tuple[str, bool]:
         """
         Fix weak cryptographic algorithms.
 
@@ -304,7 +303,7 @@ class UltraAdvancedSecurityFixer:
 
         return content, modified
 
-    def fix_container_security(self, content: str, file_path: str) -> Tuple[str, bool]:
+    def fix_container_security(self, content: str, file_path: str) -> tuple[str, bool]:
         """
         Fix container security issues in Dockerfiles and docker-compose.yml.
 
@@ -372,7 +371,7 @@ class UltraAdvancedSecurityFixer:
 
         return content, modified
 
-    def fix_sql_injection_enhanced(self, content: str) -> Tuple[str, bool]:
+    def fix_sql_injection_enhanced(self, content: str) -> tuple[str, bool]:
         """
         Enhanced SQL injection fixes with parameterization.
 
@@ -408,7 +407,7 @@ class UltraAdvancedSecurityFixer:
 
         return "\n".join(fixed_lines), modified
 
-    def fix_xss_vulnerabilities(self, content: str) -> Tuple[str, bool]:
+    def fix_xss_vulnerabilities(self, content: str) -> tuple[str, bool]:
         """
         Fix Cross-Site Scripting (XSS) vulnerabilities.
 
@@ -446,7 +445,7 @@ class UltraAdvancedSecurityFixer:
 
         return "\n".join(fixed_lines), modified
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply all ultra-advanced security fixes to a file.
 
@@ -491,7 +490,7 @@ class UltraAdvancedSecurityFixer:
 
         except Exception as e:
             self.logger.error(
-                f"Error applying ultra-advanced fixes: {str(e)}",
+                f"Error applying ultra-advanced fixes: {e!s}",
                 category="Security",
                 file_path=str(file_path),
             )

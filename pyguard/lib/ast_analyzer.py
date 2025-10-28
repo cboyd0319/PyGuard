@@ -11,10 +11,9 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -30,8 +29,8 @@ class SecurityIssue:
     column: int
     code_snippet: str = ""
     fix_suggestion: str = ""
-    owasp_id: Optional[str] = None
-    cwe_id: Optional[str] = None
+    owasp_id: str | None = None
+    cwe_id: str | None = None
 
 
 @dataclass
@@ -54,9 +53,9 @@ class SecurityVisitor(ast.NodeVisitor):
     Aligned with OWASP ASVS v5.0 and CWE Top 25.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize security visitor."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
         self.in_function = False
         self.current_function = None
@@ -676,7 +675,7 @@ class SecurityVisitor(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts: list[str] = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -687,7 +686,7 @@ class SecurityVisitor(ast.NodeVisitor):
             return ".".join(parts)
         return ""
 
-    def _get_keyword_arg(self, node: ast.Call, keyword: str) -> Optional[ast.AST]:
+    def _get_keyword_arg(self, node: ast.Call, keyword: str) -> ast.AST | None:
         """Get a keyword argument from a function call."""
         for kw in node.keywords:
             if (
@@ -717,11 +716,11 @@ class CodeQualityVisitor(ast.NodeVisitor):
     Aligned with SWEBOK v4.0 and PEP 8 best practices.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize code quality visitor."""
-        self.issues: List[CodeQualityIssue] = []
+        self.issues: list[CodeQualityIssue] = []
         self.source_lines = source_lines
-        self.complexity_by_function: Dict[str, int] = {}
+        self.complexity_by_function: dict[str, int] = {}
 
     def _add_issue(self, node: "ast.AST", issue: CodeQualityIssue) -> None:
         """Add issue if not suppressed."""
@@ -882,7 +881,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare):
         """Visit comparison nodes to check for anti-patterns."""
         # Check for comparison with None using == instead of is
-        for i, (op, comparator) in enumerate(zip(node.ops, node.comparators)):
+        for _i, (op, comparator) in enumerate(zip(node.ops, node.comparators, strict=False)):
             if isinstance(comparator, ast.Constant) and comparator.value is None:
                 if isinstance(op, (ast.Eq, ast.NotEq)):
                     suggested_op = "is None" if isinstance(op, ast.Eq) else "is not None"
@@ -982,7 +981,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
         """Get the name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return node.func.attr
         return ""
 
@@ -1053,7 +1052,7 @@ class ASTAnalyzer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def analyze_file(self, file_path: Path) -> Tuple[List[SecurityIssue], List[CodeQualityIssue]]:
+    def analyze_file(self, file_path: Path) -> tuple[list[SecurityIssue], list[CodeQualityIssue]]:
         """
         Analyze a Python file for security and quality issues.
 
@@ -1069,7 +1068,7 @@ class ASTAnalyzer:
 
         return self.analyze_code(content)
 
-    def analyze_code(self, source_code: str) -> Tuple[List[SecurityIssue], List[CodeQualityIssue]]:
+    def analyze_code(self, source_code: str) -> tuple[list[SecurityIssue], list[CodeQualityIssue]]:
         """
         Analyze Python source code for security and quality issues.
 
@@ -1099,10 +1098,10 @@ class ASTAnalyzer:
             )
             return [], []
         except Exception as e:
-            self.logger.error(f"Error analyzing code: {str(e)}", category="Analysis")
+            self.logger.error(f"Error analyzing code: {e!s}", category="Analysis")
             return [], []
 
-    def get_complexity_report(self, source_code: str) -> Dict[str, int]:
+    def get_complexity_report(self, source_code: str) -> dict[str, int]:
         """
         Get cyclomatic complexity report for all functions in code.
 

@@ -16,9 +16,8 @@ References:
 - Bandit Security | https://bandit.readthedocs.io/ | High | Python security
 """
 
-import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -44,9 +43,9 @@ class EnhancedSecurityFixer:
         self.file_ops = FileOperations()
         self.safety_classifier = FixSafetyClassifier()
         self.allow_unsafe = allow_unsafe
-        self.fixes_applied: List[str] = []
+        self.fixes_applied: list[str] = []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply enhanced security fixes to a file.
 
@@ -400,7 +399,7 @@ class EnhancedSecurityFixer:
         fixed_lines = []
         modified = False
 
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             # Pattern: os.path.join with user input indicators
             if "os.path.join" in line:
                 has_user_input = any(
@@ -438,7 +437,7 @@ class EnhancedSecurityFixer:
 
         return "\n".join(fixed_lines)
 
-    def get_fix_statistics(self) -> Dict[str, int]:
+    def get_fix_statistics(self) -> dict[str, int]:
         """
         Get statistics about fix safety classifications.
 

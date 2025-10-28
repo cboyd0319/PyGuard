@@ -10,7 +10,6 @@ Part of PyGuard's comprehensive linter replacement initiative.
 
 import ast
 from dataclasses import dataclass
-from typing import List, Optional, Set
 
 
 @dataclass
@@ -22,7 +21,7 @@ class PathlibIssue:
     col: int
     message: str
     old_code: str
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
     severity: str = "MEDIUM"
     category: str = "modernization"
 
@@ -40,10 +39,10 @@ class PathlibPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
-        self.issues: List[PathlibIssue] = []
+        self.issues: list[PathlibIssue] = []
         self.has_pathlib_import = False
         self.has_os_import = False
-        self.os_aliases: Set[str] = set()
+        self.os_aliases: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track imports of os and pathlib."""
@@ -78,13 +77,12 @@ class PathlibPatternVisitor(ast.NodeVisitor):
             return
 
         # Check for os.path.* patterns
-        if isinstance(func.value, ast.Attribute):
-            if (
-                isinstance(func.value.value, ast.Name)
-                and func.value.value.id in self.os_aliases
-                and func.value.attr == "path"
-            ):
-                self._report_os_path_usage(node, func.attr)
+        if isinstance(func.value, ast.Attribute) and (
+            isinstance(func.value.value, ast.Name)
+            and func.value.value.id in self.os_aliases
+            and func.value.attr == "path"
+        ):
+            self._report_os_path_usage(node, func.attr)
 
     def _report_os_path_usage(self, node: ast.Call, method: str) -> None:
         """Report specific os.path method usage."""
@@ -162,23 +160,22 @@ class PathlibPatternVisitor(ast.NodeVisitor):
 
     def _check_glob_call(self, node: ast.Call) -> None:
         """Check for glob.glob() calls."""
-        if isinstance(node.func, ast.Attribute):
-            if (
-                isinstance(node.func.value, ast.Name)
-                and node.func.value.id == "glob"
-                and node.func.attr == "glob"
-            ):
-                self.issues.append(
-                    PathlibIssue(
-                        rule_id="PTH124",
-                        line=node.lineno,
-                        col=node.col_offset,
-                        message="Use Path.glob() instead of glob.glob()",
-                        old_code="glob.glob(pattern)",
-                        suggested_fix="Path().glob(pattern)",
-                        severity="LOW",
-                    )
+        if isinstance(node.func, ast.Attribute) and (
+            isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "glob"
+            and node.func.attr == "glob"
+        ):
+            self.issues.append(
+                PathlibIssue(
+                    rule_id="PTH124",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="Use Path.glob() instead of glob.glob()",
+                    old_code="glob.glob(pattern)",
+                    suggested_fix="Path().glob(pattern)",
+                    severity="LOW",
                 )
+            )
 
 
 class PathlibChecker:
@@ -187,7 +184,7 @@ class PathlibChecker:
     def __init__(self):
         self.visitor = PathlibPatternVisitor()
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[PathlibIssue]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[PathlibIssue]:
         """
         Check Python code for pathlib modernization opportunities.
 
@@ -205,12 +202,12 @@ class PathlibChecker:
         except SyntaxError:
             return []
 
-    def get_issues(self) -> List[PathlibIssue]:
+    def get_issues(self) -> list[PathlibIssue]:
         """Get all detected issues."""
         return self.visitor.issues
 
 
-def check_file(filepath: str) -> List[PathlibIssue]:
+def check_file(filepath: str) -> list[PathlibIssue]:
     """
     Check a Python file for pathlib modernization opportunities.
 

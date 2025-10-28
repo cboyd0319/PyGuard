@@ -18,10 +18,9 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+import re
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -71,11 +70,11 @@ class TaintAnalyzer(ast.NodeVisitor):
         "subprocess.Popen",
     }
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize taint analyzer."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
-        self.tainted_vars: Dict[str, TaintedVariable] = {}
+        self.tainted_vars: dict[str, TaintedVariable] = {}
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
@@ -133,7 +132,7 @@ class TaintAnalyzer(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -172,7 +171,7 @@ class ReDoSDetector:
 
     def analyze_regex(
         self, pattern: str, line_number: int, code_snippet: str
-    ) -> Optional[SecurityIssue]:
+    ) -> SecurityIssue | None:
         """Analyze a regex pattern for ReDoS vulnerabilities."""
         for redos_pattern in self.REDOS_PATTERNS:
             if re.search(redos_pattern, pattern):
@@ -202,11 +201,11 @@ class RaceConditionDetector(ast.NodeVisitor):
     - CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize race condition detector."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
-        self.file_checks: List[Tuple[int, str]] = []  # (line_number, variable)
+        self.file_checks: list[tuple[int, str]] = []  # (line_number, variable)
 
     def _get_code_snippet(self, node: ast.AST) -> str:
         """Extract code snippet for a node."""
@@ -250,7 +249,7 @@ class RaceConditionDetector(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -278,9 +277,9 @@ class IntegerSecurityAnalyzer(ast.NodeVisitor):
     - CWE-682: Incorrect Calculation
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize integer security analyzer."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -329,7 +328,7 @@ class AdvancedSecurityAnalyzer:
         self.file_ops = FileOperations()
         self.redos_detector = ReDoSDetector()
 
-    def analyze_file(self, file_path: Path) -> List[SecurityIssue]:
+    def analyze_file(self, file_path: Path) -> list[SecurityIssue]:
         """
         Perform advanced security analysis on a file.
 
@@ -345,7 +344,7 @@ class AdvancedSecurityAnalyzer:
 
         return self.analyze_code(content)
 
-    def analyze_code(self, source_code: str) -> List[SecurityIssue]:
+    def analyze_code(self, source_code: str) -> list[SecurityIssue]:
         """
         Perform advanced security analysis on source code.
 
@@ -398,7 +397,7 @@ class AdvancedSecurityAnalyzer:
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):

@@ -15,7 +15,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -34,9 +33,9 @@ class ImportVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
-        self.imports: List[ast.Import] = []
-        self.from_imports: List[ast.ImportFrom] = []
+        self.violations: list[RuleViolation] = []
+        self.imports: list[ast.Import] = []
+        self.from_imports: list[ast.ImportFrom] = []
         self.type_checking_block = False
         self.in_type_checking_block_line = -1
 
@@ -161,7 +160,7 @@ class ImportOrderChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_import_order(self, file_path: Path, code: str) -> List[RuleViolation]:
+    def check_import_order(self, file_path: Path, code: str) -> list[RuleViolation]:
         """
         Check if imports are properly ordered according to PEP 8.
 
@@ -172,7 +171,7 @@ class ImportOrderChecker:
 
         Within each group, imports should be alphabetically sorted.
         """
-        violations: List[RuleViolation] = []
+        violations: list[RuleViolation] = []
 
         try:
             tree = ast.parse(code)
@@ -258,7 +257,7 @@ class ImportRulesChecker:
         self.logger = PyGuardLogger()
         self.order_checker = ImportOrderChecker()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for import issues.
 
@@ -293,7 +292,7 @@ class ImportRulesChecker:
             self.logger.error(f"Error checking file: {e}", file_path=str(file_path))
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, int]:
+    def fix_file(self, file_path: Path) -> tuple[bool, int]:
         """
         Automatically fix import issues in a file.
 

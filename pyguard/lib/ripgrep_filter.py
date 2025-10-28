@@ -6,7 +6,6 @@ Dramatically improves performance for large codebases.
 """
 
 import subprocess
-from typing import List, Set, Optional
 
 
 class RipGrepFilter:
@@ -16,23 +15,23 @@ class RipGrepFilter:
 
     # High-risk patterns that warrant AST analysis
     SECURITY_PATTERNS = [
-        r'\beval\s*\(',
-        r'\bexec\s*\(',
-        r'\bcompile\s*\(',
-        r'pickle\.loads',
-        r'yaml\.load\s*\(',
-        r'os\.system\s*\(',
-        r'subprocess\..*shell\s*=\s*True',
+        r"\beval\s*\(",
+        r"\bexec\s*\(",
+        r"\bcompile\s*\(",
+        r"pickle\.loads",
+        r"yaml\.load\s*\(",
+        r"os\.system\s*\(",
+        r"subprocess\..*shell\s*=\s*True",
         r'password\s*=\s*[\'"][^\'"]+[\'"]',
         r'api[_-]?key\s*=\s*[\'"][^\'"]+[\'"]',
-        r'jwt\.decode\s*\(',
-        r'render_template_string\s*\(',
-        r'Crypto\.Cipher\.DES',
-        r'hashlib\.(md5|sha1)\s*\(',
+        r"jwt\.decode\s*\(",
+        r"render_template_string\s*\(",
+        r"Crypto\.Cipher\.DES",
+        r"hashlib\.(md5|sha1)\s*\(",
     ]
 
     @staticmethod
-    def find_suspicious_files(path: str, patterns: Optional[List[str]] = None) -> Set[str]:
+    def find_suspicious_files(path: str, patterns: list[str] | None = None) -> set[str]:
         """
         Use ripgrep to find Python files matching security patterns.
 
@@ -47,26 +46,26 @@ class RipGrepFilter:
             patterns = RipGrepFilter.SECURITY_PATTERNS
 
         # Build ripgrep pattern (OR all patterns)
-        combined_pattern = '|'.join(patterns)
+        combined_pattern = "|".join(patterns)
 
         try:
             result = subprocess.run(
                 [
-                    'rg',
-                    '--files-with-matches',
-                    '--type',
-                    'py',
-                    '--ignore-case',
+                    "rg",
+                    "--files-with-matches",
+                    "--type",
+                    "py",
+                    "--ignore-case",
                     combined_pattern,
                     path,
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=60,
             )
 
-            candidate_files = set(result.stdout.strip().split('\n'))
-            candidate_files.discard('')  # Remove empty strings
+            candidate_files = set(result.stdout.strip().split("\n"))
+            candidate_files.discard("")  # Remove empty strings
 
             return candidate_files
 
@@ -81,7 +80,7 @@ class RipGrepFilter:
     def is_ripgrep_available() -> bool:
         """Check if ripgrep is installed."""
         try:
-            subprocess.run(['rg', '--version'], capture_output=True, timeout=5)
+            subprocess.run(["rg", "--version"], check=False, capture_output=True, timeout=5)
             return True
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False

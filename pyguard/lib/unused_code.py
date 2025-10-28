@@ -8,7 +8,6 @@ variables, arguments, and other unused code patterns.
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -35,23 +34,23 @@ class UnusedCodeVisitor(ast.NodeVisitor):
     Implements Pyflakes and flake8-unused-arguments checks.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize unused code visitor."""
-        self.issues: List[UnusedCodeIssue] = []
+        self.issues: list[UnusedCodeIssue] = []
         self.source_lines = source_lines
 
         # Track imports
-        self.imports: Dict[str, Tuple[int, int]] = {}  # name -> (line, col)
-        self.import_froms: Dict[str, Tuple[int, int]] = {}  # name -> (line, col)
+        self.imports: dict[str, tuple[int, int]] = {}  # name -> (line, col)
+        self.import_froms: dict[str, tuple[int, int]] = {}  # name -> (line, col)
 
         # Track variable assignments
-        self.assignments: Dict[str, Tuple[int, int]] = {}  # name -> (line, col)
+        self.assignments: dict[str, tuple[int, int]] = {}  # name -> (line, col)
 
         # Track function arguments
-        self.function_args: Dict[str, Set[str]] = {}  # func_name -> set of arg names
+        self.function_args: dict[str, set[str]] = {}  # func_name -> set of arg names
 
         # Track usage
-        self.used_names: Set[str] = set()
+        self.used_names: set[str] = set()
 
         # Current function context
         self.current_function: str | None = None
@@ -290,7 +289,7 @@ class UnusedCodeFixer:
         self.file_ops = FileOperations()
         self.fixes_applied = []
 
-    def scan_file_for_issues(self, file_path: Path) -> List[UnusedCodeIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[UnusedCodeIssue]:
         """
         Scan a file for unused code issues.
 
@@ -314,7 +313,7 @@ class UnusedCodeFixer:
         except SyntaxError:
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply unused code fixes to a Python file.
 

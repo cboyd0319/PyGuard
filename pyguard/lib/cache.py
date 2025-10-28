@@ -8,12 +8,12 @@ References:
 - Google SRE | https://sre.google | Medium | Product-focused reliability engineering
 """
 
+from dataclasses import asdict, dataclass
 import hashlib
 import json
-import time
-from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+import time
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -26,7 +26,7 @@ class CacheEntry:
     timestamp: float
     security_issues_count: int
     quality_issues_count: int
-    complexity_scores: Dict[str, int]
+    complexity_scores: dict[str, int]
     analysis_time_ms: float
 
 
@@ -38,7 +38,7 @@ class AnalysisCache:
     re-analysis of unchanged files. Implements TTL-based expiration and size limits.
     """
 
-    def __init__(self, cache_dir: Optional[Path] = None, max_age_hours: int = 24):
+    def __init__(self, cache_dir: Path | None = None, max_age_hours: int = 24):
         """
         Initialize analysis cache.
 
@@ -49,7 +49,7 @@ class AnalysisCache:
         self.logger = PyGuardLogger()
         self.cache_dir = cache_dir or Path.home() / ".pyguard_cache"
         self.max_age_seconds = max_age_hours * 3600
-        self.cache: Dict[str, CacheEntry] = {}
+        self.cache: dict[str, CacheEntry] = {}
 
         # Create cache directory if it doesn't exist
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -77,7 +77,7 @@ class AnalysisCache:
 
                 self.logger.debug(f"Loaded {len(self.cache)} cache entries", category="Cache")
         except Exception as e:
-            self.logger.warning(f"Failed to load cache: {str(e)}", category="Cache")
+            self.logger.warning(f"Failed to load cache: {e!s}", category="Cache")
             self.cache = {}
 
     def _save_cache(self):
@@ -96,7 +96,7 @@ class AnalysisCache:
 
             self.logger.debug(f"Saved {len(self.cache)} cache entries", category="Cache")
         except Exception as e:
-            self.logger.error(f"Failed to save cache: {str(e)}", category="Cache")
+            self.logger.error(f"Failed to save cache: {e!s}", category="Cache")
 
     def _clean_expired(self):
         """Remove expired cache entries."""
@@ -115,7 +115,7 @@ class AnalysisCache:
                 f"Removed {len(expired_keys)} expired cache entries", category="Cache"
             )
 
-    def get_file_hash(self, file_path: Path) -> Optional[str]:
+    def get_file_hash(self, file_path: Path) -> str | None:
         """
         Calculate hash of file content.
 
@@ -130,7 +130,7 @@ class AnalysisCache:
                 content = f.read()
                 return hashlib.sha256(content).hexdigest()
         except Exception as e:
-            self.logger.warning(f"Failed to hash file {file_path}: {str(e)}", category="Cache")
+            self.logger.warning(f"Failed to hash file {file_path}: {e!s}", category="Cache")
             return None
 
     def is_cached(self, file_path: Path) -> bool:
@@ -145,7 +145,7 @@ class AnalysisCache:
         """
         return self.get(file_path) is not None
 
-    def get(self, file_path: Path) -> Optional[Any]:
+    def get(self, file_path: Path) -> Any | None:
         """
         Get cached data for a file if it's still valid.
 
@@ -231,7 +231,7 @@ class AnalysisCache:
 
         self.logger.info("Cleared all cache entries", category="Cache")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -260,9 +260,9 @@ class ConfigCache:
     def __init__(self):
         """Initialize configuration cache."""
         self.logger = PyGuardLogger()
-        self.cache: Dict[str, tuple[float, Any]] = {}  # path -> (mtime, config)
+        self.cache: dict[str, tuple[float, Any]] = {}  # path -> (mtime, config)
 
-    def get(self, config_path: Path) -> Optional[Any]:
+    def get(self, config_path: Path) -> Any | None:
         """
         Get cached configuration if file hasn't been modified.
 
@@ -284,13 +284,12 @@ class ConfigCache:
             if current_mtime == cached_mtime:
                 self.logger.debug(f"Config cache hit for {config_path}", category="Cache")
                 return cached_config
-            else:
-                # File modified, invalidate cache
-                del self.cache[config_path_str]
-                return None
+            # File modified, invalidate cache
+            del self.cache[config_path_str]
+            return None
 
         except Exception as e:
-            self.logger.warning(f"Error checking config cache: {str(e)}", category="Cache")
+            self.logger.warning(f"Error checking config cache: {e!s}", category="Cache")
             return None
 
     def set(self, config_path: Path, config: Any):
@@ -308,7 +307,7 @@ class ConfigCache:
 
             self.logger.debug(f"Cached config for {config_path}", category="Cache")
         except Exception as e:
-            self.logger.warning(f"Error caching config: {str(e)}", category="Cache")
+            self.logger.warning(f"Error caching config: {e!s}", category="Cache")
 
     def invalidate(self, config_path: Path):
         """

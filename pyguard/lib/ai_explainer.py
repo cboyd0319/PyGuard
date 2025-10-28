@@ -13,7 +13,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -30,9 +30,9 @@ class SecurityExplanation:
     how_to_fix: str  # How to fix it
     example_vulnerable: str  # Example of vulnerable code
     example_secure: str  # Example of secure code
-    references: List[str]  # Links for more information
-    cwe_id: Optional[str] = None
-    owasp_id: Optional[str] = None
+    references: list[str]  # Links for more information
+    cwe_id: str | None = None
+    owasp_id: str | None = None
     difficulty_level: str = "intermediate"  # beginner, intermediate, advanced
 
 
@@ -44,7 +44,7 @@ class FixRationale:
     fixed_code: str  # Fixed code
     fix_type: str  # Type of fix (replacement, refactor, etc.)
     why_this_fix: str  # Why this specific fix
-    alternatives: List[str]  # Alternative fixes
+    alternatives: list[str]  # Alternative fixes
     trade_offs: str  # Trade-offs of this fix
     security_impact: str  # Security improvement
     performance_impact: str  # Performance considerations
@@ -373,7 +373,7 @@ class AIExplainer:
 
     def explain_vulnerability(
         self, vulnerability_type: str, educational_level: str = "intermediate"
-    ) -> Optional[SecurityExplanation]:
+    ) -> SecurityExplanation | None:
         """
         Get detailed explanation of a vulnerability type.
 
@@ -413,11 +413,10 @@ class AIExplainer:
         explanation = self.explain_vulnerability(vulnerability_type)
 
         # Generate fix rationale
-        rationale = self._generate_fix_rationale(
+        return self._generate_fix_rationale(
             original_code, fixed_code, vulnerability_type, explanation
         )
 
-        return rationale
 
     def _adjust_explanation_level(
         self, explanation: SecurityExplanation, level: str
@@ -439,7 +438,7 @@ class AIExplainer:
                 owasp_id=explanation.owasp_id,
                 difficulty_level="beginner",
             )
-        elif level == "advanced":
+        if level == "advanced":
             # Add more technical details
             return explanation  # Advanced gets full explanation
 
@@ -466,7 +465,7 @@ class AIExplainer:
         original_code: str,
         fixed_code: str,
         vulnerability_type: str,
-        explanation: Optional[SecurityExplanation],
+        explanation: SecurityExplanation | None,
     ) -> FixRationale:
         """Generate detailed rationale for a fix."""
         fix_templates = {
@@ -532,13 +531,17 @@ class AIExplainer:
             fixed_code=fixed_code,
             fix_type="automated_security_fix",
             why_this_fix=str(template["why"]),
-            alternatives=list(template["alternatives"]) if isinstance(template["alternatives"], list) else [str(template["alternatives"])],
+            alternatives=(
+                list(template["alternatives"])
+                if isinstance(template["alternatives"], list)
+                else [str(template["alternatives"])]
+            ),
             trade_offs=str(template["trade_offs"]),
             security_impact=str(template["security_impact"]),
             performance_impact=str(template["performance_impact"]),
         )
 
-    def generate_learning_content(self, vulnerability_type: str) -> Dict[str, Any]:
+    def generate_learning_content(self, vulnerability_type: str) -> dict[str, Any]:
         """
         Generate educational content for a vulnerability type.
 
@@ -569,7 +572,7 @@ class AIExplainer:
             "further_reading": explanation.references,
         }
 
-    def _generate_quiz_question(self, explanation: SecurityExplanation) -> Dict[str, Any]:
+    def _generate_quiz_question(self, explanation: SecurityExplanation) -> dict[str, Any]:
         """Generate a quiz question for learning."""
         questions = {
             "SQL Injection": {
@@ -612,7 +615,7 @@ class AIExplainer:
         )
 
 
-def explain(vulnerability_type: str, level: str = "intermediate") -> Optional[SecurityExplanation]:
+def explain(vulnerability_type: str, level: str = "intermediate") -> SecurityExplanation | None:
     """
     Convenience function to get vulnerability explanation.
 

@@ -6,10 +6,9 @@ that should be modernized to Python 3.8+ idioms. Aligned with pyupgrade rules.
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -35,9 +34,9 @@ class ModernPythonVisitor(ast.NodeVisitor):
     Implements pyupgrade-style modernization checks.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize modern Python visitor."""
-        self.issues: List[ModernizationIssue] = []
+        self.issues: list[ModernizationIssue] = []
         self.source_lines = source_lines
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -50,7 +49,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         """Get full name of an expression (for attributes)."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             parts = []
             current: ast.expr = node
             while isinstance(current, ast.Attribute):
@@ -313,24 +312,23 @@ class ModernPythonVisitor(ast.NodeVisitor):
         for decorator in node.decorator_list:
             # UP011/UP033: lru_cache without parentheses
             if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Attribute):
-                    if (
-                        decorator.func.attr == "lru_cache"
-                        and len(decorator.args) == 0
-                        and len(decorator.keywords) == 0
-                    ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
-                        self.issues.append(
-                            ModernizationIssue(
-                                severity="LOW",
-                                category="Modern Python",
-                                message="Use @functools.lru_cache instead of @functools.lru_cache()",
-                                line_number=decorator.lineno,
-                                column=decorator.col_offset,
-                                code_snippet=self._get_code_snippet(decorator),
-                                fix_suggestion="Remove empty parentheses from @lru_cache",
-                                rule_id="UP011",
-                            )
+                if isinstance(decorator.func, ast.Attribute) and (
+                    decorator.func.attr == "lru_cache"
+                    and len(decorator.args) == 0
+                    and len(decorator.keywords) == 0
+                ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                    self.issues.append(
+                        ModernizationIssue(
+                            severity="LOW",
+                            category="Modern Python",
+                            message="Use @functools.lru_cache instead of @functools.lru_cache()",
+                            line_number=decorator.lineno,
+                            column=decorator.col_offset,
+                            code_snippet=self._get_code_snippet(decorator),
+                            fix_suggestion="Remove empty parentheses from @lru_cache",
+                            rule_id="UP011",
                         )
+                    )
 
         # UP020: Use builtin open() instead of pathlib.Path.open() when appropriate
         # UP021: Replace universal newlines with text=True
@@ -488,20 +486,19 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def visit_Expr(self, node: ast.Expr) -> None:
         """Visit expression statements."""
         # UP019: typing.Text is deprecated
-        if isinstance(node.value, ast.Name):
-            if node.value.id == "Text":
-                self.issues.append(
-                    ModernizationIssue(
-                        severity="LOW",
-                        category="Modern Python",
-                        message="typing.Text is deprecated in Python 3.11+, use str instead",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Replace typing.Text with str",
-                        rule_id="UP019",
-                    )
+        if isinstance(node.value, ast.Name) and node.value.id == "Text":
+            self.issues.append(
+                ModernizationIssue(
+                    severity="LOW",
+                    category="Modern Python",
+                    message="typing.Text is deprecated in Python 3.11+, use str instead",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Replace typing.Text with str",
+                    rule_id="UP019",
                 )
+            )
 
         self.generic_visit(node)
 
@@ -509,7 +506,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -530,7 +527,7 @@ class ModernPythonFixer:
         self.file_ops = FileOperations()
         self.fixes_applied = []
 
-    def scan_file_for_issues(self, file_path: Path) -> List[ModernizationIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[ModernizationIssue]:
         """
         Scan a file for modernization issues.
 
@@ -553,7 +550,7 @@ class ModernPythonFixer:
         except SyntaxError:
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply modernization fixes to a Python file.
 

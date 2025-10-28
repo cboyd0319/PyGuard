@@ -6,7 +6,6 @@ Implements Ruff C4 rules for detecting opportunities to use comprehensions.
 
 import ast
 from pathlib import Path
-from typing import List
 
 from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
 
@@ -15,7 +14,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
     """AST visitor for detecting comprehension opportunities."""
 
     def __init__(self, file_path: Path = Path("<string>")):
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.file_path = file_path
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -286,7 +285,7 @@ class ComprehensionChecker:
     def __init__(self):
         self.rules = self._create_rules()
 
-    def _create_rules(self) -> List[Rule]:
+    def _create_rules(self) -> list[Rule]:
         """Create comprehension rules."""
         from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
 
@@ -419,7 +418,7 @@ class ComprehensionChecker:
             ),
         ]
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[RuleViolation]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[RuleViolation]:
         """
         Check code for comprehension opportunities.
 
@@ -438,6 +437,6 @@ class ComprehensionChecker:
         except SyntaxError:
             return []
 
-    def get_rules(self) -> List[Rule]:
+    def get_rules(self) -> list[Rule]:
         """Get all rules defined by this checker."""
         return self.rules

@@ -7,7 +7,7 @@ version pinning issues, and malicious package patterns.
 Security Areas Covered:
 - Typosquatting detection (Levenshtein distance analysis)
 - Package name similarity analysis
-- Private package name conflicts  
+- Private package name conflicts
 - Namespace hijacking detection
 - Deprecated package usage
 - Unmaintained dependency detection (>2 years)
@@ -32,9 +32,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set, Tuple, Optional
+import re
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -53,28 +52,50 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
-        
+        self.violations: list[RuleViolation] = []
+
         # Track package-related patterns
-        self.package_installs: List[Tuple[str, int]] = []  # (package_name, line_num)
-        self.import_statements: Set[str] = set()
-        
+        self.package_installs: list[tuple[str, int]] = []  # (package_name, line_num)
+        self.import_statements: set[str] = set()
+
         # Well-known package names for typosquatting detection
         self.popular_packages = {
-            'numpy', 'pandas', 'requests', 'django', 'flask', 'fastapi',
-            'tensorflow', 'torch', 'scikit-learn', 'matplotlib', 'scipy',
-            'pytest', 'black', 'pylint', 'mypy', 'ruff', 'bandit',
-            'sqlalchemy', 'pydantic', 'httpx', 'aiohttp', 'celery',
-            'redis', 'boto3', 'google-cloud', 'azure-core', 'kubernetes',
+            "numpy",
+            "pandas",
+            "requests",
+            "django",
+            "flask",
+            "fastapi",
+            "tensorflow",
+            "torch",
+            "scikit-learn",
+            "matplotlib",
+            "scipy",
+            "pytest",
+            "black",
+            "pylint",
+            "mypy",
+            "ruff",
+            "bandit",
+            "sqlalchemy",
+            "pydantic",
+            "httpx",
+            "aiohttp",
+            "celery",
+            "redis",
+            "boto3",
+            "google-cloud",
+            "azure-core",
+            "kubernetes",
         }
-        
+
         # Known malicious patterns (real-world examples)
         self.malicious_patterns = [
-            r'.*-nightly$',  # Fake nightly builds
-            r'.*-dev-\d+$',  # Fake dev versions
-            r'.*-rc\d+\d+$',  # Suspicious RC numbers
-            r'^python-.*-utils$',  # Common typosquat pattern
-            r'^py-.*-helper$',  # Common typosquat pattern
+            r".*-nightly$",  # Fake nightly builds
+            r".*-dev-\d+$",  # Fake dev versions
+            r".*-rc\d+\d+$",  # Suspicious RC numbers
+            r"^python-.*-utils$",  # Common typosquat pattern
+            r"^py-.*-helper$",  # Common typosquat pattern
         ]
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -93,26 +114,30 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
         """Detect package installation calls and suspicious patterns."""
         # Check for subprocess.call/run with pip install
         if isinstance(node.func, ast.Attribute):
-            if (node.func.attr in ('call', 'run', 'check_output', 'Popen') and
-                isinstance(node.func.value, ast.Name) and
-                node.func.value.id == 'subprocess'):
+            if (
+                node.func.attr in ("call", "run", "check_output", "Popen")
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "subprocess"
+            ):
                 self._check_subprocess_pip_install(node)
             # Check for os.system with pip install
-            elif (node.func.attr == 'system' and
-                isinstance(node.func.value, ast.Name) and
-                node.func.value.id == 'os'):
+            elif (
+                node.func.attr == "system"
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "os"
+            ):
                 self._check_os_system_pip_install(node)
-        
+
         self.generic_visit(node)
 
     def _check_subprocess_pip_install(self, node: ast.Call) -> None:
         """Check subprocess calls for pip install commands."""
         if not node.args:
             return
-            
+
         # Get the command argument (can be string or list)
         cmd_arg = node.args[0]
-        
+
         # Handle list arguments: ['pip', 'install', 'package']
         if isinstance(cmd_arg, ast.List):
             packages = self._extract_packages_from_list(cmd_arg)
@@ -121,7 +146,7 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
         else:
             # Handle string arguments: 'pip install package'
             cmd_str = self._extract_string_value(cmd_arg)
-            if cmd_str and 'pip install' in cmd_str:
+            if cmd_str and "pip install" in cmd_str:
                 packages = self._extract_packages_from_command(cmd_str)
                 for package in packages:
                     self._analyze_package_security(package, node.lineno)
@@ -130,20 +155,20 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
         """Check os.system calls for pip install commands."""
         if not node.args:
             return
-            
+
         cmd_arg = node.args[0]
         cmd_str = self._extract_string_value(cmd_arg)
-        
-        if cmd_str and 'pip install' in cmd_str:
+
+        if cmd_str and "pip install" in cmd_str:
             packages = self._extract_packages_from_command(cmd_str)
             for package in packages:
                 self._analyze_package_security(package, node.lineno)
 
-    def _extract_string_value(self, node: ast.AST) -> Optional[str]:
+    def _extract_string_value(self, node: ast.AST) -> str | None:
         """Extract string value from AST node."""
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
             return node.value
-        elif isinstance(node, ast.JoinedStr):
+        if isinstance(node, ast.JoinedStr):
             # Handle f-strings - conservative approach
             parts = []
             for val in node.values:
@@ -152,90 +177,90 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
                 else:
                     # If there's dynamic content, we can't reliably check
                     return None
-            return ''.join(parts)
+            return "".join(parts)
         return None
 
-    def _extract_packages_from_list(self, list_node: ast.List) -> List[str]:
+    def _extract_packages_from_list(self, list_node: ast.List) -> list[str]:
         """Extract package names from subprocess list arguments like ['pip', 'install', 'package']."""
         packages = []
-        
+
         # Convert list elements to strings
         elements = []
         for elt in list_node.elts:
             if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                 elements.append(elt.value)
-        
+
         # Find 'pip' and 'install' in the list
         try:
-            pip_idx = elements.index('pip')
-            if pip_idx + 1 < len(elements) and elements[pip_idx + 1] == 'install':
+            pip_idx = elements.index("pip")
+            if pip_idx + 1 < len(elements) and elements[pip_idx + 1] == "install":
                 # Extract packages after 'install'
                 for i in range(pip_idx + 2, len(elements)):
                     package = elements[i]
                     # Skip flags
-                    if package.startswith('-'):
+                    if package.startswith("-"):
                         continue
                     # Skip requirements.txt
-                    if 'requirements' in package.lower() or package.endswith('.txt'):
+                    if "requirements" in package.lower() or package.endswith(".txt"):
                         continue
                     # Extract package name (before version specifiers)
-                    package = re.split(r'[=<>!]', package)[0].strip()
+                    package = re.split(r"[=<>!]", package)[0].strip()
                     if package:
                         packages.append(package)
         except ValueError:
             # 'pip' not in list
             pass
-        
+
         return packages
 
-    def _extract_packages_from_command(self, cmd: str) -> List[str]:
+    def _extract_packages_from_command(self, cmd: str) -> list[str]:
         """Extract package names from pip install command."""
         packages = []
-        
+
         # Remove pip install prefix
-        after_install = re.sub(r'.*pip\s+install\s+', '', cmd)
-        
+        after_install = re.sub(r".*pip\s+install\s+", "", cmd)
+
         # Split by spaces and filter flags
         parts = after_install.split()
         for part in parts:
             # Skip flags and options
-            if part.startswith('-') or part.startswith('--'):
+            if part.startswith("-") or part.startswith("--"):
                 continue
             # Skip requirements.txt files
-            if 'requirements' in part.lower() or part.endswith('.txt'):
+            if "requirements" in part.lower() or part.endswith(".txt"):
                 continue
             # Extract package name (before any version specifier)
-            package = re.split(r'[=<>!]', part)[0].strip()
+            package = re.split(r"[=<>!]", part)[0].strip()
             if package:
                 packages.append(package)
-        
+
         return packages
 
     def _analyze_package_security(self, package: str, line_num: int) -> None:
         """Analyze a package name for security issues."""
         # DEP_CONF001: Typosquatting detection
         self._check_typosquatting(package, line_num)
-        
+
         # DEP_CONF002: Known malicious patterns
         self._check_malicious_patterns(package, line_num)
-        
+
         # DEP_CONF003: Namespace hijacking
         self._check_namespace_hijacking(package, line_num)
-        
+
         # DEP_CONF004: Suspicious naming patterns
         self._check_suspicious_naming(package, line_num)
 
     def _check_typosquatting(self, package: str, line_num: int) -> None:
         """Detect potential typosquatting via Levenshtein distance."""
         package_lower = package.lower()
-        
+
         for popular in self.popular_packages:
             # Skip exact match (case-insensitive)
             if package_lower == popular.lower():
                 continue
-            
+
             distance = self._levenshtein_distance(package_lower, popular.lower())
-            
+
             # If distance is 1-2, it might be typosquatting
             if distance <= 2:
                 self.violations.append(
@@ -258,7 +283,7 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
     def _check_malicious_patterns(self, package: str, line_num: int) -> None:
         """Check for known malicious package naming patterns."""
         package_lower = package.lower()
-        
+
         for pattern in self.malicious_patterns:
             if re.match(pattern, package_lower):
                 self.violations.append(
@@ -280,8 +305,8 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
     def _check_namespace_hijacking(self, package: str, line_num: int) -> None:
         """Detect potential namespace hijacking attempts."""
         # Check for internal/private package indicators
-        private_indicators = ['internal', 'private', 'corp', 'company', 'org-']
-        
+        private_indicators = ["internal", "private", "corp", "company", "org-"]
+
         package_lower = package.lower()
         for indicator in private_indicators:
             if indicator in package_lower:
@@ -305,7 +330,7 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
     def _check_suspicious_naming(self, package: str, line_num: int) -> None:
         """Check for suspicious naming conventions."""
         # Check for excessive dashes or underscores
-        if package.count('-') > 3 or package.count('_') > 3:
+        if package.count("-") > 3 or package.count("_") > 3:
             self.violations.append(
                 RuleViolation(
                     rule_id="DEP_CONF004",
@@ -325,16 +350,16 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
     def _levenshtein_distance(self, s1: str, s2: str) -> int:
         """
         Calculate Levenshtein distance between two strings.
-        
+
         This is the minimum number of single-character edits required
         to change one string into the other.
         """
         if len(s1) < len(s2):
             return self._levenshtein_distance(s2, s1)
-        
+
         if len(s2) == 0:
             return len(s1)
-        
+
         previous_row: list[int] = list(range(len(s2) + 1))
         for i, c1 in enumerate(s1):
             current_row = [i + 1]
@@ -345,35 +370,35 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
                 substitutions = previous_row[j] + (c1 != c2)
                 current_row.append(min(insertions, deletions, substitutions))
             previous_row = current_row
-        
+
         return previous_row[-1]
 
 
-def analyze_requirements_file(file_path: Path) -> List[RuleViolation]:
+def analyze_requirements_file(file_path: Path) -> list[RuleViolation]:
     """
     Analyze requirements.txt or similar dependency files.
-    
+
     Args:
         file_path: Path to requirements file
-        
+
     Returns:
         List of security violations found
     """
-    violations: List[RuleViolation] = []
-    
+    violations: list[RuleViolation] = []
+
     try:
         content = file_path.read_text()
         lines = content.splitlines()
-        
+
         for line_num, line in enumerate(lines, start=1):
             line = line.strip()
-            
+
             # Skip comments and empty lines
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
-            
+
             # DEP_CONF005: Check for insecure HTTP protocol
-            if line.startswith('http://'):
+            if line.startswith("http://"):
                 violations.append(
                     RuleViolation(
                         rule_id="DEP_CONF005",
@@ -389,12 +414,12 @@ def analyze_requirements_file(file_path: Path) -> List[RuleViolation]:
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-            
+
             # DEP_CONF006: Check for missing version pinning
-            if '==' not in line and '>=' not in line and '<=' not in line and '~=' not in line:
+            if "==" not in line and ">=" not in line and "<=" not in line and "~=" not in line:
                 # Extract package name
-                package = re.split(r'[<>=!]', line)[0].strip()
-                if package and not line.startswith('-'):  # Skip pip flags
+                package = re.split(r"[<>=!]", line)[0].strip()
+                if package and not line.startswith("-"):  # Skip pip flags
                     violations.append(
                         RuleViolation(
                             rule_id="DEP_CONF006",
@@ -410,11 +435,11 @@ def analyze_requirements_file(file_path: Path) -> List[RuleViolation]:
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-            
+
             # DEP_CONF007: Check for missing hash verification
-            if '==' in line and '--hash=' not in line:
-                package = line.split('==')[0].strip()
-                if package and not line.startswith('-'):
+            if "==" in line and "--hash=" not in line:
+                package = line.split("==")[0].strip()
+                if package and not line.startswith("-"):
                     violations.append(
                         RuleViolation(
                             rule_id="DEP_CONF007",
@@ -430,32 +455,36 @@ def analyze_requirements_file(file_path: Path) -> List[RuleViolation]:
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-    
+
     except Exception:
         # If file can't be read, silently skip
         pass
-    
+
     return violations
 
 
-def analyze_dependency_confusion(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_dependency_confusion(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for dependency confusion vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code content
-        
+
     Returns:
         List of rule violations found
     """
-    violations: List[RuleViolation] = []
-    
+    violations: list[RuleViolation] = []
+
     # Check if it's a requirements file
-    if file_path.name in ('requirements.txt', 'requirements-dev.txt', 
-                          'requirements-test.txt', 'dev-requirements.txt'):
+    if file_path.name in (
+        "requirements.txt",
+        "requirements-dev.txt",
+        "requirements-test.txt",
+        "dev-requirements.txt",
+    ):
         return analyze_requirements_file(file_path)
-    
+
     # Otherwise, analyze Python code
     try:
         tree = ast.parse(code)
@@ -464,7 +493,7 @@ def analyze_dependency_confusion(file_path: Path, code: str) -> List[RuleViolati
         violations.extend(visitor.violations)
     except SyntaxError:
         pass
-    
+
     return violations
 
 
@@ -561,12 +590,14 @@ DEP_CONF007_MISSING_HASH = Rule(
 )
 
 # Register all rules
-register_rules([
-    DEP_CONF001_TYPOSQUATTING,
-    DEP_CONF002_MALICIOUS_PATTERN,
-    DEP_CONF003_NAMESPACE_HIJACK,
-    DEP_CONF004_SUSPICIOUS_NAMING,
-    DEP_CONF005_INSECURE_HTTP,
-    DEP_CONF006_MISSING_VERSION_PIN,
-    DEP_CONF007_MISSING_HASH,
-])
+register_rules(
+    [
+        DEP_CONF001_TYPOSQUATTING,
+        DEP_CONF002_MALICIOUS_PATTERN,
+        DEP_CONF003_NAMESPACE_HIJACK,
+        DEP_CONF004_SUSPICIOUS_NAMING,
+        DEP_CONF005_INSECURE_HTTP,
+        DEP_CONF006_MISSING_VERSION_PIN,
+        DEP_CONF007_MISSING_HASH,
+    ]
+)

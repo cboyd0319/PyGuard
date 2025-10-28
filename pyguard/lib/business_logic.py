@@ -17,12 +17,10 @@ Week 15-16 Implementation: 30 security checks for business logic vulnerabilities
 
 import ast
 import re
-from typing import List, Set
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import Rule, RuleCategory, RuleSeverity
-
 
 # =============================================================================
 # BUSINESS LOGIC SECURITY RULES (30 TOTAL)
@@ -412,7 +410,7 @@ BUSINESS_LOGIC_RULES = [
 class BusinessLogicVisitor(ast.NodeVisitor):
     """
     AST visitor for detecting business logic vulnerabilities.
-    
+
     Implements 30 security checks across three categories:
     - Race Conditions & Timing (10 checks)
     - Financial & Transaction Logic (10 checks)
@@ -421,16 +419,16 @@ class BusinessLogicVisitor(ast.NodeVisitor):
 
     def __init__(self, source_code: str):
         """Initialize the business logic security visitor."""
-        self.issues: List[SecurityIssue] = []
-        self.source_lines: List[str] = source_code.splitlines()
+        self.issues: list[SecurityIssue] = []
+        self.source_lines: list[str] = source_code.splitlines()
         self.logger = PyGuardLogger()
-        
+
         # Track state for analysis
-        self.file_checks: List[tuple] = []  # (line, var_name, operation)
-        self.lock_acquisitions: List[tuple] = []  # (line, lock_name)
-        self.shared_vars: Set[str] = set()
-        self.financial_functions: Set[str] = set()
-        self.auth_checked_functions: Set[str] = set()
+        self.file_checks: list[tuple] = []  # (line, var_name, operation)
+        self.lock_acquisitions: list[tuple] = []  # (line, lock_name)
+        self.shared_vars: set[str] = set()
+        self.financial_functions: set[str] = set()
+        self.auth_checked_functions: set[str] = set()
         self.regex_patterns: dict = {}  # variable_name -> pattern_string
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -444,7 +442,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         """Extract function/method name from call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts: list[str] = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -458,18 +456,48 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def _is_financial_function(self, func_name: str) -> bool:
         """Check if function name suggests financial operations."""
         financial_keywords = [
-            "payment", "pay", "charge", "refund", "withdraw", "deposit",
-            "transfer", "transaction", "purchase", "buy", "sell", "price",
-            "cost", "amount", "total", "discount", "tax", "fee", "balance",
-            "order", "checkout", "cart", "invoice", "billing"
+            "payment",
+            "pay",
+            "charge",
+            "refund",
+            "withdraw",
+            "deposit",
+            "transfer",
+            "transaction",
+            "purchase",
+            "buy",
+            "sell",
+            "price",
+            "cost",
+            "amount",
+            "total",
+            "discount",
+            "tax",
+            "fee",
+            "balance",
+            "order",
+            "checkout",
+            "cart",
+            "invoice",
+            "billing",
         ]
         return any(keyword in func_name.lower() for keyword in financial_keywords)
 
     def _is_sensitive_function(self, func_name: str) -> bool:
         """Check if function performs sensitive operations."""
         sensitive_keywords = [
-            "admin", "delete", "modify", "update", "create", "remove",
-            "change", "set", "grant", "revoke", "privilege", "permission"
+            "admin",
+            "delete",
+            "modify",
+            "update",
+            "create",
+            "remove",
+            "change",
+            "set",
+            "grant",
+            "revoke",
+            "privilege",
+            "permission",
         ]
         return any(keyword in func_name.lower() for keyword in sensitive_keywords)
 
@@ -480,16 +508,21 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call):
         """Check for file operations and other race condition patterns."""
         call_name = self._get_call_name(node)
-        
+
         # BIZLOGIC001: TOCTOU - Track file existence checks
-        if call_name in ["os.path.exists", "os.path.isfile", "os.path.isdir", "pathlib.Path.exists"]:
+        if call_name in [
+            "os.path.exists",
+            "os.path.isfile",
+            "os.path.isdir",
+            "pathlib.Path.exists",
+        ]:
             self.file_checks.append((node.lineno, call_name, "check"))
-        
+
         # Track file operations
         file_ops = ["open", "os.remove", "os.rename", "os.unlink", "shutil.move", "shutil.copy"]
         if any(op in call_name for op in file_ops):
             # Check if this follows a file check (TOCTOU)
-            for check_line, check_var, _ in self.file_checks:
+            for check_line, _check_var, _ in self.file_checks:
                 if node.lineno > check_line and node.lineno - check_line <= 5:
                     self.issues.append(
                         SecurityIssue(
@@ -538,22 +571,22 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                 elif isinstance(arg, ast.Name) and arg.id in self.regex_patterns:
                     # Look up the pattern from tracked assignments
                     pattern_to_check = self.regex_patterns[arg.id]
-                    
+
             if pattern_to_check:
                 # Improved heuristics for ReDoS detection:
                 # 1. Nested quantifiers: (a+)+, (a*)*
                 # 2. Alternation with quantifiers: (a|a)*
                 # 3. Multiple quantifiers: (.*)+
                 redos_patterns = [
-                    r'\([^)]*[+*?]\)[+*?]',  # (pattern+)+  or (pattern*)*
-                    r'\(\w+\|\w+\)[+*?]',     # (a|a)+ or (a|b)*
+                    r"\([^)]*[+*?]\)[+*?]",  # (pattern+)+  or (pattern*)*
+                    r"\(\w+\|\w+\)[+*?]",  # (a|a)+ or (a|b)*
                 ]
                 is_redos = False
                 for redos_pattern in redos_patterns:
                     if re.search(redos_pattern, pattern_to_check):
                         is_redos = True
                         break
-                
+
                 if is_redos:
                     self.issues.append(
                         SecurityIssue(
@@ -592,12 +625,9 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         if "parse" in call_name:
             # Check if this looks like an XML parsing call
             lower_call = call_name.lower()
-            if any(xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]):
+            if any(xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]) or (".parse" in call_name and call_name.count(".") <= 2):
                 is_xml_parse = True
-            # Also check for ET.parse or xml*.parse patterns
-            elif ".parse" in call_name and call_name.count('.') <= 2:
-                is_xml_parse = True
-                
+
         if is_xml_parse:
             self.issues.append(
                 SecurityIssue(
@@ -624,17 +654,17 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             if "pattern" in var_name.lower() or "regex" in var_name.lower():
                 if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                     self.regex_patterns[var_name] = node.value.value
-        
+
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Analyze function definitions for business logic issues."""
         func_name = node.name
-        
+
         # Track if this is a financial or sensitive function
         is_financial = self._is_financial_function(func_name)
         is_sensitive = self._is_sensitive_function(func_name)
-        
+
         # has_balance_check = False  # Not used currently
         has_rollback = False
         has_auth_check = False
@@ -643,7 +673,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         has_discount_limit = False
         has_refund_validation = False
         uses_user_input_price = False
-        
+
         # Analyze function body
         for child in ast.walk(node):
             # Check for balance/amount validation
@@ -661,9 +691,14 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                 child_call = self._get_call_name(child)
                 if "rollback" in child_call.lower():
                     has_rollback = True
-                if any(auth in child_call.lower() for auth in ["check_permission", "require_auth", "authorize", "has_permission"]):
+                if any(
+                    auth in child_call.lower()
+                    for auth in ["check_permission", "require_auth", "authorize", "has_permission"]
+                ):
                     has_auth_check = True
-                if "refund" in func_name.lower() and any(v in child_call.lower() for v in ["verify", "validate", "check"]):
+                if "refund" in func_name.lower() and any(
+                    v in child_call.lower() for v in ["verify", "validate", "check"]
+                ):
                     has_refund_validation = True
 
             # Check for float usage in financial context
@@ -671,7 +706,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                 if isinstance(child.op, (ast.Mult, ast.Div, ast.Add, ast.Sub)):
                     # Check if operands might be floats
                     snippet = self._get_code_snippet(child)
-                    if "float" in snippet.lower() or re.search(r'\d+\.\d+', snippet):
+                    if "float" in snippet.lower() or re.search(r"\d+\.\d+", snippet):
                         uses_float_for_money = True
 
             # Check for user input in pricing
@@ -681,11 +716,24 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                     if isinstance(target, ast.Name):
                         var_name = target.id
                         # Check if this looks like a price/amount variable
-                        if any(kw in var_name.lower() for kw in ["price", "amount", "cost", "total", "balance"]):
+                        if any(
+                            kw in var_name.lower()
+                            for kw in ["price", "amount", "cost", "total", "balance"]
+                        ):
                             # Check if value comes from user input
                             if isinstance(child.value, ast.Call):
                                 call_name = self._get_call_name(child.value)
-                                if any(inp in call_name.lower() for inp in ["request.", "input", ".get", "args", "kwargs", "params"]):
+                                if any(
+                                    inp in call_name.lower()
+                                    for inp in [
+                                        "request.",
+                                        "input",
+                                        ".get",
+                                        "args",
+                                        "kwargs",
+                                        "params",
+                                    ]
+                                ):
                                     uses_user_input_price = True
                             elif isinstance(child.value, ast.Attribute):
                                 # request.args pattern
@@ -702,8 +750,8 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                             severity="HIGH",
                             category="Financial Logic",
                             message=f"Integer overflow risk in pricing calculation in '{func_name}'",
-                            line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
-                            column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                            line_number=child.lineno if hasattr(child, "lineno") else node.lineno,
+                            column=child.col_offset if hasattr(child, "col_offset") else 0,
                             code_snippet=self._get_code_snippet(child),
                             fix_suggestion="Validate result bounds; consider using decimal.Decimal for precision",
                             cwe_id="CWE-190",
@@ -729,7 +777,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             )
 
         # BIZLOGIC013: Negative quantity validation
-        if is_financial and "order" in func_name.lower() or "quantity" in func_name.lower():
+        if (is_financial and "order" in func_name.lower()) or "quantity" in func_name.lower():
             if not has_negative_check:
                 self.issues.append(
                     SecurityIssue(
@@ -845,7 +893,9 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         for child in ast.walk(node):
             if isinstance(child, ast.Subscript):
                 snippet = self._get_code_snippet(child)
-                if any(id_field in snippet for id_field in ["user_id", "account_id", "customer_id"]):
+                if any(
+                    id_field in snippet for id_field in ["user_id", "account_id", "customer_id"]
+                ):
                     # Check if it's from request without ownership check
                     if "request" in snippet and not has_auth_check:
                         self.issues.append(
@@ -853,8 +903,10 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                 severity="CRITICAL",
                                 category="Access Control",
                                 message=f"Horizontal privilege escalation in '{func_name}': User can access others' data via ID",
-                                line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
-                                column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                                line_number=(
+                                    child.lineno if hasattr(child, "lineno") else node.lineno
+                                ),
+                                column=child.col_offset if hasattr(child, "col_offset") else 0,
                                 code_snippet=snippet,
                                 fix_suggestion="Verify resource ownership: if resource.user_id != current_user.id: raise Forbidden()",
                                 cwe_id="CWE-639",
@@ -872,7 +924,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         # iter_target = None
         # if isinstance(node.target, ast.Name):
         #     iter_target = node.target.id
-        
+
         for child in ast.walk(node):
             # Check for Delete statements (del keyword)
             if isinstance(child, ast.Delete):
@@ -885,8 +937,10 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                     severity="MEDIUM",
                                     category="Race Condition",
                                     message="Concurrent modification risk: Modifying collection during iteration",
-                                    line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
-                                    column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                                    line_number=(
+                                        child.lineno if hasattr(child, "lineno") else node.lineno
+                                    ),
+                                    column=child.col_offset if hasattr(child, "col_offset") else 0,
                                     code_snippet=self._get_code_snippet(child),
                                     fix_suggestion="Iterate over a copy: for item in list(collection): ...",
                                     cwe_id="CWE-362",
@@ -894,19 +948,22 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                 )
                             )
                             break
-            
+
             # Check for method calls that modify collections
             if isinstance(child, ast.Call):
                 call_name = self._get_call_name(child)
                 # Check if modifying the collection being iterated
-                if any(mod in call_name for mod in ["append", "remove", "pop", "extend", "insert", "clear"]):
+                if any(
+                    mod in call_name
+                    for mod in ["append", "remove", "pop", "extend", "insert", "clear"]
+                ):
                     self.issues.append(
                         SecurityIssue(
                             severity="MEDIUM",
                             category="Race Condition",
                             message="Concurrent modification risk: Modifying collection during iteration",
-                            line_number=child.lineno if hasattr(child, 'lineno') else node.lineno,
-                            column=child.col_offset if hasattr(child, 'col_offset') else 0,
+                            line_number=child.lineno if hasattr(child, "lineno") else node.lineno,
+                            column=child.col_offset if hasattr(child, "col_offset") else 0,
                             code_snippet=self._get_code_snippet(child),
                             fix_suggestion="Iterate over a copy: for item in list(collection): ...",
                             cwe_id="CWE-362",
@@ -923,7 +980,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         has_lock = False
         for item in node.items:
             lock_name = None
-            
+
             # Check if this is a lock (either from a call or a variable)
             if isinstance(item.context_expr, ast.Call):
                 call_name = self._get_call_name(item.context_expr)
@@ -938,10 +995,10 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                 if "lock" in var_name.lower():
                     has_lock = True
                     lock_name = var_name
-            
+
             if has_lock and lock_name:
                 self.lock_acquisitions.append((node.lineno, lock_name))
-                
+
                 # Check for nested locks (potential deadlock)
                 # Look for another with statement inside this one
                 for child in ast.walk(node):
@@ -957,7 +1014,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                 nested_var = nested_item.context_expr.id
                                 if "lock" in nested_var.lower():
                                     is_nested_lock = True
-                            
+
                             if is_nested_lock:
                                 self.issues.append(
                                     SecurityIssue(
@@ -973,25 +1030,29 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                     )
                                 )
                                 break
-                        if self.issues and self.issues[-1].message == "Deadlock potential: Nested locks detected":
+                        if (
+                            self.issues
+                            and self.issues[-1].message
+                            == "Deadlock potential: Nested locks detected"
+                        ):
                             break
 
         self.generic_visit(node)
 
 
-def analyze_business_logic(source_code: str, filename: str = "<unknown>") -> List[SecurityIssue]:
+def analyze_business_logic(source_code: str, filename: str = "<unknown>") -> list[SecurityIssue]:
     """
     Analyze Python source code for business logic security vulnerabilities.
-    
+
     Detects 30 types of business logic vulnerabilities:
     - 10 race condition and timing issues
     - 10 financial and transaction logic flaws
     - 10 access control vulnerabilities
-    
+
     Args:
         source_code: Python source code to analyze
         filename: Name of the file being analyzed
-        
+
     Returns:
         List of SecurityIssue objects for vulnerabilities found
     """
@@ -1007,7 +1068,7 @@ def analyze_business_logic(source_code: str, filename: str = "<unknown>") -> Lis
 
 
 __all__ = [
-    "analyze_business_logic",
-    "BusinessLogicVisitor",
     "BUSINESS_LOGIC_RULES",
+    "BusinessLogicVisitor",
+    "analyze_business_logic",
 ]

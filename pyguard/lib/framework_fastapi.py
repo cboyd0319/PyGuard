@@ -32,7 +32,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set, Optional
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -52,13 +51,13 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_fastapi_import = False
         self.has_depends_import = False
         self.has_oauth2_import = False
-        self.route_functions: Set[str] = set()
-        self.authenticated_routes: Set[str] = set()
-        self.websocket_routes: Set[str] = set()
+        self.route_functions: set[str] = set()
+        self.authenticated_routes: set[str] = set()
+        self.websocket_routes: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track FastAPI imports."""
@@ -71,7 +70,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     elif alias.name in ("OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer"):
                         self.has_oauth2_import = True
             # Check for TestClient in production code (should be test-only)
-            if node.module == "starlette.testclient" or node.module == "fastapi.testclient":
+            if node.module in {"starlette.testclient", "fastapi.testclient"}:
                 for alias in node.names:
                     if alias.name == "TestClient":
                         self._check_testclient_import(node)
@@ -122,20 +121,20 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
             # Check for background task security
             self._check_background_task_security(node)
-            
+
             # Check for missing rate limiting
             self._check_missing_rate_limiting(node)
-            
+
             # Check for SSRF in URL parameters
             self._check_ssrf_in_url_params(node)
-            
+
             # Check for missing security headers
             if is_route:
                 self._check_missing_security_headers(node)
                 self._check_insecure_http_methods(node)
                 self._check_missing_api_auth_tokens(node)
                 self._check_oauth_redirect_validation(node)
-        
+
         # Check for JWT algorithm confusion (in any function)
         if self.has_fastapi_import:
             self._check_jwt_algorithm_confusion(node)
@@ -175,7 +174,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Detect OAuth2 misconfigurations
             if func_name in ("OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer"):
                 self._check_oauth2_misconfiguration(node)
-            
+
             # Detect StaticFiles mount without proper validation
             if func_name == "StaticFiles":
                 self._check_static_files_security(node)
@@ -185,13 +184,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for add_middleware with CORSMiddleware
             if node.func.attr == "add_middleware":
                 # Check if first argument is CORSMiddleware
-                if len(node.args) > 0:
-                    if isinstance(node.args[0], ast.Name):
-                        if node.args[0].id == "CORSMiddleware":
-                            self._check_cors_misconfiguration(node)
+                if len(node.args) > 0 and isinstance(node.args[0], ast.Name):
+                    if node.args[0].id == "CORSMiddleware":
+                        self._check_cors_misconfiguration(node)
                 # Check middleware ordering
                 self._check_middleware_ordering(node)
-            
+
             # Check for Pydantic validation bypasses
             if node.func.attr in ("construct", "parse_obj", "parse_raw"):
                 self._check_pydantic_validation_bypass(node)
@@ -199,23 +197,23 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for insecure session cookie settings
             if node.func.attr == "set_cookie":
                 self._check_cookie_security(node)
-            
+
             # Check for mount() calls with StaticFiles
             if node.func.attr == "mount":
                 self._check_static_mount_security(node)
-            
+
             # Check for dependency_overrides usage (works without import check)
             if node.func.attr == "dependency_overrides":
                 self._check_dependency_override_security(node)
-            
+
             # Check for Redis cache poisoning (works without import check)
             if node.func.attr in ("set", "setex", "hset", "hmset"):
                 self._check_redis_cache_poisoning(node)
-            
+
             # Check for GraphQL injection (works without import check)
             if node.func.attr in ("execute", "execute_sync"):
                 self._check_graphql_injection(node)
-            
+
             # Check for API keys in URLs (works without import check)
             if node.func.attr in ("get", "post", "put", "delete", "request"):
                 self._check_api_key_in_url(node)
@@ -233,7 +231,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         """Check assignments for security issues."""
         # Check for weak JWT secrets (in any file)
         self._check_jwt_secret_weakness(node)
-        
+
         # Check for dependency_overrides attribute access
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -241,7 +239,11 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 if isinstance(node.value, ast.Attribute):
                     if node.value.attr == "dependency_overrides":
                         filename = self.file_path.name.lower()
-                        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+                        if not (
+                            filename.startswith("test_")
+                            or filename.endswith("_test.py")
+                            or "tests/" in str(self.file_path)
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="FASTAPI025",
@@ -262,7 +264,11 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 if isinstance(target.value, ast.Attribute):
                     if target.value.attr == "dependency_overrides":
                         filename = self.file_path.name.lower()
-                        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+                        if not (
+                            filename.startswith("test_")
+                            or filename.endswith("_test.py")
+                            or "tests/" in str(self.file_path)
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="FASTAPI025",
@@ -278,27 +284,27 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                     },
                                 )
                             )
-        
+
         self.generic_visit(node)
 
     def _check_authentication_dependency(self, node: ast.FunctionDef) -> bool:
         """Check if function has authentication dependency."""
         for arg in node.args.args:
             # Check for default values with Depends
-            if arg.arg and hasattr(node.args, 'defaults'):
+            if arg.arg and hasattr(node.args, "defaults"):
                 # Get default values
                 num_defaults = len(node.args.defaults)
                 num_args = len(node.args.args)
                 default_offset = num_args - num_defaults
                 arg_index = node.args.args.index(arg)
-                
+
                 if arg_index >= default_offset:
                     default_value = node.args.defaults[arg_index - default_offset]
                     if isinstance(default_value, ast.Call):
                         if isinstance(default_value.func, ast.Name):
                             if default_value.func.id == "Depends":
                                 return True
-            
+
             # Check annotations
             if arg.annotation:
                 # Check for Depends(...) with authentication
@@ -313,7 +319,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             return True
         return False
 
-    def _check_missing_authentication(self, node: ast.FunctionDef, methods: List[str]) -> None:
+    def _check_missing_authentication(self, node: ast.FunctionDef, methods: list[str]) -> None:
         """Check for missing authentication on sensitive routes."""
         self.violations.append(
             RuleViolation(
@@ -342,15 +348,14 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 has_origin_check = True
                 break
             # Look for .headers.get() calls
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr == "get":
-                        # Check if getting 'origin' header
-                        if len(stmt.args) > 0:
-                            if isinstance(stmt.args[0], ast.Constant):
-                                if stmt.args[0].value == "origin":
-                                    has_origin_check = True
-                                    break
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
+                if stmt.func.attr == "get":
+                    # Check if getting 'origin' header
+                    if len(stmt.args) > 0:
+                        if isinstance(stmt.args[0], ast.Constant):
+                            if stmt.args[0].value == "origin":
+                                has_origin_check = True
+                                break
 
         if not has_origin_check:
             self.violations.append(
@@ -411,11 +416,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for File or UploadFile parameters
         has_file_upload = False
         for arg in node.args.args:
-            if arg.annotation:
-                if isinstance(arg.annotation, ast.Name):
-                    if arg.annotation.id in ("File", "UploadFile"):
-                        has_file_upload = True
-                        break
+            if arg.annotation and isinstance(arg.annotation, ast.Name):
+                if arg.annotation.id in ("File", "UploadFile"):
+                    has_file_upload = True
+                    break
 
         if has_file_upload:
             # Check for missing file size validation
@@ -582,7 +586,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.SAFE,
                                     fix_data={
                                         "old_value": keyword.value.value,
-                                        "new_value": keyword.value.value.replace("http://", "https://"),
+                                        "new_value": keyword.value.value.replace(
+                                            "http://", "https://"
+                                        ),
                                     },
                                 )
                             )
@@ -622,10 +628,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             elif keyword.arg == "httponly":
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     has_httponly = True
-            elif keyword.arg == "samesite":
-                if isinstance(keyword.value, ast.Constant):
-                    if keyword.value.value in ("lax", "strict"):
-                        has_samesite = True
+            elif keyword.arg == "samesite" and isinstance(keyword.value, ast.Constant):
+                if keyword.value.value in ("lax", "strict"):
+                    has_samesite = True
 
         if not has_secure:
             self.violations.append(
@@ -695,7 +700,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             # Check for missing algorithm verification
                             has_algorithms = False
                             has_verify_signature = True  # Default is True
-                            
+
                             for keyword in stmt.keywords:
                                 if keyword.arg == "algorithms":
                                     has_algorithms = True
@@ -703,7 +708,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                     if isinstance(keyword.value, ast.List):
                                         for elt in keyword.value.elts:
                                             if isinstance(elt, ast.Constant):
-                                                if isinstance(elt.value, str) and elt.value.lower() == "none":
+                                                if (
+                                                    isinstance(elt.value, str)
+                                                    and elt.value.lower() == "none"
+                                                ):
                                                     self.violations.append(
                                                         RuleViolation(
                                                             rule_id="FASTAPI014",
@@ -720,9 +728,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                                         )
                                                     )
                                 elif keyword.arg == "verify_signature":
-                                    if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                                    if (
+                                        isinstance(keyword.value, ast.Constant)
+                                        and keyword.value.value is False
+                                    ):
                                         has_verify_signature = False
-                            
+
                             if not has_algorithms and has_verify_signature:
                                 self.violations.append(
                                     RuleViolation(
@@ -739,7 +750,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                         },
                                     )
                                 )
-                            
+
                             if not has_verify_signature:
                                 self.violations.append(
                                     RuleViolation(
@@ -761,7 +772,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         """Check for missing rate limiting on API routes."""
         # Check if route has rate limiting decorator or dependency
         has_rate_limit = False
-        
+
         for decorator in node.decorator_list:
             # Check for @limiter.limit() or similar decorators
             if isinstance(decorator, ast.Call):
@@ -769,13 +780,13 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if decorator.func.attr in ("limit", "rate_limit"):
                         has_rate_limit = True
                         break
-        
+
         # Check for rate limiting dependency in function parameters
         for arg in node.args.args:
             if "rate" in arg.arg.lower() or "limit" in arg.arg.lower():
                 has_rate_limit = True
                 break
-        
+
         if not has_rate_limit:
             # Only warn for POST/PUT/DELETE routes (state-changing operations)
             route_methods = []
@@ -784,7 +795,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     method = decorator.func.attr
                     if method in ("post", "put", "delete", "patch"):
                         route_methods.append(method)
-            
+
             if route_methods:
                 self.violations.append(
                     RuleViolation(
@@ -807,16 +818,28 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for URL parameters that might be used in HTTP requests
         url_params = []
         for arg in node.args.args:
-            if "url" in arg.arg.lower() or "endpoint" in arg.arg.lower() or "callback" in arg.arg.lower():
+            if (
+                "url" in arg.arg.lower()
+                or "endpoint" in arg.arg.lower()
+                or "callback" in arg.arg.lower()
+            ):
                 url_params.append(arg.arg)
-        
+
         if url_params:
             # Check if these params are used in HTTP request libraries
             for stmt in ast.walk(node):
                 if isinstance(stmt, ast.Call):
                     # Check for requests.get/post, httpx.get/post, urllib.request.urlopen
                     if isinstance(stmt.func, ast.Attribute):
-                        if stmt.func.attr in ("get", "post", "put", "delete", "patch", "request", "urlopen"):
+                        if stmt.func.attr in (
+                            "get",
+                            "post",
+                            "put",
+                            "delete",
+                            "patch",
+                            "request",
+                            "urlopen",
+                        ):
                             func_name = self._get_name(stmt.func.value)
                             if func_name and func_name.lower() in ("requests", "httpx", "urllib"):
                                 # Check if URL param is used directly
@@ -861,7 +884,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         """Check for missing security headers in responses."""
         # Look for Response object usage in route
         has_response_headers = False
-        
+
         for stmt in ast.walk(node):
             # Check for response.headers assignments
             if isinstance(stmt, ast.Assign):
@@ -874,9 +897,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                 if isinstance(target.slice, ast.Constant):
                                     header_name = target.slice.value
                                     if isinstance(header_name, str):
-                                        if header_name.lower() in ("strict-transport-security", "hsts"):
+                                        if header_name.lower() in (
+                                            "strict-transport-security",
+                                            "hsts",
+                                        ):
                                             return  # HSTS is set, no violation
-        
+
         # Look for @app decorators to check if this is a route
         is_route = False
         for decorator in node.decorator_list:
@@ -884,7 +910,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 if decorator.func.attr in ("get", "post", "put", "delete", "patch"):
                     is_route = True
                     break
-        
+
         # Only warn for routes that return responses
         if is_route:
             # Check if function returns a Response object
@@ -923,9 +949,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                         has_introspection_disabled = False
                         for keyword in stmt.keywords:
                             if keyword.arg and "introspection" in keyword.arg.lower():
-                                if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                                if (
+                                    isinstance(keyword.value, ast.Constant)
+                                    and keyword.value.value is False
+                                ):
                                     has_introspection_disabled = True
-                        
+
                         if not has_introspection_disabled:
                             self.violations.append(
                                 RuleViolation(
@@ -943,11 +972,11 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                 )
                             )
 
-    def _get_name(self, node: ast.AST) -> Optional[str]:
+    def _get_name(self, node: ast.AST) -> str | None:
         """Get the name from an AST node."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return node.attr
         return None
 
@@ -991,8 +1020,13 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             if isinstance(stmt.value, ast.Call):
                                 # Check arguments of the return call
                                 for arg in stmt.value.args:
-                                    if isinstance(arg, (ast.FormattedValue, ast.JoinedStr, ast.Attribute)):
-                                        if isinstance(arg, ast.Attribute) and "exc" in getattr(arg.value, "id", "").lower():
+                                    if isinstance(
+                                        arg, (ast.FormattedValue, ast.JoinedStr, ast.Attribute)
+                                    ):
+                                        if (
+                                            isinstance(arg, ast.Attribute)
+                                            and "exc" in getattr(arg.value, "id", "").lower()
+                                        ):
                                             self.violations.append(
                                                 RuleViolation(
                                                     rule_id="FASTAPI023",
@@ -1012,7 +1046,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                 for kw in stmt.value.keywords:
                                     # Walk through the keyword value
                                     for sub_node in ast.walk(kw.value):
-                                        if isinstance(sub_node, (ast.FormattedValue, ast.JoinedStr)):
+                                        if isinstance(
+                                            sub_node, (ast.FormattedValue, ast.JoinedStr)
+                                        ):
                                             # Check if 'exc' is in the f-string
                                             for val in ast.walk(sub_node):
                                                 if isinstance(val, ast.Name) and val.id == "exc":
@@ -1050,10 +1086,18 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                 # Check if Form has validation constraints
                                 has_validation = False
                                 for keyword in default_value.keywords:
-                                    if keyword.arg in ("min_length", "max_length", "regex", "ge", "le", "gt", "lt"):
+                                    if keyword.arg in (
+                                        "min_length",
+                                        "max_length",
+                                        "regex",
+                                        "ge",
+                                        "le",
+                                        "gt",
+                                        "lt",
+                                    ):
                                         has_validation = True
                                         break
-                                
+
                                 if not has_validation:
                                     self.violations.append(
                                         RuleViolation(
@@ -1097,7 +1141,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                         },
                                     )
                                 )
-            
+
             # Check await expressions for database methods
             if isinstance(stmt, ast.Await):
                 if isinstance(stmt.value, ast.Call):
@@ -1129,7 +1173,11 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # TestClient should only be used in test files
         # Heuristic: if file doesn't end with test_*.py or *_test.py, warn
         filename = self.file_path.name.lower()
-        if not (filename.startswith("test_") or filename.endswith("_test.py") or "tests/" in str(self.file_path)):
+        if not (
+            filename.startswith("test_")
+            or filename.endswith("_test.py")
+            or "tests/" in str(self.file_path)
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="FASTAPI032",
@@ -1153,7 +1201,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg == "directory":
                 has_directory = True
-        
+
         if has_directory:
             self.violations.append(
                 RuleViolation(
@@ -1191,7 +1239,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if isinstance(node.args[0], ast.Name):
                         middleware_name = node.args[0].id
                         # Check for security-critical middleware
-                        if any(keyword in middleware_name.lower() for keyword in ["auth", "security", "cors"]):
+                        if any(
+                            keyword in middleware_name.lower()
+                            for keyword in ["auth", "security", "cors"]
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="FASTAPI024",
@@ -1250,7 +1301,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     # Check if the value is user input (common names)
                     if isinstance(keyword.value, ast.Name):
                         var_name = keyword.value.id.lower()
-                        if any(pattern in var_name for pattern in ["request", "data", "body", "payload", "input"]):
+                        if any(
+                            pattern in var_name
+                            for pattern in ["request", "data", "body", "payload", "input"]
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="FASTAPI027",
@@ -1303,7 +1357,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if isinstance(path, str) and "/api/" in path:
                         is_api_route = True
                         break
-        
+
         if is_api_route:
             # Check if function has X-API-Key or Authorization header check
             has_auth_check = False
@@ -1314,10 +1368,14 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             if isinstance(stmt.slice, ast.Constant):
                                 header_name = stmt.slice.value
                                 if isinstance(header_name, str):
-                                    if header_name.lower() in ("x-api-key", "authorization", "api-key"):
+                                    if header_name.lower() in (
+                                        "x-api-key",
+                                        "authorization",
+                                        "api-key",
+                                    ):
                                         has_auth_check = True
                                         break
-            
+
             if not has_auth_check and not self._check_authentication_dependency(node):
                 self.violations.append(
                     RuleViolation(
@@ -1341,7 +1399,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id
-                if any(keyword in var_name.upper() for keyword in ["JWT_SECRET", "SECRET_KEY", "TOKEN_SECRET"]):
+                if any(
+                    keyword in var_name.upper()
+                    for keyword in ["JWT_SECRET", "SECRET_KEY", "TOKEN_SECRET"]
+                ):
                     # Check if value is weak (short, common, hardcoded)
                     if isinstance(node.value, ast.Constant):
                         secret_value = node.value.value
@@ -1364,7 +1425,14 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                     )
                                 )
                             # Check for common weak secrets
-                            weak_secrets = ["secret", "password", "changeme", "test", "dev", "default"]
+                            weak_secrets = [
+                                "secret",
+                                "password",
+                                "changeme",
+                                "test",
+                                "dev",
+                                "default",
+                            ]
                             if secret_value.lower() in weak_secrets:
                                 self.violations.append(
                                     RuleViolation(
@@ -1391,10 +1459,12 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             if isinstance(decorator, ast.Call):
                 if decorator.args and isinstance(decorator.args[0], ast.Constant):
                     path = decorator.args[0].value
-                    if isinstance(path, str) and any(keyword in path.lower() for keyword in ["oauth", "callback", "redirect"]):
+                    if isinstance(path, str) and any(
+                        keyword in path.lower() for keyword in ["oauth", "callback", "redirect"]
+                    ):
                         is_oauth_route = True
                         break
-        
+
         if is_oauth_route:
             # Check for redirect_uri validation
             has_validation = False
@@ -1405,7 +1475,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                         if "redirect" in stmt.left.id.lower():
                             has_validation = True
                             break
-            
+
             if not has_validation:
                 self.violations.append(
                     RuleViolation(
@@ -1464,7 +1534,10 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                             if isinstance(value, ast.FormattedValue):
                                 if isinstance(value.value, ast.Name):
                                     var_name = value.value.id.lower()
-                                    if any(keyword in var_name for keyword in ["api_key", "token", "secret", "password"]):
+                                    if any(
+                                        keyword in var_name
+                                        for keyword in ["api_key", "token", "secret", "password"]
+                                    ):
                                         self.violations.append(
                                             RuleViolation(
                                                 rule_id="FASTAPI038",
@@ -1490,7 +1563,7 @@ class FastAPISecurityChecker:
         self.logger = PyGuardLogger(__name__)
         self.file_ops = FileOperations()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """Check a Python file for FastAPI security issues."""
         try:
             code = self.file_ops.read_file(file_path)

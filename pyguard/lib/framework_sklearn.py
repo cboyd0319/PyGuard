@@ -27,7 +27,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.custom_rules import RuleViolation
 
@@ -39,11 +38,11 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_sklearn_import = False
-        self.sklearn_aliases: Set[str] = {"sklearn"}
-        self.joblib_imports: Set[str] = set()
-        self.pickle_imports: Set[str] = set()
+        self.sklearn_aliases: set[str] = {"sklearn"}
+        self.joblib_imports: set[str] = set()
+        self.pickle_imports: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track Scikit-learn imports."""
@@ -79,10 +78,10 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
 
         # Check for unsafe model deserialization (SKL001)
         self._check_unsafe_model_loading(node)
-        
+
         # Check for missing input validation (SKL009)
         self._check_missing_input_validation(node)
-        
+
         # Check for grid search resource exhaustion (SKL012)
         self._check_grid_search_exhaustion(node)
 
@@ -91,7 +90,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
     def _check_unsafe_model_loading(self, node: ast.Call) -> None:
         """Check for unsafe model deserialization (SKL001)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for pickle.load() or joblib.load() with ML models
         # Only check if we have relevant imports
         if func_name in ["pickle.load", "load"] and self.pickle_imports and self.has_sklearn_import:
@@ -107,9 +106,11 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
                     suggestion="Use joblib.load() with custom pickler or validate model source before loading",
                 )
             )
-        
+
         # Check for joblib.load() without security considerations
-        elif (func_name == "joblib.load" or (func_name == "load" and self.joblib_imports)) and self.has_sklearn_import:
+        elif (
+            func_name == "joblib.load" or (func_name == "load" and self.joblib_imports)
+        ) and self.has_sklearn_import:
             if not self._has_validation_context(node):
                 self.violations.append(
                     RuleViolation(
@@ -127,16 +128,22 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
     def _check_missing_input_validation(self, node: ast.Call) -> None:
         """Check for missing input validation before prediction (SKL009)."""
         # func_name = self._get_func_name(node)  # Reserved for future use
-        
+
         # Only check if sklearn is imported
         if not self.has_sklearn_import:
             return
-        
+
         # Check for predict(), predict_proba(), transform() without validation
         # These are typically called as method.predict(data)
         if isinstance(node.func, ast.Attribute):
             attr = node.func.attr
-            if attr in ["predict", "predict_proba", "predict_log_proba", "transform", "fit_transform"]:
+            if attr in [
+                "predict",
+                "predict_proba",
+                "predict_log_proba",
+                "transform",
+                "fit_transform",
+            ]:
                 if not self._has_input_validation_nearby(node):
                     self.violations.append(
                         RuleViolation(
@@ -154,16 +161,16 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
     def _check_grid_search_exhaustion(self, node: ast.Call) -> None:
         """Check for grid search resource exhaustion (SKL012)."""
         func_name = self._get_func_name(node)
-        
+
         # Only check if sklearn is imported
         if not self.has_sklearn_import:
             return
-        
+
         # Check for GridSearchCV or RandomizedSearchCV without resource limits
         if func_name in ["GridSearchCV", "RandomizedSearchCV"]:
             has_cv_limit = any(kw.arg == "cv" for kw in node.keywords)
             has_n_jobs_limit = any(kw.arg == "n_jobs" for kw in node.keywords)
-            
+
             if not has_cv_limit or not has_n_jobs_limit:
                 self.violations.append(
                     RuleViolation(
@@ -182,7 +189,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         """Extract function name from a call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -197,7 +204,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         """Check if there's validation context around a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 5):min(len(self.lines), line + 3)])
+            context = "\n".join(self.lines[max(0, line - 5) : min(len(self.lines), line + 3)])
             validation_keywords = ["verify", "validate", "check", "trusted", "signature"]
             return any(keyword in context.lower() for keyword in validation_keywords)
         return False
@@ -206,20 +213,20 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         """Check if there's input validation near a prediction call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):line])
+            context = "\n".join(self.lines[max(0, line - 10) : line])
             validation_patterns = ["shape", "dtype", "isnan", "isinf", "validate", "check"]
             return any(pattern in context.lower() for pattern in validation_patterns)
         return False
 
 
-def analyze_sklearn_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_sklearn_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for Scikit-learn security vulnerabilities.
-    
+
     Args:
         file_path: Path to the Python file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -227,7 +234,7 @@ def analyze_sklearn_security(file_path: Path, code: str) -> List[RuleViolation]:
         tree = ast.parse(code)
     except SyntaxError:
         return []
-    
+
     visitor = SklearnSecurityVisitor(file_path, code)
     visitor.visit(tree)
     return visitor.violations

@@ -15,7 +15,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -34,7 +33,7 @@ class PandasVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.is_pandas_file = self._detect_pandas(code)
 
     def _detect_pandas(self, code: str) -> bool:
@@ -107,20 +106,19 @@ class PandasVisitor(ast.NodeVisitor):
 
             # PD011: Use .to_numpy() instead of np.asarray() on DataFrame/Series
             if isinstance(node.func.value, ast.Name) and node.func.value.id == "np":
-                if node.func.attr in ("asarray", "array"):
-                    if len(node.args) > 0:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="PD011",
-                                message="Use .to_numpy() instead of np.asarray() on pandas objects",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.STYLE,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
+                if node.func.attr in ("asarray", "array") and len(node.args) > 0:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="PD011",
+                            message="Use .to_numpy() instead of np.asarray() on pandas objects",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.STYLE,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
                         )
+                    )
 
             # PD013: Use .melt() instead of .stack()
             if node.func.attr == "stack":
@@ -190,7 +188,7 @@ class PandasRulesChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for pandas-specific issues.
 

@@ -6,7 +6,6 @@ Helps teams integrate PyGuard into their development workflow.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 
 class CIIntegrationGenerator:
@@ -16,7 +15,7 @@ class CIIntegrationGenerator:
         """Initialize the CI integration generator."""
         self.templates = self._load_templates()
 
-    def _load_templates(self) -> Dict[str, str]:
+    def _load_templates(self) -> dict[str, str]:
         """Load CI/CD configuration templates."""
         return {
             "github_actions": self._github_actions_template(),
@@ -165,7 +164,7 @@ steps:
   condition: always()
 """
 
-    def generate_config(self, ci_platform: str, output_path: Optional[Path] = None) -> str:
+    def generate_config(self, ci_platform: str, output_path: Path | None = None) -> str:
         """
         Generate CI/CD configuration for specified platform.
 
@@ -193,7 +192,7 @@ steps:
 
         return config
 
-    def generate_all_configs(self, output_dir: Path) -> Dict[str, Path]:
+    def generate_all_configs(self, output_dir: Path) -> dict[str, Path]:
         """
         Generate all CI/CD configurations.
 
@@ -220,7 +219,7 @@ steps:
 
         return generated_files
 
-    def list_supported_platforms(self) -> List[str]:
+    def list_supported_platforms(self) -> list[str]:
         """
         Get list of supported CI/CD platforms.
 
@@ -254,9 +253,9 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.py$
 if [ -n "$STAGED_FILES" ]; then
     echo "Running PyGuard security scan..."
     pyguard $STAGED_FILES {args}
-    
+
     EXIT_CODE=$?
-    
+
     if [ $EXIT_CODE -ne 0 ]; then
         echo "[X] PyGuard found security issues. Please fix them before committing."
         exit 1
@@ -292,7 +291,7 @@ exit 0
         return True
 
 
-def generate_ci_config(platform: str, output_path: Optional[str] = None) -> str:
+def generate_ci_config(platform: str, output_path: str | None = None) -> str:
     """
     Convenience function to generate CI/CD configuration.
 

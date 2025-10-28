@@ -39,7 +39,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -58,13 +57,13 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_tf_import = False
         self.has_keras_import = False
-        self.tf_aliases: Set[str] = {"tensorflow", "tf"}
-        self.keras_aliases: Set[str] = {"keras"}
+        self.tf_aliases: set[str] = {"tensorflow", "tf"}
+        self.keras_aliases: set[str] = {"keras"}
         # Track tainted variables (derived from user input)
-        self.tainted_vars: Set[str] = set()
+        self.tainted_vars: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track TensorFlow/Keras imports."""
@@ -106,22 +105,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
 
         # Check for unsafe model loading (TF001)
         self._check_unsafe_model_loading(node)
-        
+
         # Check for GPU memory exhaustion (TF002)
         self._check_gpu_memory_exhaustion(node)
-        
+
         # Check for callback injection (TF005)
         self._check_callback_injection(node)
-        
+
         # Check for TensorBoard security (TF006)
         self._check_tensorboard_security(node)
-        
+
         # Check for dataset pipeline injection (TF007)
         self._check_dataset_injection(node)
-        
+
         # Check for model serving vulnerabilities (TF009)
         self._check_model_serving(node)
-        
+
         # Check for checkpoint poisoning (TF010)
         self._check_checkpoint_poisoning(node)
 
@@ -130,7 +129,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
     def _check_unsafe_model_loading(self, node: ast.Call) -> None:
         """TF001: Detect unsafe model deserialization."""
         func_name = self._get_function_name(node)
-        
+
         # TensorFlow model loading functions
         tf_load_funcs = [
             "tensorflow.keras.models.load_model",
@@ -140,7 +139,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "tf.saved_model.load",
             "load_model",  # Direct import
         ]
-        
+
         if func_name in tf_load_funcs:
             # Check if loading from user-controlled path
             if node.args and self._is_user_controlled(node.args[0]):
@@ -156,24 +155,28 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Validate model path and use: tf.keras.models.load_model(path, compile=False)",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
                         owasp_id="A08:2021 – Software and Data Integrity Failures",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
-            
+
             # Check if compile=True (can execute arbitrary code)
             has_safe_compile = any(
-                isinstance(kw, ast.keyword) and 
-                kw.arg == "compile" and
-                isinstance(kw.value, ast.Constant) and
-                kw.value.value is False
+                isinstance(kw, ast.keyword)
+                and kw.arg == "compile"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is False
                 for kw in node.keywords
             )
-            
+
             if not has_safe_compile and func_name.endswith("load_model"):
                 self.violations.append(
                     RuleViolation(
@@ -187,37 +190,45 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Use: model = tf.keras.models.load_model(path, compile=False)",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
                         owasp_id="A08:2021 – Software and Data Integrity Failures",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
 
     def _check_gpu_memory_exhaustion(self, node: ast.Call) -> None:
         """TF002: Detect GPU memory exhaustion vulnerabilities."""
         func_name = self._get_function_name(node)
-        
+
         # Check for operations that can exhaust GPU memory
         memory_intensive_ops = [
-            "tf.ones", "tf.zeros", "tf.constant",
-            "tensorflow.ones", "tensorflow.zeros", "tensorflow.constant",
+            "tf.ones",
+            "tf.zeros",
+            "tf.constant",
+            "tensorflow.ones",
+            "tensorflow.zeros",
+            "tensorflow.constant",
         ]
-        
+
         if func_name in memory_intensive_ops:
             # Check if shape comes from user input (positional argument)
             is_tainted = False
             if node.args and self._is_user_controlled(node.args[0]):
                 is_tainted = True
-            
+
             # Also check for shape= keyword argument (e.g., tf.constant(0, shape=user_shape))
             for kw in node.keywords:
                 if kw.arg == "shape" and self._is_user_controlled(kw.value):
                     is_tainted = True
                     break
-            
+
             if is_tainted:
                 self.violations.append(
                     RuleViolation(
@@ -231,19 +242,23 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Add size validation: if tf.reduce_prod(shape) > MAX_ELEMENTS: raise ValueError()",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-400",
                         owasp_id="A04:2021 – Insecure Design",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
 
     def _check_callback_injection(self, node: ast.Call) -> None:
         """TF005: Detect callback injection vulnerabilities."""
         func_name = self._get_function_name(node)
-        
+
         # Check for model.fit() with user-controlled callbacks
         if func_name and func_name.endswith(".fit"):
             for kw in node.keywords:
@@ -259,21 +274,29 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                                 file_path=self.file_path,
                                 line_number=getattr(node, "lineno", 0),
                                 column=getattr(node, "col_offset", 0),
-                                end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                                end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                                code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                                end_line_number=getattr(
+                                    node, "end_lineno", getattr(node, "lineno", 0)
+                                ),
+                                end_column=getattr(
+                                    node, "end_col_offset", getattr(node, "col_offset", 0)
+                                ),
+                                code_snippet=(
+                                    self.lines[getattr(node, "lineno", 1) - 1]
+                                    if getattr(node, "lineno", 1) <= len(self.lines)
+                                    else ""
+                                ),
                                 fix_suggestion="Use allowlist: SAFE_CALLBACKS = [EarlyStopping, ModelCheckpoint]",
                                 fix_applicability=FixApplicability.SAFE,
                                 cwe_id="CWE-94",
                                 owasp_id="A03:2021 – Injection",
-                                source_tool="pyguard"
+                                source_tool="pyguard",
                             )
                         )
 
     def _check_tensorboard_security(self, node: ast.Call) -> None:
         """TF006: Detect TensorBoard security issues (log exposure)."""
         func_name = self._get_function_name(node)
-        
+
         # Check for TensorBoard callbacks without access control
         tensorboard_funcs = [
             "tensorflow.keras.callbacks.TensorBoard",
@@ -281,7 +304,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "keras.callbacks.TensorBoard",
             "TensorBoard",  # Direct import
         ]
-        
+
         if func_name in tensorboard_funcs:
             # Check if log_dir is exposed
             # has_log_dir = False  # Not used
@@ -291,7 +314,10 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                     # Check if log directory is in web-accessible location
                     if isinstance(kw.value, ast.Constant):
                         log_path = str(kw.value.value)
-                        if any(web_dir in log_path.lower() for web_dir in ["static", "public", "www", "htdocs"]):
+                        if any(
+                            web_dir in log_path.lower()
+                            for web_dir in ["static", "public", "www", "htdocs"]
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="TF006",
@@ -302,21 +328,29 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     line_number=getattr(node, "lineno", 0),
                                     column=getattr(node, "col_offset", 0),
-                                    end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
-                                    end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                                    end_line_number=getattr(
+                                        node, "end_lineno", getattr(node, "lineno", 0)
+                                    ),
+                                    end_column=getattr(
+                                        node, "end_col_offset", getattr(node, "col_offset", 0)
+                                    ),
+                                    code_snippet=(
+                                        self.lines[getattr(node, "lineno", 1) - 1]
+                                        if getattr(node, "lineno", 1) <= len(self.lines)
+                                        else ""
+                                    ),
                                     fix_suggestion="Use: log_dir='logs/private/tensorboard'",
                                     fix_applicability=FixApplicability.SAFE,
                                     cwe_id="CWE-200",
                                     owasp_id="A01:2021 – Broken Access Control",
-                                    source_tool="pyguard"
+                                    source_tool="pyguard",
                                 )
                             )
 
     def _check_dataset_injection(self, node: ast.Call) -> None:
         """TF007: Detect dataset pipeline injection vulnerabilities."""
         func_name = self._get_function_name(node)
-        
+
         # Check for dataset creation from user-controlled sources
         dataset_funcs = [
             "tf.data.Dataset.from_tensor_slices",
@@ -324,7 +358,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "tf.data.TextLineDataset",
             "tensorflow.data.Dataset.from_tensor_slices",
         ]
-        
+
         if func_name in dataset_funcs and node.args:
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
@@ -339,19 +373,23 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Validate data: check file types, sizes, and content before loading",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
                         owasp_id="A03:2021 – Injection",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
 
     def _check_model_serving(self, node: ast.Call) -> None:
         """TF009: Detect model serving vulnerabilities."""
         func_name = self._get_function_name(node)
-        
+
         # Check for model.predict() with user input
         if func_name and func_name.endswith(".predict"):
             if node.args and self._is_user_controlled(node.args[0]):
@@ -368,33 +406,37 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Add validation: if input.shape != expected_shape: raise ValueError()",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
                         owasp_id="A04:2021 – Insecure Design",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
 
     def _check_checkpoint_poisoning(self, node: ast.Call) -> None:
         """TF010: Detect checkpoint poisoning vulnerabilities."""
         func_name = self._get_function_name(node)
-        
+
         # Check for checkpoint loading - both explicit class methods and instance methods
         checkpoint_funcs = [
             "tf.train.Checkpoint.restore",
             "tensorflow.train.Checkpoint.restore",
             "tf.keras.models.load_weights",
         ]
-        
+
         # Also check for any .restore() or .load_weights() method calls (on checkpoint instances)
         is_checkpoint_load = (
-            func_name in checkpoint_funcs or
-            func_name.endswith(".restore") or
-            func_name.endswith(".load_weights")
+            func_name in checkpoint_funcs
+            or func_name.endswith(".restore")
+            or func_name.endswith(".load_weights")
         )
-        
+
         if is_checkpoint_load and node.args:
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
@@ -409,12 +451,16 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Use: verify_checkpoint_signature(checkpoint_path) before loading",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-494",
                         owasp_id="A08:2021 – Software and Data Integrity Failures",
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
 
@@ -422,7 +468,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -441,12 +487,21 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                 return True
             # Check if variable name suggests user input (more specific patterns)
             var_name = node.id.lower()
-            
+
             # Strong indicators of user input
-            strong_keywords = ["request", "input", "param", "query", "form", "payload", "body", "upload"]
+            strong_keywords = [
+                "request",
+                "input",
+                "param",
+                "query",
+                "form",
+                "payload",
+                "body",
+                "upload",
+            ]
             if any(keyword in var_name for keyword in strong_keywords):
                 return True
-            
+
             # Weaker indicators - only if they're prefixed/suffixed appropriately
             if var_name.startswith("user") or var_name.endswith("user"):
                 return True
@@ -454,13 +509,8 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                 return True
             if "user_path" in var_name or "user_file" in var_name or "user_input" in var_name:
                 return True
-            if "user_data" in var_name or "user_shape" in var_name or "user_model" in var_name:
-                return True
-                
-            return False
-        elif isinstance(node, ast.Attribute):
-            return self._is_user_controlled(node.value)
-        elif isinstance(node, ast.Subscript):
+            return bool("user_data" in var_name or "user_shape" in var_name or "user_model" in var_name)
+        if isinstance(node, (ast.Attribute, ast.Subscript)):
             return self._is_user_controlled(node.value)
         return False
 
@@ -478,14 +528,14 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             # Check attribute access on user-controlled objects
             return self._is_user_controlled(node.value)
         elif isinstance(node, ast.Subscript):
-            # Check subscript on user-controlled objects  
+            # Check subscript on user-controlled objects
             return self._is_user_controlled(node.value)
         elif isinstance(node, ast.Name):
             return self._is_user_controlled(node)
         return False
 
 
-def analyze_tensorflow_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_tensorflow_security(file_path: Path, code: str) -> list[RuleViolation]:
     """Analyze code for TensorFlow/Keras security vulnerabilities."""
     try:
         tree = ast.parse(code)

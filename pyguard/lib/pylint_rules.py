@@ -14,7 +14,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import Dict, List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -33,8 +32,8 @@ class PylintVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
-        self.function_complexity: Dict[str, int] = {}
+        self.violations: list[RuleViolation] = []
+        self.function_complexity: dict[str, int] = {}
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Detect function-related issues (PLR0911-PLR0917, PLW0120-PLW0129)."""
@@ -111,28 +110,27 @@ class PylintVisitor(ast.NodeVisitor):
 
         # PLW0120: Else clause on loop without break
         for child in ast.walk(node):
-            if isinstance(child, (ast.For, ast.While)):
-                if child.orelse:
-                    # Check if loop has break statement
-                    has_break = False
-                    for stmt in ast.walk(child):
-                        if isinstance(stmt, ast.Break):
-                            has_break = True
-                            break
+            if isinstance(child, (ast.For, ast.While)) and child.orelse:
+                # Check if loop has break statement
+                has_break = False
+                for stmt in ast.walk(child):
+                    if isinstance(stmt, ast.Break):
+                        has_break = True
+                        break
 
-                    if not has_break:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="PLW0120",
-                                message="Else clause on loop without break statement - misleading",
-                                line_number=child.lineno,
-                                column=child.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.WARNING,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
+                if not has_break:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="PLW0120",
+                            message="Else clause on loop without break statement - misleading",
+                            line_number=child.lineno,
+                            column=child.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.WARNING,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
                         )
+                    )
 
         self.generic_visit(node)
 
@@ -141,17 +139,15 @@ class PylintVisitor(ast.NodeVisitor):
         # PLR0902: Too many instance attributes
         instance_attrs = set()
         for child in ast.walk(node):
-            if isinstance(child, ast.FunctionDef):
-                if child.name == "__init__":
-                    for stmt in ast.walk(child):
-                        if isinstance(stmt, ast.Assign):
-                            for target in stmt.targets:
-                                if isinstance(target, ast.Attribute):
-                                    if (
-                                        isinstance(target.value, ast.Name)
-                                        and target.value.id == "self"
-                                    ):
-                                        instance_attrs.add(target.attr)
+            if isinstance(child, ast.FunctionDef) and child.name == "__init__":
+                for stmt in ast.walk(child):
+                    if isinstance(stmt, ast.Assign):
+                        for target in stmt.targets:
+                            if isinstance(target, ast.Attribute) and (
+                                isinstance(target.value, ast.Name)
+                                and target.value.id == "self"
+                            ):
+                                instance_attrs.add(target.attr)
 
         if len(instance_attrs) > 7:
             self.violations.append(
@@ -170,9 +166,8 @@ class PylintVisitor(ast.NodeVisitor):
         # PLR0903: Too few public methods
         public_methods = 0
         for child in node.body:
-            if isinstance(child, ast.FunctionDef):
-                if not child.name.startswith("_"):
-                    public_methods += 1
+            if isinstance(child, ast.FunctionDef) and not child.name.startswith("_"):
+                public_methods += 1
 
         if public_methods < 2 and len(node.body) > 1:
             # Only flag if class has more than just __init__
@@ -207,7 +202,7 @@ class PylintVisitor(ast.NodeVisitor):
             )
 
         # PLE0102: Function redefinition (same name)
-        method_names: Dict[str, int] = {}
+        method_names: dict[str, int] = {}
         for child in node.body:
             if isinstance(child, ast.FunctionDef):
                 if child.name in method_names:
@@ -260,21 +255,20 @@ class PylintVisitor(ast.NodeVisitor):
                     )
 
         # PLW0125: Using type() instead of isinstance()
-        if isinstance(node.test, ast.Compare):
-            if isinstance(node.test.left, ast.Call):
-                if isinstance(node.test.left.func, ast.Name) and node.test.left.func.id == "type":
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="PLW0125",
-                            message="Use isinstance() instead of type() comparison",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.MEDIUM,
-                            category=RuleCategory.STYLE,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
+        if isinstance(node.test, ast.Compare) and isinstance(node.test.left, ast.Call):
+            if isinstance(node.test.left.func, ast.Name) and node.test.left.func.id == "type":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="PLW0125",
+                        message="Use isinstance() instead of type() comparison",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.STYLE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
+                )
 
         self.generic_visit(node)
 
@@ -284,43 +278,40 @@ class PylintVisitor(ast.NodeVisitor):
         # Would need to track if we're in an except handler
 
         # PLE0711: NotImplemented raised instead of NotImplementedError
-        if isinstance(node.exc, ast.Name):
-            if node.exc.id == "NotImplemented":
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="PLE0711",
-                        message="Raising NotImplemented - did you mean NotImplementedError?",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.HIGH,
-                        category=RuleCategory.ERROR,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SAFE,
-                    )
+        if isinstance(node.exc, ast.Name) and node.exc.id == "NotImplemented":
+            self.violations.append(
+                RuleViolation(
+                    rule_id="PLE0711",
+                    message="Raising NotImplemented - did you mean NotImplementedError?",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.HIGH,
+                    category=RuleCategory.ERROR,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SAFE,
                 )
+            )
 
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
         """Detect comparison issues (PLR1701, PLR1706, PLC1901, PLW0127)."""
         # PLC1901: Compare to empty string
-        if len(node.ops) == 1:
-            if isinstance(node.ops[0], (ast.Eq, ast.NotEq)):
-                for comparator in node.comparators:
-                    if isinstance(comparator, ast.Constant):
-                        if comparator.value == "":
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="PLC1901",
-                                    message="Compare to empty string - use 'if not s:' instead",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.LOW,
-                                    category=RuleCategory.STYLE,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
-                            )
+        if len(node.ops) == 1 and isinstance(node.ops[0], (ast.Eq, ast.NotEq)):
+            for comparator in node.comparators:
+                if isinstance(comparator, ast.Constant) and comparator.value == "":
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="PLC1901",
+                            message="Compare to empty string - use 'if not s:' instead",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.STYLE,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
 
         # PLW0127: Self-comparison (x == x)
         if len(node.ops) == 1 and len(node.comparators) == 1:
@@ -393,7 +384,7 @@ class PylintRulesChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for Pylint rule violations.
 

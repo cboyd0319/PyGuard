@@ -1,10 +1,10 @@
 """PyGuard library modules - v0.8.0 with 55+ security checks and 20+ auto-fixes!"""
 
-from pyguard.lib.advanced_injection import analyze_advanced_injection, AdvancedInjectionVisitor
+from pyguard.lib.advanced_injection import AdvancedInjectionVisitor, analyze_advanced_injection
 
 __all__ = [
-    "analyze_advanced_injection",
     "AdvancedInjectionVisitor",
+    "analyze_advanced_injection",
 ]
 from pyguard.lib.advanced_security import (
     AdvancedSecurityAnalyzer,
@@ -13,25 +13,40 @@ from pyguard.lib.advanced_security import (
     ReDoSDetector,
     TaintAnalyzer,
 )
-from pyguard.lib.api_security import analyze_api_security, APISecurityVisitor, API_SECURITY_RULES
-from pyguard.lib.cloud_security import check_cloud_security, CloudSecurityVisitor, CLOUD_SECURITY_RULES
-from pyguard.lib.dependency_confusion import (
-    analyze_dependency_confusion,
-    analyze_requirements_file,
-    DependencyConfusionVisitor,
-    DEP_CONF001_TYPOSQUATTING,
-    DEP_CONF002_MALICIOUS_PATTERN,
-    DEP_CONF003_NAMESPACE_HIJACK,
-    DEP_CONF004_SUSPICIOUS_NAMING,
-    DEP_CONF005_INSECURE_HTTP,
-    DEP_CONF006_MISSING_VERSION_PIN,
-    DEP_CONF007_MISSING_HASH,
+
+# NEW in v0.3.0: AI-powered explanations
+from pyguard.lib.ai_explainer import (
+    AIExplainer,
+    FixRationale,
+    SecurityExplanation,
+    explain,
 )
+from pyguard.lib.ai_ml_security import (
+    AIML_SECURITY_RULES,
+    AIMLSecurityVisitor,
+    analyze_ai_ml_security,
+)
+from pyguard.lib.api_security import API_SECURITY_RULES, APISecurityVisitor, analyze_api_security
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.async_patterns import AsyncChecker, AsyncIssue
 from pyguard.lib.best_practices import BestPracticesFixer
+from pyguard.lib.blockchain_security import (
+    BLOCKCHAIN_RULES,
+    BlockchainSecurityVisitor,
+    analyze_blockchain_security,
+)
 from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker, BugbearVisitor
+from pyguard.lib.business_logic import (
+    BUSINESS_LOGIC_RULES,
+    BusinessLogicVisitor,
+    analyze_business_logic,
+)
 from pyguard.lib.cache import AnalysisCache, ConfigCache
+from pyguard.lib.cloud_security import (
+    CLOUD_SECURITY_RULES,
+    CloudSecurityVisitor,
+    check_cloud_security,
+)
 from pyguard.lib.comprehensions import ComprehensionChecker, ComprehensionVisitor
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.datetime_patterns import DatetimeChecker, DatetimeIssue
@@ -39,6 +54,18 @@ from pyguard.lib.debugging_patterns import (
     DEBUGGING_RULES,
     DebuggingPatternChecker,
     DebuggingPatternVisitor,
+)
+from pyguard.lib.dependency_confusion import (
+    DEP_CONF001_TYPOSQUATTING,
+    DEP_CONF002_MALICIOUS_PATTERN,
+    DEP_CONF003_NAMESPACE_HIJACK,
+    DEP_CONF004_SUSPICIOUS_NAMING,
+    DEP_CONF005_INSECURE_HTTP,
+    DEP_CONF006_MISSING_VERSION_PIN,
+    DEP_CONF007_MISSING_HASH,
+    DependencyConfusionVisitor,
+    analyze_dependency_confusion,
+    analyze_requirements_file,
 )
 from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 from pyguard.lib.exception_handling import (
@@ -52,19 +79,35 @@ from pyguard.lib.fix_safety import (
     FixSafetyClassifier,
 )
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
+from pyguard.lib.framework_celery import (
+    CELERY_RULES,
+    CelerySecurityVisitor,
+    analyze_celery_security,
+)
 from pyguard.lib.framework_django import DJANGO_RULES, DjangoRulesChecker
+from pyguard.lib.framework_numpy import NUMPY_RULES, NumPySecurityVisitor, analyze_numpy_security
 from pyguard.lib.framework_pandas import PANDAS_RULES, PandasRulesChecker
+from pyguard.lib.framework_pyramid import (
+    PYRAMID_RULES,
+    PyramidSecurityVisitor,
+    analyze_pyramid_security,
+)
 from pyguard.lib.framework_pytest import PYTEST_RULES, PytestRulesChecker
-from pyguard.lib.framework_celery import analyze_celery_security, CelerySecurityVisitor, CELERY_RULES
-from pyguard.lib.framework_tornado import analyze_tornado_security, TornadoSecurityVisitor, TORNADO_RULES
-from pyguard.lib.framework_numpy import analyze_numpy_security, NumPySecurityVisitor, NUMPY_RULES
-from pyguard.lib.framework_tensorflow import analyze_tensorflow_security, TensorFlowSecurityVisitor, TENSORFLOW_RULES
-from pyguard.lib.framework_pyramid import analyze_pyramid_security, PyramidSecurityVisitor, PYRAMID_RULES
-from pyguard.lib.business_logic import analyze_business_logic, BusinessLogicVisitor, BUSINESS_LOGIC_RULES
-from pyguard.lib.mobile_iot_security import analyze_mobile_iot_security, MobileIoTSecurityVisitor, MOBILE_IOT_RULES
-from pyguard.lib.ai_ml_security import analyze_ai_ml_security, AIMLSecurityVisitor, AIML_SECURITY_RULES
-from pyguard.lib.blockchain_security import analyze_blockchain_security, BlockchainSecurityVisitor, BLOCKCHAIN_RULES
-from pyguard.lib.framework_sqlalchemy import analyze_sqlalchemy_security, SQLAlchemySecurityVisitor, SQLALCHEMY_RULES
+from pyguard.lib.framework_sqlalchemy import (
+    SQLALCHEMY_RULES,
+    SQLAlchemySecurityVisitor,
+    analyze_sqlalchemy_security,
+)
+from pyguard.lib.framework_tensorflow import (
+    TENSORFLOW_RULES,
+    TensorFlowSecurityVisitor,
+    analyze_tensorflow_security,
+)
+from pyguard.lib.framework_tornado import (
+    TORNADO_RULES,
+    TornadoSecurityVisitor,
+    analyze_tornado_security,
+)
 from pyguard.lib.git_hooks import (
     GitHooksManager,
     install_git_hooks,
@@ -82,6 +125,11 @@ from pyguard.lib.knowledge_integration import (
 from pyguard.lib.logging_patterns import LoggingChecker, LoggingIssue
 from pyguard.lib.mcp_integration import MCPIntegration, MCPServer
 from pyguard.lib.ml_detection import AnomalyDetector, MLRiskScorer
+from pyguard.lib.mobile_iot_security import (
+    MOBILE_IOT_RULES,
+    MobileIoTSecurityVisitor,
+    analyze_mobile_iot_security,
+)
 
 # NEW in v0.3.0: Notebook security analysis
 from pyguard.lib.notebook_security import (
@@ -90,14 +138,6 @@ from pyguard.lib.notebook_security import (
     NotebookIssue,
     NotebookSecurityAnalyzer,
     scan_notebook,
-)
-
-# NEW in v0.3.0: AI-powered explanations
-from pyguard.lib.ai_explainer import (
-    AIExplainer,
-    FixRationale,
-    SecurityExplanation,
-    explain,
 )
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 
@@ -134,7 +174,11 @@ from pyguard.lib.string_operations import (
     StringOperationsVisitor,
 )
 from pyguard.lib.supply_chain import SBOM, Dependency, SupplyChainAnalyzer
-from pyguard.lib.supply_chain_advanced import analyze_supply_chain_advanced, SupplyChainAdvancedVisitor, SUPPLY_CHAIN_RULES as SUPPLY_CHAIN_ADVANCED_RULES
+from pyguard.lib.supply_chain_advanced import SUPPLY_CHAIN_RULES as SUPPLY_CHAIN_ADVANCED_RULES
+from pyguard.lib.supply_chain_advanced import (
+    SupplyChainAdvancedVisitor,
+    analyze_supply_chain_advanced,
+)
 
 # NEW in v0.8.0: Ultra-advanced auto-fixes
 from pyguard.lib.ultra_advanced_fixes import UltraAdvancedSecurityFixer
@@ -152,49 +196,14 @@ from pyguard.lib.ultra_advanced_security import (
 )
 
 __all__ = [
-    # Core
-    "PyGuardLogger",
-    "FileOperations",
-    "BackupManager",
-    "DiffGenerator",
-    # Analysis
-    "ASTAnalyzer",
-    "SecurityIssue",
-    "CodeQualityIssue",
-    # Fixers
-    "SecurityFixer",
-    "BestPracticesFixer",
-    "FormattingFixer",
-    "WhitespaceFixer",
-    "UltraAdvancedSecurityFixer",  # NEW v0.8.0
-    "EnhancedSecurityFixer",  # NEW Phase 2B - Real code transformations
-    # Advanced Security
-    "AdvancedSecurityAnalyzer",
-    "TaintAnalyzer",
-    "ReDoSDetector",
-    "RaceConditionDetector",
-    "IntegerSecurityAnalyzer",
-    # Ultra-Advanced Security (NEW v0.8.0)
-    "GraphQLInjectionDetector",
-    "SSTIDetector",
-    "JWTSecurityDetector",
-    "APIRateLimitDetector",
-    "ContainerEscapeDetector",
-    "PrototypePollutionDetector",
-    "CachePoisoningDetector",
-    "BusinessLogicDetector",
-    # API Security (NEW - Security Dominance Plan Phase 1)
-    "analyze_api_security",
-    "APISecurityVisitor",
+    "AIML_SECURITY_RULES",
     "API_SECURITY_RULES",
-    # Cloud Security (NEW - Security Dominance Plan Phase 1.3)
-    "check_cloud_security",
-    "CloudSecurityVisitor",
+    "BLOCKCHAIN_RULES",
+    "BUGBEAR_RULES",
+    "BUSINESS_LOGIC_RULES",
+    "CELERY_RULES",
     "CLOUD_SECURITY_RULES",
-    # Dependency Confusion & Supply Chain Attacks (NEW - Security Dominance Plan Phase 1.2)
-    "analyze_dependency_confusion",
-    "analyze_requirements_file",
-    "DependencyConfusionVisitor",
+    "DEBUGGING_RULES",
     "DEP_CONF001_TYPOSQUATTING",
     "DEP_CONF002_MALICIOUS_PATTERN",
     "DEP_CONF003_NAMESPACE_HIJACK",
@@ -202,157 +211,192 @@ __all__ = [
     "DEP_CONF005_INSECURE_HTTP",
     "DEP_CONF006_MISSING_VERSION_PIN",
     "DEP_CONF007_MISSING_HASH",
-    # Supply Chain
-    "SupplyChainAnalyzer",
+    "DJANGO_RULES",
+    "EXCEPTION_HANDLING_RULES",
+    "IMPORT_RULES",
+    "MOBILE_IOT_RULES",
+    "NUMPY_RULES",
+    "PANDAS_RULES",
+    "PIE_RULES",
+    "PYLINT_RULES",
+    "PYRAMID_RULES",
+    "PYTEST_RULES",
+    "REFURB_RULES",
     "SBOM",
+    "SQLALCHEMY_RULES",
+    "SUPPLY_CHAIN_ADVANCED_RULES",
+    "TENSORFLOW_RULES",
+    "TORNADO_RULES",
+    # AI Explainer (NEW v0.3.0)
+    "AIExplainer",
+    "AIMLSecurityVisitor",
+    "APIRateLimitDetector",
+    "APISecurityVisitor",
+    # Analysis
+    "ASTAnalyzer",
+    # Advanced Security
+    "AdvancedSecurityAnalyzer",
+    # Caching
+    "AnalysisCache",
+    # Reporting
+    "AnalysisMetrics",
+    "AnomalyDetector",
+    # Async Patterns (NEW v0.9.0)
+    "AsyncChecker",
+    "AsyncIssue",
+    "BackupManager",
+    "BatchProcessor",
+    "BestPracticesFixer",
+    "BlockchainSecurityVisitor",
+    # Bugbear - Common Mistakes
+    "BugbearChecker",
+    "BugbearVisitor",
+    "BusinessLogicDetector",
+    "BusinessLogicVisitor",
+    "CERTSecureCodingMapper",
+    "CachePoisoningDetector",
+    "CelerySecurityVisitor",
+    "CloudSecurityVisitor",
+    "CodeQualityIssue",
+    # Comprehensions
+    "ComprehensionChecker",
+    "ComprehensionVisitor",
+    "ConfigCache",
+    "ConsoleReporter",
+    "ContainerEscapeDetector",
+    # Datetime Patterns (NEW v0.9.0)
+    "DatetimeChecker",
+    "DatetimeIssue",
+    # Debugging Patterns
+    "DebuggingPatternChecker",
+    "DebuggingPatternVisitor",
     "Dependency",
+    "DependencyConfusionVisitor",
+    "DiffGenerator",
+    # Framework Rules (NEW v0.11.0)
+    "DjangoRulesChecker",
+    "EnhancedSecurityFixer",  # NEW Phase 2B - Real code transformations
+    # Exception Handling
+    "ExceptionHandlingChecker",
+    "ExceptionHandlingVisitor",
+    "FileOperations",
+    "FixClassification",
+    "FixRationale",
+    "FixSafety",
+    # Fix Safety Classification (NEW Phase 2B)
+    "FixSafetyClassifier",
+    "FormattingFixer",
+    "GDPRTechnicalControls",
+    # Git Hooks (NEW v0.4.0)
+    "GitHooksManager",
+    # Ultra-Advanced Security (NEW v0.8.0)
+    "GraphQLInjectionDetector",
+    "HIPAASecurityRule",
+    "HTMLReporter",
+    "IEEE12207Mapper",
+    # Import Rules (NEW v0.11.0)
+    "ImportRulesChecker",
+    "IntegerSecurityAnalyzer",
+    "JSONReporter",
+    "JWTSecurityDetector",
+    "KnowledgeBase",
     # Knowledge Integration
     "KnowledgeIntegration",
-    "KnowledgeBase",
-    "SecurityIntelligence",
+    # Logging Patterns (NEW v0.9.0)
+    "LoggingChecker",
+    "LoggingIssue",
     # MCP Integration
     "MCPIntegration",
     "MCPServer",
     # ML Detection
     "MLRiskScorer",
-    "AnomalyDetector",
-    # Notebook Security (NEW v0.3.0)
-    "NotebookSecurityAnalyzer",
+    "MitreATTACKMapper",
+    "MobileIoTSecurityVisitor",
+    "NotebookCell",
     "NotebookFixer",
     "NotebookIssue",
-    "NotebookCell",
-    "scan_notebook",
-    # AI Explainer (NEW v0.3.0)
-    "AIExplainer",
-    "SecurityExplanation",
-    "FixRationale",
-    "explain",
-    # Standards Integration
-    "StandardsMapper",
-    "SANSTop25Mapper",
-    "CERTSecureCodingMapper",
-    "IEEE12207Mapper",
-    "MitreATTACKMapper",
-    "GDPRTechnicalControls",
-    "HIPAASecurityRule",
-    # Caching
-    "AnalysisCache",
-    "ConfigCache",
+    # Notebook Security (NEW v0.3.0)
+    "NotebookSecurityAnalyzer",
+    "NumPySecurityVisitor",
+    # PEP 8 Comprehensive
+    "PEP8Checker",
+    "PEP8Rules",
+    # PIE Patterns (NEW v0.10.0)
+    "PIEPatternChecker",
+    "PandasRulesChecker",
     # Parallel
     "ParallelProcessor",
-    "BatchProcessor",
-    # Reporting
-    "AnalysisMetrics",
-    "ConsoleReporter",
-    "HTMLReporter",
-    "JSONReporter",
+    # Pathlib Patterns (NEW v0.9.0)
+    "PathlibChecker",
+    "PathlibIssue",
+    "PrototypePollutionDetector",
+    # Core
+    "PyGuardLogger",
+    # Pylint Rules (NEW v0.11.0)
+    "PylintRulesChecker",
+    "PyramidSecurityVisitor",
+    "PytestRulesChecker",
+    "RaceConditionDetector",
+    "ReDoSDetector",
+    # Refurb Patterns (NEW v0.10.0)
+    "RefurbPatternChecker",
+    # Return Patterns
+    "ReturnPatternChecker",
+    "ReturnPatternVisitor",
+    "SANSTop25Mapper",
+    "SQLAlchemySecurityVisitor",
+    "SSTIDetector",
+    "SecurityExplanation",
+    # Fixers
+    "SecurityFixer",
+    "SecurityIntelligence",
+    "SecurityIssue",
+    # Standards Integration
+    "StandardsMapper",
     # String Operations
     "StringIssue",
     "StringOperationsFixer",
     "StringOperationsVisitor",
-    # PEP 8 Comprehensive
-    "PEP8Checker",
-    "PEP8Rules",
-    # Bugbear - Common Mistakes
-    "BugbearChecker",
-    "BugbearVisitor",
-    "BUGBEAR_RULES",
-    # Exception Handling
-    "ExceptionHandlingChecker",
-    "ExceptionHandlingVisitor",
-    "EXCEPTION_HANDLING_RULES",
-    # Fix Safety Classification (NEW Phase 2B)
-    "FixSafetyClassifier",
-    "FixSafety",
-    "FixClassification",
-    # Return Patterns
-    "ReturnPatternChecker",
-    "ReturnPatternVisitor",
-    # Comprehensions
-    "ComprehensionChecker",
-    "ComprehensionVisitor",
-    # Debugging Patterns
-    "DebuggingPatternChecker",
-    "DebuggingPatternVisitor",
-    "DEBUGGING_RULES",
-    # Pathlib Patterns (NEW v0.9.0)
-    "PathlibChecker",
-    "PathlibIssue",
-    # Async Patterns (NEW v0.9.0)
-    "AsyncChecker",
-    "AsyncIssue",
-    # Logging Patterns (NEW v0.9.0)
-    "LoggingChecker",
-    "LoggingIssue",
-    # Datetime Patterns (NEW v0.9.0)
-    "DatetimeChecker",
-    "DatetimeIssue",
-    # Refurb Patterns (NEW v0.10.0)
-    "RefurbPatternChecker",
-    "REFURB_RULES",
-    # PIE Patterns (NEW v0.10.0)
-    "PIEPatternChecker",
-    "PIE_RULES",
-    # Import Rules (NEW v0.11.0)
-    "ImportRulesChecker",
-    "IMPORT_RULES",
-    # Pylint Rules (NEW v0.11.0)
-    "PylintRulesChecker",
-    "PYLINT_RULES",
-    # Framework Rules (NEW v0.11.0)
-    "DjangoRulesChecker",
-    "DJANGO_RULES",
-    "PytestRulesChecker",
-    "PYTEST_RULES",
-    "PandasRulesChecker",
-    "PANDAS_RULES",
-    # Celery Framework (NEW - Security Dominance Plan Week 11-12)
-    "analyze_celery_security",
-    "CelerySecurityVisitor",
-    "CELERY_RULES",
-    # Tornado Framework (NEW - Security Dominance Plan Week 11-12)
-    "analyze_tornado_security",
-    "TornadoSecurityVisitor",
-    "TORNADO_RULES",
-    # NumPy Framework (NEW - Security Dominance Plan Week 13-14)
-    "analyze_numpy_security",
-    "NumPySecurityVisitor",
-    "NUMPY_RULES",
-    # TensorFlow Framework (NEW - Security Dominance Plan Week 13-14)
-    "analyze_tensorflow_security",
+    "SupplyChainAdvancedVisitor",
+    # Supply Chain
+    "SupplyChainAnalyzer",
+    "TaintAnalyzer",
     "TensorFlowSecurityVisitor",
-    "TENSORFLOW_RULES",
-    # Pyramid Framework (NEW - Security Dominance Plan Week 15-16)
-    "analyze_pyramid_security",
-    "PyramidSecurityVisitor",
-    "PYRAMID_RULES",
-    # Business Logic Security (NEW - Security Dominance Plan Week 15-16)
-    "analyze_business_logic",
-    "BusinessLogicVisitor",
-    "BUSINESS_LOGIC_RULES",
-    # Mobile & IoT Security (NEW - Security Dominance Plan Month 5-6)
-    "analyze_mobile_iot_security",
-    "MobileIoTSecurityVisitor",
-    "MOBILE_IOT_RULES",
+    "TornadoSecurityVisitor",
+    "UltraAdvancedSecurityFixer",  # NEW v0.8.0
+    "WhitespaceFixer",
     # AI/ML Security (NEW - Security Dominance Plan Month 5-6)
     "analyze_ai_ml_security",
-    "AIMLSecurityVisitor",
-    "AIML_SECURITY_RULES",
+    # API Security (NEW - Security Dominance Plan Phase 1)
+    "analyze_api_security",
     # Blockchain & Web3 Security (NEW - Security Dominance Plan Month 5-6)
     "analyze_blockchain_security",
-    "BlockchainSecurityVisitor",
-    "BLOCKCHAIN_RULES",
+    # Business Logic Security (NEW - Security Dominance Plan Week 15-16)
+    "analyze_business_logic",
+    # Celery Framework (NEW - Security Dominance Plan Week 11-12)
+    "analyze_celery_security",
+    # Dependency Confusion & Supply Chain Attacks (NEW - Security Dominance Plan Phase 1.2)
+    "analyze_dependency_confusion",
+    # Mobile & IoT Security (NEW - Security Dominance Plan Month 5-6)
+    "analyze_mobile_iot_security",
+    # NumPy Framework (NEW - Security Dominance Plan Week 13-14)
+    "analyze_numpy_security",
+    # Pyramid Framework (NEW - Security Dominance Plan Week 15-16)
+    "analyze_pyramid_security",
+    "analyze_requirements_file",
     # SQLAlchemy Framework (NEW - P0 Priority - Security Dominance Plan Month 5-6)
     "analyze_sqlalchemy_security",
-    "SQLAlchemySecurityVisitor",
-    "SQLALCHEMY_RULES",
     # Supply Chain Advanced (NEW - Security Dominance Plan Week 11-12)
     "analyze_supply_chain_advanced",
-    "SupplyChainAdvancedVisitor",
-    "SUPPLY_CHAIN_ADVANCED_RULES",
-    # Git Hooks (NEW v0.4.0)
-    "GitHooksManager",
+    # TensorFlow Framework (NEW - Security Dominance Plan Week 13-14)
+    "analyze_tensorflow_security",
+    # Tornado Framework (NEW - Security Dominance Plan Week 11-12)
+    "analyze_tornado_security",
+    # Cloud Security (NEW - Security Dominance Plan Phase 1.3)
+    "check_cloud_security",
+    "explain",
     "install_git_hooks",
+    "scan_notebook",
     "uninstall_git_hooks",
     "validate_git_hooks",
 ]

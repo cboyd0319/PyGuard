@@ -34,7 +34,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -53,24 +52,23 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_sanic_import = False
         self.has_blueprint_import = False
         self.has_websocket_import = False
-        self.route_functions: Set[str] = set()
-        self.websocket_routes: Set[str] = set()
-        self.middleware_functions: Set[str] = set()
+        self.route_functions: set[str] = set()
+        self.websocket_routes: set[str] = set()
+        self.middleware_functions: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Sanic imports."""
-        if node.module:
-            if node.module.startswith("sanic"):
-                self.has_sanic_import = True
-                for alias in node.names:
-                    if alias.name == "Blueprint":
-                        self.has_blueprint_import = True
-                    elif alias.name == "Websocket":
-                        self.has_websocket_import = True
+        if node.module and node.module.startswith("sanic"):
+            self.has_sanic_import = True
+            for alias in node.names:
+                if alias.name == "Blueprint":
+                    self.has_blueprint_import = True
+                elif alias.name == "Websocket":
+                    self.has_websocket_import = True
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -180,7 +178,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         """Check for route parameter injection vulnerabilities (SANIC001)."""
         # Track variables that contain formatted strings
         formatted_vars = set()
-        
+
         # First pass: find variables assigned with string formatting
         for child in ast.walk(node):
             if isinstance(child, ast.Assign):
@@ -188,11 +186,14 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     if isinstance(target, ast.Name):
                         # Check if the value is a formatted string
                         if isinstance(child.value, ast.Call):
-                            if isinstance(child.value.func, ast.Attribute) and child.value.func.attr == "format":
+                            if (
+                                isinstance(child.value.func, ast.Attribute)
+                                and child.value.func.attr == "format"
+                            ):
                                 formatted_vars.add(target.id)
                         elif isinstance(child.value, ast.JoinedStr):
                             formatted_vars.add(target.id)
-        
+
         # Second pass: check if formatted variables are used in SQL queries
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
@@ -205,21 +206,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                                 isinstance(arg, ast.Call)
                                 and isinstance(arg.func, ast.Attribute)
                                 and arg.func.attr == "format"
-                            ):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="SANIC001",
-                                        category=RuleCategory.SECURITY,
-                                        message="Route parameter used in SQL query without sanitization",
-                                        severity=RuleSeverity.HIGH,
-                                        line_number=child.lineno,
-                                        column=child.col_offset,
-                                        file_path=self.file_path,
-                                        code_snippet=self._get_code_snippet(child.lineno),
-                                    )
-                                )
-                            # Variable that was formatted earlier
-                            elif isinstance(arg, ast.Name) and arg.id in formatted_vars:
+                            ) or (isinstance(arg, ast.Name) and arg.id in formatted_vars):
                                 self.violations.append(
                                     RuleViolation(
                                         rule_id="SANIC001",
@@ -244,9 +231,11 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                 if "auth" in decorator.id.lower() or "protected" in decorator.id.lower():
                     has_auth_decorator = True
             elif isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Name):
-                    if "auth" in decorator.func.id.lower() or "protected" in decorator.func.id.lower():
-                        has_auth_decorator = True
+                if isinstance(decorator.func, ast.Name) and (
+                    "auth" in decorator.func.id.lower()
+                    or "protected" in decorator.func.id.lower()
+                ):
+                    has_auth_decorator = True
 
         # Check for auth checks in function body
         for child in ast.walk(node):
@@ -284,15 +273,23 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                 for stmt in ast.walk(parent_func):
                     if isinstance(stmt, ast.Compare):
                         # Check if comparing len() call or data size
-                        left_is_len = isinstance(stmt.left, ast.Call) and isinstance(stmt.left.func, ast.Name) and stmt.left.func.id == "len"
+                        left_is_len = (
+                            isinstance(stmt.left, ast.Call)
+                            and isinstance(stmt.left.func, ast.Name)
+                            and stmt.left.func.id == "len"
+                        )
                         # Check if any comparator mentions size-related variables
                         for comp in stmt.comparators:
                             comp_is_size = False
-                            if isinstance(comp, ast.Name) and any(keyword in comp.id.lower() for keyword in ["size", "limit", "max"]):
+                            if (isinstance(comp, ast.Name) and any(
+                                keyword in comp.id.lower() for keyword in ["size", "limit", "max"]
+                            )) or (
+                                isinstance(comp, ast.Constant)
+                                and isinstance(comp.value, int)
+                                and comp.value > 1000
+                            ):
                                 comp_is_size = True
-                            elif isinstance(comp, ast.Constant) and isinstance(comp.value, int) and comp.value > 1000:
-                                comp_is_size = True
-                            
+
                             if left_is_len and comp_is_size:
                                 has_size_limit = True
                                 break
@@ -413,7 +410,12 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     for arg in child.value.args:
                         uses_request_data = False
                         if isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name):
-                            if arg.value.id == "request" and arg.attr in ("json", "args", "form", "body"):
+                            if arg.value.id == "request" and arg.attr in (
+                                "json",
+                                "args",
+                                "form",
+                                "body",
+                            ):
                                 uses_request_data = True
                         elif isinstance(arg, ast.Name):
                             # Check if this variable was assigned from request data
@@ -422,9 +424,12 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                                     for target in stmt.targets:
                                         if isinstance(target, ast.Name) and target.id == arg.id:
                                             if isinstance(stmt.value, ast.Attribute):
-                                                if isinstance(stmt.value.value, ast.Name) and stmt.value.value.id == "request":
+                                                if (
+                                                    isinstance(stmt.value.value, ast.Name)
+                                                    and stmt.value.value.id == "request"
+                                                ):
                                                     uses_request_data = True
-                        
+
                         if uses_request_data:
                             # Check if there's validation
                             has_validation = False
@@ -495,7 +500,14 @@ class SanicSecurityVisitor(ast.NodeVisitor):
             static_path_arg = node.args[1]
             path_str = ast.get_source_segment(self.code, static_path_arg)
             if path_str:
-                sensitive_paths = [".env", "config", "secrets", ".git", "__pycache__", "node_modules"]
+                sensitive_paths = [
+                    ".env",
+                    "config",
+                    "secrets",
+                    ".git",
+                    "__pycache__",
+                    "node_modules",
+                ]
                 if any(sensitive in path_str.lower() for sensitive in sensitive_paths):
                     self.violations.append(
                         RuleViolation(
@@ -581,7 +593,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         """Check listener function body for sensitive data exposure (SANIC013)."""
         # Check for sensitive variable names in the function body
         sensitive_keywords = ["password", "secret", "key", "token", "api_key", "private_key"]
-        
+
         for child in ast.walk(node):
             # Check variable assignments
             if isinstance(child, ast.Name):
@@ -600,7 +612,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                         )
                     )
                     return  # Only report once per function
-            
+
             # Check string literals that look like secrets
             if isinstance(child, ast.Constant) and isinstance(child.value, str):
                 value = child.value.lower()
@@ -632,7 +644,10 @@ class SanicSecurityVisitor(ast.NodeVisitor):
 
             # Check for listeners that might expose secrets
             listener_code = ast.get_source_segment(self.code, node)
-            if listener_code and any(keyword in listener_code.lower() for keyword in ["password", "secret", "key", "token"]):
+            if listener_code and any(
+                keyword in listener_code.lower()
+                for keyword in ["password", "secret", "key", "token"]
+            ):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SANIC013",
@@ -661,9 +676,8 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         # Check if running on default port without SSL
         port = None
         for keyword in node.keywords:
-            if keyword.arg == "port":
-                if isinstance(keyword.value, ast.Constant):
-                    port = keyword.value.value
+            if keyword.arg == "port" and isinstance(keyword.value, ast.Constant):
+                port = keyword.value.value
 
         # If running on port 80 or 8000 without SSL in production
         if port in (80, 8000) and not has_ssl and not has_cert:
@@ -687,7 +701,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         return "\n".join(self.lines[start:end])
 
 
-def analyze_sanic_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_sanic_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze code for Sanic security vulnerabilities.
 

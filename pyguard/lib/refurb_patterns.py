@@ -10,9 +10,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -31,7 +30,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
 
     def visit_While(self, node: ast.While) -> None:
         """Detect while loops that should be for loops (FURB101)."""
@@ -159,49 +158,47 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                     )
 
         # FURB111: Use Path.iterdir() instead of os.listdir()
-        if isinstance(node.func, ast.Attribute):
-            if (
-                isinstance(node.func.value, ast.Name)
-                and node.func.value.id == "os"
-                and node.func.attr == "listdir"
-            ):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB111",
-                        message="Use Path.iterdir() instead of os.listdir() for better path handling",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.MODERNIZATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.func, ast.Attribute) and (
+            isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "os"
+            and node.func.attr == "listdir"
+        ):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB111",
+                    message="Use Path.iterdir() instead of os.listdir() for better path handling",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.MODERNIZATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # FURB113: Use extend() instead of repeated append()
         # This requires tracking multiple statements, handled separately
 
         # FURB114: Use str.replace() method
-        if isinstance(node.func, ast.Attribute):
-            if (
-                isinstance(node.func.value, ast.Call)
-                and isinstance(node.func.value.func, ast.Attribute)
-                and node.func.value.func.attr == "split"
-                and node.func.attr == "join"
-            ):
-                # Pattern: ''.join(s.split())
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB114",
-                        message="Consider using str.replace() for simple string replacements",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.SIMPLIFICATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.func, ast.Attribute) and (
+            isinstance(node.func.value, ast.Call)
+            and isinstance(node.func.value.func, ast.Attribute)
+            and node.func.value.func.attr == "split"
+            and node.func.attr == "join"
+        ):
+            # Pattern: ''.join(s.split())
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB114",
+                    message="Consider using str.replace() for simple string replacements",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # FURB117: Use min()/max() with default parameter
         if isinstance(node.func, ast.Name) and node.func.id in ("min", "max"):
@@ -335,67 +332,64 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Detect attribute access patterns (FURB108, FURB115, FURB121)."""
         # FURB108: os.path.join() should use Path() / operator
-        if isinstance(node.value, ast.Attribute):
-            if (
-                isinstance(node.value.value, ast.Name)
-                and node.value.value.id == "os"
-                and node.value.attr == "path"
-                and node.attr in ("join", "exists", "isfile", "isdir")
-            ):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB108",
-                        message=f"Use pathlib.Path instead of os.path.{node.attr}()",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.MODERNIZATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.value, ast.Attribute) and (
+            isinstance(node.value.value, ast.Name)
+            and node.value.value.id == "os"
+            and node.value.attr == "path"
+            and node.attr in ("join", "exists", "isfile", "isdir")
+        ):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB108",
+                    message=f"Use pathlib.Path instead of os.path.{node.attr}()",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.MODERNIZATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # FURB115: Use pathlib for path operations
-        if isinstance(node.value, ast.Attribute):
-            if (
-                isinstance(node.value.value, ast.Name)
-                and node.value.value.id == "os"
-                and node.value.attr == "path"
-                and node.attr in ("abspath", "dirname", "basename", "splitext")
-            ):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB115",
-                        message=f"Use pathlib.Path.{node.attr}() instead of os.path.{node.attr}()",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.MODERNIZATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.value, ast.Attribute) and (
+            isinstance(node.value.value, ast.Name)
+            and node.value.value.id == "os"
+            and node.value.attr == "path"
+            and node.attr in ("abspath", "dirname", "basename", "splitext")
+        ):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB115",
+                    message=f"Use pathlib.Path.{node.attr}() instead of os.path.{node.attr}()",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.MODERNIZATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # FURB121: Use pathlib's stat methods
-        if isinstance(node.value, ast.Attribute):
-            if (
-                isinstance(node.value.value, ast.Name)
-                and node.value.value.id == "os"
-                and node.value.attr == "path"
-                and node.attr in ("getsize", "getmtime", "getctime")
-            ):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB121",
-                        message=f"Use Path.stat().st_size/st_mtime instead of os.path.{node.attr}()",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.MODERNIZATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.value, ast.Attribute) and (
+            isinstance(node.value.value, ast.Name)
+            and node.value.value.id == "os"
+            and node.value.attr == "path"
+            and node.attr in ("getsize", "getmtime", "getctime")
+        ):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB121",
+                    message=f"Use Path.stat().st_size/st_mtime instead of os.path.{node.attr}()",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.MODERNIZATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         self.generic_visit(node)
 
@@ -407,20 +401,19 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                 if isinstance(node.slice, ast.UnaryOp):
                     if isinstance(node.slice.op, ast.USub) and isinstance(
                         node.slice.operand, ast.Constant
-                    ):
-                        if node.slice.operand.value == 1:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FURB132",
-                                    message="Use max() instead of sorted()[-1] for better performance",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.PERFORMANCE,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
+                    ) and node.slice.operand.value == 1:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB132",
+                                message="Use max() instead of sorted()[-1] for better performance",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.MEDIUM,
+                                category=RuleCategory.PERFORMANCE,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
                             )
+                        )
                 # FURB133: Use min() instead of sorted()[0]
                 elif isinstance(node.slice, ast.Constant) and node.slice.value == 0:
                     self.violations.append(
@@ -582,21 +575,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         # FURB136: Delete instead of assigning None/empty
         for stmt in node.body:
-            if isinstance(stmt, ast.Assign):
-                if isinstance(stmt.value, ast.Constant):
-                    if stmt.value.value is None or stmt.value.value == "" or stmt.value.value == []:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB136",
-                                message="Use 'del' instead of assigning None/empty value",
-                                line_number=stmt.lineno,
-                                column=stmt.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.STYLE,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
+            if isinstance(stmt, ast.Assign) and isinstance(stmt.value, ast.Constant):
+                if stmt.value.value is None or stmt.value.value in ("", []):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB136",
+                            message="Use 'del' instead of assigning None/empty value",
+                            line_number=stmt.lineno,
+                            column=stmt.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.STYLE,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
                         )
+                    )
 
         self.generic_visit(node)
 
@@ -811,21 +803,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub):
             if isinstance(node.value.operand, ast.UnaryOp) and isinstance(
                 node.value.operand.op, ast.USub
-            ):
-                if isinstance(node.value.operand.operand, ast.BinOp):
-                    if isinstance(node.value.operand.operand.op, ast.FloorDiv):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB139",
-                                message="Use math.ceil(x/y) instead of -(-x//y)",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SIMPLIFICATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
+            ) and isinstance(node.value.operand.operand, ast.BinOp):
+                if isinstance(node.value.operand.operand.op, ast.FloorDiv):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB139",
+                            message="Use math.ceil(x/y) instead of -(-x//y)",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
                         )
+                    )
 
         self.generic_visit(node)
 
@@ -915,21 +906,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Detect augmented assignment patterns (FURB141)."""
         # FURB141: Use list.extend() instead of list += [item]
-        if isinstance(node.op, ast.Add):
-            if isinstance(node.value, ast.List):
-                if len(node.value.elts) == 1:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB141",
-                            message="Use list.append() instead of list += [item]",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.PERFORMANCE,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
+        if isinstance(node.op, ast.Add) and isinstance(node.value, ast.List):
+            if len(node.value.elts) == 1:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB141",
+                        message="Use list.append() instead of list += [item]",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.PERFORMANCE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
+                )
 
         self.generic_visit(node)
 
@@ -940,7 +930,7 @@ class RefurbPatternChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for refactoring opportunities.
 
@@ -967,7 +957,7 @@ class RefurbPatternChecker:
             self.logger.error(f"Error checking file: {e}", file_path=str(file_path))
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, int]:
+    def fix_file(self, file_path: Path) -> tuple[bool, int]:
         """
         Automatically fix refactoring opportunities in a file.
 

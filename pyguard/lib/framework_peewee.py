@@ -30,7 +30,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.custom_rules import RuleViolation
 
@@ -42,10 +41,10 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_peewee_import = False
-        self.peewee_aliases: Set[str] = {"peewee"}
-        self.model_classes: Set[str] = set()
+        self.peewee_aliases: set[str] = {"peewee"}
+        self.model_classes: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track Peewee imports."""
@@ -79,16 +78,16 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
 
         # Check for SQL injection via raw queries (PEE002)
         self._check_raw_query_injection(node)
-        
+
         # Check for unsafe database selection (PEE003)
         self._check_database_selection(node)
-        
+
         # Check for transaction handling issues (PEE004)
         self._check_transaction_handling(node)
-        
+
         # Check for Playhouse extension security (PEE010)
         self._check_playhouse_security(node)
-        
+
         # Check for field validation bypasses (PEE011)
         self._check_field_validation(node)
 
@@ -99,19 +98,19 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         if not self.has_peewee_import:
             self.generic_visit(node)
             return
-        
+
         # Check for model metadata exposure (PEE012)
         self._check_metadata_exposure(node)
-        
+
         self.generic_visit(node)
 
     def _check_raw_query_injection(self, node: ast.Call) -> None:
         """Check for SQL injection via raw queries (PEE002)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for dangerous raw query methods
         dangerous_methods = ["execute_sql", "raw", "execute"]
-        
+
         if any(method in func_name for method in dangerous_methods):
             # Check if there's string formatting in the surrounding context
             line_num = node.lineno
@@ -119,10 +118,10 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
                 # Check current line and previous 10 lines for string formatting
                 start_line = max(0, line_num - 10)
                 context_lines = self.lines[start_line:line_num]
-                context = '\n'.join(context_lines)
-                
+                context = "\n".join(context_lines)
+
                 # Check for various string formatting patterns in context
-                if any(pattern in context for pattern in ['.format(', 'f"', "f'", ' % ', ' + "']):
+                if any(pattern in context for pattern in [".format(", 'f"', "f'", " % ", ' + "']):
                     self.violations.append(
                         RuleViolation(
                             rule_id="PEE002",
@@ -139,10 +138,10 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
     def _check_database_selection(self, node: ast.Call) -> None:
         """Check for unsafe database selection (PEE003)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for Database initialization with user-controlled strings
         database_funcs = ["Database", "SqliteDatabase", "PostgresqlDatabase", "MySQLDatabase"]
-        
+
         if any(db_func in func_name for db_func in database_funcs):
             # Check if argument is a variable (not a constant string)
             if node.args:
@@ -151,7 +150,9 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
                 if isinstance(first_arg, ast.Name):
                     # Look for patterns in variable name or in context
                     var_name = first_arg.id
-                    if self._is_potentially_user_input(first_arg) or self._variable_from_user_input(var_name, node.lineno):
+                    if self._is_potentially_user_input(first_arg) or self._variable_from_user_input(
+                        var_name, node.lineno
+                    ):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="PEE003",
@@ -168,7 +169,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
     def _check_transaction_handling(self, node: ast.Call) -> None:
         """Check for transaction handling issues (PEE004)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for transactions without proper exception handling
         if "atomic" in func_name or "transaction" in func_name:
             if not self._has_exception_handling_nearby(node):
@@ -188,10 +189,10 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
     def _check_playhouse_security(self, node: ast.Call) -> None:
         """Check for Playhouse extension security (PEE010)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for unsafe shortcuts and extensions
         playhouse_risky = ["ReconnectMixin", "RetryOperationalError"]
-        
+
         if any(risky in func_name for risky in playhouse_risky):
             self.violations.append(
                 RuleViolation(
@@ -209,10 +210,10 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
     def _check_field_validation(self, node: ast.Call) -> None:
         """Check for field validation bypasses (PEE011)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for insert_many or bulk operations without validation
         bulk_operations = ["insert_many", "bulk_create", "bulk_update"]
-        
+
         if any(bulk in func_name for bulk in bulk_operations):
             if not self._has_validation_nearby(node):
                 self.violations.append(
@@ -232,7 +233,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         """Check for model metadata exposure (PEE012)."""
         # Check for exposure of internal metadata
         sensitive_attrs = ["_meta", "_schema", "_data", "dirty_fields"]
-        
+
         if node.attr in sensitive_attrs:
             # Check if this is in a potentially public context
             if self._in_public_context(node):
@@ -253,7 +254,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         """Extract function name from a call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -270,14 +271,11 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         if isinstance(node, ast.JoinedStr):
             return True
         # Check for .format()
-        elif isinstance(node, ast.Call):
+        if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
                 return True
         # Check for % formatting
-        elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
-            return True
-        # Check for string concatenation
-        elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        elif (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod)) or (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add)):
             return True
         return False
 
@@ -286,9 +284,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             user_input_patterns = ["input", "user", "request", "param", "arg", "config"]
             return any(pattern in node.id.lower() for pattern in user_input_patterns)
-        elif isinstance(node, ast.Attribute):
-            return True
-        return False
+        return bool(isinstance(node, ast.Attribute))
 
     def _variable_from_user_input(self, var_name: str, line_num: int) -> bool:
         """Check if a variable is assigned from user input in previous lines."""
@@ -296,8 +292,8 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
             # Check previous 10 lines for assignment from user input
             start_line = max(0, line_num - 10)
             context_lines = self.lines[start_line:line_num]
-            context = '\n'.join(context_lines)
-            
+            context = "\n".join(context_lines)
+
             # Check if variable is assigned from request, user input, etc.
             if var_name in context:
                 user_patterns = ["request", "input(", "user", "param", "arg", ".get("]
@@ -309,7 +305,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
             # Check surrounding context for try/except
-            context = "\n".join(self.lines[max(0, line - 5):min(len(self.lines), line + 10)])
+            context = "\n".join(self.lines[max(0, line - 5) : min(len(self.lines), line + 10)])
             error_patterns = ["try:", "except", "catch", "with"]
             return any(pattern in context.lower() for pattern in error_patterns)
         return False
@@ -318,7 +314,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         """Check if there's validation near a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):line])
+            context = "\n".join(self.lines[max(0, line - 10) : line])
             validation_patterns = ["validate", "check", "clean", "sanitize", "verify"]
             return any(pattern in context.lower() for pattern in validation_patterns)
         return False
@@ -327,20 +323,20 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         """Check if an attribute access is in a potentially public context."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):min(len(self.lines), line + 10)])
+            context = "\n".join(self.lines[max(0, line - 10) : min(len(self.lines), line + 10)])
             public_patterns = ["return", "serialize", "json", "dict", "api", "response"]
             return any(pattern in context.lower() for pattern in public_patterns)
         return False
 
 
-def analyze_peewee_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_peewee_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for Peewee ORM security vulnerabilities.
-    
+
     Args:
         file_path: Path to the Python file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -348,7 +344,7 @@ def analyze_peewee_security(file_path: Path, code: str) -> List[RuleViolation]:
         tree = ast.parse(code)
     except SyntaxError:
         return []
-    
+
     visitor = PeeweeSecurityVisitor(file_path, code)
     visitor.visit(tree)
     return visitor.violations

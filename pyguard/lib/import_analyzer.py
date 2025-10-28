@@ -4,9 +4,8 @@ Analyze Python imports using ripgrep for performance.
 Detects circular imports, god modules, and other import-related issues.
 """
 
-import subprocess
 from collections import Counter, defaultdict
-from typing import List, Tuple
+import subprocess
 
 
 class ImportAnalyzer:
@@ -15,7 +14,7 @@ class ImportAnalyzer:
     """
 
     @staticmethod
-    def find_circular_imports(path: str) -> List[Tuple[str, str]]:
+    def find_circular_imports(path: str) -> list[tuple[str, str]]:
         """
         Detect potential circular import issues.
 
@@ -29,25 +28,25 @@ class ImportAnalyzer:
             # Extract all imports from Python files
             result = subprocess.run(
                 [
-                    'rg',
-                    '--type',
-                    'py',
-                    '--no-heading',
-                    r'^(from\s+(\S+)\s+import|import\s+(\S+))',
-                    '--only-matching',
-                    '--replace',
-                    '$2$3',
+                    "rg",
+                    "--type",
+                    "py",
+                    "--no-heading",
+                    r"^(from\s+(\S+)\s+import|import\s+(\S+))",
+                    "--only-matching",
+                    "--replace",
+                    "$2$3",
                     path,
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=60,
             )
 
             imports = defaultdict(set)
-            for line in result.stdout.strip().split('\n'):
-                if ':' in line:
-                    file_path, imported_module = line.split(':', 1)
+            for line in result.stdout.strip().split("\n"):
+                if ":" in line:
+                    file_path, imported_module = line.split(":", 1)
                     imports[file_path].add(imported_module.strip())
 
             # Detect circular dependencies (simplified)
@@ -56,8 +55,8 @@ class ImportAnalyzer:
                 for file_b, imports_b in imports.items():
                     if file_a != file_b:
                         # Check if A imports B and B imports A
-                        module_a = file_a.replace('/', '.').replace('.py', '')
-                        module_b = file_b.replace('/', '.').replace('.py', '')
+                        module_a = file_a.replace("/", ".").replace(".py", "")
+                        module_b = file_b.replace("/", ".").replace(".py", "")
 
                         if module_b in imports_a and module_a in imports_b:
                             circular.append((file_a, file_b))
@@ -72,7 +71,7 @@ class ImportAnalyzer:
             return []
 
     @staticmethod
-    def find_god_modules(path: str, import_threshold: int = 20) -> List[Tuple[str, int]]:
+    def find_god_modules(path: str, import_threshold: int = 20) -> list[tuple[str, int]]:
         """
         Find modules imported by too many other modules (god modules).
 
@@ -86,25 +85,25 @@ class ImportAnalyzer:
         try:
             result = subprocess.run(
                 [
-                    'rg',
-                    '--type',
-                    'py',
-                    r'^from\s+(\S+)\s+import|^import\s+(\S+)',
-                    '--only-matching',
-                    '--replace',
-                    '$1$2',
+                    "rg",
+                    "--type",
+                    "py",
+                    r"^from\s+(\S+)\s+import|^import\s+(\S+)",
+                    "--only-matching",
+                    "--replace",
+                    "$1$2",
                     path,
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=60,
             )
 
             imports: Counter[str] = Counter()
 
-            for line in result.stdout.strip().split('\n'):
+            for line in result.stdout.strip().split("\n"):
                 if line:
-                    module = line.split('.')[0]  # Top-level module
+                    module = line.split(".")[0]  # Top-level module
                     imports[module] += 1
 
             god_modules = [

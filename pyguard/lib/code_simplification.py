@@ -8,7 +8,6 @@ while maintaining the same functionality. Aligned with flake8-simplify rules.
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -34,9 +33,9 @@ class SimplificationVisitor(ast.NodeVisitor):
     Implements flake8-simplify-style checks.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize simplification visitor."""
-        self.issues: List[SimplificationIssue] = []
+        self.issues: list[SimplificationIssue] = []
         self.source_lines = source_lines
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -314,7 +313,7 @@ class SimplificationVisitor(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare):
         """Visit comparison nodes."""
         # SIM201-204: Compare with True/False/None using 'is'
-        for op, comparator in zip(node.ops, node.comparators):
+        for op, comparator in zip(node.ops, node.comparators, strict=False):
             if isinstance(comparator, ast.Constant):
                 if comparator.value in [True, False]:
                     # Only flag == or != comparisons, not other comparison operators
@@ -346,25 +345,24 @@ class SimplificationVisitor(ast.NodeVisitor):
                         )
 
             # SIM118: Use 'key in dict' instead of 'key in dict.keys()'
-            if isinstance(op, ast.In) and isinstance(comparator, ast.Call):
-                if (
-                    isinstance(comparator.func, ast.Attribute)
-                    and comparator.func.attr
-                    == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
-                    and len(comparator.args) == 0
-                ):
-                    self.issues.append(
-                        SimplificationIssue(
-                            severity="LOW",
-                            category="Code Simplification",
-                            message="Use 'key in dict' instead of 'key in dict.keys()'",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion="Remove .keys() call - 'in' checks keys by default",
-                            rule_id="SIM118",
-                        )
+            if isinstance(op, ast.In) and isinstance(comparator, ast.Call) and (
+                isinstance(comparator.func, ast.Attribute)
+                and comparator.func.attr
+                == "keys"  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
+                and len(comparator.args) == 0
+            ):
+                self.issues.append(
+                    SimplificationIssue(
+                        severity="LOW",
+                        category="Code Simplification",
+                        message="Use 'key in dict' instead of 'key in dict.keys()'",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Remove .keys() call - 'in' checks keys by default",
+                        rule_id="SIM118",
                     )
+                )
 
         # SIM300-301: Simplify negated comparisons
         if isinstance(node, ast.Compare) and len(node.ops) == 1 and len(node.comparators) == 1:
@@ -669,7 +667,7 @@ class SimplificationVisitor(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -690,7 +688,7 @@ class CodeSimplificationFixer:
         self.file_ops = FileOperations()
         self.fixes_applied = []
 
-    def scan_file_for_issues(self, file_path: Path) -> List[SimplificationIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[SimplificationIssue]:
         """
         Scan a file for simplification issues.
 
@@ -713,7 +711,7 @@ class CodeSimplificationFixer:
         except SyntaxError:
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply simplification fixes to a Python file.
 

@@ -11,7 +11,6 @@ Based on Ruff TRY rules: https://docs.astral.sh/ruff/rules/#tryceratops-try
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -38,7 +37,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
     def __init__(self, file_path: Path):
         """Initialize visitor."""
         self.file_path = file_path
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.in_except_handler = False
 
     def visit_Raise(self, node: ast.Raise) -> None:
@@ -280,7 +279,7 @@ class ExceptionHandlingChecker:
         """Initialize checker."""
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a file for exception handling issues.
 
@@ -313,7 +312,7 @@ class ExceptionHandlingChecker:
             )
             return []
 
-    def check_code(self, code: str, file_path: Optional[Path] = None) -> List[RuleViolation]:
+    def check_code(self, code: str, file_path: Path | None = None) -> list[RuleViolation]:
         """
         Check code for exception handling issues.
 

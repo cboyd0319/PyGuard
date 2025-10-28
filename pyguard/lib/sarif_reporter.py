@@ -8,12 +8,12 @@ SARIF Specification: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0
 GitHub Integration: https://docs.github.com/en/code-security/code-scanning
 """
 
-import json
-import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+import uuid
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -28,7 +28,7 @@ class SARIFRule:
     full_description: str
     help_text: str
     default_level: str
-    properties: Optional[Dict[str, Any]] = None
+    properties: dict[str, Any] | None = None
 
 
 class SARIFReporter:
@@ -61,11 +61,11 @@ class SARIFReporter:
 
     def generate_report(
         self,
-        issues: List[Dict[str, Any]],
+        issues: list[dict[str, Any]],
         tool_name: str = "PyGuard",
         tool_version: str = "0.3.0",
-        repository_uri: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        repository_uri: str | None = None,
+    ) -> dict[str, Any]:
         """
         Generate SARIF 2.1.0 compliant report.
 
@@ -85,7 +85,7 @@ class SARIFReporter:
         results = self._convert_issues_to_results(issues)
 
         # Build SARIF report structure
-        run: Dict[str, Any] = {
+        run: dict[str, Any] = {
             "tool": {
                 "driver": {
                     "name": tool_name,
@@ -117,7 +117,7 @@ class SARIFReporter:
             "invocations": [
                 {
                     "executionSuccessful": True,
-                    "endTimeUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "endTimeUtc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                     "workingDirectory": {"uri": "file:///"},
                 }
             ],
@@ -131,15 +131,14 @@ class SARIFReporter:
         if repository_uri:
             run["versionControlProvenance"] = [{"repositoryUri": repository_uri}]
 
-        sarif_report = {
+        return {
             "$schema": self.SARIF_SCHEMA,
             "version": self.SARIF_VERSION,
             "runs": [run],
         }
 
-        return sarif_report
 
-    def _extract_rules(self, issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _extract_rules(self, issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Extract unique rules from issues.
 
@@ -158,7 +157,7 @@ class SARIFReporter:
 
         return list(rules_dict.values())
 
-    def _create_rule_definition(self, issue: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_rule_definition(self, issue: dict[str, Any]) -> dict[str, Any]:
         """
         Create SARIF rule definition from an issue.
 
@@ -205,7 +204,7 @@ class SARIFReporter:
 
         return rule
 
-    def _convert_issues_to_results(self, issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _convert_issues_to_results(self, issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Convert PyGuard issues to SARIF results.
 
@@ -266,7 +265,7 @@ class SARIFReporter:
 
         return results
 
-    def _create_location(self, issue: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_location(self, issue: dict[str, Any]) -> dict[str, Any]:
         """
         Create SARIF location object from issue.
 
@@ -299,7 +298,7 @@ class SARIFReporter:
 
         return location
 
-    def _get_rule_id(self, issue: Dict[str, Any]) -> str:
+    def _get_rule_id(self, issue: dict[str, Any]) -> str:
         """
         Generate rule ID from issue category and CWE.
 
@@ -315,10 +314,9 @@ class SARIFReporter:
         # Use CWE ID if available, otherwise use category
         if cwe_id and cwe_id.startswith("CWE-"):
             return f"PY/{cwe_id}"
-        else:
-            # Create ID from category (e.g., "SQL Injection" -> "PY/SQL-INJECTION")
-            rule_id = category.upper().replace(" ", "-")
-            return f"PY/{rule_id}"
+        # Create ID from category (e.g., "SQL Injection" -> "PY/SQL-INJECTION")
+        rule_id = category.upper().replace(" ", "-")
+        return f"PY/{rule_id}"
 
     def _map_severity(self, severity: str) -> str:
         """
@@ -351,7 +349,7 @@ class SARIFReporter:
         }
         return severity_scores.get(severity.upper(), "5.0")
 
-    def _get_tags(self, issue: Dict[str, Any]) -> List[str]:
+    def _get_tags(self, issue: dict[str, Any]) -> list[str]:
         """
         Generate tags for SARIF rule.
 
@@ -387,7 +385,7 @@ class SARIFReporter:
 
         return tags
 
-    def _format_help_markdown(self, issue: Dict[str, Any]) -> str:
+    def _format_help_markdown(self, issue: dict[str, Any]) -> str:
         """
         Format help text as markdown.
 
@@ -414,7 +412,7 @@ class SARIFReporter:
 
         return markdown
 
-    def save_report(self, report: Dict[str, Any], output_path: Path) -> bool:
+    def save_report(self, report: dict[str, Any], output_path: Path) -> bool:
         """
         Save SARIF report to file.
 
@@ -447,7 +445,7 @@ class SARIFReporter:
             )
             return False
 
-    def validate_report(self, report: Dict[str, Any]) -> bool:
+    def validate_report(self, report: dict[str, Any]) -> bool:
         """
         Perform basic validation of SARIF report structure.
 

@@ -8,7 +8,6 @@ that can be easily optimized. Aligned with Perflint rules.
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -34,9 +33,9 @@ class PerformanceVisitor(ast.NodeVisitor):
     Implements Perflint-style performance checks.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize performance visitor."""
-        self.issues: List[PerformanceIssue] = []
+        self.issues: list[PerformanceIssue] = []
         self.source_lines = source_lines
         self.in_loop = False
 
@@ -150,24 +149,23 @@ class PerformanceVisitor(ast.NodeVisitor):
                 )
 
         # PERF403: Use dict comprehension instead of dict([(k, v) ...])
-        if func_name == "dict":
-            if len(node.args) == 1:
-                arg = node.args[0]
-                if isinstance(arg, ast.ListComp):
-                    # Check if generating tuples
-                    if isinstance(arg.elt, ast.Tuple):
-                        self.issues.append(
-                            PerformanceIssue(
-                                severity="MEDIUM",
-                                category="Performance",
-                                message="Use dict comprehension instead of dict([...])",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                code_snippet=self._get_code_snippet(node),
-                                fix_suggestion="Replace dict([(k, v) for ...]) with {k: v for ...}",
-                                rule_id="PERF403",
-                            )
+        if func_name == "dict" and len(node.args) == 1:
+            arg = node.args[0]
+            if isinstance(arg, ast.ListComp):
+                # Check if generating tuples
+                if isinstance(arg.elt, ast.Tuple):
+                    self.issues.append(
+                        PerformanceIssue(
+                            severity="MEDIUM",
+                            category="Performance",
+                            message="Use dict comprehension instead of dict([...])",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Replace dict([(k, v) for ...]) with {k: v for ...}",
+                            rule_id="PERF403",
                         )
+                    )
 
         self.generic_visit(node)
 
@@ -218,7 +216,7 @@ class PerformanceVisitor(ast.NodeVisitor):
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -239,7 +237,7 @@ class PerformanceFixer:
         self.file_ops = FileOperations()
         self.fixes_applied = []
 
-    def scan_file_for_issues(self, file_path: Path) -> List[PerformanceIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[PerformanceIssue]:
         """
         Scan a file for performance issues.
 
@@ -262,7 +260,7 @@ class PerformanceFixer:
         except SyntaxError:
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply performance fixes to a Python file.
 
@@ -335,7 +333,7 @@ class PerformanceFixer:
             (r"dict\(\{([^\}]+)\}\)", r"{\1}", "dict comprehension"),
         ]
 
-        for pattern, replacement, comp_type in patterns:
+        for pattern, _replacement, comp_type in patterns:
             if re.search(pattern, content):
                 # Don't auto-fix without AST validation
                 self.fixes_applied.append(f"PERF402: Found unnecessary wrapper around {comp_type}")

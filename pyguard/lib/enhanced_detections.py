@@ -14,11 +14,10 @@ References:
 - NIST 800-53 Rev 5 | https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final | High | Security controls
 """
 
-import os
-import re
 from dataclasses import dataclass
+import os
 from pathlib import Path
-from typing import List
+import re
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -82,7 +81,7 @@ class BackupFileDetector:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def scan_directory(self, directory: Path) -> List[FileSecurityIssue]:
+    def scan_directory(self, directory: Path) -> list[FileSecurityIssue]:
         """
         Scan directory for backup files and sensitive files.
 
@@ -155,7 +154,7 @@ class MassAssignmentDetector:
         """Initialize mass assignment detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
         """
         Scan code for mass assignment vulnerabilities.
 
@@ -216,7 +215,7 @@ class ClickjackingDetector:
         """Initialize clickjacking detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
         """
         Scan code for missing clickjacking protection.
 
@@ -287,7 +286,7 @@ class DependencyConfusionDetector:
         """Initialize dependency confusion detector."""
         self.logger = PyGuardLogger()
 
-    def scan_requirements(self, requirements_file: Path) -> List[FileSecurityIssue]:
+    def scan_requirements(self, requirements_file: Path) -> list[FileSecurityIssue]:
         """
         Scan requirements file for dependency confusion risks.
 
@@ -297,7 +296,7 @@ class DependencyConfusionDetector:
         Returns:
             List of file security issues found
         """
-        issues: List[FileSecurityIssue] = []
+        issues: list[FileSecurityIssue] = []
 
         if not requirements_file.exists():
             return issues
@@ -305,7 +304,7 @@ class DependencyConfusionDetector:
         content = requirements_file.read_text()
         lines = content.split("\n")
 
-        for line_num, line in enumerate(lines, 1):
+        for _line_num, line in enumerate(lines, 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -357,7 +356,7 @@ class MemoryDisclosureDetector:
         """Initialize memory disclosure detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
         """
         Scan code for memory disclosure vulnerabilities.
 
@@ -417,7 +416,7 @@ class AuthenticationBypassDetector:
         """Initialize authentication bypass detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for authentication bypass patterns.
 
@@ -474,7 +473,7 @@ class AuthorizationBypassDetector:
         """Initialize authorization bypass detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for authorization bypass patterns.
 
@@ -541,7 +540,7 @@ class InsecureSessionManagementDetector:
         """Initialize session management detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for insecure session management.
 
@@ -597,7 +596,7 @@ class ResourceLeakDetector:
         """Initialize resource leak detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for resource leaks.
 
@@ -659,7 +658,7 @@ class UncontrolledResourceConsumptionDetector:
         """Initialize resource consumption detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for uncontrolled resource consumption.
 
@@ -715,7 +714,7 @@ class ImproperCertificateValidationDetector:
         """Initialize certificate validation detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for improper certificate validation.
 
@@ -771,7 +770,7 @@ class CryptographicNonceMisuseDetector:
         """Initialize nonce misuse detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for nonce/IV misuse.
 

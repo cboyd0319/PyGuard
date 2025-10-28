@@ -30,7 +30,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.custom_rules import RuleViolation
 
@@ -42,9 +41,9 @@ class PonySecurityVisitor(ast.NodeVisitor):
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_pony_import = False
-        self.pony_aliases: Set[str] = {"pony"}
+        self.pony_aliases: set[str] = {"pony"}
         self.has_db_session_decorator = False
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -92,13 +91,13 @@ class PonySecurityVisitor(ast.NodeVisitor):
 
         # Check for SQL injection via raw queries (PON002)
         self._check_raw_sql_injection(node)
-        
+
         # Check for generator expression injection (PON004)
         self._check_generator_injection(node)
-        
+
         # Check for database connection security (PON005)
         self._check_database_connection(node)
-        
+
         # Check for caching vulnerabilities (PON008)
         self._check_caching_security(node)
 
@@ -107,14 +106,14 @@ class PonySecurityVisitor(ast.NodeVisitor):
     def _check_raw_sql_injection(self, node: ast.Call) -> None:
         """Check for SQL injection via raw SQL (PON002)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for dangerous raw SQL methods
         if "select" in func_name.lower() or "execute" in func_name.lower():
             line_num = node.lineno
             if 0 <= line_num - 1 < len(self.lines):
-                context = '\n'.join(self.lines[max(0, line_num - 5):line_num])
+                context = "\n".join(self.lines[max(0, line_num - 5) : line_num])
                 # Check for SQL string formatting
-                if any(pattern in context for pattern in ['.format(', 'f"', "f'", ' % ', ' + "']):
+                if any(pattern in context for pattern in [".format(", 'f"', "f'", " % ", ' + "']):
                     self.violations.append(
                         RuleViolation(
                             rule_id="PON002",
@@ -131,7 +130,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
     def _check_generator_injection(self, node: ast.Call) -> None:
         """Check for generator expression injection (PON004)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for select() with potential injection
         if func_name == "select" or ".select" in func_name:
             # Check if lambda/generator uses user input
@@ -152,7 +151,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
     def _check_database_connection(self, node: ast.Call) -> None:
         """Check for database connection security (PON005)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for Database binding
         if "bind" in func_name or "Database" in func_name:
             # For bind(), check the second argument (database path/name)
@@ -160,7 +159,9 @@ class PonySecurityVisitor(ast.NodeVisitor):
                 second_arg = node.args[1]
                 if isinstance(second_arg, ast.Name):
                     var_name = second_arg.id
-                    if self._is_potentially_user_input(second_arg) or self._variable_from_user_input(var_name, node.lineno):
+                    if self._is_potentially_user_input(
+                        second_arg
+                    ) or self._variable_from_user_input(var_name, node.lineno):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="PON005",
@@ -216,7 +217,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
         """Extract function name from a call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -240,8 +241,8 @@ class PonySecurityVisitor(ast.NodeVisitor):
             # Check previous 10 lines for assignment from user input
             start_line = max(0, line_num - 10)
             context_lines = self.lines[start_line:line_num]
-            context = '\n'.join(context_lines)
-            
+            context = "\n".join(context_lines)
+
             # Check if variable is assigned from request, user input, etc.
             if var_name in context:
                 user_patterns = ["= user_input", "= request", "input()", "user_", "param"]
@@ -252,27 +253,24 @@ class PonySecurityVisitor(ast.NodeVisitor):
         """Check if user input is used in surrounding context."""
         if 0 <= line_num - 1 < len(self.lines):
             start_line = max(0, line_num - 5)
-            context = '\n'.join(self.lines[start_line:min(len(self.lines), line_num + 3)])
+            context = "\n".join(self.lines[start_line : min(len(self.lines), line_num + 3)])
             user_patterns = ["request", "input(", "user_", "param", "arg"]
             return any(pattern in context.lower() for pattern in user_patterns)
         return False
 
     def _has_error_handling_in_function(self, node: ast.FunctionDef) -> bool:
         """Check if a function has error handling."""
-        for child in ast.walk(node):
-            if isinstance(child, ast.Try) or isinstance(child, ast.ExceptHandler):
-                return True
-        return False
+        return any(isinstance(child, (ast.Try, ast.ExceptHandler)) for child in ast.walk(node))
 
 
-def analyze_pony_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_pony_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for Pony ORM security vulnerabilities.
-    
+
     Args:
         file_path: Path to the Python file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -280,7 +278,7 @@ def analyze_pony_security(file_path: Path, code: str) -> List[RuleViolation]:
         tree = ast.parse(code)
     except SyntaxError:
         return []
-    
+
     visitor = PonySecurityVisitor(file_path, code)
     visitor.visit(tree)
     return visitor.violations

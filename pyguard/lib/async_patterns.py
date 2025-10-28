@@ -10,7 +10,6 @@ Part of PyGuard's comprehensive linter replacement initiative.
 
 import ast
 from dataclasses import dataclass
-from typing import List, Optional, Set
 
 
 @dataclass
@@ -23,7 +22,7 @@ class AsyncIssue:
     message: str
     severity: str = "HIGH"
     category: str = "async"
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
 
 
 class AsyncPatternVisitor(ast.NodeVisitor):
@@ -39,11 +38,11 @@ class AsyncPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
-        self.issues: List[AsyncIssue] = []
+        self.issues: list[AsyncIssue] = []
         self.in_async_function = False
-        self.current_function: Optional[str] = None
+        self.current_function: str | None = None
         self.has_await_in_function = False
-        self.blocking_calls: Set[str] = {
+        self.blocking_calls: set[str] = {
             "open",
             "read",
             "write",
@@ -176,9 +175,8 @@ class AsyncPatternVisitor(ast.NodeVisitor):
         """Get the name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                return f"{node.func.value.id}.{node.func.attr}"
+        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+            return f"{node.func.value.id}.{node.func.attr}"
         return ""
 
     def visit_With(self, node: ast.With) -> None:
@@ -231,7 +229,7 @@ class AsyncChecker:
     def __init__(self):
         self.visitor = AsyncPatternVisitor()
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[AsyncIssue]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[AsyncIssue]:
         """
         Check Python code for async anti-patterns.
 
@@ -249,12 +247,12 @@ class AsyncChecker:
         except SyntaxError:
             return []
 
-    def get_issues(self) -> List[AsyncIssue]:
+    def get_issues(self) -> list[AsyncIssue]:
         """Get all detected issues."""
         return self.visitor.issues
 
 
-def check_file(filepath: str) -> List[AsyncIssue]:
+def check_file(filepath: str) -> list[AsyncIssue]:
     """
     Check a Python file for async anti-patterns.
 

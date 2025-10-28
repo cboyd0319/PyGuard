@@ -9,9 +9,8 @@ Detects debugging statements that should not be in production code:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List
+import re
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -32,7 +31,7 @@ class DebuggingPatternVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
 
     def visit_Call(self, node: ast.Call) -> None:
         """Visit call nodes to detect debugging function calls."""
@@ -140,7 +139,7 @@ class DebuggingPatternChecker:
         """Initialize checker."""
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a file for debugging patterns.
 

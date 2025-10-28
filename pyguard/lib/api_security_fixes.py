@@ -35,9 +35,8 @@ References:
 - CWE Top 25 | https://cwe.mitre.org/top25/ | High
 """
 
-import re
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -62,9 +61,9 @@ class APISecurityFixer:
         self.file_ops = FileOperations()
         self.safety_classifier = FixSafetyClassifier()
         self.allow_unsafe = allow_unsafe
-        self.fixes_applied: List[str] = []
+        self.fixes_applied: list[str] = []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply API security fixes to a file.
 
@@ -173,12 +172,11 @@ class APISecurityFixer:
                             modified = True
 
             # Fix jwt.encode() with weak algorithms
-            if "jwt.encode(" in line:
-                if "'HS256'" in line or '"HS256"' in line:
-                    line = line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
-                    if not modified:
-                        self.fixes_applied.append("JWT encode algorithm: HS256 → RS256 (API006)")
-                        modified = True
+            if "jwt.encode(" in line and ("'HS256'" in line or '"HS256"' in line):
+                line = line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
+                if not modified:
+                    self.fixes_applied.append("JWT encode algorithm: HS256 → RS256 (API006)")
+                    modified = True
 
             fixed_lines.append(line)
 
@@ -209,8 +207,7 @@ class APISecurityFixer:
                 return f"methods=[{', '.join(repr(m) for m in safe_methods)}]"
             return match.group(0)
 
-        content = re.sub(pattern, remove_insecure_methods, content)
-        return content
+        return re.sub(pattern, remove_insecure_methods, content)
 
     def _fix_graphql_introspection(self, content: str) -> str:
         """
@@ -251,7 +248,9 @@ class APISecurityFixer:
                     # Add defusedxml import
                     line = "from defusedxml.ElementTree import parse, fromstring  # PyGuard: XXE protection"
                     if not modified:
-                        self.fixes_applied.append("XML: Replaced xml.etree with defusedxml (API012)")
+                        self.fixes_applied.append(
+                            "XML: Replaced xml.etree with defusedxml (API012)"
+                        )
                         modified = True
             # Replace xml.etree.ElementTree.parse with defusedxml
             elif "ET.parse(" in line or "ElementTree.parse(" in line:
@@ -287,7 +286,10 @@ class APISecurityFixer:
                 # Check if warning already exists
                 if i == 0 or "WARNING" not in lines[i - 1]:
                     indent = len(line) - len(line.lstrip())
-                    warning = " " * indent + "# WARNING: Insecure deserialization - use JSON instead (CWE-502)"
+                    warning = (
+                        " " * indent
+                        + "# WARNING: Insecure deserialization - use JSON instead (CWE-502)"
+                    )
                     fixed_lines.append(warning)
                     if not modified:
                         self.fixes_applied.append("Added deserialization security warning (API013)")
@@ -322,7 +324,10 @@ class APISecurityFixer:
                 fixed_lines.append(line)
                 if "class" in line and ("Model" in line or "BaseModel" in line):
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * (indent + 4) + "# TODO: Add Meta class with 'fields' to prevent mass assignment (API001)"
+                    comment = (
+                        " " * (indent + 4)
+                        + "# TODO: Add Meta class with 'fields' to prevent mass assignment (API001)"
+                    )
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added mass assignment protection comment (API001)")
             return "\n".join(fixed_lines)
@@ -348,7 +353,10 @@ class APISecurityFixer:
                     # Check if rate limiting decorator already exists
                     if i == 0 or "limiter" not in lines[i - 1].lower():
                         indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add @limiter.limit('5/minute') for rate limiting (API002)"
+                        comment = (
+                            " " * indent
+                            + "# TODO: Add @limiter.limit('5/minute') for rate limiting (API002)"
+                        )
                         fixed_lines.append(comment)
                         self.fixes_applied.append("Added rate limiting suggestion (API002)")
                 fixed_lines.append(line)
@@ -367,7 +375,9 @@ class APISecurityFixer:
             lines = content.split("\n")
             fixed_lines = []
             for line in lines:
-                if "def " in line and any(keyword in line for keyword in ["create", "update", "delete"]):
+                if "def " in line and any(
+                    keyword in line for keyword in ["create", "update", "delete"]
+                ):
                     indent = len(line) - len(line.lstrip())
                     if indent > 0:
                         comment = " " * indent + "# TODO: Add authentication decorator (API003)"
@@ -405,7 +415,10 @@ class APISecurityFixer:
                 if "api_key=" in line or "apikey=" in line:
                     if "http" in line.lower():
                         indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# WARNING: API keys should be in headers, not URLs (API007)"
+                        comment = (
+                            " " * indent
+                            + "# WARNING: API keys should be in headers, not URLs (API007)"
+                        )
                         fixed_lines.append(comment)
                         self.fixes_applied.append("Added API key security warning (API007)")
                 fixed_lines.append(line)
@@ -421,7 +434,9 @@ class APISecurityFixer:
             for line in lines:
                 if "redirect(" in line:
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * indent + "# TODO: Validate redirect URL against allowlist (API008)"
+                    comment = (
+                        " " * indent + "# TODO: Validate redirect URL against allowlist (API008)"
+                    )
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added redirect validation suggestion (API008)")
                 fixed_lines.append(line)
@@ -438,7 +453,9 @@ class APISecurityFixer:
                 for line in lines:
                     fixed_lines.append(line)
                     if "Flask(" in line or "FastAPI(" in line:
-                        comment = "# TODO: Add security headers: HSTS, CSP, X-Frame-Options (API009)"
+                        comment = (
+                            "# TODO: Add security headers: HSTS, CSP, X-Frame-Options (API009)"
+                        )
                         fixed_lines.append(comment)
                         self.fixes_applied.append("Added security headers suggestion (API009)")
                         break
@@ -449,8 +466,12 @@ class APISecurityFixer:
         """Fix CORS wildcard misconfiguration (API011)."""
         # Replace wildcard with specific origins
         if "allow_origins=['*']" in content or 'allow_origins=["*"]' in content:
-            content = content.replace("allow_origins=['*']", "allow_origins=['https://yourdomain.com']")
-            content = content.replace('allow_origins=["*"]', 'allow_origins=["https://yourdomain.com"]')
+            content = content.replace(
+                "allow_origins=['*']", "allow_origins=['https://yourdomain.com']"
+            )
+            content = content.replace(
+                'allow_origins=["*"]', 'allow_origins=["https://yourdomain.com"]'
+            )
             self.fixes_applied.append("CORS: Replaced wildcard with specific origin (API011)")
         return content
 
@@ -463,7 +484,9 @@ class APISecurityFixer:
             for line in lines:
                 if "redirect_uri" in line:
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * indent + "# TODO: Validate redirect_uri against allowlist (API014)"
+                    comment = (
+                        " " * indent + "# TODO: Validate redirect_uri against allowlist (API014)"
+                    )
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added OAuth redirect validation suggestion (API014)")
                 fixed_lines.append(line)
@@ -479,7 +502,9 @@ class APISecurityFixer:
                 fixed_lines = []
                 added = False
                 for line in lines:
-                    if ("@app.post" in line or "@app.put" in line or "@app.delete" in line) and not added:
+                    if (
+                        "@app.post" in line or "@app.put" in line or "@app.delete" in line
+                    ) and not added:
                         indent = len(line) - len(line.lstrip())
                         comment = " " * indent + "# TODO: Add CSRF token validation (API015)"
                         fixed_lines.append(comment)
@@ -498,7 +523,10 @@ class APISecurityFixer:
             for line in lines:
                 if "/v0/" in line or "/v1/" in line:
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * indent + "# TODO: Add version validation and deprecation warnings (API016)"
+                    comment = (
+                        " " * indent
+                        + "# TODO: Add version validation and deprecation warnings (API016)"
+                    )
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added API versioning security suggestion (API016)")
                 fixed_lines.append(line)
@@ -514,7 +542,10 @@ class APISecurityFixer:
             for line in lines:
                 if "requests.get(" in line or "requests.post(" in line:
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * indent + "# TODO: Validate URL against allowlist to prevent SSRF (API017)"
+                    comment = (
+                        " " * indent
+                        + "# TODO: Validate URL against allowlist to prevent SSRF (API017)"
+                    )
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added SSRF protection suggestion (API017)")
                 fixed_lines.append(line)
@@ -532,7 +563,10 @@ class APISecurityFixer:
                     fixed_lines.append(line)
                     if "Response(" in line or "return" in line:
                         indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add HSTS header: Strict-Transport-Security (API018)"
+                        comment = (
+                            " " * indent
+                            + "# TODO: Add HSTS header: Strict-Transport-Security (API018)"
+                        )
                         fixed_lines.append(comment)
                         self.fixes_applied.append("Added HSTS header suggestion (API018)")
                         break
@@ -550,7 +584,10 @@ class APISecurityFixer:
                     fixed_lines.append(line)
                     if "Response(" in line or "return" in line:
                         indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add X-Frame-Options header: DENY or SAMEORIGIN (API019)"
+                        comment = (
+                            " " * indent
+                            + "# TODO: Add X-Frame-Options header: DENY or SAMEORIGIN (API019)"
+                        )
                         fixed_lines.append(comment)
                         self.fixes_applied.append("Added X-Frame-Options suggestion (API019)")
                         break
@@ -575,7 +612,7 @@ class APISecurityFixer:
 
 
 # Convenience function for external use
-def fix_api_security_issues(file_path: Path, allow_unsafe: bool = False) -> Tuple[bool, List[str]]:
+def fix_api_security_issues(file_path: Path, allow_unsafe: bool = False) -> tuple[bool, list[str]]:
     """
     Apply API security fixes to a file.
 
