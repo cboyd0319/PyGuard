@@ -483,7 +483,7 @@ class SANSTop25Mapper:
         """
         for rank, (cwe, _) in self.SANS_TOP_25_2024.items():
             if cwe == cwe_id:
-                return rank
+                return int(rank)
         return None
 
     def prioritize_issues(self, issues: list[dict]) -> list[dict]:
