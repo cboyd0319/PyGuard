@@ -59,6 +59,8 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         self.route_functions: Set[str] = set()
         self.websocket_routes: Set[str] = set()
         self.current_function_has_secure_filename = False
+        # Track tainted variables (user input)
+        self.tainted_vars: Set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Quart imports."""
@@ -68,6 +70,16 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 for alias in node.names:
                     if alias.name == "websocket":
                         self.has_websocket_import = True
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Track variable assignments for taint analysis."""
+        # Check if the right side is user input (request.form, request.args, etc.)
+        if self._is_user_input(node.value):
+            # Mark all target variables as tainted
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    self.tainted_vars.add(target.id)
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -145,33 +157,42 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 self._check_file_upload_security(node)
 
         # Check for CORS configuration
-        if isinstance(node.func, ast.Name) and node.func.id == "CORS":
+        if isinstance(node.func, ast.Name) and node.func.id.lower() == "cors":
             self._check_cors_configuration(node)
 
         self.generic_visit(node)
 
-    def _check_async_request_context(self, node: ast.AsyncFunctionDef) -> None:
+    def _check_async_request_context(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for async request context issues (QUART001)."""
-        # Check if the function accesses request without proper context
-        # Note: This function is called for AsyncFunctionDef nodes, so the context is already async
-        # The check here is for nested non-async functions that access request
-        for child in ast.walk(node):
-            if isinstance(child, ast.FunctionDef) and not isinstance(child, ast.AsyncFunctionDef):
-                # Check for request access in nested non-async functions
-                for subchild in ast.walk(child):
-                    if isinstance(subchild, ast.Attribute) and subchild.attr == "request":
+        # In Quart, request access should be in async context
+        # Check if this is a non-async function that accesses request
+        if isinstance(node, ast.FunctionDef) and not isinstance(node, ast.AsyncFunctionDef):
+            # This is a sync function (non-async) - check if it accesses request
+            for child in ast.walk(node):
+                if isinstance(child, ast.Attribute):
+                    # Check for request.* access
+                    if isinstance(child.value, ast.Name) and child.value.id == "request":
                         self.violations.append(
                             RuleViolation(
                                 rule_id="QUART001",
                                 category=RuleCategory.SECURITY,
-                                message="Request accessed outside async context in Quart",
                                 severity=RuleSeverity.HIGH,
-                                line_number=subchild.lineno,
-                                column=subchild.col_offset,
+                                message="Request accessed outside async context in Quart. "
+                                "Use 'async def' for route handlers that access request.",
                                 file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
+                                line_number=getattr(child, "lineno", 0),
+                                column=getattr(child, "col_offset", 0),
+                                end_line_number=getattr(child, "end_lineno", getattr(child, "lineno", 0)),
+                                end_column=getattr(child, "end_col_offset", getattr(child, "col_offset", 0)),
+                                code_snippet=self.lines[getattr(child, "lineno", 1) - 1] if getattr(child, "lineno", 1) <= len(self.lines) else "",
+                                fix_suggestion="Change 'def' to 'async def' and use 'await' for request operations",
+                                fix_applicability=FixApplicability.UNSAFE,
+                                cwe_id=None,
+                                owasp_id=None,
+                                source_tool="pyguard"
                             )
                         )
+                        break  # Only report once per function
 
     def _check_websocket_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for WebSocket authentication issues (QUART002)."""
@@ -221,20 +242,34 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         """Check for background task security issues (QUART003)."""
         # Check if background task has user input without validation
         for arg in node.args:
+            is_user_input = False
             if isinstance(arg, ast.Attribute):
                 if arg.attr in ("form", "args", "data", "json"):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="QUART003",
-                            category=RuleCategory.SECURITY,
-                            message="Background task receives user input without validation",
-                            severity=RuleSeverity.MEDIUM,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.UNSAFE,
-                        )
+                    is_user_input = True
+            elif isinstance(arg, ast.Name) and arg.id in self.tainted_vars:
+                is_user_input = True
+            
+            if is_user_input:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="QUART003",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Background task receives user input without validation",
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Validate and sanitize user input before passing to background tasks",
+                        fix_applicability=FixApplicability.UNSAFE,
+                        cwe_id=None,
+                        owasp_id=None,
+                        source_tool="pyguard"
                     )
+                )
+                break  # Only report once per call
 
     def _check_session_management(self, node: ast.FunctionDef) -> None:
         """Check for session management issues in async context (QUART004)."""
@@ -281,12 +316,19 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 RuleViolation(
                     rule_id="QUART005",
                     category=RuleCategory.SECURITY,
-                    message="CORS configured with wildcard origin or no origin specified",
                     severity=RuleSeverity.HIGH,
-                    line_number=node.lineno,
-                    column=node.col_offset,
+                    message="CORS configured with wildcard origin or no origin specified",
                     file_path=self.file_path,
+                    line_number=getattr(node, "lineno", 0),
+                    column=getattr(node, "col_offset", 0),
+                    end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                    end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                    fix_suggestion="Specify explicit origins: cors(app, origins=['https://example.com'])",
                     fix_applicability=FixApplicability.SAFE,
+                    cwe_id=None,
+                    owasp_id=None,
+                    source_tool="pyguard"
                 )
             )
 
@@ -441,7 +483,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                         )
                     )
 
-    def _check_missing_auth(self, node: ast.FunctionDef) -> None:
+    def _check_missing_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for authentication decorator issues (QUART012)."""
         has_auth_decorator = False
 
@@ -456,9 +498,18 @@ class QuartSecurityVisitor(ast.NodeVisitor):
 
         # Check if route accesses sensitive data without auth
         has_sensitive_access = False
+        sensitive_keywords = ["password", "token", "secret", "api_key", "private", "api_token"]
+        
         for child in ast.walk(node):
+            # Check for sensitive attributes
             if isinstance(child, ast.Attribute):
-                if child.attr in ("password", "token", "secret", "api_key", "private"):
+                if child.attr in sensitive_keywords:
+                    has_sensitive_access = True
+                    break
+            # Check for sensitive keywords in string literals (e.g., SQL queries)
+            elif isinstance(child, ast.Constant) and isinstance(child.value, str):
+                value_lower = child.value.lower()
+                if any(keyword in value_lower for keyword in sensitive_keywords):
                     has_sensitive_access = True
                     break
 
@@ -467,14 +518,34 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 RuleViolation(
                     rule_id="QUART012",
                     category=RuleCategory.SECURITY,
-                    message="Route accessing sensitive data without authentication decorator",
                     severity=RuleSeverity.HIGH,
-                    line_number=node.lineno,
-                    column=node.col_offset,
+                    message="Route accessing sensitive data without authentication decorator",
                     file_path=self.file_path,
+                    line_number=getattr(node, "lineno", 0),
+                    column=getattr(node, "col_offset", 0),
+                    end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                    end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                    fix_suggestion="Add authentication decorator like @login_required or @requires_auth",
                     fix_applicability=FixApplicability.UNSAFE,
+                    cwe_id=None,
+                    owasp_id=None,
+                    source_tool="pyguard"
                 )
             )
+
+    def _is_user_input(self, node: ast.AST) -> bool:
+        """Check if an expression represents user input (request.form, request.args, etc.)."""
+        if isinstance(node, ast.Attribute):
+            # Check for request.form, request.args, request.json, etc.
+            if node.attr in ("form", "args", "json", "data", "values", "files"):
+                if isinstance(node.value, ast.Name) and node.value.id == "request":
+                    return True
+            return self._is_user_input(node.value)
+        elif isinstance(node, ast.Await):
+            # Handle await request.form
+            return self._is_user_input(node.value)
+        return False
 
 
 def analyze_quart(file_path: Path, code: str) -> List[RuleViolation]:

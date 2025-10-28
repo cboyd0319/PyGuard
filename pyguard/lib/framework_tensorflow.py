@@ -63,6 +63,8 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         self.has_keras_import = False
         self.tf_aliases: Set[str] = {"tensorflow", "tf"}
         self.keras_aliases: Set[str] = {"keras"}
+        # Track tainted variables (derived from user input)
+        self.tainted_vars: Set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track TensorFlow/Keras imports."""
@@ -84,6 +86,16 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                 self.has_tf_import = True
             elif node.module.startswith("keras"):
                 self.has_keras_import = True
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Track variable assignments for taint analysis."""
+        # Check if the right side is user-controlled
+        if self._is_user_controlled_expr(node.value):
+            # Mark all target variables as tainted
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    self.tainted_vars.add(target.id)
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -126,6 +138,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "keras.models.load_model",
             "tensorflow.saved_model.load",
             "tf.saved_model.load",
+            "load_model",  # Direct import
         ]
         
         if func_name in tf_load_funcs:
@@ -193,9 +206,19 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "tensorflow.ones", "tensorflow.zeros", "tensorflow.constant",
         ]
         
-        if func_name in memory_intensive_ops and node.args:
-            # Check if shape comes from user input
-            if self._is_user_controlled(node.args[0]):
+        if func_name in memory_intensive_ops:
+            # Check if shape comes from user input (positional argument)
+            is_tainted = False
+            if node.args and self._is_user_controlled(node.args[0]):
+                is_tainted = True
+            
+            # Also check for shape= keyword argument (e.g., tf.constant(0, shape=user_shape))
+            for kw in node.keywords:
+                if kw.arg == "shape" and self._is_user_controlled(kw.value):
+                    is_tainted = True
+                    break
+            
+            if is_tainted:
                 self.violations.append(
                     RuleViolation(
                         rule_id="TF002",
@@ -256,6 +279,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "tensorflow.keras.callbacks.TensorBoard",
             "tf.keras.callbacks.TensorBoard",
             "keras.callbacks.TensorBoard",
+            "TensorBoard",  # Direct import
         ]
         
         if func_name in tensorboard_funcs:
@@ -357,14 +381,21 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         """TF010: Detect checkpoint poisoning vulnerabilities."""
         func_name = self._get_function_name(node)
         
-        # Check for checkpoint loading
+        # Check for checkpoint loading - both explicit class methods and instance methods
         checkpoint_funcs = [
             "tf.train.Checkpoint.restore",
             "tensorflow.train.Checkpoint.restore",
             "tf.keras.models.load_weights",
         ]
         
-        if func_name in checkpoint_funcs and node.args:
+        # Also check for any .restore() or .load_weights() method calls (on checkpoint instances)
+        is_checkpoint_load = (
+            func_name in checkpoint_funcs or
+            func_name.endswith(".restore") or
+            func_name.endswith(".load_weights")
+        )
+        
+        if is_checkpoint_load and node.args:
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
@@ -403,17 +434,54 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         return ""
 
     def _is_user_controlled(self, node: ast.AST) -> bool:
-        """Check if value comes from user input (heuristic)."""
+        """Check if value comes from user input (heuristic with taint tracking)."""
         if isinstance(node, ast.Name):
-            user_input_keywords = [
-                "request", "input", "user", "param", "arg", "query",
-                "form", "data", "payload", "body", "file", "upload", "path"
-            ]
-            return any(keyword in node.id.lower() for keyword in user_input_keywords)
+            # Check if variable is in tainted set
+            if node.id in self.tainted_vars:
+                return True
+            # Check if variable name suggests user input (more specific patterns)
+            var_name = node.id.lower()
+            
+            # Strong indicators of user input
+            strong_keywords = ["request", "input", "param", "query", "form", "payload", "body", "upload"]
+            if any(keyword in var_name for keyword in strong_keywords):
+                return True
+            
+            # Weaker indicators - only if they're prefixed/suffixed appropriately
+            if var_name.startswith("user") or var_name.endswith("user"):
+                return True
+            if var_name.startswith("user_") or var_name.endswith("_user"):
+                return True
+            if "user_path" in var_name or "user_file" in var_name or "user_input" in var_name:
+                return True
+            if "user_data" in var_name or "user_shape" in var_name or "user_model" in var_name:
+                return True
+                
+            return False
         elif isinstance(node, ast.Attribute):
             return self._is_user_controlled(node.value)
         elif isinstance(node, ast.Subscript):
             return self._is_user_controlled(node.value)
+        return False
+
+    def _is_user_controlled_expr(self, node: ast.AST) -> bool:
+        """Check if an expression produces user-controlled data."""
+        if isinstance(node, ast.Call):
+            # Check for input() calls
+            func_name = self._get_function_name(node)
+            if func_name == "input":
+                return True
+            # Check if function is called on user-controlled object
+            if isinstance(node.func, ast.Attribute):
+                return self._is_user_controlled(node.func.value)
+        elif isinstance(node, ast.Attribute):
+            # Check attribute access on user-controlled objects
+            return self._is_user_controlled(node.value)
+        elif isinstance(node, ast.Subscript):
+            # Check subscript on user-controlled objects  
+            return self._is_user_controlled(node.value)
+        elif isinstance(node, ast.Name):
+            return self._is_user_controlled(node)
         return False
 
 
