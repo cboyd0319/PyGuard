@@ -302,7 +302,7 @@ class RuleExecutor:
             self.logger.error(
                 f"Failed to read file: {file_path}",
                 category="RuleExecutor",
-                error=str(e),
+                details={"error": str(e)},
             )
             return []
 
