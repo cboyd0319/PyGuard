@@ -462,7 +462,7 @@ class AIExplainer:
         original_code: str,
         fixed_code: str,
         vulnerability_type: str,
-        explanation: SecurityExplanation | None,
+        _explanation: SecurityExplanation | None,  # Reserved for future use
     ) -> FixRationale:
         """Generate detailed rationale for a fix."""
         fix_templates = {
