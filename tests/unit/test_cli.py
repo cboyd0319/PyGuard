@@ -918,9 +918,11 @@ class TestNotebookAnalyzer:
             mock_analyzer.return_value = mock_instance
             
             # Access the property - should trigger import
+            analyzer = cli.notebook_analyzer
             
             # Should have created the analyzer
             assert cli._notebook_analyzer is not None
+            assert analyzer is mock_instance
 
     def test_notebook_analyzer_lazy_loading_import_error(self):
         """Test notebook analyzer handles import error gracefully."""

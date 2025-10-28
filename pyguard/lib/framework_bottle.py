@@ -51,6 +51,8 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         self.violations: List[RuleViolation] = []
         self.has_bottle_import = False
         self.route_functions: Set[str] = set()
+        self.user_input_vars: Set[str] = set()  # Track variables from user input
+        self.current_function_has_secure_filename = False  # Track if secure_filename is used
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Bottle imports."""
@@ -63,6 +65,10 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         if not self.has_bottle_import:
             self.generic_visit(node)
             return
+
+        # Reset function-level tracking
+        self.user_input_vars.clear()
+        self.current_function_has_secure_filename = False
 
         # Check decorators to identify routes
         is_route = False
@@ -80,6 +86,11 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                     is_route = True
                     self.route_functions.add(node.name)
 
+        # Track user input variables and security functions in this function
+        if is_route:
+            self._track_user_input_variables(node)
+            self._track_secure_filename_usage(node)
+            
         # Check for security issues in routes
         if is_route:
             self._check_csrf_protection(node)
@@ -109,6 +120,39 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                 self._check_file_upload_security(node)
 
         self.generic_visit(node)
+
+    def _track_user_input_variables(self, node: ast.FunctionDef) -> None:
+        """Track variables assigned from user input (request.forms, request.query, etc.)."""
+        for child in ast.walk(node):
+            if isinstance(child, ast.Assign):
+                # Pattern 1: request.forms.get("field")
+                if isinstance(child.value, ast.Call):
+                    if isinstance(child.value.func, ast.Attribute):
+                        # request.forms.get(), request.query.get(), etc.
+                        if child.value.func.attr == "get":
+                            if isinstance(child.value.func.value, ast.Attribute):
+                                if child.value.func.value.attr in ("forms", "query", "params", "json"):
+                                    # Track the variable name
+                                    for target in child.targets:
+                                        if isinstance(target, ast.Name):
+                                            self.user_input_vars.add(target.id)
+                # Pattern 2: request.query.field (direct attribute access)
+                elif isinstance(child.value, ast.Attribute):
+                    if isinstance(child.value.value, ast.Attribute):
+                        # Check if it's request.query.X or request.forms.X
+                        if child.value.value.attr in ("query", "forms", "params", "json"):
+                            for target in child.targets:
+                                if isinstance(target, ast.Name):
+                                    self.user_input_vars.add(target.id)
+
+    def _track_secure_filename_usage(self, node: ast.FunctionDef) -> None:
+        """Track if secure_filename or similar function is used in the function."""
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Name):
+                    if child.func.id in ("secure_filename", "sanitize_filename"):
+                        self.current_function_has_secure_filename = True
+                        break
 
     def _check_route_injection(self, decorator: ast.Call) -> None:
         """Check for route decorator injection vulnerabilities (BOTTLE001)."""
@@ -148,6 +192,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         """Check for template engine security issues (BOTTLE002)."""
         # Check for template() calls with user input
         for arg in node.args:
+            # Direct attribute access: template(request.forms.template)
             if isinstance(arg, ast.Attribute):
                 # Check if template name comes from request
                 if arg.attr in ("forms", "query", "params", "json"):
@@ -163,13 +208,45 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
+            # Variable that was assigned from user input: template(tmpl)
+            elif isinstance(arg, ast.Name):
+                if arg.id in self.user_input_vars:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="BOTTLE002",
+                            category=RuleCategory.SECURITY,
+                            message="Template name from user input (template injection risk)",
+                            severity=RuleSeverity.CRITICAL,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
 
         # Check for template content with user input in keywords
         for keyword in node.keywords:
+            # Direct attribute access: template(..., raw_html=request.query.content)
             if isinstance(keyword.value, ast.Attribute):
                 if keyword.value.attr in ("forms", "query", "params", "json"):
                     # This is less severe - passing user data to template is common
                     # Only flag if variable name suggests raw HTML injection
+                    if keyword.arg and any(dangerous in keyword.arg.lower() for dangerous in ["html", "raw", "content", "body"]):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="BOTTLE002",
+                                category=RuleCategory.SECURITY,
+                                message="User input passed to template as raw HTML variable",
+                                severity=RuleSeverity.HIGH,
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
+            # Variable from user input: template(..., raw_html=content)
+            elif isinstance(keyword.value, ast.Name):
+                if keyword.value.id in self.user_input_vars:
                     if keyword.arg and any(dangerous in keyword.arg.lower() for dangerous in ["html", "raw", "content", "body"]):
                         self.violations.append(
                             RuleViolation(
@@ -188,8 +265,24 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         """Check for static file path traversal vulnerabilities (BOTTLE003)."""
         # Check if filename comes from user input without validation
         for arg in node.args:
+            # Direct attribute access
             if isinstance(arg, ast.Attribute):
                 if arg.attr in ("forms", "query", "params"):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="BOTTLE003",
+                            category=RuleCategory.SECURITY,
+                            message="Static file path from user input without validation",
+                            severity=RuleSeverity.HIGH,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.MANUAL,
+                        )
+                    )
+            # Variable from user input
+            elif isinstance(arg, ast.Name):
+                if arg.id in self.user_input_vars:
                     self.violations.append(
                         RuleViolation(
                             rule_id="BOTTLE003",
@@ -267,8 +360,14 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         # Look for CSRF token validation in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
+                # Check for method calls like obj.csrf() or obj.validate_csrf()
                 if isinstance(child.func, ast.Attribute):
                     if "csrf" in child.func.attr.lower():
+                        has_csrf_check = True
+                        break
+                # Check for function calls like validate_csrf() or check_csrf()
+                elif isinstance(child.func, ast.Name):
+                    if "csrf" in child.func.id.lower():
                         has_csrf_check = True
                         break
 
@@ -327,17 +426,8 @@ class BottleSecurityVisitor(ast.NodeVisitor):
 
     def _check_file_upload_security(self, node: ast.Call) -> None:
         """Check for file upload vulnerabilities (BOTTLE008)."""
-        # Check if file save has path validation
-        has_validation = False
-
-        # Look back to see if secure_filename or similar was used
-        # parent_func = None  # Reserved for future use
-        for n in ast.walk(node):
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name):
-                if n.func.id in ("secure_filename", "sanitize_filename"):
-                    has_validation = True
-
-        if not has_validation:
+        # Only flag if secure_filename is not used in the function
+        if not self.current_function_has_secure_filename:
             self.violations.append(
                 RuleViolation(
                     rule_id="BOTTLE008",
