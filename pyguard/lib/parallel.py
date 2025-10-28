@@ -8,12 +8,12 @@ References:
 - Google SRE | https://sre.google | Medium | Scalability and performance patterns
 """
 
-import concurrent.futures
-import multiprocessing
-import time
 from collections.abc import Callable
+import concurrent.futures
 from dataclasses import dataclass
+import multiprocessing
 from pathlib import Path
+import time
 
 from pyguard.lib.core import PyGuardLogger
 

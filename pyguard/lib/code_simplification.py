@@ -545,7 +545,7 @@ class SimplificationVisitor(ast.NodeVisitor):
 
     def _is_duplicate_if_body(self, _node: ast.If) -> bool:
         """Check if there are duplicate if bodies (would need parent context).
-        
+
         Args:
             _node: If node (requires parent tracking - not yet implemented)
         """
@@ -562,7 +562,7 @@ class SimplificationVisitor(ast.NodeVisitor):
 
     def _is_manual_enumerate_pattern(self, _node: ast.For) -> bool:
         """Check if loop uses manual counter instead of enumerate.
-        
+
         Args:
             _node: For loop node (requires context analysis - not yet implemented)
         """

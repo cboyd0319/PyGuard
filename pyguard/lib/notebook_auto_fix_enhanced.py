@@ -282,7 +282,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced code injection fix with AST transformation.
-        
+
         Args:
             source: Source code to fix
             _issue: Issue details (reserved for context)
@@ -332,7 +332,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced deserialization fix.
-        
+
         Args:
             source: Source code to fix
             _issue: Issue details (reserved for context)

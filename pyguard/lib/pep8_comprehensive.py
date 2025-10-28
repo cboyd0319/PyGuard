@@ -6,8 +6,8 @@ Covers all major PEP 8 style issues without external dependencies.
 """
 
 import ast
-import re
 from pathlib import Path
+import re
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -212,13 +212,13 @@ class PEP8Checker:
     ) -> tuple[str, bool]:
         """
         Fix continuation line indentation issues.
-        
+
         Args:
             line: Line to fix
             line_num: Line number
             _lines: All lines (reserved for context)
             bracket_stack: Stack of open brackets
-        
+
         Returns:
             Tuple of (fixed_line, was_fixed)
         """
@@ -722,7 +722,7 @@ class PEP8Checker:
 
     def _check_imports(self, _content: str, lines: list[str]) -> None:
         """Check import issues (E4xx codes).
-        
+
         Args:
             _content: Full file content (reserved for context)
             lines: Lines of code

@@ -456,7 +456,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
 
     def _check_acl_definition(self, node: ast.Assign, _class_line: int):
         """Check ACL definition for security issues.
-        
+
         Args:
             node: Assignment node to check
             _class_line: Line number of class (reserved for context)

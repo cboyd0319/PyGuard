@@ -86,7 +86,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
 
     def _check_string_formatting(self, node: ast.Call, _method_name: str) -> None:
         """Check for string formatting in logging calls.
-        
+
         Args:
             node: Call node to check
             _method_name: Logging method name (reserved for context)
@@ -153,7 +153,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
 
     def _check_string_concat(self, node: ast.Call, _method_name: str) -> None:
         """Check for string concatenation in logging.
-        
+
         Args:
             node: Call node to check
             _method_name: Logging method name (reserved for context)
