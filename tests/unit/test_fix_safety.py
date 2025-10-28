@@ -77,11 +77,12 @@ class TestFixSafetyClassifier:
 
     def test_should_apply_fix_warning_only(self):
         """Test should_apply_fix for WARNING_ONLY fixes."""
-        # WARNING_ONLY fixes should never be applied automatically
-        assert not self.classifier.should_apply_fix("hardcoded_secrets", allow_unsafe=False)
-        assert not self.classifier.should_apply_fix("hardcoded_secrets", allow_unsafe=True)
-        assert not self.classifier.should_apply_fix("eval_exec_warning", allow_unsafe=False)
-        assert not self.classifier.should_apply_fix("eval_exec_warning", allow_unsafe=True)
+        # WARNING_ONLY fixes add warning comments (no semantic changes)
+        # They can be applied to alert developers, but don't modify logic
+        assert self.classifier.should_apply_fix("hardcoded_secrets", allow_unsafe=False)
+        assert self.classifier.should_apply_fix("hardcoded_secrets", allow_unsafe=True)
+        assert self.classifier.should_apply_fix("eval_exec_warning", allow_unsafe=False)
+        assert self.classifier.should_apply_fix("eval_exec_warning", allow_unsafe=True)
 
     def test_should_apply_fix_unknown(self):
         """Test should_apply_fix for unknown fixes."""

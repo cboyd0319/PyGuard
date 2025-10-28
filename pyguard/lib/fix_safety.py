@@ -590,9 +590,8 @@ class FixSafetyClassifier:
             return True
         if classification.safety == FixSafety.UNSAFE:
             return allow_unsafe
-        # WARNING_ONLY
-        # WARNING_ONLY fixes add warnings/comments for manual review, which is safe
-        # These should be applied to alert developers to potential issues
+        # WARNING_ONLY fixes add warning comments (no semantic changes)
+        # They can be applied safely to alert developers to issues
         return True
 
     def get_all_safe_fixes(self) -> set[str]:

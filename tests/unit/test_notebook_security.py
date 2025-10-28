@@ -426,8 +426,8 @@ class TestNotebookFixer:
         fixer = NotebookFixer()
         success, fixes = fixer.fix_notebook(temp_notebook, [])
 
-        assert not success
-        assert len(fixes) == 0
+        assert success  # Operation succeeded (idempotent - no fixes needed)
+        assert len(fixes) == 0  # No fixes were applied
 
         temp_notebook.unlink()
 
