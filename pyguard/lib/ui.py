@@ -11,10 +11,10 @@ References:
 - Web Content Accessibility Guidelines | https://www.w3.org/WAI/WCAG21 | High | Accessibility standards
 """
 
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import sys
 from typing import Any
 
 from rich import box

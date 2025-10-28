@@ -4,8 +4,8 @@ Find Python modules without test coverage using ripgrep.
 Analyzes test coverage by comparing source files to test files.
 """
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 class TestCoverageAnalyzer:

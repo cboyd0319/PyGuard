@@ -107,9 +107,9 @@ class TestGoldenFileSnapshots:
         assert "import ast" in cell_source, "Should add ast import"
         # Check that the original dangerous eval( call was replaced (not just commented)
         # The source should have ast.literal_eval(user_input) instead of eval(user_input)
-        assert "result = ast.literal_eval(user_input)" in cell_source, (
-            "Should have safe ast.literal_eval() call"
-        )
+        assert (
+            "result = ast.literal_eval(user_input)" in cell_source
+        ), "Should have safe ast.literal_eval() call"
 
     def test_secrets_fix_snapshot(self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path):
         """Test secrets auto-fix produces expected output."""
@@ -145,9 +145,9 @@ class TestGoldenFileSnapshots:
         for line in lines:
             if "sk-1234567890" in line:
                 # It's OK if it's in a comment
-                assert line.strip().startswith("#"), (
-                    "Secret should only appear in comments, not active code"
-                )
+                assert line.strip().startswith(
+                    "#"
+                ), "Secret should only appear in comments, not active code"
 
     def test_torch_load_fix_snapshot(
         self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path
@@ -412,9 +412,9 @@ class TestSnapshotRegressionSuite:
         critical_issues = [i for i in issues if i.severity == "CRITICAL"]
 
         # Should not detect critical false positives in genuinely safe code
-        assert len(critical_issues) == 0, (
-            f"Should not flag safe code as critically vulnerable, but found: {critical_issues}"
-        )
+        assert (
+            len(critical_issues) == 0
+        ), f"Should not flag safe code as critically vulnerable, but found: {critical_issues}"
 
     def test_fix_preserves_cell_order(self, tmp_path: Path):
         """Test that fixes preserve cell execution order."""

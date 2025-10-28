@@ -475,7 +475,9 @@ data = np.zeros(100)
         """Analysis should be reasonable on medium files."""
         code = """
 import numpy as np
-""" + "\n".join([f"data{i} = np.zeros(100)" for i in range(100)])
+""" + "\n".join(
+            [f"data{i} = np.zeros(100)" for i in range(100)]
+        )
 
         import time
 

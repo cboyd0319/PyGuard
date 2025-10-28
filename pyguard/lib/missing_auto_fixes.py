@@ -29,8 +29,8 @@ References:
 - OWASP Proactive Controls | https://owasp.org/www-project-proactive-controls/ | High | Security controls
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier

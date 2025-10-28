@@ -4,8 +4,8 @@ Security vulnerability fixes for Python code.
 Detects and fixes common security issues based on Bandit and best practices.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger

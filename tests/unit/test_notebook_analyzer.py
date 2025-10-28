@@ -86,11 +86,13 @@ class TestNotebookSecurityAnalyzer:
     def test_detect_pickle_load(self, analyzer, temp_notebook):
         """Test detection of unsafe pickle.load()."""
         cells = [
-            nbf.new_code_cell("""
+            nbf.new_code_cell(
+                """
 import pickle
 with open('data.pkl', 'rb') as f:
     data = pickle.load(f)
-""")
+"""
+            )
         ]
         nb_path = temp_notebook(cells)
 
@@ -104,10 +106,12 @@ with open('data.pkl', 'rb') as f:
     def test_detect_torch_load_unsafe(self, analyzer, temp_notebook):
         """Test detection of torch.load() without weights_only."""
         cells = [
-            nbf.new_code_cell("""
+            nbf.new_code_cell(
+                """
 import torch
 model = torch.load('model.pth')
-""")
+"""
+            )
         ]
         nb_path = temp_notebook(cells)
 
@@ -121,10 +125,12 @@ model = torch.load('model.pth')
     def test_detect_yaml_load_unsafe(self, analyzer, temp_notebook):
         """Test detection of unsafe yaml.load()."""
         cells = [
-            nbf.new_code_cell("""
+            nbf.new_code_cell(
+                """
 import yaml
 data = yaml.load(open('config.yml'))
-""")
+"""
+            )
         ]
         nb_path = temp_notebook(cells)
 
@@ -293,11 +299,13 @@ data = yaml.load(open('config.yml'))
     def test_clean_notebook(self, analyzer, temp_notebook):
         """Test analysis of clean notebook with no issues."""
         cells = [
-            nbf.new_code_cell("""
+            nbf.new_code_cell(
+                """
 import numpy as np
 data = np.array([1, 2, 3])
 print(data.mean())
-""")
+"""
+            )
         ]
         nb_path = temp_notebook(cells)
 
@@ -340,11 +348,13 @@ print(data.mean())
     def test_multiple_issues_in_one_cell(self, analyzer, temp_notebook):
         """Test detection of multiple issues in a single cell."""
         cells = [
-            nbf.new_code_cell("""
+            nbf.new_code_cell(
+                """
 api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"
 result = eval(user_input)
 data = pickle.load(open('data.pkl', 'rb'))
-""")
+"""
+            )
         ]
         nb_path = temp_notebook(cells)
 

@@ -16,8 +16,8 @@ References:
 - Bandit Security | https://bandit.readthedocs.io/ | High | Python security
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier

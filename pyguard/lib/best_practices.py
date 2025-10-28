@@ -5,8 +5,8 @@ Enforces PEP 8, Python idioms, and coding standards.
 """
 
 import ast
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue

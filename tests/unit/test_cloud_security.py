@@ -658,6 +658,6 @@ def test_minimum_test_count():
             test_count += len(test_methods)
 
     # Security Dominance Plan requires minimum 38 tests
-    assert test_count >= 38, (
-        f"Only {test_count} tests, need 38+ (15 vuln + 10 safe + 3 perf + 10 other)"
-    )
+    assert (
+        test_count >= 38
+    ), f"Only {test_count} tests, need 38+ (15 vuln + 10 safe + 3 perf + 10 other)"

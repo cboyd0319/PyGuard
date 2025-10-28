@@ -23,8 +23,8 @@ References:
 """
 
 import ast
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (

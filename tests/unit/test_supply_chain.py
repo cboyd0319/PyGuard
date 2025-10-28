@@ -432,12 +432,14 @@ class TestDependencyParserFormats:
     def test_parse_requirements_txt_with_comments(self, temp_dir):
         """Test parsing requirements.txt with comments."""
         req_file = temp_dir / "requirements.txt"
-        req_file.write_text("""
+        req_file.write_text(
+            """
 # This is a comment
 requests==2.28.0
 # Another comment
 flask>=2.0.0
-""")
+"""
+        )
 
         parser = DependencyParser()
         deps = parser.parse_requirements_txt(req_file)
@@ -451,10 +453,12 @@ flask>=2.0.0
     def test_parse_requirements_txt_without_version(self, temp_dir):
         """Test parsing requirements.txt with package names only."""
         req_file = temp_dir / "requirements.txt"
-        req_file.write_text("""
+        req_file.write_text(
+            """
 pytest
 black
-""")
+"""
+        )
 
         parser = DependencyParser()
         deps = parser.parse_requirements_txt(req_file)
@@ -478,11 +482,13 @@ black
     def test_parse_pyproject_toml_with_dependencies(self, temp_dir):
         """Test parsing pyproject.toml with dependencies."""
         toml_file = temp_dir / "pyproject.toml"
-        toml_file.write_text("""
+        toml_file.write_text(
+            """
 [project.dependencies]
     "requests>=2.28.0"
     "flask==2.0.0"
-""")
+"""
+        )
 
         parser = DependencyParser()
         deps = parser.parse_pyproject_toml(toml_file)
@@ -504,14 +510,16 @@ black
     def test_parse_pipfile_with_packages(self, temp_dir):
         """Test parsing Pipfile with packages."""
         pipfile = temp_dir / "Pipfile"
-        pipfile.write_text("""
+        pipfile.write_text(
+            """
 [packages]
 requests = "==2.28.0"
 flask = ">=2.0.0"
 
 [dev-packages]
 pytest = "*"
-""")
+"""
+        )
 
         parser = DependencyParser()
         deps = parser.parse_pipfile(pipfile)
@@ -601,10 +609,12 @@ class TestSupplyChainAnalyzerMain:
     def test_analyze_project_with_pyproject_toml(self, temp_dir):
         """Test analyzing a project with pyproject.toml."""
         toml_file = temp_dir / "pyproject.toml"
-        toml_file.write_text("""
+        toml_file.write_text(
+            """
 [project.dependencies]
     "requests>=2.28.0"
-""")
+"""
+        )
 
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)
@@ -614,10 +624,12 @@ class TestSupplyChainAnalyzerMain:
     def test_analyze_project_with_pipfile(self, temp_dir):
         """Test analyzing a project with Pipfile."""
         pipfile = temp_dir / "Pipfile"
-        pipfile.write_text("""
+        pipfile.write_text(
+            """
 [packages]
 requests = "==2.28.0"
-""")
+"""
+        )
 
         analyzer = SupplyChainAnalyzer()
         result = analyzer.analyze_project(temp_dir)

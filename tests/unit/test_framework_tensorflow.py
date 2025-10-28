@@ -501,7 +501,9 @@ model = tf.keras.Sequential([
         """Analysis should be reasonable on medium files."""
         code = """
 import tensorflow as tf
-""" + "\n".join([f"layer{i} = tf.keras.layers.Dense(10)" for i in range(100)])
+""" + "\n".join(
+            [f"layer{i} = tf.keras.layers.Dense(10)" for i in range(100)]
+        )
 
         import time
 

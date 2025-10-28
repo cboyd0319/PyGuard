@@ -1482,11 +1482,13 @@ class TestPerformance:
         """Benchmark on file with many API routes."""
         routes = []
         for i in range(50):
-            routes.append(f"""
+            routes.append(
+                f"""
 @app.route('/api/endpoint{i}')
 def endpoint{i}():
     return {{'data': {i}}}
-""")
+"""
+            )
         code = "from flask import Flask\napp = Flask(__name__)\n" + "\n".join(routes)
         benchmark(lambda: analyze_api_security(Path("test.py"), code))
         assert benchmark.stats["mean"] < 0.300  # <300ms for 50 routes

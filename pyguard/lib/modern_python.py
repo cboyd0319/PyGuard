@@ -6,9 +6,9 @@ that should be modernized to Python 3.8+ idioms. Aligned with pyupgrade rules.
 """
 
 import ast
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

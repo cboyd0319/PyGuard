@@ -4,8 +4,8 @@ Analyze Python imports using ripgrep for performance.
 Detects circular imports, god modules, and other import-related issues.
 """
 
-from collections import Counter, defaultdict
 import subprocess
+from collections import Counter, defaultdict
 
 
 class ImportAnalyzer:

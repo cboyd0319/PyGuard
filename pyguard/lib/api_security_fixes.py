@@ -35,8 +35,8 @@ References:
 - CWE Top 25 | https://cwe.mitre.org/top25/ | High
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -150,14 +150,18 @@ class APISecurityFixer:
             if "jwt.decode(" in fixed_line:
                 # Replace HS256 with RS256
                 if "'HS256'" in fixed_line or '"HS256"' in fixed_line:
-                    fixed_line = fixed_line.replace("'HS256'", "'RS256'").replace('"HS256"', '"RS256"')
+                    fixed_line = fixed_line.replace("'HS256'", "'RS256'").replace(
+                        '"HS256"', '"RS256"'
+                    )
                     if not modified:
                         self.fixes_applied.append("JWT algorithm: HS256 → RS256 (API006)")
                         modified = True
 
                 # Remove 'none' algorithm
                 if "'none'" in fixed_line or '"none"' in fixed_line:
-                    fixed_line = fixed_line.replace("'none'", "'RS256'").replace('"none"', '"RS256"')
+                    fixed_line = fixed_line.replace("'none'", "'RS256'").replace(
+                        '"none"', '"RS256"'
+                    )
                     if not modified:
                         self.fixes_applied.append("JWT algorithm: none → RS256 (API006)")
                         modified = True
