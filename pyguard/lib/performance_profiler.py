@@ -186,11 +186,7 @@ class PerformanceProfiler(ast.NodeVisitor):
 
     def _is_dict_keys_iteration(self, node: ast.Call) -> bool:
         """Check if iterating dict.keys()."""
-        if (
-            isinstance(node.func, ast.Attribute) and node.func.attr == "keys"
-        ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
-            return True
-        return False
+        return isinstance(node.func, ast.Attribute) and node.func.attr == "keys"
 
     def _is_sum_with_list(self, node: ast.Call) -> bool:
         """Check if sum() is called with list comprehension."""

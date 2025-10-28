@@ -245,10 +245,9 @@ class PEP8Checker:
 
     def _update_bracket_stack(self, line: str, line_num: int, bracket_stack: list[tuple]) -> None:
         """Update bracket stack for continuation line tracking."""
-        col = 0
         indent = len(line) - len(line.lstrip())
 
-        for char in line:
+        for col, char in enumerate(line):
             if char in "([{":
                 bracket_stack.append((char, line_num, col, indent))
             elif char in ")]}" and bracket_stack:
@@ -259,7 +258,6 @@ class PEP8Checker:
                     or (char == "}" and open_char == "{")
                 ):
                     bracket_stack.pop()
-            col += 1
 
     def _check_continuation_indentation(
         self, line: str, line_num: int, lines: list[str], bracket_stack: list[tuple]

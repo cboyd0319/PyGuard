@@ -82,7 +82,8 @@ class ParallelProcessor:
 
             # Collect results as they complete
             completed = 0
-            for future in concurrent.futures.as_completed(future_to_file):
+            # Cannot use enumerate() here because as_completed() yields futures in completion order, not original order
+            for future in concurrent.futures.as_completed(future_to_file):  # noqa: SIM113
                 file_path = future_to_file[future]
                 completed += 1
 

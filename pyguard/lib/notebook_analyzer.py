@@ -39,7 +39,7 @@ NotebookFinding = NotebookIssue
 
 # Check if nbformat is available
 try:
-    import nbformat  # noqa: F401
+    import nbformat
 
     NBFORMAT_AVAILABLE = True
 except ImportError:

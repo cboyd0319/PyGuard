@@ -115,14 +115,14 @@ class DependencyParser:
 
         dependencies = []
         for line in content.split("\n"):
-            line = line.strip()
+            stripped_line = line.strip()
 
             # Skip comments and empty lines
-            if not line or line.startswith("#"):
+            if not stripped_line or stripped_line.startswith("#"):
                 continue
 
             # Parse package==version or package>=version
-            match = re.match(r"([a-zA-Z0-9_-]+)\s*([><=!~]+)\s*([0-9.]+)", line)
+            match = re.match(r"([a-zA-Z0-9_-]+)\s*([><=!~]+)\s*([0-9.]+)", stripped_line)
             if match:
                 name, _, version = match.groups()
                 dependencies.append(
@@ -162,21 +162,21 @@ class DependencyParser:
         in_dependencies = False
 
         for line in content.split("\n"):
-            line = line.strip()
+            stripped_line = line.strip()
 
             # Detect dependencies section
-            if line in {"[project.dependencies]", "dependencies = ["}:
+            if stripped_line in {"[project.dependencies]", "dependencies = ["}:
                 in_dependencies = True
                 continue
 
             if in_dependencies:
                 # End of section
-                if line.startswith("[") or line == "]":
+                if stripped_line.startswith("[") or stripped_line == "]":
                     in_dependencies = False
                     continue
 
                 # Parse dependency line
-                match = re.search(r'"([a-zA-Z0-9_-]+)\s*([><=!~]+)\s*([0-9.]+)"', line)
+                match = re.search(r'"([a-zA-Z0-9_-]+)\s*([><=!~]+)\s*([0-9.]+)"', stripped_line)
                 if match:
                     name, _, version = match.groups()
                     dependencies.append(
@@ -207,21 +207,21 @@ class DependencyParser:
         in_packages = False
 
         for line in content.split("\n"):
-            line = line.strip()
+            stripped_line = line.strip()
 
             # Detect packages section
-            if line == "[packages]":
+            if stripped_line == "[packages]":
                 in_packages = True
                 continue
 
             if in_packages:
                 # End of section
-                if line.startswith("["):
+                if stripped_line.startswith("["):
                     in_packages = False
                     continue
 
                 # Parse package line
-                match = re.match(r'([a-zA-Z0-9_-]+)\s*=\s*"([^"]+)"', line)
+                match = re.match(r'([a-zA-Z0-9_-]+)\s*=\s*"([^"]+)"', stripped_line)
                 if match:
                     name, version_spec = match.groups()
                     # Extract version number

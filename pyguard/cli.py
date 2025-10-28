@@ -68,7 +68,7 @@ class PyGuardCLI:
         """Lazy load notebook analyzer."""
         if self._notebook_analyzer is None:
             try:
-                from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer  # noqa: PLC0415
+                from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
 
                 self._notebook_analyzer = NotebookSecurityAnalyzer()
             except ImportError:
@@ -800,11 +800,11 @@ def main():
 
     # Watch mode
     if args.watch:
-        from pyguard.lib.watch import run_watch_mode  # noqa: PLC0415
+        from pyguard.lib.watch import run_watch_mode
 
         def analyze_file(file_path: Path):
             """Analyze a single file in watch mode."""
-            from rich.console import Console  # noqa: PLC0415
+            from rich.console import Console
 
             console = Console()
             console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
