@@ -2412,8 +2412,9 @@ class NotebookFixer:
 
             fixes_applied.insert(0, f"Created backup at {backup_path}")
 
-        # Return True if fixes were applied, False if no fixes needed
-        return bool(fixes_applied), fixes_applied
+        # Return True for success (whether fixes applied or not - idempotent)
+        # Return False only if there was an error (handled by exceptions)
+        return True, fixes_applied
 
     def _fix_torch_load(self, source: str) -> str:
         """
