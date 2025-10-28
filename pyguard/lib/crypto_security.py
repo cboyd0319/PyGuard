@@ -108,7 +108,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                         for target in node.targets:
                             if isinstance(target, ast.Name):
                                 self.null_iv_variables.add(target.id)
-        
+
         # CRYPTO008: Hardcoded encryption keys
         self._check_hardcoded_keys(node)
 

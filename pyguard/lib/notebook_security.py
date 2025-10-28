@@ -704,7 +704,7 @@ class NotebookSecurityAnalyzer:
             if line.strip().startswith("# PyGuard") or line.strip().startswith("# CWE-") or \
                line.strip().startswith("# SECURITY:") or line.strip().startswith("# WARNING: PII detected"):
                 continue
-                
+
             for pattern, description in self.PII_PATTERNS.items():
                 matches = re.finditer(pattern, line, re.IGNORECASE)
                 for match in matches:
@@ -2185,7 +2185,7 @@ class NotebookFixer:
                         redacted_line = line
                         for pattern in NotebookSecurityAnalyzer.SECRET_PATTERNS:
                             redacted_line = re.sub(pattern, "[REDACTED]", redacted_line)
-                        
+
                         lines[issue.line_number - 1] = (
                             f"# SECURITY: Removed hardcoded secret - use os.getenv() instead\n"
                             f"# Original (redacted): {redacted_line}"

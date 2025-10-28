@@ -152,7 +152,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
             # Check for file upload handling
             elif node.func.attr == "save":
                 self._check_file_upload_security(node)
-        
+
         # Check for directly imported render_template_string
         elif isinstance(node.func, ast.Name):
             if node.func.id in ("render_template_string", "render_template"):
@@ -392,12 +392,12 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         """Check for template rendering security issues (QUART007)."""
         # Check for render_template_string with user input
         is_render_template_string = False
-        
+
         if isinstance(node.func, ast.Attribute) and node.func.attr == "render_template_string":
             is_render_template_string = True
         elif isinstance(node.func, ast.Name) and node.func.id == "render_template_string":
             is_render_template_string = True
-        
+
         if is_render_template_string:
             for arg in node.args:
                 # Check if arg is direct user input (request.form, request.args, etc.)
@@ -534,21 +534,23 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                             # Check if methods is a list containing unsafe methods
                             if isinstance(methods_value, ast.List):
                                 for elt in methods_value.elts:
-                                    if isinstance(elt, ast.Constant) and elt.value.upper() in ("POST", "PUT", "DELETE", "PATCH"):
-                                        if not has_csrf_check:
-                                            self.violations.append(
-                                                RuleViolation(
-                                                    rule_id="QUART011",
-                                                    category=RuleCategory.SECURITY,
-                                                    message=f"Route with {elt.value.upper()} method missing CSRF protection",
-                                                    severity=RuleSeverity.HIGH,
-                                                    line_number=node.lineno,
-                                                    column=node.col_offset,
-                                                    file_path=self.file_path,
-                                                    fix_applicability=FixApplicability.UNSAFE,
+                                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                        method_name = elt.value.upper()
+                                        if method_name in ("POST", "PUT", "DELETE", "PATCH"):
+                                            if not has_csrf_check:
+                                                self.violations.append(
+                                                    RuleViolation(
+                                                        rule_id="QUART011",
+                                                        category=RuleCategory.SECURITY,
+                                                        message=f"Route with {method_name} method missing CSRF protection",
+                                                        severity=RuleSeverity.HIGH,
+                                                        line_number=node.lineno,
+                                                        column=node.col_offset,
+                                                        file_path=self.file_path,
+                                                        fix_applicability=FixApplicability.UNSAFE,
+                                                    )
                                                 )
-                                            )
-                                            break  # Only report once per route
+                                                break  # Only report once per route
 
     def _check_missing_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for authentication decorator issues (QUART012)."""
