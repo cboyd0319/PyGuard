@@ -1185,10 +1185,8 @@ class PEP8Checker:
             # This was for Python 2/3 transition - now less relevant but still useful
             if any(word in stripped for word in ["async", "await"]):
                 # Check if used as variable names (not as keywords)
-                import re as regex_module
-
                 # Simple check for assignment to async/await
-                if regex_module.search(r"\b(async|await)\s*=", stripped):
+                if re.search(r"\b(async|await)\s*=", stripped):
                     self._add_violation(
                         "W606",
                         line_num,

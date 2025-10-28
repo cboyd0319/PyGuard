@@ -13,6 +13,7 @@ import concurrent.futures
 from dataclasses import dataclass
 import multiprocessing
 from pathlib import Path
+import time
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -129,7 +130,6 @@ class ParallelProcessor:
         Returns:
             ProcessingResult object
         """
-        import time
 
         start_time = time.time()
 

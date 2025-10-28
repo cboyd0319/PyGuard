@@ -20,6 +20,8 @@ Example:
     >>> print(f"Found {len(critical)} critical issues")
 """
 
+import ast
+import json
 from pathlib import Path
 
 # Re-export the main notebook security classes for convenience
@@ -58,7 +60,6 @@ class NotebookAnalysisResult:
         # If notebook path provided, extract metadata
         if notebook_path and notebook_path.exists():
             try:
-                import json
 
                 with open(notebook_path, encoding="utf-8") as f:
                     notebook_data = json.load(f)
@@ -132,7 +133,6 @@ class NotebookSecurityAnalyzer(_BaseNotebookSecurityAnalyzer):
         Returns:
             Function name as string (e.g., 'eval' or 'pickle.load')
         """
-        import ast
 
         if isinstance(node.func, ast.Name):
             return node.func.id

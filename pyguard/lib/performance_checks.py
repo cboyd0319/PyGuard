@@ -6,6 +6,7 @@ that can be easily optimized. Aligned with Perflint rules.
 """
 
 import ast
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -298,7 +299,6 @@ class PerformanceFixer:
 
     def _fix_dict_keys_in_membership(self, content: str) -> str:
         """Fix dict.keys() in membership tests."""
-        import re
 
         # Pattern: 'in dict.keys()' → 'in dict'
         pattern = r"(\w+)\s+in\s+(\w+)\.keys\(\)"
@@ -311,7 +311,6 @@ class PerformanceFixer:
 
     def _fix_list_copy_slice(self, content: str) -> str:
         """Fix list[:] to list.copy()."""
-        import re
 
         # Pattern: 'list[:]' → 'list.copy()'
         # This is a simplified pattern; real implementation needs context
@@ -324,7 +323,6 @@ class PerformanceFixer:
 
     def _fix_unnecessary_wrappers(self, content: str) -> str:
         """Remove unnecessary type wrappers around comprehensions."""
-        import re
 
         # Pattern: list([...]) → [...]
         patterns = [

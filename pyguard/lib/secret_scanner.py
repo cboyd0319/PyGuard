@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import json
 import re
 import subprocess
+from typing import Any
 
 
 @dataclass
@@ -122,7 +123,6 @@ class SecretScanner:
     @staticmethod
     def _export_to_sarif(findings: list[SecretFinding], output_path: str):
         """Export findings to SARIF format for GitHub Code Scanning."""
-        from typing import Any
 
         sarif: dict[str, Any] = {
             "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",

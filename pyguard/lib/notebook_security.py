@@ -102,6 +102,7 @@ This implementation targets:
 """
 
 import ast
+import hashlib
 from dataclasses import dataclass
 import json
 import math
@@ -2842,7 +2843,6 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
         >>> with open('notebook-security.sarif', 'w') as f:
         ...     json.dump(sarif, f, indent=2)
     """
-    import hashlib
 
     notebook_pathobj = Path(notebook_path)
 
