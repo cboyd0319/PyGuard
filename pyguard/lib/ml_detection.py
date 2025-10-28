@@ -103,13 +103,26 @@ class CodeFeatureExtractor:
             features["subprocess_count"] = float(
                 code.count("subprocess.") + code.count("os.system")
             )
+            
+            # Check for dangerous subprocess patterns
+            features["shell_true_count"] = float(
+                len(re.findall(r'shell\s*=\s*True', code))
+            )
+            
             features["network_count"] = float(code.count("socket.") + code.count("requests."))
             features["file_ops_count"] = float(code.count("open(") + code.count("file("))
 
-            # String patterns
-            features["hardcoded_strings"] = float(
-                len(re.findall(r'["\'](?:password|api_key|secret|token)["\']', code.lower()))
+            # String patterns - detect both variable names and string literals
+            # Look for variable assignments with sensitive names (e.g., password = "...")
+            # and string literals containing sensitive keywords
+            sensitive_patterns = r'(?:password|api_key|secret|token|private_key|access_token)'
+            var_assignments = re.findall(
+                rf'\b({sensitive_patterns})\s*=\s*["\']', code.lower()
             )
+            string_literals = re.findall(
+                rf'["\']({sensitive_patterns})["\']', code.lower()
+            )
+            features["hardcoded_strings"] = float(len(var_assignments) + len(string_literals))
             features["sql_patterns"] = float(
                 len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code))
             )
@@ -129,6 +142,7 @@ class CodeFeatureExtractor:
                     "max_nesting",
                     "eval_count",
                     "subprocess_count",
+                    "shell_true_count",
                     "network_count",
                     "file_ops_count",
                     "hardcoded_strings",
@@ -195,10 +209,17 @@ class MLRiskScorer:
             score += 0.3
             factors.append(f"Code injection risk: {int(features['eval_count'])} eval/exec calls")
 
-        if features.get("subprocess_count", 0) > 2:
+        if features.get("subprocess_count", 0) > 0:
             score += 0.2
             factors.append(
                 f"Command injection risk: {int(features['subprocess_count'])} subprocess calls"
+            )
+        
+        # shell=True is particularly dangerous
+        if features.get("shell_true_count", 0) > 0:
+            score += 0.15
+            factors.append(
+                f"Critical shell injection: {int(features['shell_true_count'])} shell=True usage"
             )
 
         if features.get("hardcoded_strings", 0) > 0:

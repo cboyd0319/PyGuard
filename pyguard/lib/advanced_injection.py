@@ -84,6 +84,18 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
         self.source_lines = source_code.split('\n')
         self.imported_modules: Set[str] = set()
         self.template_engines: Set[str] = set()
+        # Track variables that contain user input (tainted variables)
+        self.tainted_variables: Set[str] = set()
+
+    def visit_Assign(self, node: ast.Assign):
+        """Track variable assignments from user input sources."""
+        # Check if the value being assigned contains user input
+        if self._has_user_input(node.value):
+            # Mark all target variables as tainted
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    self.tainted_variables.add(target.id)
+        self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import):
         """Track imported modules for context."""
@@ -170,11 +182,26 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
         ]
         
         if isinstance(node, ast.Name):
-            return any(indicator in node.id.lower() for indicator in user_input_indicators)
+            # Check if variable name contains user input indicators
+            name_has_indicator = any(indicator in node.id.lower() for indicator in user_input_indicators)
+            # Also check if this variable was previously marked as tainted
+            is_tainted = node.id in self.tainted_variables
+            return name_has_indicator or is_tainted
         elif isinstance(node, ast.Attribute):
             attr_str = self._get_attr_chain(node).lower()
             return any(indicator in attr_str for indicator in user_input_indicators)
         elif isinstance(node, ast.Subscript):
+            return self._has_user_input(node.value)
+        elif isinstance(node, ast.JoinedStr):
+            # Check f-strings for user input in formatted values
+            for value in node.values:
+                if isinstance(value, ast.FormattedValue):
+                    if self._has_user_input(value.value):
+                        return True
+                elif self._has_user_input(value):
+                    return True
+            return False
+        elif isinstance(node, ast.FormattedValue):
             return self._has_user_input(node.value)
         
         # Check children
