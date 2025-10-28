@@ -47,7 +47,7 @@ def load_config(file_path):
         )
 
         # Run PyGuard with SARIF output
-        result = subprocess.run(
+        subprocess.run(
             [
                 sys.executable,
                 "-m",
@@ -112,7 +112,7 @@ def add_numbers(a: int, b: int) -> int:
         )
 
         # Run PyGuard with SARIF output
-        result = subprocess.run(
+        subprocess.run(
             [
                 sys.executable,
                 "-m",
@@ -345,7 +345,7 @@ def dangerous_exec(code):
         if run.get("results"):
             for result in run["results"]:
                 # Should have either fixes or help text with recommendations
-                has_fix_info = "fixes" in result or (
+                "fixes" in result or (
                     "help" in run["tool"]["driver"].get("rules", [{}])[0]
                     if run["tool"]["driver"].get("rules")
                     else False

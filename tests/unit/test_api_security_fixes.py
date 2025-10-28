@@ -12,7 +12,6 @@ Total: 80+ tests for production-quality auto-fix coverage
 """
 
 import pytest
-from pathlib import Path
 from pyguard.lib.api_security_fixes import APISecurityFixer
 
 

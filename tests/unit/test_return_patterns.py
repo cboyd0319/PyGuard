@@ -2,8 +2,7 @@
 Unit tests for return_patterns module.
 """
 
-import pytest
-from pyguard.lib.return_patterns import ReturnPatternChecker, ReturnPatternVisitor
+from pyguard.lib.return_patterns import ReturnPatternChecker
 
 
 class TestReturnPatternChecker:

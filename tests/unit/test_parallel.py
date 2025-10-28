@@ -1,10 +1,8 @@
 """Tests for parallel processing module."""
 
 import tempfile
-import time
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
 
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor, ProcessingResult
 

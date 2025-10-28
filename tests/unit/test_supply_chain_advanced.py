@@ -7,14 +7,12 @@ and code signing/integrity checks.
 """
 
 import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.supply_chain_advanced import (
     SupplyChainAdvancedVisitor,
     analyze_supply_chain_advanced,
 )
-from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleSeverity
 
 
 class TestDeprecatedPackageUsage:
@@ -27,7 +25,7 @@ import imp  # Deprecated in Python 3.4
 import optparse  # Deprecated in favor of argparse
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        deprecated_violations = [v for v in violations if v.rule_id == "SUPPLY001"]
+        [v for v in violations if v.rule_id == "SUPPLY001"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -38,7 +36,7 @@ import argparse
 import json
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        deprecated_violations = [v for v in violations if v.rule_id == "SUPPLY001"]
+        [v for v in violations if v.rule_id == "SUPPLY001"]
         # Modern packages should be safe
         assert True
 
@@ -94,7 +92,7 @@ class TestGitHubActionsInjection:
 workflow_content = f"name: CI\\non: push\\njobs:\\n  build:\\n    runs-on: ubuntu-latest\\n    steps:\\n      - run: {user_input}"
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        injection_violations = [v for v in violations if v.rule_id == "SUPPLY008"]
+        [v for v in violations if v.rule_id == "SUPPLY008"]
         # Should detect user input in workflow
         assert isinstance(violations, list)
 
@@ -109,7 +107,7 @@ import os
 print(os.environ)  # Exposes all environment variables
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        env_violations = [v for v in violations if v.rule_id == "SUPPLY009"]
+        [v for v in violations if v.rule_id == "SUPPLY009"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -120,7 +118,7 @@ import os
 database_url = os.getenv('DATABASE_URL', 'default')
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        env_violations = [v for v in violations if v.rule_id == "SUPPLY009"]
+        [v for v in violations if v.rule_id == "SUPPLY009"]
         # Selective env var access should be safe
         assert True
 
@@ -136,7 +134,7 @@ api_key = "sk-1234567890abcdef"
 logging.info(f"Using API key: {api_key}")
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        secret_violations = [v for v in violations if v.rule_id == "SUPPLY010"]
+        [v for v in violations if v.rule_id == "SUPPLY010"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -147,7 +145,7 @@ import logging
 logging.info("API request completed")
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        secret_violations = [v for v in violations if v.rule_id == "SUPPLY010"]
+        [v for v in violations if v.rule_id == "SUPPLY010"]
         # Generic logging should be safe
         assert True
 
@@ -165,7 +163,7 @@ user_input = os.getenv('GITHUB_INPUT_COMMAND')
 subprocess.run(user_input, shell=True)  # Unvalidated!
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        input_violations = [v for v in violations if v.rule_id == "SUPPLY011"]
+        [v for v in violations if v.rule_id == "SUPPLY011"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -210,7 +208,7 @@ secret_key = "my-secret-key"
 subprocess.run(['docker', 'build', '--build-arg', f'SECRET={secret_key}', '.'])
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        docker_violations = [v for v in violations if v.rule_id == "SUPPLY014"]
+        [v for v in violations if v.rule_id == "SUPPLY014"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -222,7 +220,7 @@ import subprocess
 subprocess.run(['docker', 'build', '-t', 'myapp', '.'])
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        docker_violations = [v for v in violations if v.rule_id == "SUPPLY014"]
+        [v for v in violations if v.rule_id == "SUPPLY014"]
         # Build without secrets should be safe
         assert True
 
@@ -241,7 +239,7 @@ url = "https://example.com/package.tar.gz"
 urllib.request.urlretrieve(url, "package.tar.gz")
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        cache_violations = [v for v in violations if v.rule_id == "SUPPLY015"]
+        [v for v in violations if v.rule_id == "SUPPLY015"]
         # May detect downloads without verification
         assert isinstance(violations, list)
 
@@ -273,7 +271,7 @@ data = b"package content"
 signature = hashlib.md5(data).hexdigest()
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        sig_violations = [v for v in violations if v.rule_id == "SUPPLY024"]
+        [v for v in violations if v.rule_id == "SUPPLY024"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -286,7 +284,7 @@ data = b"package content"
 signature = hashlib.sha1(data).hexdigest()
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        sig_violations = [v for v in violations if v.rule_id == "SUPPLY024"]
+        [v for v in violations if v.rule_id == "SUPPLY024"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -331,7 +329,7 @@ subprocess.run(['docker', 'push', 'myregistry/myapp:latest'])
 # Missing: Image signing
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        unsigned_violations = [v for v in violations if v.rule_id == "SUPPLY030"]
+        [v for v in violations if v.rule_id == "SUPPLY030"]
         # May detect unsigned pushes
         assert isinstance(violations, list)
 
@@ -348,7 +346,7 @@ import subprocess
 subprocess.run(['pip', 'install', 'requests'])
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        integrity_violations = [v for v in violations if v.rule_id == "SUPPLY031"]
+        [v for v in violations if v.rule_id == "SUPPLY031"]
         # May detect installations without hashes
         assert isinstance(violations, list)
 
@@ -366,7 +364,7 @@ subprocess.run([
 ])
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        integrity_violations = [v for v in violations if v.rule_id == "SUPPLY031"]
+        [v for v in violations if v.rule_id == "SUPPLY031"]
         # Hash-verified install should be safe
         assert True
 

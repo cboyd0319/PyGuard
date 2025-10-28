@@ -5,7 +5,6 @@ Unit tests for Import Analyzer module.
 import subprocess
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from pyguard.lib.import_analyzer import ImportAnalyzer
 

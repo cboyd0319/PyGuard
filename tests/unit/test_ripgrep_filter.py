@@ -3,10 +3,8 @@ Unit tests for RipGrep filter module.
 """
 
 import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from pyguard.lib.ripgrep_filter import RipGrepFilter
 

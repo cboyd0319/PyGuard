@@ -1,8 +1,6 @@
 """Tests for import rules module."""
 
-from pathlib import Path
 
-import pytest
 
 from pyguard.lib.import_rules import IMPORT_RULES, ImportRulesChecker
 

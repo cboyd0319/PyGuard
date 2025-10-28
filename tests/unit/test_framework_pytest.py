@@ -9,7 +9,6 @@ Comprehensive test suite following PyTest Architect Agent principles:
 - Deterministic test execution
 """
 
-from pathlib import Path
 
 import pytest
 
@@ -279,7 +278,7 @@ def test_empty_fixture():
         violations = checker.check_file(file_path)
 
         # Assert
-        pt004_violations = [v for v in violations if v.rule_id == "PT004"]
+        [v for v in violations if v.rule_id == "PT004"]
         # PT004 only checks when it's a fixture on a test function
         # This is testing the fixture detection logic
         assert isinstance(violations, list)

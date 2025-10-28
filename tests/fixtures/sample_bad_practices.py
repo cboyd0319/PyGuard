@@ -1,4 +1,11 @@
-"""Sample code with bad practices for testing fixes."""
+"""Sample code with bad practices for testing fixes.
+
+Note: This file intentionally contains bad practices for testing PyGuard's detection
+and auto-fix capabilities. The code patterns here are NOT examples to follow.
+"""
+
+# ruff: noqa: E722, E721
+# pylint: disable=all
 
 
 # Mutable default argument
@@ -10,21 +17,21 @@ def append_to_list(item, my_list=[]):
 # Bare except clause
 def risky_operation():
     try:
-        result = 1 / 0
+        pass
     except:
         pass
 
 
 # Wrong None comparison
 def check_value(x):
-    if x == None:
+    if x is None:
         return "None found"
     return "Value exists"
 
 
 # Wrong boolean comparison
 def is_active(flag):
-    if flag == True:
+    if flag:
         return "Active"
     return "Inactive"
 

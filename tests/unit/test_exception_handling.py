@@ -5,11 +5,9 @@ Tests for exception handling pattern detection.
 import ast
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.exception_handling import (
     ExceptionHandlingChecker,
-    ExceptionHandlingVisitor,
     EXCEPTION_HANDLING_RULES,
 )
 
@@ -579,7 +577,6 @@ with mymodule.suppress(Exception):
         checker = ExceptionHandlingChecker()
         
         # Mock the ast.parse to raise an exception (not SyntaxError)
-        import ast
         original_parse = ast.parse
         
         def mock_parse_error(*args, **kwargs):
@@ -599,7 +596,6 @@ with mymodule.suppress(Exception):
         checker = ExceptionHandlingChecker()
         
         # Mock ast.parse to raise a non-syntax exception
-        import ast
         original_parse = ast.parse
         
         def mock_parse_error(*args, **kwargs):

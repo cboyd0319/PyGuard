@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.enhanced_detections import (
     AuthenticationBypassDetector,
@@ -362,7 +361,7 @@ def update_user(request):
     data = {k: v for k, v in request.data.items() if k in allowed}
     user.update(data)
 """
-        issues = self.detector.scan_code(code, "test.py")
+        self.detector.scan_code(code, "test.py")
         # May still detect but that's conservative
         # The important thing is detecting the vulnerable patterns
 

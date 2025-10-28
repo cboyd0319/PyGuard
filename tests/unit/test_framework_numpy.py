@@ -6,15 +6,13 @@ Covers 15 security checks for array operations, memory safety,
 numerical computation security, and data science application security.
 """
 
-import ast
 import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_numpy import (
-    NumPySecurityVisitor,
     analyze_numpy_security,
 )
-from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleSeverity
+from pyguard.lib.rule_engine import RuleSeverity
 
 
 class TestNumPyUnsafePickle:
@@ -287,7 +285,7 @@ arr2 = np.array([3000, 4000])
 result = arr1 * arr2
 """
         violations = analyze_numpy_security(Path("test.py"), code)
-        overflow_violations = [v for v in violations if v.rule_id == "NUMPY002"]
+        [v for v in violations if v.rule_id == "NUMPY002"]
         # May or may not detect based on heuristics
         assert isinstance(violations, list)
 
@@ -299,7 +297,7 @@ import numpy as np
 data = large_array + other_array
 """
         violations = analyze_numpy_security(Path("test.py"), code)
-        overflow_violations = [v for v in violations if v.rule_id == "NUMPY002"]
+        [v for v in violations if v.rule_id == "NUMPY002"]
         # May or may not detect based on heuristics
         assert isinstance(violations, list)
 
@@ -468,7 +466,7 @@ data = np.zeros(100)
 """
         import time
         start = time.time()
-        violations = analyze_numpy_security(Path("test.py"), code)
+        analyze_numpy_security(Path("test.py"), code)
         elapsed = time.time() - start
         
         assert elapsed < 0.1  # Should complete in <100ms
@@ -481,7 +479,7 @@ import numpy as np
         
         import time
         start = time.time()
-        violations = analyze_numpy_security(Path("test.py"), code)
+        analyze_numpy_security(Path("test.py"), code)
         elapsed = time.time() - start
         
         assert elapsed < 1.0  # Should complete in <1 second

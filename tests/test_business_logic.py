@@ -9,15 +9,11 @@ Tests 30 security checks across three categories:
 Following TDD approach with minimum 90 tests as per Security Dominance Plan.
 """
 
-import ast
-import pytest
 
 from pyguard.lib.business_logic import (
     analyze_business_logic,
-    BusinessLogicVisitor,
     BUSINESS_LOGIC_RULES,
 )
-from pyguard.lib.ast_analyzer import SecurityIssue
 
 
 class TestBusinessLogicModule:
@@ -269,7 +265,7 @@ def process_order(quantity, price):
     return total
 """
         issues = analyze_business_logic(code)
-        negative_issues = [i for i in issues if "negative" in i.message.lower() and "quantity" in i.message.lower()]
+        [i for i in issues if "negative" in i.message.lower() and "quantity" in i.message.lower()]
         # May still flag for other reasons, but should have validation
         # This is a simplified check
 

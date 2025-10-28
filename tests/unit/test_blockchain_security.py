@@ -14,7 +14,6 @@ Tests all 10 blockchain security checks (BLOCKCHAIN001-BLOCKCHAIN010) including:
 - NFT metadata injection
 """
 
-import pytest
 from pathlib import Path
 
 from pyguard.lib.blockchain_security import (

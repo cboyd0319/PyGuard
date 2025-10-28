@@ -1,6 +1,5 @@
 """Sample correct Python code following best practices."""
 
-import hashlib
 import secrets
 from typing import List, Optional
 

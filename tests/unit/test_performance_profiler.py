@@ -1,7 +1,5 @@
 """Tests for performance profiler module."""
 
-import pytest
-from pathlib import Path
 from pyguard.lib.performance_profiler import (
     PerformanceProfiler,
     PerformanceOptimizationSuggester,

@@ -20,8 +20,7 @@ Testing Strategy:
 import pytest
 from pathlib import Path
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
-from io import StringIO
+from unittest.mock import patch
 
 from pyguard.lib.ui import UITheme, EnhancedConsole, ModernHTMLReporter
 

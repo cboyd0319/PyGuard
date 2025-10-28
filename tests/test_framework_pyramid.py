@@ -10,14 +10,12 @@ Following TDD approach with minimum 45 tests as per Security Dominance Plan.
 """
 
 import ast
-import pytest
 
 from pyguard.lib.framework_pyramid import (
     analyze_pyramid_security,
     PyramidSecurityVisitor,
     PYRAMID_RULES,
 )
-from pyguard.lib.ast_analyzer import SecurityIssue
 
 
 class TestPyramidModule:
@@ -89,7 +87,7 @@ class SecureFactory:
 """
         issues = analyze_pyramid_security(code)
         # May still flag Everyone if it's anywhere in the code, but Authenticated alone is OK
-        everyone_issues = [i for i in issues if "Everyone" in i.message]
+        [i for i in issues if "Everyone" in i.message]
         # This test validates the rule is working; actual flagging depends on code content
 
 

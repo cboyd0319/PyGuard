@@ -1,6 +1,5 @@
 """Tests for knowledge integration module."""
 
-import pytest
 
 from pyguard.lib.knowledge_integration import (
     KnowledgeBase,

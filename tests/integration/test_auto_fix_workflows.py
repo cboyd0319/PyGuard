@@ -206,7 +206,7 @@ def load_and_query(config_file, user_id):
 """
         )
 
-        original_content = test_file.read_text()
+        test_file.read_text()
 
         # Run with allow_unsafe_fixes=False
         cli = PyGuardCLI(allow_unsafe_fixes=False)
@@ -630,7 +630,7 @@ class TestPerformance:
             lines.append(f"variable_{i} = {i}")
             if i % 10 == 0:
                 lines.append(f"if variable_{i} == None:")
-                lines.append(f"    pass")
+                lines.append("    pass")
         large_file.write_text("\n".join(lines))
 
         # Process file

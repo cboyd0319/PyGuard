@@ -1,6 +1,5 @@
 """Unit tests for standards integration module."""
 
-import pytest
 
 from pyguard.lib.standards_integration import (
     CERTSecureCodingMapper,

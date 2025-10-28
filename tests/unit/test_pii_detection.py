@@ -13,7 +13,7 @@ Total: 40+ tests exceeding minimum 38 requirement.
 import pytest
 from pathlib import Path
 
-from pyguard.lib.pii_detection import check_pii, PIIDetectionVisitor
+from pyguard.lib.pii_detection import check_pii
 from pyguard.lib.rule_engine import RuleSeverity
 
 
@@ -92,7 +92,7 @@ fake_card = "1234-5678-9012-3456"
         code = """
 amex = "3782-822463-10005"
 """
-        violations = check_pii(Path("test.py"), code)
+        check_pii(Path("test.py"), code)
         # Current implementation may not catch 15-digit format
         # This is a known limitation to document
 
@@ -468,14 +468,14 @@ class TestPerformance:
     def test_performance_small_file(self, benchmark):
         """Test performance on small file (100 lines)."""
         code = "\n".join([f"var{i} = {i}" for i in range(100)])
-        result = benchmark(lambda: check_pii(Path("test.py"), code))
+        benchmark(lambda: check_pii(Path("test.py"), code))
         # Should complete in <5ms for small file
         # Note: benchmark runs multiple times, check that it doesn't error
 
     def test_performance_medium_file(self, benchmark):
         """Test performance on medium file (1000 lines)."""
         code = "\n".join([f"variable_{i} = 'value_{i}'" for i in range(1000)])
-        result = benchmark(lambda: check_pii(Path("test.py"), code))
+        benchmark(lambda: check_pii(Path("test.py"), code))
         # Should complete in <50ms for medium file
         # Note: benchmark runs multiple times, check that it doesn't error
 
@@ -488,7 +488,7 @@ phone = "555-123-4567"
 ip = "192.168.1.1"
 mac = "00:1A:2B:3C:4D:5E"
 """ * 100  # Repeat 100 times
-        result = benchmark(lambda: check_pii(Path("test.py"), code))
+        benchmark(lambda: check_pii(Path("test.py"), code))
         # Should still be fast even with many PII detections
         # Note: benchmark.stats is a dict-like object
         assert benchmark.stats['mean'] < 0.100  # 100ms

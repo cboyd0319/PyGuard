@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.ruff_security import check_ruff_security
 

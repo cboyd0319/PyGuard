@@ -1,6 +1,5 @@
 """Unit tests for fix safety classification system."""
 
-import pytest
 
 from pyguard.lib.fix_safety import (
     FixClassification,

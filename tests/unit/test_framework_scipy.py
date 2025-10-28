@@ -6,12 +6,9 @@ Covers 10+ security checks for scientific computing security, numerical computat
 file I/O security, and algorithm security.
 """
 
-import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_scipy import (
-    ScipySecurityVisitor,
     analyze_scipy_security,
 )
 

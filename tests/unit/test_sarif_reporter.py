@@ -3,9 +3,7 @@ Tests for SARIF reporter module.
 """
 
 import json
-from pathlib import Path
 
-import pytest
 
 from pyguard.lib.sarif_reporter import SARIFReporter
 

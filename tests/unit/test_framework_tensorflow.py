@@ -6,15 +6,13 @@ Covers 20 security checks for model security, training pipeline security,
 inference security, and distributed ML security.
 """
 
-import ast
 import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_tensorflow import (
-    TensorFlowSecurityVisitor,
     analyze_tensorflow_security,
 )
-from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleSeverity
+from pyguard.lib.rule_engine import RuleSeverity
 
 
 class TestTensorFlowUnsafeModelLoading:
@@ -64,7 +62,7 @@ import tensorflow as tf
 model = tf.keras.models.load_model('model.h5', compile=False)
 """
         violations = analyze_tensorflow_security(Path("test.py"), code)
-        model_violations = [v for v in violations if v.rule_id == "TF001"]
+        [v for v in violations if v.rule_id == "TF001"]
         # Should still detect missing path validation, but not compile issue
         # Adjust based on implementation
         assert isinstance(violations, list)
@@ -494,7 +492,7 @@ model = tf.keras.Sequential([
 """
         import time
         start = time.time()
-        violations = analyze_tensorflow_security(Path("test.py"), code)
+        analyze_tensorflow_security(Path("test.py"), code)
         elapsed = time.time() - start
         
         assert elapsed < 0.1  # Should complete in <100ms
@@ -507,7 +505,7 @@ import tensorflow as tf
         
         import time
         start = time.time()
-        violations = analyze_tensorflow_security(Path("test.py"), code)
+        analyze_tensorflow_security(Path("test.py"), code)
         elapsed = time.time() - start
         
         assert elapsed < 1.0  # Should complete in <1 second

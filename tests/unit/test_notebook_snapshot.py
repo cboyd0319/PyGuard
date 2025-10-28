@@ -21,7 +21,6 @@ Reference: PYGUARD_JUPYTER_SECURITY_ENGINEER.md
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Dict, Any
 
@@ -30,7 +29,6 @@ import pytest
 from pyguard.lib.notebook_security import (
     scan_notebook,
     NotebookFixer,
-    NotebookIssue,
 )
 
 
@@ -276,7 +274,7 @@ class TestGoldenFileSnapshots:
         notebook = self.load_notebook(vulnerable_path)
         
         original_cell_count = len(notebook["cells"])
-        original_metadata = notebook.get("metadata", {})
+        notebook.get("metadata", {})
         
         # Apply fix
         fixed_path = tmp_path / "fixed.ipynb"

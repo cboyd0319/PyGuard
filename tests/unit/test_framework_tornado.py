@@ -7,14 +7,12 @@ RequestHandler security, and high-performance web applications.
 """
 
 import ast
-import pytest
 from pathlib import Path
 
 from pyguard.lib.framework_tornado import (
     TornadoSecurityVisitor,
     analyze_tornado_security,
 )
-from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleSeverity
 
 
 class TestTornadoXSRFProtection:
@@ -33,7 +31,7 @@ class MyHandler(tornado.web.RequestHandler):
         self.write("OK")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        xsrf_violations = [v for v in violations if v.rule_id == "TORNADO003"]
+        [v for v in violations if v.rule_id == "TORNADO003"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -47,7 +45,7 @@ app = tornado.web.Application([
 ], xsrf_cookies=False)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        xsrf_violations = [v for v in violations if v.rule_id == "TORNADO003"]
+        [v for v in violations if v.rule_id == "TORNADO003"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -81,7 +79,7 @@ class ChatHandler(tornado.websocket.WebSocketHandler):
         self.write_message("Echo: " + message)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        ws_violations = [v for v in violations if v.rule_id == "TORNADO004"]
+        [v for v in violations if v.rule_id == "TORNADO004"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -115,7 +113,7 @@ class MyHandler(tornado.web.RequestHandler):
         self.render("template.html", autoescape=None)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        escape_violations = [v for v in violations if v.rule_id == "TORNADO006"]
+        [v for v in violations if v.rule_id == "TORNADO006"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -129,7 +127,7 @@ class MyHandler(tornado.web.RequestHandler):
         self.render("template.html")  # autoescape on by default
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        escape_violations = [v for v in violations if v.rule_id == "TORNADO006"]
+        [v for v in violations if v.rule_id == "TORNADO006"]
         # Default autoescape should be safe
         assert True
 
@@ -151,7 +149,7 @@ class FileHandler(tornado.web.StaticFileHandler):
             self.write(f.read())
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        static_violations = [v for v in violations if v.rule_id == "TORNADO007"]
+        [v for v in violations if v.rule_id == "TORNADO007"]
         # May detect unsafe path construction
         assert isinstance(violations, list)
 
@@ -169,7 +167,7 @@ app = tornado.web.Application([
 ], cookie_secret="12345")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        cookie_violations = [v for v in violations if v.rule_id in ["TORNADO001", "TORNADO002"]]
+        [v for v in violations if v.rule_id in ["TORNADO001", "TORNADO002"]]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -183,7 +181,7 @@ class MyHandler(tornado.web.RequestHandler):
         self.set_cookie("session_id", "abc123")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        secure_violations = [v for v in violations if v.rule_id == "TORNADO009"]
+        [v for v in violations if v.rule_id == "TORNADO009"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -196,7 +194,7 @@ class MyHandler(tornado.web.RequestHandler):
     def get(self):
         self.set_secure_cookie("session_id", "abc123", secure=True, httponly=True)
 """
-        violations = analyze_tornado_security(Path("test.py"), code)
+        analyze_tornado_security(Path("test.py"), code)
         # Secure cookies should not trigger violations
         assert True
 
@@ -219,7 +217,7 @@ class UserHandler(tornado.web.RequestHandler):
         self.write(result)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        sql_violations = [v for v in violations if v.rule_id == "TORNADO005"]
+        [v for v in violations if v.rule_id == "TORNADO005"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -238,7 +236,7 @@ class UserHandler(tornado.web.RequestHandler):
         self.write(result)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        sql_violations = [v for v in violations if v.rule_id == "TORNADO005"]
+        [v for v in violations if v.rule_id == "TORNADO005"]
         # Parameterized queries should be safe
         assert True
 
@@ -258,7 +256,7 @@ class MyHandler(tornado.web.RequestHandler):
         self.write("OK")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        blocking_violations = [v for v in violations if v.rule_id == "TORNADO008"]
+        [v for v in violations if v.rule_id == "TORNADO008"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -296,7 +294,7 @@ class CounterHandler(tornado.web.RequestHandler):
         self.write(str(counter))
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        race_violations = [v for v in violations if v.rule_id == "TORNADO010"]
+        [v for v in violations if v.rule_id == "TORNADO010"]
         # May detect global variable modification
         assert isinstance(violations, list)
 
@@ -313,7 +311,7 @@ http_client = tornado.httpclient.HTTPClient()
 response = http_client.fetch("https://example.com", validate_cert=False)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        http_violations = [v for v in violations if v.rule_id in ["TORNADO011", "TORNADO012"]]
+        [v for v in violations if v.rule_id in ["TORNADO011", "TORNADO012"]]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -326,7 +324,7 @@ http_client = tornado.httpclient.HTTPClient()
 response = http_client.fetch("https://example.com")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        http_violations = [v for v in violations if v.rule_id in ["TORNADO011", "TORNADO012"]]
+        [v for v in violations if v.rule_id in ["TORNADO011", "TORNADO012"]]
         # Default SSL verification should be safe
         assert True
 
@@ -348,7 +346,7 @@ class LoginHandler(tornado.web.RequestHandler):
             self.set_secure_cookie("user", username)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        session_violations = [v for v in violations if v.rule_id == "TORNADO014"]
+        [v for v in violations if v.rule_id == "TORNADO014"]
         # May detect session fixation patterns
         assert isinstance(violations, list)
 
@@ -366,7 +364,7 @@ class SecureHandler(tornado.web.RequestHandler):
         self.write("Secure content")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        hsts_violations = [v for v in violations if v.rule_id == "TORNADO015"]
+        [v for v in violations if v.rule_id == "TORNADO015"]
         # May detect missing HSTS
         assert isinstance(violations, list)
 
@@ -383,7 +381,7 @@ class SecureHandler(tornado.web.RequestHandler):
         self.write("Secure content")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        hsts_violations = [v for v in violations if v.rule_id == "TORNADO015"]
+        [v for v in violations if v.rule_id == "TORNADO015"]
         # HSTS header should be safe
         assert True
 
@@ -417,7 +415,7 @@ class AdminHandler(tornado.web.RequestHandler):
         self.write("Admin panel")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        auth_violations = [v for v in violations if v.rule_id == "TORNADO016"]
+        [v for v in violations if v.rule_id == "TORNADO016"]
         # Authenticated handlers should be safe
         assert True
 
@@ -436,7 +434,7 @@ class SearchHandler(tornado.web.RequestHandler):
         self.write("<h1>Search results for: " + query + "</h1>")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        sanitize_violations = [v for v in violations if v.rule_id == "TORNADO017"]
+        [v for v in violations if v.rule_id == "TORNADO017"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -453,7 +451,7 @@ class SearchHandler(tornado.web.RequestHandler):
         self.write("<h1>Search results for: " + safe_query + "</h1>")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        sanitize_violations = [v for v in violations if v.rule_id == "TORNADO017"]
+        [v for v in violations if v.rule_id == "TORNADO017"]
         # Escaped input should be safe
         assert True
 
@@ -472,7 +470,7 @@ class RedirectHandler(tornado.web.RequestHandler):
         self.redirect(url)  # Open redirect!
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        redirect_violations = [v for v in violations if v.rule_id == "TORNADO018"]
+        [v for v in violations if v.rule_id == "TORNADO018"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -490,7 +488,7 @@ class RedirectHandler(tornado.web.RequestHandler):
             self.redirect('/')
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        redirect_violations = [v for v in violations if v.rule_id == "TORNADO018"]
+        [v for v in violations if v.rule_id == "TORNADO018"]
         # Validated redirects should be safe
         assert True
 
@@ -511,7 +509,7 @@ class GreetHandler(tornado.web.RequestHandler):
         self.render_string(template.replace("{{ name }}", name))
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        template_violations = [v for v in violations if v.rule_id == "TORNADO019"]
+        [v for v in violations if v.rule_id == "TORNADO019"]
         # May detect template injection patterns
         assert isinstance(violations, list)
 
@@ -532,7 +530,7 @@ class MyHandler(tornado.web.RequestHandler):
             self.write(str(e))  # Exposes exception details!
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        exception_violations = [v for v in violations if v.rule_id == "TORNADO020"]
+        [v for v in violations if v.rule_id == "TORNADO020"]
         # Detection may vary based on implementation
         assert isinstance(violations, list)
 
@@ -550,7 +548,7 @@ class MyHandler(tornado.web.RequestHandler):
             self.write("An error occurred")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
-        exception_violations = [v for v in violations if v.rule_id == "TORNADO020"]
+        [v for v in violations if v.rule_id == "TORNADO020"]
         # Logging errors without exposing to users should be safe
         assert True
 

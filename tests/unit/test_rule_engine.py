@@ -4,7 +4,6 @@ import ast
 from pathlib import Path
 from typing import List, Optional
 
-import pytest
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -864,7 +863,6 @@ class TestRuleExecutorEdgeCases:
         
         assert fixed_code == code
         assert len(applied) == 0
-        assert filtered == []
 
     def test_registry_get_all_rules(self):
         """Test getting all registered rules."""
@@ -897,8 +895,8 @@ class TestRuleExecutorEdgeCases:
         assert rule2 in all_rules
 
 
-class TestRuleExecutorEdgeCases:
-    """Test RuleExecutor edge cases."""
+class TestRuleExecutorAdditionalEdgeCases:
+    """Test RuleExecutor additional edge cases."""
 
     def test_executor_analyze_empty_file(self, tmp_path):
         """Test analyzing an empty file."""

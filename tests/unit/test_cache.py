@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from pyguard.lib.cache import AnalysisCache, ConfigCache
 
@@ -219,7 +218,6 @@ class TestAnalysisCacheEdgeCases:
         self.cache.set(test_file, {"data": "test"})
         
         # Make cache directory read-only to trigger save error
-        import os
         import stat
         self.cache_dir.chmod(stat.S_IRUSR | stat.S_IXUSR)
         

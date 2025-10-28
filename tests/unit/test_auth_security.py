@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 from pyguard.lib.auth_security import AuthSecurityChecker, AuthSecurityVisitor
-from pyguard.lib.rule_engine import FixApplicability, RuleSeverity
+from pyguard.lib.rule_engine import RuleSeverity
 
 
 class TestWeakSessionIDDetection:

@@ -12,12 +12,10 @@ Tests cover:
 Following pytest best practices with AAA pattern, parametrization, and proper mocking.
 """
 
-import ast
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import List
-from unittest.mock import MagicMock, Mock, patch, mock_open
+from unittest.mock import patch
 
 import pytest
 
@@ -139,7 +137,6 @@ class TestFixNotebookWithValidation:
         """Test that fix_notebook_with_validation creates a timestamped backup."""
         # Arrange
         fixer = EnhancedNotebookFixer()
-        parent_dir = temp_notebook.parent
 
         # Act
         with patch("pyguard.lib.notebook_auto_fix_enhanced.datetime") as mock_datetime:
@@ -153,7 +150,7 @@ class TestFixNotebookWithValidation:
                 pass
 
         # Assert - check backup was attempted to be created
-        expected_backup = temp_notebook.with_suffix(
+        temp_notebook.with_suffix(
             ".ipynb.backup.20250101_120000"
         )
         # Note: Backup creation happens in the method, we're verifying the logic

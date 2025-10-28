@@ -148,14 +148,12 @@ class TestWorkflowValidation:
                     continue
 
                 # Check for continue-on-error or if: always() patterns
-                has_error_handling = False
 
                 for step in job_config["steps"]:
                     if not isinstance(step, dict):
                         continue
 
                     if "continue-on-error" in step or "if" in step:
-                        has_error_handling = True
                         break
 
                 # Not all jobs need error handling, but good practice
