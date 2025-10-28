@@ -133,14 +133,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             if node.args and self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "TF001", "Unsafe Model Deserialization",
-                        RuleSeverity.CRITICAL,
-                        "Loading models from user-controlled paths can execute arbitrary code during deserialization. "
+                        rule_id="TF001",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.CRITICAL,
+                        message="Loading models from user-controlled paths can execute arbitrary code during deserialization. "
                         "Validate model sources and use signature verification.",
-                        "Validate model path and use: tf.keras.models.load_model(path, compile=False)",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Validate model path and use: tf.keras.models.load_model(path, compile=False)",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures"
+                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        source_tool="pyguard"
                     )
                 )
             
@@ -156,14 +164,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             if not has_safe_compile and func_name.endswith("load_model"):
                 self.violations.append(
                     RuleViolation(
-                        node, "TF001", "Unsafe Model Compilation on Load",
-                        RuleSeverity.HIGH,
-                        "Loading models with compile=True can execute custom layers/losses/metrics with arbitrary code. "
+                        rule_id="TF001",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Loading models with compile=True can execute custom layers/losses/metrics with arbitrary code. "
                         "Set compile=False and manually compile after inspection.",
-                        "Use: model = tf.keras.models.load_model(path, compile=False)",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Use: model = tf.keras.models.load_model(path, compile=False)",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures"
+                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        source_tool="pyguard"
                     )
                 )
 
@@ -182,14 +198,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "TF002", "GPU Memory Exhaustion Risk",
-                        RuleSeverity.HIGH,
-                        "Creating tensors with user-controlled shapes can exhaust GPU memory. "
+                        rule_id="TF002",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Creating tensors with user-controlled shapes can exhaust GPU memory. "
                         "Validate and limit tensor sizes.",
-                        "Add size validation: if tf.reduce_prod(shape) > MAX_ELEMENTS: raise ValueError()",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Add size validation: if tf.reduce_prod(shape) > MAX_ELEMENTS: raise ValueError()",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-400",
-                        owasp_id="A04:2021 – Insecure Design"
+                        owasp_id="A04:2021 – Insecure Design",
+                        source_tool="pyguard"
                     )
                 )
 
@@ -204,14 +228,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                     if self._is_user_controlled(kw.value):
                         self.violations.append(
                             RuleViolation(
-                                node, "TF005", "Callback Injection Vulnerability",
-                                RuleSeverity.CRITICAL,
-                                "Using user-controlled callbacks can execute arbitrary code during training. "
+                                rule_id="TF005",
+                                category=RuleCategory.SECURITY,
+                                severity=RuleSeverity.CRITICAL,
+                                message="Using user-controlled callbacks can execute arbitrary code during training. "
                                 "Only use predefined, validated callbacks.",
-                                "Use allowlist: SAFE_CALLBACKS = [EarlyStopping, ModelCheckpoint]",
-                                RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                line_number=getattr(node, "lineno", 0),
+                                column=getattr(node, "col_offset", 0),
+                                end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                                end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                                code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                                fix_suggestion="Use allowlist: SAFE_CALLBACKS = [EarlyStopping, ModelCheckpoint]",
+                                fix_applicability=FixApplicability.SAFE,
                                 cwe_id="CWE-94",
-                                owasp_id="A03:2021 – Injection"
+                                owasp_id="A03:2021 – Injection",
+                                source_tool="pyguard"
                             )
                         )
 
@@ -238,14 +270,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         if any(web_dir in log_path.lower() for web_dir in ["static", "public", "www", "htdocs"]):
                             self.violations.append(
                                 RuleViolation(
-                                    node, "TF006", "TensorBoard Log Exposure",
-                                    RuleSeverity.MEDIUM,
-                                    "TensorBoard logs in web-accessible directories can expose sensitive training data and model information. "
+                                    rule_id="TF006",
+                                    category=RuleCategory.SECURITY,
+                                    severity=RuleSeverity.MEDIUM,
+                                    message="TensorBoard logs in web-accessible directories can expose sensitive training data and model information. "
                                     "Store logs in protected directories.",
-                                    "Use: log_dir='logs/private/tensorboard'",
-                                    RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    line_number=getattr(node, "lineno", 0),
+                                    column=getattr(node, "col_offset", 0),
+                                    end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                                    end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                                    fix_suggestion="Use: log_dir='logs/private/tensorboard'",
+                                    fix_applicability=FixApplicability.SAFE,
                                     cwe_id="CWE-200",
-                                    owasp_id="A01:2021 – Broken Access Control"
+                                    owasp_id="A01:2021 – Broken Access Control",
+                                    source_tool="pyguard"
                                 )
                             )
 
@@ -265,14 +305,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "TF007", "Dataset Pipeline Injection",
-                        RuleSeverity.HIGH,
-                        "Creating datasets from user-controlled sources can lead to data poisoning or code execution. "
+                        rule_id="TF007",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Creating datasets from user-controlled sources can lead to data poisoning or code execution. "
                         "Validate and sanitize data sources.",
-                        "Validate data: check file types, sizes, and content before loading",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Validate data: check file types, sizes, and content before loading",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
-                        owasp_id="A03:2021 – Injection"
+                        owasp_id="A03:2021 – Injection",
+                        source_tool="pyguard"
                     )
                 )
 
@@ -286,14 +334,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                 # Check if input validation is present
                 self.violations.append(
                     RuleViolation(
-                        node, "TF009", "Model Serving without Input Validation",
-                        RuleSeverity.MEDIUM,
-                        "Accepting user input for model inference without validation can lead to adversarial attacks. "
+                        rule_id="TF009",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Accepting user input for model inference without validation can lead to adversarial attacks. "
                         "Validate input shapes, ranges, and types.",
-                        "Add validation: if input.shape != expected_shape: raise ValueError()",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Add validation: if input.shape != expected_shape: raise ValueError()",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
-                        owasp_id="A04:2021 – Insecure Design"
+                        owasp_id="A04:2021 – Insecure Design",
+                        source_tool="pyguard"
                     )
                 )
 
@@ -312,14 +368,22 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
-                        node, "TF010", "Checkpoint Poisoning Risk",
-                        RuleSeverity.HIGH,
-                        "Loading checkpoints from user-controlled paths can introduce backdoored model weights. "
+                        rule_id="TF010",
+                        category=RuleCategory.SECURITY,
+                        severity=RuleSeverity.HIGH,
+                        message="Loading checkpoints from user-controlled paths can introduce backdoored model weights. "
                         "Verify checkpoint integrity with signatures.",
-                        "Use: verify_checkpoint_signature(checkpoint_path) before loading",
-                        RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        line_number=getattr(node, "lineno", 0),
+                        column=getattr(node, "col_offset", 0),
+                        end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
+                        end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
+                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        fix_suggestion="Use: verify_checkpoint_signature(checkpoint_path) before loading",
+                        fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-494",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures"
+                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        source_tool="pyguard"
                     )
                 )
 

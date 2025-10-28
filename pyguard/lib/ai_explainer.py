@@ -13,7 +13,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -569,7 +569,7 @@ class AIExplainer:
             "further_reading": explanation.references,
         }
 
-    def _generate_quiz_question(self, explanation: SecurityExplanation) -> Dict[str, any]:
+    def _generate_quiz_question(self, explanation: SecurityExplanation) -> Dict[str, Any]:
         """Generate a quiz question for learning."""
         questions = {
             "SQL Injection": {
