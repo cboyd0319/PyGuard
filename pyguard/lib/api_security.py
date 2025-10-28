@@ -1165,8 +1165,13 @@ class APISecurityVisitor(ast.NodeVisitor):
                         )
         return False
 
-    def _has_url_validation(self, func_node: ast.FunctionDef, url_node: ast.AST) -> bool:
-        """Check if URL validation exists in the function."""
+    def _has_url_validation(self, func_node: ast.FunctionDef, _url_node: ast.AST) -> bool:
+        """Check if URL validation exists in the function.
+        
+        Args:
+            func_node: Function to check for URL validation
+            _url_node: URL node (reserved for future use)
+        """
         # Look for URL validation patterns
         for child in ast.walk(func_node):
             # Check for urlparse, domain checking, whitelist validation

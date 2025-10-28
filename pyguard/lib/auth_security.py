@@ -102,8 +102,13 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _check_weak_session_id(self, node: ast.Assign, var_name: str) -> None:
-        """Check for weak session ID generation (AUTH001)."""
+    def _check_weak_session_id(self, node: ast.Assign, _var_name: str) -> None:
+        """Check for weak session ID generation (AUTH001).
+        
+        Args:
+            node: Assignment node to check
+            _var_name: Variable name (reserved for future use)
+        """
         if not isinstance(node.value, ast.Call):
             return
 

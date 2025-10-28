@@ -155,13 +155,13 @@ class MassAssignmentDetector:
         """Initialize mass assignment detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
+    def scan_code(self, code: str, _file_path: str) -> list[SecurityIssue]:
         """
         Scan code for mass assignment vulnerabilities.
 
         Args:
             code: Source code to scan
-            file_path: Path to file being scanned
+            _file_path: Path to file being scanned (reserved for context)
 
         Returns:
             List of security issues found
@@ -216,13 +216,13 @@ class ClickjackingDetector:
         """Initialize clickjacking detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
+    def scan_code(self, code: str, _file_path: str) -> list[SecurityIssue]:
         """
         Scan code for missing clickjacking protection.
 
         Args:
             code: Source code to scan
-            file_path: Path to file being scanned
+            _file_path: Path to file being scanned (reserved for context)
 
         Returns:
             List of security issues found
@@ -357,13 +357,13 @@ class MemoryDisclosureDetector:
         """Initialize memory disclosure detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str, file_path: str) -> list[SecurityIssue]:
+    def scan_code(self, code: str, _file_path: str) -> list[SecurityIssue]:
         """
         Scan code for memory disclosure vulnerabilities.
 
         Args:
             code: Source code to scan
-            file_path: Path to file being scanned
+            _file_path: Path to file being scanned (reserved for context)
 
         Returns:
             List of security issues found
