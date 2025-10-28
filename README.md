@@ -68,9 +68,9 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 - **DevSecOps engineers** automating security scanning in CI/CD pipelines
 - **Open source maintainers** needing SARIF reports for GitHub Security tab
 
-### 🆕 What's New in v0.6.0
+### 🆕 What's New
 
-- 🎊 **MISSION ACCOMPLISHED** — **1,230+ Security Checks** (720 general + **510 AI/ML**) — **10x more than any competitor!** 🎊
+- 🎊 **MISSION ACCOMPLISHED** — **1,230+ Security Checks** (720 general + **510 AI/ML**) — **3-10x more than competitors!** 🎊
 - 🏆 **#1 AI/ML SECURITY DOMINANCE** — World's most comprehensive Python AI/ML security tool! 🎉
 - 🤖 **AI/ML Security** — **510 specialized checks** covering the entire ML lifecycle:
   - ✅ **LLM Security (60 checks)** — Prompt injection, API security, output validation
@@ -388,7 +388,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 
 **What it does**:
 
-- Finds **1,230+ security vulnerabilities** (720 general + **510 AI/ML**) — **#1 in the market (+1,100 ahead of Snyk - 846% more)**
+- Finds **1,230+ security vulnerabilities** (720 general + **510 AI/ML**) — **#1 in the market (6x more than Snyk)**
   - **AI/ML Security (510 checks)**: LLM prompt injection (60), model security (40), training/fine-tuning (30), adversarial ML (20), MLOps (120), framework-specific (100), supply chain (80), emerging threats (50)
   - **General Security (720 checks)**: Mobile/IoT (43), Blockchain (22), Business Logic (30), Advanced injection (37), API security (20), Auth (15), Cloud (15), PII (25), Cryptography (15), Supply chain (27), and more
 - Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
