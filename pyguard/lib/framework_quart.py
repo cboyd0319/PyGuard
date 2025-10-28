@@ -177,7 +177,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                                 rule_id="QUART001",
                                 category=RuleCategory.SECURITY,
                                 severity=RuleSeverity.HIGH,
-                                message="Request accessed in non-async function in Quart. "
+                                message="Request accessed outside async context in Quart. "
                                 "Use 'async def' for route handlers that access request.",
                                 file_path=self.file_path,
                                 line_number=getattr(child, "lineno", 0),
