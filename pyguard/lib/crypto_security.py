@@ -52,6 +52,8 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
         self.violations: list[RuleViolation] = []
         self.source_code = source_code
         self.source_lines = source_code.split("\n")
+        # Track variable assignments to detect null IVs assigned to variables
+        self.null_iv_variables: set[str] = set()
 
     def visit_Call(self, node: ast.Call):
         """Check for cryptographic vulnerabilities in function calls."""
@@ -87,7 +89,26 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign):
-        """Check for hardcoded encryption keys in assignments."""
+        """Check for hardcoded encryption keys in assignments and track null IVs."""
+        # Track null IV assignments: iv = b'\x00' * N
+        if isinstance(node.value, ast.BinOp):
+            if isinstance(node.value.op, ast.Mult):
+                left = node.value.left
+                right = node.value.right
+                # Check for b'\x00' * N or N * b'\x00'
+                if isinstance(left, ast.Constant) and isinstance(left.value, bytes):
+                    if left.value == b"\x00":
+                        # This is a null IV pattern
+                        for target in node.targets:
+                            if isinstance(target, ast.Name):
+                                self.null_iv_variables.add(target.id)
+                elif isinstance(right, ast.Constant) and isinstance(right.value, bytes):
+                    if right.value == b"\x00":
+                        # This is a null IV pattern
+                        for target in node.targets:
+                            if isinstance(target, ast.Name):
+                                self.null_iv_variables.add(target.id)
+        
         # CRYPTO008: Hardcoded encryption keys
         self._check_hardcoded_keys(node)
 
@@ -298,10 +319,9 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
         if "AES.new" in func_name or "Cipher" in func_name:
             iv_arg = self._get_keyword_arg(node, "iv") or self._get_keyword_arg(node, "IV")
 
-            if iv_arg and isinstance(iv_arg, ast.Constant):
-                iv_value = iv_arg.value
-                # Check for null IV (all zeros)
-                if isinstance(iv_value, bytes) and iv_value == b"\x00" * len(iv_value):
+            if iv_arg:
+                # Check if it's a variable name that was assigned a null IV
+                if isinstance(iv_arg, ast.Name) and iv_arg.id in self.null_iv_variables:
                     self._create_violation(
                         node,
                         "CRYPTO006",
@@ -313,19 +333,35 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                         "CWE-329",
                         "NIST SP 800-38A",
                     )
-                # Check for hardcoded IV
-                elif isinstance(iv_value, (str, bytes)):
-                    self._create_violation(
-                        node,
-                        "CRYPTO006",
-                        "Hardcoded IV",
-                        "Hardcoded initialization vector detected. "
-                        "IVs must be unique and unpredictable for each encryption.",
-                        "Generate a fresh random IV for each encryption: iv = os.urandom(16)",
-                        RuleSeverity.HIGH,
-                        "CWE-329",
-                        "NIST SP 800-38A",
-                    )
+                # Check for direct constant IV
+                elif isinstance(iv_arg, ast.Constant):
+                    iv_value = iv_arg.value
+                    # Check for null IV (all zeros)
+                    if isinstance(iv_value, bytes) and iv_value == b"\x00" * len(iv_value):
+                        self._create_violation(
+                            node,
+                            "CRYPTO006",
+                            "Null IV",
+                            "Null initialization vector (all zeros) detected. "
+                            "Using a null IV is cryptographically weak.",
+                            "Generate a random IV using os.urandom() for each encryption operation",
+                            RuleSeverity.HIGH,
+                            "CWE-329",
+                            "NIST SP 800-38A",
+                        )
+                    # Check for hardcoded IV
+                    elif isinstance(iv_value, (str, bytes)):
+                        self._create_violation(
+                            node,
+                            "CRYPTO006",
+                            "Hardcoded IV",
+                            "Hardcoded initialization vector detected. "
+                            "IVs must be unique and unpredictable for each encryption.",
+                            "Generate a fresh random IV for each encryption: iv = os.urandom(16)",
+                            RuleSeverity.HIGH,
+                            "CWE-329",
+                            "NIST SP 800-38A",
+                        )
 
     def _check_missing_salt(self, node: ast.Call, func_name: str):
         """CRYPTO007: Detect missing salt in password hashing."""

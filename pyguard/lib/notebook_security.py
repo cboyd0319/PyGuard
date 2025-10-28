@@ -700,6 +700,11 @@ class NotebookSecurityAnalyzer:
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
+            # Skip PyGuard-generated comments to avoid false positives
+            if line.strip().startswith("# PyGuard") or line.strip().startswith("# CWE-") or \
+               line.strip().startswith("# SECURITY:") or line.strip().startswith("# WARNING: PII detected"):
+                continue
+                
             for pattern, description in self.PII_PATTERNS.items():
                 matches = re.finditer(pattern, line, re.IGNORECASE)
                 for match in matches:
@@ -749,8 +754,16 @@ class NotebookSecurityAnalyzer:
                 return True
 
         # Skip IP addresses that are clearly local/private
-        if pii_type == "IP address":
+        if pii_type == "IPv4 address":
             if text.startswith("127.") or text.startswith("192.168.") or text.startswith("10."):
+                return True
+
+        # Skip SWIFT/BIC false positives (common English words that match the pattern)
+        if pii_type == "SWIFT/BIC code":
+            # SWIFT/BIC codes should be all uppercase or contain numbers
+            # Common words like "Replaced", "literals", "Improper" should be filtered out
+            if text.isalpha() and not text.isupper():
+                # If it's all letters but not all uppercase, likely a false positive
                 return True
 
         return False
@@ -1378,6 +1391,7 @@ class NotebookSecurityAnalyzer:
                                 fix_suggestion="Use JSON or safer serialization formats. If pickle is required, validate source and use signatures.",
                                 cwe_id="CWE-502",
                                 owasp_id="ASVS-5.5.3",
+                                auto_fixable=True,  # Can add warning comment
                             )
                         )
 
@@ -2157,7 +2171,7 @@ class NotebookFixer:
                 continue
 
             if issue.category in {"Hardcoded Secret", "High-Entropy Secret"}:
-                # Comment out lines with secrets
+                # Comment out lines with secrets and redact the secret values
                 if 0 <= issue.cell_index < len(cells):
                     cell = cells[issue.cell_index]
                     source = cell.get("source", [])
@@ -2167,9 +2181,14 @@ class NotebookFixer:
                     lines = source.split("\n")
                     if 0 < issue.line_number <= len(lines):
                         line = lines[issue.line_number - 1]
+                        # Redact secrets from the line using all known patterns
+                        redacted_line = line
+                        for pattern in NotebookSecurityAnalyzer.SECRET_PATTERNS:
+                            redacted_line = re.sub(pattern, "[REDACTED]", redacted_line)
+                        
                         lines[issue.line_number - 1] = (
                             f"# SECURITY: Removed hardcoded secret - use os.getenv() instead\n"
-                            f"# Original: {line}"
+                            f"# Original (redacted): {redacted_line}"
                         )
                         cell["source"] = "\n".join(lines)
                         fixes_applied.append(
@@ -2184,21 +2203,51 @@ class NotebookFixer:
                     if isinstance(source, list):
                         source = "".join(source)
 
-                    # Add warning comment
+                    # Add warning comment (idempotent - only if not already present)
+                    pii_warning = "# WARNING: PII detected below - redact before sharing"
                     lines = source.split("\n")
                     if 0 < issue.line_number <= len(lines):
-                        lines.insert(
-                            issue.line_number - 1,
-                            "# WARNING: PII detected below - redact before sharing",
+                        # Check if warning already exists at or near the target line
+                        insert_pos = issue.line_number - 1
+                        already_has_warning = any(
+                            pii_warning in line
+                            for line in lines[max(0, insert_pos - 1) : insert_pos + 2]
                         )
-                        cell["source"] = "\n".join(lines)
-                        fixes_applied.append(f"Added PII warning in cell {issue.cell_index}")
+                        if not already_has_warning:
+                            lines.insert(insert_pos, pii_warning)
+                            cell["source"] = "\n".join(lines)
+                            fixes_applied.append(f"Added PII warning in cell {issue.cell_index}")
 
                 elif issue.category == "PII in Output":
                     # Clear outputs for cells with PII
                     if 0 <= issue.cell_index < len(cells):
                         cells[issue.cell_index]["outputs"] = []
                         fixes_applied.append(f"Cleared outputs with PII in cell {issue.cell_index}")
+
+            elif issue.category == "Unsafe Deserialization":
+                # Add warning for unsafe deserialization (pickle.load)
+                if "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):
+                    cell = cells[issue.cell_index]
+                    source = cell.get("source", [])
+                    if isinstance(source, list):
+                        source = "".join(source)
+
+                    # Add warning comment for pickle (idempotent check)
+                    lines = source.split("\n")
+                    if 0 < issue.line_number <= len(lines):
+                        # Check if warning already exists
+                        warning_text = "# SECURITY WARNING: pickle.load()"
+                        if not any(warning_text in line for line in lines):
+                            lines.insert(
+                                issue.line_number - 1,
+                                "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"
+                                "# Consider using JSON or safer serialization format\n"
+                                "# If pickle required, verify source and use restricted unpickler",
+                            )
+                            cell["source"] = "\n".join(lines)
+                            fixes_applied.append(
+                                f"Added security warning for pickle.load() in cell {issue.cell_index}"
+                            )
 
             elif issue.category == "ML Pipeline Security":
                 # Auto-fix ML security issues
@@ -2214,26 +2263,6 @@ class NotebookFixer:
                         cell["source"] = fixed_source
                         fixes_applied.append(
                             f"Added weights_only=True to torch.load() in cell {issue.cell_index}"
-                        )
-
-                elif "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):
-                    cell = cells[issue.cell_index]
-                    source = cell.get("source", [])
-                    if isinstance(source, list):
-                        source = "".join(source)
-
-                    # Add warning comment for pickle
-                    lines = source.split("\n")
-                    if 0 < issue.line_number <= len(lines):
-                        lines.insert(
-                            issue.line_number - 1,
-                            "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"
-                            "# Consider using JSON or safer serialization format\n"
-                            "# If pickle required, verify source and use restricted unpickler",
-                        )
-                        cell["source"] = "\n".join(lines)
-                        fixes_applied.append(
-                            f"Added security warning for pickle.load() in cell {issue.cell_index}"
                         )
 
             elif issue.category == "Code Injection":
@@ -2378,7 +2407,8 @@ class NotebookFixer:
 
             fixes_applied.insert(0, f"Created backup at {backup_path}")
 
-        return len(fixes_applied) > 0, fixes_applied
+        # Return True for success even if no fixes were applied (idempotent case)
+        return True, fixes_applied
 
     def _fix_torch_load(self, source: str) -> str:
         """
