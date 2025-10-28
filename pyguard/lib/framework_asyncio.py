@@ -149,7 +149,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        """ASYNCIO002: Check for event loop injection vulnerabilities."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "set_event_loop":
                 # Check if loop is from user input or untrusted source
@@ -200,7 +199,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        """ASYNCIO004: Check for Future result tampering."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "set_result":
                 # Check if setting result without proper validation
@@ -315,7 +313,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        """ASYNCIO009: Check for Queue.put() with untrusted data."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("put", "put_nowait"):
                 # Check if data is validated
@@ -363,7 +360,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        """ASYNCIO011: Check for run_in_executor with untrusted function."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "run_in_executor":
                 # Check if executor is None (default executor)

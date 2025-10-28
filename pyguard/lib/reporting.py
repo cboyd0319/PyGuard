@@ -225,8 +225,6 @@ class HTMLReporter:
             issues: List of issues found
             _fixes: List of fixes applied (reserved for future enhancement)
 
-            fixes: List of fixes applied
-
         Returns:
             HTML as string
         """

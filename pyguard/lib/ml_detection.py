@@ -191,8 +191,6 @@ class MLRiskScorer:
             file_path: Optional file path
             _existing_issues: Existing issues (reserved for enhancement)
 
-            existing_issues: List of already detected issues
-
         Returns:
             RiskScore with overall assessment
         """
