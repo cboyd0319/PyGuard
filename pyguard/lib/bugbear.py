@@ -11,7 +11,6 @@ Based on flake8-bugbear rules: https://github.com/PyCQA/flake8-bugbear
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -38,9 +37,9 @@ class BugbearVisitor(ast.NodeVisitor):
     def __init__(self, file_path: Path):
         """Initialize visitor."""
         self.file_path = file_path
-        self.violations: List[RuleViolation] = []
-        self.function_names: Set[str] = set()
-        self.class_names: Set[str] = set()
+        self.violations: list[RuleViolation] = []
+        self.function_names: set[str] = set()
+        self.class_names: set[str] = set()
         self.in_loop = False
         self.loop_depth = 0
 
@@ -183,25 +182,24 @@ class BugbearVisitor(ast.NodeVisitor):
                     ast.JoinedStr,
                     ast.FormattedValue,
                 ),
-            ):
-                if isinstance(stmt.value, ast.Constant):
-                    # Skip docstrings
-                    if stmt is node.body[0]:
-                        continue
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="B018",
-                            category=RuleCategory.WARNING,
-                            severity=RuleSeverity.MEDIUM,
-                            message="Found useless expression. Statement has no effect",
-                            file_path=self.file_path,
-                            line_number=stmt.lineno,
-                            column=stmt.col_offset,
-                            fix_suggestion="Remove useless expression or assign to variable",
-                            fix_applicability=FixApplicability.MANUAL,
-                            source_tool="bugbear",
-                        )
+            ) and isinstance(stmt.value, ast.Constant):
+                # Skip docstrings
+                if stmt is node.body[0]:
+                    continue
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="B018",
+                        category=RuleCategory.WARNING,
+                        severity=RuleSeverity.MEDIUM,
+                        message="Found useless expression. Statement has no effect",
+                        file_path=self.file_path,
+                        line_number=stmt.lineno,
+                        column=stmt.col_offset,
+                        fix_suggestion="Remove useless expression or assign to variable",
+                        fix_applicability=FixApplicability.MANUAL,
+                        source_tool="bugbear",
                     )
+                )
 
         self.generic_visit(node)
 
@@ -229,14 +227,13 @@ class BugbearVisitor(ast.NodeVisitor):
 
         # B004: Using hasattr with a try/except - hasattr hides errors
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if (
-                    isinstance(stmt.func, ast.Name)
-                    and stmt.func.id == "hasattr"
-                    and len(stmt.args) == 2
-                ):
-                    # Check if we're in a try/except
-                    pass  # Simplified for now
+            if isinstance(stmt, ast.Call) and (
+                isinstance(stmt.func, ast.Name)
+                and stmt.func.id == "hasattr"
+                and len(stmt.args) == 2
+            ):
+                # Check if we're in a try/except
+                pass  # Simplified for now
 
         # Check for __eq__ without __hash__
         has_eq = False
@@ -298,22 +295,21 @@ class BugbearVisitor(ast.NodeVisitor):
             and node.func.id == "except"
             and node.args
             and len(node.args) == 1
-        ):
-            if isinstance(node.args[0], ast.Tuple) and len(node.args[0].elts) == 1:
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="B013",
-                        category=RuleCategory.WARNING,
-                        severity=RuleSeverity.LOW,
-                        message="Redundant tuple in exception handler",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        fix_suggestion="Remove unnecessary tuple",
-                        fix_applicability=FixApplicability.AUTOMATIC,
-                        source_tool="bugbear",
-                    )
+        ) and isinstance(node.args[0], ast.Tuple) and len(node.args[0].elts) == 1:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="B013",
+                    category=RuleCategory.WARNING,
+                    severity=RuleSeverity.LOW,
+                    message="Redundant tuple in exception handler",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    fix_suggestion="Remove unnecessary tuple",
+                    fix_applicability=FixApplicability.AUTOMATIC,
+                    source_tool="bugbear",
                 )
+            )
 
         self.generic_visit(node)
 
@@ -460,10 +456,9 @@ class BugbearVisitor(ast.NodeVisitor):
             return True
         if isinstance(node, ast.Set):
             return True
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name):
-                if node.func.id in ("list", "dict", "set"):
-                    return True
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id in ("list", "dict", "set"):
+                return True
         return False
 
     def _get_exception_name(self, node: ast.AST) -> str:
@@ -482,7 +477,7 @@ class BugbearChecker:
         """Initialize checker."""
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a file for bugbear-style issues.
 
@@ -515,7 +510,7 @@ class BugbearChecker:
             )
             return []
 
-    def check_code(self, code: str, file_path: Optional[Path] = None) -> List[RuleViolation]:
+    def check_code(self, code: str, file_path: Path | None = None) -> list[RuleViolation]:
         """
         Check code for bugbear-style issues.
 

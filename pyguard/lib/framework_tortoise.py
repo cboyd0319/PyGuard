@@ -33,7 +33,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.custom_rules import RuleViolation
 
@@ -45,9 +44,9 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_tortoise_import = False
-        self.tortoise_aliases: Set[str] = {"tortoise"}
+        self.tortoise_aliases: set[str] = {"tortoise"}
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track Tortoise imports."""
@@ -72,16 +71,16 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
 
         # Check for async query injection (TOR001)
         self._check_async_query_injection(node)
-        
+
         # Check for raw SQL in async context (TOR012)
         self._check_raw_sql_async(node)
-        
+
         # Check for connection pool issues (TOR007)
         self._check_connection_pool(node)
-        
+
         # Check for prefetch security (TOR010)
         self._check_prefetch_security(node)
-        
+
         # Check for aggregate manipulation (TOR011)
         self._check_aggregate_security(node)
 
@@ -98,16 +97,16 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     def _check_async_query_injection(self, node: ast.Call) -> None:
         """Check for async query injection (TOR001)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for filter(), get(), create() with potential injection
         query_methods = ["filter", "get", "create", "update", "delete"]
-        
+
         if any(method in func_name for method in query_methods):
             # Check if using string formatting in context
             line_num = node.lineno
             if 0 <= line_num - 1 < len(self.lines):
-                context = '\n'.join(self.lines[max(0, line_num - 5):line_num])
-                if any(pattern in context for pattern in ['.format(', 'f"', "f'", ' % ']):
+                context = "\n".join(self.lines[max(0, line_num - 5) : line_num])
+                if any(pattern in context for pattern in [".format(", 'f"', "f'", " % "]):
                     self.violations.append(
                         RuleViolation(
                             rule_id="TOR001",
@@ -124,13 +123,13 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     def _check_raw_sql_async(self, node: ast.Call) -> None:
         """Check for raw SQL in async context (TOR012)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for raw SQL execution
         if "execute" in func_name or "raw" in func_name:
             line_num = node.lineno
             if 0 <= line_num - 1 < len(self.lines):
-                context = '\n'.join(self.lines[max(0, line_num - 5):line_num])
-                if any(pattern in context for pattern in ['.format(', 'f"', "f'", ' + "']):
+                context = "\n".join(self.lines[max(0, line_num - 5) : line_num])
+                if any(pattern in context for pattern in [".format(", 'f"', "f'", ' + "']):
                     self.violations.append(
                         RuleViolation(
                             rule_id="TOR012",
@@ -147,7 +146,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     def _check_connection_pool(self, node: ast.Call) -> None:
         """Check for connection pool issues (TOR007)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for register_tortoise or init without pool size limits
         if "register_tortoise" in func_name or "init" in func_name:
             has_pool_limit = False
@@ -155,7 +154,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
                 if keyword.arg in ["max_size", "min_size", "pool_size"]:
                     has_pool_limit = True
                     break
-            
+
             if not has_pool_limit:
                 self.violations.append(
                     RuleViolation(
@@ -173,13 +172,15 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     def _check_prefetch_security(self, node: ast.Call) -> None:
         """Check for prefetch security (TOR010)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for prefetch_related without limits
         if "prefetch_related" in func_name:
             # Check if there's a limit on the query
             line_num = node.lineno
             if 0 <= line_num - 1 < len(self.lines):
-                context = '\n'.join(self.lines[max(0, line_num - 3):min(len(self.lines), line_num + 3)])
+                context = "\n".join(
+                    self.lines[max(0, line_num - 3) : min(len(self.lines), line_num + 3)]
+                )
                 if "limit" not in context.lower():
                     self.violations.append(
                         RuleViolation(
@@ -197,7 +198,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     def _check_aggregate_security(self, node: ast.Call) -> None:
         """Check for aggregate function manipulation (TOR011)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for aggregate functions with user input
         if "aggregate" in func_name or "annotate" in func_name:
             if self._uses_user_input_in_context(node.lineno):
@@ -218,7 +219,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
         """Extract function name from a call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -233,20 +234,20 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
         """Check if user input is used in surrounding context."""
         if 0 <= line_num - 1 < len(self.lines):
             start_line = max(0, line_num - 5)
-            context = '\n'.join(self.lines[start_line:min(len(self.lines), line_num + 3)])
+            context = "\n".join(self.lines[start_line : min(len(self.lines), line_num + 3)])
             user_patterns = ["request", "input(", "user_", "param", "arg"]
             return any(pattern in context.lower() for pattern in user_patterns)
         return False
 
 
-def analyze_tortoise_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_tortoise_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for Tortoise ORM security vulnerabilities.
-    
+
     Args:
         file_path: Path to the Python file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -254,7 +255,7 @@ def analyze_tortoise_security(file_path: Path, code: str) -> List[RuleViolation]
         tree = ast.parse(code)
     except SyntaxError:
         return []
-    
+
     visitor = TortoiseSecurityVisitor(file_path, code)
     visitor.visit(tree)
     return visitor.violations

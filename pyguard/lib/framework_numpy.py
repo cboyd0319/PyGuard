@@ -8,7 +8,7 @@ memory safety, numerical computation security, and data science application secu
 Security Areas Covered (15 checks):
 - Buffer overflow in array operations
 - Integer overflow in calculations
-- Unsafe pickle deserialization  
+- Unsafe pickle deserialization
 - Memory exhaustion via large arrays
 - Race conditions in parallel operations
 - Insecure random number generation
@@ -34,7 +34,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -53,11 +52,11 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_numpy_import = False
-        self.numpy_aliases: Set[str] = {"numpy", "np"}
-        self.random_calls: Set[str] = set()
-        self.user_controlled_vars: Set[str] = set()  # Track variables from user input
+        self.numpy_aliases: set[str] = {"numpy", "np"}
+        self.random_calls: set[str] = set()
+        self.user_controlled_vars: set[str] = set()  # Track variables from user input
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track NumPy imports."""
@@ -81,9 +80,11 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             # Check if it's a call to request.args.get(), input(), etc.
             if isinstance(node.value.func, ast.Attribute):
                 # Pattern: request.args.get(), request.form.get(), etc.
-                if (isinstance(node.value.func.value, ast.Attribute) and
-                    isinstance(node.value.func.value.value, ast.Name) and
-                    node.value.func.value.value.id in ["request", "req"]):
+                if (
+                    isinstance(node.value.func.value, ast.Attribute)
+                    and isinstance(node.value.func.value.value, ast.Name)
+                    and node.value.func.value.value.id in ["request", "req"]
+                ):
                     # Track all targets of this assignment
                     for target in node.targets:
                         if isinstance(target, ast.Name):
@@ -110,16 +111,16 @@ class NumPySecurityVisitor(ast.NodeVisitor):
 
         # Check for unsafe pickle deserialization (NUMPY003)
         self._check_unsafe_pickle(node)
-        
+
         # Check for insecure random number generation (NUMPY006)
         self._check_insecure_random(node)
-        
+
         # Check for memory exhaustion risks (NUMPY004)
         self._check_memory_exhaustion(node)
-        
+
         # Check for file I/O security (NUMPY015)
         self._check_file_io_security(node)
-        
+
         # Check for unsafe dtype casting (NUMPY008)
         self._check_unsafe_dtype_casting(node)
 
@@ -150,18 +151,18 @@ class NumPySecurityVisitor(ast.NodeVisitor):
     def _check_unsafe_pickle(self, node: ast.Call) -> None:
         """NUMPY003: Detect unsafe pickle deserialization in NumPy."""
         func_name = self._get_function_name(node)
-        
+
         # Check for numpy.load with allow_pickle=True (default)
         if func_name in ["numpy.load", "np.load"]:
             # Check if allow_pickle is explicitly set to False
             has_safe_pickle = any(
-                isinstance(kw, ast.keyword) and 
-                kw.arg == "allow_pickle" and
-                isinstance(kw.value, ast.Constant) and
-                kw.value.value is False
+                isinstance(kw, ast.keyword)
+                and kw.arg == "allow_pickle"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value is False
                 for kw in node.keywords
             )
-            
+
             if not has_safe_pickle:
                 self.violations.append(
                     RuleViolation(
@@ -175,28 +176,33 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Set allow_pickle=False: np.load(file, allow_pickle=False)",
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures"
+                        owasp_id="A08:2021 – Software and Data Integrity Failures",
                     )
                 )
 
     def _check_insecure_random(self, node: ast.Call) -> None:
         """NUMPY006: Detect insecure random number generation."""
         func_name = self._get_function_name(node)
-        
+
         # NumPy's random is not cryptographically secure
         numpy_random_funcs = [
-            "numpy.random.rand", "np.random.rand",
-            "numpy.random.randn", "np.random.randn", 
-            "numpy.random.randint", "np.random.randint",
-            "numpy.random.random", "np.random.random",
-            "numpy.random.choice", "np.random.choice",
+            "numpy.random.rand",
+            "np.random.rand",
+            "numpy.random.randn",
+            "np.random.randn",
+            "numpy.random.randint",
+            "np.random.randint",
+            "numpy.random.random",
+            "np.random.random",
+            "numpy.random.choice",
+            "np.random.choice",
         ]
-        
+
         if func_name in numpy_random_funcs:
             # Check if this is used in a security-sensitive context
             # (heuristic: variable names containing 'key', 'token', 'secret', 'password')
             is_security_context = self._is_security_context(node)
-            
+
             if is_security_context:
                 self.violations.append(
                     RuleViolation(
@@ -210,24 +216,30 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Use: import secrets; key = secrets.token_bytes(32)",
                         cwe_id="CWE-338",
-                        owasp_id="A02:2021 – Cryptographic Failures"
+                        owasp_id="A02:2021 – Cryptographic Failures",
                     )
                 )
 
     def _check_memory_exhaustion(self, node: ast.Call) -> None:
         """NUMPY004: Detect potential memory exhaustion via large arrays."""
         func_name = self._get_function_name(node)
-        
+
         # Functions that can create large arrays
         array_creation_funcs = [
-            "numpy.zeros", "np.zeros",
-            "numpy.ones", "np.ones",
-            "numpy.empty", "np.empty",
-            "numpy.full", "np.full",
-            "numpy.arange", "np.arange",
-            "numpy.linspace", "np.linspace",
+            "numpy.zeros",
+            "np.zeros",
+            "numpy.ones",
+            "np.ones",
+            "numpy.empty",
+            "np.empty",
+            "numpy.full",
+            "np.full",
+            "numpy.arange",
+            "np.arange",
+            "numpy.linspace",
+            "np.linspace",
         ]
-        
+
         if func_name in array_creation_funcs and node.args:
             # Check if size comes from user input (heuristic)
             if self._is_user_controlled(node.args[0]):
@@ -243,21 +255,24 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Add size validation: if size > MAX_SIZE: raise ValueError('Array too large')",
                         cwe_id="CWE-770",
-                        owasp_id="A04:2021 – Insecure Design"
+                        owasp_id="A04:2021 – Insecure Design",
                     )
                 )
 
     def _check_file_io_security(self, node: ast.Call) -> None:
         """NUMPY015: Detect insecure file I/O operations."""
         func_name = self._get_function_name(node)
-        
+
         # Check for unsafe file loading functions
         unsafe_io_funcs = [
-            "numpy.load", "np.load",  # Can execute arbitrary code via pickle
-            "numpy.loadtxt", "np.loadtxt",  # Can read any file
-            "numpy.genfromtxt", "np.genfromtxt",
+            "numpy.load",
+            "np.load",  # Can execute arbitrary code via pickle
+            "numpy.loadtxt",
+            "np.loadtxt",  # Can read any file
+            "numpy.genfromtxt",
+            "np.genfromtxt",
         ]
-        
+
         if func_name in unsafe_io_funcs and node.args:
             # Check if filename is user-controlled
             if self._is_user_controlled(node.args[0]):
@@ -273,20 +288,26 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Validate paths: from pathlib import Path; Path(filename).resolve().is_relative_to(SAFE_DIR)",
                         cwe_id="CWE-22",
-                        owasp_id="A01:2021 – Broken Access Control"
+                        owasp_id="A01:2021 – Broken Access Control",
                     )
                 )
 
     def _check_unsafe_dtype_casting(self, node: ast.Call) -> None:
         """NUMPY008: Detect unsafe dtype casting that can lose precision."""
         func_name = self._get_function_name(node)
-        
+
         # Check for astype() calls
         if func_name and func_name.endswith(".astype") and node.args:
             # Check if casting to smaller type (potential data loss)
             if isinstance(node.args[0], (ast.Constant, ast.Attribute, ast.Name)):
                 target_dtype = self._get_constant_value(node.args[0])
-                if isinstance(target_dtype, str) and target_dtype in ["int8", "int16", "uint8", "uint16", "float16"]:
+                if isinstance(target_dtype, str) and target_dtype in [
+                    "int8",
+                    "int16",
+                    "uint8",
+                    "uint16",
+                    "float16",
+                ]:
                     self.violations.append(
                         RuleViolation(
                             rule_id="NUMPY008",
@@ -299,7 +320,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                             file_path=self.file_path,
                             fix_suggestion="Check range: assert arr.min() >= dtype_min and arr.max() <= dtype_max",
                             cwe_id="CWE-190",
-                            owasp_id="A04:2021 – Insecure Design"
+                            owasp_id="A04:2021 – Insecure Design",
                         )
                     )
 
@@ -311,7 +332,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             # This is a heuristic check
             left_is_array = self._is_numpy_array(node.left)
             right_is_array = self._is_numpy_array(node.right)
-            
+
             if left_is_array or right_is_array:
                 self.violations.append(
                     RuleViolation(
@@ -325,7 +346,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Use np.clip() or check for overflow: result = np.multiply(a, b, dtype=np.int64)",
                         cwe_id="CWE-190",
-                        owasp_id="A04:2021 – Insecure Design"
+                        owasp_id="A04:2021 – Insecure Design",
                     )
                 )
 
@@ -346,7 +367,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Validate: if 0 <= index < len(array): arr[index]",
                         cwe_id="CWE-129",
-                        owasp_id="A04:2021 – Insecure Design"
+                        owasp_id="A04:2021 – Insecure Design",
                     )
                 )
 
@@ -354,10 +375,10 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
                 return f"{node.func.value.id}.{node.func.attr}"
-            elif isinstance(node.func.value, ast.Attribute):
+            if isinstance(node.func.value, ast.Attribute):
                 # Handle nested attributes like np.random.rand
                 parts = []
                 current: ast.expr = node.func
@@ -373,9 +394,9 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         """Extract constant value from node."""
         if isinstance(node, ast.Constant):
             return node.value
-        elif isinstance(node, ast.Name):
+        if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return node.attr
         return None
 
@@ -384,7 +405,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         if isinstance(node, ast.Call):
             func_name = self._get_function_name(node)
             return any(func_name.startswith(prefix) for prefix in ["numpy.", "np."])
-        elif isinstance(node, ast.Name):
+        if isinstance(node, ast.Name):
             # Heuristic: variables with 'arr', 'array', 'data' in name
             return any(keyword in node.id.lower() for keyword in ["arr", "array", "data", "matrix"])
         return False
@@ -397,13 +418,21 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                 return True
             # Common variable names for user input
             user_input_keywords = [
-                "request", "input", "user", "param", "arg", "query",
-                "form", "data", "payload", "body", "file", "upload"
+                "request",
+                "input",
+                "user",
+                "param",
+                "arg",
+                "query",
+                "form",
+                "data",
+                "payload",
+                "body",
+                "file",
+                "upload",
             ]
             return any(keyword in node.id.lower() for keyword in user_input_keywords)
-        elif isinstance(node, ast.Attribute):
-            return self._is_user_controlled(node.value)
-        elif isinstance(node, ast.Subscript):
+        if isinstance(node, (ast.Attribute, ast.Subscript)):
             return self._is_user_controlled(node.value)
         return False
 
@@ -415,7 +444,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
         return any(keyword in parent_line.lower() for keyword in security_keywords)
 
 
-def analyze_numpy_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_numpy_security(file_path: Path, code: str) -> list[RuleViolation]:
     """Analyze code for NumPy security vulnerabilities."""
     try:
         tree = ast.parse(code)

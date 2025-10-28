@@ -5,9 +5,9 @@ Enforces PEP 8, Python idioms, and coding standards.
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+import re
+from typing import Any
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -23,7 +23,7 @@ class BestPracticesFixer:
         self.fixes_applied = []
         self.ast_analyzer = ASTAnalyzer()
 
-    def scan_file_for_issues(self, file_path: Path) -> List[CodeQualityIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[CodeQualityIssue]:
         """
         Scan a file for code quality issues using AST analysis.
 
@@ -36,7 +36,7 @@ class BestPracticesFixer:
         _, quality_issues = self.ast_analyzer.analyze_file(file_path)
         return quality_issues
 
-    def get_complexity_report(self, file_path: Path) -> Dict[str, int]:
+    def get_complexity_report(self, file_path: Path) -> dict[str, int]:
         """
         Get cyclomatic complexity report for a file.
 
@@ -51,7 +51,7 @@ class BestPracticesFixer:
             return {}
         return self.ast_analyzer.get_complexity_report(content)
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply best practice fixes to a Python file.
 
@@ -260,7 +260,7 @@ class BestPracticesFixer:
 
         return "\n".join(lines)
 
-    def analyze_complexity(self, file_path: Path) -> Dict[str, Any]:
+    def analyze_complexity(self, file_path: Path) -> dict[str, Any]:
         """
         Analyze code complexity metrics.
 
@@ -311,7 +311,7 @@ class NamingConventionFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def check_naming_conventions(self, file_path: Path) -> List[Dict[str, Any]]:
+    def check_naming_conventions(self, file_path: Path) -> list[dict[str, Any]]:
         """
         Check for naming convention violations.
 
@@ -325,7 +325,7 @@ class NamingConventionFixer:
         if content is None:
             return []
 
-        violations: List[Dict[str, Any]] = []
+        violations: list[dict[str, Any]] = []
 
         try:
             tree = ast.parse(content)

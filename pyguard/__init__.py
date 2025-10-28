@@ -13,12 +13,27 @@ from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssu
 from pyguard.lib.best_practices import BestPracticesFixer
 from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker, BugbearVisitor
 from pyguard.lib.cache import AnalysisCache, ConfigCache
+from pyguard.lib.ci_integration import (
+    CIIntegrationGenerator,
+    PreCommitHookGenerator,
+    generate_ci_config,
+    install_pre_commit_hook,
+)
 from pyguard.lib.code_simplification import CodeSimplificationFixer, SimplificationIssue
 from pyguard.lib.core import BackupManager, DiffGenerator, PyGuardLogger
+from pyguard.lib.custom_rules import (
+    CustomRule,
+    CustomRuleEngine,
+    create_rule_engine_from_config,
+)
 from pyguard.lib.debugging_patterns import (
     DEBUGGING_RULES,
     DebuggingPatternChecker,
     DebuggingPatternVisitor,
+)
+from pyguard.lib.dependency_analyzer import (
+    DependencyGraphAnalyzer,
+    analyze_project_dependencies,
 )
 from pyguard.lib.exception_handling import (
     EXCEPTION_HANDLING_RULES,
@@ -32,6 +47,11 @@ from pyguard.lib.naming_conventions import NamingConventionFixer, NamingIssue
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
 from pyguard.lib.performance_checks import PerformanceFixer, PerformanceIssue
+from pyguard.lib.performance_profiler import (
+    PerformanceOptimizationSuggester,
+    PerformanceProfiler,
+    analyze_performance,
+)
 from pyguard.lib.reporting import (
     AnalysisMetrics,
     ConsoleReporter,
@@ -63,110 +83,90 @@ from pyguard.lib.xss_detection import (
     check_xss_vulnerabilities,
     detect_xss_patterns,
 )
-from pyguard.lib.ci_integration import (
-    CIIntegrationGenerator,
-    PreCommitHookGenerator,
-    generate_ci_config,
-    install_pre_commit_hook,
-)
-from pyguard.lib.performance_profiler import (
-    PerformanceProfiler,
-    PerformanceOptimizationSuggester,
-    analyze_performance,
-)
-from pyguard.lib.dependency_analyzer import (
-    DependencyGraphAnalyzer,
-    analyze_project_dependencies,
-)
-from pyguard.lib.custom_rules import (
-    CustomRule,
-    CustomRuleEngine,
-    create_rule_engine_from_config,
-)
 
 __all__ = [
-    "PyGuardLogger",
-    "BackupManager",
-    "DiffGenerator",
-    "SecurityFixer",
-    "BestPracticesFixer",
-    "FormattingFixer",
-    "ModernPythonFixer",
-    "CodeSimplificationFixer",
-    "PerformanceFixer",
-    "UnusedCodeFixer",
-    "NamingConventionFixer",
+    "BUGBEAR_RULES",
+    "DEBUGGING_RULES",
+    "EXCEPTION_HANDLING_RULES",
+    "XSS_RULES",
     "ASTAnalyzer",
-    "SecurityIssue",
-    "CodeQualityIssue",
-    "ModernizationIssue",
-    "SimplificationIssue",
-    "PerformanceIssue",
-    "UnusedCodeIssue",
-    "NamingIssue",
     "AnalysisCache",
-    "ConfigCache",
-    "ParallelProcessor",
-    "BatchProcessor",
-    "ConsoleReporter",
-    "JSONReporter",
-    "HTMLReporter",
-    "SARIFReporter",
     "AnalysisMetrics",
+    "BackupManager",
+    "BatchProcessor",
+    "BestPracticesFixer",
+    # Bugbear - Common Mistakes
+    "BugbearChecker",
+    "BugbearVisitor",
+    # CI/CD Integration
+    "CIIntegrationGenerator",
+    "CodeQualityIssue",
+    "CodeSimplificationFixer",
+    "ConfigCache",
+    "ConsoleReporter",
+    # Custom Rules Engine
+    "CustomRule",
+    "CustomRuleEngine",
+    # Debugging Patterns
+    "DebuggingPatternChecker",
+    "DebuggingPatternVisitor",
+    # Dependency Analyzer
+    "DependencyGraphAnalyzer",
+    "DiffGenerator",
     "EnhancedConsole",
+    # Exception Handling
+    "ExceptionHandlingChecker",
+    "ExceptionHandlingVisitor",
+    "FixApplicability",
+    "FormattingFixer",
+    "HTMLReporter",
+    "ImportAnalyzer",
+    # Import Management
+    "ImportManager",
+    "JSONReporter",
     "ModernHTMLReporter",
+    "ModernPythonFixer",
+    "ModernizationIssue",
+    "NamingConventionFixer",
+    "NamingIssue",
+    # PEP 8 Comprehensive
+    "PEP8Checker",
+    "PEP8Rules",
+    "ParallelProcessor",
+    "PerformanceFixer",
+    "PerformanceIssue",
+    "PerformanceOptimizationSuggester",
+    # Performance Profiler
+    "PerformanceProfiler",
+    "PreCommitHookGenerator",
+    "PyGuardLogger",
     # Rule Engine
     "Rule",
     "RuleCategory",
+    "RuleExecutor",
+    "RuleRegistry",
     "RuleSeverity",
     "RuleViolation",
-    "RuleRegistry",
-    "RuleExecutor",
-    "FixApplicability",
-    # Type Checking
-    "TypeChecker",
-    "TypeInferenceEngine",
-    # Import Management
-    "ImportManager",
-    "ImportAnalyzer",
+    "SARIFReporter",
+    "SecurityFixer",
+    "SecurityIssue",
+    "SimplificationIssue",
     # String Operations
     "StringIssue",
     "StringOperationsFixer",
     "StringOperationsVisitor",
-    # PEP 8 Comprehensive
-    "PEP8Checker",
-    "PEP8Rules",
-    # Bugbear - Common Mistakes
-    "BugbearChecker",
-    "BugbearVisitor",
-    "BUGBEAR_RULES",
-    # Exception Handling
-    "ExceptionHandlingChecker",
-    "ExceptionHandlingVisitor",
-    "EXCEPTION_HANDLING_RULES",
-    # Debugging Patterns
-    "DebuggingPatternChecker",
-    "DebuggingPatternVisitor",
-    "DEBUGGING_RULES",
+    # Type Checking
+    "TypeChecker",
+    "TypeInferenceEngine",
+    "UnusedCodeFixer",
+    "UnusedCodeIssue",
     # XSS Detection
     "XSSDetector",
-    "XSS_RULES",
+    "analyze_performance",
+    "analyze_project_dependencies",
     "check_xss_vulnerabilities",
+    "create_rule_engine_from_config",
     "detect_xss_patterns",
-    # CI/CD Integration
-    "CIIntegrationGenerator",
-    "PreCommitHookGenerator",
     "generate_ci_config",
     "install_pre_commit_hook",
-    # Performance Profiler
-    "PerformanceProfiler",
-    "PerformanceOptimizationSuggester",
-    "analyze_performance",
-    # Dependency Analyzer
-    "DependencyGraphAnalyzer",
-    "analyze_project_dependencies",
-    # Custom Rules Engine
-    "CustomRule",
-    "CustomRuleEngine",
-    "create_rule_engine_from_config",
 ]

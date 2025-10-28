@@ -35,9 +35,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set
+import re
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -56,15 +55,15 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_mobile_framework = False
         self.has_iot_framework = False
         self.has_mqtt = False
         self.has_coap = False
-        self.storage_calls: Set[str] = set()
+        self.storage_calls: set[str] = set()
         # Track MQTT client configurations
-        self.mqtt_clients_with_auth: Set[str] = set()
-        self.mqtt_clients_with_tls: Set[str] = set()
+        self.mqtt_clients_with_auth: set[str] = set()
+        self.mqtt_clients_with_tls: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track mobile and IoT framework imports."""
@@ -99,54 +98,54 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         """Check for insecure data storage and hardcoded credentials."""
         # MOBILE001: Insecure data storage
         self._check_insecure_data_storage(node)
-        
+
         # MOBILE004: Insecure authentication
         self._check_hardcoded_mobile_credentials(node)
-        
+
         # MOBILE007: Hardcoded API endpoints
         self._check_hardcoded_api_endpoints(node)
-        
+
         # IOT001: Hardcoded device credentials
         self._check_iot_device_credentials(node)
-        
+
         # IOT002: Weak default passwords
         self._check_weak_default_passwords(node)
-        
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for insecure function calls."""
         # MOBILE002: Insufficient transport layer protection
         self._check_transport_security(node)
-        
+
         # MOBILE003: Weak mobile encryption
         self._check_mobile_encryption(node)
-        
+
         # MOBILE005: Missing certificate pinning
         self._check_certificate_pinning(node)
-        
+
         # MOBILE009: Insecure IPC
         self._check_insecure_ipc(node)
-        
+
         # IOT003: Insecure firmware update
         self._check_firmware_update(node)
-        
+
         # IOT005: Unencrypted IoT communications
         self._check_iot_encryption(node)
-        
+
         # IOT006: MQTT security issues
         self._check_mqtt_security(node)
-        
+
         # IOT007: CoAP security issues
         self._check_coap_security(node)
-        
+
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check function definitions for security issues."""
         # IOT004: Missing secure boot verification
         self._check_secure_boot(node)
-        
+
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> None:
@@ -159,17 +158,17 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_insecure_data_storage(self, node: ast.Assign) -> None:
         """
         MOBILE001: Detect insecure data storage on device.
-        
+
         CWE-312: Cleartext Storage of Sensitive Information
         Severity: HIGH
         OWASP Mobile: M2 - Insecure Data Storage
         """
         if not isinstance(node.value, ast.Constant):
             return
-            
+
         # Check for sensitive data stored in plain text files
         # value_str = str(node.value.value) if hasattr(node.value, 'value') else ''  # Reserved for future use
-        
+
         # Look for patterns indicating sensitive data storage
         sensitive_patterns = [
             r'password\s*=\s*["\']',
@@ -178,13 +177,15 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             r'secret\s*=\s*["\']',
             r'auth[_-]?token\s*=\s*["\']',
         ]
-        
-        line_text = ast.get_source_segment(self.code, node) or ''
-        
+
+        line_text = ast.get_source_segment(self.code, node) or ""
+
         for pattern in sensitive_patterns:
             if re.search(pattern, line_text, re.IGNORECASE):
                 # Check if stored in files (not env vars or secure storage)
-                if not any(x in line_text.lower() for x in ['environ', 'getenv', 'keychain', 'keystore']):
+                if not any(
+                    x in line_text.lower() for x in ["environ", "getenv", "keychain", "keystore"]
+                ):
                     self.violations.append(
                         RuleViolation(
                             rule_id="MOBILE001",
@@ -203,18 +204,18 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_transport_security(self, node: ast.Call) -> None:
         """
         MOBILE002: Detect insufficient transport layer protection.
-        
+
         CWE-319: Cleartext Transmission of Sensitive Information
         Severity: HIGH
         OWASP Mobile: M3 - Insecure Communication
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for HTTP (not HTTPS) connections
-        if func_name in ['urlopen', 'request', 'get', 'post', 'put', 'delete']:
+        if func_name in ["urlopen", "request", "get", "post", "put", "delete"]:
             for arg in node.args:
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    if arg.value.startswith('http://'):
+                    if arg.value.startswith("http://"):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="MOBILE002",
@@ -228,11 +229,11 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
                                 owasp_id="M3",
                             )
                         )
-        
+
         # Check for SSL verification disabled
-        if func_name in ['request', 'get', 'post', 'put', 'delete', 'Session']:
+        if func_name in ["request", "get", "post", "put", "delete", "Session"]:
             for keyword in node.keywords:
-                if keyword.arg == 'verify' and isinstance(keyword.value, ast.Constant):
+                if keyword.arg == "verify" and isinstance(keyword.value, ast.Constant):
                     if keyword.value.value is False:
                         self.violations.append(
                             RuleViolation(
@@ -251,38 +252,37 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_mobile_encryption(self, node: ast.Call) -> None:
         """
         MOBILE003: Detect weak mobile encryption.
-        
+
         CWE-326: Inadequate Encryption Strength
         Severity: HIGH
         OWASP Mobile: M2 - Insecure Data Storage
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for weak encryption algorithms
-        weak_algorithms = ['DES', 'RC4', 'MD5', 'SHA1']
-        
+        weak_algorithms = ["DES", "RC4", "MD5", "SHA1"]
+
         # Check if calling a weak algorithm module (e.g., DES.new, RC4.new)
-        if isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                module_name = node.func.value.id
-                if module_name in weak_algorithms:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="MOBILE003",
-                            message=f"Weak mobile encryption: Using deprecated {module_name} algorithm",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            cwe_id="CWE-326",
-                            owasp_id="M2",
-                        )
+        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+            module_name = node.func.value.id
+            if module_name in weak_algorithms:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="MOBILE003",
+                        message=f"Weak mobile encryption: Using deprecated {module_name} algorithm",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        cwe_id="CWE-326",
+                        owasp_id="M2",
                     )
-                    return
-        
+                )
+                return
+
         # Also check arguments for algorithm constants (e.g., Crypto.Cipher.MODE_DES)
-        if func_name in ['new', 'encrypt', 'decrypt']:
+        if func_name in ["new", "encrypt", "decrypt"]:
             for arg in node.args:
                 if isinstance(arg, ast.Attribute):
                     attr_name = arg.attr
@@ -304,16 +304,16 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_hardcoded_mobile_credentials(self, node: ast.Assign) -> None:
         """
         MOBILE004: Detect insecure authentication in mobile apps.
-        
+
         CWE-798: Use of Hard-coded Credentials
         Severity: CRITICAL
         OWASP Mobile: M4 - Insecure Authentication
         """
         if not isinstance(node.value, ast.Constant):
             return
-            
-        line_text = ast.get_source_segment(self.code, node) or ''
-        
+
+        line_text = ast.get_source_segment(self.code, node) or ""
+
         # Check for hardcoded authentication credentials
         auth_patterns = [
             r'username\s*=\s*["\'][^"\']+["\']',
@@ -322,7 +322,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             r'access[_-]?token\s*=\s*["\'][^"\']+["\']',
             r'auth[_-]?token\s*=\s*["\'][^"\']+["\']',
         ]
-        
+
         for pattern in auth_patterns:
             if re.search(pattern, line_text, re.IGNORECASE):
                 self.violations.append(
@@ -343,29 +343,29 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_certificate_pinning(self, node: ast.Call) -> None:
         """
         MOBILE005: Detect missing certificate pinning.
-        
+
         CWE-295: Improper Certificate Validation
         Severity: MEDIUM
         OWASP Mobile: M3 - Insecure Communication
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for HTTPS connections without certificate pinning
-        if func_name in ['HTTPSConnection', 'urlopen', 'Session']:
+        if func_name in ["HTTPSConnection", "urlopen", "Session"]:
             has_cert_pin = False
             for keyword in node.keywords:
-                if keyword.arg in ['cert', 'cert_reqs', 'ssl_context']:
+                if keyword.arg in ["cert", "cert_reqs", "ssl_context"]:
                     has_cert_pin = True
                     break
-            
+
             # Check if any args contain URLs
             has_https_url = False
             for arg in node.args:
                 if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    if arg.value.startswith('https://'):
+                    if arg.value.startswith("https://"):
                         has_https_url = True
                         break
-            
+
             if has_https_url and not has_cert_pin:
                 self.violations.append(
                     RuleViolation(
@@ -384,16 +384,16 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_debuggable_build(self, node: ast.Assign) -> None:
         """
         MOBILE006: Detect debuggable builds in production.
-        
+
         CWE-489: Active Debug Code
         Severity: MEDIUM
         OWASP Mobile: M7 - Client Code Quality
         """
-        line_text = ast.get_source_segment(self.code, node) or ''
-        
+        line_text = ast.get_source_segment(self.code, node) or ""
+
         # Check for debug mode enabled
-        if re.search(r'debug\s*=\s*True', line_text, re.IGNORECASE):
-            if 'production' in line_text.lower() or 'prod' in line_text.lower():
+        if re.search(r"debug\s*=\s*True", line_text, re.IGNORECASE):
+            if "production" in line_text.lower() or "prod" in line_text.lower():
                 self.violations.append(
                     RuleViolation(
                         rule_id="MOBILE006",
@@ -411,20 +411,20 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_hardcoded_api_endpoints(self, node: ast.Assign) -> None:
         """
         MOBILE007: Detect hardcoded API endpoints.
-        
+
         CWE-615: Inclusion of Sensitive Information in Source Code Comments
         Severity: LOW
         OWASP Mobile: M7 - Client Code Quality
         """
         if not isinstance(node.value, ast.Constant):
             return
-            
+
         value = node.value.value
         if isinstance(value, str):
             # Check for hardcoded API URLs
-            if value.startswith(('http://', 'https://')):
+            if value.startswith(("http://", "https://")):
                 # Check if it's an internal or production endpoint
-                if any(x in value.lower() for x in ['api', 'internal', 'prod', 'staging']):
+                if any(x in value.lower() for x in ["api", "internal", "prod", "staging"]):
                     self.violations.append(
                         RuleViolation(
                             rule_id="MOBILE007",
@@ -442,15 +442,15 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_code_obfuscation(self, node: ast.FunctionDef) -> None:
         """
         MOBILE008: Detect missing code obfuscation.
-        
+
         CWE-656: Reliance on Security Through Obscurity
         Severity: LOW
         OWASP Mobile: M7 - Client Code Quality
         """
         # This is a heuristic check - real obfuscation detection is complex
         # Check for functions with security-sensitive names
-        sensitive_names = ['decrypt', 'unlock', 'authenticate', 'verify_license']
-        
+        sensitive_names = ["decrypt", "unlock", "authenticate", "verify_license"]
+
         if any(name in node.name.lower() for name in sensitive_names):
             # Check if function has obvious logic (not obfuscated)
             if len(node.body) < 10:  # Simple heuristic
@@ -471,24 +471,24 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_insecure_ipc(self, node: ast.Call) -> None:
         """
         MOBILE009: Detect insecure inter-process communication.
-        
+
         CWE-927: Use of Implicit Intent for Sensitive Communication
         Severity: MEDIUM
         OWASP Mobile: M1 - Improper Platform Usage
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for insecure IPC mechanisms
-        insecure_ipc = ['broadcast', 'sendBroadcast', 'startActivity', 'startService']
-        
+        insecure_ipc = ["broadcast", "sendBroadcast", "startActivity", "startService"]
+
         if any(ipc in func_name for ipc in insecure_ipc):
             # Check if intent is explicit
             has_explicit_component = False
             for keyword in node.keywords:
-                if keyword.arg in ['component', 'package']:
+                if keyword.arg in ["component", "package"]:
                     has_explicit_component = True
                     break
-            
+
             if not has_explicit_component:
                 self.violations.append(
                     RuleViolation(
@@ -507,7 +507,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_file_storage_security(self, node: ast.With) -> None:
         """
         MOBILE010: Detect insecure file storage.
-        
+
         CWE-312: Cleartext Storage of Sensitive Information
         Severity: HIGH
         OWASP Mobile: M2 - Insecure Data Storage
@@ -515,13 +515,13 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         for item in node.items:
             if isinstance(item.context_expr, ast.Call):
                 func_name = self._get_function_name(item.context_expr)
-                
-                if func_name == 'open':
+
+                if func_name == "open":
                     # Check if writing sensitive data
                     for arg in item.context_expr.args:
                         if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                             # Check for sensitive file names
-                            sensitive_files = ['token', 'password', 'secret', 'key', 'credential']
+                            sensitive_files = ["token", "password", "secret", "key", "credential"]
                             if any(sens in arg.value.lower() for sens in sensitive_files):
                                 self.violations.append(
                                     RuleViolation(
@@ -542,16 +542,16 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_iot_device_credentials(self, node: ast.Assign) -> None:
         """
         IOT001: Detect hardcoded device credentials.
-        
+
         CWE-798: Use of Hard-coded Credentials
         Severity: CRITICAL
         OWASP IoT: I1 - Weak, Guessable, or Hardcoded Passwords
         """
         if not isinstance(node.value, ast.Constant):
             return
-            
-        line_text = ast.get_source_segment(self.code, node) or ''
-        
+
+        line_text = ast.get_source_segment(self.code, node) or ""
+
         # Check for IoT device credentials
         iot_cred_patterns = [
             r'device[_-]?id\s*=\s*["\'][^"\']+["\']',
@@ -560,7 +560,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             r'wifi[_-]?password\s*=\s*["\'][^"\']+["\']',
             r'serial[_-]?number\s*=\s*["\'][^"\']+["\']',
         ]
-        
+
         for pattern in iot_cred_patterns:
             if re.search(pattern, line_text, re.IGNORECASE):
                 self.violations.append(
@@ -581,60 +581,67 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_weak_default_passwords(self, node: ast.Assign) -> None:
         """
         IOT002: Detect weak default passwords.
-        
+
         CWE-521: Weak Password Requirements
         Severity: HIGH
         OWASP IoT: I1 - Weak, Guessable, or Hardcoded Passwords
         """
         if not isinstance(node.value, ast.Constant):
             return
-            
+
         value = node.value.value
         if isinstance(value, str):
             # Check for common weak passwords
             weak_passwords = [
-                'admin', 'password', '12345', 'default', 'root',
-                'guest', 'user', 'test', '1234', '123456'
+                "admin",
+                "password",
+                "12345",
+                "default",
+                "root",
+                "guest",
+                "user",
+                "test",
+                "1234",
+                "123456",
             ]
-            
-            line_text = ast.get_source_segment(self.code, node) or ''
-            if 'password' in line_text.lower():
-                if value.lower() in weak_passwords:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="IOT002",
-                            message=f"Weak default password: Using common password '{value}'",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            cwe_id="CWE-521",
-                            owasp_id="I1",
-                        )
+
+            line_text = ast.get_source_segment(self.code, node) or ""
+            if "password" in line_text.lower() and value.lower() in weak_passwords:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="IOT002",
+                        message=f"Weak default password: Using common password '{value}'",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        cwe_id="CWE-521",
+                        owasp_id="I1",
                     )
+                )
 
     def _check_firmware_update(self, node: ast.Call) -> None:
         """
         IOT003: Detect insecure firmware update mechanisms.
-        
+
         CWE-494: Download of Code Without Integrity Check
         Severity: CRITICAL
         OWASP IoT: I3 - Insecure Ecosystem Interfaces
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for firmware download without verification
-        if any(x in func_name.lower() for x in ['download', 'fetch', 'update']):
-            line_text = ast.get_source_segment(self.code, node) or ''
-            if 'firmware' in line_text.lower():
+        if any(x in func_name.lower() for x in ["download", "fetch", "update"]):
+            line_text = ast.get_source_segment(self.code, node) or ""
+            if "firmware" in line_text.lower():
                 # Check if there's signature verification
                 has_verification = False
                 for keyword in node.keywords:
-                    if keyword.arg in ['verify', 'signature', 'checksum', 'hash']:
+                    if keyword.arg in ["verify", "signature", "checksum", "hash"]:
                         has_verification = True
                         break
-                
+
                 if not has_verification:
                     self.violations.append(
                         RuleViolation(
@@ -653,22 +660,22 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_secure_boot(self, node: ast.FunctionDef) -> None:
         """
         IOT004: Detect missing secure boot verification.
-        
+
         CWE-494: Download of Code Without Integrity Check
         Severity: HIGH
         OWASP IoT: I5 - Use of Insecure or Outdated Components
         """
         # Check for boot functions without verification
-        if 'boot' in node.name.lower() or 'init' in node.name.lower():
+        if "boot" in node.name.lower() or "init" in node.name.lower():
             # Look for signature/hash verification in function body
             has_verification = False
             for stmt in ast.walk(node):
                 if isinstance(stmt, ast.Call):
                     func_name = self._get_function_name(stmt)
-                    if any(x in func_name.lower() for x in ['verify', 'check', 'validate', 'hash']):
+                    if any(x in func_name.lower() for x in ["verify", "check", "validate", "hash"]):
                         has_verification = True
                         break
-            
+
             if not has_verification:
                 self.violations.append(
                     RuleViolation(
@@ -687,25 +694,25 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_iot_encryption(self, node: ast.Call) -> None:
         """
         IOT005: Detect unencrypted IoT communications.
-        
+
         CWE-319: Cleartext Transmission of Sensitive Information
         Severity: HIGH
         OWASP IoT: I3 - Insecure Ecosystem Interfaces
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for unencrypted protocols
-        if any(x in func_name.lower() for x in ['socket', 'connect', 'send']):
+        if any(x in func_name.lower() for x in ["socket", "connect", "send"]):
             # Check for encryption parameters
             has_encryption = False
             for keyword in node.keywords:
-                if keyword.arg in ['ssl', 'tls', 'encrypt', 'secure']:
+                if keyword.arg in ["ssl", "tls", "encrypt", "secure"]:
                     has_encryption = True
                     break
-            
+
             # Check if connecting to a device (IoT context)
-            line_text = ast.get_source_segment(self.code, node) or ''
-            if any(x in line_text.lower() for x in ['device', 'sensor', 'actuator']):
+            line_text = ast.get_source_segment(self.code, node) or ""
+            if any(x in line_text.lower() for x in ["device", "sensor", "actuator"]):
                 if not has_encryption:
                     self.violations.append(
                         RuleViolation(
@@ -724,55 +731,55 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_mqtt_security(self, node: ast.Call) -> None:
         """
         IOT006: Detect MQTT security issues.
-        
+
         CWE-306: Missing Authentication for Critical Function
         Severity: HIGH
         OWASP IoT: I3 - Insecure Ecosystem Interfaces
         """
         func_name = self._get_function_name(node)
-        
+
         # Track username_pw_set and tls_set calls
-        if func_name == 'username_pw_set':
+        if func_name == "username_pw_set":
             # Get the client object name if available
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
                     mqtt_client_name = node.func.value.id
                     self.mqtt_clients_with_auth.add(mqtt_client_name)
             return
-        
-        if func_name == 'tls_set':
+
+        if func_name == "tls_set":
             # Get the client object name if available
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
                     mqtt_client_name = node.func.value.id
                     self.mqtt_clients_with_tls.add(mqtt_client_name)
             return
-        
+
         # Check for MQTT connections
-        if 'mqtt' in func_name.lower() or (self.has_mqtt and 'connect' in func_name.lower()):
+        if "mqtt" in func_name.lower() or (self.has_mqtt and "connect" in func_name.lower()):
             # Get the client object name
             client_name: str | None = None
             if isinstance(node.func, ast.Attribute):
                 if isinstance(node.func.value, ast.Name):
                     client_name = node.func.value.id
-            
+
             # Check for authentication (either in keywords or previously configured)
             has_auth = False
             has_tls = False
-            
+
             for keyword in node.keywords:
-                if keyword.arg in ['username', 'password', 'auth']:
+                if keyword.arg in ["username", "password", "auth"]:
                     has_auth = True
-                if keyword.arg in ['tls', 'ssl', 'ca_certs']:
+                if keyword.arg in ["tls", "ssl", "ca_certs"]:
                     has_tls = True
-            
+
             # Check if this client was previously configured with auth/TLS
             if client_name:
                 if client_name in self.mqtt_clients_with_auth:
                     has_auth = True
                 if client_name in self.mqtt_clients_with_tls:
                     has_tls = True
-            
+
             if not has_auth:
                 self.violations.append(
                     RuleViolation(
@@ -787,7 +794,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
                         owasp_id="I3",
                     )
                 )
-            
+
             if not has_tls:
                 self.violations.append(
                     RuleViolation(
@@ -806,22 +813,22 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_coap_security(self, node: ast.Call) -> None:
         """
         IOT007: Detect CoAP protocol vulnerabilities.
-        
+
         CWE-306: Missing Authentication for Critical Function
         Severity: MEDIUM
         OWASP IoT: I3 - Insecure Ecosystem Interfaces
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for CoAP connections
-        if 'coap' in func_name.lower() or (self.has_coap and 'request' in func_name.lower()):
+        if "coap" in func_name.lower() or (self.has_coap and "request" in func_name.lower()):
             # Check for DTLS (secure CoAP)
             has_dtls = False
             for keyword in node.keywords:
-                if keyword.arg in ['dtls', 'secure', 'credentials']:
+                if keyword.arg in ["dtls", "secure", "credentials"]:
                     has_dtls = True
                     break
-            
+
             if not has_dtls:
                 self.violations.append(
                     RuleViolation(
@@ -840,22 +847,22 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_zigbee_zwave_security(self, node: ast.Call) -> None:
         """
         IOT008: Detect Zigbee/Z-Wave security gaps.
-        
+
         CWE-326: Inadequate Encryption Strength
         Severity: MEDIUM
         OWASP IoT: I3 - Insecure Ecosystem Interfaces
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for Zigbee/Z-Wave operations
-        if any(x in func_name.lower() for x in ['zigbee', 'zwave', 'z_wave']):
+        if any(x in func_name.lower() for x in ["zigbee", "zwave", "z_wave"]):
             # Check for encryption/security settings
             has_security = False
             for keyword in node.keywords:
-                if keyword.arg in ['security', 'encryption', 'key']:
+                if keyword.arg in ["security", "encryption", "key"]:
                     has_security = True
                     break
-            
+
             if not has_security:
                 self.violations.append(
                     RuleViolation(
@@ -874,20 +881,20 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_device_fingerprinting(self, node: ast.Call) -> None:
         """
         IOT009: Detect device fingerprinting risks.
-        
+
         CWE-359: Exposure of Private Personal Information
         Severity: LOW
         OWASP IoT: I4 - Lack of Secure Update Mechanism
         """
         func_name = self._get_function_name(node)
-        
+
         # Check for device identification collection
-        identifying_functions = ['getmac', 'uuid', 'getnode', 'gethostname']
-        
+        identifying_functions = ["getmac", "uuid", "getnode", "gethostname"]
+
         if any(x in func_name.lower() for x in identifying_functions):
             # Check if being sent externally
-            line_text = ast.get_source_segment(self.code, node) or ''
-            if any(x in line_text.lower() for x in ['send', 'post', 'upload', 'transmit']):
+            line_text = ast.get_source_segment(self.code, node) or ""
+            if any(x in line_text.lower() for x in ["send", "post", "upload", "transmit"]):
                 self.violations.append(
                     RuleViolation(
                         rule_id="IOT009",
@@ -905,22 +912,22 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
     def _check_iot_botnet_indicators(self, node: ast.Call) -> None:
         """
         IOT010: Detect IoT botnet indicators.
-        
+
         CWE-912: Hidden Functionality
         Severity: CRITICAL
         OWASP IoT: I2 - Insecure Network Services
         """
         # func_name = self._get_function_name(node)  # Reserved for future use
-        
+
         # Check for suspicious network operations
         suspicious_patterns = [
-            ('scan', 'port'),
-            ('brute', 'force'),
-            ('ddos', 'attack'),
-            ('exploit', 'vulnerability'),
+            ("scan", "port"),
+            ("brute", "force"),
+            ("ddos", "attack"),
+            ("exploit", "vulnerability"),
         ]
-        
-        line_text = ast.get_source_segment(self.code, node) or ''
+
+        line_text = ast.get_source_segment(self.code, node) or ""
         for pattern1, pattern2 in suspicious_patterns:
             if pattern1 in line_text.lower() and pattern2 in line_text.lower():
                 self.violations.append(
@@ -942,19 +949,19 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         """Extract function name from Call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return node.func.attr
         return ""
 
 
-def analyze_mobile_iot_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_mobile_iot_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze code for mobile and IoT security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of security violations found
     """

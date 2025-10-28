@@ -29,7 +29,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -49,15 +48,15 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_flask_import = False
         self.has_django_import = False
         self.has_fastapi_import = False
         self.has_jwt_import = False
-        self.session_vars: Set[str] = set()
-        self.auth_functions: Set[str] = set()
-        self.password_vars: Set[str] = set()
-        self.jwt_payloads_with_exp: Set[str] = set()  # Track payload variables with 'exp'
+        self.session_vars: set[str] = set()
+        self.auth_functions: set[str] = set()
+        self.password_vars: set[str] = set()
+        self.jwt_payloads_with_exp: set[str] = set()  # Track payload variables with 'exp'
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track framework and security imports."""
@@ -80,27 +79,27 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 if "session" in target.id.lower():
                     self.session_vars.add(target.id)
                     self._check_weak_session_id(node, target.id)
-                
+
                 # Track password variables for policy checks
                 if "password" in target.id.lower() or "pwd" in target.id.lower():
                     self.password_vars.add(target.id)
-                
+
                 # Track JWT payloads with 'exp' claim
                 if isinstance(node.value, ast.Dict):
                     for key in node.value.keys:
                         if isinstance(key, ast.Constant) and key.value == "exp":
                             self.jwt_payloads_with_exp.add(target.id)
                             break
-                
+
                 # Check for hardcoded credentials
                 self._check_hardcoded_credentials(node, target.id)
-                
+
                 # Check for weak password reset tokens
                 self._check_weak_password_reset_token(node, target.id)
-        
+
         # Check for privilege escalation
         self._check_privilege_escalation(node)
-        
+
         self.generic_visit(node)
 
     def _check_weak_session_id(self, node: ast.Assign, var_name: str) -> None:
@@ -150,7 +149,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         # Check the immediate call
         check_call(node.value)
-        
+
         # Also check if wrapped in str(), int(), etc.
         if node.value.args:
             for arg in node.value.args:
@@ -164,8 +163,16 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             return
 
         suspicious_names = {
-            "password", "passwd", "pwd", "secret", "api_key", "apikey",
-            "access_token", "auth_token", "private_key", "secret_key"
+            "password",
+            "passwd",
+            "pwd",
+            "secret",
+            "api_key",
+            "apikey",
+            "access_token",
+            "auth_token",
+            "private_key",
+            "secret_key",
         }
 
         var_lower = var_name.lower()
@@ -202,24 +209,26 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             self._check_timing_attack(node)
             self._check_session_fixation(node)
             self._check_missing_mfa(node)
-        
+
         # Check for missing authentication on sensitive operations
-        if any(term in node.name.lower() for term in ["delete", "remove", "update", "admin", "sudo"]):
+        if any(
+            term in node.name.lower() for term in ["delete", "remove", "update", "admin", "sudo"]
+        ):
             self._check_missing_authentication(node)
-        
+
         # Check for IDOR vulnerabilities
         self._check_idor_vulnerability(node)
-        
+
         # Check for weak password policies
         self._check_weak_password_policy(node)
-        
+
         self.generic_visit(node)
-    
+
     def visit_Compare(self, node: ast.Compare) -> None:
         """Check for security issues in comparisons."""
         # Check for null byte authentication bypass
         self._check_null_byte_auth_bypass(node)
-        
+
         self.generic_visit(node)
 
     def _check_timing_attack(self, node: ast.FunctionDef) -> None:
@@ -229,7 +238,10 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             if isinstance(child, ast.Compare):
                 # Check if comparing passwords or credentials directly
                 if isinstance(child.left, ast.Name):
-                    if any(term in child.left.id.lower() for term in ["password", "pwd", "secret", "token"]):
+                    if any(
+                        term in child.left.id.lower()
+                        for term in ["password", "pwd", "secret", "token"]
+                    ):
                         # Using == operator instead of constant-time comparison
                         if any(isinstance(op, ast.Eq) for op in child.ops):
                             self.violations.append(
@@ -283,18 +295,27 @@ class AuthSecurityVisitor(ast.NodeVisitor):
     def _check_missing_authentication(self, node: ast.FunctionDef) -> None:
         """Check for missing authentication on sensitive operations (AUTH005)."""
         # Skip login/auth/public routes (they don't need authentication)
-        if any(term in node.name.lower() for term in ["login", "signup", "register", "public", "health", "ping"]):
+        if any(
+            term in node.name.lower()
+            for term in ["login", "signup", "register", "public", "health", "ping"]
+        ):
             return
-        
+
         # Look for decorators indicating authentication
         has_auth_decorator = False
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Name):
-                if any(term in decorator.id.lower() for term in ["login", "auth", "require", "permission"]):
+                if any(
+                    term in decorator.id.lower()
+                    for term in ["login", "auth", "require", "permission"]
+                ):
                     has_auth_decorator = True
                     break
             elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):
-                if any(term in decorator.func.id.lower() for term in ["login", "auth", "require", "permission"]):
+                if any(
+                    term in decorator.func.id.lower()
+                    for term in ["login", "auth", "require", "permission"]
+                ):
                     has_auth_decorator = True
                     break
 
@@ -320,7 +341,10 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     for arg in decorator.args:
                         if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                             path = arg.value.lower()
-                            if any(term in path for term in ["admin", "delete", "remove", "/api/", "/users/"]):
+                            if any(
+                                term in path
+                                for term in ["admin", "delete", "remove", "/api/", "/users/"]
+                            ):
                                 has_sensitive_path = True
                                 break
 
@@ -359,22 +383,29 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             if isinstance(child, ast.Call):
                 # Check for permission checks (attribute calls like obj.check_permission())
                 if isinstance(child.func, ast.Attribute):
-                    if any(term in child.func.attr.lower() for term in ["check", "verify", "authorize", "permission", "can"]):
+                    if any(
+                        term in child.func.attr.lower()
+                        for term in ["check", "verify", "authorize", "permission", "can"]
+                    ):
                         has_auth_check = True
                         break
                 # Check for permission checks (function calls like check_permission())
-                elif isinstance(child.func, ast.Name):
-                    if any(term in child.func.id.lower() for term in ["check", "verify", "authorize", "permission"]):
-                        has_auth_check = True
-                        break
+                elif isinstance(child.func, ast.Name) and any(
+                    term in child.func.id.lower()
+                    for term in ["check", "verify", "authorize", "permission"]
+                ):
+                    has_auth_check = True
+                    break
             elif isinstance(child, ast.If):
                 # Check for ownership verification
                 for cmp_child in ast.walk(child.test):
                     if isinstance(cmp_child, ast.Compare):
-                        if isinstance(cmp_child.left, ast.Attribute):
-                            if "user" in cmp_child.left.attr.lower() or "owner" in cmp_child.left.attr.lower():
-                                has_auth_check = True
-                                break
+                        if isinstance(cmp_child.left, ast.Attribute) and (
+                            "user" in cmp_child.left.attr.lower()
+                            or "owner" in cmp_child.left.attr.lower()
+                        ):
+                            has_auth_check = True
+                            break
 
         if not has_auth_check:
             self.violations.append(
@@ -395,26 +426,26 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for JWT and session configuration issues."""
         # Check for insecure Remember Me implementations (AUTH012)
         self._check_insecure_remember_me(node)
-        
+
         # Check for LDAP injection (AUTH015)
         self._check_ldap_injection(node)
-        
+
         if isinstance(node.func, ast.Attribute):
             # Check JWT encode without expiration (AUTH007)
             if node.func.attr == "encode" and self.has_jwt_import:
                 self._check_jwt_expiration(node)
-            
+
             # Check session configuration (AUTH008)
             elif "session" in str(node.func.attr).lower():
                 self._check_session_timeout(node)
-        
+
         self.generic_visit(node)
 
     def _check_jwt_expiration(self, node: ast.Call) -> None:
         """Check for JWT tokens without expiration (AUTH007)."""
         # Check if 'exp' claim is set in payload
         has_exp = False
-        
+
         # Helper to check if a dict has 'exp' key
         def dict_has_exp(dict_node):
             if isinstance(dict_node, ast.Dict):
@@ -422,7 +453,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     if isinstance(key, ast.Constant) and key.value == "exp":
                         return True
             return False
-        
+
         # Check keyword arguments
         for keyword in node.keywords:
             if keyword.arg == "payload" or not keyword.arg:
@@ -430,7 +461,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     has_exp = True
                     break
                 # Check if it's a tracked variable with exp
-                elif isinstance(keyword.value, ast.Name):
+                if isinstance(keyword.value, ast.Name):
                     if keyword.value.id in self.jwt_payloads_with_exp:
                         has_exp = True
                         break
@@ -440,7 +471,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             # First argument is usually the payload
             if node.args:
                 first_arg = node.args[0]
-                
+
                 # Check if it's a dict literal
                 if dict_has_exp(first_arg):
                     has_exp = True
@@ -474,22 +505,25 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for weak password reset token generation (AUTH009)."""
         # Check if variable name indicates a reset token
         var_lower = var_name.lower()
-        if not (("reset" in var_lower or "recovery" in var_lower) and ("token" in var_lower or "code" in var_lower)):
+        if not (
+            ("reset" in var_lower or "recovery" in var_lower)
+            and ("token" in var_lower or "code" in var_lower)
+        ):
             return
-        
+
         if not isinstance(node.value, ast.Call):
             return
-        
+
         # Helper to check for weak random in the call tree
         def check_for_weak_random(call_node):
             if isinstance(call_node.func, ast.Attribute):
                 module = None
                 if isinstance(call_node.func.value, ast.Name):
                     module = call_node.func.value.id
-                
+
                 if module == "random":
                     return True
-            
+
             # Check arguments for nested calls
             for arg in call_node.args:
                 if isinstance(arg, ast.Call):
@@ -499,10 +533,13 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     # Check generator expression for random usage
                     for child in ast.walk(arg):
                         if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
-                            if isinstance(child.func.value, ast.Name) and child.func.value.id == "random":
+                            if (
+                                isinstance(child.func.value, ast.Name)
+                                and child.func.value.id == "random"
+                            ):
                                 return True
             return False
-        
+
         if check_for_weak_random(node.value):
             self.violations.append(
                 RuleViolation(
@@ -523,10 +560,13 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if not isinstance(target, ast.Attribute):
                 continue
-            
+
             # Check for setting user roles/permissions from request
             attr_name = target.attr.lower()
-            if any(term in attr_name for term in ["role", "permission", "admin", "is_staff", "is_superuser"]):
+            if any(
+                term in attr_name
+                for term in ["role", "permission", "admin", "is_staff", "is_superuser"]
+            ):
                 # Check if value comes from request parameters (Subscript like request['role'])
                 if isinstance(node.value, ast.Subscript):
                     # Check the value being subscripted
@@ -548,7 +588,14 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                             )
                     elif isinstance(node.value.value, ast.Name):
                         # Check patterns like request['role'], form['role'], data['role']
-                        if node.value.value.id in ("request", "form", "data", "params", "query", "json"):
+                        if node.value.value.id in (
+                            "request",
+                            "form",
+                            "data",
+                            "params",
+                            "query",
+                            "json",
+                        ):
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="AUTH010",
@@ -567,21 +614,28 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for missing multi-factor authentication (AUTH011)."""
         if "login" not in node.name.lower() and "signin" not in node.name.lower():
             return
-        
+
         # Check if MFA/2FA is implemented
         has_mfa = False
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
                 if isinstance(child.func, ast.Attribute):
-                    if any(term in child.func.attr.lower() for term in ["mfa", "2fa", "totp", "otp", "verify_code"]):
+                    if any(
+                        term in child.func.attr.lower()
+                        for term in ["mfa", "2fa", "totp", "otp", "verify_code"]
+                    ):
                         has_mfa = True
                         break
-                elif isinstance(child.func, ast.Name):
-                    if any(term in child.func.id.lower() for term in ["mfa", "2fa", "totp", "otp", "verify_code"]):
-                        has_mfa = True
-                        break
-        
-        if not has_mfa and (self.has_flask_import or self.has_django_import or self.has_fastapi_import):
+                elif isinstance(child.func, ast.Name) and any(
+                    term in child.func.id.lower()
+                    for term in ["mfa", "2fa", "totp", "otp", "verify_code"]
+                ):
+                    has_mfa = True
+                    break
+
+        if not has_mfa and (
+            self.has_flask_import or self.has_django_import or self.has_fastapi_import
+        ):
             self.violations.append(
                 RuleViolation(
                     rule_id="AUTH011",
@@ -601,35 +655,37 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         # Check for cookie setting with passwords or credentials
         if not isinstance(node.func, ast.Attribute):
             return
-        
+
         if node.func.attr != "set_cookie":
             return
-        
+
         # Check cookie name and value
         cookie_name = None
         cookie_value_var = None
-        
+
         # Check positional and keyword arguments
         if len(node.args) >= 1:
             # First arg is usually the cookie name
             if isinstance(node.args[0], ast.Constant):
                 cookie_name = node.args[0].value
-        
+
         for keyword in node.keywords:
             if keyword.arg in ("key", "name"):
                 if isinstance(keyword.value, ast.Constant):
                     cookie_name = keyword.value.value
-            elif keyword.arg == "value":
-                if isinstance(keyword.value, ast.Name):
-                    cookie_value_var = keyword.value.id
-        
+            elif keyword.arg == "value" and isinstance(keyword.value, ast.Name):
+                cookie_value_var = keyword.value.id
+
         # Also check second positional arg for value
         if len(node.args) >= 2 and isinstance(node.args[1], ast.Name):
             cookie_value_var = node.args[1].id
-        
+
         # Check if it's a remember me cookie storing sensitive data
         if cookie_name and isinstance(cookie_name, str) and "remember" in cookie_name.lower():
-            if cookie_value_var and any(term in cookie_value_var.lower() for term in ["password", "pwd", "credential", "secret"]):
+            if cookie_value_var and any(
+                term in cookie_value_var.lower()
+                for term in ["password", "pwd", "credential", "secret"]
+            ):
                 self.violations.append(
                     RuleViolation(
                         rule_id="AUTH012",
@@ -648,21 +704,23 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for weak password validation (AUTH013)."""
         if not any(term in node.name.lower() for term in ["password", "validate", "check"]):
             return
-        
+
         # Look for length checks
         has_length_check = False
         min_length = 0
-        
+
         for child in ast.walk(node):
             if isinstance(child, ast.Compare):
                 # Check for len(password) comparisons
                 if isinstance(child.left, ast.Call):
                     if isinstance(child.left.func, ast.Name) and child.left.func.id == "len":
                         for comparator in child.comparators:
-                            if isinstance(comparator, ast.Constant) and isinstance(comparator.value, int):
+                            if isinstance(comparator, ast.Constant) and isinstance(
+                                comparator.value, int
+                            ):
                                 min_length = comparator.value
                                 has_length_check = True
-        
+
         if has_length_check and min_length < 8:
             self.violations.append(
                 RuleViolation(
@@ -709,12 +767,12 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         # Check for LDAP operations with string formatting
         if not isinstance(node.func, ast.Attribute):
             return
-        
+
         func_name = node.func.attr.lower()
         # Check for common LDAP methods
         if not any(term in func_name for term in ["search", "search_s", "search_st", "search_ext"]):
             return
-        
+
         # Check arguments for string concatenation or formatting in LDAP queries
         for arg in node.args:
             # Check for f-strings (JoinedStr)
@@ -734,7 +792,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 )
                 break
             # Check for string concatenation (BinOp with Add)
-            elif isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add):
+            if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add):
                 # Check if it's string concatenation
                 self.violations.append(
                     RuleViolation(
@@ -765,7 +823,7 @@ class AuthSecurityChecker:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """Check a file for authentication and authorization vulnerabilities."""
         try:
             code = self.file_ops.read_file(file_path)
@@ -784,7 +842,7 @@ class AuthSecurityChecker:
             self.logger.error(f"Error analyzing {file_path}: {e}")
             return []
 
-    def fix_file(self, file_path: Path, violations: List[RuleViolation]) -> str:
+    def fix_file(self, file_path: Path, violations: list[RuleViolation]) -> str:
         """Apply auto-fixes for authentication and authorization issues."""
         code = self.file_ops.read_file(file_path)
         if not code:

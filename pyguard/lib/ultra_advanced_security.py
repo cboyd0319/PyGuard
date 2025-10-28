@@ -23,9 +23,8 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
-from typing import List
+import re
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger
@@ -66,7 +65,7 @@ class GraphQLInjectionDetector:
         """Initialize GraphQL injection detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for GraphQL injection vulnerabilities.
 
@@ -117,9 +116,9 @@ class SSTIDetector(ast.NodeVisitor):
         "flask": ["render_template_string"],
     }
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize SSTI detector."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
         self.using_template_engine = False
@@ -151,7 +150,7 @@ class SSTIDetector(ast.NodeVisitor):
         if "render_template_string" in call_name:
             # Check if any argument might be user-controlled
             for arg in node.args:
-                if isinstance(arg, ast.Name) or isinstance(arg, ast.BinOp):
+                if isinstance(arg, (ast.Name, ast.BinOp)):
                     self.issues.append(
                         SecurityIssue(
                             severity="CRITICAL",
@@ -190,7 +189,7 @@ class SSTIDetector(ast.NodeVisitor):
         """Extract the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -229,7 +228,7 @@ class JWTSecurityDetector:
         """Initialize JWT security detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for JWT security issues.
 
@@ -276,9 +275,9 @@ class APIRateLimitDetector(ast.NodeVisitor):
     API_DECORATORS = {"@app.route", "@api.route", "@router.get", "@router.post", "@endpoint"}
     RATE_LIMIT_DECORATORS = {"@limiter", "@rate_limit", "@throttle", "@limit"}
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize API rate limit detector."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
 
@@ -325,7 +324,7 @@ class APIRateLimitDetector(ast.NodeVisitor):
         """Extract decorator name as string."""
         if isinstance(decorator, ast.Name):
             return f"@{decorator.id}"
-        elif isinstance(decorator, ast.Call):
+        if isinstance(decorator, ast.Call):
             if isinstance(decorator.func, ast.Attribute):
                 parts = []
                 current: ast.expr = decorator.func
@@ -335,7 +334,7 @@ class APIRateLimitDetector(ast.NodeVisitor):
                 if isinstance(current, ast.Name):
                     parts.append(current.id)
                 return "@" + ".".join(reversed(parts))
-            elif isinstance(decorator.func, ast.Name):
+            if isinstance(decorator.func, ast.Name):
                 return f"@{decorator.func.id}"
         elif isinstance(decorator, ast.Attribute):
             parts2 = []
@@ -379,7 +378,7 @@ class ContainerEscapeDetector:
         """Initialize container escape detector."""
         self.logger = PyGuardLogger()
 
-    def scan_file(self, file_path: str, content: str) -> List[SecurityIssue]:
+    def scan_file(self, file_path: str, content: str) -> list[SecurityIssue]:
         """
         Scan Docker/container configuration files for escape vulnerabilities.
 
@@ -390,7 +389,7 @@ class ContainerEscapeDetector:
         Returns:
             List of security issues found
         """
-        issues: List[SecurityIssue] = []
+        issues: list[SecurityIssue] = []
 
         # Only scan relevant files
         if not any(
@@ -431,9 +430,9 @@ class PrototypePollutionDetector(ast.NodeVisitor):
     __dict__, __class__, and dynamic attribute assignment.
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize prototype pollution detector."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
 
@@ -495,7 +494,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return node.func.attr
         return ""
 
@@ -526,7 +525,7 @@ class CachePoisoningDetector:
         """Initialize cache poisoning detector."""
         self.logger = PyGuardLogger()
 
-    def scan_code(self, code: str) -> List[SecurityIssue]:
+    def scan_code(self, code: str) -> list[SecurityIssue]:
         """
         Scan code for cache poisoning vulnerabilities.
 
@@ -573,9 +572,9 @@ class BusinessLogicDetector(ast.NodeVisitor):
     - Inadequate balance/quantity checks
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize business logic detector."""
-        self.issues: List[SecurityIssue] = []
+        self.issues: list[SecurityIssue] = []
         self.source_lines = source_lines
         self.logger = PyGuardLogger()
 
@@ -644,19 +643,19 @@ class BusinessLogicDetector(ast.NodeVisitor):
         """Extract function name from call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return node.func.attr
         return ""
 
 
 # Export all detectors for easy access
 __all__ = [
-    "GraphQLInjectionDetector",
-    "SSTIDetector",
-    "JWTSecurityDetector",
     "APIRateLimitDetector",
-    "ContainerEscapeDetector",
-    "PrototypePollutionDetector",
-    "CachePoisoningDetector",
     "BusinessLogicDetector",
+    "CachePoisoningDetector",
+    "ContainerEscapeDetector",
+    "GraphQLInjectionDetector",
+    "JWTSecurityDetector",
+    "PrototypePollutionDetector",
+    "SSTIDetector",
 ]

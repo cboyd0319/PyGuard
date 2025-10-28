@@ -10,60 +10,60 @@ across 13 security categories with 76+ vulnerability patterns.
    - eval/exec/compile with untrusted input
    - Dynamic imports and attribute access
    - IPython kernel message injection
-   
+
 2. Unsafe Deserialization & ML Model Risks (CRITICAL)
    - pickle.load() arbitrary code execution
    - PyTorch torch.load() without weights_only
    - Hugging Face model poisoning
-   
+
 3. Shell & Magic Command Abuse (HIGH/CRITICAL)
    - System command execution via ! and %%bash
    - Unpinned package installations
    - Remote code loading
-   
+
 4. Network & Data Exfiltration (HIGH)
    - HTTP POST/PUT to external domains
    - Database connections without validation
    - Cloud SDK usage (AWS, GCP, Azure)
    - Raw socket access
-   
+
 5. Secrets & Credential Exposure (CRITICAL/HIGH)
    - 50+ secret patterns (AWS, GitHub, Slack, OpenAI, SSH, JWT)
    - Entropy-based detection for cryptographic keys
    - Secrets in outputs and metadata
-   
+
 6. Privacy & PII Leakage (HIGH)
    - SSN, credit cards, emails, phone numbers
    - PII in cell outputs and tracebacks
-   
+
 7. Output Payload Injection (HIGH/CRITICAL)
    - XSS via HTML/JavaScript rendering
    - Iframe injection and clickjacking
-   
+
 8. Filesystem & Path Traversal (HIGH)
    - Path traversal attempts
    - Access to sensitive system files
    - Unsafe file operations
-   
+
 9. Reproducibility & Environment Integrity (MEDIUM)
    - Missing random seeds for ML frameworks
    - Unpinned dependencies
    - Non-deterministic operations
-   
+
 10. Execution Order & Notebook Integrity (MEDIUM)
     - Non-monotonic execution counts
     - Variables used before definition
-    
+
 11. Resource Exhaustion & DoS (HIGH/CRITICAL)
     - Infinite loops
     - Large memory allocations
     - Fork bombs
-    
+
 12. Advanced ML/AI Security (HIGH/CRITICAL)
     - Prompt injection in LLM applications
     - Adversarial input acceptance
     - Model supply chain risks
-    
+
 13. Advanced Code Injection (CRITICAL)
     - Sandbox escape via dunder methods
     - Type manipulation
@@ -102,12 +102,12 @@ This implementation targets:
 """
 
 import ast
-import json
-import re
-import math
 from dataclasses import dataclass
+import json
+import math
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Set
+import re
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -118,9 +118,9 @@ class NotebookCell:
 
     cell_type: str  # "code", "markdown", "raw"
     source: str  # Cell source code
-    execution_count: Optional[int]  # Execution order
-    outputs: List[Dict[str, Any]]  # Cell outputs
-    metadata: Dict[str, Any]  # Cell metadata
+    execution_count: int | None  # Execution order
+    outputs: list[dict[str, Any]]  # Cell outputs
+    metadata: dict[str, Any]  # Cell metadata
 
 
 @dataclass
@@ -135,9 +135,9 @@ class NotebookIssue:
     line_number: int  # Line within cell
     code_snippet: str  # Relevant code
     rule_id: str = ""  # Rule identifier (e.g., NB-INJECT-001)
-    fix_suggestion: Optional[str] = None  # How to fix
-    cwe_id: Optional[str] = None  # CWE identifier
-    owasp_id: Optional[str] = None  # OWASP identifier
+    fix_suggestion: str | None = None  # How to fix
+    cwe_id: str | None = None  # CWE identifier
+    owasp_id: str | None = None  # OWASP identifier
     confidence: float = 1.0  # Detection confidence (0.0-1.0)
     auto_fixable: bool = False  # Whether issue can be auto-fixed
 
@@ -148,8 +148,8 @@ class NotebookMetadata:
 
     kernel_name: str
     language: str
-    kernel_version: Optional[str] = None
-    jupyter_version: Optional[str] = None
+    kernel_version: str | None = None
+    jupyter_version: str | None = None
     trusted: bool = False  # Whether notebook is trusted
     execution_count_max: int = 0  # Maximum execution count seen
     has_outputs: bool = False  # Whether notebook has cell outputs
@@ -158,7 +158,7 @@ class NotebookMetadata:
 class NotebookSecurityAnalyzer:
     """
     World-class security analyzer for Jupyter notebooks.
-    
+
     This analyzer implements comprehensive security detection across 13 categories
     with 76+ vulnerability patterns, following the PyGuard Jupyter Security Engineer
     vision for best-in-class notebook security.
@@ -168,7 +168,7 @@ class NotebookSecurityAnalyzer:
     - HIGH: Shell commands, XSS, network exfiltration, filesystem access, PII exposure
     - MEDIUM: Reproducibility, execution order, resource exhaustion
     - LOW: Kernel metadata, environment info
-    
+
     **Key Features:**
     - Pattern-based detection (76+ patterns)
     - Entropy-based secret detection (Shannon entropy > 4.5)
@@ -177,17 +177,17 @@ class NotebookSecurityAnalyzer:
     - Confidence scoring (0.0-1.0)
     - CWE/OWASP mapping
     - Auto-fix suggestions
-    
+
     **Performance:**
     - Target: Sub-100ms for small notebooks (< 10 cells)
     - Linear scaling to 1000+ cells
     - Parallel cell processing (planned)
-    
+
     **Quality Metrics:**
     - Target: 100% detection on CRITICAL issues
     - Target: < 5% false positive rate on HIGH severity
     - Comprehensive test coverage (64+ test cases)
-    
+
     Example:
         >>> analyzer = NotebookSecurityAnalyzer()
         >>> issues = analyzer.analyze_notebook(Path("notebook.ipynb"))
@@ -203,25 +203,20 @@ class NotebookSecurityAnalyzer:
         "%%bash": "Bash script execution",
         "%%sh": "Shell script execution",
         "%%script": "Script execution",
-        
         # Package management
         "%pip": "Pip package installation (version pinning recommended)",
         "%conda": "Conda package installation (version pinning recommended)",
-        
         # Code loading from external sources
         "%load_ext": "Loading external extensions (may be unsafe)",
         "%run": "Running external scripts (path traversal risk)",
         "%load": "Loading code from external sources (verify integrity)",
         "%loadpy": "Loading Python code from URL or file (security risk)",
-        
         # File operations
         "%%writefile": "Writing files (path traversal risk)",
-        
         # Environment & State manipulation
         "%env": "Environment variable manipulation",
         "%set_env": "Setting environment variables (secret exposure risk)",
         "%store": "Cross-notebook variable storage (state poisoning risk)",
-        
         # Directory navigation
         "%cd": "Directory change (filesystem structure exposure)",
         "%pwd": "Print working directory (filesystem disclosure)",
@@ -306,25 +301,20 @@ class NotebookSecurityAnalyzer:
         # Identity numbers
         r"\b\d{3}-\d{2}-\d{4}\b": "Social Security Number (SSN)",
         r"\b[A-Z]{1,2}\d{6,8}[A-Z]?\b": "Passport number pattern",
-        
         # Contact information
         r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b": "Email address",
         r"\b(?:\d{3}[-.]?)?\d{3}[-.]?\d{4}\b": "Phone number",
-        
         # Financial data
         r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b": "Credit card number",
         r"\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b": "IBAN (International Bank Account Number)",
         r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b": "SWIFT/BIC code",
-        
         # Network identifiers
         r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b": "IPv4 address",
         r"\b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b": "IPv6 address",
         r"\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b": "MAC address",
-        
         # Geographic data
         r"\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b": "UK postal code",
         r"\b\d{5}(-\d{4})?\b": "US ZIP code",
-        
         # Medical & Health
         r"\b[A-Z]\d{2}\.\d{1,3}\b": "ICD-10 diagnosis code pattern",
         r"\bMRN[:\s-]?\d{6,10}\b": "Medical Record Number (MRN)",
@@ -338,36 +328,29 @@ class NotebookSecurityAnalyzer:
         r"pd\.read_pickle\(": "Pandas pickle reading (code execution risk)",
         r"np\.load\(.*allow_pickle\s*=\s*True": "NumPy pickle loading enabled",
         r"dill\.loads?\(": "Dill deserialization (arbitrary code execution risk)",
-        
         # PyTorch (CRITICAL)
         r"torch\.load\(": "PyTorch model loading (arbitrary code execution risk via __reduce__)",
         r"torch\.jit\.load\(": "PyTorch JIT model loading (verify source and checksum)",
-        
         # TensorFlow & Keras (HIGH)
         r"tf\.keras\.models\.load_model\(": "TensorFlow Keras model loading (verify source)",
         r"keras\.models\.load_model": "Keras model loading with potential custom layers",
         r"tf\.saved_model\.load\(": "TensorFlow SavedModel loading without signature verification",
         r"tf\.keras\.models\.model_from_json\(": "Keras model from JSON (verify architecture integrity)",
         r"tf\.keras\.models\.model_from_yaml\(": "Keras model from YAML (architecture injection risk)",
-        
         # ONNX (HIGH)
         r"onnx\.load\(": "ONNX model loading without opset validation",
         r"onnxruntime\.InferenceSession\(": "ONNX Runtime inference (verify model source)",
-        
         # Hugging Face Transformers (HIGH)
         r"from_pretrained\(": "Hugging Face model loading (verify repository trust)",
         r"AutoModel\.from_pretrained\(": "Hugging Face AutoModel loading (supply chain risk)",
         r"pipeline\(.*model\s*=": "Hugging Face pipeline with custom model (verify source)",
-        
         # MLflow (MEDIUM)
         r"mlflow\..*\.load_model": "MLflow model loading (verify artifact source)",
         r"mlflow\.pyfunc\.load_model\(": "MLflow PyFunc model loading (arbitrary code risk)",
-        
         # YAML deserialization (CRITICAL)
         r"yaml\.load\(": "YAML load without safe loader (arbitrary code execution risk)",
         r"yaml\.unsafe_load\(": "Unsafe YAML loading (arbitrary code execution risk)",
         r"yaml\.full_load\(": "YAML full_load (consider safe_load instead)",
-        
         # Model training risks (MEDIUM)
         r"model\.fit\(": "Model training detected (ensure data validation)",
     }
@@ -379,13 +362,11 @@ class NotebookSecurityAnalyzer:
         r"display\(HTML\(": "HTML display (XSS risk)",
         r"\.to_html\(\)": "DataFrame to HTML (potential XSS)",
         r"%%html": "HTML cell magic (XSS risk)",
-        
         # JavaScript execution
         r"IPython\.display\.Javascript\(": "JavaScript execution (XSS risk)",
         r"Javascript\(": "JavaScript execution (XSS risk)",
         r"%%javascript": "JavaScript cell magic (XSS risk)",
         r"%%js": "JavaScript cell magic (XSS risk)",
-        
         # Inline HTML/JS
         r"<script": "Inline script tag (XSS risk)",
         r"<iframe": "Iframe injection (XSS/clickjacking risk)",
@@ -393,15 +374,12 @@ class NotebookSecurityAnalyzer:
         r"<embed": "Embed tag (XSS/content injection)",
         r"javascript:": "JavaScript protocol URL (XSS risk)",
         r"on\w+\s*=": "HTML event handler (XSS risk)",
-        
         # CSS injection & data exfiltration
         r"<style": "Inline style tag (CSS injection risk)",
         r"style\s*=\s*['\"].*background.*url\(": "CSS background URL (data exfiltration via CSS)",
-        
         # SVG & XML
         r"<svg": "SVG tag (potential XSS if user-controlled)",
         r"\.to_svg\(\)": "SVG generation (sanitize user input)",
-        
         # Markdown rendering (if treated as HTML)
         r"IPython\.display\.Markdown\(": "Markdown display (verify no HTML injection)",
     }
@@ -413,41 +391,33 @@ class NotebookSecurityAnalyzer:
         r"urllib\.request\.urlopen\(": "Direct URL access (data exfiltration risk)",
         r"httpx\.(post|put|patch)\(": "HTTPX POST/PUT/PATCH (data exfiltration risk)",
         r"urllib3\.": "urllib3 direct HTTP access (data exfiltration risk)",
-        
         # File transfer protocols
         r"ftplib\.FTP\(": "FTP connection (data exfiltration risk)",
         r"smtplib\.SMTP\(": "SMTP connection (email exfiltration risk)",
         r"imaplib\.IMAP4": "IMAP connection (email data access)",
-        
         # Raw network access
         r"socket\.socket\(": "Raw socket access (network exfiltration risk)",
         r"socket\.create_connection\(": "Socket connection (network exfiltration risk)",
-        
         # Cloud SDKs
         r"boto3\.client\(": "AWS SDK usage (cloud data access risk)",
         r"google\.cloud": "Google Cloud SDK (cloud data access risk)",
         r"azure\.": "Azure SDK (cloud data access risk)",
-        
         # Telemetry & Monitoring
         r"sentry_sdk\.init\(": "Sentry telemetry (data collection)",
         r"datadog\.": "DataDog telemetry (data collection)",
         r"newrelic\.": "New Relic telemetry (data collection)",
-        
         # Real-time communication
         r"websocket\.": "WebSocket connection (real-time data channel)",
         r"socketio\.": "Socket.IO connection (real-time data channel)",
-        
         # GraphQL & API
         r"graphql\.": "GraphQL query/mutation (API data access)",
         r"gql\(": "GraphQL query (validate endpoint allowlist)",
-        
         # Database connections
         r"pymongo\.MongoClient\(": "MongoDB connection (database access)",
         r"psycopg2\.connect\(": "PostgreSQL connection (database access)",
         r"sqlalchemy\.create_engine\(": "SQLAlchemy database connection",
         r"mysql\.connector\.connect\(": "MySQL connection (database access)",
         r"redis\.Redis\(": "Redis connection (data store access)",
-        
         # DNS & Covert channels
         r"dns\.resolver\.": "DNS resolver (potential DNS exfiltration)",
         r"dnspython\.": "DNS operations (covert channel risk)",
@@ -485,21 +455,18 @@ class NotebookSecurityAnalyzer:
         r"streamlit\..*input": "Streamlit user input (validation required)",
         r"['\"].*\s*\+\s*(user_input|input\(|user_|request\.)": "String concatenation with user input (prompt injection risk)",
     }
-    
+
     # Compliance & Licensing patterns (Category 12) - NEW
     COMPLIANCE_LICENSING_PATTERNS = {
         # GPL licenses (copyleft restrictions)
         r"from\s+.*\s+import.*#.*GPL": "GPL-licensed dependency (check license compatibility)",
         r"import\s+.*#.*GPL": "GPL-licensed import (license compliance)",
-        
         # License file references
         r"open\(['\"]LICENSE": "License file access (verify compliance)",
         r"pkg_resources\.get_distribution.*\.license": "License checking code detected",
-        
         # Export control concerns
         r"from\s+cryptography\s+import": "Cryptography library (export control considerations)",
         r"import\s+(pycrypto|cryptography|nacl)": "Cryptographic library (export restrictions may apply)",
-        
         # Data usage compliance
         r"pd\.read_csv.*license": "Dataset with license reference",
         r"dataset.*license": "Dataset licensing concern",
@@ -508,78 +475,82 @@ class NotebookSecurityAnalyzer:
     def __init__(self):
         """Initialize the notebook security analyzer."""
         self.logger = PyGuardLogger()
-        self.detected_pii: Set[str] = set()  # Track unique PII types detected
-        self.detected_dependencies: Dict[str, str] = {}  # Track imported packages
+        self.detected_pii: set[str] = set()  # Track unique PII types detected
+        self.detected_dependencies: dict[str, str] = {}  # Track imported packages
 
     def _calculate_entropy(self, text: str) -> float:
         """
         Calculate Shannon entropy of a string to detect high-entropy secrets.
-        
+
         High entropy (> 4.5) often indicates cryptographic keys, tokens, or secrets.
-        
+
         Args:
             text: String to analyze
-            
+
         Returns:
             Shannon entropy value
         """
         if not text:
             return 0.0
-        
+
         # Calculate character frequency
         char_freq: dict[str, int] = {}
         for char in text:
             char_freq[char] = char_freq.get(char, 0) + 1
-        
+
         # Calculate entropy
         entropy = 0.0
         text_len = len(text)
         for count in char_freq.values():
             probability = count / text_len
             entropy -= probability * math.log2(probability)
-        
+
         return entropy
-    
-    def _detect_high_entropy_strings(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+
+    def _detect_high_entropy_strings(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Detect high-entropy strings that may be secrets using Shannon entropy.
-        
+
         Detects base64-encoded secrets, cryptographic keys, and random tokens
         that pattern matching might miss.
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of detected issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         # Pattern to extract string literals
         string_pattern = r'["\']([a-zA-Z0-9+/=_-]{20,})["\']'
-        
+
         for line_num, line in enumerate(lines, 1):
             # Skip comments
             if line.strip().startswith("#"):
                 continue
-                
+
             matches = re.finditer(string_pattern, line)
             for match in matches:
                 candidate = match.group(1)
-                
+
                 # Skip common false positives
                 if candidate.lower() in ["test", "example", "placeholder", "your_key_here"]:
                     continue
-                
+
                 # Calculate entropy
                 entropy = self._calculate_entropy(candidate)
-                
+
                 # High entropy threshold (cryptographic material typically > 4.5)
                 if entropy > 4.5 and len(candidate) >= 20:
                     # Additional validation: check if it's base64-like
-                    base64_chars = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
+                    base64_chars = set(
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+                    )
                     if set(candidate).issubset(base64_chars):
                         issues.append(
                             NotebookIssue(
@@ -600,10 +571,10 @@ class NotebookSecurityAnalyzer:
                                 auto_fixable=True,
                             )
                         )
-        
+
         return issues
 
-    def analyze_notebook(self, notebook_path: Path) -> List[NotebookIssue]:
+    def analyze_notebook(self, notebook_path: Path) -> list[NotebookIssue]:
         """
         Analyze a Jupyter notebook for security issues.
 
@@ -617,7 +588,7 @@ class NotebookSecurityAnalyzer:
             FileNotFoundError: If notebook file doesn't exist
             ValueError: If file is not a valid notebook
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         if not notebook_path.exists():
             raise FileNotFoundError(f"Notebook not found: {notebook_path}")
@@ -626,7 +597,7 @@ class NotebookSecurityAnalyzer:
             raise ValueError(f"Not a notebook file: {notebook_path}")
 
         try:
-            with open(notebook_path, "r", encoding="utf-8") as f:
+            with open(notebook_path, encoding="utf-8") as f:
                 notebook_data = json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid notebook JSON: {e}")
@@ -661,7 +632,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _parse_cells(self, notebook_data: Dict[str, Any]) -> List[NotebookCell]:
+    def _parse_cells(self, notebook_data: dict[str, Any]) -> list[NotebookCell]:
         """Parse notebook cells from JSON data."""
         cells = []
 
@@ -681,9 +652,9 @@ class NotebookSecurityAnalyzer:
 
         return cells
 
-    def _analyze_metadata(self, notebook_data: Dict[str, Any]) -> List[NotebookIssue]:
+    def _analyze_metadata(self, notebook_data: dict[str, Any]) -> list[NotebookIssue]:
         """Analyze notebook metadata for security issues."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         metadata = notebook_data.get("metadata", {})
 
         # Check for untrusted notebook (only if explicitly marked as False, not missing)
@@ -723,9 +694,9 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_pii(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_pii(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for Personally Identifiable Information (PII) in cell code."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
@@ -784,23 +755,23 @@ class NotebookSecurityAnalyzer:
 
         return False
 
-    def _check_ml_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_ml_security(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for ML/Data Science security issues."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.ML_SECURITY_PATTERNS.items():
                 if re.search(pattern, line):
                     severity = "CRITICAL" if "code execution" in description.lower() else "HIGH"
-                    
+
                     # Special handling for torch.load
                     if pattern == r"torch\.load\(":
                         # Check if weights_only=True is present in the same line or nearby
                         if "weights_only" in line and "True" in line:
                             # Safe usage detected - skip
                             continue
-                        
+
                         issues.append(
                             NotebookIssue(
                                 severity="CRITICAL",
@@ -825,7 +796,7 @@ class NotebookSecurityAnalyzer:
                         # Skip pickle patterns - already detected by AST-based check in _check_unsafe_operations
                         if "pickle" in pattern:
                             continue
-                        
+
                         # Assign rule_id based on pattern type
                         if "yaml" in description.lower():
                             rule_id = "NB-DESERIAL-002"
@@ -833,7 +804,7 @@ class NotebookSecurityAnalyzer:
                             rule_id = "NB-ML-002"
                         else:
                             rule_id = "NB-ML-003"
-                        
+
                         auto_fixable = pattern in [r"from_pretrained\("]
                         issues.append(
                             NotebookIssue(
@@ -879,9 +850,11 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_xss_vulnerabilities(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_xss_vulnerabilities(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """Check for XSS vulnerabilities in notebook outputs."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
@@ -898,7 +871,7 @@ class NotebookSecurityAnalyzer:
                         rule_id = "NB-XSS-004"
                     else:
                         rule_id = "NB-XSS-005"
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity="HIGH",
@@ -921,9 +894,9 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_output_pii(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_output_pii(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check cell outputs for PII exposure."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         for output in cell.outputs:
             output_text = ""
@@ -964,9 +937,9 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_secrets_in_outputs(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_secrets_in_outputs(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check cell outputs for exposed secrets."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         for output in cell.outputs:
             output_text = ""
@@ -974,17 +947,11 @@ class NotebookSecurityAnalyzer:
             # Extract text from different output types
             if output.get("output_type") == "stream":
                 text_data = output.get("text", [])
-                if isinstance(text_data, list):
-                    output_text = "".join(text_data)
-                else:
-                    output_text = str(text_data)
+                output_text = "".join(text_data) if isinstance(text_data, list) else str(text_data)
             elif output.get("output_type") == "execute_result":
                 data = output.get("data", {})
                 text_data = data.get("text/plain", "")
-                if isinstance(text_data, list):
-                    output_text = "".join(text_data)
-                else:
-                    output_text = str(text_data)
+                output_text = "".join(text_data) if isinstance(text_data, list) else str(text_data)
             elif output.get("output_type") == "error":
                 output_text = "\n".join(output.get("traceback", []))
 
@@ -1000,13 +967,15 @@ class NotebookSecurityAnalyzer:
                             rule_id = "NB-SECRET-OUTPUT-001"
                             severity = "CRITICAL"
                             specific_message = f"{description} exposed in cell output"
-                            
+
                             # AWS credentials
                             if "AWS" in description or "AKIA" in value:
                                 rule_id = "NB-SECRET-AWS-OUTPUT-001"
                                 specific_message = "AWS access key exposed in cell output"
                             # GitHub tokens
-                            elif "GitHub" in description or value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                            elif "GitHub" in description or value.startswith(
+                                ("ghp_", "gho_", "ghu_", "ghs_", "ghr_")
+                            ):
                                 rule_id = "NB-SECRET-GITHUB-OUTPUT-001"
                                 specific_message = "GitHub token exposed in cell output"
                             # OpenAI API keys
@@ -1014,10 +983,12 @@ class NotebookSecurityAnalyzer:
                                 rule_id = "NB-SECRET-OPENAI-OUTPUT-001"
                                 specific_message = "OpenAI API key exposed in cell output"
                             # Slack tokens
-                            elif "Slack" in description or value.startswith(("xoxb-", "xoxp-", "xoxa-", "xoxr-")):
+                            elif "Slack" in description or value.startswith(
+                                ("xoxb-", "xoxp-", "xoxa-", "xoxr-")
+                            ):
                                 rule_id = "NB-SECRET-SLACK-OUTPUT-001"
                                 specific_message = "Slack token exposed in cell output"
-                            
+
                             issues.append(
                                 NotebookIssue(
                                     severity=severity,
@@ -1041,9 +1012,11 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_secrets_in_markdown(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_secrets_in_markdown(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """Check markdown cells for exposed secrets."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         lines = cell.source.split("\n")
         for line_num, line in enumerate(lines, 1):
@@ -1076,16 +1049,16 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _analyze_code_cell(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _analyze_code_cell(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Analyze a single code cell for security issues."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         # Check for dangerous magic commands
         issues.extend(self._check_magic_commands(cell, cell_index))
 
         # Check for hardcoded secrets (pattern-based)
         issues.extend(self._check_secrets(cell, cell_index))
-        
+
         # Check for high-entropy secrets (entropy-based detection)
         issues.extend(self._detect_high_entropy_strings(cell, cell_index))
 
@@ -1106,38 +1079,38 @@ class NotebookSecurityAnalyzer:
 
         # Check output sanitization
         issues.extend(self._check_output_security(cell, cell_index))
-        
+
         # Check for reproducibility issues
         issues.extend(self._check_reproducibility(cell, cell_index))
-        
+
         # Check for filesystem security issues
         issues.extend(self._check_filesystem_security(cell, cell_index))
-        
+
         # Check for network exfiltration risks
         issues.extend(self._check_network_exfiltration(cell, cell_index))
-        
+
         # Check for resource exhaustion risks
         issues.extend(self._check_resource_exhaustion(cell, cell_index))
-        
+
         # Check for advanced code injection
         issues.extend(self._check_advanced_code_injection(cell, cell_index))
-        
+
         # Check for advanced ML/AI security
         issues.extend(self._check_advanced_ml_security(cell, cell_index))
-        
+
         # Check for compliance and licensing issues
         issues.extend(self._check_compliance_licensing(cell, cell_index))
 
         return issues
 
-    def _check_magic_commands(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_magic_commands(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for dangerous Jupyter magic commands."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             line_stripped = line.strip()
-            
+
             # Check for extremely dangerous curl|bash patterns first (highest priority)
             if line_stripped.startswith("!") or line_stripped.startswith("%system"):
                 # Detect curl|bash, wget|bash, or similar remote code execution
@@ -1163,7 +1136,7 @@ class NotebookSecurityAnalyzer:
                         )
                     )
                     continue  # Don't also flag as generic shell command
-            
+
             # Check for %run with remote URLs
             if line_stripped.startswith("%run"):
                 # Detect http:// or https:// URLs
@@ -1188,7 +1161,7 @@ class NotebookSecurityAnalyzer:
                         )
                     )
                     continue
-            
+
             # Check for generic dangerous magics
             for magic, description in self.DANGEROUS_MAGICS.items():
                 if line_stripped.startswith(magic):
@@ -1208,7 +1181,7 @@ class NotebookSecurityAnalyzer:
                     else:
                         rule_id = "NB-SHELL-005"
                         severity = "MEDIUM"
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity=severity,
@@ -1229,11 +1202,12 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_secrets(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_secrets(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for hardcoded secrets in cell code."""
-        issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
-        seen_secrets: dict[tuple[int, str], dict[str, Any]] = {}  # Track secrets to avoid duplicates
+        seen_secrets: dict[tuple[int, str], dict[str, Any]] = (
+            {}
+        )  # Track secrets to avoid duplicates
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():
@@ -1247,7 +1221,7 @@ class NotebookSecurityAnalyzer:
                         severity = "HIGH"
                         priority = 100  # Lower number = higher priority, generic patterns get 100
                         specific_message = description  # Default to pattern description
-                        
+
                         # AWS credentials (CRITICAL) - highest priority
                         if "AWS" in description or "AKIA" in value:
                             rule_id = "NB-SECRET-AWS-001"
@@ -1255,12 +1229,16 @@ class NotebookSecurityAnalyzer:
                             priority = 1
                             specific_message = "AWS access key detected in notebook"
                         # GitHub tokens (CRITICAL) - specific patterns take precedence
-                        elif "GitHub" in description or value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+                        elif "GitHub" in description or value.startswith(
+                            ("ghp_", "gho_", "ghu_", "ghs_", "ghr_")
+                        ):
                             rule_id = "NB-SECRET-GITHUB-001"
                             severity = "CRITICAL"
                             if value.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
                                 priority = 1
-                                specific_message = "GitHub personal access token detected in notebook"
+                                specific_message = (
+                                    "GitHub personal access token detected in notebook"
+                                )
                             else:
                                 priority = 10
                                 specific_message = "GitHub token detected in notebook"
@@ -1275,7 +1253,9 @@ class NotebookSecurityAnalyzer:
                                 priority = 10
                                 specific_message = "API key detected in notebook"
                         # Slack tokens (HIGH)
-                        elif "Slack" in description or value.startswith(("xoxb-", "xoxp-", "xoxa-", "xoxr-")):
+                        elif "Slack" in description or value.startswith(
+                            ("xoxb-", "xoxp-", "xoxa-", "xoxr-")
+                        ):
                             rule_id = "NB-SECRET-SLACK-001"
                             severity = "HIGH"
                             priority = 2
@@ -1287,26 +1267,35 @@ class NotebookSecurityAnalyzer:
                             priority = 1
                             specific_message = "SSH/RSA private key detected in notebook"
                         # Database credentials (CRITICAL)
-                        elif any(db in description for db in ["MongoDB", "PostgreSQL", "MySQL", "Redis"]):
+                        elif any(
+                            db in description for db in ["MongoDB", "PostgreSQL", "MySQL", "Redis"]
+                        ):
                             rule_id = "NB-SECRET-DB-001"
                             severity = "CRITICAL"
                             priority = 1
-                            specific_message = "Database connection string with credentials detected in notebook"
+                            specific_message = (
+                                "Database connection string with credentials detected in notebook"
+                            )
                         # JWT tokens (HIGH)
-                        elif "JWT" in description or (value.startswith("eyJ") and value.count(".") >= 2):
+                        elif "JWT" in description or (
+                            value.startswith("eyJ") and value.count(".") >= 2
+                        ):
                             rule_id = "NB-SECRET-JWT-001"
                             severity = "HIGH"
                             priority = 2
                             specific_message = "JWT token detected in notebook"
-                        
+
                         # Create unique key for this secret
                         secret_key = (line_num, value.strip())
-                        
+
                         # Only keep the highest priority finding for each secret
-                        if secret_key not in seen_secrets or priority < seen_secrets[secret_key]['priority']:
+                        if (
+                            secret_key not in seen_secrets
+                            or priority < seen_secrets[secret_key]["priority"]
+                        ):
                             seen_secrets[secret_key] = {
-                                'priority': priority,
-                                'issue': NotebookIssue(
+                                "priority": priority,
+                                "issue": NotebookIssue(
                                     severity=severity,
                                     category="Hardcoded Secret",
                                     message=specific_message,
@@ -1321,16 +1310,15 @@ class NotebookSecurityAnalyzer:
                                     cwe_id="CWE-798",
                                     owasp_id="ASVS-2.6.3",
                                     auto_fixable=True,
-                                )
+                                ),
                             }
 
         # Extract just the issues from the deduplication dict
-        issues = [entry['issue'] for entry in seen_secrets.values()]
-        return issues
+        return [entry["issue"] for entry in seen_secrets.values()]
 
-    def _check_unsafe_operations(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_unsafe_operations(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for unsafe Python operations in cell."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         # Try to parse cell as Python code
         try:
@@ -1351,7 +1339,7 @@ class NotebookSecurityAnalyzer:
                             rule_id = "NB-INJECT-002"
                         else:
                             rule_id = "NB-INJECT-003"
-                        
+
                         issues.append(
                             NotebookIssue(
                                 severity="CRITICAL",
@@ -1364,7 +1352,9 @@ class NotebookSecurityAnalyzer:
                                 fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",
                                 cwe_id="CWE-95",
                                 owasp_id="ASVS-5.2.1",
-                                auto_fixable=True if node.func.id == "eval" else False,  # eval can be auto-fixed to ast.literal_eval
+                                auto_fixable=(
+                                    node.func.id == "eval"
+                                ),  # eval can be auto-fixed to ast.literal_eval
                             )
                         )
 
@@ -1393,9 +1383,9 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_command_injection(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_command_injection(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for command injection vulnerabilities."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         try:
             tree = ast.parse(cell.source)
@@ -1432,9 +1422,9 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_output_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_output_security(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check cell outputs for security issues."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         for output in cell.outputs:
             # Check for error tracebacks that might leak sensitive info
@@ -1456,18 +1446,18 @@ class NotebookSecurityAnalyzer:
                             )
                         )
                         break
-            
+
             # Check for XSS vulnerabilities in HTML/JavaScript outputs
             if output.get("output_type") in ["display_data", "execute_result"]:
                 data = output.get("data", {})
-                
+
                 # Check HTML outputs for XSS patterns
                 if "text/html" in data:
                     html_content = data["text/html"]
                     # Convert to string if it's a list
                     if isinstance(html_content, list):
                         html_content = "".join(html_content)
-                    
+
                     # Detect XSS patterns in HTML output with specific rule IDs
                     xss_patterns = {
                         r"<script[^>]*>": ("NB-XSS-001", "Script tag in HTML output"),
@@ -1477,7 +1467,7 @@ class NotebookSecurityAnalyzer:
                         r"<object": ("NB-XSS-005", "Object tag in HTML output"),
                         r"<embed": ("NB-XSS-006", "Embed tag in HTML output"),
                     }
-                    
+
                     for pattern, (rule_id, description) in xss_patterns.items():
                         if re.search(pattern, html_content, re.IGNORECASE):
                             issues.append(
@@ -1501,13 +1491,13 @@ class NotebookSecurityAnalyzer:
                                 )
                             )
                             break  # Only report once per output
-                
+
                 # Check JavaScript outputs
                 if "application/javascript" in data:
                     js_content = data["application/javascript"]
                     if isinstance(js_content, list):
                         js_content = "".join(js_content)
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity="HIGH",
@@ -1531,13 +1521,13 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _analyze_cell_dependencies(self, cells: List[NotebookCell]) -> List[NotebookIssue]:
+    def _analyze_cell_dependencies(self, cells: list[NotebookCell]) -> list[NotebookIssue]:
         """Analyze dependencies and data flow between cells."""
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
 
         # Track variables defined in cells
-        defined_vars: Dict[str, int] = {}  # var_name -> cell_index
-        used_vars: Dict[str, List[int]] = {}  # var_name -> list of cell_indices
+        defined_vars: dict[str, int] = {}  # var_name -> cell_index
+        used_vars: dict[str, list[int]] = {}  # var_name -> list of cell_indices
 
         for idx, cell in enumerate(cells):
             if cell.cell_type != "code":
@@ -1580,26 +1570,26 @@ class NotebookSecurityAnalyzer:
                         )
 
         return issues
-    
-    def _check_reproducibility(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+
+    def _check_reproducibility(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """
         Check for reproducibility issues in ML/AI notebooks.
-        
+
         Detects:
         - Missing random seeds for ML frameworks
         - Non-deterministic operations
         - Unpinned dependencies
         - Missing environment constraints
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of reproducibility issues
         """
-        issues: List[NotebookIssue] = []
-        
+        issues: list[NotebookIssue] = []
+
         # Check for ML framework usage without seed setting
         ml_frameworks = {
             "torch": "PyTorch",
@@ -1610,7 +1600,7 @@ class NotebookSecurityAnalyzer:
             "random": "Python random",
             "sklearn": "scikit-learn",
         }
-        
+
         # Check if ML frameworks are imported
         imports_found = []
         try:
@@ -1621,11 +1611,13 @@ class NotebookSecurityAnalyzer:
                         if alias.name in ml_frameworks:
                             imports_found.append((alias.name, ml_frameworks[alias.name]))
                 elif isinstance(node, ast.ImportFrom):
-                    if node.module and node.module.split('.')[0] in ml_frameworks:
-                        imports_found.append((node.module.split('.')[0], ml_frameworks[node.module.split('.')[0]]))
+                    if node.module and node.module.split(".")[0] in ml_frameworks:
+                        imports_found.append(
+                            (node.module.split(".")[0], ml_frameworks[node.module.split(".")[0]])
+                        )
         except SyntaxError:
             pass
-        
+
         # Check if seeds are set for imported frameworks
         seed_patterns = {
             "torch": r"torch\.manual_seed\(",
@@ -1635,7 +1627,7 @@ class NotebookSecurityAnalyzer:
             "np": r"np\.random\.seed\(",
             "random": r"random\.seed\(",
         }
-        
+
         for framework, framework_name in imports_found:
             if framework in seed_patterns:
                 pattern = seed_patterns[framework]
@@ -1658,14 +1650,14 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=True,
                         )
                     )
-        
+
         # Check for unpinned pip/conda installs
         unpinned_install_patterns = [
             (r"%pip\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "pip"),
             (r"!pip\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "pip"),
             (r"%conda\s+install\s+([a-zA-Z0-9_-]+)(?!\s*==)", "conda"),
         ]
-        
+
         for pattern, tool in unpinned_install_patterns:
             matches = re.finditer(pattern, cell.source)
             for match in matches:
@@ -1684,7 +1676,7 @@ class NotebookSecurityAnalyzer:
                         auto_fixable=True,
                     )
                 )
-        
+
         # Check for PyTorch non-deterministic operations
         if any(fw == "torch" for fw, _ in imports_found):
             if "torch.backends.cudnn.deterministic" not in cell.source:
@@ -1707,28 +1699,30 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=True,
                         )
                     )
-        
+
         return issues
 
-    def _check_filesystem_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_filesystem_security(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for filesystem security issues.
-        
+
         Detects:
         - Path traversal attempts (../)
         - Accessing sensitive system files
         - Unsafe file operations
         - Symlink attacks
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of filesystem security issues
         """
-        issues: List[NotebookIssue] = []
-        
+        issues: list[NotebookIssue] = []
+
         # Dangerous path patterns
         dangerous_paths = {
             r"\.\./": "Path traversal attempt (../) - directory escape risk",
@@ -1739,7 +1733,7 @@ class NotebookSecurityAnalyzer:
             r"\.\.\\": "Windows path traversal attempt",
             r"C:\\Windows\\System32": "Access to Windows system directory",
         }
-        
+
         for pattern, description in dangerous_paths.items():
             if re.search(pattern, cell.source):
                 issues.append(
@@ -1760,11 +1754,11 @@ class NotebookSecurityAnalyzer:
                         confidence=0.8,
                     )
                 )
-        
+
         # Check for unsafe file operations
         try:
             tree = ast.parse(cell.source)
-            
+
             for node in ast.walk(tree):
                 # Check for os.remove, shutil.rmtree without validation
                 if isinstance(node, ast.Call):
@@ -1772,7 +1766,7 @@ class NotebookSecurityAnalyzer:
                         module = None
                         if isinstance(node.func.value, ast.Name):
                             module = node.func.value.id
-                        
+
                         # Dangerous file operations
                         if module == "os" and node.func.attr in ["remove", "unlink", "rmdir"]:
                             issues.append(
@@ -1782,7 +1776,9 @@ class NotebookSecurityAnalyzer:
                                     message=f"os.{node.func.attr}() without path validation - file deletion risk",
                                     cell_index=cell_index,
                                     line_number=getattr(node, "lineno", 0),
-                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    code_snippet=(
+                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                    ),
                                     fix_suggestion=(
                                         "Validate file paths before deletion. Check against allowlist. "
                                         "Prevent path traversal and ensure file exists before deleting."
@@ -1791,7 +1787,7 @@ class NotebookSecurityAnalyzer:
                                     confidence=0.7,
                                 )
                             )
-                        
+
                         elif module == "shutil" and node.func.attr in ["rmtree", "move", "copy"]:
                             issues.append(
                                 NotebookIssue(
@@ -1800,7 +1796,9 @@ class NotebookSecurityAnalyzer:
                                     message=f"shutil.{node.func.attr}() without path validation - unsafe file operation",
                                     cell_index=cell_index,
                                     line_number=getattr(node, "lineno", 0),
-                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    code_snippet=(
+                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                    ),
                                     fix_suggestion=(
                                         "Validate and sanitize file paths. Implement allowlist checking. "
                                         "Be careful with recursive operations like rmtree()."
@@ -1809,7 +1807,7 @@ class NotebookSecurityAnalyzer:
                                     confidence=0.7,
                                 )
                             )
-                        
+
                         # Check for chmod/chown that could elevate privileges
                         elif module == "os" and node.func.attr in ["chmod", "chown"]:
                             issues.append(
@@ -1819,7 +1817,9 @@ class NotebookSecurityAnalyzer:
                                     message=f"os.{node.func.attr}() - privilege manipulation risk",
                                     cell_index=cell_index,
                                     line_number=getattr(node, "lineno", 0),
-                                    code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                                    code_snippet=(
+                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                    ),
                                     fix_suggestion=(
                                         "Avoid changing file permissions unless absolutely necessary. "
                                         "Ensure proper permission model (least privilege)."
@@ -1828,10 +1828,10 @@ class NotebookSecurityAnalyzer:
                                     confidence=0.6,
                                 )
                             )
-        
+
         except SyntaxError:
             pass
-        
+
         # Check for tempfile misuse (predictable names)
         if "tempfile.mktemp(" in cell.source:
             issues.append(
@@ -1851,31 +1851,32 @@ class NotebookSecurityAnalyzer:
                     auto_fixable=True,
                 )
             )
-        
+
         return issues
 
-
-    def _check_network_exfiltration(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_network_exfiltration(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for network and data exfiltration risks.
-        
+
         Detects:
         - HTTP POST/PUT requests to external domains
         - Database connections without validation
         - Cloud SDK usage with potential data access
         - Telemetry and monitoring SDKs
         - Raw socket access
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of network exfiltration issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.NETWORK_EXFILTRATION_PATTERNS.items():
                 if re.search(pattern, line):
@@ -1885,7 +1886,7 @@ class NotebookSecurityAnalyzer:
                         severity = "MEDIUM"  # Cloud SDKs are common in notebooks
                     elif "socket" in pattern or "ftp" in pattern:
                         severity = "CRITICAL"  # Raw network access is very risky
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity=severity,
@@ -1905,30 +1906,32 @@ class NotebookSecurityAnalyzer:
                             confidence=0.75,
                         )
                     )
-        
+
         return issues
 
-    def _check_resource_exhaustion(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_resource_exhaustion(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for resource exhaustion and DoS risks.
-        
+
         Detects:
         - Infinite loops without timeouts
         - Large memory allocations
         - Complex regex patterns (ReDoS)
         - Zip bomb risks
         - Fork bomb patterns
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of resource exhaustion issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.RESOURCE_EXHAUSTION_PATTERNS.items():
                 if re.search(pattern, line):
@@ -1938,7 +1941,7 @@ class NotebookSecurityAnalyzer:
                         severity = "CRITICAL"
                     elif "zip" in line.lower():
                         severity = "MEDIUM"
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity=severity,
@@ -1958,29 +1961,31 @@ class NotebookSecurityAnalyzer:
                             confidence=0.8,
                         )
                     )
-        
+
         return issues
 
-    def _check_advanced_code_injection(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_advanced_code_injection(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for advanced code injection patterns.
-        
+
         Detects:
         - Dunder method access (sandbox escape)
         - Type manipulation via __bases__
         - IPython kernel message injection
         - Advanced attribute injection
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of advanced code injection issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.ADVANCED_CODE_INJECTION_PATTERNS.items():
                 if re.search(pattern, line):
@@ -2004,29 +2009,31 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=False,
                         )
                     )
-        
+
         return issues
 
-    def _check_advanced_ml_security(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_advanced_ml_security(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for advanced ML/AI security issues.
-        
+
         Detects:
         - Adversarial input acceptance
         - Model downloading from untrusted sources
         - Prompt injection in LLM applications
         - User input to model predictions
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of advanced ML/AI security issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.ADVANCED_ML_PATTERNS.items():
                 if re.search(pattern, line):
@@ -2034,7 +2041,7 @@ class NotebookSecurityAnalyzer:
                     severity = "HIGH"
                     if "prompt" in description.lower() or "injection" in description.lower():
                         severity = "CRITICAL"
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity=severity,
@@ -2055,39 +2062,39 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=True,
                         )
                     )
-        
+
         return issues
 
-    def _check_compliance_licensing(self, cell: NotebookCell, cell_index: int) -> List[NotebookIssue]:
+    def _check_compliance_licensing(
+        self, cell: NotebookCell, cell_index: int
+    ) -> list[NotebookIssue]:
         """
         Check for compliance and licensing issues (Category 12).
-        
+
         Detects:
         - GPL dependencies in commercial notebooks
         - Cryptographic libraries with export restrictions
         - Dataset licensing concerns
         - License compatibility issues
-        
+
         Args:
             cell: Notebook cell to analyze
             cell_index: Index of the cell
-            
+
         Returns:
             List of compliance and licensing issues
         """
-        issues: List[NotebookIssue] = []
+        issues: list[NotebookIssue] = []
         lines = cell.source.split("\n")
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.COMPLIANCE_LICENSING_PATTERNS.items():
                 if re.search(pattern, line):
                     # Determine severity based on pattern
                     severity = "LOW"
-                    if "cryptography" in pattern.lower() or "export" in description.lower():
+                    if "cryptography" in pattern.lower() or "export" in description.lower() or "gpl" in pattern.lower():
                         severity = "MEDIUM"
-                    elif "gpl" in pattern.lower():
-                        severity = "MEDIUM"
-                    
+
                     issues.append(
                         NotebookIssue(
                             severity=severity,
@@ -2108,7 +2115,7 @@ class NotebookSecurityAnalyzer:
                             auto_fixable=False,
                         )
                     )
-        
+
         return issues
 
 
@@ -2120,8 +2127,8 @@ class NotebookFixer:
         self.logger = PyGuardLogger()
 
     def fix_notebook(
-        self, notebook_path: Path, issues: List[NotebookIssue]
-    ) -> Tuple[bool, List[str]]:
+        self, notebook_path: Path, issues: list[NotebookIssue]
+    ) -> tuple[bool, list[str]]:
         """
         Apply automated fixes to notebook.
 
@@ -2132,10 +2139,10 @@ class NotebookFixer:
         Returns:
             Tuple of (success, list of fixes applied)
         """
-        fixes_applied: List[str] = []
+        fixes_applied: list[str] = []
 
         # Load notebook
-        with open(notebook_path, "r", encoding="utf-8") as f:
+        with open(notebook_path, encoding="utf-8") as f:
             notebook_data = json.load(f)
 
         cells = notebook_data.get("cells", [])
@@ -2145,7 +2152,7 @@ class NotebookFixer:
             if not issue.auto_fixable:
                 continue
 
-            if issue.category == "Hardcoded Secret" or issue.category == "High-Entropy Secret":
+            if issue.category in {"Hardcoded Secret", "High-Entropy Secret"}:
                 # Comment out lines with secrets
                 if 0 <= issue.cell_index < len(cells):
                     cell = cells[issue.cell_index]
@@ -2196,7 +2203,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     # Add weights_only=True to torch.load calls
                     fixed_source = self._fix_torch_load(source)
                     if fixed_source != source:
@@ -2204,13 +2211,13 @@ class NotebookFixer:
                         fixes_applied.append(
                             f"Added weights_only=True to torch.load() in cell {issue.cell_index}"
                         )
-                
+
                 elif "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):
                     cell = cells[issue.cell_index]
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     # Add warning comment for pickle
                     lines = source.split("\n")
                     if 0 < issue.line_number <= len(lines):
@@ -2218,7 +2225,7 @@ class NotebookFixer:
                             issue.line_number - 1,
                             "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"
                             "# Consider using JSON or safer serialization format\n"
-                            "# If pickle required, verify source and use restricted unpickler"
+                            "# If pickle required, verify source and use restricted unpickler",
                         )
                         cell["source"] = "\n".join(lines)
                         fixes_applied.append(
@@ -2232,7 +2239,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     fixed_source = self._fix_eval_exec(source, issue)
                     if fixed_source != source:
                         cell["source"] = fixed_source
@@ -2247,7 +2254,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     fixed_source = self._fix_yaml_load(source)
                     if fixed_source != source:
                         cell["source"] = fixed_source
@@ -2262,7 +2269,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     # Add seed setting
                     fixed_source = self._add_seed_setting(source, issue.message)
                     if fixed_source != source:
@@ -2278,14 +2285,13 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     lines = source.split("\n")
                     # Find the pip install line
                     for i, line in enumerate(lines):
                         if "pip install" in line and issue.code_snippet in line:
                             lines.insert(
-                                i,
-                                "# TODO: Pin package version for reproducibility (e.g., ==X.Y.Z)"
+                                i, "# TODO: Pin package version for reproducibility (e.g., ==X.Y.Z)"
                             )
                             break
                     cell["source"] = "\n".join(lines)
@@ -2300,7 +2306,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     # Add schema validation suggestion
                     lines = source.split("\n")
                     for i, line in enumerate(lines):
@@ -2308,7 +2314,7 @@ class NotebookFixer:
                             lines.insert(
                                 i,
                                 "# TODO: Add data validation - specify dtypes and validate schema\n"
-                                "# Example: pd.read_csv(..., dtype={'col': int}, converters={...})"
+                                "# Example: pd.read_csv(..., dtype={'col': int}, converters={...})",
                             )
                             break
                     cell["source"] = "\n".join(lines)
@@ -2323,7 +2329,7 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     fixed_source = self._fix_tempfile_mktemp(source)
                     if fixed_source != source:
                         cell["source"] = fixed_source
@@ -2338,13 +2344,13 @@ class NotebookFixer:
                     source = cell.get("source", [])
                     if isinstance(source, list):
                         source = "".join(source)
-                    
+
                     lines = source.split("\n")
                     if 0 < issue.line_number <= len(lines):
                         lines.insert(
                             issue.line_number - 1,
                             "# SECURITY WARNING: shell=True enables command injection\n"
-                            "# Use shell=False and pass command as list: ['cmd', 'arg1', 'arg2']"
+                            "# Use shell=False and pass command as list: ['cmd', 'arg1', 'arg2']",
                         )
                         cell["source"] = "\n".join(lines)
                         fixes_applied.append(
@@ -2360,7 +2366,7 @@ class NotebookFixer:
             # Create backup first
             backup_path = notebook_path.with_suffix(".ipynb.backup")
             with open(backup_path, "w", encoding="utf-8") as f:
-                with open(notebook_path, "r", encoding="utf-8") as orig:
+                with open(notebook_path, encoding="utf-8") as orig:
                     f.write(orig.read())
 
             with open(notebook_path, "w", encoding="utf-8") as f:
@@ -2369,21 +2375,21 @@ class NotebookFixer:
             fixes_applied.insert(0, f"Created backup at {backup_path}")
 
         return len(fixes_applied) > 0, fixes_applied
-    
+
     def _fix_torch_load(self, source: str) -> str:
         """
         Fix torch.load() calls to include weights_only=True and checksum verification.
-        
+
         Implements the world-class standard from the vision document:
         - Adds weights_only=True parameter
         - Adds checksum verification before loading
         - Includes educational comments with security rationale
-        
+
         Performs AST-based transformation to safely add the parameter.
-        
+
         Args:
             source: Source code to fix
-            
+
         Returns:
             Fixed source code with safe model loading and verification
         """
@@ -2397,73 +2403,78 @@ class NotebookFixer:
             secure_block.append("import hashlib")
             secure_block.append("")
             secure_block.append("# TODO: Replace with actual model checksum")
-            secure_block.append("MODEL_CHECKSUM = 'abcdef1234567890...'  # Get this from trusted source")
+            secure_block.append(
+                "MODEL_CHECKSUM = 'abcdef1234567890...'  # Get this from trusted source"
+            )
             secure_block.append("")
             secure_block.append("# Step 1: Verify model checksum before loading")
             secure_block.append("model_path = 'model.pth'  # TODO: Update with actual path")
             secure_block.append("with open(model_path, 'rb') as f:")
             secure_block.append("    file_hash = hashlib.sha256(f.read()).hexdigest()")
             secure_block.append("    if file_hash != MODEL_CHECKSUM:")
-            secure_block.append("        raise ValueError(f'Model checksum mismatch! Expected {MODEL_CHECKSUM}, got {file_hash}')")
+            secure_block.append(
+                "        raise ValueError(f'Model checksum mismatch! Expected {MODEL_CHECKSUM}, got {file_hash}')"
+            )
             secure_block.append("")
-            secure_block.append("# Step 2: Load with weights_only=True (prevents arbitrary code execution)")
+            secure_block.append(
+                "# Step 2: Load with weights_only=True (prevents arbitrary code execution)"
+            )
             secure_block.append("# Original unsafe torch.load() call replaced:")
             secure_block.append("")
-            
+
             # Try AST-based transformation first
             try:
                 tree = ast.parse(source)
                 modified = False
-                
+
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Call):
                         # Check if this is a torch.load call
-                        if isinstance(node.func, ast.Attribute):
-                            if (isinstance(node.func.value, ast.Name) and 
-                                node.func.value.id == "torch" and 
-                                node.func.attr == "load"):
-                                
-                                # Check if weights_only is already present
-                                has_weights_only = any(
-                                    kw.arg == "weights_only" for kw in node.keywords
+                        if isinstance(node.func, ast.Attribute) and (
+                            isinstance(node.func.value, ast.Name)
+                            and node.func.value.id == "torch"
+                            and node.func.attr == "load"
+                        ):
+
+                            # Check if weights_only is already present
+                            has_weights_only = any(
+                                kw.arg == "weights_only" for kw in node.keywords
+                            )
+
+                            if not has_weights_only:
+                                # Add weights_only=True keyword argument
+                                node.keywords.append(
+                                    ast.keyword(
+                                        arg="weights_only", value=ast.Constant(value=True)
+                                    )
                                 )
-                                
-                                if not has_weights_only:
-                                    # Add weights_only=True keyword argument
+
+                                # Add map_location for safety
+                                has_map_location = any(
+                                    kw.arg == "map_location" for kw in node.keywords
+                                )
+                                if not has_map_location:
                                     node.keywords.append(
                                         ast.keyword(
-                                            arg="weights_only",
-                                            value=ast.Constant(value=True)
+                                            arg="map_location", value=ast.Constant(value="cpu")
                                         )
                                     )
-                                    
-                                    # Add map_location for safety
-                                    has_map_location = any(
-                                        kw.arg == "map_location" for kw in node.keywords
-                                    )
-                                    if not has_map_location:
-                                        node.keywords.append(
-                                            ast.keyword(
-                                                arg="map_location",
-                                                value=ast.Constant(value="cpu")
-                                            )
-                                        )
-                                    
-                                    modified = True
-                
+
+                                modified = True
+
                 if modified and hasattr(ast, "unparse"):
                     # Unparse to get fixed source
                     fixed_source = ast.unparse(tree)
                     # Add secure block before the fixed source
                     return "\n".join(secure_block) + fixed_source
-                
+
             except SyntaxError:
                 pass
-            
+
             # Fallback: regex-based replacement if AST fails
             lines = source.split("\n")
             fixed_lines = []
-            
+
             for line in lines:
                 if "torch.load(" in line and "weights_only" not in line:
                     # Add secure block before torch.load line
@@ -2472,41 +2483,43 @@ class NotebookFixer:
                     fixed_line = re.sub(
                         r"torch\.load\(([^)]+)\)",
                         r"torch.load(\1, weights_only=True, map_location='cpu')",
-                        line
+                        line,
                     )
                     # Clean up potential double comma
                     fixed_line = fixed_line.replace(", , weights_only", ", weights_only")
                     fixed_lines.append(fixed_line)
                 else:
                     fixed_lines.append(line)
-            
+
             return "\n".join(fixed_lines)
-        
+
         return source
-    
+
     def _add_seed_setting(self, source: str, message: str) -> str:
         """
         Add comprehensive random seed setting for ML frameworks.
-        
+
         Implements the world-class standard from the vision document:
         - Sets seeds for all major ML frameworks (random, numpy, torch, tf, jax)
         - Configures deterministic backends
         - Documents environment for reproducibility
-        
+
         Args:
             source: Source code to fix
             message: Issue message describing which framework needs seeding
-            
+
         Returns:
             Fixed source code with comprehensive seed setting
         """
         # Detect which frameworks are imported
         has_torch = "import torch" in source or "from torch" in source
-        has_tf = "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
+        has_tf = (
+            "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
+        )
         has_numpy = "import numpy" in source or "from numpy" in source or "import np" in source
         has_random = "import random" in source
         has_jax = "import jax" in source or "from jax" in source
-        
+
         # Build comprehensive seed setting function
         if has_torch or has_numpy or has_tf or has_random or "import" in source:
             # Create comprehensive reproducibility setup
@@ -2514,18 +2527,18 @@ class NotebookFixer:
             seed_block.append("# PYGUARD AUTO-FIX: Comprehensive reproducibility setup")
             seed_block.append("# Added for deterministic ML experiments")
             seed_block.append("def set_global_seed(seed=42):")
-            seed_block.append("    \"\"\"Set seeds for reproducible ML experiments.\"\"\"")
-            
+            seed_block.append('    """Set seeds for reproducible ML experiments."""')
+
             # Python random
             if has_random or "random" in message.lower():
                 seed_block.append("    import random")
                 seed_block.append("    random.seed(seed)")
-            
+
             # NumPy
             if has_numpy or "numpy" in message.lower():
                 seed_block.append("    import numpy as np")
                 seed_block.append("    np.random.seed(seed)")
-            
+
             # PyTorch
             if has_torch or "torch" in message.lower():
                 seed_block.append("    import torch")
@@ -2535,10 +2548,12 @@ class NotebookFixer:
                 seed_block.append("    torch.backends.cudnn.deterministic = True")
                 seed_block.append("    torch.backends.cudnn.benchmark = False")
                 seed_block.append("    try:")
-                seed_block.append("        torch.use_deterministic_algorithms(True, warn_only=True)")
+                seed_block.append(
+                    "        torch.use_deterministic_algorithms(True, warn_only=True)"
+                )
                 seed_block.append("    except AttributeError:")
                 seed_block.append("        pass  # PyTorch < 1.8")
-            
+
             # TensorFlow
             if has_tf or "tensorflow" in message.lower():
                 seed_block.append("    import tensorflow as tf")
@@ -2547,98 +2562,108 @@ class NotebookFixer:
                 seed_block.append("        tf.config.experimental.enable_op_determinism()")
                 seed_block.append("    except AttributeError:")
                 seed_block.append("        pass  # TensorFlow < 2.9")
-            
+
             # JAX
             if has_jax:
                 seed_block.append("    import jax")
-                seed_block.append("    # JAX uses explicit PRNG keys, set environment for consistency")
-            
+                seed_block.append(
+                    "    # JAX uses explicit PRNG keys, set environment for consistency"
+                )
+
             # Environment variables for additional determinism
             if has_torch or has_tf:
                 seed_block.append("    import os")
                 seed_block.append("    os.environ['PYTHONHASHSEED'] = str(seed)")
                 if has_torch:
                     seed_block.append("    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'")
-            
+
             seed_block.append("    print(f'✓ Global seed set to {seed} for reproducibility')")
             seed_block.append("")
             seed_block.append("# Call seed setting function")
             seed_block.append("set_global_seed(42)")
             seed_block.append("")
-            
+
             # Add the seed block at the beginning after imports
             lines = source.split("\n")
             insert_pos = 0
-            
+
             # Find position after all import statements
             last_import_line = -1
             for i, line in enumerate(lines):
                 if line.strip().startswith("import ") or line.strip().startswith("from "):
                     last_import_line = i
-            
+
             if last_import_line >= 0:
                 insert_pos = last_import_line + 1
-            
+
             # Insert seed block
             for line in reversed(seed_block):
                 lines.insert(insert_pos, line)
-            
+
             return "\n".join(lines)
-        
+
         # Fallback to simple seed additions if comprehensive setup not appropriate
         seed_additions = []
-        
+
         if "PyTorch" in message or "torch" in message.lower():
             if "torch.manual_seed" not in source:
-                seed_additions.append("torch.manual_seed(42)  # Set PyTorch seed for reproducibility")
-        
+                seed_additions.append(
+                    "torch.manual_seed(42)  # Set PyTorch seed for reproducibility"
+                )
+
         if "NumPy" in message or "numpy" in message.lower():
             if "np.random.seed" not in source and "numpy.random.seed" not in source:
                 seed_additions.append("np.random.seed(42)  # Set NumPy seed for reproducibility")
-        
-        if "TensorFlow" in message:
-            if "tf.random.set_seed" not in source:
-                seed_additions.append("tf.random.set_seed(42)  # Set TensorFlow seed for reproducibility")
-        
-        if "Python random" in message:
-            if "random.seed" not in source:
-                seed_additions.append("random.seed(42)  # Set Python random seed for reproducibility")
-        
+
+        if "TensorFlow" in message and "tf.random.set_seed" not in source:
+            seed_additions.append(
+                "tf.random.set_seed(42)  # Set TensorFlow seed for reproducibility"
+            )
+
+        if "Python random" in message and "random.seed" not in source:
+            seed_additions.append(
+                "random.seed(42)  # Set Python random seed for reproducibility"
+            )
+
         if seed_additions:
             # Add seeds at the beginning of the cell (after imports ideally)
             lines = source.split("\n")
             insert_pos = 0
-            
+
             # Try to insert after import statements
             for i, line in enumerate(lines):
-                if line.strip() and not line.strip().startswith("import") and not line.strip().startswith("from"):
+                if (
+                    line.strip()
+                    and not line.strip().startswith("import")
+                    and not line.strip().startswith("from")
+                ):
                     insert_pos = i
                     break
-            
+
             for seed_line in reversed(seed_additions):
                 lines.insert(insert_pos, seed_line)
-            
+
             return "\n".join(lines)
-        
+
         return source
-    
+
     def _fix_eval_exec(self, source: str, issue: NotebookIssue) -> str:
         """
         Fix eval/exec calls to use safer alternatives.
-        
+
         Replaces eval() with ast.literal_eval() where appropriate, and adds
         warnings for exec() usage.
-        
+
         This implements world-class auto-fix from vision document:
         - AST-based transformation (minimal, precise)
         - Educational comments with CWE references
         - Exception handling for invalid input
         - Semantic preservation where possible
-        
+
         Args:
             source: Source code to fix
             issue: The issue describing the eval/exec usage
-            
+
         Returns:
             Fixed source code with safe alternatives
         """
@@ -2647,7 +2672,7 @@ class NotebookFixer:
             # Add import if not present
             if "import ast" not in source:
                 source = "import ast  # PyGuard: For safe literal evaluation\n" + source
-            
+
             # Replace eval() with ast.literal_eval() and add error handling
             lines = source.split("\n")
             new_lines = []
@@ -2656,21 +2681,29 @@ class NotebookFixer:
                 line = lines[i]
                 if "eval(" in line and not line.strip().startswith("#"):
                     # Add educational comment
-                    new_lines.append("# PyGuard: Replaced eval() with ast.literal_eval() for safe evaluation")
-                    new_lines.append("# CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code")
-                    new_lines.append("# ast.literal_eval() only evaluates Python literals (strings, numbers, tuples, lists, dicts)")
-                    
+                    new_lines.append(
+                        "# PyGuard: Replaced eval() with ast.literal_eval() for safe evaluation"
+                    )
+                    new_lines.append(
+                        "# CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+                    )
+                    new_lines.append(
+                        "# ast.literal_eval() only evaluates Python literals (strings, numbers, tuples, lists, dicts)"
+                    )
+
                     # Replace eval( with ast.literal_eval( in the line
                     fixed_line = line.replace("eval(", "ast.literal_eval(")
                     new_lines.append(fixed_line)
-                    
+
                     # Add exception handling suggestion as comment
-                    new_lines.append("# PyGuard Note: Consider adding try/except for ValueError, SyntaxError")
+                    new_lines.append(
+                        "# PyGuard Note: Consider adding try/except for ValueError, SyntaxError"
+                    )
                 else:
                     new_lines.append(line)
                 i += 1
             source = "\n".join(new_lines)
-        
+
         # For exec(), add warning (exec is harder to fix safely)
         elif "exec(" in source and "exec()" in issue.message:
             lines = source.split("\n")
@@ -2681,22 +2714,22 @@ class NotebookFixer:
                         "# PyGuard: CRITICAL SECURITY WARNING\n"
                         "# CWE-95: exec() executes arbitrary code and cannot be made safe\n"
                         "# Recommendation: Refactor to avoid dynamic code execution\n"
-                        "# If absolutely necessary: Use restricted globals/locals dict"
+                        "# If absolutely necessary: Use restricted globals/locals dict",
                     )
                     break
             source = "\n".join(lines)
-        
+
         return source
-    
+
     def _fix_yaml_load(self, source: str) -> str:
         """
         Fix yaml.load() to use yaml.safe_load().
-        
+
         Performs a simple string replacement to use the safer alternative.
-        
+
         Args:
             source: Source code to fix
-            
+
         Returns:
             Fixed source code
         """
@@ -2706,30 +2739,28 @@ class NotebookFixer:
             # Add comment explaining the change
             source = (
                 "# SECURITY FIX: Using yaml.safe_load() instead of yaml.load()\n"
-                "# yaml.safe_load() prevents arbitrary code execution\n" + 
-                source
+                "# yaml.safe_load() prevents arbitrary code execution\n" + source
             )
             source = source.replace("yaml.load(", "yaml.safe_load(")
-        
+
         # Also handle yaml.unsafe_load
         if "yaml.unsafe_load(" in source:
             source = (
-                "# SECURITY FIX: Using yaml.safe_load() instead of yaml.unsafe_load()\n" +
-                source
+                "# SECURITY FIX: Using yaml.safe_load() instead of yaml.unsafe_load()\n" + source
             )
             source = source.replace("yaml.unsafe_load(", "yaml.safe_load(")
-        
+
         return source
-    
+
     def _fix_tempfile_mktemp(self, source: str) -> str:
         """
         Fix tempfile.mktemp() to use tempfile.mkstemp().
-        
+
         Replaces the deprecated mktemp with the secure mkstemp.
-        
+
         Args:
             source: Source code to fix
-            
+
         Returns:
             Fixed source code
         """
@@ -2738,16 +2769,15 @@ class NotebookFixer:
             source = (
                 "# SECURITY FIX: Using tempfile.mkstemp() instead of mktemp()\n"
                 "# mkstemp() creates the file securely, preventing race conditions\n"
-                "# Note: mkstemp() returns (fd, path) tuple instead of just path\n" +
-                source
+                "# Note: mkstemp() returns (fd, path) tuple instead of just path\n" + source
             )
             # Replace tempfile.mktemp() with tempfile.mkstemp()
             source = source.replace("tempfile.mktemp(", "tempfile.mkstemp(")
-        
+
         return source
 
 
-def scan_notebook(notebook_path: str) -> List[NotebookIssue]:
+def scan_notebook(notebook_path: str) -> list[NotebookIssue]:
     """
     Convenience function to scan a notebook for security issues.
 
@@ -2761,20 +2791,20 @@ def scan_notebook(notebook_path: str) -> List[NotebookIssue]:
     return analyzer.analyze_notebook(Path(notebook_path))
 
 
-def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> Dict[str, Any]:
+def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> dict[str, Any]:
     """
     Generate SARIF 2.1.0 report for notebook security issues.
-    
+
     This is a convenience function that creates a SARIF report compatible with
     GitHub Security, VS Code, and other security platforms.
-    
+
     Args:
         notebook_path: Path to the notebook file
         issues: List of security issues found by scan_notebook()
-        
+
     Returns:
         SARIF report as dictionary
-        
+
     Example:
         >>> issues = scan_notebook('notebook.ipynb')
         >>> sarif = generate_notebook_sarif('notebook.ipynb', issues)
@@ -2782,75 +2812,82 @@ def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> 
         ...     json.dump(sarif, f, indent=2)
     """
     import hashlib
-    
+
     notebook_pathobj = Path(notebook_path)
-    
+
     # Build rules dictionary from unique categories
     rules_dict = {}
     for issue in issues:
         rule_id = _get_rule_id_from_issue(issue)
-        
+
         if rule_id not in rules_dict:
             rules_dict[rule_id] = {
                 "id": rule_id,
                 "name": issue.message,
-                "shortDescription": {
-                    "text": issue.message
-                },
+                "shortDescription": {"text": issue.message},
                 "fullDescription": {
                     "text": f"{issue.message}. {issue.fix_suggestion or 'No automated fix available.'}"
                 },
-                "defaultConfiguration": {
-                    "level": _severity_to_sarif_level(issue.severity)
-                },
+                "defaultConfiguration": {"level": _severity_to_sarif_level(issue.severity)},
                 "properties": {
                     "security-severity": str(_severity_to_score(issue.severity)),
-                    "precision": "high" if issue.confidence >= 0.9 else "medium" if issue.confidence >= 0.7 else "low",
-                    "tags": _get_tags_for_issue(issue)
+                    "precision": (
+                        "high"
+                        if issue.confidence >= 0.9
+                        else "medium" if issue.confidence >= 0.7 else "low"
+                    ),
+                    "tags": _get_tags_for_issue(issue),
                 },
                 "help": {
-                    "text": issue.fix_suggestion or "Review the finding and apply appropriate security measures.",
-                    "markdown": _format_help_markdown(issue)
-                }
+                    "text": issue.fix_suggestion
+                    or "Review the finding and apply appropriate security measures.",
+                    "markdown": _format_help_markdown(issue),
+                },
             }
-    
+
     # Build SARIF results
     sarif_results = []
     for issue in issues:
         rule_id = _get_rule_id_from_issue(issue)
-        
+
         sarif_result = {
             "ruleId": rule_id,
             "level": _severity_to_sarif_level(issue.severity),
             "message": {
                 "text": f"{issue.message} in cell {issue.cell_index}",
-                "markdown": _format_message_markdown(issue)
+                "markdown": _format_message_markdown(issue),
             },
-            "locations": [{
-                "physicalLocation": {
-                    "artifactLocation": {
-                        "uri": str(notebook_pathobj),
-                        "uriBaseId": "%SRCROOT%"
-                    },
-                    "region": {
-                        "startLine": issue.line_number if issue.line_number else 1,
-                        "endLine": issue.line_number if issue.line_number else 1,
-                        "snippet": {
-                            "text": issue.code_snippet if issue.code_snippet else f"Cell {issue.cell_index}"
-                        }
-                    },
-                    "contextRegion": {
-                        "startLine": 1,
-                        "snippet": {
-                            "text": f"Notebook Cell {issue.cell_index} ({issue.category})"
-                        }
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(notebook_pathobj),
+                            "uriBaseId": "%SRCROOT%",
+                        },
+                        "region": {
+                            "startLine": issue.line_number if issue.line_number else 1,
+                            "endLine": issue.line_number if issue.line_number else 1,
+                            "snippet": {
+                                "text": (
+                                    issue.code_snippet
+                                    if issue.code_snippet
+                                    else f"Cell {issue.cell_index}"
+                                )
+                            },
+                        },
+                        "contextRegion": {
+                            "startLine": 1,
+                            "snippet": {
+                                "text": f"Notebook Cell {issue.cell_index} ({issue.category})"
+                            },
+                        },
                     }
                 }
-            }],
+            ],
             "partialFingerprints": {
                 "primaryLocationLineHash": hashlib.md5(
                     f"{notebook_path}:{issue.cell_index}:{issue.line_number}:{issue.code_snippet}".encode(),
-                    usedforsecurity=False  # Used for fingerprinting, not cryptography
+                    usedforsecurity=False,  # Used for fingerprinting, not cryptography
                 ).hexdigest()[:16]
             },
             "properties": {
@@ -2862,80 +2899,90 @@ def generate_notebook_sarif(notebook_path: str, issues: List[NotebookIssue]) -> 
                 "cwe_id": issue.cwe_id,
                 "owasp_id": issue.owasp_id,
                 "rule_id": issue.rule_id or _get_rule_id_from_issue(issue),
-                "fix_quality": "excellent" if issue.confidence >= 0.95 else "good" if issue.confidence >= 0.85 else "fair",
-                "semantic_risk": "low" if issue.confidence >= 0.9 else "medium" if issue.confidence >= 0.7 else "high"
-            }
+                "fix_quality": (
+                    "excellent"
+                    if issue.confidence >= 0.95
+                    else "good" if issue.confidence >= 0.85 else "fair"
+                ),
+                "semantic_risk": (
+                    "low"
+                    if issue.confidence >= 0.9
+                    else "medium" if issue.confidence >= 0.7 else "high"
+                ),
+            },
         }
-        
+
         # Add fix information if available
         if issue.fix_suggestion and issue.auto_fixable:
             # Enhanced fix metadata with rollback commands
             fix_description = f"**Auto-fix available** (Confidence: {issue.confidence:.0%})\\n\\n{issue.fix_suggestion}"
-            
+
             # Add rollback command
             backup_path = f"{notebook_pathobj}.backup"
             rollback_cmd = f"cp {backup_path} {notebook_pathobj}"
-            
+
             fix_description += f"\\n\\n**Rollback Command:**\\n```bash\\n{rollback_cmd}\\n```"
-            
+
             # Add fix metadata
-            sarif_result["fixes"] = [{
-                "description": {
-                    "text": issue.fix_suggestion,
-                    "markdown": fix_description
-                },
-                "properties": {
-                    "fix_confidence": issue.confidence,
-                    "fix_type": "automated",
-                    "rollback_command": rollback_cmd,
-                    "backup_location": backup_path,
-                    "semantic_preservation": "verified" if issue.confidence >= 0.95 else "probable"
+            sarif_result["fixes"] = [
+                {
+                    "description": {"text": issue.fix_suggestion, "markdown": fix_description},
+                    "properties": {
+                        "fix_confidence": issue.confidence,
+                        "fix_type": "automated",
+                        "rollback_command": rollback_cmd,
+                        "backup_location": backup_path,
+                        "semantic_preservation": (
+                            "verified" if issue.confidence >= 0.95 else "probable"
+                        ),
+                    },
                 }
-            }]
-        
+            ]
+
         sarif_results.append(sarif_result)
-    
+
     # Build complete SARIF report
-    sarif_report = {
+    return {
         "version": "2.1.0",
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-        "runs": [{
-            "tool": {
-                "driver": {
-                    "name": "PyGuard Notebook Security Analyzer",
-                    "version": "0.3.0",
-                    "informationUri": "https://github.com/cboyd0319/PyGuard",
-                    "semanticVersion": "0.3.0",
-                    "organization": "PyGuard",
-                    "shortDescription": {
-                        "text": "World-class Jupyter notebook security analyzer with ML/AI-aware detection"
-                    },
-                    "fullDescription": {
-                        "text": "Comprehensive security analysis for Jupyter notebooks with 76+ vulnerability patterns across 13 categories including code injection, unsafe deserialization, hardcoded secrets, and ML-specific risks."
-                    },
-                    "rules": list(rules_dict.values())
-                }
-            },
-            "results": sarif_results,
-            "columnKind": "utf16CodeUnits",
-            "properties": {
-                "notebook_analyzed": str(notebook_pathobj),
-                "total_issues": len(issues),
-                "critical_issues": sum(1 for i in issues if i.severity == "CRITICAL"),
-                "high_issues": sum(1 for i in issues if i.severity == "HIGH"),
-                "medium_issues": sum(1 for i in issues if i.severity == "MEDIUM"),
-                "low_issues": sum(1 for i in issues if i.severity == "LOW"),
-                "auto_fixable_issues": sum(1 for i in issues if i.auto_fixable),
-                "high_confidence_issues": sum(1 for i in issues if i.confidence >= 0.9),
-                "categories_detected": list(set(i.category for i in issues)),
-                "pyguard_version": "0.3.0",
-                "sarif_enhanced": True,
-                "includes_rollback_commands": True
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "PyGuard Notebook Security Analyzer",
+                        "version": "0.3.0",
+                        "informationUri": "https://github.com/cboyd0319/PyGuard",
+                        "semanticVersion": "0.3.0",
+                        "organization": "PyGuard",
+                        "shortDescription": {
+                            "text": "World-class Jupyter notebook security analyzer with ML/AI-aware detection"
+                        },
+                        "fullDescription": {
+                            "text": "Comprehensive security analysis for Jupyter notebooks with 76+ vulnerability patterns across 13 categories including code injection, unsafe deserialization, hardcoded secrets, and ML-specific risks."
+                        },
+                        "rules": list(rules_dict.values()),
+                    }
+                },
+                "results": sarif_results,
+                "columnKind": "utf16CodeUnits",
+                "properties": {
+                    "notebook_analyzed": str(notebook_pathobj),
+                    "total_issues": len(issues),
+                    "critical_issues": sum(1 for i in issues if i.severity == "CRITICAL"),
+                    "high_issues": sum(1 for i in issues if i.severity == "HIGH"),
+                    "medium_issues": sum(1 for i in issues if i.severity == "MEDIUM"),
+                    "low_issues": sum(1 for i in issues if i.severity == "LOW"),
+                    "auto_fixable_issues": sum(1 for i in issues if i.auto_fixable),
+                    "high_confidence_issues": sum(1 for i in issues if i.confidence >= 0.9),
+                    "categories_detected": list({i.category for i in issues}),
+                    "pyguard_version": "0.3.0",
+                    "sarif_enhanced": True,
+                    "includes_rollback_commands": True,
+                },
             }
-        }]
+        ],
     }
-    
-    return sarif_report
+
 
 
 def _get_rule_id_from_issue(issue: NotebookIssue) -> str:
@@ -2963,24 +3010,23 @@ def _get_rule_id_from_issue(issue: NotebookIssue) -> str:
         "Advanced Code Injection": "ACI",
         "Advanced ML/AI Security": "AML",
         "Untrusted Notebook": "TRUST",
-        "Non-Standard Kernel": "KERN"
+        "Non-Standard Kernel": "KERN",
     }
-    
+
     abbrev = category_abbrev.get(issue.category, "GEN")
     # Create unique rule ID
-    rule_id = f"PYGUARD-NB-{abbrev}-{issue.severity[:3]}"
-    return rule_id
+    return f"PYGUARD-NB-{abbrev}-{issue.severity[:3]}"
 
 
-def _get_tags_for_issue(issue: NotebookIssue) -> List[str]:
+def _get_tags_for_issue(issue: NotebookIssue) -> list[str]:
     """Get SARIF tags for an issue."""
     tags = ["security", "notebook"]
-    
+
     if issue.cwe_id:
         tags.append(issue.cwe_id)
     if issue.owasp_id:
         tags.append(issue.owasp_id)
-    
+
     # Add category-specific tags
     category_tags = {
         "Code Injection": ["injection", "code-execution"],
@@ -2993,35 +3039,35 @@ def _get_tags_for_issue(issue: NotebookIssue) -> List[str]:
         "ML Pipeline Security": ["ml", "ai", "model-security"],
         "Filesystem Security": ["path-traversal", "filesystem"],
         "Network & Data Exfiltration": ["network", "exfiltration"],
-        "Resource Exhaustion": ["dos", "resource-exhaustion"]
+        "Resource Exhaustion": ["dos", "resource-exhaustion"],
     }
-    
+
     if issue.category in category_tags:
         tags.extend(category_tags[issue.category])
-    
+
     return tags
 
 
 def _severity_to_sarif_level(severity: str) -> str:
     """Convert PyGuard severity to SARIF level."""
     mapping = {
-        'CRITICAL': 'error',
-        'HIGH': 'error',
-        'MEDIUM': 'warning',
-        'LOW': 'note',
-        'INFO': 'note',
+        "CRITICAL": "error",
+        "HIGH": "error",
+        "MEDIUM": "warning",
+        "LOW": "note",
+        "INFO": "note",
     }
-    return mapping.get(severity, 'warning')
+    return mapping.get(severity, "warning")
 
 
 def _severity_to_score(severity: str) -> float:
     """Convert severity to numeric score (CVSS-like)."""
     mapping = {
-        'CRITICAL': 9.0,
-        'HIGH': 7.0,
-        'MEDIUM': 5.0,
-        'LOW': 3.0,
-        'INFO': 1.0,
+        "CRITICAL": 9.0,
+        "HIGH": 7.0,
+        "MEDIUM": 5.0,
+        "LOW": 3.0,
+        "INFO": 1.0,
     }
     return mapping.get(severity, 5.0)
 
@@ -3032,18 +3078,18 @@ def _format_help_markdown(issue: NotebookIssue) -> str:
     help_text += f"**Category:** {issue.category}\\n"
     help_text += f"**Severity:** {issue.severity}\\n"
     help_text += f"**Confidence:** {issue.confidence:.0%}\\n\\n"
-    
+
     if issue.cwe_id:
         help_text += f"**{issue.cwe_id}:** Common Weakness Enumeration\\n"
     if issue.owasp_id:
         help_text += f"**OWASP:** {issue.owasp_id}\\n"
-    
+
     help_text += "\\n### Fix Suggestion\\n\\n"
     help_text += issue.fix_suggestion or "No automated fix available. Manual review required."
-    
+
     if issue.auto_fixable:
         help_text += "\\n\\n✅ **Auto-fix available** - Run PyGuard with auto-fix enabled."
-    
+
     return help_text
 
 
@@ -3054,8 +3100,8 @@ def _format_message_markdown(issue: NotebookIssue) -> str:
     if issue.line_number:
         msg += f", line {issue.line_number}"
     msg += f"\\n\\nConfidence: {issue.confidence:.0%}"
-    
+
     if issue.code_snippet:
         msg += f"\\n\\n```python\\n{issue.code_snippet}\\n```"
-    
+
     return msg

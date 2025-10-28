@@ -34,7 +34,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -53,23 +52,22 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_quart_import = False
         self.has_websocket_import = False
-        self.route_functions: Set[str] = set()
-        self.websocket_routes: Set[str] = set()
+        self.route_functions: set[str] = set()
+        self.websocket_routes: set[str] = set()
         self.current_function_has_secure_filename = False
         # Track tainted variables (user input)
-        self.tainted_vars: Set[str] = set()
+        self.tainted_vars: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Quart imports."""
-        if node.module:
-            if node.module.startswith("quart"):
-                self.has_quart_import = True
-                for alias in node.names:
-                    if alias.name == "websocket":
-                        self.has_websocket_import = True
+        if node.module and node.module.startswith("quart"):
+            self.has_quart_import = True
+            for alias in node.names:
+                if alias.name == "websocket":
+                    self.has_websocket_import = True
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -99,14 +97,11 @@ class QuartSecurityVisitor(ast.NodeVisitor):
 
         # Reset function-level tracking
         self.current_function_has_secure_filename = False
-        
+
         # Check if secure_filename is used anywhere in this function
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
-                if isinstance(child.func, ast.Name) and "secure" in child.func.id.lower():
-                    self.current_function_has_secure_filename = True
-                    break
-                elif isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower():
+                if (isinstance(child.func, ast.Name) and "secure" in child.func.id.lower()) or (isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower()):
                     self.current_function_has_secure_filename = True
                     break
 
@@ -182,14 +177,22 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                                 file_path=self.file_path,
                                 line_number=getattr(child, "lineno", 0),
                                 column=getattr(child, "col_offset", 0),
-                                end_line_number=getattr(child, "end_lineno", getattr(child, "lineno", 0)),
-                                end_column=getattr(child, "end_col_offset", getattr(child, "col_offset", 0)),
-                                code_snippet=self.lines[getattr(child, "lineno", 1) - 1] if getattr(child, "lineno", 1) <= len(self.lines) else "",
+                                end_line_number=getattr(
+                                    child, "end_lineno", getattr(child, "lineno", 0)
+                                ),
+                                end_column=getattr(
+                                    child, "end_col_offset", getattr(child, "col_offset", 0)
+                                ),
+                                code_snippet=(
+                                    self.lines[getattr(child, "lineno", 1) - 1]
+                                    if getattr(child, "lineno", 1) <= len(self.lines)
+                                    else ""
+                                ),
                                 fix_suggestion="Change 'def' to 'async def' and use 'await' for request operations",
                                 fix_applicability=FixApplicability.UNSAFE,
                                 cwe_id=None,
                                 owasp_id=None,
-                                source_tool="pyguard"
+                                source_tool="pyguard",
                             )
                         )
                         break  # Only report once per function
@@ -206,10 +209,12 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     if child.func.attr in ("check_auth", "verify_token", "authenticate"):
                         has_auth_check = True
                         break
-                elif isinstance(child.func, ast.Name):
-                    if any(keyword in child.func.id.lower() for keyword in ["auth", "verify", "validate"]):
-                        has_auth_check = True
-                        break
+                elif isinstance(child.func, ast.Name) and any(
+                    keyword in child.func.id.lower()
+                    for keyword in ["auth", "verify", "validate"]
+                ):
+                    has_auth_check = True
+                    break
             elif isinstance(child, ast.If):
                 # Check if condition checks for authentication
                 if isinstance(child.test, ast.Attribute):
@@ -220,7 +225,10 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 elif isinstance(child.test, ast.UnaryOp) and isinstance(child.test.op, ast.Not):
                     if isinstance(child.test.operand, ast.Call):
                         if isinstance(child.test.operand.func, ast.Name):
-                            if any(keyword in child.test.operand.func.id.lower() for keyword in ["verify", "auth", "validate"]):
+                            if any(
+                                keyword in child.test.operand.func.id.lower()
+                                for keyword in ["verify", "auth", "validate"]
+                            ):
                                 has_auth_check = True
                                 break
 
@@ -248,7 +256,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     is_user_input = True
             elif isinstance(arg, ast.Name) and arg.id in self.tainted_vars:
                 is_user_input = True
-            
+
             if is_user_input:
                 self.violations.append(
                     RuleViolation(
@@ -261,12 +269,16 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                         column=getattr(node, "col_offset", 0),
                         end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                         end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                        code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                        code_snippet=(
+                            self.lines[getattr(node, "lineno", 1) - 1]
+                            if getattr(node, "lineno", 1) <= len(self.lines)
+                            else ""
+                        ),
                         fix_suggestion="Validate and sanitize user input before passing to background tasks",
                         fix_applicability=FixApplicability.UNSAFE,
                         cwe_id=None,
                         owasp_id=None,
-                        source_tool="pyguard"
+                        source_tool="pyguard",
                     )
                 )
                 break  # Only report once per call
@@ -323,12 +335,16 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     column=getattr(node, "col_offset", 0),
                     end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                     end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                    code_snippet=(
+                        self.lines[getattr(node, "lineno", 1) - 1]
+                        if getattr(node, "lineno", 1) <= len(self.lines)
+                        else ""
+                    ),
                     fix_suggestion="Specify explicit origins: cors(app, origins=['https://example.com'])",
                     fix_applicability=FixApplicability.SAFE,
                     cwe_id=None,
                     owasp_id=None,
-                    source_tool="pyguard"
+                    source_tool="pyguard",
                 )
             )
 
@@ -460,10 +476,9 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                         has_csrf_check = True
                         break
             # Also check for csrf_token variable access/validation
-            elif isinstance(child, ast.Name):
-                if "csrf" in child.id.lower():
-                    has_csrf_check = True
-                    break
+            elif isinstance(child, ast.Name) and "csrf" in child.id.lower():
+                has_csrf_check = True
+                break
 
         # Check if route uses unsafe HTTP methods
         for decorator in node.decorator_list:
@@ -499,7 +514,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         # Check if route accesses sensitive data without auth
         has_sensitive_access = False
         sensitive_keywords = ["password", "token", "secret", "api_key", "private", "api_token"]
-        
+
         for child in ast.walk(node):
             # Check for sensitive attributes
             if isinstance(child, ast.Attribute):
@@ -525,12 +540,16 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     column=getattr(node, "col_offset", 0),
                     end_line_number=getattr(node, "end_lineno", getattr(node, "lineno", 0)),
                     end_column=getattr(node, "end_col_offset", getattr(node, "col_offset", 0)),
-                    code_snippet=self.lines[getattr(node, "lineno", 1) - 1] if getattr(node, "lineno", 1) <= len(self.lines) else "",
+                    code_snippet=(
+                        self.lines[getattr(node, "lineno", 1) - 1]
+                        if getattr(node, "lineno", 1) <= len(self.lines)
+                        else ""
+                    ),
                     fix_suggestion="Add authentication decorator like @login_required or @requires_auth",
                     fix_applicability=FixApplicability.UNSAFE,
                     cwe_id=None,
                     owasp_id=None,
-                    source_tool="pyguard"
+                    source_tool="pyguard",
                 )
             )
 
@@ -542,13 +561,13 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 if isinstance(node.value, ast.Name) and node.value.id == "request":
                     return True
             return self._is_user_input(node.value)
-        elif isinstance(node, ast.Await):
+        if isinstance(node, ast.Await):
             # Handle await request.form
             return self._is_user_input(node.value)
         return False
 
 
-def analyze_quart(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_quart(file_path: Path, code: str) -> list[RuleViolation]:
     """Analyze Quart code for security vulnerabilities."""
     tree = ast.parse(code)
     visitor = QuartSecurityVisitor(file_path, code)

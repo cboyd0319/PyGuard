@@ -6,10 +6,10 @@ YAML/TOML configuration or Python code.
 """
 
 import ast
-import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+import re
 
 try:
     import tomli as tomllib  # Python < 3.11
@@ -26,8 +26,8 @@ class CustomRule:
     severity: str  # HIGH, MEDIUM, LOW
     category: str
     description: str
-    pattern: Optional[str] = None  # Regex pattern for simple rules
-    ast_check: Optional[Callable] = None  # AST-based checker function
+    pattern: str | None = None  # Regex pattern for simple rules
+    ast_check: Callable | None = None  # AST-based checker function
     suggestion: str = ""
     enabled: bool = True
 
@@ -51,8 +51,8 @@ class CustomRuleEngine:
 
     def __init__(self):
         """Initialize the custom rule engine."""
-        self.rules: Dict[str, CustomRule] = {}
-        self.violations: List[RuleViolation] = []
+        self.rules: dict[str, CustomRule] = {}
+        self.violations: list[RuleViolation] = []
 
     def load_rules_from_toml(self, config_path: Path) -> None:
         """
@@ -136,7 +136,7 @@ class CustomRuleEngine:
         self,
         rule_id: str,
         name: str,
-        checker: Callable[[ast.AST], List[int]],
+        checker: Callable[[ast.AST], list[int]],
         severity: str = "MEDIUM",
         category: str = "Custom",
         description: str = "",
@@ -165,7 +165,7 @@ class CustomRuleEngine:
         )
         self.add_rule(rule)
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a file against all custom rules.
 
@@ -232,7 +232,7 @@ class CustomRuleEngine:
         except Exception:
             return []
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[RuleViolation]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[RuleViolation]:
         """
         Check code string against all custom rules.
 
@@ -319,7 +319,7 @@ class CustomRuleEngine:
         if rule_id in self.rules:
             self.rules[rule_id].enabled = True
 
-    def list_rules(self) -> List[CustomRule]:
+    def list_rules(self) -> list[CustomRule]:
         """
         Get list of all rules.
 
@@ -328,7 +328,7 @@ class CustomRuleEngine:
         """
         return list(self.rules.values())
 
-    def get_rule(self, rule_id: str) -> Optional[CustomRule]:
+    def get_rule(self, rule_id: str) -> CustomRule | None:
         """
         Get a specific rule.
 
@@ -378,7 +378,7 @@ class CustomRuleEngine:
 
 
 # Example AST checker functions that can be used with add_ast_rule()
-def check_no_global_variables(tree: ast.AST) -> List[int]:
+def check_no_global_variables(tree: ast.AST) -> list[int]:
     """Check for global variable assignments."""
     lines = []
     for node in ast.walk(tree):
@@ -389,7 +389,7 @@ def check_no_global_variables(tree: ast.AST) -> List[int]:
     return lines
 
 
-def check_function_length(tree: ast.AST, max_lines: int = 50) -> List[int]:
+def check_function_length(tree: ast.AST, max_lines: int = 50) -> list[int]:
     """Check for functions that are too long."""
     lines = []
     for node in ast.walk(tree):

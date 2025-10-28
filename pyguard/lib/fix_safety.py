@@ -16,7 +16,6 @@ References:
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set
 
 
 class FixSafety(Enum):
@@ -36,7 +35,7 @@ class FixClassification:
     category: str  # "security", "quality", "style", "performance"
     description: str
     reasoning: str
-    examples: Optional[List[str]] = None
+    examples: list[str] | None = None
 
 
 class FixSafetyClassifier:
@@ -49,7 +48,7 @@ class FixSafetyClassifier:
 
     def __init__(self):
         """Initialize fix safety classifier with predefined classifications."""
-        self._classifications: Dict[str, FixClassification] = {}
+        self._classifications: dict[str, FixClassification] = {}
         self._initialize_classifications()
 
     def _initialize_classifications(self) -> None:
@@ -520,7 +519,7 @@ class FixSafetyClassifier:
             reasoning=reasoning,
         )
 
-    def get_classification(self, fix_id: str) -> Optional[FixClassification]:
+    def get_classification(self, fix_id: str) -> FixClassification | None:
         """
         Get classification for a specific fix.
 
@@ -589,14 +588,14 @@ class FixSafetyClassifier:
 
         if classification.safety == FixSafety.SAFE:
             return True
-        elif classification.safety == FixSafety.UNSAFE:
+        if classification.safety == FixSafety.UNSAFE:
             return allow_unsafe
-        else:  # WARNING_ONLY
-            # WARNING_ONLY fixes should never be automatically applied
-            # They only add warnings/comments for manual intervention
-            return False
+        # WARNING_ONLY
+        # WARNING_ONLY fixes should never be automatically applied
+        # They only add warnings/comments for manual intervention
+        return False
 
-    def get_all_safe_fixes(self) -> Set[str]:
+    def get_all_safe_fixes(self) -> set[str]:
         """Get IDs of all SAFE fixes."""
         return {
             fix_id
@@ -604,7 +603,7 @@ class FixSafetyClassifier:
             if classification.safety == FixSafety.SAFE
         }
 
-    def get_all_unsafe_fixes(self) -> Set[str]:
+    def get_all_unsafe_fixes(self) -> set[str]:
         """Get IDs of all UNSAFE fixes."""
         return {
             fix_id
@@ -612,7 +611,7 @@ class FixSafetyClassifier:
             if classification.safety == FixSafety.UNSAFE
         }
 
-    def get_all_warning_only_fixes(self) -> Set[str]:
+    def get_all_warning_only_fixes(self) -> set[str]:
         """Get IDs of all WARNING_ONLY fixes."""
         return {
             fix_id
@@ -620,7 +619,7 @@ class FixSafetyClassifier:
             if classification.safety == FixSafety.WARNING_ONLY
         }
 
-    def get_fixes_by_category(self, category: str) -> Dict[str, FixClassification]:
+    def get_fixes_by_category(self, category: str) -> dict[str, FixClassification]:
         """
         Get all fixes in a specific category.
 
@@ -636,7 +635,7 @@ class FixSafetyClassifier:
             if classification.category == category
         }
 
-    def get_statistics(self) -> Dict[str, int]:
+    def get_statistics(self) -> dict[str, int]:
         """
         Get statistics about fix classifications.
 

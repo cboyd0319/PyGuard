@@ -12,12 +12,11 @@ References:
 - CycloneDX | https://cyclonedx.org/ | High | SBOM standard
 """
 
-import json
-import re
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+import json
 from pathlib import Path
-from typing import List, Optional
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -29,9 +28,9 @@ class Dependency:
     name: str
     version: str
     source: str  # pypi, git, local, etc.
-    license: Optional[str] = None
-    hash_sha256: Optional[str] = None
-    vulnerabilities: List[str] = field(default_factory=list)
+    license: str | None = None
+    hash_sha256: str | None = None
+    vulnerabilities: list[str] = field(default_factory=list)
     risk_level: str = "UNKNOWN"  # LOW, MEDIUM, HIGH, CRITICAL
 
 
@@ -42,7 +41,7 @@ class SBOM:
     project_name: str
     project_version: str
     timestamp: str
-    dependencies: List[Dependency]
+    dependencies: list[Dependency]
     total_dependencies: int = 0
     critical_vulnerabilities: int = 0
     high_vulnerabilities: int = 0
@@ -99,7 +98,7 @@ class DependencyParser:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def parse_requirements_txt(self, file_path: Path) -> List[Dependency]:
+    def parse_requirements_txt(self, file_path: Path) -> list[Dependency]:
         """
         Parse requirements.txt file.
 
@@ -132,20 +131,19 @@ class DependencyParser:
                         source="pypi",
                     )
                 )
-            else:
-                # Package without version
-                if re.match(r"^[a-zA-Z0-9_-]+$", line):
-                    dependencies.append(
-                        Dependency(
-                            name=line,
-                            version="unknown",
-                            source="pypi",
-                        )
+            # Package without version
+            elif re.match(r"^[a-zA-Z0-9_-]+$", line):
+                dependencies.append(
+                    Dependency(
+                        name=line,
+                        version="unknown",
+                        source="pypi",
                     )
+                )
 
         return dependencies
 
-    def parse_pyproject_toml(self, file_path: Path) -> List[Dependency]:
+    def parse_pyproject_toml(self, file_path: Path) -> list[Dependency]:
         """
         Parse pyproject.toml file.
 
@@ -166,7 +164,7 @@ class DependencyParser:
             line = line.strip()
 
             # Detect dependencies section
-            if line == "[project.dependencies]" or line == "dependencies = [":
+            if line in {"[project.dependencies]", "dependencies = ["}:
                 in_dependencies = True
                 continue
 
@@ -190,7 +188,7 @@ class DependencyParser:
 
         return dependencies
 
-    def parse_pipfile(self, file_path: Path) -> List[Dependency]:
+    def parse_pipfile(self, file_path: Path) -> list[Dependency]:
         """
         Parse Pipfile.
 
@@ -335,13 +333,13 @@ class VulnerabilityChecker:
             if spec.startswith("<="):
                 target = spec[2:]
                 return self._compare_versions(version, target) <= 0
-            elif spec.startswith(">="):
+            if spec.startswith(">="):
                 target = spec[2:]
                 return self._compare_versions(version, target) >= 0
-            elif spec.startswith("<"):
+            if spec.startswith("<"):
                 target = spec[1:]
                 return self._compare_versions(version, target) < 0
-            elif spec.startswith(">"):
+            if spec.startswith(">"):
                 target = spec[1:]
                 return self._compare_versions(version, target) > 0
         except Exception:
@@ -367,11 +365,11 @@ class VulnerabilityChecker:
 
         if parts1 < parts2:
             return -1
-        elif parts1 > parts2:
+        if parts1 > parts2:
             return 1
         return 0
 
-    def _assess_risk(self, vulnerabilities: List[str]) -> str:
+    def _assess_risk(self, vulnerabilities: list[str]) -> str:
         """Assess overall risk level based on vulnerabilities."""
         if any("CRITICAL" in v or "CVE-2023" in v or "CVE-2024" in v for v in vulnerabilities):
             return "CRITICAL"
@@ -442,7 +440,7 @@ class SupplyChainAnalyzer:
         sbom = SBOM(
             project_name=project_dir.name,
             project_version="unknown",  # Would be parsed from setup.py/pyproject.toml
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             dependencies=unique_deps,
             total_dependencies=len(unique_deps),
         )
@@ -479,7 +477,7 @@ class SupplyChainAnalyzer:
         output_path.write_text(content)
         self.logger.info(f"SBOM written to {output_path}", category="SupplyChain")
 
-    def _deduplicate_dependencies(self, dependencies: List[Dependency]) -> List[Dependency]:
+    def _deduplicate_dependencies(self, dependencies: list[Dependency]) -> list[Dependency]:
         """Remove duplicate dependencies, keeping the most specific version."""
         seen = {}
         for dep in dependencies:

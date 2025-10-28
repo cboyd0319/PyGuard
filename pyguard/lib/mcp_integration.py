@@ -11,7 +11,7 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -23,8 +23,8 @@ class MCPServer:
     name: str
     url: str
     enabled: bool = True
-    api_key: Optional[str] = None
-    capabilities: Optional[List[str]] = None
+    api_key: str | None = None
+    capabilities: list[str] | None = None
 
     def __post_init__(self):
         if self.capabilities is None:
@@ -38,7 +38,7 @@ class MCPQuery:
     query_type: str  # security_check, code_analysis, vulnerability_lookup
     code_snippet: str
     language: str = "python"
-    context: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
 
 
 @dataclass
@@ -46,11 +46,11 @@ class MCPResponse:
     """Response from an MCP server."""
 
     success: bool
-    data: Dict[str, Any]
+    data: dict[str, Any]
     confidence: float  # 0.0 to 1.0
     source: str
     timestamp: str
-    recommendations: Optional[List[str]] = None
+    recommendations: list[str] | None = None
 
     def __post_init__(self):
         if self.recommendations is None:
@@ -71,7 +71,7 @@ class MCPIntegration:
     def __init__(self):
         """Initialize MCP integration."""
         self.logger = PyGuardLogger()
-        self.servers: Dict[str, MCPServer] = {}
+        self.servers: dict[str, MCPServer] = {}
         self._initialize_default_servers()
 
     def _initialize_default_servers(self):
@@ -121,15 +121,15 @@ class MCPIntegration:
             return True
         except Exception as e:
             self.logger.error(
-                f"Failed to register MCP server: {str(e)}",
+                f"Failed to register MCP server: {e!s}",
                 category="MCP",
                 details={"server": server.name},
             )
             return False
 
     def query_security_intelligence(
-        self, code_snippet: str, context: Optional[Dict[str, Any]] = None
-    ) -> Optional[MCPResponse]:
+        self, code_snippet: str, context: dict[str, Any] | None = None
+    ) -> MCPResponse | None:
         """
         Query MCP servers for security intelligence.
 
@@ -151,7 +151,7 @@ class MCPIntegration:
 
         return None
 
-    def _query_server(self, server: MCPServer, query: MCPQuery) -> Optional[MCPResponse]:
+    def _query_server(self, server: MCPServer, query: MCPQuery) -> MCPResponse | None:
         """
         Query a specific MCP server.
 
@@ -215,7 +215,7 @@ class MCPIntegration:
             recommendations=recommendations,
         )
 
-    def get_enhanced_vulnerability_info(self, cwe_id: str) -> Optional[Dict[str, Any]]:
+    def get_enhanced_vulnerability_info(self, cwe_id: str) -> dict[str, Any] | None:
         """
         Get enhanced vulnerability information from MCP servers.
 
@@ -244,7 +244,7 @@ class MCPIntegration:
 
         return None
 
-    def get_code_recommendations(self, code_snippet: str, issue_type: str) -> List[str]:
+    def get_code_recommendations(self, code_snippet: str, issue_type: str) -> list[str]:
         """
         Get AI-powered code improvement recommendations.
 
@@ -261,7 +261,7 @@ class MCPIntegration:
             context={"issue_type": issue_type},
         )
 
-        recommendations: List[str] = []
+        recommendations: list[str] = []
         for server in self.servers.values():
             if server.enabled and server.capabilities and "code_patterns" in server.capabilities:
                 response = self._query_server(server, query)
@@ -279,7 +279,7 @@ class MCPIntegration:
         """
         return any(server.enabled for server in self.servers.values())
 
-    def get_server_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_server_status(self) -> dict[str, dict[str, Any]]:
         """
         Get status of all registered MCP servers.
 

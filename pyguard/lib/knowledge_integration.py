@@ -14,7 +14,6 @@ References:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -27,12 +26,12 @@ class SecurityAdvisory:
     title: str
     description: str
     severity: str  # CRITICAL, HIGH, MEDIUM, LOW
-    affected_packages: List[str]
-    fixed_versions: List[str]
+    affected_packages: list[str]
+    fixed_versions: list[str]
     published_date: str
     source: str  # NVD, GitHub, OSV
-    references: List[str]
-    cwe_ids: List[str]
+    references: list[str]
+    cwe_ids: list[str]
 
 
 @dataclass
@@ -44,8 +43,8 @@ class CWEInformation:
     description: str
     extended_description: str
     mitigation: str
-    detection_methods: List[str]
-    owasp_mappings: List[str]
+    detection_methods: list[str]
+    owasp_mappings: list[str]
     likelihood: str
     impact: str
 
@@ -58,9 +57,9 @@ class OWASPCategory:
     rank: int
     category: str
     description: str
-    cwes: List[str]
-    mitigation_strategies: List[str]
-    detection_techniques: List[str]
+    cwes: list[str]
+    mitigation_strategies: list[str]
+    detection_techniques: list[str]
 
 
 class KnowledgeBase:
@@ -283,11 +282,11 @@ class KnowledgeBase:
         """Initialize knowledge base."""
         self.logger = PyGuardLogger()
 
-    def get_cwe_info(self, cwe_id: str) -> Optional[Dict]:
+    def get_cwe_info(self, cwe_id: str) -> dict | None:
         """Get information about a CWE."""
         return self.CWE_TOP_25_2023.get(cwe_id)
 
-    def get_owasp_category(self, owasp_id: str) -> Optional[Dict]:
+    def get_owasp_category(self, owasp_id: str) -> dict | None:
         """Get information about an OWASP Top 10 category."""
         return self.OWASP_TOP_10_2021.get(owasp_id)
 
@@ -314,7 +313,7 @@ class KnowledgeBase:
         """Check if CWE is in Top 25."""
         return cwe_id in self.CWE_TOP_25_2023
 
-    def get_related_cwes(self, cwe_id: str) -> List[str]:
+    def get_related_cwes(self, cwe_id: str) -> list[str]:
         """Get related CWEs for a given CWE."""
         # Map common related CWEs
         relations = {
@@ -339,7 +338,7 @@ class SecurityIntelligence:
         self.knowledge_base = KnowledgeBase()
         self.logger = PyGuardLogger()
 
-    def enrich_security_issue(self, issue_dict: Dict) -> Dict:
+    def enrich_security_issue(self, issue_dict: dict) -> dict:
         """
         Enrich a security issue with additional context.
 
@@ -373,7 +372,7 @@ class SecurityIntelligence:
 
         return issue_dict
 
-    def _get_owasp_category_from_asvs(self, asvs_id: str) -> Optional[Dict]:
+    def _get_owasp_category_from_asvs(self, asvs_id: str) -> dict | None:
         """Map ASVS ID to OWASP Top 10 category."""
         # Simplified mapping - in production would be more comprehensive
         asvs_to_owasp = {
@@ -395,7 +394,7 @@ class SecurityIntelligence:
 
         return None
 
-    def get_attack_patterns(self, cwe_id: str) -> List[str]:
+    def get_attack_patterns(self, cwe_id: str) -> list[str]:
         """Get common attack patterns for a CWE."""
         patterns = {
             "CWE-89": [
@@ -415,7 +414,7 @@ class SecurityIntelligence:
         }
         return patterns.get(cwe_id, [])
 
-    def get_mitigation_checklist(self, cwe_id: str) -> List[str]:
+    def get_mitigation_checklist(self, cwe_id: str) -> list[str]:
         """Get actionable mitigation checklist for a CWE."""
         checklists = {
             "CWE-89": [
@@ -458,7 +457,7 @@ class KnowledgeIntegration:
         self.security_intel = SecurityIntelligence()
         self.logger = PyGuardLogger()
 
-    def get_comprehensive_report(self, cwe_id: str) -> Dict:
+    def get_comprehensive_report(self, cwe_id: str) -> dict:
         """
         Get comprehensive security report for a CWE.
 

@@ -7,7 +7,7 @@ Complements mypy/pytype by focusing on practical type improvements and auto-fixe
 
 import ast
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -27,19 +27,19 @@ class TypeInferenceEngine:
         """Initialize type inference engine."""
         self.logger = PyGuardLogger()
 
-    def infer_from_default(self, default_value: ast.AST) -> Optional[str]:
+    def infer_from_default(self, default_value: ast.AST) -> str | None:
         """Infer type from default value."""
         if isinstance(default_value, ast.Constant):
             value = default_value.value
             if isinstance(value, bool):
                 return "bool"
-            elif isinstance(value, int):
+            if isinstance(value, int):
                 return "int"
-            elif isinstance(value, float):
+            if isinstance(value, float):
                 return "float"
-            elif isinstance(value, str):
+            if isinstance(value, str):
                 return "str"
-            elif value is None:
+            if value is None:
                 return "Optional"
         elif isinstance(default_value, ast.List):
             return "list"
@@ -51,11 +51,11 @@ class TypeInferenceEngine:
             return "tuple"
         return None
 
-    def infer_from_assignment(self, value: ast.AST) -> Optional[str]:
+    def infer_from_assignment(self, value: ast.AST) -> str | None:
         """Infer type from assignment value."""
         return self.infer_from_default(value)
 
-    def infer_return_type(self, func_node: ast.FunctionDef) -> Optional[str]:
+    def infer_return_type(self, func_node: ast.FunctionDef) -> str | None:
         """Infer return type from function body."""
         # Simple inference from return statements
         return_types = set()
@@ -67,8 +67,8 @@ class TypeInferenceEngine:
                     return_types.add(inferred)
 
         if len(return_types) == 1:
-            return list(return_types)[0]
-        elif len(return_types) > 1:
+            return next(iter(return_types))
+        if len(return_types) > 1:
             # Multiple return types - suggest Union
             return f"Union[{', '.join(sorted(return_types))}]"
 
@@ -78,10 +78,10 @@ class TypeInferenceEngine:
 class TypeHintVisitor(ast.NodeVisitor):
     """AST visitor for type hint analysis."""
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize visitor."""
         self.source_lines = source_lines
-        self.violations: List[Tuple[Rule, Dict[str, Any]]] = []
+        self.violations: list[tuple[Rule, dict[str, Any]]] = []
         self.type_inference = TypeInferenceEngine()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -155,10 +155,7 @@ class TypeHintVisitor(ast.NodeVisitor):
 
     def _contains_any_type(self, node: ast.AST) -> bool:
         """Check if annotation contains Any type."""
-        for child in ast.walk(node):
-            if isinstance(child, ast.Name) and child.id == "Any":
-                return True
-        return False
+        return any(isinstance(child, ast.Name) and child.id == "Any" for child in ast.walk(node))
 
 
 class TypeCheckingRule(Rule):
@@ -232,7 +229,7 @@ TYPE_COMPARISON_RULE = TypeCheckingRule(
 
 
 # Implement detection for type checking rules
-def _detect_type_hints(code: str, file_path: Path, tree: Optional[ast.AST] = None):
+def _detect_type_hints(code: str, file_path: Path, tree: ast.AST | None = None):
     """Detect missing type hints."""
     if tree is None:
         try:
@@ -262,7 +259,7 @@ def _detect_type_hints(code: str, file_path: Path, tree: Optional[ast.AST] = Non
     return violations
 
 
-def _detect_type_comparison(code: str, file_path: Path, tree: Optional[ast.AST] = None):
+def _detect_type_comparison(code: str, file_path: Path, tree: ast.AST | None = None):
     """Detect type() == comparisons."""
     if tree is None:
         try:
@@ -275,26 +272,25 @@ def _detect_type_comparison(code: str, file_path: Path, tree: Optional[ast.AST] 
     for node in ast.walk(tree):
         if isinstance(node, ast.Compare):
             # Check for type(x) == SomeClass or type(x) is SomeClass
-            if isinstance(node.left, ast.Call):
-                if (
-                    isinstance(node.left.func, ast.Name)
-                    and node.left.func.id == "type"
-                    and len(node.left.args) == 1
-                ):
-                    # Found type() call in comparison
-                    for op in node.ops:
-                        if isinstance(op, (ast.Eq, ast.Is)):
-                            violation = RuleViolation(
-                                rule_id=TYPE_COMPARISON_RULE.rule_id,
-                                category=TYPE_COMPARISON_RULE.category,
-                                severity=TYPE_COMPARISON_RULE.severity,
-                                message=TYPE_COMPARISON_RULE.message_template,
-                                file_path=file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                fix_applicability=TYPE_COMPARISON_RULE.fix_applicability,
-                            )
-                            violations.append(violation)
+            if isinstance(node.left, ast.Call) and (
+                isinstance(node.left.func, ast.Name)
+                and node.left.func.id == "type"
+                and len(node.left.args) == 1
+            ):
+                # Found type() call in comparison
+                for op in node.ops:
+                    if isinstance(op, (ast.Eq, ast.Is)):
+                        violation = RuleViolation(
+                            rule_id=TYPE_COMPARISON_RULE.rule_id,
+                            category=TYPE_COMPARISON_RULE.category,
+                            severity=TYPE_COMPARISON_RULE.severity,
+                            message=TYPE_COMPARISON_RULE.message_template,
+                            file_path=file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            fix_applicability=TYPE_COMPARISON_RULE.fix_applicability,
+                        )
+                        violations.append(violation)
 
     return violations
 
@@ -312,7 +308,7 @@ class TypeChecker:
         self.file_ops = FileOperations()
         self.inference_engine = TypeInferenceEngine()
 
-    def analyze_file(self, file_path: Path) -> List[RuleViolation]:
+    def analyze_file(self, file_path: Path) -> list[RuleViolation]:
         """Analyze a file for type-related issues."""
         content = self.file_ops.read_file(file_path)
         if content is None:
@@ -331,7 +327,7 @@ class TypeChecker:
 
         return violations
 
-    def add_type_hints(self, file_path: Path, violations: List[RuleViolation]) -> Tuple[bool, int]:
+    def add_type_hints(self, file_path: Path, violations: list[RuleViolation]) -> tuple[bool, int]:
         """
         Add type hints based on violations.
 

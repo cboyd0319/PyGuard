@@ -23,9 +23,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set, Tuple
+import re
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -51,15 +50,15 @@ class XSSDetector(ast.NodeVisitor):
         self.file_path = file_path
         self.source_code = source_code
         self.source_lines = source_code.splitlines()
-        self.violations: List[RuleViolation] = []
-        self.imports: Set[str] = set()
-        self.from_imports: dict[str, Set[str]] = {}
+        self.violations: list[RuleViolation] = []
+        self.imports: set[str] = set()
+        self.from_imports: dict[str, set[str]] = {}
 
     def _get_call_name(self, node: ast.Call) -> str:
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -78,9 +77,7 @@ class XSSDetector(ast.NodeVisitor):
                 keyword in name
                 for keyword in ["request", "input", "user", "param", "query", "form", "data"]
             )
-        elif isinstance(node, ast.Subscript):
-            return self._is_user_input(node.value)
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, (ast.Subscript, ast.Attribute)):
             return self._is_user_input(node.value)
         return False
 
@@ -345,7 +342,7 @@ class XSSDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
+def detect_xss_patterns(content: str) -> list[tuple[str, int, str]]:
     """
     Detect XSS patterns using regex (complement to AST analysis).
 
@@ -381,7 +378,7 @@ def detect_xss_patterns(content: str) -> List[Tuple[str, int, str]]:
     return patterns
 
 
-def check_xss_vulnerabilities(file_path: Path) -> List[RuleViolation]:
+def check_xss_vulnerabilities(file_path: Path) -> list[RuleViolation]:
     """
     Check Python file for XSS vulnerabilities.
 
@@ -391,10 +388,10 @@ def check_xss_vulnerabilities(file_path: Path) -> List[RuleViolation]:
     Returns:
         List of XSS rule violations
     """
-    violations: List[RuleViolation] = []
+    violations: list[RuleViolation] = []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         # AST-based detection
@@ -408,7 +405,7 @@ def check_xss_vulnerabilities(file_path: Path) -> List[RuleViolation]:
 
         # Regex-based detection for patterns not easily caught by AST
         regex_patterns = detect_xss_patterns(content)
-        for pattern_name, line_num, line_content in regex_patterns:
+        for pattern_name, line_num, _line_content in regex_patterns:
             severity = RuleSeverity.HIGH
             message = ""
             fix_suggestion = ""

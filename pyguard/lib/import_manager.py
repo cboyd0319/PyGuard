@@ -7,7 +7,6 @@ Implements isort-like functionality natively with additional analysis capabiliti
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -27,14 +26,14 @@ class ImportAnalyzer:
         """Initialize import analyzer."""
         self.logger = PyGuardLogger()
 
-    def extract_imports(self, tree: ast.AST) -> Dict[str, List[ast.AST]]:
+    def extract_imports(self, tree: ast.AST) -> dict[str, list[ast.AST]]:
         """
         Extract all imports from AST.
 
         Returns:
             Dict with keys: 'stdlib', 'third_party', 'local', 'future'
         """
-        imports: Dict[str, List[ast.AST]] = {
+        imports: dict[str, list[ast.AST]] = {
             "future": [],
             "stdlib": [],
             "third_party": [],
@@ -50,7 +49,7 @@ class ImportAnalyzer:
 
         return imports
 
-    def find_unused_imports(self, tree: ast.AST, code: str) -> Set[str]:
+    def find_unused_imports(self, tree: ast.AST, code: str) -> set[str]:
         """Find imports that are never used."""
         imported_names = set()
         used_names = set()
@@ -100,9 +99,8 @@ class ImportAnalyzer:
         used_names = collector.names
 
         # Find unused
-        unused = imported_names - used_names
+        return imported_names - used_names
 
-        return unused
 
     def sort_imports(self, code: str) -> str:
         """
@@ -159,7 +157,7 @@ class ImportAnalyzer:
 
         return "\n".join(new_lines)
 
-    def _categorize_import(self, node: ast.AST, stdlib_modules: Set[str]) -> str:
+    def _categorize_import(self, node: ast.AST, stdlib_modules: set[str]) -> str:
         """Categorize an import as future, stdlib, third_party, or local."""
         module_name = None
 
@@ -173,14 +171,13 @@ class ImportAnalyzer:
 
         if module_name == "__future__":
             return "future"
-        elif module_name in stdlib_modules:
+        if module_name in stdlib_modules:
             return "stdlib"
-        elif module_name and module_name.startswith("."):
+        if module_name and module_name.startswith("."):
             return "local"
-        else:
-            return "third_party"
+        return "third_party"
 
-    def _get_stdlib_modules(self) -> Set[str]:
+    def _get_stdlib_modules(self) -> set[str]:
         """Get set of standard library module names."""
         # Common stdlib modules (subset for efficiency)
         return {
@@ -239,7 +236,7 @@ class ImportAnalyzer:
             "zipfile",
         }
 
-    def _get_import_line(self, node: ast.AST, lines: List[str]) -> str:
+    def _get_import_line(self, node: ast.AST, lines: list[str]) -> str:
         """Get the source line for an import node."""
         if hasattr(node, "lineno"):
             return str(lines[node.lineno - 1])
@@ -314,7 +311,7 @@ STAR_IMPORT_RULE = ImportRule(
 )
 
 
-def _detect_unused_imports(code: str, file_path: Path, tree: Optional[ast.AST] = None):
+def _detect_unused_imports(code: str, file_path: Path, tree: ast.AST | None = None):
     """Detect unused imports."""
     if tree is None:
         try:
@@ -361,7 +358,7 @@ def _detect_unused_imports(code: str, file_path: Path, tree: Optional[ast.AST] =
     return violations
 
 
-def _detect_star_imports(code: str, file_path: Path, tree: Optional[ast.AST] = None):
+def _detect_star_imports(code: str, file_path: Path, tree: ast.AST | None = None):
     """Detect star imports."""
     if tree is None:
         try:
@@ -403,7 +400,7 @@ class ImportManager:
         self.file_ops = FileOperations()
         self.analyzer = ImportAnalyzer()
 
-    def analyze_file(self, file_path: Path) -> List[RuleViolation]:
+    def analyze_file(self, file_path: Path) -> list[RuleViolation]:
         """Analyze a file for import issues."""
         content = self.file_ops.read_file(file_path)
         if content is None:
@@ -422,7 +419,7 @@ class ImportManager:
 
         return violations
 
-    def fix_imports(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_imports(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Fix import issues in a file.
 

@@ -8,7 +8,6 @@ Detects inefficient patterns and suggests improvements.
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 
 @dataclass
@@ -28,7 +27,7 @@ class PerformanceProfiler(ast.NodeVisitor):
 
     def __init__(self):
         """Initialize the performance profiler."""
-        self.issues: List[PerformanceIssue] = []
+        self.issues: list[PerformanceIssue] = []
         self.current_line = 0
 
     def visit_For(self, node: ast.For) -> None:
@@ -172,14 +171,13 @@ class PerformanceProfiler(ast.NodeVisitor):
 
     def _is_re_match_call(self, node: ast.Call) -> bool:
         """Check if call is re.match()."""
-        if isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                if node.func.value.id == "re" and node.func.attr in [
-                    "match",
-                    "search",
-                    "findall",
-                ]:
-                    return True
+        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+            if node.func.value.id == "re" and node.func.attr in [
+                "match",
+                "search",
+                "findall",
+            ]:
+                return True
         return False
 
     def _is_re_search_call(self, node: ast.Call) -> bool:
@@ -208,12 +206,9 @@ class PerformanceProfiler(ast.NodeVisitor):
             return True
 
         # Check for complex expressions
-        if len(list(ast.walk(node.elt))) > 10:
-            return True
+        return len(list(ast.walk(node.elt))) > 10
 
-        return False
-
-    def analyze_file(self, file_path: Path) -> List[PerformanceIssue]:
+    def analyze_file(self, file_path: Path) -> list[PerformanceIssue]:
         """
         Analyze a Python file for performance issues.
 
@@ -232,7 +227,7 @@ class PerformanceProfiler(ast.NodeVisitor):
         except SyntaxError:
             return []
 
-    def analyze_code(self, code: str) -> List[PerformanceIssue]:
+    def analyze_code(self, code: str) -> list[PerformanceIssue]:
         """
         Analyze Python code string for performance issues.
 
@@ -283,7 +278,7 @@ class PerformanceOptimizationSuggester:
             },
         }
 
-    def get_suggestion(self, pattern_name: str) -> Optional[dict]:
+    def get_suggestion(self, pattern_name: str) -> dict | None:
         """
         Get optimization suggestion for a pattern.
 
@@ -295,7 +290,7 @@ class PerformanceOptimizationSuggester:
         """
         return self.optimizations.get(pattern_name)
 
-    def list_patterns(self) -> List[str]:
+    def list_patterns(self) -> list[str]:
         """
         Get list of all optimization patterns.
 
@@ -305,7 +300,7 @@ class PerformanceOptimizationSuggester:
         return list(self.optimizations.keys())
 
 
-def analyze_performance(file_path: str) -> List[PerformanceIssue]:
+def analyze_performance(file_path: str) -> list[PerformanceIssue]:
     """
     Convenience function to analyze file performance.
 

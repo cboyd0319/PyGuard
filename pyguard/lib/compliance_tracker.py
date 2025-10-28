@@ -25,61 +25,61 @@ class ComplianceTracker:
             Dictionary of compliance annotations by type
         """
         annotations: dict[str, list[dict[str, Any]]] = {
-            'OWASP': [],
-            'CWE': [],
-            'NIST': [],
-            'PCI-DSS': [],
+            "OWASP": [],
+            "CWE": [],
+            "NIST": [],
+            "PCI-DSS": [],
         }
 
         try:
             # Find OWASP references
             owasp_result = subprocess.run(
                 [
-                    'rg',
-                    '--type',
-                    'py',
-                    '--line-number',
-                    r'OWASP[\s-]*(ASVS|Top\s*10)?[\s-]*[A-Z]?\d+',
-                    '--only-matching',
+                    "rg",
+                    "--type",
+                    "py",
+                    "--line-number",
+                    r"OWASP[\s-]*(ASVS|Top\s*10)?[\s-]*[A-Z]?\d+",
+                    "--only-matching",
                     path,
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=60,
             )
 
-            for line in owasp_result.stdout.strip().split('\n'):
+            for line in owasp_result.stdout.strip().split("\n"):
                 if line:
-                    parts = line.split(':', 2)
+                    parts = line.split(":", 2)
                     if len(parts) >= 3:
                         file_path, line_num, ref = parts
-                        annotations['OWASP'].append(
-                            {'file': file_path, 'line': int(line_num), 'reference': ref.strip()}
+                        annotations["OWASP"].append(
+                            {"file": file_path, "line": int(line_num), "reference": ref.strip()}
                         )
 
             # Find CWE references
             cwe_result = subprocess.run(
                 [
-                    'rg',
-                    '--type',
-                    'py',
-                    '--line-number',
-                    r'CWE-\d+',
-                    '--only-matching',
+                    "rg",
+                    "--type",
+                    "py",
+                    "--line-number",
+                    r"CWE-\d+",
+                    "--only-matching",
                     path,
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=60,
             )
 
-            for line in cwe_result.stdout.strip().split('\n'):
+            for line in cwe_result.stdout.strip().split("\n"):
                 if line:
-                    parts = line.split(':', 2)
+                    parts = line.split(":", 2)
                     if len(parts) >= 3:
                         file_path, line_num, ref = parts
-                        annotations['CWE'].append(
-                            {'file': file_path, 'line': int(line_num), 'reference': ref.strip()}
+                        annotations["CWE"].append(
+                            {"file": file_path, "line": int(line_num), "reference": ref.strip()}
                         )
 
         except subprocess.TimeoutExpired:
@@ -91,7 +91,7 @@ class ComplianceTracker:
         return annotations
 
     @staticmethod
-    def generate_compliance_report(path: str, output_path: str = 'compliance-report.md'):
+    def generate_compliance_report(path: str, output_path: str = "compliance-report.md"):
         """
         Generate compliance documentation from code annotations.
 
@@ -101,15 +101,15 @@ class ComplianceTracker:
         """
         annotations = ComplianceTracker.find_compliance_annotations(path)
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write("# PyGuard Compliance Report\n\n")
 
             f.write(f"## OWASP References ({len(annotations['OWASP'])})\n\n")
-            for ann in annotations['OWASP']:
+            for ann in annotations["OWASP"]:
                 f.write(f"- {ann['reference']} - `{ann['file']}:{ann['line']}`\n")
 
             f.write(f"\n## CWE References ({len(annotations['CWE'])})\n\n")
-            for ann in annotations['CWE']:
+            for ann in annotations["CWE"]:
                 f.write(f"- {ann['reference']} - `{ann['file']}:{ann['line']}`\n")
 
         print(f"Compliance report generated: {output_path}")

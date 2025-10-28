@@ -29,9 +29,8 @@ References:
 - OWASP Proactive Controls | https://owasp.org/www-project-proactive-controls/ | High | Security controls
 """
 
-import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier
@@ -56,9 +55,9 @@ class MissingAutoFixes:
         self.file_ops = FileOperations()
         self.safety_classifier = FixSafetyClassifier()
         self.allow_unsafe = allow_unsafe
-        self.fixes_applied: List[str] = []
+        self.fixes_applied: list[str] = []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply missing auto-fixes to a file.
 
@@ -263,7 +262,7 @@ class MissingAutoFixes:
         # Check if lxml is used in content
         has_lxml = "lxml" in content
 
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             # Fix lxml etree parser
             if has_lxml and "etree.parse" in line:
                 fixed_lines.append("# FIXED: XXE protection - disable external entities")
@@ -504,7 +503,7 @@ class MissingAutoFixes:
         lines = content.split("\n")
         fixed_lines = []
 
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             # Detect potential IDOR patterns
             if any(pattern in line for pattern in ["get_object(", "filter(id=", "query.get("]):
                 if "request." in line or "user_id" in line.lower():
@@ -814,7 +813,7 @@ class MissingAutoFixes:
 
         return "\n".join(fixed_lines)
 
-    def get_fix_statistics(self) -> Dict[str, int]:
+    def get_fix_statistics(self) -> dict[str, int]:
         """
         Get statistics about applied fixes.
 

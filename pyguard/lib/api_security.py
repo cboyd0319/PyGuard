@@ -37,7 +37,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set, Optional
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -56,13 +55,13 @@ class APISecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_flask = False
         self.has_fastapi = False
         self.has_django = False
-        self.route_functions: Set[str] = set()
-        self.model_classes: Set[str] = set()
-        self.defusedxml_imports: Set[str] = set()  # Track defusedxml imports
+        self.route_functions: set[str] = set()
+        self.model_classes: set[str] = set()
+        self.defusedxml_imports: set[str] = set()  # Track defusedxml imports
         self.has_hsts_header = False  # Track if HSTS header is set anywhere
         self.has_xframe_header = False  # Track if X-Frame-Options is set
         self.has_csp_header = False  # Track if CSP is set
@@ -71,7 +70,7 @@ class APISecurityVisitor(ast.NodeVisitor):
         """Track imports including defusedxml."""
         for alias in node.names:
             if "defusedxml" in alias.name:
-                import_name = alias.asname if alias.asname else alias.name.split('.')[-1]
+                import_name = alias.asname if alias.asname else alias.name.split(".")[-1]
                 self.defusedxml_imports.add(import_name)
         self.generic_visit(node)
 
@@ -96,9 +95,7 @@ class APISecurityVisitor(ast.NodeVisitor):
         # Check for ORM models
         base_names = [self._get_name(base) for base in node.bases]
         is_model = any(
-            name in ("Model", "Base", "BaseModel", "Document")
-            for name in base_names
-            if name
+            name in ("Model", "Base", "BaseModel", "Document") for name in base_names if name
         )
 
         if is_model:
@@ -141,14 +138,14 @@ class APISecurityVisitor(ast.NodeVisitor):
         self._check_missing_hsts_header(node)
         self._check_missing_xframe_options(node)
         self._check_missing_csp_header(node)
-        
+
         # Check for API key exposure in URL assignments
         for value in [node.value]:
             if isinstance(value, ast.JoinedStr):
                 # Check if this is a URL with sensitive parameters
                 url_pattern = False
                 has_sensitive_param = False
-                
+
                 for val in value.values:
                     if isinstance(val, ast.Constant) and isinstance(val.value, str):
                         # Check if this looks like a URL
@@ -157,10 +154,17 @@ class APISecurityVisitor(ast.NodeVisitor):
                         # Check for sensitive parameter names in URL
                         if any(
                             keyword in val.value.lower()
-                            for keyword in ("api_key=", "apikey=", "token=", "secret=", "password=", "auth=")
+                            for keyword in (
+                                "api_key=",
+                                "apikey=",
+                                "token=",
+                                "secret=",
+                                "password=",
+                                "auth=",
+                            )
                         ):
                             has_sensitive_param = True
-                
+
                 if url_pattern and has_sensitive_param:
                     self.violations.append(
                         RuleViolation(
@@ -177,7 +181,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -186,11 +190,11 @@ class APISecurityVisitor(ast.NodeVisitor):
         self._check_cors_misconfiguration(node)
         self._check_xxe_vulnerability(node)
         self._check_insecure_deserialization(node)
-        
+
         # Check for JWT algorithm confusion in module-level calls
         func_name = None
         is_jwt_call = False
-        
+
         if isinstance(node.func, ast.Attribute):
             func_name = node.func.attr
             # Check if it's jwt.encode() or jwt.decode()
@@ -204,7 +208,7 @@ class APISecurityVisitor(ast.NodeVisitor):
             # Check for algorithm parameter
             algo_value = None
             for keyword in node.keywords:
-                if keyword.arg == "algorithms" or keyword.arg == "algorithm":
+                if keyword.arg in {"algorithms", "algorithm"}:
                     if isinstance(keyword.value, ast.Constant):
                         algo_value = keyword.value.value
                     elif isinstance(keyword.value, ast.List):
@@ -213,8 +217,8 @@ class APISecurityVisitor(ast.NodeVisitor):
                                 elt_val = elt.value
                                 # Handle bytes
                                 if isinstance(elt_val, bytes):
-                                    elt_val = elt_val.decode('utf-8', errors='ignore')
-                                if elt_val == "HS256" or elt_val == "none":
+                                    elt_val = elt_val.decode("utf-8", errors="ignore")
+                                if elt_val in {"HS256", "none"}:
                                     algo_value = elt_val
                                     break
 
@@ -234,14 +238,14 @@ class APISecurityVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.SAFE,
                     )
                 )
-        
+
         self.generic_visit(node)
 
-    def _get_name(self, node: ast.expr) -> Optional[str]:
+    def _get_name(self, node: ast.expr) -> str | None:
         """Extract name from an AST node."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return node.attr
         return None
 
@@ -270,7 +274,7 @@ class APISecurityVisitor(ast.NodeVisitor):
         CWE-915: Improper Control of Dynamically-Managed Code Resources
         """
         has_meta_class = False
-        protected_fields: Set[str] = set()
+        protected_fields: set[str] = set()
 
         for item in node.body:
             # Check for __fields__ or __annotations__ (Pydantic)
@@ -433,16 +437,12 @@ class APISecurityVisitor(ast.NodeVisitor):
 
         # Only flag list/query endpoints
         is_list_endpoint = any(
-            keyword in node.name.lower()
-            for keyword in ("list", "all", "query", "search", "find")
+            keyword in node.name.lower() for keyword in ("list", "all", "query", "search", "find")
         )
-        
+
         # Don't flag if function has parameters suggesting single item (like user_id)
-        has_id_param = any(
-            arg.arg.endswith('_id') or arg.arg == 'id'
-            for arg in node.args.args
-        )
-        
+        has_id_param = any(arg.arg.endswith("_id") or arg.arg == "id" for arg in node.args.args)
+
         # If it has "get" and an ID parameter, it's probably a single-item endpoint
         if "get" in node.name.lower() and has_id_param:
             is_list_endpoint = False
@@ -515,7 +515,7 @@ class APISecurityVisitor(ast.NodeVisitor):
             if isinstance(item, ast.Call):
                 func_name = None
                 is_jwt_call = False
-                
+
                 if isinstance(item.func, ast.Attribute):
                     func_name = item.func.attr
                     # Check if it's jwt.encode() or jwt.decode()
@@ -529,24 +529,28 @@ class APISecurityVisitor(ast.NodeVisitor):
                     # Check for algorithm parameter
                     algo_value = None
                     for keyword in item.keywords:
-                        if keyword.arg == "algorithms" or keyword.arg == "algorithm":
+                        if keyword.arg in {"algorithms", "algorithm"}:
                             if isinstance(keyword.value, ast.Constant):
                                 algo_value = keyword.value.value
                                 # Handle bytes
                                 if isinstance(algo_value, bytes):
-                                    algo_value = algo_value.decode('utf-8', errors='ignore')
+                                    algo_value = algo_value.decode("utf-8", errors="ignore")
                             elif isinstance(keyword.value, ast.List):
                                 for elt in keyword.value.elts:
                                     if isinstance(elt, ast.Constant):
                                         elt_val = elt.value
                                         # Handle bytes
                                         if isinstance(elt_val, bytes):
-                                            elt_val = elt_val.decode('utf-8', errors='ignore')
-                                        if elt_val == "HS256" or elt_val == "none":
+                                            elt_val = elt_val.decode("utf-8", errors="ignore")
+                                        if elt_val in {"HS256", "none"}:
                                             algo_value = elt_val
                                             break
 
-                    if algo_value and isinstance(algo_value, str) and algo_value in ("HS256", "none"):
+                    if (
+                        algo_value
+                        and isinstance(algo_value, str)
+                        and algo_value in ("HS256", "none")
+                    ):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="API006",
@@ -576,7 +580,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                 # Check if it contains URL with 'api_key', 'token', etc. in query params
                 url_pattern = False
                 has_sensitive_param = False
-                
+
                 for value in item.values:
                     if isinstance(value, ast.Constant) and isinstance(value.value, str):
                         # Check if this looks like a URL
@@ -585,10 +589,17 @@ class APISecurityVisitor(ast.NodeVisitor):
                         # Check for sensitive parameter names in URL
                         if any(
                             keyword in value.value.lower()
-                            for keyword in ("api_key=", "apikey=", "token=", "secret=", "password=", "auth=")
+                            for keyword in (
+                                "api_key=",
+                                "apikey=",
+                                "token=",
+                                "secret=",
+                                "password=",
+                                "auth=",
+                            )
                         ):
                             has_sensitive_param = True
-                
+
                 if url_pattern and has_sensitive_param:
                     self.violations.append(
                         RuleViolation(
@@ -679,7 +690,11 @@ class APISecurityVisitor(ast.NodeVisitor):
                     # Check if security headers are configured
                     if isinstance(node.value, ast.Dict):
                         keys = [
-                            k.value if isinstance(k, ast.Constant) and isinstance(k.value, str) else None
+                            (
+                                k.value
+                                if isinstance(k, ast.Constant) and isinstance(k.value, str)
+                                else None
+                            )
                             for k in node.value.keys
                         ]
                         security_headers = {
@@ -689,7 +704,9 @@ class APISecurityVisitor(ast.NodeVisitor):
                             "X-Content-Type-Options",
                         }
                         configured_headers = {
-                            k for k in keys if k and isinstance(k, str) and any(h in k for h in security_headers)
+                            k
+                            for k in keys
+                            if k and isinstance(k, str) and any(h in k for h in security_headers)
                         }
 
                         if not configured_headers:
@@ -724,8 +741,7 @@ class APISecurityVisitor(ast.NodeVisitor):
 
         # Check for GraphQL-related function calls (Schema, GraphQLApp, etc.)
         if func_name and (
-            "graphql" in func_name.lower() or 
-            func_name in ("Schema", "GraphQLApp", "GraphQLView")
+            "graphql" in func_name.lower() or func_name in ("Schema", "GraphQLApp", "GraphQLView")
         ):
             # Check for introspection parameter
             for keyword in node.keywords:
@@ -748,7 +764,6 @@ class APISecurityVisitor(ast.NodeVisitor):
                                 )
                             )
 
-
     def _check_cors_misconfiguration(self, node: ast.Call) -> None:
         """Check for CORS wildcard origin misconfiguration."""
         # Check for CORS configuration with wildcard
@@ -756,10 +771,9 @@ class APISecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if "cors" in node.func.attr.lower() or "add_middleware" in node.func.attr.lower():
                 func_check = True
-        elif isinstance(node.func, ast.Name):
-            if "cors" in node.func.id.lower():
-                func_check = True
-        
+        elif isinstance(node.func, ast.Name) and "cors" in node.func.id.lower():
+            func_check = True
+
         if func_check:
             for keyword in node.keywords:
                 if keyword.arg in ("allow_origins", "origins", "allowed_origins"):
@@ -808,21 +822,21 @@ class APISecurityVisitor(ast.NodeVisitor):
             if func_name in ("parse", "fromstring", "XMLParser"):
                 # Check if using defusedxml
                 using_defusedxml = False
-                
+
                 if isinstance(node.func.value, ast.Name):
                     # Check if the module variable is from defusedxml
-                    if node.func.value.id in self.defusedxml_imports:
+                    if node.func.value.id in self.defusedxml_imports or "defusedxml" in node.func.value.id.lower():
                         using_defusedxml = True
-                    elif "defusedxml" in node.func.value.id.lower():
-                        using_defusedxml = True
-                    
+
                     # Check for XMLParser creation with resolve_entities=False
                     if func_name == "XMLParser":
                         for keyword in node.keywords:
-                            if keyword.arg == "resolve_entities":
-                                if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
-                                    return  # Safe - explicitly disabled
-                
+                            if keyword.arg == "resolve_entities" and (
+                                isinstance(keyword.value, ast.Constant)
+                                and keyword.value.value is False
+                            ):
+                                return  # Safe - explicitly disabled
+
                 # Only flag if NOT using defusedxml AND NOT using resolve_entities=False
                 if not using_defusedxml and func_name in ("parse", "fromstring"):
                     self.violations.append(
@@ -847,10 +861,10 @@ class APISecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             func_name = node.func.attr
             module_name = None
-            
+
             if isinstance(node.func.value, ast.Name):
                 module_name = node.func.value.id.lower()
-            
+
             if module_name in ("pickle", "marshal", "shelve", "dill") and func_name == "loads":
                 self.violations.append(
                     RuleViolation(
@@ -881,14 +895,14 @@ class APISecurityVisitor(ast.NodeVisitor):
                 if decorator.attr in ("get", "post", "route"):
                     has_route_decorator = True
                     break
-        
+
         if not has_route_decorator:
             return  # Not a route handler, skip
-        
+
         # Check for OAuth redirect without validation
         has_redirect = False
         validates_redirect = False
-        
+
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
                 if isinstance(child.func, ast.Attribute):
@@ -901,7 +915,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                         for arg in child.args:
                             if isinstance(arg, ast.Call):
                                 validates_redirect = True
-        
+
         # Check for validation patterns in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
@@ -911,10 +925,13 @@ class APISecurityVisitor(ast.NodeVisitor):
             elif isinstance(child, ast.If):
                 # Check for conditional validation
                 validates_redirect = True  # Assume if statement might be validating
-        
+
         if has_redirect and not validates_redirect:
             # Check if function name suggests OAuth
-            if any(keyword in node.name.lower() for keyword in ("oauth", "authorize", "callback", "login")):
+            if any(
+                keyword in node.name.lower()
+                for keyword in ("oauth", "authorize", "callback", "login")
+            ):
                 self.violations.append(
                     RuleViolation(
                         rule_id="API014",
@@ -935,7 +952,7 @@ class APISecurityVisitor(ast.NodeVisitor):
         """Check for API versioning security issues (API016)."""
         # Check if route has versioning in path
         uses_deprecated_version = False
-        
+
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                 # Check route path for version patterns
@@ -944,18 +961,22 @@ class APISecurityVisitor(ast.NodeVisitor):
                     if isinstance(route_arg, ast.Constant) and isinstance(route_arg.value, str):
                         route_path = route_arg.value.lower()
                         # Check for deprecated versions (v0, v1 are often deprecated)
-                        if '/v0/' in route_path or ('/v1/' in route_path and '/v2/' not in self.code):
+                        if "/v0/" in route_path or (
+                            "/v1/" in route_path and "/v2/" not in self.code
+                        ):
                             uses_deprecated_version = True
-        
+
         # Check function body for version validation
         has_version_check = False
         for child in ast.walk(node):
             if isinstance(child, ast.Compare):
                 for comp in child.comparators:
                     if isinstance(comp, ast.Constant):
-                        if isinstance(comp.value, str) and any(v in comp.value.lower() for v in ['v1', 'v2', 'v3', 'version']):
+                        if isinstance(comp.value, str) and any(
+                            v in comp.value.lower() for v in ["v1", "v2", "v3", "version"]
+                        ):
                             has_version_check = True
-        
+
         # Report if using deprecated version without checks
         if uses_deprecated_version and not has_version_check:
             self.violations.append(
@@ -982,9 +1003,18 @@ class APISecurityVisitor(ast.NodeVisitor):
                 # Check for requests library calls
                 if isinstance(child.func, ast.Attribute):
                     func_name = child.func.attr
-                    
+
                     # Check for requests.get(), urllib.request.urlopen(), httpx.get(), etc.
-                    if func_name in ('get', 'post', 'put', 'delete', 'patch', 'request', 'urlopen', 'urlretrieve'):
+                    if func_name in (
+                        "get",
+                        "post",
+                        "put",
+                        "delete",
+                        "patch",
+                        "request",
+                        "urlopen",
+                        "urlretrieve",
+                    ):
                         # Get the module name (could be nested like urllib.request)
                         module = None
                         if isinstance(child.func.value, ast.Name):
@@ -993,15 +1023,15 @@ class APISecurityVisitor(ast.NodeVisitor):
                             # Handle urllib.request.urlopen
                             if isinstance(child.func.value.value, ast.Name):
                                 module = child.func.value.value.id
-                        
-                        if module in ('requests', 'urllib', 'httpx'):
+
+                        if module in ("requests", "urllib", "httpx"):
                             # Check if URL is from user input
                             if child.args:
                                 url_arg = child.args[0]
                                 # Check for function parameters, request.args, etc.
                                 has_user_input = self._is_user_input(url_arg)
                                 has_url_validation = self._has_url_validation(node, url_arg)
-                                
+
                                 if has_user_input and not has_url_validation:
                                     self.violations.append(
                                         RuleViolation(
@@ -1029,15 +1059,20 @@ class APISecurityVisitor(ast.NodeVisitor):
                         # Check if HSTS is being set
                         if isinstance(target.slice, ast.Constant):
                             header_name = target.slice.value
-                            if isinstance(header_name, str) and "strict-transport-security" in header_name.lower():
+                            if (
+                                isinstance(header_name, str)
+                                and "strict-transport-security" in header_name.lower()
+                            ):
                                 self.has_hsts_header = True
                                 return  # HSTS is set
-        
+
         # Check app configuration for HSTS
         for target in node.targets:
             if isinstance(target, ast.Attribute):
                 if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    keys = [
+                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                    ]
                     if any(k and "hsts" in str(k).lower() for k in keys):
                         self.has_hsts_header = True
                         return  # HSTS configured
@@ -1052,15 +1087,20 @@ class APISecurityVisitor(ast.NodeVisitor):
                         # Check if X-Frame-Options is being set
                         if isinstance(target.slice, ast.Constant):
                             header_name = target.slice.value
-                            if isinstance(header_name, str) and "x-frame-options" in header_name.lower():
+                            if (
+                                isinstance(header_name, str)
+                                and "x-frame-options" in header_name.lower()
+                            ):
                                 self.has_xframe_header = True
                                 return  # X-Frame-Options is set
-        
+
         # Check app configuration for X-Frame-Options
         for target in node.targets:
             if isinstance(target, ast.Attribute):
                 if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    keys = [
+                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                    ]
                     if any(k and "frame" in str(k).lower() for k in keys):
                         self.has_xframe_header = True
                         return  # X-Frame-Options configured
@@ -1075,17 +1115,25 @@ class APISecurityVisitor(ast.NodeVisitor):
                         # Check if CSP is being set
                         if isinstance(target.slice, ast.Constant):
                             header_name = target.slice.value
-                            if isinstance(header_name, str) and "content-security-policy" in header_name.lower():
+                            if (
+                                isinstance(header_name, str)
+                                and "content-security-policy" in header_name.lower()
+                            ):
                                 self.has_csp_header = True
                                 return  # CSP is set
-        
+
         # Check app configuration for CSP (handle both hyphens and underscores)
         for target in node.targets:
             if isinstance(target, ast.Attribute):
                 if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [k.value if isinstance(k, ast.Constant) else None for k in node.value.keys]
+                    keys = [
+                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                    ]
                     # Check for CSP with hyphens or underscores
-                    if any(k and ("content-security-policy" in str(k).lower().replace('_', '-')) for k in keys):
+                    if any(
+                        k and ("content-security-policy" in str(k).lower().replace("_", "-"))
+                        for k in keys
+                    ):
                         self.has_csp_header = True
                         return  # CSP configured
 
@@ -1094,19 +1142,24 @@ class APISecurityVisitor(ast.NodeVisitor):
         # Check for common user input patterns
         if isinstance(node, ast.Name):
             var_name = node.id.lower()
-            return any(keyword in var_name for keyword in ['url', 'uri', 'link', 'redirect', 'request', 'input', 'param'])
-        elif isinstance(node, ast.Subscript):
+            return any(
+                keyword in var_name
+                for keyword in ["url", "uri", "link", "redirect", "request", "input", "param"]
+            )
+        if isinstance(node, ast.Subscript):
             # Check for request.args['url'], request.form['url'], etc.
             if isinstance(node.value, ast.Attribute):
-                if node.value.attr in ('args', 'form', 'json', 'data', 'params', 'query_params'):
+                if node.value.attr in ("args", "form", "json", "data", "params", "query_params"):
                     return True
         elif isinstance(node, ast.Call):
             # Check for request.get('url'), request.args.get('url'), etc.
             if isinstance(node.func, ast.Attribute):
-                if node.func.attr == 'get' and node.args:
+                if node.func.attr == "get" and node.args:
                     if isinstance(node.args[0], ast.Constant):
                         arg_name = str(node.args[0].value).lower()
-                        return any(keyword in arg_name for keyword in ['url', 'uri', 'link', 'redirect'])
+                        return any(
+                            keyword in arg_name for keyword in ["url", "uri", "link", "redirect"]
+                        )
         return False
 
     def _has_url_validation(self, func_node: ast.FunctionDef, url_node: ast.AST) -> bool:
@@ -1116,18 +1169,22 @@ class APISecurityVisitor(ast.NodeVisitor):
             # Check for urlparse, domain checking, whitelist validation
             if isinstance(child, ast.Call):
                 if isinstance(child.func, ast.Name):
-                    if child.func.id in ('urlparse', 'urlsplit'):
+                    if child.func.id in ("urlparse", "urlsplit"):
                         return True
-                elif isinstance(child.func, ast.Attribute):
-                    if child.func.attr in ('parse_url', 'validate_url', 'check_domain', 'is_safe_url'):
-                        return True
+                elif isinstance(child.func, ast.Attribute) and child.func.attr in (
+                    "parse_url",
+                    "validate_url",
+                    "check_domain",
+                    "is_safe_url",
+                ):
+                    return True
             # Check for 'in allowed_domains' or similar whitelist checks
             elif isinstance(child, ast.Compare):
                 for op in child.ops:
                     if isinstance(op, ast.In):
                         for comp in child.comparators:
                             if isinstance(comp, ast.Name):
-                                if 'allowed' in comp.id.lower() or 'whitelist' in comp.id.lower():
+                                if "allowed" in comp.id.lower() or "whitelist" in comp.id.lower():
                                     return True
         return False
 
@@ -1136,13 +1193,13 @@ class APISecurityVisitor(ast.NodeVisitor):
         # Only check if we're in a web framework context
         if not (self.has_flask or self.has_django or self.has_fastapi):
             return
-        
+
         # Check if we found any app initialization
         has_app_init = "Flask(" in self.code or "FastAPI(" in self.code or "Django" in self.code
-        
+
         if not has_app_init:
             return
-        
+
         # Report missing HSTS
         if not self.has_hsts_header:
             self.violations.append(
@@ -1160,7 +1217,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.SUGGESTED,
                 )
             )
-        
+
         # Report missing X-Frame-Options
         if not self.has_xframe_header:
             self.violations.append(
@@ -1178,7 +1235,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     fix_applicability=FixApplicability.SUGGESTED,
                 )
             )
-        
+
         # Report missing CSP
         if not self.has_csp_header:
             self.violations.append(
@@ -1202,13 +1259,13 @@ class APISecurityVisitor(ast.NodeVisitor):
         # Check if this is a state-changing route (POST, PUT, DELETE, PATCH)
         is_state_changing = False
         has_csrf_check = False
-        
+
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
                 method = decorator.func.attr
                 if method in ("post", "put", "delete", "patch"):
                     is_state_changing = True
-        
+
         if is_state_changing:
             # Check for CSRF validation
             for child in ast.walk(node):
@@ -1220,7 +1277,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     if "csrf" in child.attr.lower():
                         has_csrf_check = True
                         break
-            
+
             if not has_csrf_check:
                 self.violations.append(
                     RuleViolation(
@@ -1239,7 +1296,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                 )
 
 
-def analyze_api_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_api_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze code for API security vulnerabilities.
 

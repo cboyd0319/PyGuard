@@ -15,7 +15,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -34,7 +33,7 @@ class DjangoVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.is_django_file = self._detect_django_imports(code)
 
     def _detect_django_imports(self, code: str) -> bool:
@@ -75,12 +74,11 @@ class DjangoVisitor(ast.NodeVisitor):
             # This is checked in visit_ClassDef
 
             # DJ012: Model .objects.get() without exception handling
-            if node.func.attr == "get":
-                if isinstance(node.func.value, ast.Attribute):
-                    if node.func.value.attr == "objects":
-                        # Check if wrapped in try-except
-                        # This requires parent context, handled in checker
-                        pass
+            if node.func.attr == "get" and isinstance(node.func.value, ast.Attribute):
+                if node.func.value.attr == "objects":
+                    # Check if wrapped in try-except
+                    # This requires parent context, handled in checker
+                    pass
 
         # DJ003: Django render() without csrf_token
         if isinstance(node.func, ast.Name) and node.func.id == "render":
@@ -231,7 +229,7 @@ class DjangoRulesChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for Django-specific issues.
 

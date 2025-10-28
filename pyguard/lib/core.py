@@ -4,14 +4,14 @@ Core utilities for PyGuard.
 Provides logging, backup management, diff generation, and file operations.
 """
 
+from datetime import datetime
 import difflib
 import json
 import logging
-import shutil
-import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+import shutil
+from typing import Any
+import uuid
 
 
 class PyGuardLogger:
@@ -25,7 +25,7 @@ class PyGuardLogger:
     - Severity-based filtering
     """
 
-    def __init__(self, log_file: Optional[str] = None, correlation_id: Optional[str] = None):
+    def __init__(self, log_file: str | None = None, correlation_id: str | None = None):
         """
         Initialize the logger.
 
@@ -45,7 +45,7 @@ class PyGuardLogger:
         self.correlation_id = correlation_id or str(uuid.uuid4())
 
         # Track metrics
-        self.metrics: Dict[str, Any] = {
+        self.metrics: dict[str, Any] = {
             "start_time": datetime.now(),
             "files_processed": 0,
             "issues_found": 0,
@@ -65,9 +65,9 @@ class PyGuardLogger:
         level: str,
         message: str,
         category: str = "General",
-        details: Optional[Dict[str, Any]] = None,
-        file_path: Optional[str] = None,
-        correlation_id: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        file_path: str | None = None,
+        correlation_id: str | None = None,
     ) -> None:
         """
         Log a structured message with correlation tracking.
@@ -138,7 +138,7 @@ class PyGuardLogger:
         """Track number of fixes applied."""
         self.metrics["fixes_applied"] += count
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get current metrics.
 
@@ -176,7 +176,7 @@ class BackupManager:
         self.backup_dir.mkdir(exist_ok=True)
         self.logger = PyGuardLogger()
 
-    def create_backup(self, file_path: Union[str, Path]) -> Optional[Path]:
+    def create_backup(self, file_path: str | Path) -> Path | None:
         """
         Create a backup of the specified file.
 
@@ -211,13 +211,13 @@ class BackupManager:
 
         except Exception as e:
             self.logger.error(
-                f"Failed to create backup: {str(e)}",
+                f"Failed to create backup: {e!s}",
                 category="Backup",
                 file_path=str(file_path),
             )
             return None
 
-    def restore_backup(self, backup_path: Union[str, Path], target_path: Union[str, Path]) -> bool:
+    def restore_backup(self, backup_path: str | Path, target_path: str | Path) -> bool:
         """
         Restore a file from backup.
 
@@ -248,12 +248,12 @@ class BackupManager:
 
         except Exception as e:
             self.logger.error(
-                f"Failed to restore backup: {str(e)}",
+                f"Failed to restore backup: {e!s}",
                 category="Backup",
             )
             return False
 
-    def list_backups(self, pattern: str = "*.bak") -> List[Path]:
+    def list_backups(self, pattern: str = "*.bak") -> list[Path]:
         """
         List all backup files.
 
@@ -275,7 +275,7 @@ class BackupManager:
         backups = self.list_backups()
 
         # Group by original filename
-        backup_groups: Dict[str, List[Path]] = {}
+        backup_groups: dict[str, list[Path]] = {}
         for backup in backups:
             base_name = backup.name.split(".")[0]
             backup_groups.setdefault(base_name, []).append(backup)
@@ -293,7 +293,7 @@ class BackupManager:
                         )
                     except Exception as e:
                         self.logger.error(
-                            f"Failed to remove backup: {str(e)}",
+                            f"Failed to remove backup: {e!s}",
                             category="Backup",
                         )
 
@@ -354,7 +354,7 @@ class DiffGenerator:
         modified_lines = modified_content.splitlines()
 
         differ = difflib.HtmlDiff()
-        html_diff = differ.make_table(
+        return differ.make_table(
             original_lines,
             modified_lines,
             fromdesc="Original",
@@ -363,7 +363,6 @@ class DiffGenerator:
             numlines=3,
         )
 
-        return html_diff
 
 
 class FileOperations:
@@ -373,7 +372,7 @@ class FileOperations:
         """Initialize file operations."""
         self.logger = PyGuardLogger()
 
-    def read_file(self, file_path: Union[str, Path]) -> Optional[str]:
+    def read_file(self, file_path: str | Path) -> str | None:
         """
         Read file content safely.
 
@@ -395,20 +394,20 @@ class FileOperations:
                     return f.read()
             except Exception as e:
                 self.logger.error(
-                    f"Failed to read file: {str(e)}",
+                    f"Failed to read file: {e!s}",
                     category="FileOps",
                     file_path=str(file_path),
                 )
                 return None
         except Exception as e:
             self.logger.error(
-                f"Failed to read file: {str(e)}",
+                f"Failed to read file: {e!s}",
                 category="FileOps",
                 file_path=str(file_path),
             )
             return None
 
-    def write_file(self, file_path: Union[str, Path], content: str) -> bool:
+    def write_file(self, file_path: str | Path, content: str) -> bool:
         """
         Write content to file safely.
 
@@ -432,7 +431,7 @@ class FileOperations:
 
         except Exception as e:
             self.logger.error(
-                f"Failed to write file: {str(e)}",
+                f"Failed to write file: {e!s}",
                 category="FileOps",
                 file_path=str(file_path),
             )
@@ -440,9 +439,9 @@ class FileOperations:
 
     def find_python_files(
         self,
-        directory: Union[str, Path],
-        exclude_patterns: Optional[List[str]] = None,
-    ) -> List[Path]:
+        directory: str | Path,
+        exclude_patterns: list[str] | None = None,
+    ) -> list[Path]:
         """
         Find all Python files in a directory.
 

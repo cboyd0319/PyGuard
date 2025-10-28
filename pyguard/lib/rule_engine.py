@@ -10,7 +10,7 @@ import ast
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -67,14 +67,14 @@ class RuleViolation:
     file_path: Path
     line_number: int
     column: int = 0
-    end_line_number: Optional[int] = None
-    end_column: Optional[int] = None
+    end_line_number: int | None = None
+    end_column: int | None = None
     code_snippet: str = ""
     fix_suggestion: str = ""
     fix_applicability: FixApplicability = FixApplicability.NONE
-    fix_data: Optional[Dict[str, Any]] = None
-    owasp_id: Optional[str] = None
-    cwe_id: Optional[str] = None
+    fix_data: dict[str, Any] | None = None
+    owasp_id: str | None = None
+    cwe_id: str | None = None
     source_tool: str = "pyguard"  # Which tool/module detected this
 
 
@@ -91,14 +91,14 @@ class Rule:
     explanation: str = ""  # Why this rule matters
     fix_applicability: FixApplicability = FixApplicability.NONE
     enabled: bool = True
-    tags: Set[str] = field(default_factory=set)
-    references: List[str] = field(default_factory=list)  # URLs to documentation
-    owasp_mapping: Optional[str] = None
-    cwe_mapping: Optional[str] = None
+    tags: set[str] = field(default_factory=set)
+    references: list[str] = field(default_factory=list)  # URLs to documentation
+    owasp_mapping: str | None = None
+    cwe_mapping: str | None = None
 
     def detect(
-        self, code: str, file_path: Path, tree: Optional[ast.AST] = None
-    ) -> List[RuleViolation]:
+        self, code: str, file_path: Path, tree: ast.AST | None = None
+    ) -> list[RuleViolation]:
         """
         Detect violations of this rule in code.
 
@@ -112,7 +112,7 @@ class Rule:
         """
         raise NotImplementedError("Subclasses must implement detect()")
 
-    def fix(self, code: str, violation: RuleViolation) -> Optional[str]:
+    def fix(self, code: str, violation: RuleViolation) -> str | None:
         """
         Apply automatic fix for a violation.
 
@@ -133,12 +133,12 @@ class Rule:
             return self.message_template
 
     @property
-    def cwe_id(self) -> Optional[str]:
+    def cwe_id(self) -> str | None:
         """Alias for cwe_mapping for backward compatibility."""
         return self.cwe_mapping
 
     @property
-    def owasp_category(self) -> Optional[str]:
+    def owasp_category(self) -> str | None:
         """Alias for owasp_mapping for backward compatibility."""
         return self.owasp_mapping
 
@@ -148,8 +148,8 @@ class RuleRegistry:
 
     def __init__(self):
         """Initialize rule registry."""
-        self.rules: Dict[str, Rule] = {}
-        self.rules_by_category: Dict[RuleCategory, List[Rule]] = {}
+        self.rules: dict[str, Rule] = {}
+        self.rules_by_category: dict[RuleCategory, list[Rule]] = {}
         self.logger = PyGuardLogger()
 
     def register(self, rule: Rule) -> None:
@@ -196,23 +196,23 @@ class RuleRegistry:
 
         return True
 
-    def get_rule(self, rule_id: str) -> Optional[Rule]:
+    def get_rule(self, rule_id: str) -> Rule | None:
         """Get a rule by ID."""
         return self.rules.get(rule_id)
 
-    def get_all_rules(self) -> List[Rule]:
+    def get_all_rules(self) -> list[Rule]:
         """Get all registered rules."""
         return list(self.rules.values())
 
-    def get_enabled_rules(self) -> List[Rule]:
+    def get_enabled_rules(self) -> list[Rule]:
         """Get all enabled rules."""
         return [rule for rule in self.rules.values() if rule.enabled]
 
-    def get_rules_by_category(self, category: RuleCategory) -> List[Rule]:
+    def get_rules_by_category(self, category: RuleCategory) -> list[Rule]:
         """Get all rules in a category."""
         return self.rules_by_category.get(category, [])
 
-    def get_fixable_rules(self) -> List[Rule]:
+    def get_fixable_rules(self) -> list[Rule]:
         """Get all rules that have auto-fixes available."""
         return [
             rule
@@ -250,7 +250,7 @@ class RuleRegistry:
             rule.enabled = False
         return len(rules)
 
-    def filter_by_severity(self, rules: List[Rule], min_severity: RuleSeverity) -> List[Rule]:
+    def filter_by_severity(self, rules: list[Rule], min_severity: RuleSeverity) -> list[Rule]:
         """Filter rules by minimum severity level."""
         severity_order = {
             RuleSeverity.INFO: 0,
@@ -262,7 +262,7 @@ class RuleRegistry:
         min_level = severity_order[min_severity]
         return [rule for rule in rules if severity_order[rule.severity] >= min_level]
 
-    def filter_by_tags(self, rules: List[Rule], tags: Set[str]) -> List[Rule]:
+    def filter_by_tags(self, rules: list[Rule], tags: set[str]) -> list[Rule]:
         """Filter rules by tags (returns rules that have any of the provided tags)."""
         return [rule for rule in rules if rule.tags & tags]
 
@@ -278,9 +278,9 @@ class RuleExecutor:
     def analyze_file(
         self,
         file_path: Path,
-        rules: Optional[List[Rule]] = None,
-        tree: Optional[ast.AST] = None,
-    ) -> List[RuleViolation]:
+        rules: list[Rule] | None = None,
+        tree: ast.AST | None = None,
+    ) -> list[RuleViolation]:
         """
         Analyze a file with specified rules.
 
@@ -322,8 +322,8 @@ class RuleExecutor:
         return all_violations
 
     def apply_fixes(
-        self, code: str, violations: List[RuleViolation]
-    ) -> Tuple[str, List[RuleViolation]]:
+        self, code: str, violations: list[RuleViolation]
+    ) -> tuple[str, list[RuleViolation]]:
         """
         Apply fixes for violations.
 
@@ -375,7 +375,7 @@ def register_rule(rule: Rule) -> None:
     _global_registry.register(rule)
 
 
-def register_rules(rules: List[Rule]) -> None:
+def register_rules(rules: list[Rule]) -> None:
     """Register multiple rules with the global registry."""
     for rule in rules:
         _global_registry.register(rule)

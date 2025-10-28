@@ -25,9 +25,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -47,7 +46,7 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_flask_import = False
         self.has_fastapi_import = False
         self.has_csrf_protection = False
@@ -228,7 +227,7 @@ class FlaskSecurityChecker:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for Flask/FastAPI security vulnerabilities.
 
@@ -275,7 +274,7 @@ class FlaskSecurityChecker:
             self.logger.error(f"Error checking Flask security: {e}", file_path=str(file_path))
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply automatic security fixes to Flask/FastAPI code.
 

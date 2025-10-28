@@ -8,11 +8,11 @@ References:
 - Google SRE | https://sre.google | Medium | Scalability and performance patterns
 """
 
+from collections.abc import Callable
 import concurrent.futures
-import multiprocessing
 from dataclasses import dataclass
+import multiprocessing
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -23,8 +23,8 @@ class ProcessingResult:
 
     file_path: Path
     success: bool
-    fixes_applied: List[str]
-    error: Optional[str] = None
+    fixes_applied: list[str]
+    error: str | None = None
     processing_time_ms: float = 0.0
 
 
@@ -36,7 +36,7 @@ class ParallelProcessor:
     Provides progress tracking and error handling.
     """
 
-    def __init__(self, max_workers: Optional[int] = None):
+    def __init__(self, max_workers: int | None = None):
         """
         Initialize parallel processor.
 
@@ -52,10 +52,10 @@ class ParallelProcessor:
 
     def process_files(
         self,
-        files: List[Path],
-        processor_func: Callable[[Path], Tuple[bool, List[str]]],
+        files: list[Path],
+        processor_func: Callable[[Path], tuple[bool, list[str]]],
         show_progress: bool = True,
-    ) -> List[ProcessingResult]:
+    ) -> list[ProcessingResult]:
         """
         Process multiple files in parallel.
 
@@ -96,7 +96,7 @@ class ParallelProcessor:
                         )
 
                 except Exception as e:
-                    error_msg = f"Error processing {file_path}: {str(e)}"
+                    error_msg = f"Error processing {file_path}: {e!s}"
                     self.logger.error(error_msg, category="Parallel")
                     results.append(
                         ProcessingResult(
@@ -117,7 +117,7 @@ class ParallelProcessor:
         return results
 
     def _process_single_file(
-        self, file_path: Path, processor_func: Callable[[Path], Tuple[bool, List[str]]]
+        self, file_path: Path, processor_func: Callable[[Path], tuple[bool, list[str]]]
     ) -> ProcessingResult:
         """
         Process a single file with timing.
@@ -179,8 +179,8 @@ class BatchProcessor:
         self.parallel_processor = ParallelProcessor()
 
     def process_in_batches(
-        self, files: List[Path], processor_func: Callable[[Path], Tuple[bool, List[str]]]
-    ) -> List[ProcessingResult]:
+        self, files: list[Path], processor_func: Callable[[Path], tuple[bool, list[str]]]
+    ) -> list[ProcessingResult]:
         """
         Process files in batches to manage memory usage.
 

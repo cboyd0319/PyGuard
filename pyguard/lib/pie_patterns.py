@@ -10,9 +10,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -31,7 +30,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
 
     def visit_Pass(self, node: ast.Pass) -> None:
         """Detect unnecessary pass statements (PIE790)."""
@@ -88,7 +87,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare) -> None:
         """Detect comparison patterns that should use 'is' (PIE792, PIE793)."""
         # PIE792: Prefer 'is False' over '== False'
-        for i, (op, comparator) in enumerate(zip(node.ops, node.comparators)):
+        for _i, (op, comparator) in enumerate(zip(node.ops, node.comparators, strict=False)):
             if isinstance(op, ast.Eq) and isinstance(comparator, ast.Constant):
                 if comparator.value is False:
                     self.violations.append(
@@ -221,20 +220,19 @@ class PIEPatternVisitor(ast.NodeVisitor):
                 )
 
         # PIE801: Lambda that just returns a function call
-        if isinstance(node.func, ast.Lambda):
-            if isinstance(node.func.body, ast.Call):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="PIE801",
-                        message="Lambda that just calls a function - use the function directly",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.SIMPLIFICATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.func, ast.Lambda) and isinstance(node.func.body, ast.Call):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="PIE801",
+                    message="Lambda that just calls a function - use the function directly",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # PIE802: Unnecessary iteration with list()
         if isinstance(node.func, ast.Name) and node.func.id == "list":
@@ -304,7 +302,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
         """Detect if-related code smells (PIE803, PIE806, PIE807, PIE808)."""
         # PIE803: Prefer '==' over 'is' for literals
         if isinstance(node.test, ast.Compare):
-            for op, comparator in zip(node.test.ops, node.test.comparators):
+            for op, comparator in zip(node.test.ops, node.test.comparators, strict=False):
                 if isinstance(op, (ast.Is, ast.IsNot)):
                     if isinstance(comparator, ast.Constant):
                         # Check if it's a literal (not None, True, False)
@@ -381,22 +379,21 @@ class PIEPatternVisitor(ast.NodeVisitor):
         """Detect for-loop related code smells (PIE805, PIE811)."""
         # PIE805: Prefer 'next()' over for loop with single iteration
         # Check if loop has only one iteration (has break as first statement)
-        if len(node.body) > 0:
-            if isinstance(node.body[0], ast.Break) or (
-                len(node.body) == 2 and isinstance(node.body[1], ast.Break)
-            ):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="PIE805",
-                        message="Prefer 'next()' over for loop that only gets first item",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.SIMPLIFICATION,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if len(node.body) > 0 and (isinstance(node.body[0], ast.Break) or (
+            len(node.body) == 2 and isinstance(node.body[1], ast.Break)
+        )):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="PIE805",
+                    message="Prefer 'next()' over for loop that only gets first item",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # PIE811: Redundant tuple unpacking
         # Check if target is a tuple and there's immediate re-packing
@@ -581,7 +578,7 @@ class PIEPatternChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for code smells and unnecessary patterns.
 
@@ -608,7 +605,7 @@ class PIEPatternChecker:
             self.logger.error(f"Error checking file: {e}", file_path=str(file_path))
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, int]:
+    def fix_file(self, file_path: Path) -> tuple[bool, int]:
         """
         Automatically fix code smells in a file.
 

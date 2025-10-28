@@ -4,11 +4,12 @@ This module provides file system watching capabilities for PyGuard,
 enabling real-time analysis when files change.
 """
 
-import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Set
+import time
+
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -16,7 +17,7 @@ from pyguard.lib.core import PyGuardLogger
 class PyGuardWatcher(FileSystemEventHandler):
     """File system event handler for PyGuard watch mode."""
 
-    def __init__(self, callback: Callable[[Path], None], patterns: Set[str] | None = None):
+    def __init__(self, callback: Callable[[Path], None], patterns: set[str] | None = None):
         """Initialize the watcher.
 
         Args:
@@ -27,7 +28,7 @@ class PyGuardWatcher(FileSystemEventHandler):
         self.callback = callback
         self.patterns = patterns or {"*.py"}
         self.logger = PyGuardLogger()
-        self._processing: Set[str] = set()
+        self._processing: set[str] = set()
 
     def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events.
@@ -77,9 +78,7 @@ class PyGuardWatcher(FileSystemEventHandler):
 
         # Check file extension matches patterns
         for pattern in self.patterns:
-            if pattern == "*.py" and path.suffix == ".py":
-                return True
-            elif path.match(pattern):
+            if (pattern == "*.py" and path.suffix == ".py") or path.match(pattern):
                 return True
 
         return False

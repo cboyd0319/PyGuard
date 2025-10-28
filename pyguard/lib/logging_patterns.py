@@ -9,7 +9,6 @@ Part of PyGuard's comprehensive linter replacement initiative.
 
 import ast
 from dataclasses import dataclass
-from typing import List, Optional, Set
 
 
 @dataclass
@@ -22,7 +21,7 @@ class LoggingIssue:
     message: str
     severity: str = "MEDIUM"
     category: str = "logging"
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
 
 
 class LoggingPatternVisitor(ast.NodeVisitor):
@@ -38,8 +37,8 @@ class LoggingPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
-        self.issues: List[LoggingIssue] = []
-        self.logger_names: Set[str] = {"logging", "logger", "log", "LOGGER", "LOG"}
+        self.issues: list[LoggingIssue] = []
+        self.logger_names: set[str] = {"logging", "logger", "log", "LOGGER", "LOG"}
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for logging-related calls."""
@@ -199,7 +198,7 @@ class LoggingChecker:
     def __init__(self):
         self.visitor = LoggingPatternVisitor()
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[LoggingIssue]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[LoggingIssue]:
         """
         Check Python code for logging anti-patterns.
 
@@ -217,12 +216,12 @@ class LoggingChecker:
         except SyntaxError:
             return []
 
-    def get_issues(self) -> List[LoggingIssue]:
+    def get_issues(self) -> list[LoggingIssue]:
         """Get all detected issues."""
         return self.visitor.issues
 
 
-def check_file(filepath: str) -> List[LoggingIssue]:
+def check_file(filepath: str) -> list[LoggingIssue]:
     """
     Check a Python file for logging anti-patterns.
 

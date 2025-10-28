@@ -35,9 +35,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Optional
+import re
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -48,113 +47,82 @@ from pyguard.lib.rule_engine import (
     register_rules,
 )
 
-
 # Regex patterns for PII detection
 # SSN pattern - must have dashes or spaces to avoid false positives on random numbers
 SSN_PATTERN = re.compile(
-    r'\b\d{3}[-\s]\d{2}[-\s]\d{4}\b'  # US SSN: 123-45-6789 or 123 45 6789 (must have separators)
+    r"\b\d{3}[-\s]\d{2}[-\s]\d{4}\b"  # US SSN: 123-45-6789 or 123 45 6789 (must have separators)
 )
 
 # Credit card pattern - 13-19 digits with optional separators
 # Matches: 1234567890123456, 1234-5678-9012-3456, 1234 5678 9012 3456
 CREDIT_CARD_PATTERN = re.compile(
-    r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{1,7}\b'  # 13-19 digit cards
+    r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{1,7}\b"  # 13-19 digit cards
 )
 
 # IBAN pattern (international bank account)
-IBAN_PATTERN = re.compile(
-    r'\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b'  # IBAN: GB29NWBK60161331926819
-)
+IBAN_PATTERN = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b")  # IBAN: GB29NWBK60161331926819
 
 # SWIFT/BIC code pattern
-SWIFT_PATTERN = re.compile(
-    r'\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b'  # SWIFT: BNPAFRPPXXX
-)
+SWIFT_PATTERN = re.compile(r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b")  # SWIFT: BNPAFRPPXXX
 
 # Passport number patterns (common formats)
-PASSPORT_PATTERN = re.compile(
-    r'\b[A-Z0-9]{6,9}\b'  # Generic passport: A12345678
-)
+PASSPORT_PATTERN = re.compile(r"\b[A-Z0-9]{6,9}\b")  # Generic passport: A12345678
 
 # US Driver's License patterns (varies by state)
-DRIVERS_LICENSE_PATTERN = re.compile(
-    r'\b[A-Z]{1,2}\d{5,8}\b'  # Generic DL format
-)
+DRIVERS_LICENSE_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{5,8}\b")  # Generic DL format
 
 # Health insurance numbers (US)
-HEALTH_INSURANCE_PATTERN = re.compile(
-    r'\b[A-Z0-9]{9,12}\b'  # Generic health insurance ID
-)
+HEALTH_INSURANCE_PATTERN = re.compile(r"\b[A-Z0-9]{9,12}\b")  # Generic health insurance ID
 
 # IP address pattern (IPv4 and IPv6)
-IPV4_PATTERN = re.compile(
-    r'\b(?:\d{1,3}\.){3}\d{1,3}\b'  # IPv4: 192.168.1.1
-)
+IPV4_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")  # IPv4: 192.168.1.1
 
 IPV6_PATTERN = re.compile(
-    r'\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b'  # IPv6: 2001:0db8:85a3::8a2e:0370:7334
+    r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"  # IPv6: 2001:0db8:85a3::8a2e:0370:7334
 )
 
 # MAC address pattern
 MAC_ADDRESS_PATTERN = re.compile(
-    r'\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b'  # MAC: 00:1A:2B:3C:4D:5E
+    r"\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"  # MAC: 00:1A:2B:3C:4D:5E
 )
 
 # Email address pattern
-EMAIL_PATTERN = re.compile(
-    r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-)
+EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
 # Phone number patterns (E.164 international format) - must have separators to avoid false positives
 # Matches: 555-123-4567, +1-555-123-4567, (555) 123-4567
 PHONE_PATTERN = re.compile(
-    r'\b\+?\d{1,4}?[\s-]?\(?\d{2,4}\)?[\s-]\d{3,4}[\s-]\d{4}\b'  # Requires at least one separator
+    r"\b\+?\d{1,4}?[\s-]?\(?\d{2,4}\)?[\s-]\d{3,4}[\s-]\d{4}\b"  # Requires at least one separator
 )
 
 # GPS coordinates
-GPS_PATTERN = re.compile(
-    r'\b-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+\b'  # Lat,Long: 40.7128,-74.0060
-)
+GPS_PATTERN = re.compile(r"\b-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+\b")  # Lat,Long: 40.7128,-74.0060
 
 # Date of birth pattern (common formats)
-DOB_PATTERN = re.compile(
-    r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b'  # DOB: 01/15/1990, 1-15-90
-)
+DOB_PATTERN = re.compile(r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b")  # DOB: 01/15/1990, 1-15-90
 
 # Financial account number (generic pattern)
 FINANCIAL_ACCOUNT_PATTERN = re.compile(
-    r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4,12}\b'  # Account: 1234-5678-9012345
+    r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4,12}\b"  # Account: 1234-5678-9012345
 )
 
 # Tax ID / EIN pattern (US)
-TAX_ID_PATTERN = re.compile(
-    r'\b\d{2}[-\s]?\d{7}\b'  # EIN: 12-3456789
-)
+TAX_ID_PATTERN = re.compile(r"\b\d{2}[-\s]?\d{7}\b")  # EIN: 12-3456789
 
 # Medical record number pattern
-MEDICAL_RECORD_PATTERN = re.compile(
-    r'\bMRN[-\s]?\d{6,10}\b'  # MRN-12345678
-)
+MEDICAL_RECORD_PATTERN = re.compile(r"\bMRN[-\s]?\d{6,10}\b")  # MRN-12345678
 
 # IMEI device identifier
-IMEI_PATTERN = re.compile(
-    r'\b\d{15}\b'  # IMEI: 15 digits exactly
-)
+IMEI_PATTERN = re.compile(r"\b\d{15}\b")  # IMEI: 15 digits exactly
 
 # VIN (Vehicle Identification Number)
-VIN_PATTERN = re.compile(
-    r'\b[A-HJ-NPR-Z0-9]{17}\b'  # VIN: 17 characters (excludes I, O, Q)
-)
+VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")  # VIN: 17 characters (excludes I, O, Q)
 
 # Insurance policy number pattern
-INSURANCE_POLICY_PATTERN = re.compile(
-    r'\b[A-Z]{2,4}\d{6,12}\b'  # Policy: ABC123456789
-)
+INSURANCE_POLICY_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{6,12}\b")  # Policy: ABC123456789
 
 # National ID patterns (common formats)
-NATIONAL_ID_PATTERN = re.compile(
-    r'\b[A-Z]{1,2}\d{6,10}[A-Z]?\b'  # Generic national ID format
-)
+NATIONAL_ID_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{6,10}[A-Z]?\b")  # Generic national ID format
 
 # Biometric data reference keywords
 BIOMETRIC_KEYWORDS = ["fingerprint", "retina", "iris", "facial", "biometric", "palm"]
@@ -163,18 +131,14 @@ BIOMETRIC_KEYWORDS = ["fingerprint", "retina", "iris", "facial", "biometric", "p
 GENETIC_KEYWORDS = ["dna", "genetic", "genome", "chromosome", "mutation"]
 
 # Serial number pattern (devices, equipment)
-SERIAL_NUMBER_PATTERN = re.compile(
-    r'\b[A-Z]{2,4}\d{8,12}[A-Z]?\b'  # Serial: ABC12345678
-)
+SERIAL_NUMBER_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{8,12}[A-Z]?\b")  # Serial: ABC12345678
 
 # Full name pattern (First Last format)
-FULL_NAME_PATTERN = re.compile(
-    r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b'  # Name: John Doe
-)
+FULL_NAME_PATTERN = re.compile(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b")  # Name: John Doe
 
 # Street address pattern
 ADDRESS_PATTERN = re.compile(
-    r'\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b'
+    r"\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b"
 )
 
 
@@ -185,8 +149,8 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
-        
+        self.violations: list[RuleViolation] = []
+
         # Track logging/print statements for context
         self.in_logging_call = False
         self.has_logging = False
@@ -219,19 +183,19 @@ class PIIDetectionVisitor(ast.NodeVisitor):
                 self._check_pii_patterns(node, var_name, value_str)
             elif isinstance(node.value, ast.Dict):
                 # Check dictionary values for PII
-                for key, value in zip(node.value.keys, node.value.values):
+                for key, value in zip(node.value.keys, node.value.values, strict=False):
                     if isinstance(value, ast.Constant):
                         # Get key name for context
                         if isinstance(key, ast.Constant):
                             if isinstance(key.value, bytes):
-                                key_name = key.value.decode('utf-8', errors='ignore')
+                                key_name = key.value.decode("utf-8", errors="ignore")
                             else:
                                 key_name = str(key.value)
                         else:
                             key_name = "unknown"
                         # Handle both str and bytes values
                         if isinstance(value.value, bytes):
-                            value_str = value.value.decode('utf-8', errors='ignore')
+                            value_str = value.value.decode("utf-8", errors="ignore")
                         else:
                             value_str = str(value.value)
                         self._check_pii_patterns(node, f"{var_name}['{key_name}']", value_str)
@@ -241,7 +205,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         """Check for PII in function calls (logging, print, etc.)."""
         func_name = self._get_func_name(node.func)
-        
+
         # Check if this is a logging or print call
         is_logging = (
             func_name in ("print", "log", "info", "debug", "warning", "error", "critical")
@@ -259,11 +223,11 @@ class PIIDetectionVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _get_name(self, node: ast.AST) -> Optional[str]:
+    def _get_name(self, node: ast.AST) -> str | None:
         """Extract name from AST node."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return node.attr
         return None
 
@@ -271,7 +235,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         """Extract function name from call."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return node.attr
         return ""
 
@@ -280,177 +244,278 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         # Check for SSN
         if SSN_PATTERN.search(value):
             self._add_violation(
-                node, "PII001", "SSN", var_name,
+                node,
+                "PII001",
+                "SSN",
+                var_name,
                 "Social Security Number (SSN) detected in code. "
-                "Store SSN in secure database with encryption, not in source code."
+                "Store SSN in secure database with encryption, not in source code.",
             )
 
         # Check for credit card
         if CREDIT_CARD_PATTERN.search(value) and self._is_valid_credit_card(value):
             self._add_violation(
-                node, "PII002", "Credit Card", var_name,
+                node,
+                "PII002",
+                "Credit Card",
+                var_name,
                 "Credit card number detected (Luhn algorithm validated). "
-                "Never store raw credit card numbers. Use tokenization or PCI-compliant vault."
+                "Never store raw credit card numbers. Use tokenization or PCI-compliant vault.",
             )
 
         # Check for IBAN
         if IBAN_PATTERN.search(value):
             self._add_violation(
-                node, "PII003", "IBAN", var_name,
+                node,
+                "PII003",
+                "IBAN",
+                var_name,
                 "International Bank Account Number (IBAN) detected. "
-                "Store financial account numbers in encrypted database, not in code."
+                "Store financial account numbers in encrypted database, not in code.",
             )
 
         # Check for SWIFT code
         if SWIFT_PATTERN.search(value):
             self._add_violation(
-                node, "PII004", "SWIFT", var_name,
-                "SWIFT/BIC code detected. Store in secure configuration, not hardcoded."
+                node,
+                "PII004",
+                "SWIFT",
+                var_name,
+                "SWIFT/BIC code detected. Store in secure configuration, not hardcoded.",
             )
 
         # Check for passport number
         if PASSPORT_PATTERN.search(value) and "passport" in var_name.lower():
             self._add_violation(
-                node, "PII005", "Passport", var_name,
+                node,
+                "PII005",
+                "Passport",
+                var_name,
                 "Passport number detected. "
-                "Passport numbers are sensitive PII. Store encrypted in secure database."
+                "Passport numbers are sensitive PII. Store encrypted in secure database.",
             )
 
         # Check for driver's license
-        if DRIVERS_LICENSE_PATTERN.search(value) and ("license" in var_name.lower() or "dl" in var_name.lower()):
+        if DRIVERS_LICENSE_PATTERN.search(value) and (
+            "license" in var_name.lower() or "dl" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII006", "Driver License", var_name,
-                "Driver's license number detected. Store encrypted, not in source code."
+                node,
+                "PII006",
+                "Driver License",
+                var_name,
+                "Driver's license number detected. Store encrypted, not in source code.",
             )
 
         # Check for health insurance
-        if HEALTH_INSURANCE_PATTERN.search(value) and ("insurance" in var_name.lower() or "health" in var_name.lower()):
+        if HEALTH_INSURANCE_PATTERN.search(value) and (
+            "insurance" in var_name.lower() or "health" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII007", "Health Insurance", var_name,
+                node,
+                "PII007",
+                "Health Insurance",
+                var_name,
                 "Health insurance number detected. "
-                "Protected Health Information (PHI) under HIPAA. Store encrypted."
+                "Protected Health Information (PHI) under HIPAA. Store encrypted.",
             )
 
         # Check for IP address
         if IPV4_PATTERN.search(value) or IPV6_PATTERN.search(value):
             self._add_violation(
-                node, "PII010", "IP Address", var_name,
+                node,
+                "PII010",
+                "IP Address",
+                var_name,
                 "IP address detected. Under GDPR, IP addresses are personal data. "
-                "Anonymize or pseudonymize IP addresses in logs."
+                "Anonymize or pseudonymize IP addresses in logs.",
             )
 
         # Check for MAC address
         if MAC_ADDRESS_PATTERN.search(value):
             self._add_violation(
-                node, "PII011", "MAC Address", var_name,
+                node,
+                "PII011",
+                "MAC Address",
+                var_name,
                 "MAC address detected. Device identifiers are PII under GDPR. "
-                "Store encrypted or hash for anonymization."
+                "Store encrypted or hash for anonymization.",
             )
 
         # Check for email
         if EMAIL_PATTERN.search(value):
             self._add_violation(
-                node, "PII014", "Email", var_name,
+                node,
+                "PII014",
+                "Email",
+                var_name,
                 "Email address detected in code. "
-                "Avoid hardcoding email addresses. Use configuration or database."
+                "Avoid hardcoding email addresses. Use configuration or database.",
             )
 
         # Check for phone number
         if PHONE_PATTERN.search(value):
             self._add_violation(
-                node, "PII015", "Phone", var_name,
-                "Phone number detected. Personal contact information should not be hardcoded."
+                node,
+                "PII015",
+                "Phone",
+                var_name,
+                "Phone number detected. Personal contact information should not be hardcoded.",
             )
 
         # Check for date of birth (context-aware)
-        if DOB_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["birth", "dob", "born"]):
+        if DOB_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["birth", "dob", "born"]
+        ):
             self._add_violation(
-                node, "PII016", "Date of Birth", var_name,
-                "Date of birth detected. DOB is sensitive PII under GDPR and HIPAA. Store encrypted."
+                node,
+                "PII016",
+                "Date of Birth",
+                var_name,
+                "Date of birth detected. DOB is sensitive PII under GDPR and HIPAA. Store encrypted.",
             )
 
         # Check for financial account number (context-aware)
-        if FINANCIAL_ACCOUNT_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["account", "bank", "routing"]):
+        if FINANCIAL_ACCOUNT_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["account", "bank", "routing"]
+        ):
             self._add_violation(
-                node, "PII017", "Financial Account", var_name,
-                "Financial account number detected. Store in PCI-DSS compliant system with encryption."
+                node,
+                "PII017",
+                "Financial Account",
+                var_name,
+                "Financial account number detected. Store in PCI-DSS compliant system with encryption.",
             )
 
         # Check for tax ID / EIN (context-aware)
-        if TAX_ID_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["tax", "ein", "itin"]):
+        if TAX_ID_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["tax", "ein", "itin"]
+        ):
             self._add_violation(
-                node, "PII018", "Tax ID", var_name,
-                "Tax identification number (EIN/ITIN) detected. Store encrypted, not in source code."
+                node,
+                "PII018",
+                "Tax ID",
+                var_name,
+                "Tax identification number (EIN/ITIN) detected. Store encrypted, not in source code.",
             )
 
         # Check for medical record number (context-aware)
-        if MEDICAL_RECORD_PATTERN.search(value) or (any(keyword in var_name.lower() for keyword in ["mrn", "medical", "patient", "record"]) and re.search(r'\b\d{6,10}\b', value)):
+        if MEDICAL_RECORD_PATTERN.search(value) or (
+            any(keyword in var_name.lower() for keyword in ["mrn", "medical", "patient", "record"])
+            and re.search(r"\b\d{6,10}\b", value)
+        ):
             self._add_violation(
-                node, "PII019", "Medical Record", var_name,
-                "Medical record number detected. PHI under HIPAA. Must be encrypted and access-controlled."
+                node,
+                "PII019",
+                "Medical Record",
+                var_name,
+                "Medical record number detected. PHI under HIPAA. Must be encrypted and access-controlled.",
             )
 
         # Check for IMEI device identifier (context-aware)
-        if IMEI_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["imei", "device", "phone"]):
+        if IMEI_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["imei", "device", "phone"]
+        ):
             self._add_violation(
-                node, "PII020", "IMEI", var_name,
-                "IMEI device identifier detected. Device identifiers are PII under GDPR."
+                node,
+                "PII020",
+                "IMEI",
+                var_name,
+                "IMEI device identifier detected. Device identifiers are PII under GDPR.",
             )
 
         # Check for VIN (context-aware)
-        if VIN_PATTERN.search(value) and ("vin" in var_name.lower() or "vehicle" in var_name.lower()):
+        if VIN_PATTERN.search(value) and (
+            "vin" in var_name.lower() or "vehicle" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII021", "VIN", var_name,
-                "Vehicle Identification Number detected. VIN can be used to identify vehicle owners."
+                node,
+                "PII021",
+                "VIN",
+                var_name,
+                "Vehicle Identification Number detected. VIN can be used to identify vehicle owners.",
             )
 
         # Check for insurance policy number (context-aware)
-        if INSURANCE_POLICY_PATTERN.search(value) and ("policy" in var_name.lower() or "insurance" in var_name.lower()):
+        if INSURANCE_POLICY_PATTERN.search(value) and (
+            "policy" in var_name.lower() or "insurance" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII022", "Insurance Policy", var_name,
-                "Insurance policy number detected. Personal insurance information is PII."
+                node,
+                "PII022",
+                "Insurance Policy",
+                var_name,
+                "Insurance policy number detected. Personal insurance information is PII.",
             )
 
         # Check for national ID (context-aware)
-        if NATIONAL_ID_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["national", "id", "citizen", "identity"]):
+        if NATIONAL_ID_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["national", "id", "citizen", "identity"]
+        ):
             self._add_violation(
-                node, "PII023", "National ID", var_name,
-                "National identification number detected. Government-issued IDs are sensitive PII."
+                node,
+                "PII023",
+                "National ID",
+                var_name,
+                "National identification number detected. Government-issued IDs are sensitive PII.",
             )
 
         # Check for biometric data references (context-aware)
         if any(keyword in var_name.lower() for keyword in BIOMETRIC_KEYWORDS):
             self._add_violation(
-                node, "PII024", "Biometric Data", var_name,
-                "Biometric data reference detected. Biometric information is highly sensitive PII under GDPR Article 9."
+                node,
+                "PII024",
+                "Biometric Data",
+                var_name,
+                "Biometric data reference detected. Biometric information is highly sensitive PII under GDPR Article 9.",
             )
 
         # Check for genetic data references (context-aware)
         if any(keyword in var_name.lower() for keyword in GENETIC_KEYWORDS):
             self._add_violation(
-                node, "PII025", "Genetic Data", var_name,
-                "Genetic information reference detected. Genetic data is special category PII under GDPR Article 9."
+                node,
+                "PII025",
+                "Genetic Data",
+                var_name,
+                "Genetic information reference detected. Genetic data is special category PII under GDPR Article 9.",
             )
 
         # Check for serial numbers (context-aware)
-        if SERIAL_NUMBER_PATTERN.search(value) and any(keyword in var_name.lower() for keyword in ["serial", "device", "equipment"]):
+        if SERIAL_NUMBER_PATTERN.search(value) and any(
+            keyword in var_name.lower() for keyword in ["serial", "device", "equipment"]
+        ):
             self._add_violation(
-                node, "PII008", "Serial Number", var_name,
-                "Device/equipment serial number detected. Can be used to identify and track individuals."
+                node,
+                "PII008",
+                "Serial Number",
+                var_name,
+                "Device/equipment serial number detected. Can be used to identify and track individuals.",
             )
 
         # Check for full names (context-aware)
-        if FULL_NAME_PATTERN.search(value) and ("name" in var_name.lower() or "user" in var_name.lower() or "customer" in var_name.lower()):
+        if FULL_NAME_PATTERN.search(value) and (
+            "name" in var_name.lower()
+            or "user" in var_name.lower()
+            or "customer" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII009", "Full Name", var_name,
-                "Full name detected. Personal names are PII under GDPR and should not be hardcoded."
+                node,
+                "PII009",
+                "Full Name",
+                var_name,
+                "Full name detected. Personal names are PII under GDPR and should not be hardcoded.",
             )
 
         # Check for residential addresses (context-aware)
-        if ADDRESS_PATTERN.search(value) and ("address" in var_name.lower() or "street" in var_name.lower()):
+        if ADDRESS_PATTERN.search(value) and (
+            "address" in var_name.lower() or "street" in var_name.lower()
+        ):
             self._add_violation(
-                node, "PII012", "Residential Address", var_name,
-                "Residential address detected. Home addresses are sensitive PII protected under GDPR."
+                node,
+                "PII012",
+                "Residential Address",
+                var_name,
+                "Residential address detected. Home addresses are sensitive PII protected under GDPR.",
             )
 
     def _check_pii_in_logging(self, node: ast.Call, value: str) -> None:
@@ -458,32 +523,38 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         # Check for IP addresses in logging
         if IPV4_PATTERN.search(value) or IPV6_PATTERN.search(value):
             self._add_logging_violation(
-                node, "PII010", "IP Address",
+                node,
+                "PII010",
+                "IP Address",
                 "IP address logged. GDPR Article 4(1) considers IP addresses personal data. "
-                "Anonymize IP addresses before logging (e.g., mask last octet)."
+                "Anonymize IP addresses before logging (e.g., mask last octet).",
             )
 
         # Check for email in logging
         if EMAIL_PATTERN.search(value):
             self._add_logging_violation(
-                node, "PII014", "Email",
+                node,
+                "PII014",
+                "Email",
                 "Email address logged. Avoid logging personal contact information. "
-                "Use user ID or pseudonym instead."
+                "Use user ID or pseudonym instead.",
             )
 
         # Check for GPS coordinates in logging
         if GPS_PATTERN.search(value):
             self._add_logging_violation(
-                node, "PII013", "Location",
+                node,
+                "PII013",
+                "Location",
                 "GPS coordinates logged. Location data is sensitive PII under GDPR. "
-                "Anonymize or aggregate location data in logs."
+                "Anonymize or aggregate location data in logs.",
             )
 
     def _is_valid_credit_card(self, value: str) -> bool:
         """Validate credit card number using Luhn algorithm."""
         # Remove spaces and dashes
-        digits = re.sub(r'[-\s]', '', value)
-        
+        digits = re.sub(r"[-\s]", "", value)
+
         if not digits.isdigit() or len(digits) < 13 or len(digits) > 19:
             return False
 
@@ -845,7 +916,7 @@ PII_RULES = [
 register_rules(PII_RULES)
 
 
-def check_pii(file_path: Path, code: str) -> List[RuleViolation]:
+def check_pii(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Check Python code for PII exposure.
 

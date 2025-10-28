@@ -4,9 +4,8 @@ Security vulnerability fixes for Python code.
 Detects and fixes common security issues based on Bandit and best practices.
 """
 
-import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+import re
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -22,7 +21,7 @@ class SecurityFixer:
         self.fixes_applied = []
         self.ast_analyzer = ASTAnalyzer()
 
-    def scan_file_for_issues(self, file_path: Path) -> List[SecurityIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[SecurityIssue]:
         """
         Scan a file for security issues using AST analysis.
 
@@ -35,7 +34,7 @@ class SecurityFixer:
         security_issues, _ = self.ast_analyzer.analyze_file(file_path)
         return security_issues
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply security fixes to a Python file.
 
@@ -159,12 +158,11 @@ class SecurityFixer:
         for i, line in enumerate(lines):
             if "random." in line and any(
                 word in line.lower() for word in ["password", "token", "key", "secret"]
-            ):
-                if "# SECURITY:" not in line:
-                    lines[i] = (
-                        f"{line}  # SECURITY: Use secrets module for cryptographic randomness"
-                    )
-                    self.fixes_applied.append("Added warning about insecure random usage")
+            ) and "# SECURITY:" not in line:
+                lines[i] = (
+                    f"{line}  # SECURITY: Use secrets module for cryptographic randomness"
+                )
+                self.fixes_applied.append("Added warning about insecure random usage")
 
         return "\n".join(lines)
 
@@ -222,7 +220,7 @@ class SecurityFixer:
             "hashlib.sha1(": "hashlib.sha256(",
         }
 
-        for weak, strong in weak_hashes.items():
+        for weak, _strong in weak_hashes.items():
             if weak in content:
                 lines = content.split("\n")
                 for i, line in enumerate(lines):
@@ -241,15 +239,14 @@ class SecurityFixer:
             for i, line in enumerate(lines):
                 if "os.path.join" in line and any(
                     var in line for var in ["input", "request", "user", "param"]
-                ):
-                    if "# PATH TRAVERSAL" not in line:
-                        lines[i] = f"{line}  # PATH TRAVERSAL RISK: Validate and sanitize paths"
-                        self.fixes_applied.append("Added path traversal warning")
+                ) and "# PATH TRAVERSAL" not in line:
+                    lines[i] = f"{line}  # PATH TRAVERSAL RISK: Validate and sanitize paths"
+                    self.fixes_applied.append("Added path traversal warning")
             content = "\n".join(lines)
 
         return content
 
-    def scan_file_for_issues_legacy(self, file_path: Path) -> List[Dict[str, str]]:
+    def scan_file_for_issues_legacy(self, file_path: Path) -> list[dict[str, str]]:
         """
         Scan file for security issues using regex patterns (legacy method).
 

@@ -7,10 +7,9 @@ Aligned with flake8-quotes, flynt, and other string-focused linters.
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -36,12 +35,12 @@ class StringOperationsVisitor(ast.NodeVisitor):
     Implements string-related checks for modernization and consistency.
     """
 
-    def __init__(self, source_lines: List[str], source_code: str):
+    def __init__(self, source_lines: list[str], source_code: str):
         """Initialize string operations visitor."""
-        self.issues: List[StringIssue] = []
+        self.issues: list[StringIssue] = []
         self.source_lines = source_lines
         self.source_code = source_code
-        self.quote_style: Optional[str] = None  # Will be detected
+        self.quote_style: str | None = None  # Will be detected
         self._detect_dominant_quote_style()
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -106,20 +105,19 @@ class StringOperationsVisitor(ast.NodeVisitor):
                 )
 
         # PG-S005: String concatenation (+ operator)
-        if isinstance(node.op, ast.Add):
-            if self._is_string_concatenation(node):
-                self.issues.append(
-                    StringIssue(
-                        severity="LOW",
-                        category="String Operations",
-                        message="Consider using join() for string concatenation or f-strings",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Use ''.join([...]) for multiple concatenations",
-                        rule_id="PG-S005",
-                    )
+        if isinstance(node.op, ast.Add) and self._is_string_concatenation(node):
+            self.issues.append(
+                StringIssue(
+                    severity="LOW",
+                    category="String Operations",
+                    message="Consider using join() for string concatenation or f-strings",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use ''.join([...]) for multiple concatenations",
+                    rule_id="PG-S005",
                 )
+            )
 
         self.generic_visit(node)
 
@@ -168,34 +166,32 @@ class StringOperationsVisitor(ast.NodeVisitor):
         """Visit for loops to detect string concatenation patterns."""
         # PG-S006: String concatenation in loop
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.AugAssign):
-                if isinstance(stmt.op, ast.Add):
-                    if self._is_string_augassign(stmt):
-                        self.issues.append(
-                            StringIssue(
-                                severity="MEDIUM",
-                                category="String Operations",
-                                message="String concatenation in loop (inefficient)",
-                                line_number=stmt.lineno,
-                                column=stmt.col_offset,
-                                code_snippet=self._get_code_snippet(stmt),
-                                fix_suggestion="Use a list and ''.join() or io.StringIO",
-                                rule_id="PG-S006",
-                            )
+            if isinstance(stmt, ast.AugAssign) and isinstance(stmt.op, ast.Add):
+                if self._is_string_augassign(stmt):
+                    self.issues.append(
+                        StringIssue(
+                            severity="MEDIUM",
+                            category="String Operations",
+                            message="String concatenation in loop (inefficient)",
+                            line_number=stmt.lineno,
+                            column=stmt.col_offset,
+                            code_snippet=self._get_code_snippet(stmt),
+                            fix_suggestion="Use a list and ''.join() or io.StringIO",
+                            rule_id="PG-S006",
                         )
+                    )
 
         self.generic_visit(node)
 
     def _is_format_call(self, node: ast.Call) -> bool:
         """Check if this is a .format() call on a string."""
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "format":
-                # Check if it's called on a string
-                if isinstance(node.func.value, ast.Constant):
-                    return True
-                # Check if it's a variable.format() call
-                if isinstance(node.func.value, ast.Name):
-                    return True
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
+            # Check if it's called on a string
+            if isinstance(node.func.value, ast.Constant):
+                return True
+            # Check if it's a variable.format() call
+            if isinstance(node.func.value, ast.Name):
+                return True
         return False
 
     def _is_string_concatenation(self, node: ast.BinOp) -> bool:
@@ -239,9 +235,8 @@ class StringOperationsVisitor(ast.NodeVisitor):
         if self.quote_style == "double":
             # Looking for single quotes when double is preferred
             return "'" in line_text and '"' not in line_text
-        else:
-            # Looking for double quotes when single is preferred
-            return '"' in line_text and "'" not in line_text
+        # Looking for double quotes when single is preferred
+        return '"' in line_text and "'" not in line_text
 
 
 class StringOperationsFixer:
@@ -251,12 +246,12 @@ class StringOperationsFixer:
     Provides auto-fixes for f-string conversion, quote normalization, etc.
     """
 
-    def __init__(self, logger: Optional[PyGuardLogger] = None):
+    def __init__(self, logger: PyGuardLogger | None = None):
         """Initialize string operations fixer."""
         self.logger = logger or PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def analyze_file(self, file_path: Path) -> List[StringIssue]:
+    def analyze_file(self, file_path: Path) -> list[StringIssue]:
         """
         Analyze a file for string operation issues.
 
@@ -294,8 +289,8 @@ class StringOperationsFixer:
             return []
 
     def fix_file(
-        self, file_path: Path, issues: Optional[List[StringIssue]] = None
-    ) -> Tuple[bool, List[str]]:
+        self, file_path: Path, issues: list[StringIssue] | None = None
+    ) -> tuple[bool, list[str]]:
         """
         Fix string operation issues in a file.
 
@@ -317,7 +312,7 @@ class StringOperationsFixer:
             if content is None:
                 return False, ["Failed to read file"]
             modified_content = content
-            applied_fixes: List[str] = []
+            applied_fixes: list[str] = []
 
             # Sort issues by line number (descending) to avoid offset issues
             sorted_issues = sorted(issues, key=lambda x: x.line_number, reverse=True)
@@ -366,8 +361,8 @@ class StringOperationsFixer:
         return content
 
     def scan_directory(
-        self, directory: Path, exclude_patterns: Optional[List[str]] = None
-    ) -> List[Tuple[Path, List[StringIssue]]]:
+        self, directory: Path, exclude_patterns: list[str] | None = None
+    ) -> list[tuple[Path, list[StringIssue]]]:
         """
         Scan a directory for string operation issues.
 
@@ -378,7 +373,7 @@ class StringOperationsFixer:
         Returns:
             List of (file_path, issues) tuples
         """
-        results: List[Tuple[Path, List[StringIssue]]] = []
+        results: list[tuple[Path, list[StringIssue]]] = []
 
         for py_file in directory.rglob("*.py"):
             if exclude_patterns:

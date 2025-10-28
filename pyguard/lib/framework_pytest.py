@@ -15,7 +15,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -34,7 +33,7 @@ class PytestVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.is_test_file = self._detect_pytest(code) or "test_" in str(file_path.name)
 
     def _detect_pytest(self, code: str) -> bool:
@@ -51,16 +50,16 @@ class PytestVisitor(ast.NodeVisitor):
 
         is_test_func = node.name.startswith("test_")
         is_fixture = any(
-            isinstance(dec, ast.Name)
-            and dec.id == "fixture"
+            (isinstance(dec, ast.Name)
+            and dec.id == "fixture")
             or (isinstance(dec, ast.Attribute) and dec.attr == "fixture")
             or (
                 isinstance(dec, ast.Call)
                 and (
-                    isinstance(dec.func, ast.Name)
-                    and dec.func.id == "fixture"
-                    or isinstance(dec.func, ast.Attribute)
-                    and dec.func.attr == "fixture"
+                    (isinstance(dec.func, ast.Name)
+                    and dec.func.id == "fixture")
+                    or (isinstance(dec.func, ast.Attribute)
+                    and dec.func.attr == "fixture")
                 )
             )
             for dec in node.decorator_list
@@ -183,20 +182,19 @@ class PytestVisitor(ast.NodeVisitor):
             return
 
         # PT018: Composite assertion can be split
-        if isinstance(node.test, ast.BoolOp):
-            if isinstance(node.test.op, ast.And):
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="PT018",
-                        message="Composite assertion with 'and' - split into multiple asserts",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.STYLE,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SUGGESTED,
-                    )
+        if isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.And):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="PT018",
+                    message="Composite assertion with 'and' - split into multiple asserts",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.STYLE,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
                 )
+            )
 
         # PT019: Use @pytest.mark.xfail instead of assert with condition
         # This requires more context about the test structure
@@ -210,7 +208,7 @@ class PytestRulesChecker:
     def __init__(self):
         self.logger = PyGuardLogger()
 
-    def check_file(self, file_path: Path) -> List[RuleViolation]:
+    def check_file(self, file_path: Path) -> list[RuleViolation]:
         """
         Check a Python file for pytest-specific issues.
 

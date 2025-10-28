@@ -1,11 +1,11 @@
 """CLI for PyGuard git hooks management."""
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
-from pyguard.lib.git_hooks import GitHooksManager
 from pyguard.lib.core import PyGuardLogger
+from pyguard.lib.git_hooks import GitHooksManager
 
 
 def main():

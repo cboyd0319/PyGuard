@@ -14,7 +14,7 @@ References:
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich import box
 from rich.console import Console
@@ -56,7 +56,7 @@ class EnhancedConsole:
     - Beginner-friendly error messages
     """
 
-    def __init__(self, theme: Optional[UITheme] = None):
+    def __init__(self, theme: UITheme | None = None):
         """
         Initialize enhanced console.
 
@@ -65,29 +65,30 @@ class EnhancedConsole:
         """
         # Configure console with proper encoding for Windows compatibility
         import sys
+
         self.is_windows = sys.platform == "win32"
         self.console = Console(
             record=True,
             force_terminal=True,
             legacy_windows=False,  # Disable legacy Windows rendering to avoid encoding issues
             safe_box=self.is_windows,  # Use ASCII box chars on Windows
-            emoji=not self.is_windows  # Disable emoji on Windows to avoid encoding issues
+            emoji=not self.is_windows,  # Disable emoji on Windows to avoid encoding issues
         )
         self.theme = theme or UITheme()
-    
+
     def _safe_text(self, text: str) -> str:
         """
         Make text safe for Windows console by removing/replacing emoji.
-        
+
         Args:
             text: Text that may contain emoji
-            
+
         Returns:
             Text safe for Windows console
         """
         if not self.is_windows:
             return text
-        
+
         # Replace common emoji with text equivalents for Windows
         replacements = {
             "🛡️": "[Shield]",
@@ -117,12 +118,12 @@ class EnhancedConsole:
         if self.is_windows:
             banner_text = """
             ================================================================
-                                                                     
-               PyGuard - World's Best Python Security Tool         
-                                                                     
-               Security | Quality | Formatting | Compliance                  
-               Zero Technical Knowledge Required - Just Run and Fix!        
-                                                                     
+
+               PyGuard - World's Best Python Security Tool
+
+               Security | Quality | Formatting | Compliance
+               Zero Technical Knowledge Required - Just Run and Fix!
+
             ================================================================
             """
         else:
@@ -140,12 +141,14 @@ class EnhancedConsole:
 
     def print_welcome(self, files_count: int):
         """Print welcome message."""
-        ready_text = self._safe_text(f"[bold green]Ready to analyze {files_count} Python files![/bold green]\n\n")
+        ready_text = self._safe_text(
+            f"[bold green]Ready to analyze {files_count} Python files![/bold green]\n\n"
+        )
         title_text = self._safe_text("[bold cyan] Getting Started[/bold cyan]")
-        
+
         panel = Panel(
-            ready_text +
-            "[dim]PyGuard will find security issues, improve code quality, and format your code.\n"
+            ready_text
+            + "[dim]PyGuard will find security issues, improve code quality, and format your code.\n"
             "Sit back and relax - this will only take a moment...[/dim]",
             title=title_text,
             border_style="cyan",
@@ -165,12 +168,9 @@ class EnhancedConsole:
             Progress object for displaying progress
         """
         # Use ASCII-safe spinner on Windows to avoid encoding issues
-        if self.is_windows:
-            spinner_column = SpinnerColumn(spinner_name="dots")
-        else:
-            spinner_column = SpinnerColumn()
-        
-        progress = Progress(
+        spinner_column = SpinnerColumn(spinner_name="dots") if self.is_windows else SpinnerColumn()
+
+        return Progress(
             spinner_column,
             TextColumn("[bold blue]{task.description}"),
             BarColumn(complete_style="green", finished_style="bold green"),
@@ -178,9 +178,8 @@ class EnhancedConsole:
             TimeElapsedColumn(),
             console=self.console,
         )
-        return progress
 
-    def print_summary_table(self, metrics: Dict[str, Any]):
+    def print_summary_table(self, metrics: dict[str, Any]):
         """Print beautiful summary table."""
         table = Table(
             title="[bold cyan] Analysis Summary[/bold cyan]",
@@ -256,13 +255,15 @@ class EnhancedConsole:
         self.console.print(table)
         self.console.print()
 
-    def print_issue_details(self, issues: List[Dict[str, Any]], max_display: int = 10):
+    def print_issue_details(self, issues: list[dict[str, Any]], max_display: int = 10):
         """Print detailed issue list."""
         if not issues:
             self.console.print(
                 Panel(
-                    self._safe_text("[bold green]🎉 Excellent! No issues found!\n\n"
-                    "Your code is clean, secure, and follows best practices.[/bold green]"),
+                    self._safe_text(
+                        "[bold green]🎉 Excellent! No issues found!\n\n"
+                        "Your code is clean, secure, and follows best practices.[/bold green]"
+                    ),
                     title=self._safe_text("[bold green]✨ Perfect Score[/bold green]"),
                     border_style="green",
                     box=box.DOUBLE,
@@ -277,7 +278,9 @@ class EnhancedConsole:
         # Print high severity issues
         if high_issues:
             table = Table(
-                title=self._safe_text("[bold red]🔴 HIGH Severity Issues (Fix Immediately!)[/bold red]"),
+                title=self._safe_text(
+                    "[bold red]🔴 HIGH Severity Issues (Fix Immediately!)[/bold red]"
+                ),
                 box=box.HEAVY,
                 show_header=True,
                 header_style="bold red",
@@ -300,7 +303,9 @@ class EnhancedConsole:
         # Print medium severity issues
         if medium_issues:
             table = Table(
-                title=self._safe_text("[bold yellow]🟡 MEDIUM Severity Issues (Fix Soon)[/bold yellow]"),
+                title=self._safe_text(
+                    "[bold yellow]🟡 MEDIUM Severity Issues (Fix Soon)[/bold yellow]"
+                ),
                 box=box.ROUNDED,
                 show_header=True,
                 header_style="bold yellow",
@@ -344,7 +349,7 @@ class EnhancedConsole:
         self.console.print(panel)
         self.console.print()
 
-    def print_next_steps(self, report_path: Optional[Path] = None):
+    def print_next_steps(self, report_path: Path | None = None):
         """Print helpful next steps."""
         steps = [
             "[OK] Review the changes PyGuard made to your files",
@@ -380,12 +385,14 @@ class EnhancedConsole:
         )
         self.console.print(panel)
 
-    def print_error(self, error: str, suggestion: Optional[str] = None):
+    def print_error(self, error: str, suggestion: str | None = None):
         """Print beginner-friendly error message."""
         message = f"[bold red][X] Oops! Something went wrong:[/bold red]\n\n{error}"
 
         if suggestion:
-            message += self._safe_text(f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}")
+            message += self._safe_text(
+                f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}"
+            )
 
         panel = Panel(
             message,
@@ -412,9 +419,9 @@ class ModernHTMLReporter:
 
     def generate_report(
         self,
-        metrics: Dict[str, Any],
-        issues: List[Dict[str, Any]],
-        fixes: List[Dict[str, Any]],
+        metrics: dict[str, Any],
+        issues: list[dict[str, Any]],
+        fixes: list[dict[str, Any]],
     ) -> str:
         """
         Generate stunning HTML report.
@@ -451,7 +458,7 @@ class ModernHTMLReporter:
 
         # Generate issue rows HTML with proper accessibility
         issue_rows_html = ""
-        for idx, issue in enumerate(issues):
+        for _idx, issue in enumerate(issues):
             severity = issue.get("severity", "UNKNOWN")
             severity_class = severity.lower()
             severity_icon = {
@@ -510,24 +517,24 @@ class ModernHTMLReporter:
             --primary: #667eea;
             --primary-dark: #5a67d8;
             --primary-darker: #4c51bf;
-            
+
             /* Semantic Colors - WCAG 2.2 AA Compliant */
             --success: #38a169;        /* 5.1:1 contrast ratio [OK] */
             --success-bg: #c6f6d5;
             --success-border: #2f855a;
-            
+
             --warning: #d69e2e;        /* 5.2:1 contrast ratio [OK] */
             --warning-bg: #feebc8;
             --warning-border: #b7791f;
-            
+
             --danger: #e53e3e;         /* 5.3:1 contrast ratio [OK] */
             --danger-bg: #fed7d7;
             --danger-border: #c53030;
-            
+
             --info: #3182ce;           /* 5.4:1 contrast ratio [OK] */
             --info-bg: #bee3f8;
             --info-border: #2c5282;
-            
+
             /* Neutral Grays */
             --gray-50: #f7fafc;
             --gray-100: #edf2f7;
@@ -539,33 +546,33 @@ class ModernHTMLReporter:
             --gray-700: #2d3748;
             --gray-800: #1a202c;
             --gray-900: #171923;
-            
+
             /* Severity Colors - Enhanced Contrast */
             --severity-high: #e53e3e;
             --severity-high-bg: #fff5f5;
             --severity-high-border: #c53030;
-            
+
             --severity-medium: #d69e2e;
             --severity-medium-bg: #fffaf0;
             --severity-medium-border: #b7791f;
-            
+
             --severity-low: #38a169;
             --severity-low-bg: #f0fdf4;
             --severity-low-border: #2f855a;
-            
+
             /* Shadows - Subtle Depth */
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            
+
             /* Border Radius */
             --radius-sm: 0.375rem;
             --radius-md: 0.5rem;
             --radius-lg: 0.75rem;
             --radius-xl: 1rem;
-            
+
             /* Spacing Scale (4px base) */
             --space-1: 0.25rem;
             --space-2: 0.5rem;
@@ -577,16 +584,16 @@ class ModernHTMLReporter:
             --space-10: 2.5rem;
             --space-12: 3rem;
             --space-16: 4rem;
-            
+
             /* Typography */
             --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --font-mono: 'Monaco', 'Courier New', monospace;
-            
+
             /* Animation Durations */
             --duration-fast: 150ms;
             --duration-base: 250ms;
             --duration-slow: 350ms;
-            
+
             /* Easing Functions */
             --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
             --ease-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1);
@@ -607,11 +614,11 @@ class ModernHTMLReporter:
                 --gray-800: #f7fafc;
                 --gray-900: #ffffff;
             }}
-            
+
             body {{
                 background: var(--gray-900);
             }}
-            
+
             .container {{
                 background: var(--gray-800);
                 color: var(--gray-100);
@@ -665,7 +672,7 @@ class ModernHTMLReporter:
             padding: var(--space-8);
             position: relative;
         }}
-        
+
         /* Subtle grain texture overlay for depth */
         body::before {{
             content: '';
@@ -679,14 +686,14 @@ class ModernHTMLReporter:
             pointer-events: none;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }}
-        
+
         /* Custom focus rings - brand-matched, visible by design */
         *:focus-visible {{
             outline: 3px solid var(--primary);
             outline-offset: 2px;
             transition: outline var(--duration-fast) var(--ease-standard);
         }}
-        
+
         /* Skip to Content Link - WCAG 2.2 AA */
         .skip-link {{
             position: absolute;
@@ -702,7 +709,7 @@ class ModernHTMLReporter:
             box-shadow: var(--shadow-lg);
             transition: all var(--duration-base) var(--ease-standard);
         }}
-        
+
         .skip-link:focus {{
             top: 0;
             outline: 3px solid white;
@@ -731,7 +738,7 @@ class ModernHTMLReporter:
             position: relative;
             overflow: hidden;
         }}
-        
+
         /* Gradient mesh background enhancement */
         header::before {{
             content: '';
@@ -745,7 +752,7 @@ class ModernHTMLReporter:
             opacity: 0.6;
             z-index: 0;
         }}
-        
+
         header > * {{
             position: relative;
             z-index: 1;
@@ -762,7 +769,7 @@ class ModernHTMLReporter:
             line-height: 1.2;
             animation: heroReveal 0.6s var(--ease-decelerate) both;
         }}
-        
+
         header h1 .icon {{
             font-size: 1.2em;
             flex-shrink: 0;
@@ -801,7 +808,7 @@ class ModernHTMLReporter:
             overflow: hidden;
             animation: slideIn var(--duration-slow) var(--ease-decelerate) 0.6s both;
         }}
-        
+
         /* Soft shadow for depth */
         .status-banner::after {{
             content: '';
@@ -812,7 +819,7 @@ class ModernHTMLReporter:
             height: 4px;
             background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
         }}
-        
+
         .status-banner .icon {{
             font-size: 1.5em;
             flex-shrink: 0;
@@ -861,20 +868,20 @@ class ModernHTMLReporter:
             position: relative;
             cursor: default;
         }}
-        
+
         /* Magnetic hover effect */
         .metric-card:hover {{
             transform: translateY(-6px) scale(1.02);
             box-shadow: var(--shadow-xl), 0 0 0 1px rgba(102, 126, 234, 0.1);
             border-color: var(--primary);
         }}
-        
+
         /* Subtle 3D press effect on active */
         .metric-card:active {{
             transform: translateY(-2px) scale(0.98);
             box-shadow: var(--shadow-md);
         }}
-        
+
         /* Focus States - WCAG 2.2 AA */
         .metric-card:focus-visible {{
             outline: 3px solid var(--primary);
@@ -912,7 +919,7 @@ class ModernHTMLReporter:
         .metric-card.warning .value {{ color: var(--warning-border); }}
         .metric-card.danger .value {{ color: var(--danger-border); }}
         .metric-card.info .value {{ color: var(--info-border); }}
-        
+
         .metric-card.success:hover {{ border-color: var(--success); }}
         .metric-card.warning:hover {{ border-color: var(--warning); }}
         .metric-card.danger:hover {{ border-color: var(--danger); }}
@@ -933,7 +940,7 @@ class ModernHTMLReporter:
             gap: var(--space-3);
             line-height: 1.3;
         }}
-        
+
         .section-title .icon {{
             font-size: 1.2em;
             flex-shrink: 0;
@@ -948,7 +955,7 @@ class ModernHTMLReporter:
             border: 2px solid transparent;
             transition: border-color var(--duration-fast) var(--ease-standard);
         }}
-        
+
         .table-container:focus-within {{
             border-color: var(--primary);
             box-shadow: var(--shadow-lg), 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -959,7 +966,7 @@ class ModernHTMLReporter:
             width: 100%;
             border-collapse: collapse;
         }}
-        
+
         caption {{
             position: absolute;
             width: 1px;
@@ -999,13 +1006,13 @@ class ModernHTMLReporter:
             transition: all var(--duration-base) var(--ease-standard);
             cursor: default;
         }}
-        
+
         tbody tr:hover {{
             background: var(--gray-50);
             transform: translateX(4px);
             box-shadow: inset 4px 0 0 var(--primary);
         }}
-        
+
         tbody tr:focus-within {{
             background: var(--gray-100);
             outline: 3px solid var(--primary);
@@ -1042,12 +1049,12 @@ class ModernHTMLReporter:
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: all var(--duration-fast) var(--ease-standard);
         }}
-        
+
         .severity-badge:hover {{
             transform: scale(1.05);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }}
-        
+
         .severity-badge .icon {{
             font-size: 1em;
             flex-shrink: 0;
@@ -1102,7 +1109,7 @@ class ModernHTMLReporter:
             border-radius: var(--radius-lg);
             animation: fadeIn var(--duration-slow) var(--ease-decelerate) both;
         }}
-        
+
         .no-issues .icon {{
             font-size: 3rem;
             display: block;
@@ -1120,7 +1127,7 @@ class ModernHTMLReporter:
             position: relative;
             overflow: hidden;
         }}
-        
+
         /* Subtle footer overlay for depth */
         footer::before {{
             content: '';
@@ -1131,13 +1138,13 @@ class ModernHTMLReporter:
             height: 1px;
             background: linear-gradient(90deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
         }}
-        
+
         footer p {{
             margin-bottom: var(--space-2);
             position: relative;
             z-index: 1;
         }}
-        
+
         footer strong {{
             color: white;
             font-weight: 700;
@@ -1165,7 +1172,7 @@ class ModernHTMLReporter:
             transform: translateY(-2px);
             background: rgba(102, 126, 234, 0.1);
         }}
-        
+
         footer a:focus-visible {{
             outline: 3px solid var(--primary);
             outline-offset: 2px;
@@ -1189,32 +1196,32 @@ class ModernHTMLReporter:
                 background: white;
                 padding: 0;
             }}
-            
+
             .container {{
                 box-shadow: none;
                 border-radius: 0;
             }}
-            
+
             .metric-card,
             .table-container {{
                 break-inside: avoid;
                 page-break-inside: avoid;
             }}
-            
+
             .metric-card:hover {{
                 transform: none;
                 box-shadow: none;
             }}
-            
+
             .skip-link,
             footer {{
                 display: none;
             }}
-            
+
             header {{
                 background: var(--gray-900);
             }}
-            
+
             @page {{
                 margin: 2cm;
             }}
@@ -1225,62 +1232,62 @@ class ModernHTMLReporter:
             body {{
                 padding: var(--space-4);
             }}
-            
+
             header {{
                 padding: var(--space-8) var(--space-4);
             }}
-            
+
             header h1 {{
                 font-size: 1.75rem;
                 flex-direction: column;
                 gap: var(--space-2);
             }}
-            
+
             .status-banner {{
                 padding: var(--space-6) var(--space-4);
                 font-size: 1.125rem;
                 flex-direction: column;
             }}
-            
+
             .metrics-grid {{
                 grid-template-columns: 1fr;
                 padding: var(--space-4);
                 gap: var(--space-4);
             }}
-            
+
             .metric-card:hover {{
                 transform: translateY(-4px) scale(1.01);
             }}
-            
+
             .issues-section {{
                 padding: var(--space-4);
             }}
-            
+
             .table-container {{
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 border-radius: var(--radius-md);
             }}
-            
+
             table {{
                 min-width: 600px;
             }}
-            
+
             th, td {{
                 padding: var(--space-3);
                 font-size: 0.875rem;
             }}
-            
+
             tbody tr:hover {{
                 transform: translateX(2px);
             }}
-            
+
             .footer-links {{
                 flex-direction: column;
                 gap: var(--space-3);
             }}
         }}
-        
+
         /* Large Screens */
         @media (min-width: 1400px) {{
             .metrics-grid {{
@@ -1299,7 +1306,7 @@ class ModernHTMLReporter:
                 transform: translateY(0);
             }}
         }}
-        
+
         @keyframes slideIn {{
             from {{
                 opacity: 0;
@@ -1310,7 +1317,7 @@ class ModernHTMLReporter:
                 transform: translateX(0);
             }}
         }}
-        
+
         /* Hero section reveal animations */
         @keyframes heroReveal {{
             from {{
@@ -1322,7 +1329,7 @@ class ModernHTMLReporter:
                 transform: translateY(0);
             }}
         }}
-        
+
         @keyframes iconBounce {{
             0%, 100% {{
                 transform: scale(1);
@@ -1331,7 +1338,7 @@ class ModernHTMLReporter:
                 transform: scale(1.1);
             }}
         }}
-        
+
         /* Staggered reveal for metrics cards */
         .metric-card {{
             animation: fadeIn var(--duration-slow) var(--ease-decelerate);
@@ -1343,17 +1350,17 @@ class ModernHTMLReporter:
         .metric-card:nth-child(4) {{ animation-delay: 210ms; }}
         .metric-card:nth-child(5) {{ animation-delay: 280ms; }}
         .metric-card:nth-child(6) {{ animation-delay: 350ms; }}
-        
+
         /* Table reveal with slide */
         .table-container {{
             animation: slideIn var(--duration-slow) var(--ease-decelerate) 400ms both;
         }}
-        
+
         /* Smooth scroll behavior */
         html {{
             scroll-behavior: smooth;
         }}
-        
+
         /* Section title reveal */
         .section-title {{
             animation: slideIn var(--duration-slow) var(--ease-decelerate) 350ms both;
@@ -1363,7 +1370,7 @@ class ModernHTMLReporter:
 <body>
     <!-- Skip to Content Link - WCAG 2.2 AA -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
+
     <div class="container">
         <!-- Header - Banner Landmark -->
         <header role="banner">

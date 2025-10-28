@@ -108,6 +108,49 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["pyguard", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "S",      # flake8-bandit (security)
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T20",    # flake8-print
+    "PT",     # flake8-pytest-style
+    "RET",    # flake8-return
+    "SIM",    # flake8-simplify
+    "ARG",    # flake8-unused-arguments
+    "PL",     # pylint
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "S101",   # Use of assert (OK in tests and validation code)
+    "S603",   # subprocess call (intentional for tool integration)
+    "S607",   # Starting process with partial path (intentional)
+    "S104",   # Binding to all interfaces (intentional in examples)
+    "S108",   # Hardcoded temp directory (standard practice)
+    "S110",   # Try-except-pass (intentional in some error handling)
+    "S112",   # Try-except-continue (intentional in some loops)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "PLR2004", "ARG", "S105"]
+"pyguard/lib/**/*.py" = ["T20"]  # Print statements OK in security detection modules
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyguard"]
+force-sort-within-sections = true
+
 [tool.mypy]
 python_version = "3.13"
 warn_return_any = true

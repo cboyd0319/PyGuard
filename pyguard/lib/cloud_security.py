@@ -29,9 +29,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List, Set
+import re
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -50,13 +49,13 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_boto3 = False
         self.has_azure = False
         self.has_gcp = False
         self.has_docker = False
         self.has_kubernetes = False
-        self.env_var_accesses: Set[str] = set()
+        self.env_var_accesses: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track cloud and container framework imports."""
@@ -92,57 +91,57 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Check for hardcoded cloud credentials and security issues."""
         # Check for hardcoded AWS credentials
         self._check_aws_credentials(node)
-        
+
         # Check for hardcoded Azure credentials
         self._check_azure_credentials(node)
-        
+
         # Check for hardcoded GCP credentials
         self._check_gcp_credentials(node)
-        
+
         # Check for Docker secrets in environment variables
         self._check_docker_secrets(node)
-        
+
         # Check for Kubernetes secrets
         self._check_k8s_secrets(node)
-        
+
         # Check for Terraform state file secrets
         self._check_terraform_state_secrets(node)
-        
+
         self.generic_visit(node)
-    
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check for serverless function security issues."""
         # Check for serverless cold start vulnerabilities
         self._check_serverless_cold_start(node)
-        
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for cloud API misuse and security issues."""
         # Check for S3 bucket ACL issues
         self._check_s3_acl_issues(node)
-        
+
         # Check for IAM policy issues
         self._check_iam_misconfiguration(node)
-        
+
         # Check for privileged container detection
         self._check_privileged_container(node)
-        
+
         # Check for container escape risks
         self._check_container_escape_risks(node)
-        
+
         # Check for container escape attempts
         self._check_container_escape_attempts(node)
-        
+
         # Check for cloud storage public access
         self._check_storage_public_access(node)
-        
+
         # Check for serverless timeout issues
         self._check_serverless_timeout_abuse(node)
-        
+
         # Check for Kubernetes RBAC misconfiguration
         self._check_k8s_rbac_misconfiguration(node)
-        
+
         self.generic_visit(node)
 
     def _check_aws_credentials(self, node: ast.Assign) -> None:
@@ -150,24 +149,28 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 # Enhanced AWS credential patterns
                 aws_patterns = [
-                    "aws_access_key", "aws_secret", "aws_session_token",
-                    "access_key_id", "secret_access_key", "aws_key"
+                    "aws_access_key",
+                    "aws_secret",
+                    "aws_session_token",
+                    "access_key_id",
+                    "secret_access_key",
+                    "aws_key",
                 ]
-                
+
                 if any(pattern in var_name for pattern in aws_patterns):
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         # Check for AWS key patterns (AKIA*, ASIA*)
                         value = node.value.value
-                        if re.match(r'^(AKIA|ASIA)[A-Z0-9]{16}$', value):
+                        if re.match(r"^(AKIA|ASIA)[A-Z0-9]{16}$", value):
                             self.violations.append(
                                 RuleViolation(
                                     file_path=self.file_path,
                                     rule_id="cloud-security-aws-credentials",
                                     message=f"Hardcoded AWS access key detected in variable '{target.id}'. "
-                                            "Use AWS Secrets Manager or environment variables.",
+                                    "Use AWS Secrets Manager or environment variables.",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.CRITICAL,
@@ -182,12 +185,17 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 azure_patterns = [
-                    "azure_key", "azure_secret", "storage_account_key",
-                    "azure_connection_string", "cosmos_key", "sas", "azure_sas"
+                    "azure_key",
+                    "azure_secret",
+                    "storage_account_key",
+                    "azure_connection_string",
+                    "cosmos_key",
+                    "sas",
+                    "azure_sas",
                 ]
-                
+
                 if any(pattern in var_name for pattern in azure_patterns):
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         value = node.value.value
@@ -198,7 +206,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     rule_id="cloud-security-azure-credentials",
                                     message=f"Hardcoded Azure credential detected in variable '{target.id}'. "
-                                            "Use Azure Key Vault for credential management.",
+                                    "Use Azure Key Vault for credential management.",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.CRITICAL,
@@ -213,23 +221,31 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 gcp_patterns = [
-                    "service_account_key", "gcp_key", "google_credentials",
-                    "gcloud_key", "firebase_key"
+                    "service_account_key",
+                    "gcp_key",
+                    "google_credentials",
+                    "gcloud_key",
+                    "firebase_key",
                 ]
-                
+
                 if any(pattern in var_name for pattern in gcp_patterns):
                     if isinstance(node.value, (ast.Dict, ast.Constant)):
                         # GCP service account keys are JSON objects with specific fields
-                        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                            if '"private_key":' in node.value.value and '"type": "service_account"' in node.value.value:
+                        if isinstance(node.value, ast.Constant) and isinstance(
+                            node.value.value, str
+                        ):
+                            if (
+                                '"private_key":' in node.value.value
+                                and '"type": "service_account"' in node.value.value
+                            ):
                                 self.violations.append(
                                     RuleViolation(
-                                    file_path=self.file_path,
+                                        file_path=self.file_path,
                                         rule_id="cloud-security-gcp-credentials",
                                         message=f"Hardcoded GCP service account key detected in variable '{target.id}'. "
-                                                "Use Google Secret Manager or Workload Identity.",
+                                        "Use Google Secret Manager or Workload Identity.",
                                         line_number=node.lineno,
                                         column=node.col_offset,
                                         severity=RuleSeverity.CRITICAL,
@@ -243,26 +259,30 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect Docker secrets exposed in environment variables."""
         # Check for environment variable access patterns
         if isinstance(node.value, ast.Call):
-            if (isinstance(node.value.func, ast.Attribute) and
-                isinstance(node.value.func.value, ast.Name) and
-                node.value.func.value.id == "os" and
-                node.value.func.attr in ("getenv", "environ")):
-                
+            if (
+                isinstance(node.value.func, ast.Attribute)
+                and isinstance(node.value.func.value, ast.Name)
+                and node.value.func.value.id == "os"
+                and node.value.func.attr in ("getenv", "environ")
+            ):
+
                 # Check if secret-like names are used
                 for target in node.targets:
                     if isinstance(target, ast.Name):
                         var_name = target.id.lower()
-                        if any(secret in var_name for secret in ["secret", "key", "token", "password"]):
+                        if any(
+                            secret in var_name for secret in ["secret", "key", "token", "password"]
+                        ):
                             # Check if there's a default value (insecure)
                             if len(node.value.args) > 1:
                                 default = node.value.args[1]
                                 if isinstance(default, ast.Constant) and default.value:
                                     self.violations.append(
                                         RuleViolation(
-                                    file_path=self.file_path,
+                                            file_path=self.file_path,
                                             rule_id="cloud-security-docker-secret-env",
                                             message=f"Secret '{target.id}' has hardcoded default in os.getenv(). "
-                                                    "Use Docker secrets or remove default value.",
+                                            "Use Docker secrets or remove default value.",
                                             line_number=node.lineno,
                                             column=node.col_offset,
                                             severity=RuleSeverity.HIGH,
@@ -277,16 +297,16 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 # Check for hardcoded K8s secrets
                 if "k8s_secret" in var_name or "kubernetes_secret" in var_name:
                     if isinstance(node.value, ast.Constant):
                         self.violations.append(
                             RuleViolation(
-                                    file_path=self.file_path,
+                                file_path=self.file_path,
                                 rule_id="cloud-security-k8s-secret-hardcoded",
                                 message=f"Hardcoded Kubernetes secret in variable '{target.id}'. "
-                                        "Use Kubernetes Secret objects or external secret management.",
+                                "Use Kubernetes Secret objects or external secret management.",
                                 line_number=node.lineno,
                                 column=node.col_offset,
                                 severity=RuleSeverity.HIGH,
@@ -300,7 +320,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect S3 bucket ACL configuration issues."""
         if not self.has_boto3:
             return
-        
+
         # Check for S3 put_bucket_acl with public-read or public-read-write
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "put_bucket_acl":
@@ -310,14 +330,17 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                             acl_value = keyword.value.value
                             # Convert bytes to string if needed
                             if isinstance(acl_value, bytes):
-                                acl_value = acl_value.decode('utf-8', errors='ignore')
-                            if isinstance(acl_value, str) and acl_value in ("public-read", "public-read-write"):
+                                acl_value = acl_value.decode("utf-8", errors="ignore")
+                            if isinstance(acl_value, str) and acl_value in (
+                                "public-read",
+                                "public-read-write",
+                            ):
                                 self.violations.append(
                                     RuleViolation(
-                                    file_path=self.file_path,
+                                        file_path=self.file_path,
                                         rule_id="cloud-security-s3-public-acl",
                                         message=f"S3 bucket ACL set to '{acl_value}' which allows public access. "
-                                                "Use bucket policies with least privilege.",
+                                        "Use bucket policies with least privilege.",
                                         line_number=node.lineno,
                                         column=node.col_offset,
                                         severity=RuleSeverity.CRITICAL,
@@ -331,7 +354,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect IAM policy misconfigurations."""
         if not self.has_boto3:
             return
-        
+
         # Check for overly permissive IAM policies (Action: "*")
         if isinstance(node.func, ast.Attribute):
             if "put_" in node.func.attr and "policy" in node.func.attr.lower():
@@ -346,7 +369,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     rule_id="cloud-security-iam-wildcard-action",
                                     message="IAM policy uses wildcard ('*') for Action. "
-                                            "Specify explicit permissions for least privilege.",
+                                    "Specify explicit permissions for least privilege.",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.HIGH,
@@ -360,7 +383,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect privileged container usage."""
         if not self.has_docker:
             return
-        
+
         # Check for Docker container run with privileged=True
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("run", "create"):
@@ -372,7 +395,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     rule_id="cloud-security-privileged-container",
                                     message="Container running with privileged=True grants excessive permissions. "
-                                            "Use specific capabilities instead (--cap-add).",
+                                    "Use specific capabilities instead (--cap-add).",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.HIGH,
@@ -386,7 +409,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect container escape attempt patterns."""
         if not self.has_docker:
             return
-        
+
         # Check for Docker socket mounting (/var/run/docker.sock)
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("run", "create"):
@@ -400,7 +423,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     rule_id="cloud-security-docker-socket-mount",
                                     message="Docker socket (/var/run/docker.sock) mounted in container. "
-                                            "This allows container escape. Use Docker API with authentication.",
+                                    "This allows container escape. Use Docker API with authentication.",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.CRITICAL,
@@ -421,10 +444,10 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                             if keyword.value.value in ("blob", "container"):
                                 self.violations.append(
                                     RuleViolation(
-                                    file_path=self.file_path,
+                                        file_path=self.file_path,
                                         rule_id="cloud-security-azure-public-storage",
                                         message="Azure Blob Container configured with public access. "
-                                                "Use SAS tokens or Azure AD authentication.",
+                                        "Use SAS tokens or Azure AD authentication.",
                                         line_number=node.lineno,
                                         column=node.col_offset,
                                         severity=RuleSeverity.HIGH,
@@ -446,10 +469,10 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                             if isinstance(timeout, int) and timeout > 600:  # > 10 minutes
                                 self.violations.append(
                                     RuleViolation(
-                                    file_path=self.file_path,
+                                        file_path=self.file_path,
                                         rule_id="cloud-security-serverless-long-timeout",
                                         message=f"Serverless function timeout set to {timeout}s (>10 min). "
-                                                "Long timeouts can lead to resource exhaustion.",
+                                        "Long timeouts can lead to resource exhaustion.",
                                         line_number=node.lineno,
                                         column=node.col_offset,
                                         severity=RuleSeverity.MEDIUM,
@@ -464,15 +487,20 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id.lower()
-                
+
                 # Check for Terraform state file references with secrets
                 if "terraform" in var_name and "state" in var_name:
                     if isinstance(node.value, ast.Constant):
                         if isinstance(node.value.value, str):
                             # Check for common secret patterns in Terraform state
                             secret_patterns = [
-                                "password", "secret", "api_key", "access_key",
-                                "private_key", "token", "credential"
+                                "password",
+                                "secret",
+                                "api_key",
+                                "access_key",
+                                "private_key",
+                                "token",
+                                "credential",
                             ]
                             value_lower = node.value.value.lower()
                             if any(pattern in value_lower for pattern in secret_patterns):
@@ -481,7 +509,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                         file_path=self.file_path,
                                         rule_id="cloud-security-terraform-state-secrets",
                                         message=f"Terraform state file may contain secrets in variable '{target.id}'. "
-                                                "Use remote state with encryption and secret management.",
+                                        "Use remote state with encryption and secret management.",
                                         line_number=node.lineno,
                                         column=node.col_offset,
                                         severity=RuleSeverity.HIGH,
@@ -501,7 +529,10 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     for target in stmt.targets:
                         if isinstance(target, ast.Name):
                             var_name = target.id.lower()
-                            if any(cred in var_name for cred in ["client", "session", "connection", "credentials"]):
+                            if any(
+                                cred in var_name
+                                for cred in ["client", "session", "connection", "credentials"]
+                            ):
                                 # Check if it's initialized with credentials
                                 if isinstance(stmt.value, ast.Call):
                                     self.violations.append(
@@ -509,7 +540,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                             file_path=self.file_path,
                                             rule_id="cloud-security-serverless-cold-start",
                                             message=f"Credentials/clients initialized in serverless handler '{node.name}'. "
-                                                    "Cold start vulnerabilities may expose credentials. Use lazy initialization.",
+                                            "Cold start vulnerabilities may expose credentials. Use lazy initialization.",
                                             line_number=stmt.lineno,
                                             column=stmt.col_offset,
                                             severity=RuleSeverity.MEDIUM,
@@ -524,7 +555,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect Kubernetes RBAC misconfiguration."""
         if not self.has_kubernetes:
             return
-        
+
         # Check for overly permissive RBAC rules
         if isinstance(node.func, ast.Attribute):
             if "create_role" in node.func.attr or "create_cluster_role" in node.func.attr:
@@ -538,7 +569,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                                     file_path=self.file_path,
                                     rule_id="cloud-security-k8s-rbac-wildcard",
                                     message="Kubernetes RBAC rule uses wildcard ('*') permissions. "
-                                            "Apply least privilege principle with specific resource permissions.",
+                                    "Apply least privilege principle with specific resource permissions.",
                                     line_number=node.lineno,
                                     column=node.col_offset,
                                     severity=RuleSeverity.HIGH,
@@ -552,7 +583,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
         """Detect container escape attempt patterns in code."""
         if not self.has_docker:
             return
-        
+
         # Check for dangerous system calls that could enable container escape
         if isinstance(node.func, ast.Attribute):
             dangerous_calls = {
@@ -561,14 +592,14 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 "unshare": "unshare() with CLONE_NEWUSER can escalate privileges",
                 "setns": "setns() can break namespace isolation",
             }
-            
+
             if node.func.attr in dangerous_calls:
                 self.violations.append(
                     RuleViolation(
                         file_path=self.file_path,
                         rule_id="cloud-security-container-escape-attempt",
                         message=f"Potential container escape: {dangerous_calls[node.func.attr]}. "
-                                "Ensure proper security context and restrictions.",
+                        "Ensure proper security context and restrictions.",
                         line_number=node.lineno,
                         column=node.col_offset,
                         severity=RuleSeverity.CRITICAL,
@@ -579,14 +610,14 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 )
 
 
-def check_cloud_security(file_path: Path, code: str) -> List[RuleViolation]:
+def check_cloud_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Check for cloud and container security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -612,9 +643,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-798",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.SAFE,
-        references=[
-            "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
-        ]
+        references=["https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"],
     ),
     Rule(
         rule_id="cloud-security-azure-credentials",
@@ -627,9 +656,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-798",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.SAFE,
-        references=[
-            "https://learn.microsoft.com/en-us/azure/key-vault/general/overview"
-        ]
+        references=["https://learn.microsoft.com/en-us/azure/key-vault/general/overview"],
     ),
     Rule(
         rule_id="cloud-security-gcp-credentials",
@@ -644,7 +671,7 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SAFE,
         references=[
             "https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys"
-        ]
+        ],
     ),
     Rule(
         rule_id="cloud-security-docker-secret-env",
@@ -657,9 +684,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-522",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.SUGGESTED,
-        references=[
-            "https://docs.docker.com/engine/swarm/secrets/"
-        ]
+        references=["https://docs.docker.com/engine/swarm/secrets/"],
     ),
     Rule(
         rule_id="cloud-security-k8s-secret-hardcoded",
@@ -672,9 +697,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-798",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.SAFE,
-        references=[
-            "https://kubernetes.io/docs/concepts/configuration/secret/"
-        ]
+        references=["https://kubernetes.io/docs/concepts/configuration/secret/"],
     ),
     Rule(
         rule_id="cloud-security-s3-public-acl",
@@ -689,7 +712,7 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SUGGESTED,
         references=[
             "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html"
-        ]
+        ],
     ),
     Rule(
         rule_id="cloud-security-iam-wildcard-action",
@@ -702,9 +725,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-732",
         owasp_mapping="A01:2021",
         fix_applicability=FixApplicability.MANUAL,
-        references=[
-            "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
-        ]
+        references=["https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"],
     ),
     Rule(
         rule_id="cloud-security-privileged-container",
@@ -719,7 +740,7 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SUGGESTED,
         references=[
             "https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities"
-        ]
+        ],
     ),
     Rule(
         rule_id="cloud-security-docker-socket-mount",
@@ -732,9 +753,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-250",
         owasp_mapping="A01:2021",
         fix_applicability=FixApplicability.MANUAL,
-        references=[
-            "https://docs.docker.com/engine/security/protect-access/"
-        ]
+        references=["https://docs.docker.com/engine/security/protect-access/"],
     ),
     Rule(
         rule_id="cloud-security-azure-public-storage",
@@ -749,7 +768,7 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SUGGESTED,
         references=[
             "https://learn.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-overview"
-        ]
+        ],
     ),
     Rule(
         rule_id="cloud-security-serverless-long-timeout",
@@ -764,7 +783,7 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.SAFE,
         references=[
             "https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html"
-        ]
+        ],
     ),
     Rule(
         rule_id="cloud-security-terraform-state-secrets",
@@ -777,9 +796,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-798",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.MANUAL,
-        references=[
-            "https://developer.hashicorp.com/terraform/language/state/sensitive-data"
-        ]
+        references=["https://developer.hashicorp.com/terraform/language/state/sensitive-data"],
     ),
     Rule(
         rule_id="cloud-security-serverless-cold-start",
@@ -792,9 +809,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-522",
         owasp_mapping="A02:2021",
         fix_applicability=FixApplicability.SUGGESTED,
-        references=[
-            "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
-        ]
+        references=["https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"],
     ),
     Rule(
         rule_id="cloud-security-k8s-rbac-wildcard",
@@ -807,9 +822,7 @@ CLOUD_SECURITY_RULES = [
         cwe_mapping="CWE-732",
         owasp_mapping="A01:2021",
         fix_applicability=FixApplicability.MANUAL,
-        references=[
-            "https://kubernetes.io/docs/concepts/security/rbac-good-practices/"
-        ]
+        references=["https://kubernetes.io/docs/concepts/security/rbac-good-practices/"],
     ),
     Rule(
         rule_id="cloud-security-container-escape-attempt",
@@ -824,8 +837,8 @@ CLOUD_SECURITY_RULES = [
         fix_applicability=FixApplicability.MANUAL,
         references=[
             "https://docs.docker.com/engine/security/seccomp/",
-            "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
-        ]
+            "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+        ],
     ),
 ]
 

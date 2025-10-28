@@ -56,9 +56,8 @@ References:
 """
 
 import ast
-import re
 from pathlib import Path
-from typing import List
+import re
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -77,10 +76,21 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
-        self.is_github_workflow = file_path.suffix in ('.yml', '.yaml') and '.github/workflows' in str(file_path)
-        self.is_dockerfile = file_path.name in ('Dockerfile', 'Containerfile') or file_path.suffix == '.dockerfile'
-        self.is_ci_config = file_path.name in ('.travis.yml', '.gitlab-ci.yml', 'azure-pipelines.yml', 'circle.yml', 'Jenkinsfile')
+        self.violations: list[RuleViolation] = []
+        self.is_github_workflow = file_path.suffix in (
+            ".yml",
+            ".yaml",
+        ) and ".github/workflows" in str(file_path)
+        self.is_dockerfile = (
+            file_path.name in ("Dockerfile", "Containerfile") or file_path.suffix == ".dockerfile"
+        )
+        self.is_ci_config = file_path.name in (
+            ".travis.yml",
+            ".gitlab-ci.yml",
+            "azure-pipelines.yml",
+            "circle.yml",
+            "Jenkinsfile",
+        )
 
     def analyze_yaml_workflow(self) -> None:
         """Analyze GitHub Actions workflows and other CI YAML files."""
@@ -89,29 +99,32 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
 
         for line_num, line in enumerate(self.lines, 1):
             # SUPPLY001: Check for secrets in workflow
-            if re.search(r'(password|secret|token|key|api[_-]?key)\s*[:=]\s*["\']?[\w-]{20,}', line, re.IGNORECASE):
-                if not re.search(r'\$\{\{\s*secrets\.', line):  # Not using GitHub secrets
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="SUPPLY001",
-                            file_path=self.file_path,
-                            line_number=line_num,
-                            column=0,
-                            severity=RuleSeverity.CRITICAL,
-                            category=RuleCategory.SECURITY,
-                            message="Hardcoded secret in CI/CD workflow - credential exposure",
-                            fix_suggestion="Use encrypted secrets: ${{ secrets.SECRET_NAME }}. "
-                                          "Never commit credentials to workflow files.",
-                            cwe_id="CWE-798",
-                            owasp_id="A07:2021 - Identification and Authentication Failures",
-                            fix_applicability=FixApplicability.MANUAL,
-                        )
+            if re.search(
+                r'(password|secret|token|key|api[_-]?key)\s*[:=]\s*["\']?[\w-]{20,}',
+                line,
+                re.IGNORECASE,
+            ) and not re.search(r"\$\{\{\s*secrets\.", line):  # Not using GitHub secrets
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="SUPPLY001",
+                        file_path=self.file_path,
+                        line_number=line_num,
+                        column=0,
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        message="Hardcoded secret in CI/CD workflow - credential exposure",
+                        fix_suggestion="Use encrypted secrets: ${{ secrets.SECRET_NAME }}. "
+                        "Never commit credentials to workflow files.",
+                        cwe_id="CWE-798",
+                        owasp_id="A07:2021 - Identification and Authentication Failures",
+                        fix_applicability=FixApplicability.MANUAL,
                     )
+                )
 
             # SUPPLY002: Check for unpinned third-party actions
-            if 'uses:' in line and '@' in line:
-                if not re.search(r'@[0-9a-f]{40}', line):  # Not a commit SHA
-                    if not re.search(r'@v\d+\.\d+\.\d+$', line):  # Not a specific version
+            if "uses:" in line and "@" in line:
+                if not re.search(r"@[0-9a-f]{40}", line):  # Not a commit SHA
+                    if not re.search(r"@v\d+\.\d+\.\d+$", line):  # Not a specific version
                         self.violations.append(
                             RuleViolation(
                                 rule_id="SUPPLY002",
@@ -122,7 +135,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Unpinned third-party action - supply chain attack risk",
                                 fix_suggestion="Pin actions to specific commit SHA (e.g., @abc123...) or semantic version (e.g., @v1.2.3). "
-                                              "Never use floating tags like @main or @v1.",
+                                "Never use floating tags like @main or @v1.",
                                 cwe_id="CWE-494",
                                 owasp_id="A06:2021 - Vulnerable and Outdated Components",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -130,7 +143,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         )
 
             # SUPPLY003: Check for dangerous workflow permissions
-            if re.search(r'permissions:\s*write-all', line, re.IGNORECASE):
+            if re.search(r"permissions:\s*write-all", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY003",
@@ -141,7 +154,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Workflow granted write-all permissions - excessive privileges",
                         fix_suggestion="Use minimal permissions. Grant only required permissions like 'contents: read'. "
-                                      "Avoid 'permissions: write-all'.",
+                        "Avoid 'permissions: write-all'.",
                         cwe_id="CWE-250",
                         owasp_id="A04:2021 - Insecure Design",
                         fix_applicability=FixApplicability.SAFE,
@@ -149,12 +162,14 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY004: Check for workflow_dispatch without input validation
-            if 'workflow_dispatch:' in line:
+            if "workflow_dispatch:" in line:
                 # Look ahead for inputs without validation
                 if line_num < len(self.lines):
-                    next_lines = self.lines[line_num:line_num + 10]
-                    has_inputs = any('inputs:' in line for line in next_lines)
-                    has_validation = any('required:' in line or 'type:' in line for line in next_lines)
+                    next_lines = self.lines[line_num : line_num + 10]
+                    has_inputs = any("inputs:" in line for line in next_lines)
+                    has_validation = any(
+                        "required:" in line or "type:" in line for line in next_lines
+                    )
                     if has_inputs and not has_validation:
                         self.violations.append(
                             RuleViolation(
@@ -166,7 +181,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Workflow dispatch inputs without validation - injection risk",
                                 fix_suggestion="Add 'required: true' and 'type:' to all workflow inputs. "
-                                              "Validate inputs before use in scripts.",
+                                "Validate inputs before use in scripts.",
                                 cwe_id="CWE-20",
                                 owasp_id="A03:2021 - Injection",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -174,7 +189,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         )
 
             # SUPPLY005: Check for echo/print of secrets
-            if re.search(r'(echo|print|console\.log).*\$\{\{\s*secrets\.', line, re.IGNORECASE):
+            if re.search(r"(echo|print|console\.log).*\$\{\{\s*secrets\.", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY005",
@@ -192,10 +207,16 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY006: Check for missing attestation/provenance
-            if 'publish' in line.lower() or 'release' in line.lower():
+            if "publish" in line.lower() or "release" in line.lower():
                 # Check if SLSA provenance or attestation is generated
-                context = '\n'.join(self.lines[max(0, line_num-10):min(len(self.lines), line_num+10)])
-                if not re.search(r'(slsa-framework/slsa-github-generator|attestation|provenance|sigstore)', context, re.IGNORECASE):
+                context = "\n".join(
+                    self.lines[max(0, line_num - 10) : min(len(self.lines), line_num + 10)]
+                )
+                if not re.search(
+                    r"(slsa-framework/slsa-github-generator|attestation|provenance|sigstore)",
+                    context,
+                    re.IGNORECASE,
+                ):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY006",
@@ -206,7 +227,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Package published without provenance attestation",
                             fix_suggestion="Generate SLSA provenance using slsa-github-generator. "
-                                          "Add attestation to verify build integrity.",
+                            "Add attestation to verify build integrity.",
                             cwe_id="CWE-345",
                             owasp_id="A08:2021 - Software and Data Integrity Failures",
                             fix_applicability=FixApplicability.MANUAL,
@@ -214,10 +235,10 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY012: Check for pull_request_target with code execution
-            if 'pull_request_target:' in line:
+            if "pull_request_target:" in line:
                 # Check if workflow executes code from PR
-                context = '\n'.join(self.lines[line_num:min(len(self.lines), line_num+20)])
-                if re.search(r'(run:|script:|npm\s+run|python|node)', context, re.IGNORECASE):
+                context = "\n".join(self.lines[line_num : min(len(self.lines), line_num + 20)])
+                if re.search(r"(run:|script:|npm\s+run|python|node)", context, re.IGNORECASE):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY012",
@@ -228,7 +249,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="pull_request_target executes untrusted code - workflow poisoning risk",
                             fix_suggestion="Use 'pull_request' trigger instead of 'pull_request_target'. "
-                                          "Never run untrusted code with secrets access.",
+                            "Never run untrusted code with secrets access.",
                             cwe_id="CWE-94",
                             owasp_id="A08:2021 - Software and Data Integrity Failures",
                             fix_applicability=FixApplicability.SAFE,
@@ -236,7 +257,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY013: Check for cache poisoning risks
-            if re.search(r'cache.*key.*github\.event\.pull_request', line, re.IGNORECASE):
+            if re.search(r"cache.*key.*github\.event\.pull_request", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY013",
@@ -254,10 +275,12 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY014: Check for artifact upload without permissions check
-            if 'actions/upload-artifact' in line:
+            if "actions/upload-artifact" in line:
                 # Look for retention days
-                context = '\n'.join(self.lines[max(0, line_num-5):min(len(self.lines), line_num+10)])
-                if not re.search(r'retention-days:', context):
+                context = "\n".join(
+                    self.lines[max(0, line_num - 5) : min(len(self.lines), line_num + 10)]
+                )
+                if not re.search(r"retention-days:", context):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY014",
@@ -268,7 +291,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Artifact uploaded without retention policy - storage exposure risk",
                             fix_suggestion="Set retention-days to limit artifact storage duration. "
-                                          "Default 90 days may expose sensitive data longer than needed.",
+                            "Default 90 days may expose sensitive data longer than needed.",
                             cwe_id="CWE-404",
                             owasp_id="A01:2021 - Broken Access Control",
                             fix_applicability=FixApplicability.SUGGESTED,
@@ -276,9 +299,11 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY015: Check for missing SBOM generation
-            if re.search(r'(build|package|release).*\.(whl|tar\.gz|zip)', line, re.IGNORECASE):
-                context = '\n'.join(self.lines[max(0, line_num-10):min(len(self.lines), line_num+10)])
-                if not re.search(r'(sbom|cyclonedx|spdx)', context, re.IGNORECASE):
+            if re.search(r"(build|package|release).*\.(whl|tar\.gz|zip)", line, re.IGNORECASE):
+                context = "\n".join(
+                    self.lines[max(0, line_num - 10) : min(len(self.lines), line_num + 10)]
+                )
+                if not re.search(r"(sbom|cyclonedx|spdx)", context, re.IGNORECASE):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY015",
@@ -289,7 +314,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Package built without SBOM generation",
                             fix_suggestion="Generate SBOM using cyclonedx-py or similar tool. "
-                                          "SBOMs enable vulnerability tracking and compliance.",
+                            "SBOMs enable vulnerability tracking and compliance.",
                             cwe_id="CWE-1104",
                             owasp_id="A06:2021 - Vulnerable and Outdated Components",
                             fix_applicability=FixApplicability.MANUAL,
@@ -297,9 +322,11 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY016: Check for missing code signing
-            if re.search(r'(publish|release|upload).*\.(whl|tar\.gz|exe|msi)', line, re.IGNORECASE):
-                context = '\n'.join(self.lines[max(0, line_num-10):min(len(self.lines), line_num+10)])
-                if not re.search(r'(sign|gpg|cosign|sigstore)', context, re.IGNORECASE):
+            if re.search(r"(publish|release|upload).*\.(whl|tar\.gz|exe|msi)", line, re.IGNORECASE):
+                context = "\n".join(
+                    self.lines[max(0, line_num - 10) : min(len(self.lines), line_num + 10)]
+                )
+                if not re.search(r"(sign|gpg|cosign|sigstore)", context, re.IGNORECASE):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY016",
@@ -310,7 +337,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Package published without digital signature",
                             fix_suggestion="Sign releases with GPG or Sigstore/cosign. "
-                                          "Signatures enable verification of package authenticity.",
+                            "Signatures enable verification of package authenticity.",
                             cwe_id="CWE-345",
                             owasp_id="A08:2021 - Software and Data Integrity Failures",
                             fix_applicability=FixApplicability.MANUAL,
@@ -318,7 +345,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY017: Check for pipeline privilege escalation
-            if re.search(r'sudo|su\s+', line):
+            if re.search(r"sudo|su\s+", line):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY017",
@@ -329,7 +356,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Pipeline uses sudo/su - privilege escalation risk",
                         fix_suggestion="Avoid sudo in CI/CD. Use appropriate permissions and containers. "
-                                      "If sudo needed, use with specific commands only.",
+                        "If sudo needed, use with specific commands only.",
                         cwe_id="CWE-250",
                         owasp_id="A04:2021 - Insecure Design",
                         fix_applicability=FixApplicability.MANUAL,
@@ -337,7 +364,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY018: Check for build reproducibility issues
-            if re.search(r'(build|compile).*\$\(date\)|Random', line, re.IGNORECASE):
+            if re.search(r"(build|compile).*\$\(date\)|Random", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY018",
@@ -348,7 +375,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Build uses timestamps or random values - not reproducible",
                         fix_suggestion="Use SOURCE_DATE_EPOCH for reproducible builds. "
-                                      "Avoid timestamps and random values in build output.",
+                        "Avoid timestamps and random values in build output.",
                         cwe_id="CWE-330",
                         owasp_id="A08:2021 - Software and Data Integrity Failures",
                         fix_applicability=FixApplicability.MANUAL,
@@ -362,7 +389,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
 
         for line_num, line in enumerate(self.lines, 1):
             # SUPPLY007: Check for secrets in build args
-            if re.search(r'ARG\s+(password|secret|token|key|api[_-]?key)', line, re.IGNORECASE):
+            if re.search(r"ARG\s+(password|secret|token|key|api[_-]?key)", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY007",
@@ -373,7 +400,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Secret passed as Docker build argument - stored in image history",
                         fix_suggestion="Use multi-stage builds and mount secrets with --secret flag (BuildKit). "
-                                      "Never pass secrets as ARG - they're stored in image layers.",
+                        "Never pass secrets as ARG - they're stored in image layers.",
                         cwe_id="CWE-522",
                         owasp_id="A02:2021 - Cryptographic Failures",
                         fix_applicability=FixApplicability.MANUAL,
@@ -381,9 +408,9 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY008: Check for unsigned base images
-            if line.strip().startswith('FROM '):
+            if line.strip().startswith("FROM "):
                 # Check if image is from trusted registry with content trust
-                if not re.search(r'@sha256:', line):
+                if not re.search(r"@sha256:", line):
                     self.violations.append(
                         RuleViolation(
                             rule_id="SUPPLY008",
@@ -394,7 +421,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Docker image not pinned to digest - image tampering risk",
                             fix_suggestion="Pin images to SHA256 digest: FROM image@sha256:abc123... "
-                                          "This ensures immutable image reference.",
+                            "This ensures immutable image reference.",
                             cwe_id="CWE-494",
                             owasp_id="A08:2021 - Software and Data Integrity Failures",
                             fix_applicability=FixApplicability.MANUAL,
@@ -402,7 +429,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                     )
 
             # SUPPLY019: Check for running as root in containers
-            if re.search(r'USER\s+root', line, re.IGNORECASE):
+            if re.search(r"USER\s+root", line, re.IGNORECASE):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY019",
@@ -413,7 +440,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Container configured to run as root user",
                         fix_suggestion="Create and use non-root user: USER nonroot. "
-                                      "Running as root increases attack surface.",
+                        "Running as root increases attack surface.",
                         cwe_id="CWE-250",
                         owasp_id="A04:2021 - Insecure Design",
                         fix_applicability=FixApplicability.SAFE,
@@ -421,7 +448,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY020: Check for insecure package downloads
-            if re.search(r'(curl|wget).*http://', line):
+            if re.search(r"(curl|wget).*http://", line):
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY020",
@@ -443,10 +470,10 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
         # SUPPLY009: Check for deprecated package usage
         if isinstance(node.func, ast.Name):
             deprecated_modules = {
-                'imp': 'Use importlib instead',
-                'optparse': 'Use argparse instead',
-                'md5': 'Use hashlib.sha256 instead',
-                'sha': 'Use hashlib.sha256 instead',
+                "imp": "Use importlib instead",
+                "optparse": "Use argparse instead",
+                "md5": "Use hashlib.sha256 instead",
+                "sha": "Use hashlib.sha256 instead",
             }
             if node.func.id in deprecated_modules:
                 self.violations.append(
@@ -468,23 +495,23 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def analyze_requirements_file_advanced(file_path: Path) -> List[RuleViolation]:
+def analyze_requirements_file_advanced(file_path: Path) -> list[RuleViolation]:
     """Analyze requirements.txt for advanced supply chain issues."""
-    violations: List[RuleViolation] = []
-    
+    violations: list[RuleViolation] = []
+
     try:
         content = file_path.read_text()
-        lines = content.split('\n')
-        
+        lines = content.split("\n")
+
         seen_packages = set()
         for line_num, line in enumerate(lines, 1):
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
-            
+
             # SUPPLY010: Check for license compliance issues
             # (Simplified - would need actual license data in production)
-            if re.match(r'(gpl|lgpl|agpl)', line, re.IGNORECASE):
+            if re.match(r"(gpl|lgpl|agpl)", line, re.IGNORECASE):
                 violations.append(
                     RuleViolation(
                         rule_id="SUPPLY010",
@@ -495,15 +522,15 @@ def analyze_requirements_file_advanced(file_path: Path) -> List[RuleViolation]:
                         category=RuleCategory.SECURITY,
                         message="Package with GPL license detected - verify compliance with proprietary code",
                         fix_suggestion="Review GPL license compatibility with your project's license. "
-                                      "GPL requires source code distribution.",
+                        "GPL requires source code distribution.",
                         cwe_id="CWE-1104",
                         owasp_id="A06:2021 - Vulnerable and Outdated Components",
                         fix_applicability=FixApplicability.MANUAL,
                     )
                 )
-            
+
             # SUPPLY011: Check for version conflicts
-            package_match = re.match(r'([a-zA-Z0-9_-]+)', line)
+            package_match = re.match(r"([a-zA-Z0-9_-]+)", line)
             if package_match:
                 package_name = package_match.group(1).lower()
                 if package_name in seen_packages:
@@ -523,45 +550,45 @@ def analyze_requirements_file_advanced(file_path: Path) -> List[RuleViolation]:
                         )
                     )
                 seen_packages.add(package_name)
-    
+
     except Exception:
         pass
-    
+
     return violations
 
 
-def analyze_supply_chain_advanced(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_supply_chain_advanced(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze files for advanced supply chain security issues.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code content
-        
+
     Returns:
         List of rule violations found
     """
-    violations: List[RuleViolation] = []
-    
+    violations: list[RuleViolation] = []
+
     # Check if it's a requirements file
-    if file_path.name in ('requirements.txt', 'requirements-dev.txt', 'requirements-test.txt'):
+    if file_path.name in ("requirements.txt", "requirements-dev.txt", "requirements-test.txt"):
         violations.extend(analyze_requirements_file_advanced(file_path))
-    
+
     # Initialize visitor
     visitor = SupplyChainAdvancedVisitor(file_path, code)
-    
+
     # Analyze YAML workflows
     if visitor.is_github_workflow or visitor.is_ci_config:
         visitor.analyze_yaml_workflow()
         violations.extend(visitor.violations)
         return violations
-    
+
     # Analyze Dockerfile
     if visitor.is_dockerfile:
         visitor.analyze_dockerfile()
         violations.extend(visitor.violations)
         return violations
-    
+
     # Analyze Python code
     try:
         tree = ast.parse(code)
@@ -569,7 +596,7 @@ def analyze_supply_chain_advanced(file_path: Path, code: str) -> List[RuleViolat
         violations.extend(visitor.violations)
     except SyntaxError:
         pass
-    
+
     return violations
 
 

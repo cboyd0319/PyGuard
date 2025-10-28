@@ -8,11 +8,11 @@ References:
 - Google SRE | https://sre.google | Medium | Observability and monitoring patterns
 """
 
-import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
+import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -127,7 +127,7 @@ class ConsoleReporter:
         message: str,
         file_path: str,
         line_number: int,
-        fix_suggestion: Optional[str] = None,
+        fix_suggestion: str | None = None,
     ):
         """Print details of a single issue."""
         severity_colors = {"HIGH": "RED", "MEDIUM": "YELLOW", "LOW": "CYAN"}
@@ -154,8 +154,8 @@ class JSONReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
-        self, metrics: AnalysisMetrics, issues: List[Dict[str, Any]], fixes: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], fixes: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Generate JSON report.
 
@@ -176,7 +176,7 @@ class JSONReporter:
             "status": self._get_status(metrics),
         }
 
-    def save_report(self, report: Dict[str, Any], output_path: Path):
+    def save_report(self, report: dict[str, Any], output_path: Path):
         """
         Save report to JSON file.
 
@@ -190,18 +190,17 @@ class JSONReporter:
 
             self.logger.success(f"JSON report saved to {output_path}", category="Reporting")
         except Exception as e:
-            self.logger.error(f"Failed to save JSON report: {str(e)}", category="Reporting")
+            self.logger.error(f"Failed to save JSON report: {e!s}", category="Reporting")
 
     def _get_status(self, metrics: AnalysisMetrics) -> str:
         """Get overall status based on metrics."""
         if metrics.total_issues == 0:
             return "passed"
-        elif metrics.security_issues > 0:
+        if metrics.security_issues > 0:
             return "failed_security"
-        elif metrics.quality_issues > 0:
+        if metrics.quality_issues > 0:
             return "warning"
-        else:
-            return "unknown"
+        return "unknown"
 
 
 class HTMLReporter:
@@ -216,7 +215,7 @@ class HTMLReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
-        self, metrics: AnalysisMetrics, issues: List[Dict[str, Any]], fixes: List[Dict[str, Any]]
+        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], fixes: list[dict[str, Any]]
     ) -> str:
         """
         Generate HTML report.
@@ -339,7 +338,7 @@ class HTMLReporter:
         <h1>🐍 PyGuard Analysis Report</h1>
         <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
     </div>
-    
+
     <div class="metrics">
         <div class="metric-card">
             <h3>Total Files</h3>
@@ -358,11 +357,11 @@ class HTMLReporter:
             <div class="value">{metrics.fixes_applied}</div>
         </div>
     </div>
-    
+
     <div class="status {'passed' if metrics.total_issues == 0 else 'failed'}">
         {'[OK] No issues found!' if metrics.total_issues == 0 else f'[WARN] {metrics.total_issues} issues detected'}
     </div>
-    
+
     <div class="issues-table">
         <table>
             <thead>
@@ -398,4 +397,4 @@ class HTMLReporter:
 
             self.logger.success(f"HTML report saved to {output_path}", category="Reporting")
         except Exception as e:
-            self.logger.error(f"Failed to save HTML report: {str(e)}", category="Reporting")
+            self.logger.error(f"Failed to save HTML report: {e!s}", category="Reporting")

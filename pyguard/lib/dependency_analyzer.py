@@ -9,7 +9,7 @@ import ast
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any
 
 
 @dataclass
@@ -19,7 +19,7 @@ class DependencyIssue:
     severity: str  # HIGH, MEDIUM, LOW
     category: str
     message: str
-    modules: List[str]
+    modules: list[str]
     suggestion: str
 
 
@@ -28,9 +28,9 @@ class DependencyGraphAnalyzer:
 
     def __init__(self):
         """Initialize the dependency analyzer."""
-        self.dependencies: Dict[str, Set[str]] = defaultdict(set)
-        self.reverse_dependencies: Dict[str, Set[str]] = defaultdict(set)
-        self.issues: List[DependencyIssue] = []
+        self.dependencies: dict[str, set[str]] = defaultdict(set)
+        self.reverse_dependencies: dict[str, set[str]] = defaultdict(set)
+        self.issues: list[DependencyIssue] = []
 
     def analyze_file(self, file_path: Path, module_name: str) -> None:
         """
@@ -51,10 +51,9 @@ class DependencyGraphAnalyzer:
                         self.dependencies[module_name].add(imported)
                         self.reverse_dependencies[imported].add(module_name)
 
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module:
-                        self.dependencies[module_name].add(node.module)
-                        self.reverse_dependencies[node.module].add(module_name)
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    self.dependencies[module_name].add(node.module)
+                    self.reverse_dependencies[node.module].add(module_name)
 
         except (SyntaxError, UnicodeDecodeError):
             pass
@@ -74,7 +73,7 @@ class DependencyGraphAnalyzer:
 
             # Calculate module name
             relative_path = py_file.relative_to(directory)
-            module_parts = list(relative_path.parts[:-1]) + [py_file.stem]
+            module_parts = [*list(relative_path.parts[:-1]), py_file.stem]
 
             if module_parts[-1] == "__init__":
                 module_parts = module_parts[:-1]
@@ -86,7 +85,7 @@ class DependencyGraphAnalyzer:
 
             self.analyze_file(py_file, module_name)
 
-    def find_circular_dependencies(self) -> List[List[str]]:
+    def find_circular_dependencies(self) -> list[list[str]]:
         """
         Find circular dependencies in the dependency graph.
 
@@ -96,11 +95,11 @@ class DependencyGraphAnalyzer:
         cycles = []
         visited = set()
 
-        def dfs(node: str, path: List[str]) -> None:
+        def dfs(node: str, path: list[str]) -> None:
             if node in path:
                 # Found a cycle
                 cycle_start = path.index(node)
-                cycle = path[cycle_start:] + [node]
+                cycle = [*path[cycle_start:], node]
                 if cycle not in cycles and list(reversed(cycle)) not in cycles:
                     cycles.append(cycle)
                 return
@@ -119,7 +118,7 @@ class DependencyGraphAnalyzer:
 
         return cycles
 
-    def find_complex_dependencies(self, threshold: int = 10) -> Dict[str, int]:
+    def find_complex_dependencies(self, threshold: int = 10) -> dict[str, int]:
         """
         Find modules with too many dependencies.
 
@@ -137,7 +136,7 @@ class DependencyGraphAnalyzer:
 
         return complex_modules
 
-    def find_god_modules(self, threshold: int = 10) -> Dict[str, int]:
+    def find_god_modules(self, threshold: int = 10) -> dict[str, int]:
         """
         Find modules that are dependencies of too many other modules.
 
@@ -155,7 +154,7 @@ class DependencyGraphAnalyzer:
 
         return god_modules
 
-    def detect_dependency_issues(self) -> List[DependencyIssue]:
+    def detect_dependency_issues(self) -> list[DependencyIssue]:
         """
         Detect all dependency-related issues.
 
@@ -205,7 +204,7 @@ class DependencyGraphAnalyzer:
 
         return self.issues
 
-    def generate_graph_data(self) -> Dict[str, Any]:
+    def generate_graph_data(self) -> dict[str, Any]:
         """
         Generate data for dependency graph visualization.
 
@@ -248,7 +247,7 @@ class DependencyGraphAnalyzer:
 
         return "\n".join(lines)
 
-    def get_dependency_stats(self) -> Dict[str, Any]:
+    def get_dependency_stats(self) -> dict[str, Any]:
         """
         Get statistics about dependencies.
 

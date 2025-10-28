@@ -6,10 +6,9 @@ following PEP 8 guidelines.
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -36,9 +35,9 @@ class NamingConventionVisitor(ast.NodeVisitor):
     Implements PEP 8 naming conventions (pep8-naming).
     """
 
-    def __init__(self, source_lines: List[str]):
+    def __init__(self, source_lines: list[str]):
         """Initialize naming convention visitor."""
-        self.issues: List[NamingIssue] = []
+        self.issues: list[NamingIssue] = []
         self.source_lines = source_lines
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -52,7 +51,7 @@ class NamingConventionVisitor(ast.NodeVisitor):
         """Check if name follows snake_case convention."""
         # Allow leading underscore(s)
         name = name.lstrip("_")
-        return name.islower() or "_" in name and name.replace("_", "").islower()
+        return name.islower() or ("_" in name and name.replace("_", "").islower())
 
     def _is_camel_case(self, name: str) -> bool:
         """Check if name follows CamelCase convention."""
@@ -346,7 +345,7 @@ class NamingConventionFixer:
         self.file_ops = FileOperations()
         self.fixes_applied = []
 
-    def scan_file_for_issues(self, file_path: Path) -> List[NamingIssue]:
+    def scan_file_for_issues(self, file_path: Path) -> list[NamingIssue]:
         """
         Scan a file for naming convention issues.
 
@@ -369,7 +368,7 @@ class NamingConventionFixer:
         except SyntaxError:
             return []
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, List[str]]:
+    def fix_file(self, file_path: Path) -> tuple[bool, list[str]]:
         """
         Apply naming convention fixes to a Python file.
 

@@ -4,9 +4,9 @@ Code formatting fixes for Python.
 Integrates with black, isort, autopep8 for automated formatting.
 """
 
-import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+import subprocess
+from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -19,7 +19,7 @@ class FormattingFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def format_with_black(self, file_path: Path, line_length: int = 100) -> Tuple[bool, str]:
+    def format_with_black(self, file_path: Path, line_length: int = 100) -> tuple[bool, str]:
         """
         Format file with Black.
 
@@ -33,7 +33,7 @@ class FormattingFixer:
         try:
             result = subprocess.run(
                 ["black", "--line-length", str(line_length), str(file_path)],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -62,11 +62,11 @@ class FormattingFixer:
             self.logger.error(error_msg, category="Formatting", file_path=str(file_path))
             return False, error_msg
         except Exception as e:
-            error_msg = f"Error running Black: {str(e)}"
+            error_msg = f"Error running Black: {e!s}"
             self.logger.error(error_msg, category="Formatting", file_path=str(file_path))
             return False, error_msg
 
-    def format_with_autopep8(self, file_path: Path, aggressive: int = 1) -> Tuple[bool, str]:
+    def format_with_autopep8(self, file_path: Path, aggressive: int = 1) -> tuple[bool, str]:
         """
         Format file with autopep8.
 
@@ -87,7 +87,7 @@ class FormattingFixer:
 
             result = subprocess.run(
                 args,
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -107,11 +107,11 @@ class FormattingFixer:
             self.logger.error(error_msg, category="Formatting")
             return False, error_msg
         except Exception as e:
-            error_msg = f"Error running autopep8: {str(e)}"
+            error_msg = f"Error running autopep8: {e!s}"
             self.logger.error(error_msg, category="Formatting", file_path=str(file_path))
             return False, error_msg
 
-    def sort_imports_with_isort(self, file_path: Path) -> Tuple[bool, str]:
+    def sort_imports_with_isort(self, file_path: Path) -> tuple[bool, str]:
         """
         Sort imports with isort.
 
@@ -124,7 +124,7 @@ class FormattingFixer:
         try:
             result = subprocess.run(
                 ["isort", str(file_path)],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -144,7 +144,7 @@ class FormattingFixer:
             self.logger.error(error_msg, category="Formatting")
             return False, error_msg
         except Exception as e:
-            error_msg = f"Error running isort: {str(e)}"
+            error_msg = f"Error running isort: {e!s}"
             self.logger.error(error_msg, category="Formatting", file_path=str(file_path))
             return False, error_msg
 
@@ -154,7 +154,7 @@ class FormattingFixer:
         use_black: bool = True,
         use_isort: bool = True,
         use_autopep8: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Format a Python file using specified formatters.
 
@@ -167,8 +167,8 @@ class FormattingFixer:
         Returns:
             Dictionary with formatting results
         """
-        formatters_applied: List[str] = []
-        errors: List[str] = []
+        formatters_applied: list[str] = []
+        errors: list[str] = []
         success_flag = True
 
         # Sort imports first (if using isort)
@@ -198,21 +198,20 @@ class FormattingFixer:
                 errors.append(f"black: {output}")
                 success_flag = False
 
-        results = {
+        return {
             "file": str(file_path),
             "success": success_flag,
             "formatters_applied": formatters_applied,
             "errors": errors,
         }
 
-        return results
 
     def format_directory(
         self,
         directory: Path,
-        exclude_patterns: Optional[List[str]] = None,
+        exclude_patterns: list[str] | None = None,
         **format_options,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Format all Python files in a directory.
 
@@ -249,7 +248,7 @@ class WhitespaceFixer:
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
-    def fix_trailing_whitespace(self, content: str) -> Tuple[str, int]:
+    def fix_trailing_whitespace(self, content: str) -> tuple[str, int]:
         """
         Remove trailing whitespace from lines.
 
@@ -269,7 +268,7 @@ class WhitespaceFixer:
 
         return "\n".join(lines), fixed_count
 
-    def fix_blank_lines(self, content: str) -> Tuple[str, int]:
+    def fix_blank_lines(self, content: str) -> tuple[str, int]:
         """
         Fix excessive blank lines (PEP 8: max 2 consecutive).
 
@@ -288,7 +287,7 @@ class WhitespaceFixer:
         fixes = 0 if content == original_content else 1
         return content, fixes
 
-    def fix_line_endings(self, content: str) -> Tuple[str, bool]:
+    def fix_line_endings(self, content: str) -> tuple[str, bool]:
         """
         Ensure consistent line endings (LF).
 
@@ -302,7 +301,7 @@ class WhitespaceFixer:
             return content.replace("\r\n", "\n"), True
         return content, False
 
-    def fix_file_whitespace(self, file_path: Path) -> Dict[str, Any]:
+    def fix_file_whitespace(self, file_path: Path) -> dict[str, Any]:
         """
         Fix all whitespace issues in a file.
 

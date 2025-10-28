@@ -34,7 +34,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -52,11 +51,11 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
     def __init__(self, file_path: Path, code: str):
         self.file_path = file_path
         self.code = code
-        self.lines: List[str] = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.lines: list[str] = code.splitlines()
+        self.violations: list[RuleViolation] = []
         self.has_asyncio_import = False
-        self.async_functions: Set[str] = set()
-        self.event_loops: Set[str] = set()
+        self.async_functions: set[str] = set()
+        self.event_loops: set[str] = set()
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track asyncio imports."""
@@ -74,7 +73,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Analyze async functions for security issues."""
         self.async_functions.add(node.name)
-        
+
         # Check for subprocess usage
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
@@ -83,7 +82,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                 self._check_future_tampering(child, node)
                 self._check_queue_poisoning(child, node)
                 self._check_executor_security(child, node)
-        
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -98,7 +97,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         self._check_semaphore_security(node)
         self._check_lock_security(node)
         self._check_stream_security(node)
-        
+
         self.generic_visit(node)
 
     def _check_subprocess_security(self, node: ast.Call, func_node: ast.AsyncFunctionDef) -> None:
@@ -124,7 +123,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.HIGH,
                         category=RuleCategory.SECURITY,
                         code_snippet=self._get_snippet(node),
-                        
                     )
                 )
 
@@ -134,7 +132,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
                 self._check_event_loop_injection(child, node)
-        
+
         self.generic_visit(node)
 
     def _check_event_loop_injection(self, node: ast.Call, func_node) -> None:
@@ -153,7 +151,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.HIGH,
                             category=RuleCategory.SECURITY,
                             code_snippet=self._get_snippet(node),
-                            
                         )
                     )
 
@@ -163,13 +160,12 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "create_task":
                 func_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
-            if node.func.id == "create_task":
-                func_name = node.func.id
+        elif isinstance(node.func, ast.Name) and node.func.id == "create_task":
+            func_name = node.func.id
 
         if func_name:
             # Check if task is created but not awaited or stored
-            parent = getattr(node, '_parent', None)
+            parent = getattr(node, "_parent", None)
             if parent and isinstance(parent, ast.Expr):
                 self.violations.append(
                     RuleViolation(
@@ -181,7 +177,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.MEDIUM,
                         category=RuleCategory.SECURITY,
                         code_snippet=self._get_snippet(node),
-                        
                     )
                 )
 
@@ -200,7 +195,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.MEDIUM,
                         category=RuleCategory.SECURITY,
                         code_snippet=self._get_snippet(node),
-                        
                     )
                 )
 
@@ -210,15 +204,12 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "gather":
                 func_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
-            if node.func.id == "gather":
-                func_name = node.func.id
+        elif isinstance(node.func, ast.Name) and node.func.id == "gather":
+            func_name = node.func.id
 
         if func_name:
             # Check if return_exceptions is not set
-            has_return_exceptions = any(
-                kw.arg == "return_exceptions" for kw in node.keywords
-            )
+            has_return_exceptions = any(kw.arg == "return_exceptions" for kw in node.keywords)
             if not has_return_exceptions:
                 self.violations.append(
                     RuleViolation(
@@ -230,7 +221,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.LOW,
                         category=RuleCategory.SECURITY,
                         code_snippet=self._get_snippet(node),
-                        
                     )
                 )
 
@@ -240,9 +230,8 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "wait":
                 func_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
-            if node.func.id == "wait":
-                func_name = node.func.id
+        elif isinstance(node.func, ast.Name) and node.func.id == "wait":
+            func_name = node.func.id
 
         if func_name:
             # Check if timeout is set
@@ -258,14 +247,13 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                         severity=RuleSeverity.MEDIUM,
                         category=RuleCategory.SECURITY,
                         code_snippet=self._get_snippet(node),
-                        
                     )
                 )
 
     def _check_semaphore_security(self, node: ast.Call) -> None:
         """ASYNCIO007: Check for Semaphore with value from user input."""
         if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "Semaphore" or node.func.attr == "BoundedSemaphore":
+            if node.func.attr in {"Semaphore", "BoundedSemaphore"}:
                 if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
                     # Value might be from user input
                     self.violations.append(
@@ -278,7 +266,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.MEDIUM,
                             category=RuleCategory.SECURITY,
                             code_snippet=self._get_snippet(node),
-                            
                         )
                     )
 
@@ -299,7 +286,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.SECURITY,
                             code_snippet=self._get_snippet(node),
-                            
                         )
                     )
 
@@ -319,7 +305,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.MEDIUM,
                             category=RuleCategory.SECURITY,
                             code_snippet=self._get_snippet(node),
-                            
                         )
                     )
 
@@ -343,7 +328,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                                     severity=RuleSeverity.HIGH,
                                     category=RuleCategory.SECURITY,
                                     code_snippet=self._get_snippet(node),
-                                    
                                 )
                             )
 
@@ -365,7 +349,6 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.SECURITY,
                                 code_snippet=self._get_snippet(node),
-                                
                             )
                         )
 
@@ -388,10 +371,9 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                                 severity=RuleSeverity.LOW,
                                 category=RuleCategory.SECURITY,
                                 code_snippet=self._get_snippet(node),
-                                
                             )
                         )
-        
+
         self.generic_visit(node)
 
     def visit_AsyncFor(self, node: ast.AsyncFor) -> None:
@@ -408,10 +390,9 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                     severity=RuleSeverity.LOW,
                     category=RuleCategory.SECURITY,
                     code_snippet=self._get_snippet(node),
-                    
                 )
             )
-        
+
         self.generic_visit(node)
 
     def visit_ListComp(self, node: ast.ListComp) -> None:
@@ -430,10 +411,9 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.SECURITY,
                             code_snippet=self._get_snippet(node),
-                            
                         )
                     )
-        
+
         self.generic_visit(node)
 
     def visit_Try(self, node: ast.Try) -> None:
@@ -459,16 +439,15 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
                                     severity=RuleSeverity.MEDIUM,
                                     category=RuleCategory.SECURITY,
                                     code_snippet=self._get_snippet(node),
-                                    
                                 )
                             )
-        
+
         self.generic_visit(node)
 
     def _get_snippet(self, node: ast.AST) -> str:
         """Get code snippet for the node."""
         try:
-            if hasattr(node, 'lineno'):
+            if hasattr(node, "lineno"):
                 line_idx = node.lineno - 1
                 if 0 <= line_idx < len(self.lines):
                     line: str = self.lines[line_idx]
@@ -478,7 +457,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         return ""
 
 
-def analyze_asyncio_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_asyncio_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze code for asyncio security vulnerabilities.
 

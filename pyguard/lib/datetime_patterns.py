@@ -9,7 +9,6 @@ Part of PyGuard's comprehensive linter replacement initiative.
 
 import ast
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 @dataclass
@@ -22,7 +21,7 @@ class DatetimeIssue:
     message: str
     severity: str = "MEDIUM"
     category: str = "datetime"
-    suggested_fix: Optional[str] = None
+    suggested_fix: str | None = None
 
 
 class DatetimePatternVisitor(ast.NodeVisitor):
@@ -38,7 +37,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
-        self.issues: List[DatetimeIssue] = []
+        self.issues: list[DatetimeIssue] = []
 
     def visit_Call(self, node: ast.Call) -> None:
         """Check for datetime-related calls."""
@@ -147,18 +146,17 @@ class DatetimePatternVisitor(ast.NodeVisitor):
         """Check datetime class methods like datetime.datetime.now()."""
         if class_name == "datetime":
             self._check_datetime_method(node, method_name)
-        elif class_name == "date":
-            if method_name == "today":
-                self.issues.append(
-                    DatetimeIssue(
-                        rule_id="DTZ002",
-                        line=node.lineno,
-                        col=node.col_offset,
-                        message="date.today() returns naive date, use datetime.now(tz=...).date()",
-                        severity="LOW",
-                        suggested_fix="Use datetime.now(tz=timezone.utc).date()",
-                    )
+        elif class_name == "date" and method_name == "today":
+            self.issues.append(
+                DatetimeIssue(
+                    rule_id="DTZ002",
+                    line=node.lineno,
+                    col=node.col_offset,
+                    message="date.today() returns naive date, use datetime.now(tz=...).date()",
+                    severity="LOW",
+                    suggested_fix="Use datetime.now(tz=timezone.utc).date()",
                 )
+            )
 
     def _has_tz_argument(self, node: ast.Call) -> bool:
         """Check if call has tz or tzinfo argument."""
@@ -168,10 +166,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
                 return True
 
         # For some methods, second positional argument is tz
-        if len(node.args) >= 2:
-            return True
-
-        return False
+        return len(node.args) >= 2
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Check for datetime attribute access."""
@@ -186,7 +181,7 @@ class DatetimeChecker:
     def __init__(self):
         self.visitor = DatetimePatternVisitor()
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[DatetimeIssue]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[DatetimeIssue]:
         """
         Check Python code for datetime timezone issues.
 
@@ -204,12 +199,12 @@ class DatetimeChecker:
         except SyntaxError:
             return []
 
-    def get_issues(self) -> List[DatetimeIssue]:
+    def get_issues(self) -> list[DatetimeIssue]:
         """Get all detected issues."""
         return self.visitor.issues
 
 
-def check_file(filepath: str) -> List[DatetimeIssue]:
+def check_file(filepath: str) -> list[DatetimeIssue]:
     """
     Check a Python file for datetime timezone issues.
 

@@ -6,7 +6,6 @@ Implements Ruff RET rules for detecting suboptimal return patterns.
 
 import ast
 from pathlib import Path
-from typing import List, Optional
 
 from .rule_engine import Rule, RuleCategory, RuleSeverity, RuleViolation
 
@@ -15,8 +14,8 @@ class ReturnPatternVisitor(ast.NodeVisitor):
     """AST visitor for detecting return pattern issues."""
 
     def __init__(self, file_path: Path = Path("<string>")):
-        self.violations: List[RuleViolation] = []
-        self.current_function: Optional[ast.FunctionDef] = None
+        self.violations: list[RuleViolation] = []
+        self.current_function: ast.FunctionDef | None = None
         self.file_path = file_path
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -274,21 +273,21 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                             )
                         )
 
-    def _branch_ends_with_return(self, body: List[ast.stmt]) -> bool:
+    def _branch_ends_with_return(self, body: list[ast.stmt]) -> bool:
         """Check if a branch ends with a return statement."""
         if not body:
             return False
         last_stmt = body[-1]
         return isinstance(last_stmt, ast.Return)
 
-    def _branch_ends_with_continue(self, body: List[ast.stmt]) -> bool:
+    def _branch_ends_with_continue(self, body: list[ast.stmt]) -> bool:
         """Check if a branch ends with a continue statement."""
         if not body:
             return False
         last_stmt = body[-1]
         return isinstance(last_stmt, ast.Continue)
 
-    def _branch_ends_with_break(self, body: List[ast.stmt]) -> bool:
+    def _branch_ends_with_break(self, body: list[ast.stmt]) -> bool:
         """Check if a branch ends with a break statement."""
         if not body:
             return False
@@ -302,7 +301,7 @@ class ReturnPatternChecker:
     def __init__(self):
         self.rules = self._create_rules()
 
-    def _create_rules(self) -> List[Rule]:
+    def _create_rules(self) -> list[Rule]:
         """Create return pattern rules."""
         from .rule_engine import FixApplicability, Rule, RuleCategory, RuleSeverity
 
@@ -381,7 +380,7 @@ class ReturnPatternChecker:
             ),
         ]
 
-    def check_code(self, code: str, filename: str = "<string>") -> List[RuleViolation]:
+    def check_code(self, code: str, filename: str = "<string>") -> list[RuleViolation]:
         """
         Check code for return pattern issues.
 
@@ -400,6 +399,6 @@ class ReturnPatternChecker:
         except SyntaxError:
             return []
 
-    def get_rules(self) -> List[Rule]:
+    def get_rules(self) -> list[Rule]:
         """Get all rules defined by this checker."""
         return self.rules

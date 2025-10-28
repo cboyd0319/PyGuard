@@ -28,7 +28,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.custom_rules import RuleViolation
 
@@ -40,10 +39,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_scipy_import = False
-        self.scipy_aliases: Set[str] = {"scipy"}
-        self.scipy_submodules: Set[str] = set()
+        self.scipy_aliases: set[str] = {"scipy"}
+        self.scipy_submodules: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track SciPy imports."""
@@ -74,31 +73,31 @@ class ScipySecurityVisitor(ast.NodeVisitor):
 
         # Check for unsafe optimization parameters (SCP001)
         self._check_unsafe_optimization(node)
-        
+
         # Check for signal processing injection (SCP002)
         self._check_signal_processing_injection(node)
-        
+
         # Check for FFT input validation (SCP003)
         self._check_fft_input_validation(node)
-        
+
         # Check for sparse matrix vulnerabilities (SCP004)
         self._check_sparse_matrix_issues(node)
-        
+
         # Check for integration function risks (SCP005)
         self._check_integration_risks(node)
-        
+
         # Check for linear algebra security (SCP006)
         self._check_linalg_security(node)
-        
+
         # Check for interpolation injection (SCP007)
         self._check_interpolation_injection(node)
-        
+
         # Check for file format vulnerabilities (SCP008)
         self._check_file_format_vulnerabilities(node)
-        
+
         # Check for statistics calculation manipulation (SCP009)
         self._check_stats_manipulation(node)
-        
+
         # Check for spatial algorithm DoS (SCP010)
         self._check_spatial_dos(node)
 
@@ -107,15 +106,21 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_unsafe_optimization(self, node: ast.Call) -> None:
         """Check for unsafe optimization parameters (SCP001)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for minimize, minimize_scalar, etc. without bounds
-        optimization_funcs = ["minimize", "minimize_scalar", "differential_evolution", 
-                             "basinhopping", "shgo", "dual_annealing"]
-        
+        optimization_funcs = [
+            "minimize",
+            "minimize_scalar",
+            "differential_evolution",
+            "basinhopping",
+            "shgo",
+            "dual_annealing",
+        ]
+
         if any(opt in func_name for opt in optimization_funcs):
             has_bounds = any(kw.arg == "bounds" for kw in node.keywords)
             has_maxiter = any(kw.arg in ["maxiter", "max_iter"] for kw in node.keywords)
-            
+
             if not has_bounds:
                 self.violations.append(
                     RuleViolation(
@@ -129,7 +134,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
                         suggestion="Set bounds parameter to limit search space and prevent unbounded optimization",
                     )
                 )
-            
+
             if not has_maxiter:
                 self.violations.append(
                     RuleViolation(
@@ -147,10 +152,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_signal_processing_injection(self, node: ast.Call) -> None:
         """Check for signal processing injection (SCP002)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for filter design functions with user input
         signal_funcs = ["butter", "cheby1", "cheby2", "ellip", "bessel", "iirfilter"]
-        
+
         if any(sig in func_name for sig in signal_funcs):
             # Check if filter order comes from user input or is a variable (not a constant)
             if node.args and self._is_potentially_user_input_or_variable(node.args[0]):
@@ -170,10 +175,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_fft_input_validation(self, node: ast.Call) -> None:
         """Check for FFT input validation (SCP003)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for FFT functions without input validation
         fft_funcs = ["fft", "fft2", "fftn", "rfft", "irfft", "ifft"]
-        
+
         if any(fft in func_name for fft in fft_funcs):
             if not self._has_input_validation_nearby(node):
                 self.violations.append(
@@ -192,11 +197,18 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_sparse_matrix_issues(self, node: ast.Call) -> None:
         """Check for sparse matrix vulnerabilities (SCP004)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for sparse matrix construction without size limits
-        sparse_constructors = ["csr_matrix", "csc_matrix", "coo_matrix", "lil_matrix", 
-                              "dok_matrix", "dia_matrix", "bsr_matrix"]
-        
+        sparse_constructors = [
+            "csr_matrix",
+            "csc_matrix",
+            "coo_matrix",
+            "lil_matrix",
+            "dok_matrix",
+            "dia_matrix",
+            "bsr_matrix",
+        ]
+
         if any(sparse in func_name for sparse in sparse_constructors):
             # Check if shape is validated
             if not self._has_shape_validation_nearby(node):
@@ -216,13 +228,13 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_integration_risks(self, node: ast.Call) -> None:
         """Check for integration function risks (SCP005)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for integration functions without limits
         integration_funcs = ["quad", "dblquad", "tplquad", "nquad", "romberg", "quadrature"]
-        
+
         if any(integ in func_name for integ in integration_funcs):
             has_limit = any(kw.arg in ["limit", "maxiter"] for kw in node.keywords)
-            
+
             if not has_limit:
                 self.violations.append(
                     RuleViolation(
@@ -240,10 +252,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_linalg_security(self, node: ast.Call) -> None:
         """Check for linear algebra security (SCP006)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for matrix decomposition without error handling
         linalg_funcs = ["inv", "solve", "lstsq", "eig", "svd", "qr", "cholesky"]
-        
+
         if any(linalg in func_name for linalg in linalg_funcs):
             # Check if there's error handling for singular matrices
             if not self._has_error_handling_nearby(node):
@@ -263,10 +275,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_interpolation_injection(self, node: ast.Call) -> None:
         """Check for interpolation injection (SCP007)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for interpolation functions with user input
         interp_funcs = ["interp1d", "interp2d", "interpn", "griddata", "Rbf"]
-        
+
         if any(interp in func_name for interp in interp_funcs):
             # Check if interpolation points are validated
             if not self._has_input_validation_nearby(node):
@@ -286,10 +298,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_file_format_vulnerabilities(self, node: ast.Call) -> None:
         """Check for file format vulnerabilities (SCP008)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for unsafe file loading (MATLAB, NetCDF, etc.)
         file_funcs = ["loadmat", "savemat", "whosmat"]
-        
+
         if any(file_func in func_name for file_func in file_funcs):
             self.violations.append(
                 RuleViolation(
@@ -307,10 +319,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_stats_manipulation(self, node: ast.Call) -> None:
         """Check for statistics calculation manipulation (SCP009)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for statistical functions without input validation
         stats_funcs = ["ttest_ind", "kstest", "mannwhitneyu", "wilcoxon", "kruskal"]
-        
+
         if any(stat in func_name for stat in stats_funcs):
             # Check if sample size is validated
             if not self._has_input_validation_nearby(node):
@@ -330,10 +342,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     def _check_spatial_dos(self, node: ast.Call) -> None:
         """Check for spatial algorithm DoS (SCP010)."""
         func_name = self._get_func_name(node)
-        
+
         # Check for spatial algorithms without size limits
         spatial_funcs = ["KDTree", "cKDTree", "distance_matrix", "cdist", "pdist"]
-        
+
         if any(spatial in func_name for spatial in spatial_funcs):
             # Check if data size is validated
             if not self._has_size_validation_nearby(node):
@@ -354,7 +366,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         """Extract function name from a call node."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -373,10 +385,10 @@ class ScipySecurityVisitor(ast.NodeVisitor):
             user_input_patterns = ["input", "user", "request", "param", "arg", "data", "order"]
             return any(pattern in node.id.lower() for pattern in user_input_patterns)
         # Also check for attribute access like request.args
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             return True
         # Constants (numbers) are safe
-        elif isinstance(node, ast.Constant):
+        if isinstance(node, ast.Constant):
             return False
         return False
 
@@ -384,7 +396,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         """Check if there's input validation near a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):line])
+            context = "\n".join(self.lines[max(0, line - 10) : line])
             validation_patterns = ["len(", "size", "shape", "validate", "check", "assert"]
             return any(pattern in context.lower() for pattern in validation_patterns)
         return False
@@ -393,7 +405,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         """Check if there's shape validation near a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):line])
+            context = "\n".join(self.lines[max(0, line - 10) : line])
             validation_patterns = ["shape", "size", "ndim", "validate", "check"]
             return any(pattern in context.lower() for pattern in validation_patterns)
         return False
@@ -402,7 +414,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         """Check if there's size validation near a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 10):line])
+            context = "\n".join(self.lines[max(0, line - 10) : line])
             validation_patterns = ["len(", "size", "count", "validate", "check", "limit"]
             return any(pattern in context.lower() for pattern in validation_patterns)
         return False
@@ -411,20 +423,20 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         """Check if there's error handling near a call."""
         line = node.lineno
         if 0 <= line - 1 < len(self.lines):
-            context = "\n".join(self.lines[max(0, line - 5):min(len(self.lines), line + 5)])
+            context = "\n".join(self.lines[max(0, line - 5) : min(len(self.lines), line + 5)])
             error_patterns = ["try:", "except", "linalgerror", "catch"]
             return any(pattern in context.lower() for pattern in error_patterns)
         return False
 
 
-def analyze_scipy_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_scipy_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for SciPy security vulnerabilities.
-    
+
     Args:
         file_path: Path to the Python file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of rule violations found
     """
@@ -432,7 +444,7 @@ def analyze_scipy_security(file_path: Path, code: str) -> List[RuleViolation]:
         tree = ast.parse(code)
     except SyntaxError:
         return []
-    
+
     visitor = ScipySecurityVisitor(file_path, code)
     visitor.visit(tree)
     return visitor.violations

@@ -16,9 +16,9 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+import re
+from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -38,7 +38,7 @@ class RiskScore:
 
     score: float  # 0.0 to 1.0
     confidence: float  # 0.0 to 1.0
-    factors: List[str]
+    factors: list[str]
     severity: str  # CRITICAL, HIGH, MEDIUM, LOW
 
 
@@ -57,7 +57,7 @@ class CodeFeatureExtractor:
         """Initialize feature extractor."""
         self.logger = PyGuardLogger()
 
-    def extract_features(self, code: str, file_path: str = "") -> Dict[str, float]:
+    def extract_features(self, code: str, file_path: str = "") -> dict[str, float]:
         """
         Extract numerical features from code.
 
@@ -68,7 +68,7 @@ class CodeFeatureExtractor:
         Returns:
             Dictionary of feature names to values
         """
-        features: Dict[str, float] = {}
+        features: dict[str, float] = {}
 
         try:
             tree = ast.parse(code)
@@ -103,25 +103,19 @@ class CodeFeatureExtractor:
             features["subprocess_count"] = float(
                 code.count("subprocess.") + code.count("os.system")
             )
-            
+
             # Check for dangerous subprocess patterns
-            features["shell_true_count"] = float(
-                len(re.findall(r'shell\s*=\s*True', code))
-            )
-            
+            features["shell_true_count"] = float(len(re.findall(r"shell\s*=\s*True", code)))
+
             features["network_count"] = float(code.count("socket.") + code.count("requests."))
             features["file_ops_count"] = float(code.count("open(") + code.count("file("))
 
             # String patterns - detect both variable names and string literals
             # Look for variable assignments with sensitive names (e.g., password = "...")
             # and string literals containing sensitive keywords
-            sensitive_patterns = r'(?:password|api_key|secret|token|private_key|access_token)'
-            var_assignments = re.findall(
-                rf'\b({sensitive_patterns})\s*=\s*["\']', code.lower()
-            )
-            string_literals = re.findall(
-                rf'["\']({sensitive_patterns})["\']', code.lower()
-            )
+            sensitive_patterns = r"(?:password|api_key|secret|token|private_key|access_token)"
+            var_assignments = re.findall(rf'\b({sensitive_patterns})\s*=\s*["\']', code.lower())
+            string_literals = re.findall(rf'["\']({sensitive_patterns})["\']', code.lower())
             features["hardcoded_strings"] = float(len(var_assignments) + len(string_literals))
             features["sql_patterns"] = float(
                 len(re.findall(r"(?:SELECT|INSERT|UPDATE|DELETE)", code))
@@ -133,9 +127,8 @@ class CodeFeatureExtractor:
 
         except SyntaxError:
             # Return zeros for invalid syntax
-            return {
-                key: 0.0
-                for key in [
+            return dict.fromkeys(
+                [
                     "num_functions",
                     "num_classes",
                     "num_imports",
@@ -149,8 +142,9 @@ class CodeFeatureExtractor:
                     "sql_patterns",
                     "bare_except",
                     "try_except_ratio",
-                ]
-            }
+                ],
+                0.0,
+            )
 
         return features
 
@@ -187,7 +181,7 @@ class MLRiskScorer:
         self.extractor = CodeFeatureExtractor()
 
     def calculate_risk_score(
-        self, code: str, file_path: str = "", existing_issues: Optional[List] = None
+        self, code: str, file_path: str = "", existing_issues: list | None = None
     ) -> RiskScore:
         """
         Calculate comprehensive risk score for code.
@@ -214,7 +208,7 @@ class MLRiskScorer:
             factors.append(
                 f"Command injection risk: {int(features['subprocess_count'])} subprocess calls"
             )
-        
+
         # shell=True is particularly dangerous
         if features.get("shell_true_count", 0) > 0:
             score += 0.15
@@ -267,7 +261,7 @@ class MLRiskScorer:
 
         return RiskScore(score=score, confidence=confidence, factors=factors, severity=severity)
 
-    def predict_vulnerability_type(self, code_snippet: str) -> Optional[Tuple[str, float]]:
+    def predict_vulnerability_type(self, code_snippet: str) -> tuple[str, float] | None:
         """
         Predict most likely vulnerability type.
 
@@ -315,7 +309,7 @@ class AnomalyDetector:
         """Initialize anomaly detector."""
         self.logger = PyGuardLogger()
 
-    def detect_anomalies(self, code: str) -> List[Dict[str, Any]]:
+    def detect_anomalies(self, code: str) -> list[dict[str, Any]]:
         """
         Detect anomalous patterns in code.
 
@@ -376,10 +370,7 @@ class AnomalyDetector:
             return True
 
         # Base64 patterns
-        if "base64.b64decode" in code and ".decode()" in code:
-            return True
-
-        return False
+        return bool("base64.b64decode" in code and ".decode()" in code)
 
     def _check_unusual_strings(self, code: str) -> bool:
         """Check for unusual string patterns."""
@@ -390,12 +381,9 @@ class AnomalyDetector:
 
         # Hex encoded strings
         hex_pattern = r"\\x[0-9a-fA-F]{2}"
-        if len(re.findall(hex_pattern, code)) > 10:
-            return True
+        return len(re.findall(hex_pattern, code)) > 10
 
-        return False
-
-    def _check_suspicious_imports(self, code: str) -> List[str]:
+    def _check_suspicious_imports(self, code: str) -> list[str]:
         """Check for suspicious import statements."""
         suspicious = []
 

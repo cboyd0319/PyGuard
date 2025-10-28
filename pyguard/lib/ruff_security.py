@@ -9,7 +9,6 @@ Based on Ruff's security rules: https://docs.astral.sh/ruff/rules/#flake8-bandit
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -31,15 +30,15 @@ class RuffSecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.source_code = source_code
         self.source_lines = source_code.splitlines()
-        self.violations: List[RuleViolation] = []
-        self.imports: Set[str] = set()
-        self.from_imports: dict[str, Set[str]] = {}
+        self.violations: list[RuleViolation] = []
+        self.imports: set[str] = set()
+        self.from_imports: dict[str, set[str]] = {}
 
     def _get_call_name(self, node: ast.Call) -> str:
         """Get the full name of a function call."""
         if isinstance(node.func, ast.Name):
             return node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             parts = []
             current: ast.expr = node.func
             while isinstance(current, ast.Attribute):
@@ -54,7 +53,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
         """Get full name of an expression (for imports, attributes)."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Attribute):
+        if isinstance(node, ast.Attribute):
             parts = []
             current: ast.expr = node
             while isinstance(current, ast.Attribute):
@@ -1022,7 +1021,9 @@ class RuffSecurityVisitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check function definitions for hardcoded passwords in defaults."""
         # S107: hardcoded-password-default
-        for default, arg in zip(node.args.defaults, node.args.args[-len(node.args.defaults) :]):
+        for default, arg in zip(
+            node.args.defaults, node.args.args[-len(node.args.defaults) :], strict=False
+        ):
             if isinstance(default, ast.Constant) and isinstance(default.value, str):
                 arg_name = arg.arg.lower()
                 if any(
@@ -1124,7 +1125,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def check_ruff_security(file_path: Path) -> List[RuleViolation]:
+def check_ruff_security(file_path: Path) -> list[RuleViolation]:
     """
     Check a Python file for Ruff S (Security) rule violations.
 
@@ -1135,7 +1136,7 @@ def check_ruff_security(file_path: Path) -> List[RuleViolation]:
         List of rule violations found
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
 
         tree = ast.parse(source_code, filename=str(file_path))

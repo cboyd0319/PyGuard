@@ -39,7 +39,6 @@ References:
 
 import ast
 from pathlib import Path
-from typing import List, Set
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -58,20 +57,19 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
-        self.violations: List[RuleViolation] = []
+        self.violations: list[RuleViolation] = []
         self.has_celery_import = False
         self.has_task_decorator = False
-        self.task_functions: Set[str] = set()
-        self.broker_urls: List[str] = []
+        self.task_functions: set[str] = set()
+        self.broker_urls: list[str] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Celery imports."""
-        if node.module:
-            if node.module.startswith("celery"):
-                self.has_celery_import = True
-                for alias in node.names:
-                    if alias.name in ("task", "Task", "Celery"):
-                        self.has_task_decorator = True
+        if node.module and node.module.startswith("celery"):
+            self.has_celery_import = True
+            for alias in node.names:
+                if alias.name in ("task", "Task", "Celery"):
+                    self.has_task_decorator = True
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -89,37 +87,45 @@ class CelerySecurityVisitor(ast.NodeVisitor):
 
         # Check if it's a Celery task
         is_task = any(
-            (isinstance(dec, ast.Name) and dec.id == "task") or
-            (isinstance(dec, ast.Attribute) and dec.attr == "task") or
-            (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Name) and dec.func.id == "task") or
-            (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute) and dec.func.attr == "task")
+            (isinstance(dec, ast.Name) and dec.id == "task")
+            or (isinstance(dec, ast.Attribute) and dec.attr == "task")
+            or (
+                isinstance(dec, ast.Call)
+                and isinstance(dec.func, ast.Name)
+                and dec.func.id == "task"
+            )
+            or (
+                isinstance(dec, ast.Call)
+                and isinstance(dec.func, ast.Attribute)
+                and dec.func.attr == "task"
+            )
             for dec in node.decorator_list
         )
 
         if is_task:
             self.task_functions.add(node.name)
-            
+
             # CELERY001: Check for pickle serialization
             self._check_pickle_serialization(node)
-            
+
             # CELERY002: Check for task signature spoofing
             self._check_task_signature_spoofing(node)
-            
+
             # CELERY003: Check for missing task authentication
             self._check_missing_task_auth(node)
-            
+
             # CELERY004: Check for task argument injection
             self._check_task_argument_injection(node)
-            
+
             # CELERY005: Check for result exposure
             self._check_result_exposure(node)
-            
+
             # CELERY006: Check for insecure retry logic
             self._check_retry_logic(node)
-            
+
             # CELERY007: Check for rate limit bypass
             self._check_rate_limit_bypass(node)
-            
+
             # CELERY008: Check for worker pool exhaustion
             self._check_worker_pool_exhaustion(node)
 
@@ -133,22 +139,22 @@ class CelerySecurityVisitor(ast.NodeVisitor):
 
         # CELERY009: Check broker URL security
         self._check_broker_url_security(node)
-        
+
         # CELERY010: Check result backend injection
         self._check_result_backend_injection(node)
-        
+
         # CELERY011: Check for insecure canvas operations
         self._check_canvas_security(node)
-        
+
         # CELERY012: Check for task revocation bypass
         self._check_task_revocation(node)
-        
+
         # CELERY013: Check monitoring interface security
         self._check_monitoring_security(node)
-        
+
         # CELERY014: Check Flower dashboard access
         self._check_flower_security(node)
-        
+
         # CELERY019: Check insecure RPC calls
         self._check_insecure_rpc_calls(node)
 
@@ -162,16 +168,16 @@ class CelerySecurityVisitor(ast.NodeVisitor):
 
         # CELERY015: Check broker connection security
         self._check_broker_connection_config(node)
-        
+
         # CELERY016: Check task routing security
         self._check_task_routing_config(node)
-        
+
         # CELERY017: Check Beat scheduler security
         self._check_beat_scheduler_config(node)
-        
+
         # CELERY018: Check worker privilege config
         self._check_worker_privilege_config(node)
-        
+
         # CELERY020: Check task protocol security
         self._check_task_protocol_security(node)
 
@@ -195,7 +201,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.SECURITY,
                                     message="Task uses pickle serializer - vulnerable to arbitrary code execution",
                                     fix_suggestion="Use JSON serializer instead: @task(serializer='json'). "
-                                                  "Pickle can deserialize malicious payloads leading to RCE.",
+                                    "Pickle can deserialize malicious payloads leading to RCE.",
                                     cwe_id="CWE-502",
                                     owasp_id="A08:2021 - Software and Data Integrity Failures",
                                     fix_applicability=FixApplicability.SAFE,
@@ -211,7 +217,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     # Check for apply_async with user-controlled args
                     if stmt.func.attr == "apply_async":
                         for kw in stmt.keywords:
-                            if kw.arg == "args" or kw.arg == "kwargs":
+                            if kw.arg in {"args", "kwargs"}:
                                 # Simplified check - in production would track data flow
                                 self.violations.append(
                                     RuleViolation(
@@ -223,7 +229,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                         category=RuleCategory.SECURITY,
                                         message="Task signature may accept untrusted arguments - spoofing risk",
                                         fix_suggestion="Validate all task arguments. Use task.signature() with bind=True and validate self.request. "
-                                                      "Consider using task_protocol=2 for enhanced security.",
+                                        "Consider using task_protocol=2 for enhanced security.",
                                         cwe_id="CWE-345",
                                         owasp_id="A08:2021 - Software and Data Integrity Failures",
                                         fix_applicability=FixApplicability.MANUAL,
@@ -235,22 +241,25 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         # Check if task has any authentication/authorization
         has_auth_check = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    # Look for common auth patterns
-                    if stmt.func.attr in ("authenticate", "authorize", "check_permission", "verify"):
-                        has_auth_check = True
-                        break
-        
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
+                # Look for common auth patterns
+                if stmt.func.attr in (
+                    "authenticate",
+                    "authorize",
+                    "check_permission",
+                    "verify",
+                ):
+                    has_auth_check = True
+                    break
+
         # Check for sensitive operations without auth
         has_sensitive_ops = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr in ("delete", "remove", "drop", "execute", "system"):
-                        has_sensitive_ops = True
-                        break
-        
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
+                if stmt.func.attr in ("delete", "remove", "drop", "execute", "system"):
+                    has_sensitive_ops = True
+                    break
+
         if has_sensitive_ops and not has_auth_check:
             self.violations.append(
                 RuleViolation(
@@ -262,7 +271,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     category=RuleCategory.SECURITY,
                     message="Task performs sensitive operations without authentication",
                     fix_suggestion="Add authentication checks at task start. Use @task(bind=True) and validate self.request.id. "
-                                  "Consider task-level permissions or OAuth2 integration.",
+                    "Consider task-level permissions or OAuth2 integration.",
                     cwe_id="CWE-287",
                     owasp_id="A07:2021 - Identification and Authentication Failures",
                     fix_applicability=FixApplicability.MANUAL,
@@ -292,7 +301,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                             category=RuleCategory.SECURITY,
                                             message="Task argument used directly in dangerous operation - injection risk",
                                             fix_suggestion="Validate and sanitize all task arguments. Use parameterized queries for SQL, "
-                                                          "whitelist validation for commands, and escape special characters.",
+                                            "whitelist validation for commands, and escape special characters.",
                                             cwe_id="CWE-94",
                                             owasp_id="A03:2021 - Injection",
                                             fix_applicability=FixApplicability.MANUAL,
@@ -309,8 +318,17 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     for key in stmt.value.keys:
                         if isinstance(key, ast.Constant):
                             key_str = str(key.value).lower()
-                            if any(sensitive in key_str for sensitive in 
-                                   ["password", "secret", "token", "key", "credential", "private"]):
+                            if any(
+                                sensitive in key_str
+                                for sensitive in [
+                                    "password",
+                                    "secret",
+                                    "token",
+                                    "key",
+                                    "credential",
+                                    "private",
+                                ]
+                            ):
                                 self.violations.append(
                                     RuleViolation(
                                         rule_id="CELERY005",
@@ -321,8 +339,8 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                         category=RuleCategory.SECURITY,
                                         message="Task returns sensitive data - exposure via result backend",
                                         fix_suggestion="Never return passwords, secrets, or credentials in task results. "
-                                                      "Use secure storage and return only references/IDs. "
-                                                      "Ensure result backend is encrypted (Redis TLS, encrypted DB).",
+                                        "Use secure storage and return only references/IDs. "
+                                        "Ensure result backend is encrypted (Redis TLS, encrypted DB).",
                                         cwe_id="CWE-200",
                                         owasp_id="A01:2021 - Broken Access Control",
                                         fix_applicability=FixApplicability.MANUAL,
@@ -350,7 +368,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.SECURITY,
                                     message="Task configured with unlimited retries - resource exhaustion risk",
                                     fix_suggestion="Set max_retries to a reasonable limit (e.g., 3-5). "
-                                                  "Use autoretry_for with specific exceptions only.",
+                                    "Use autoretry_for with specific exceptions only.",
                                     cwe_id="CWE-400",
                                     owasp_id="A04:2021 - Insecure Design",
                                     fix_applicability=FixApplicability.SAFE,
@@ -358,7 +376,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                             )
                     if kw.arg in ("retry_backoff", "retry_backoff_max"):
                         has_retry_backoff = True
-                
+
                 if not has_retry_backoff and has_max_retries:
                     self.violations.append(
                         RuleViolation(
@@ -370,7 +388,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Task retry without exponential backoff - DoS amplification risk",
                             fix_suggestion="Add retry_backoff=True or retry_backoff_max to prevent retry storms. "
-                                          "Use exponential backoff to avoid overwhelming services.",
+                            "Use exponential backoff to avoid overwhelming services.",
                             cwe_id="CWE-400",
                             owasp_id="A04:2021 - Insecure Design",
                             fix_applicability=FixApplicability.SUGGESTED,
@@ -387,16 +405,15 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     if kw.arg == "rate_limit":
                         has_rate_limit = True
                         break
-        
+
         # Check if task seems to do expensive operations
         has_expensive_ops = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr in ("request", "get", "post", "execute", "query"):
-                        has_expensive_ops = True
-                        break
-        
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
+                if stmt.func.attr in ("request", "get", "post", "execute", "query"):
+                    has_expensive_ops = True
+                    break
+
         if has_expensive_ops and not has_rate_limit:
             self.violations.append(
                 RuleViolation(
@@ -408,7 +425,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     category=RuleCategory.SECURITY,
                     message="Task performs expensive operations without rate limiting",
                     fix_suggestion="Add rate_limit parameter: @task(rate_limit='10/m') to prevent abuse. "
-                                  "Adjust limit based on resource constraints.",
+                    "Adjust limit based on resource constraints.",
                     cwe_id="CWE-770",
                     owasp_id="A04:2021 - Insecure Design",
                     fix_applicability=FixApplicability.SUGGESTED,
@@ -435,7 +452,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.PERFORMANCE,
                                     message="Task uses blocking operation without timeout - worker pool exhaustion risk",
                                     fix_suggestion="Add timeout parameter to prevent indefinite blocking. "
-                                                  "Use task time_limit and soft_time_limit decorators.",
+                                    "Use task time_limit and soft_time_limit decorators.",
                                     cwe_id="CWE-400",
                                     owasp_id="A04:2021 - Insecure Design",
                                     fix_applicability=FixApplicability.MANUAL,
@@ -450,7 +467,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                 if kw.arg == "broker" and isinstance(kw.value, ast.Constant):
                     broker_url = str(kw.value.value)
                     self.broker_urls.append(broker_url)
-                    
+
                     # Check for insecure protocols
                     if broker_url.startswith(("redis://", "amqp://", "mongodb://")):
                         if "localhost" not in broker_url and "127.0.0.1" not in broker_url:
@@ -464,15 +481,17 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.SECURITY,
                                     message="Broker URL uses unencrypted protocol - credentials exposed in transit",
                                     fix_suggestion="Use encrypted protocols: rediss:// for Redis, amqps:// for RabbitMQ, "
-                                                  "mongodb+srv:// for MongoDB. Enable TLS/SSL on broker.",
+                                    "mongodb+srv:// for MongoDB. Enable TLS/SSL on broker.",
                                     cwe_id="CWE-311",
                                     owasp_id="A02:2021 - Cryptographic Failures",
                                     fix_applicability=FixApplicability.MANUAL,
                                 )
                             )
-                    
+
                     # Check for credentials in URL
-                    if "@" in broker_url and ("password" in broker_url.lower() or ":" in broker_url.split("@")[0]):
+                    if "@" in broker_url and (
+                        "password" in broker_url.lower() or ":" in broker_url.split("@")[0]
+                    ):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="CELERY009",
@@ -483,7 +502,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Broker URL contains hardcoded credentials - secret exposure",
                                 fix_suggestion="Move credentials to environment variables. Use CELERY_BROKER_URL env var. "
-                                              "Never commit credentials to source code.",
+                                "Never commit credentials to source code.",
                                 cwe_id="CWE-798",
                                 owasp_id="A07:2021 - Identification and Authentication Failures",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -510,7 +529,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                         category=RuleCategory.SECURITY,
                                         message="Result backend URL from user input - injection and SSRF risk",
                                         fix_suggestion="Use hardcoded backend URLs or validate against whitelist. "
-                                                      "Never accept backend URLs from user input.",
+                                        "Never accept backend URLs from user input.",
                                         cwe_id="CWE-943",
                                         owasp_id="A03:2021 - Injection",
                                         fix_applicability=FixApplicability.MANUAL,
@@ -536,8 +555,8 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message=f"Canvas operation ({node.func.id}) may use untrusted task signatures",
                                 fix_suggestion="Validate all task signatures in canvas workflows. "
-                                              "Use immutable signatures to prevent tampering. "
-                                              "Apply task-level authentication.",
+                                "Use immutable signatures to prevent tampering. "
+                                "Apply task-level authentication.",
                                 cwe_id="CWE-345",
                                 owasp_id="A08:2021 - Software and Data Integrity Failures",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -561,7 +580,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Task revocation without terminate flag - task may continue execution",
                             fix_suggestion="Use revoke(terminate=True) to forcefully stop running tasks. "
-                                          "Also check task_reject_on_worker_lost setting.",
+                            "Also check task_reject_on_worker_lost setting.",
                             cwe_id="CWE-400",
                             owasp_id="A04:2021 - Insecure Design",
                             fix_applicability=FixApplicability.SUGGESTED,
@@ -588,7 +607,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Monitoring interface accessed without security configuration",
                                 fix_suggestion="Configure broker_use_ssl and enable authentication for monitoring. "
-                                              "Restrict network access to monitoring ports. Use Celery security features.",
+                                "Restrict network access to monitoring ports. Use Celery security features.",
                                 cwe_id="CWE-306",
                                 owasp_id="A07:2021 - Identification and Authentication Failures",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -616,7 +635,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                             category=RuleCategory.SECURITY,
                             message="Flower dashboard configured without authentication",
                             fix_suggestion="Configure Flower authentication: --basic_auth=user:password or OAuth2. "
-                                          "Never expose Flower dashboard publicly without auth.",
+                            "Never expose Flower dashboard publicly without auth.",
                             cwe_id="CWE-306",
                             owasp_id="A07:2021 - Identification and Authentication Failures",
                             fix_applicability=FixApplicability.MANUAL,
@@ -640,13 +659,13 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Broker SSL/TLS explicitly disabled - unencrypted communication",
                                 fix_suggestion="Enable SSL/TLS for broker: broker_use_ssl=True. "
-                                              "Configure broker_ssl_options with cert validation.",
+                                "Configure broker_ssl_options with cert validation.",
                                 cwe_id="CWE-319",
                                 owasp_id="A02:2021 - Cryptographic Failures",
                                 fix_applicability=FixApplicability.SAFE,
                             )
                         )
-                
+
                 # Check for result backend SSL
                 if target.id in ("result_backend_use_ssl", "RESULT_BACKEND_USE_SSL"):
                     if isinstance(node.value, ast.Constant) and node.value.value is False:
@@ -684,7 +703,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                 category=RuleCategory.SECURITY,
                                 message="Task routing configuration from dynamic source - manipulation risk",
                                 fix_suggestion="Use static routing configuration. Never accept routing rules from user input. "
-                                              "Validate queue names against whitelist.",
+                                "Validate queue names against whitelist.",
                                 cwe_id="CWE-15",
                                 owasp_id="A04:2021 - Insecure Design",
                                 fix_applicability=FixApplicability.MANUAL,
@@ -699,10 +718,10 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                 if target.id in ("beat_schedule", "CELERYBEAT_SCHEDULE"):
                     # Check if schedule is modified at runtime
                     if isinstance(node.value, ast.Dict):
-                        for key, value in zip(node.value.keys, node.value.values):
+                        for _key, value in zip(node.value.keys, node.value.values, strict=False):
                             # Check for task names from variables (potential injection)
                             if isinstance(value, ast.Dict):
-                                for k, v in zip(value.keys, value.values):
+                                for k, v in zip(value.keys, value.values, strict=False):
                                     if isinstance(k, ast.Constant) and k.value == "task":
                                         if not isinstance(v, ast.Constant):
                                             self.violations.append(
@@ -715,7 +734,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                                     category=RuleCategory.SECURITY,
                                                     message="Beat schedule task name from variable - injection risk",
                                                     fix_suggestion="Use hardcoded task names in beat_schedule. "
-                                                                  "Never accept task names from user input or configuration files.",
+                                                    "Never accept task names from user input or configuration files.",
                                                     cwe_id="CWE-94",
                                                     owasp_id="A03:2021 - Injection",
                                                     fix_applicability=FixApplicability.MANUAL,
@@ -740,7 +759,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.SECURITY,
                                     message="Worker configured to run as root - privilege escalation risk",
                                     fix_suggestion="Never run Celery workers as root. Create dedicated unprivileged user. "
-                                                  "Remove C_FORCE_ROOT setting and run as non-root user.",
+                                    "Remove C_FORCE_ROOT setting and run as non-root user.",
                                     cwe_id="CWE-250",
                                     owasp_id="A04:2021 - Insecure Design",
                                     fix_applicability=FixApplicability.SAFE,
@@ -762,8 +781,8 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                         category=RuleCategory.SECURITY,
                         message="Worker RPC call without authentication check",
                         fix_suggestion="Implement authentication for worker control RPC calls. "
-                                      "Use broker_use_ssl and validate caller identity. "
-                                      "Restrict network access to management interfaces.",
+                        "Use broker_use_ssl and validate caller identity. "
+                        "Restrict network access to management interfaces.",
                         cwe_id="CWE-306",
                         owasp_id="A07:2021 - Identification and Authentication Failures",
                         fix_applicability=FixApplicability.MANUAL,
@@ -789,7 +808,7 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                                     category=RuleCategory.SECURITY,
                                     message="Task protocol version 1 is less secure than version 2",
                                     fix_suggestion="Upgrade to task_protocol=2 for enhanced security. "
-                                                  "Protocol 2 includes better error handling and security features.",
+                                    "Protocol 2 includes better error handling and security features.",
                                     cwe_id="CWE-757",
                                     owasp_id="A05:2021 - Security Misconfiguration",
                                     fix_applicability=FixApplicability.SAFE,
@@ -797,19 +816,19 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                             )
 
 
-def analyze_celery_security(file_path: Path, code: str) -> List[RuleViolation]:
+def analyze_celery_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Python code for Celery security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code content
-        
+
     Returns:
         List of rule violations found
     """
-    violations: List[RuleViolation] = []
-    
+    violations: list[RuleViolation] = []
+
     try:
         tree = ast.parse(code)
         visitor = CelerySecurityVisitor(file_path, code)
@@ -817,7 +836,7 @@ def analyze_celery_security(file_path: Path, code: str) -> List[RuleViolation]:
         violations.extend(visitor.violations)
     except SyntaxError:
         pass
-    
+
     return violations
 
 

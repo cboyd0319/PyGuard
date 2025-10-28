@@ -5,26 +5,26 @@ Enhanced with world-class UI using Rich library for beautiful, beginner-friendly
 """
 
 import argparse
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
+from pyguard.lib.compliance_tracker import ComplianceTracker
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 from pyguard.lib.enhanced_security_fixes import EnhancedSecurityFixer
 from pyguard.lib.formatting import FormattingFixer, WhitespaceFixer
-from pyguard.lib.sarif_reporter import SARIFReporter
-from pyguard.lib.security import SecurityFixer
-from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
-from pyguard.lib.ripgrep_filter import RipGrepFilter
-from pyguard.lib.secret_scanner import SecretScanner
 from pyguard.lib.import_analyzer import ImportAnalyzer
+from pyguard.lib.ripgrep_filter import RipGrepFilter
+from pyguard.lib.sarif_reporter import SARIFReporter
+from pyguard.lib.secret_scanner import SecretScanner
+from pyguard.lib.security import SecurityFixer
 from pyguard.lib.test_coverage import TestCoverageAnalyzer
-from pyguard.lib.compliance_tracker import ComplianceTracker
+from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
 
 
 class PyGuardCLI:
@@ -52,16 +52,17 @@ class PyGuardCLI:
         self.formatting_fixer = FormattingFixer()
         self.whitespace_fixer = WhitespaceFixer()
         self.naming_fixer = NamingConventionFixer()
-        
+
         # Initialize notebook analyzer (lazy load)
-        self._notebook_analyzer: Optional["NotebookSecurityAnalyzer"] = None
-    
+        self._notebook_analyzer: NotebookSecurityAnalyzer | None = None
+
     @property
     def notebook_analyzer(self) -> Optional["NotebookSecurityAnalyzer"]:
         """Lazy load notebook analyzer."""
         if self._notebook_analyzer is None:
             try:
                 from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
+
                 self._notebook_analyzer = NotebookSecurityAnalyzer()
             except ImportError:
                 self.ui.console.print(
@@ -71,7 +72,7 @@ class PyGuardCLI:
                 self._notebook_analyzer = None
         return self._notebook_analyzer
 
-    def run_security_fixes(self, files: List[Path], create_backup: bool = True) -> Dict[str, Any]:
+    def run_security_fixes(self, files: list[Path], create_backup: bool = True) -> dict[str, Any]:
         """
         Run security fixes on files.
 
@@ -85,7 +86,7 @@ class PyGuardCLI:
         total: int = len(files)
         fixed: int = 0
         failed: int = 0
-        fixes_list: List[str] = []
+        fixes_list: list[str] = []
 
         for file_path in files:
             # Create backup if requested
@@ -109,8 +110,8 @@ class PyGuardCLI:
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
     def run_best_practices_fixes(
-        self, files: List[Path], create_backup: bool = True
-    ) -> Dict[str, Any]:
+        self, files: list[Path], create_backup: bool = True
+    ) -> dict[str, Any]:
         """
         Run best practices fixes on files.
 
@@ -124,7 +125,7 @@ class PyGuardCLI:
         total: int = len(files)
         fixed: int = 0
         failed: int = 0
-        fixes_list: List[str] = []
+        fixes_list: list[str] = []
 
         for file_path in files:
             # Create backup if requested
@@ -142,13 +143,13 @@ class PyGuardCLI:
 
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
-    def analyze_notebooks(self, notebooks: List[Path]) -> Dict[str, Any]:
+    def analyze_notebooks(self, notebooks: list[Path]) -> dict[str, Any]:
         """
         Analyze Jupyter notebooks for security issues.
-        
+
         Args:
             notebooks: List of .ipynb files to analyze
-            
+
         Returns:
             Dictionary with results
         """
@@ -157,14 +158,14 @@ class PyGuardCLI:
                 "total": len(notebooks),
                 "analyzed": 0,
                 "findings": [],
-                "error": "Notebook analyzer not available (nbformat not installed)"
+                "error": "Notebook analyzer not available (nbformat not installed)",
             }
-        
+
         all_results = []
         total_findings = 0
         critical_count = 0
         high_count = 0
-        
+
         for nb_path in notebooks:
             try:
                 result = self.notebook_analyzer.analyze_notebook(nb_path)
@@ -174,7 +175,7 @@ class PyGuardCLI:
                 high_count += result.high_count()
             except Exception as e:
                 self.logger.error(f"Failed to analyze {nb_path}: {e}")
-        
+
         return {
             "total": len(notebooks),
             "analyzed": len(all_results),
@@ -186,11 +187,11 @@ class PyGuardCLI:
 
     def run_formatting(
         self,
-        files: List[Path],
+        files: list[Path],
         create_backup: bool = True,
         use_black: bool = True,
         use_isort: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run formatting on files.
 
@@ -225,8 +226,8 @@ class PyGuardCLI:
         return results
 
     def run_full_analysis(
-        self, files: List[Path], create_backup: bool = True, fix: bool = True
-    ) -> Dict[str, Any]:
+        self, files: list[Path], create_backup: bool = True, fix: bool = True
+    ) -> dict[str, Any]:
         """
         Run full analysis and fixes on files with beautiful progress display.
 
@@ -264,7 +265,9 @@ class PyGuardCLI:
                 progress.update(task, completed=len(files))
 
                 # Best practices
-                task = progress.add_task(self.ui._safe_text("✨ Best Practices..."), total=len(files))
+                task = progress.add_task(
+                    self.ui._safe_text("✨ Best Practices..."), total=len(files)
+                )
                 results["best_practices"] = self.run_best_practices_fixes(files, create_backup)
                 progress.update(task, completed=len(files))
 
@@ -296,8 +299,10 @@ class PyGuardCLI:
 
             progress = self.ui.create_progress_bar()
             with progress:
-                task = progress.add_task(self.ui._safe_text("🔍 Scanning for issues..."), total=len(files))
-                for i, file_path in enumerate(files):
+                task = progress.add_task(
+                    self.ui._safe_text("🔍 Scanning for issues..."), total=len(files)
+                )
+                for _i, file_path in enumerate(files):
                     # Security issues
                     sec_issues = self.security_fixer.scan_file_for_issues(file_path)
                     for sec_issue in sec_issues:
@@ -340,7 +345,7 @@ class PyGuardCLI:
         return results
 
     def print_results(
-        self, results: Dict[str, Any], generate_html: bool = True, generate_sarif: bool = False
+        self, results: dict[str, Any], generate_html: bool = True, generate_sarif: bool = False
     ) -> None:
         """
         Print beautiful formatted results using Rich UI.
@@ -354,7 +359,7 @@ class PyGuardCLI:
         self.ui.print_summary_table(results)
 
         # Print issue details if available
-        if "all_issues" in results and results["all_issues"]:
+        if results.get("all_issues"):
             self.ui.print_issue_details(results["all_issues"])
 
         # Print success message
@@ -549,7 +554,7 @@ def main():
             # Find Python files
             files = cli.file_ops.find_python_files(path, args.exclude)
             all_files.extend(files)
-            
+
             # Find Jupyter notebooks
             for nb_file in path.rglob("*.ipynb"):
                 # Skip files in exclude patterns
@@ -558,10 +563,10 @@ def main():
                     if nb_file.match(pattern):
                         skip = True
                         break
-                if not skip and '.ipynb_checkpoints' not in str(nb_file):
+                if not skip and ".ipynb_checkpoints" not in str(nb_file):
                     notebook_files.append(nb_file)
         else:
-            print(f"Warning: {path} is not a Python file, notebook, or directory, skipping...")
+            pass
 
     if not all_files and not notebook_files:
         cli.ui.print_error(
@@ -575,54 +580,61 @@ def main():
     if args.scan_secrets:
         cli.ui.console.print("[bold cyan]Running Secret Scan...[/bold cyan]")
         cli.ui.console.print()
-        
+
         if not RipGrepFilter.is_ripgrep_available():
             cli.ui.console.print(
                 "[yellow]Warning: ripgrep not found. Secret scanning requires ripgrep.[/yellow]"
             )
-            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            cli.ui.console.print(
+                "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
+            )
             sys.exit(1)
-        
+
         for path_str in args.paths:
             findings = SecretScanner.scan_secrets(path_str, export_sarif=args.sarif)
-            
+
             if findings:
                 cli.ui.console.print(f"[red]Found {len(findings)} hardcoded secrets:[/red]")
-                
+
                 # Group by secret type
                 from collections import Counter
+
                 types = Counter(f.secret_type for f in findings)
                 for secret_type, count in types.items():
                     cli.ui.console.print(f"  - {count} x {secret_type}")
-                
+
                 cli.ui.console.print()
                 cli.ui.console.print("[bold]Secret Details:[/bold]")
                 for finding in findings[:10]:  # Show first 10
-                    cli.ui.console.print(f"  {finding.file_path}:{finding.line_number} - {finding.secret_type}")
+                    cli.ui.console.print(
+                        f"  {finding.file_path}:{finding.line_number} - {finding.secret_type}"
+                    )
                     cli.ui.console.print(f"    {finding.match}")
-                
+
                 if len(findings) > 10:
                     cli.ui.console.print(f"  ... and {len(findings) - 10} more")
-                    
+
                 if args.sarif:
                     cli.ui.console.print("[green]SARIF report: pyguard-secrets.sarif[/green]")
             else:
                 cli.ui.console.print("[green]No hardcoded secrets found.[/green]")
-        
+
         sys.exit(0)
-    
+
     # Import analysis
     if args.analyze_imports:
         cli.ui.console.print("[bold cyan]Analyzing Import Structure...[/bold cyan]")
         cli.ui.console.print()
-        
+
         if not RipGrepFilter.is_ripgrep_available():
             cli.ui.console.print(
                 "[yellow]Warning: ripgrep not found. Import analysis requires ripgrep.[/yellow]"
             )
-            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            cli.ui.console.print(
+                "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
+            )
             sys.exit(1)
-        
+
         for path_str in args.paths:
             # Find circular imports
             circular = ImportAnalyzer.find_circular_imports(path_str)
@@ -634,9 +646,9 @@ def main():
                     cli.ui.console.print(f"  ... and {len(circular) - 10} more")
             else:
                 cli.ui.console.print("[green]No circular imports detected.[/green]")
-            
+
             cli.ui.console.print()
-            
+
             # Find god modules
             god_modules = ImportAnalyzer.find_god_modules(path_str)
             if god_modules:
@@ -647,38 +659,42 @@ def main():
                     cli.ui.console.print(f"  ... and {len(god_modules) - 10} more")
             else:
                 cli.ui.console.print("[green]No god modules detected.[/green]")
-        
+
         sys.exit(0)
-    
+
     # Test coverage check
     if args.check_test_coverage:
         cli.ui.console.print("[bold cyan]Checking Test Coverage...[/bold cyan]")
         cli.ui.console.print()
-        
+
         if not RipGrepFilter.is_ripgrep_available():
             cli.ui.console.print(
                 "[yellow]Warning: ripgrep not found. Test coverage check requires ripgrep.[/yellow]"
             )
-            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            cli.ui.console.print(
+                "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
+            )
             sys.exit(1)
-        
+
         for path_str in args.paths:
             # Try common test directory names
-            test_dirs = ['tests', 'test', 'testing']
+            test_dirs = ["tests", "test", "testing"]
             test_dir = None
             for td in test_dirs:
                 if Path(td).exists():
                     test_dir = td
                     break
-            
+
             if not test_dir:
-                cli.ui.console.print("[yellow]No test directory found. Looking for 'tests', 'test', or 'testing'.[/yellow]")
+                cli.ui.console.print(
+                    "[yellow]No test directory found. Looking for 'tests', 'test', or 'testing'.[/yellow]"
+                )
                 sys.exit(1)
-            
+
             coverage_ratio = TestCoverageAnalyzer.calculate_test_coverage_ratio(path_str, test_dir)
             cli.ui.console.print(f"[bold]Test coverage: {coverage_ratio:.1f}%[/bold]")
             cli.ui.console.print()
-            
+
             untested = TestCoverageAnalyzer.find_untested_modules(path_str, test_dir)
             if untested:
                 cli.ui.console.print(f"[yellow]Untested modules ({len(untested)}):[/yellow]")
@@ -688,41 +704,45 @@ def main():
                     cli.ui.console.print(f"  ... and {len(untested) - 20} more")
             else:
                 cli.ui.console.print("[green]All modules have test coverage![/green]")
-        
+
         sys.exit(0)
-    
+
     # Compliance report
     if args.compliance_report:
         cli.ui.console.print("[bold cyan]Generating Compliance Report...[/bold cyan]")
         cli.ui.console.print()
-        
+
         if not RipGrepFilter.is_ripgrep_available():
             cli.ui.console.print(
                 "[yellow]Warning: ripgrep not found. Compliance tracking requires ripgrep.[/yellow]"
             )
-            cli.ui.console.print("[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]")
+            cli.ui.console.print(
+                "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
+            )
             sys.exit(1)
-        
+
         for path_str in args.paths:
             ComplianceTracker.generate_compliance_report(path_str)
-            
+
             # Also print summary
             annotations = ComplianceTracker.find_compliance_annotations(path_str)
-            cli.ui.console.print(f"[green]Found {len(annotations['OWASP'])} OWASP references[/green]")
+            cli.ui.console.print(
+                f"[green]Found {len(annotations['OWASP'])} OWASP references[/green]"
+            )
             cli.ui.console.print(f"[green]Found {len(annotations['CWE'])} CWE references[/green]")
-        
+
         sys.exit(0)
 
     # Print banner and welcome
     cli.ui.print_banner()
     total_files = len(all_files) + len(notebook_files)
     cli.ui.print_welcome(total_files)
-    
+
     # Apply fast mode filtering if enabled
     if args.fast and all_files:
         if RipGrepFilter.is_ripgrep_available():
             cli.ui.console.print("[cyan]Fast mode enabled: Using ripgrep pre-filtering...[/cyan]")
-            
+
             # Get suspicious files for each directory
             all_candidate_files = set()
             for path_str in args.paths:
@@ -730,32 +750,34 @@ def main():
                 if path.is_dir():
                     candidates = RipGrepFilter.find_suspicious_files(str(path))
                     all_candidate_files.update(candidates)
-            
+
             # Convert to Path objects
             candidate_paths = {Path(f) for f in all_candidate_files}
-            
+
             # Filter the all_files list
             original_count = len(all_files)
-            all_files = [f for f in all_files if f in candidate_paths or str(f) in all_candidate_files]
-            
+            all_files = [
+                f for f in all_files if f in candidate_paths or str(f) in all_candidate_files
+            ]
+
             filtered_count = original_count - len(all_files)
             cli.ui.console.print(
                 f"[cyan]RipGrep filter: {len(all_files)} candidates "
                 f"(skipping {filtered_count} clean files)[/cyan]"
             )
             cli.ui.console.print()
-            
+
             if len(all_files) == 0:
-                cli.ui.console.print("[green]No suspicious files found! Your codebase looks clean.[/green]")
+                cli.ui.console.print(
+                    "[green]No suspicious files found! Your codebase looks clean.[/green]"
+                )
                 sys.exit(0)
         else:
-            cli.ui.console.print(
-                "[yellow]Warning: ripgrep not found. Fast mode disabled.[/yellow]"
-            )
+            cli.ui.console.print("[yellow]Warning: ripgrep not found. Fast mode disabled.[/yellow]")
             cli.ui.console.print(
                 "[yellow]Install with: brew install ripgrep (macOS) or apt install ripgrep (Linux)[/yellow]"
             )
-    
+
     if notebook_files:
         cli.ui.console.print(
             f"[cyan]Found {len(all_files)} Python files and {len(notebook_files)} Jupyter notebooks[/cyan]"
@@ -814,16 +836,16 @@ def main():
     else:
         # Run full analysis
         results = cli.run_full_analysis(all_files, create_backup, fix)
-        
+
         # Analyze notebooks if any
         if notebook_files:
             cli.ui.console.print()
             cli.ui.console.print("[bold cyan]Analyzing Jupyter Notebooks...[/bold cyan]")
             cli.ui.console.print()
-            
+
             notebook_results = cli.analyze_notebooks(notebook_files)
             results["notebooks"] = notebook_results
-            
+
             # Add notebook findings to all_issues for reporting
             if "results" in notebook_results:
                 for nb_result in notebook_results["results"]:
@@ -842,13 +864,13 @@ def main():
                         if "all_issues" not in results:
                             results["all_issues"] = []  # type: ignore[assignment]
                         results["all_issues"].append(issue)  # type: ignore[attr-defined]
-                        
+
                         # Update counters
-                        if finding.severity == "CRITICAL" or finding.severity == "HIGH":
+                        if finding.severity in {"CRITICAL", "HIGH"}:
                             security_count = results.get("security_issues", 0)
                             if isinstance(security_count, int):
                                 results["security_issues"] = security_count + 1  # type: ignore[assignment]
-            
+
             # Print notebook summary
             cli.ui.console.print()
             cli.ui.console.print("[bold]Notebook Analysis Summary:[/bold]")
