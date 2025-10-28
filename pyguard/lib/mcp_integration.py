@@ -185,7 +185,7 @@ class MCPIntegration:
         Returns:
             MCPResponse with local analysis
         """
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         # Simple pattern matching for demonstration
         recommendations = []
@@ -211,7 +211,7 @@ class MCPIntegration:
             },
             confidence=confidence,
             source="local_kb",
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             recommendations=recommendations,
         )
 

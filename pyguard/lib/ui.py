@@ -12,7 +12,7 @@ References:
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -435,7 +435,7 @@ class ModernHTMLReporter:
             HTML string
         """
         # Generate timestamp
-        timestamp = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        timestamp = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p")
 
         # Calculate summary stats
         total_issues = len(issues)
@@ -1380,7 +1380,7 @@ class ModernHTMLReporter:
             </h1>
             <p class="subtitle">The World's Best Python Security & Quality Tool</p>
             <p class="timestamp">
-                <time datetime="{datetime.now().isoformat()}">Generated on {timestamp}</time>
+                <time datetime="{datetime.now(timezone.utc).isoformat()}">Generated on {timestamp}</time>
             </p>
         </header>
 

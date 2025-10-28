@@ -4,7 +4,7 @@ Core utilities for PyGuard.
 Provides logging, backup management, diff generation, and file operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import difflib
 import json
 import logging
@@ -46,7 +46,7 @@ class PyGuardLogger:
 
         # Track metrics
         self.metrics: dict[str, Any] = {
-            "start_time": datetime.now(),
+            "start_time": datetime.now(timezone.utc),
             "files_processed": 0,
             "issues_found": 0,
             "fixes_applied": 0,
@@ -81,7 +81,7 @@ class PyGuardLogger:
             correlation_id: Optional correlation ID (uses instance ID if not provided)
         """
         log_entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "correlation_id": correlation_id or self.correlation_id,
             "level": level,
             "category": category,
@@ -145,7 +145,7 @@ class PyGuardLogger:
         Returns:
             Dictionary with metrics including elapsed time
         """
-        elapsed = (datetime.now() - self.metrics["start_time"]).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.metrics["start_time"]).total_seconds()
         return {
             "start_time": self.metrics["start_time"].isoformat(),
             "files_processed": self.metrics["files_processed"],
@@ -194,7 +194,7 @@ class BackupManager:
 
         try:
             # Create timestamp-based backup name
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             backup_name = f"{file_path.name}.{timestamp}.bak"
             backup_path = self.backup_dir / backup_name
 
