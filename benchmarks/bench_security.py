@@ -70,7 +70,7 @@ def main():
     scan_time = benchmark_security_scan()
     fix_time = benchmark_security_fix()
     
-    print(f"\n Summary:")
+    print("\n Summary:")
     print(f"   Scan: {scan_time:.2f}ms")
     print(f"   Fix:  {fix_time:.2f}ms")
     print(f"   Total: {scan_time + fix_time:.2f}ms")

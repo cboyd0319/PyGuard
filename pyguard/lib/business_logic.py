@@ -17,12 +17,11 @@ Week 15-16 Implementation: 30 security checks for business logic vulnerabilities
 
 import ast
 import re
-from dataclasses import dataclass
 from typing import List, Set
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import PyGuardLogger
-from pyguard.lib.rule_engine import Rule, RuleCategory, RuleSeverity, FixApplicability
+from pyguard.lib.rule_engine import Rule, RuleCategory, RuleSeverity
 
 
 # =============================================================================
@@ -559,7 +558,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                         SecurityIssue(
                             severity="HIGH",
                             category="Access Control DoS",
-                            message=f"ReDoS vulnerability: Regular expression with potential catastrophic backtracking",
+                            message="ReDoS vulnerability: Regular expression with potential catastrophic backtracking",
                             line_number=node.lineno,
                             column=node.col_offset,
                             code_snippet=self._get_code_snippet(node),
@@ -635,7 +634,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         is_financial = self._is_financial_function(func_name)
         is_sensitive = self._is_sensitive_function(func_name)
         
-        has_balance_check = False
+        # has_balance_check = False  # Not used currently
         has_rollback = False
         has_auth_check = False
         has_negative_check = False
@@ -650,7 +649,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             if isinstance(child, ast.Compare):
                 snippet = self._get_code_snippet(child)
                 if any(kw in snippet.lower() for kw in ["balance", "amount", "total", "limit"]):
-                    has_balance_check = True
+                    pass  # has_balance_check = True  # Not used currently
                 if any(kw in snippet.lower() for kw in ["< 0", "> 0", ">= 0"]):
                     has_negative_check = True
                 if "discount" in snippet.lower() and ">" in snippet:
@@ -868,10 +867,10 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     def visit_For(self, node: ast.For):
         """Check for concurrent modification during iteration."""
         # BIZLOGIC008: Concurrent modification
-        # Get the target being iterated over
-        iter_target = None
-        if isinstance(node.target, ast.Name):
-            iter_target = node.target.id
+        # Get the target being iterated over (reserved for future use)
+        # iter_target = None
+        # if isinstance(node.target, ast.Name):
+        #     iter_target = node.target.id
         
         for child in ast.walk(node):
             # Check for Delete statements (del keyword)

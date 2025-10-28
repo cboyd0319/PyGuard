@@ -82,7 +82,7 @@ def public_function(a, b, c, d, e, f):
 
     # Get complexity report
     complexity = analyzer.get_complexity_report(sample_code)
-    print(f"\n Complexity Report:")
+    print("\n Complexity Report:")
     for func_name, score in complexity.items():
         status = "[WARN] HIGH" if score > 10 else "[OK] OK"
         print(f"  {func_name}: {score} {status}")
@@ -126,11 +126,11 @@ def example_with_caching():
     if cache.is_cached(test_file):
         results = cache.get(test_file)
         print(f"  Retrieved from cache in {(time.time() - start)*1000:.2f}ms")
-        print(f"  ⚡ Much faster!")
+        print("  ⚡ Much faster!")
 
     # Show cache statistics
     stats = cache.get_stats()
-    print(f"\n📈 Cache Statistics:")
+    print("\n📈 Cache Statistics:")
     print(f"  Entries: {stats['entries']}")
     print(f"  Size: {stats['size_mb']} MB")
 
@@ -162,7 +162,7 @@ def example_with_correlation():
 
     # Get metrics
     metrics = logger.get_metrics()
-    print(f"\n Metrics:")
+    print("\n Metrics:")
     print(f"  Files processed: {metrics['files_processed']}")
     print(f"  Issues found: {metrics['issues_found']}")
     print(f"  Fixes applied: {metrics['fixes_applied']}")
@@ -274,7 +274,7 @@ def complex_logic(a, b, c, d, e, f):
     # Check cache
     if cache.is_cached(test_file):
         print("[OK] Using cached results")
-        results = cache.get(test_file)
+        # results = cache.get(test_file)  # Cached results available but not used in this example
     else:
         print(" Analyzing file...")
 

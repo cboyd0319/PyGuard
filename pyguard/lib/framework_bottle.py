@@ -331,7 +331,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         has_validation = False
 
         # Look back to see if secure_filename or similar was used
-        parent_func = None
+        # parent_func = None  # Reserved for future use
         for n in ast.walk(node):
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name):
                 if n.func.id in ("secure_filename", "sanitize_filename"):

@@ -531,11 +531,11 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         """Check for listener function risks (SANIC013)."""
         # Listeners can be used to perform setup tasks, but can be risky
         if node.args:
-            listener_type = None
+            # listener_type = None  # Reserved for future use
             for keyword in node.keywords:
                 if keyword.arg == "when":
                     if isinstance(keyword.value, ast.Constant):
-                        listener_type = keyword.value.value
+                        pass  # listener_type = keyword.value.value
 
             # Check for listeners that might expose secrets
             listener_code = ast.get_source_segment(self.code, node)

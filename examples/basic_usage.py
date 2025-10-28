@@ -35,8 +35,8 @@ def main():
 
     logger.info("Starting PyGuard analysis", file=str(file_path))
 
-    # Read original code
-    original_code = file_path.read_text()
+    # Read original code (kept for reference/comparison)
+    # original_code = file_path.read_text()
 
     # Apply security fixes
     logger.info("Applying security fixes...")

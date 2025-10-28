@@ -228,10 +228,10 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         
         if func_name in tensorboard_funcs:
             # Check if log_dir is exposed
-            has_log_dir = False
+            # has_log_dir = False  # Not used
             for kw in node.keywords:
                 if kw.arg == "log_dir":
-                    has_log_dir = True
+                    # has_log_dir = True
                     # Check if log directory is in web-accessible location
                     if isinstance(kw.value, ast.Constant):
                         log_path = str(kw.value.value)

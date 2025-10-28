@@ -7581,11 +7581,11 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         # Check for train_test_split usage
         if isinstance(node.func, ast.Attribute):
             if "split" in node.func.attr.lower():
-                # Check if shuffle is disabled
-                has_shuffle = any(
-                    kw.arg == "shuffle" and isinstance(kw.value, ast.Constant) and kw.value.value
-                    for kw in node.keywords
-                )
+                # Check if shuffle is disabled (check performed but variable not needed)
+                # has_shuffle = any(
+                #     kw.arg == "shuffle" and isinstance(kw.value, ast.Constant) and kw.value.value
+                #     for kw in node.keywords
+                # )
                 
                 has_random_state = any(
                     kw.arg == "random_state"
@@ -19448,7 +19448,7 @@ class AIMLSecurityFixer:
 
         Reference: AIML011-045, OWASP LLM01
         """
-        fix_id = "prompt_injection_basic"
+        # fix_id = "prompt_injection_basic"  # Reserved for future use
         # This is a complex transformation requiring context analysis
         # For now, return content unchanged
         # TODO: Implement in future iteration with AST-based analysis
@@ -19558,19 +19558,19 @@ class AIMLSecurityFixer:
                     fixed_lines.append(line)
                     continue
 
-                line_modified = False
+                # line_modified = False  # Not used
                 for pattern, func_name in api_patterns:
                     if re.search(pattern, line) and "timeout" not in line:
                         # Add warning to add timeout
                         fixed_lines.append(
-                            f"# PyGuard: Add timeout to prevent indefinite hangs (AIML056)"
+                            "# PyGuard: Add timeout to prevent indefinite hangs (AIML056)"
                         )
                         if not modified:
                             self.fixes_applied.append(
-                                f"Added timeout configuration warning [AIML056]"
+                                "Added timeout configuration warning [AIML056]"
                             )
                             modified = True
-                        line_modified = True
+                        # line_modified = True  # Not used
                         break
 
                 fixed_lines.append(line)
@@ -19713,10 +19713,10 @@ class AIMLSecurityFixer:
                 if "torch.jit.load(" in line and not line.strip().startswith("#"):
                     # Add map_location parameter
                     if "map_location" not in line:
-                        fixed_line = line.replace(
-                            "torch.jit.load(",
-                            "torch.jit.load("
-                        )
+                        # fixed_line = line.replace(  # Not used - incomplete implementation
+                        #     "torch.jit.load(",
+                        #     "torch.jit.load("
+                        # )
                         # Add comment about adding map_location
                         fixed_lines.append(
                             "# PyGuard: Add map_location='cpu' to torch.jit.load for security (AIML077)"
@@ -21544,7 +21544,7 @@ class AIMLSecurityFixer:
 
         Reference: AIML072, CWE-502, OWASP ML05
         """
-        fix_id = "pickle_to_safetensors"
+        # fix_id = "pickle_to_safetensors"  # Reserved for future use
         # Unsafe transformation - requires dependency and API change
         # TODO: Implement in future iteration
         return content
@@ -21559,7 +21559,7 @@ class AIMLSecurityFixer:
 
         Reference: AIML111-140, OWASP ML09
         """
-        fix_id = "training_data_validation"
+        # fix_id = "training_data_validation"  # Reserved for future use
         # Unsafe transformation - modifies training logic
         # TODO: Implement in future iteration
         return content

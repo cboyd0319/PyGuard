@@ -20,7 +20,7 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import List, Dict
 
 # Patterns that indicate code is doing pattern detection, not actual operations
 SAFE_PATTERNS = [

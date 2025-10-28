@@ -134,7 +134,7 @@ class DemoClass:
                 has_error = True
 
         # SIM301: Negated equality
-        if not (has_error == False):
+        if not has_error:
             return False
 
         return True
