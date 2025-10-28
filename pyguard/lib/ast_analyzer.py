@@ -63,7 +63,7 @@ class SecurityVisitor(ast.NodeVisitor):
 
     def _add_issue(self, node: ast.AST, issue: SecurityIssue) -> None:
         """Add issue if not suppressed."""
-        if not self._is_suppressed(node, issue.cwe_id):
+        if not self._is_suppressed(node, issue.cwe_id or ""):
             self.issues.append(issue)
 
     def _get_code_snippet(self, node: ast.AST) -> str:
@@ -72,7 +72,7 @@ class SecurityVisitor(ast.NodeVisitor):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
-    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+    def _is_suppressed(self, node: ast.AST, rule_id: str | None = None) -> bool:
         """
         Check if a node has suppression comment.
 
@@ -736,7 +736,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
             return str(self.source_lines[node.lineno - 1].strip())
         return ""
 
-    def _is_suppressed(self, node: ast.AST, rule_id: str = None) -> bool:
+    def _is_suppressed(self, node: ast.AST, rule_id: str | None = None) -> bool:
         """
         Check if a node has suppression comment.
 

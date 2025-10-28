@@ -423,7 +423,7 @@ class MissingAutoFixes:
         """
         import_added = False
         lines = content.split("\n")
-        fixed_lines = []
+        fixed_lines: list[str] = []
 
         # Patterns for hardcoded secrets
         secret_patterns = [
@@ -821,7 +821,7 @@ class MissingAutoFixes:
         Returns:
             Dictionary with fix counts by category
         """
-        stats = {}
+        stats: dict[str, int] = {}
         for fix in self.fixes_applied:
             category = fix.split(":")[0] if ":" in fix else fix
             stats[category] = stats.get(category, 0) + 1

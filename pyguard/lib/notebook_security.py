@@ -527,7 +527,7 @@ class NotebookSecurityAnalyzer:
             return 0.0
         
         # Calculate character frequency
-        char_freq = {}
+        char_freq: dict[str, int] = {}
         for char in text:
             char_freq[char] = char_freq.get(char, 0) + 1
         
@@ -1233,7 +1233,7 @@ class NotebookSecurityAnalyzer:
         """Check for hardcoded secrets in cell code."""
         issues: List[NotebookIssue] = []
         lines = cell.source.split("\n")
-        seen_secrets = {}  # Track secrets to avoid duplicates: {(line_num, value): priority}
+        seen_secrets: dict[tuple[int, str], int] = {}  # Track secrets to avoid duplicates: {(line_num, value): priority}
 
         for line_num, line in enumerate(lines, 1):
             for pattern, description in self.SECRET_PATTERNS.items():

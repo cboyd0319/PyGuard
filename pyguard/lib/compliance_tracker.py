@@ -24,7 +24,7 @@ class ComplianceTracker:
         Returns:
             Dictionary of compliance annotations by type
         """
-        annotations = {'OWASP': [], 'CWE': [], 'NIST': [], 'PCI-DSS': []}
+        annotations: dict[str, list[str]] = {'OWASP': [], 'CWE': [], 'NIST': [], 'PCI-DSS': []}
 
         try:
             # Find OWASP references

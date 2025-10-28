@@ -360,7 +360,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
             elif isinstance(node.func.value, ast.Attribute):
                 # Handle nested attributes like np.random.rand
                 parts = []
-                current = node.func
+                current: ast.expr = node.func
                 while isinstance(current, ast.Attribute):
                     parts.append(current.attr)
                     current = current.value

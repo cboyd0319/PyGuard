@@ -19866,7 +19866,7 @@ class AIMLSecurityFixer:
 
         if any(pattern in content for pattern in prompt_patterns):
             lines = content.split("\n")
-            fixed_lines = []
+            fixed_lines: list[str] = []
             modified = False
             import_added = False
 
@@ -20042,7 +20042,7 @@ class AIMLSecurityFixer:
         
         if any(indicator in content.lower() for indicator in markdown_indicators):
             lines = content.split("\n")
-            fixed_lines = []
+            fixed_lines: list[str] = []
             modified = False
             import_added = False
 

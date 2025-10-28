@@ -46,7 +46,7 @@ except ImportError:
 class NotebookAnalysisResult:
     """Wrapper for notebook analysis results to provide a consistent interface."""
     
-    def __init__(self, findings: list, notebook_path: Path = None):
+    def __init__(self, findings: list, notebook_path: Path | None = None):
         """Initialize with a list of findings and optionally notebook metadata."""
         self.findings = findings
         self.cell_count = 0
