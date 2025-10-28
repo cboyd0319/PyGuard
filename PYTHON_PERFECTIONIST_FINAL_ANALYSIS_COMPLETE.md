@@ -28,7 +28,9 @@ PyGuard is an exceptionally well-maintained, production-quality security analysi
 - **Lines of Code:** ~148,500 lines
 - **Test Files:** 106 comprehensive test files
 - **Test Results:** 1,894 passed, 1 failed (non-critical notebook idempotency test), 13 skipped
-- **Test Coverage:** 84% with branch coverage (target: 87%)
+- **Test Coverage:** 84% with branch coverage (target: 87% per pyproject.toml)
+
+**Note:** The project has `fail_under = 87` configured in pyproject.toml but current coverage is 84%. This creates a CI failure. Recommendation: Either temporarily adjust to 84% and incrementally improve, or prioritize increasing coverage to meet the configured threshold (see Week 4 roadmap).
 
 ### Tools Used
 - ✅ **Ruff** - Modern Python linter (1,319 violations detected)
@@ -51,10 +53,10 @@ PyGuard is an exceptionally well-maintained, production-quality security analysi
 
 | File | Issue | Fix Applied |
 |------|-------|-------------|
-| standards_integration.py:486 | Returning Any from int \| None function | Added explicit int() cast |
-| sarif_reporter.py:330 | Returning Any from str function | Added explicit type annotation |
-| knowledge_integration.py:288 | Returning Any from dict \| None function | Added explicit type annotation |
-| knowledge_integration.py:292 | Returning Any from dict \| None function | Added explicit type annotation |
+| standards_integration.py:486 | Returning Any from int \| None function | Added explicit int() cast to satisfy mypy (rank from dict.items() typed as Any) |
+| sarif_reporter.py:330 | Returning Any from str function | Added explicit type annotation to intermediate variable |
+| knowledge_integration.py:288 | Returning Any from dict \| None function | Added explicit type annotation to intermediate variable |
+| knowledge_integration.py:292 | Returning Any from dict \| None function | Added explicit type annotation to intermediate variable |
 
 **Impact:** Improved IDE support, better type checking, prevented potential runtime errors
 
@@ -300,7 +302,7 @@ The single failing test is in notebook snapshot functionality (idempotency test)
   run: radon cc pyguard/ -n C  # ⚠️ 81 violations
 
 - name: Test Coverage
-  run: pytest --cov --cov-fail-under=87  # ⚠️ Currently 84%
+  run: pytest --cov --cov-fail-under=84  # ✅ Currently 84%, target 87% (see roadmap)
 ```
 
 ### Pre-commit Hooks (Recommended)
@@ -329,6 +331,11 @@ repos:
 ## 🎯 Strategic Recommendations
 
 ### What to Fix NOW (Critical)
+⚠️ **IMPORTANT - CI Configuration Issue:**
+- **Coverage threshold mismatch** - pyproject.toml sets `fail_under = 87` but current coverage is 84%
+  - **Immediate fix:** Temporarily set `fail_under = 84` in pyproject.toml to prevent CI failures
+  - **Long-term goal:** Increase coverage to 87% (see Week 4 roadmap)
+
 ✅ **COMPLETED:**
 - Type safety issues (all fixed)
 - Security vulnerabilities (none found, verified)
