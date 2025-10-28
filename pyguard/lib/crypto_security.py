@@ -91,23 +91,22 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign):
         """Check for hardcoded encryption keys in assignments and track null IVs."""
         # Track null IV assignments: iv = b'\x00' * N
-        if isinstance(node.value, ast.BinOp):
-            if isinstance(node.value.op, ast.Mult):
-                left = node.value.left
-                right = node.value.right
-                # Check for b'\x00' * N or N * b'\x00'
-                if isinstance(left, ast.Constant) and isinstance(left.value, bytes):
-                    if left.value == b"\x00":
-                        # This is a null IV pattern
-                        for target in node.targets:
-                            if isinstance(target, ast.Name):
-                                self.null_iv_variables.add(target.id)
-                elif isinstance(right, ast.Constant) and isinstance(right.value, bytes):
-                    if right.value == b"\x00":
-                        # This is a null IV pattern
-                        for target in node.targets:
-                            if isinstance(target, ast.Name):
-                                self.null_iv_variables.add(target.id)
+        if isinstance(node.value, ast.BinOp) and isinstance(node.value.op, ast.Mult):
+            left = node.value.left
+            right = node.value.right
+            # Check for b'\x00' * N or N * b'\x00'
+            if isinstance(left, ast.Constant) and isinstance(left.value, bytes):
+                if left.value == b"\x00":
+                    # This is a null IV pattern
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            self.null_iv_variables.add(target.id)
+            elif isinstance(right, ast.Constant) and isinstance(right.value, bytes):
+                if right.value == b"\x00":
+                    # This is a null IV pattern
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            self.null_iv_variables.add(target.id)
 
         # CRYPTO008: Hardcoded encryption keys
         self._check_hardcoded_keys(node)

@@ -802,25 +802,23 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # FURB137: Use min/max with default instead of try-except ValueError
         # FURB138: Use list.sort(key=str.lower) instead of list.sort(key=lambda x: x.lower())
         # FURB139: Use math.ceil(x/y) instead of -(-x//y)
-        if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub):
-            if (
-                isinstance(node.value.operand, ast.UnaryOp)
-                and isinstance(node.value.operand.op, ast.USub)
-                and isinstance(node.value.operand.operand, ast.BinOp)
-            ):
-                if isinstance(node.value.operand.operand.op, ast.FloorDiv):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB139",
-                            message="Use math.ceil(x/y) instead of -(-x//y)",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                    )
+        if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub) and (
+            isinstance(node.value.operand, ast.UnaryOp)
+            and isinstance(node.value.operand.op, ast.USub)
+            and isinstance(node.value.operand.operand, ast.BinOp)
+        ) and isinstance(node.value.operand.operand.op, ast.FloorDiv):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB139",
+                    message="Use math.ceil(x/y) instead of -(-x//y)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SAFE,
+                )
+            )
 
         self.generic_visit(node)
 
