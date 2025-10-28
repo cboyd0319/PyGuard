@@ -285,11 +285,13 @@ class KnowledgeBase:
 
     def get_cwe_info(self, cwe_id: str) -> dict | None:
         """Get information about a CWE."""
-        return self.CWE_TOP_25_2023.get(cwe_id)
+        result: dict | None = self.CWE_TOP_25_2023.get(cwe_id)
+        return result
 
     def get_owasp_category(self, owasp_id: str) -> dict | None:
         """Get information about an OWASP Top 10 category."""
-        return self.OWASP_TOP_10_2021.get(owasp_id)
+        result: dict | None = self.OWASP_TOP_10_2021.get(owasp_id)
+        return result
 
     def get_severity_score(self, cwe_id: str) -> int:
         """

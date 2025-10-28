@@ -327,7 +327,8 @@ class SARIFReporter:
         Returns:
             SARIF level (error, warning, note, none)
         """
-        return self.SEVERITY_MAP.get(severity.upper(), "warning")
+        result: str = self.SEVERITY_MAP.get(severity.upper(), "warning")
+        return result
 
     def _get_security_severity(self, severity: str) -> str:
         """
