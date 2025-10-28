@@ -64,9 +64,9 @@ This is exceptional. The codebase demonstrates:
 
 ### 🟡 Major Issues (Quality Improvements)
 
-#### 1. High Complexity Functions (3 functions)
+#### 1. High Complexity Functions
 
-**cli.py:408 - main() function**
+**cli.py - main() function**
 ```
 Current: 69 cyclomatic complexity, 478 lines
 Recommended: <10 complexity, <50 lines per function
@@ -94,7 +94,7 @@ def run_analysis(cli, args): ...
 def generate_reports(results, args): ...
 ```
 
-**cli.py:228 - run_full_analysis() function**
+**cli.py - run_full_analysis() function**
 ```
 Current: 118 lines
 Recommended: <50 lines
@@ -102,7 +102,7 @@ Impact: Testing, readability
 Priority: Medium
 ```
 
-**git_hooks_cli.py:11 - main() function**
+**git_hooks_cli.py - main() function**
 ```
 Current: 14 complexity, 160 lines
 Recommended: <10 complexity, <50 lines
@@ -190,7 +190,7 @@ Some docstrings don't follow imperative mood:
 
 **Changes:**
 - Auto-fixed 2,570 linting issues with ruff
-- Formatted 130 files with ruff format
+- Formatted 162 files with ruff format (130 files actually reformatted, 32 already formatted)
 - Fixed import sorting across all files
 - Removed trailing whitespace
 - Updated deprecated typing (Dict→dict, List→list)
@@ -561,26 +561,26 @@ pyguard pyguard/ --scan-only
 
 ```
 Initial State (Before):
-├── Total Issues: 6,029
-├── Auto-fixable: 2,570
-├── Manual fixes needed: 3,459
-└── Breakdown:
-    ├── Import sorting: 800
-    ├── Formatting: 1,200
-    ├── Whitespace: 570
-    ├── Deprecated typing: 400
-    └── Others: 3,059
+- Total Issues: 6,029
+- Auto-fixable: 2,570
+- Manual fixes needed: 3,459
+- Breakdown:
+  - Import sorting: 800
+  - Formatting: 1,200
+  - Whitespace: 570
+  - Deprecated typing: 400
+  - Others: 3,059
 
 After Phase 1 & 2:
-├── Total Issues: 3,520 (-42%)
-├── Fixed: 2,570
-└── Remaining breakdown:
-    ├── Magic numbers: 1,500
-    ├── Line length: 1,000
-    ├── Complexity: 50
-    ├── Imports in functions: 200
-    ├── Code simplification: 300
-    └── Others: 470
+- Total Issues: 3,520 (-42%)
+- Fixed: 2,570
+- Remaining breakdown:
+  - Magic numbers: 1,500
+  - Line length: 1,000
+  - Complexity: 50
+  - Imports in functions: 200
+  - Code simplification: 300
+  - Others: 470
 ```
 
 ### Test Coverage
@@ -591,15 +591,15 @@ Target: 87%
 Gap: 9.08%
 
 Coverage by Module:
-├── pyguard/lib/*.py: ~80% (good)
-├── pyguard/cli.py: ~45% (needs improvement)
-├── pyguard/git_hooks_cli.py: ~30% (needs improvement)
-└── Overall: 77.92%
+- pyguard/lib/*.py: ~80% (good)
+- pyguard/cli.py: ~45% (needs improvement)
+- pyguard/git_hooks_cli.py: ~30% (needs improvement)
+- Overall: 77.92%
 
 To reach 87%:
-├── Add CLI tests: +5%
-├── Add error path tests: +3%
-└── Add integration tests: +1%
+- Add CLI tests: +5%
+- Add error path tests: +3%
+- Add integration tests: +1%
 ```
 
 ---
