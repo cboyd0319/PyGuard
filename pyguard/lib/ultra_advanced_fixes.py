@@ -22,8 +22,8 @@ References:
 - CWE Top 25 2024 | https://cwe.mitre.org/top25/ | High | Common weaknesses
 """
 
-import re
 from pathlib import Path
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

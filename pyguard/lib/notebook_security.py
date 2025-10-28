@@ -102,12 +102,12 @@ This implementation targets:
 """
 
 import ast
+from dataclasses import dataclass
 import hashlib
 import json
 import math
-import re
-from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger

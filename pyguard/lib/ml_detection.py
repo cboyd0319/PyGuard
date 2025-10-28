@@ -16,8 +16,8 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
+import re
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger

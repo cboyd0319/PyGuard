@@ -4,9 +4,9 @@ Code formatting fixes for Python.
 Integrates with black, isort, autopep8 for automated formatting.
 """
 
+from pathlib import Path
 import re
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger

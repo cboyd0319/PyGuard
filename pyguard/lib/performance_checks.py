@@ -6,9 +6,9 @@ that can be easily optimized. Aligned with Perflint rules.
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

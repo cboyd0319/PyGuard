@@ -14,10 +14,10 @@ References:
 - NIST 800-53 Rev 5 | https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final | High | Security controls
 """
 
-import os
-import re
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import re
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger

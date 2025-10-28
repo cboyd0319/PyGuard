@@ -5,11 +5,11 @@ Enhanced with world-class UI using Rich library for beautiful, beginner-friendly
 """
 
 import argparse
-import sys
-import time
 from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
+import sys
+import time
 from typing import TYPE_CHECKING, Any, Optional
 
 from pyguard import __version__
