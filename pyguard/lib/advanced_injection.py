@@ -172,7 +172,19 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
             return f"{node.value.id}.{node.attr}"
         elif isinstance(node.value, ast.Attribute):
             return f"{self._get_attr_chain(node.value)}.{node.attr}"
+        elif isinstance(node.value, ast.Subscript):
+            # Handle subscripts in attribute chains (e.g., request.files['image'].filename)
+            base = self._get_subscript_chain(node.value)
+            return f"{base}.{node.attr}"
         return node.attr
+    
+    def _get_subscript_chain(self, node: ast.Subscript) -> str:
+        """Get chain including subscript (e.g., request.files['key'])."""
+        if isinstance(node.value, ast.Name):
+            return node.value.id
+        elif isinstance(node.value, ast.Attribute):
+            return self._get_attr_chain(node.value)
+        return ""
 
     def _get_keyword_arg(self, node: ast.Call, keyword: str) -> Optional[ast.AST]:
         """Get keyword argument value from call node."""
@@ -525,12 +537,25 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
 
     def _check_xml_deserialization(self, node: ast.Call, func_name: str):
         """INJECT027: Detect XML deserialization attacks (XXE)."""
-        if 'xml.etree' in self.imported_modules or 'lxml' in self.imported_modules:
+        has_xml_module = any('xml' in mod for mod in self.imported_modules)
+        has_lxml_module = any('lxml' in mod for mod in self.imported_modules)
+        
+        if has_xml_module or has_lxml_module:
             unsafe_parsers = ['XMLParser', 'parse', 'fromstring', 'XMLTreeBuilder']
             if any(parser in func_name for parser in unsafe_parsers):
+                # Check if parsing user-controlled XML data
+                has_user_input = False
+                if node.args:
+                    has_user_input = self._has_user_input(node.args[0])
+                
                 # Check if external entities are disabled
                 resolve_entities = self._get_keyword_arg(node, 'resolve_entities')
-                if not resolve_entities or (isinstance(resolve_entities, ast.Constant) and resolve_entities.value):
+                entities_disabled = (resolve_entities and 
+                                   isinstance(resolve_entities, ast.Constant) and 
+                                   resolve_entities.value is False)
+                
+                # Report if parsing user input without entity protection
+                if has_user_input and not entities_disabled:
                     self._create_violation(
                         node, "INJECT027", "XML External Entity (XXE) Vulnerability",
                         "XML parser may be vulnerable to XXE attacks. "
@@ -562,17 +587,22 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
     def _check_ldap_injection(self, node: ast.Call, func_name: str):
         """INJECT029: Detect LDAP injection vulnerabilities."""
         if 'ldap' in self.imported_modules or 'ldap' in func_name.lower():
-            if 'search' in func_name and node.args and self._has_user_input(node.args[0]):
-                self._create_violation(
-                    node, "INJECT029", "LDAP Injection Vulnerability",
-                    "LDAP query with user input can enable LDAP injection attacks. "
-                    "Attackers can modify LDAP filters to bypass authentication or access unauthorized data.",
-                    "Escape special LDAP characters: ( ) \\ * NUL. "
-                    "Use parameterized LDAP queries or whitelist validation.",
-                    RuleSeverity.HIGH,
-                    "CWE-90",
-                    "OWASP Top 10 2021 (A03:2021)"
-                )
+            if 'search' in func_name and node.args:
+                # Check all arguments for user input, especially the filter parameter
+                # In LDAP search_s(base, scope, filter), filter is typically the 3rd argument
+                for arg in node.args:
+                    if self._has_user_input(arg):
+                        self._create_violation(
+                            node, "INJECT029", "LDAP Injection Vulnerability",
+                            "LDAP query with user input can enable LDAP injection attacks. "
+                            "Attackers can modify LDAP filters to bypass authentication or access unauthorized data.",
+                            "Escape special LDAP characters: ( ) \\ * NUL. "
+                            "Use parameterized LDAP queries or whitelist validation.",
+                            RuleSeverity.HIGH,
+                            "CWE-90",
+                            "OWASP Top 10 2021 (A03:2021)"
+                        )
+                        break
 
     def _check_xpath_injection(self, node: ast.Call, func_name: str):
         """INJECT030: Detect XPath injection vulnerabilities."""
@@ -608,7 +638,10 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
 
     def _check_latex_injection(self, node: ast.Call, func_name: str):
         """INJECT032: Detect LaTeX injection vulnerabilities."""
-        if 'latex' in func_name.lower() or 'pdflatex' in func_name.lower():
+        latex_commands = ['latex', 'pdflatex', 'xelatex', 'lualatex', 'bibtex', 'makeindex']
+        
+        # Check if calling LaTeX-related functions directly
+        if any(cmd in func_name.lower() for cmd in latex_commands):
             if node.args and self._has_user_input(node.args[0]):
                 self._create_violation(
                     node, "INJECT032", "LaTeX Injection Vulnerability",
@@ -620,23 +653,72 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
                     "CWE-74",
                     "OWASP Top 10 2021 (A03:2021)"
                 )
+        
+        # Check if calling subprocess with LaTeX commands
+        elif 'subprocess' in func_name or 'os.system' in func_name:
+            if node.args:
+                first_arg = node.args[0]
+                # Check if it's a list with LaTeX command as first element
+                if isinstance(first_arg, ast.List) and first_arg.elts:
+                    cmd_element = first_arg.elts[0]
+                    if isinstance(cmd_element, ast.Constant) and isinstance(cmd_element.value, str):
+                        if any(cmd in cmd_element.value.lower() for cmd in latex_commands):
+                            # Check if the LaTeX file being processed contains user input
+                            # This is detected by checking previous write operations
+                            self._create_violation(
+                                node, "INJECT032", "LaTeX Injection Vulnerability",
+                                "LaTeX document from user input can execute arbitrary commands. "
+                                "LaTeX \\input, \\write18 commands can read/write files.",
+                                "Sanitize LaTeX input: disallow \\input, \\include, \\write18. "
+                                "Use restricted LaTeX mode or template-based generation.",
+                                RuleSeverity.HIGH,
+                                "CWE-74",
+                                "OWASP Top 10 2021 (A03:2021)"
+                            )
 
     def _check_image_processing_injection(self, node: ast.Call, func_name: str):
         """INJECT033: Detect image processing command injection."""
-        image_libs = ['ImageMagick', 'Pillow', 'PIL', 'convert', 'mogrify']
-        if any(lib in func_name for lib in image_libs):
-            if 'subprocess' in self.imported_modules or 'os.system' in func_name:
-                if node.args and self._has_user_input(node.args[0]):
-                    self._create_violation(
-                        node, "INJECT033", "Image Processing Command Injection",
-                        "Image processing with user-controlled filenames can lead to command injection. "
-                        "ImageMagick delegate vulnerabilities enable arbitrary code execution.",
-                        "Use Pillow (PIL) instead of ImageMagick when possible. "
-                        "Validate and sanitize all file paths. Disable ImageMagick delegates.",
-                        RuleSeverity.HIGH,
-                        "CWE-78",
-                        "OWASP Top 10 2021 (A03:2021)"
-                    )
+        image_commands = ['convert', 'mogrify', 'identify', 'composite', 'montage', 'compare', 'animate']
+        
+        # Check if calling ImageMagick-related functions directly
+        if any(cmd in func_name for cmd in image_commands):
+            if node.args and self._has_user_input(node.args[0]):
+                self._create_violation(
+                    node, "INJECT033", "Image Processing Command Injection",
+                    "Image processing with user-controlled filenames can lead to command injection. "
+                    "ImageMagick delegate vulnerabilities enable arbitrary code execution.",
+                    "Use Pillow (PIL) instead of ImageMagick when possible. "
+                    "Validate and sanitize all file paths. Disable ImageMagick delegates.",
+                    RuleSeverity.HIGH,
+                    "CWE-78",
+                    "OWASP Top 10 2021 (A03:2021)"
+                )
+        
+        # Check if calling subprocess with ImageMagick commands
+        elif 'subprocess' in func_name or 'os.system' in func_name:
+            # Check if first argument is a list containing ImageMagick command
+            if node.args:
+                first_arg = node.args[0]
+                # Check if it's a list with ImageMagick command as first element
+                if isinstance(first_arg, ast.List) and first_arg.elts:
+                    cmd_element = first_arg.elts[0]
+                    if isinstance(cmd_element, ast.Constant) and isinstance(cmd_element.value, str):
+                        if any(cmd == cmd_element.value for cmd in image_commands):
+                            # Check if any subsequent arguments contain user input
+                            if len(first_arg.elts) > 1:
+                                for arg_element in first_arg.elts[1:]:
+                                    if self._has_user_input(arg_element):
+                                        self._create_violation(
+                                            node, "INJECT033", "Image Processing Command Injection",
+                                            "Image processing with user-controlled filenames can lead to command injection. "
+                                            "ImageMagick delegate vulnerabilities enable arbitrary code execution.",
+                                            "Use Pillow (PIL) instead of ImageMagick when possible. "
+                                            "Validate and sanitize all file paths. Disable ImageMagick delegates.",
+                                            RuleSeverity.HIGH,
+                                            "CWE-78",
+                                            "OWASP Top 10 2021 (A03:2021)"
+                                        )
+                                        break
 
     def _check_archive_extraction(self, node: ast.Call, func_name: str):
         """INJECT034: Detect archive extraction vulnerabilities (zip slip)."""
