@@ -343,9 +343,9 @@ class TestPerformanceProperties:
             # Rough heuristic: < 2ms per cell for simple cells
             max_expected_time = num_cells * 0.002 + 0.010  # 2ms/cell + 10ms overhead
 
-            assert elapsed < max_expected_time * 10, (
-                f"Analysis took {elapsed:.3f}s for {num_cells} cells (expected <{max_expected_time:.3f}s)"
-            )
+            assert (
+                elapsed < max_expected_time * 10
+            ), f"Analysis took {elapsed:.3f}s for {num_cells} cells (expected <{max_expected_time:.3f}s)"
         finally:
             notebook_path.unlink()
 

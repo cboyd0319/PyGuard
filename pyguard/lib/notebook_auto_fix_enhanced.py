@@ -24,11 +24,11 @@ Example:
 """
 
 import ast
+import json
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import json
 from pathlib import Path
-import re
 
 from pyguard.lib.notebook_security import NotebookFixer, NotebookIssue
 
@@ -279,9 +279,14 @@ class EnhancedNotebookFixer(NotebookFixer):
         return source, "", [], 0.0
 
     def _fix_code_injection_enhanced(
-        self, source: str, issue: NotebookIssue
+        self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
-        """Enhanced code injection fix with AST transformation."""
+        """Enhanced code injection fix with AST transformation.
+        
+        Args:
+            source: Source code to fix
+            _issue: Issue details (reserved for context)
+        """
         if "eval(" in source:
             # Replace eval with ast.literal_eval
             fixed = source.replace("eval(", "ast.literal_eval(")
@@ -324,9 +329,14 @@ class EnhancedNotebookFixer(NotebookFixer):
         return source, "", [], 0.0
 
     def _fix_deserialization_enhanced(
-        self, source: str, issue: NotebookIssue
+        self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
-        """Enhanced deserialization fix."""
+        """Enhanced deserialization fix.
+        
+        Args:
+            source: Source code to fix
+            _issue: Issue details (reserved for context)
+        """
         if "yaml.load(" in source and "yaml.safe_load" not in source:
             fixed = source.replace("yaml.load(", "yaml.safe_load(")
             return fixed, "Replaced yaml.load() with yaml.safe_load()", ["CWE-502"], 0.95

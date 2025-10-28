@@ -49,8 +49,13 @@ class ImportAnalyzer:
 
         return imports
 
-    def find_unused_imports(self, tree: ast.AST, code: str) -> set[str]:
-        """Find imports that are never used."""
+    def find_unused_imports(self, tree: ast.AST, _code: str) -> set[str]:
+        """Find imports that are never used.
+        
+        Args:
+            tree: AST to analyze
+            _code: Source code (reserved for advanced analysis)
+        """
         imported_names = set()
         used_names = set()
 

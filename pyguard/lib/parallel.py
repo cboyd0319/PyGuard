@@ -8,12 +8,12 @@ References:
 - Google SRE | https://sre.google | Medium | Scalability and performance patterns
 """
 
-from collections.abc import Callable
 import concurrent.futures
-from dataclasses import dataclass
 import multiprocessing
-from pathlib import Path
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
 
 from pyguard.lib.core import PyGuardLogger
 
@@ -83,7 +83,7 @@ class ParallelProcessor:
             # Collect results as they complete
             completed = 0
             # Cannot use enumerate() here because as_completed() yields futures in completion order, not original order
-            for future in concurrent.futures.as_completed(future_to_file):  # noqa: SIM113
+            for future in concurrent.futures.as_completed(future_to_file):
                 file_path = future_to_file[future]
                 completed += 1
 

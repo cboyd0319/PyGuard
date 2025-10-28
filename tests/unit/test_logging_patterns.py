@@ -688,10 +688,12 @@ class TestCheckFileFunction:
         """Test check_file detects issues in a file."""
         # Arrange
         file_path = tmp_path / "test_logging.py"
-        file_path.write_text("""
+        file_path.write_text(
+            """
 import logging
 logging.info(f"Test {var}")
-""")
+"""
+        )
 
         # Act
         issues = check_file(str(file_path))
@@ -704,10 +706,12 @@ logging.info(f"Test {var}")
         """Test check_file with clean code."""
         # Arrange
         file_path = tmp_path / "clean_logging.py"
-        file_path.write_text("""
+        file_path.write_text(
+            """
 import logging
 logging.info("Test %s", var)
-""")
+"""
+        )
 
         # Act
         issues = check_file(str(file_path))
@@ -892,14 +896,14 @@ import logging
 
         # Assert
         if should_detect:
-            assert any(issue.rule_id == "LOG005" for issue in issues), (
-                f"Expected LOG005 for: {code_snippet}"
-            )
+            assert any(
+                issue.rule_id == "LOG005" for issue in issues
+            ), f"Expected LOG005 for: {code_snippet}"
         else:
             # May have other issues, but not LOG005
-            assert not any(issue.rule_id == "LOG005" for issue in issues), (
-                f"Unexpected LOG005 for: {code_snippet}"
-            )
+            assert not any(
+                issue.rule_id == "LOG005" for issue in issues
+            ), f"Unexpected LOG005 for: {code_snippet}"
 
 
 class TestLoggingNoArgs:

@@ -8,9 +8,9 @@ References:
 - Google SRE | https://sre.google | Medium | Observability and monitoring patterns
 """
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 from typing import Any
 
@@ -215,7 +215,7 @@ class HTMLReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
-        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], fixes: list[dict[str, Any]]
+        self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], _fixes: list[dict[str, Any]]
     ) -> str:
         """
         Generate HTML report.
@@ -223,7 +223,7 @@ class HTMLReporter:
         Args:
             metrics: Analysis metrics
             issues: List of issues found
-            fixes: List of fixes applied
+            _fixes: List of fixes applied (reserved for future enhancement)
 
         Returns:
             HTML as string

@@ -4,9 +4,9 @@ This module provides file system watching capabilities for PyGuard,
 enabling real-time analysis when files change.
 """
 
+import time
 from collections.abc import Callable
 from pathlib import Path
-import time
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer

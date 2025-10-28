@@ -11,10 +11,10 @@ References:
 - Web Content Accessibility Guidelines | https://www.w3.org/WAI/WCAG21 | High | Accessibility standards
 """
 
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import sys
 from typing import Any
 
 from rich import box
@@ -157,12 +157,12 @@ class EnhancedConsole:
         self.console.print(panel)
         self.console.print()
 
-    def create_progress_bar(self, description: str = "Processing") -> Progress:
+    def create_progress_bar(self, _description: str = "Processing") -> Progress:
         """
         Create a beautiful progress bar.
 
         Args:
-            description: Progress bar description
+            _description: Progress bar description (reserved for customization)
 
         Returns:
             Progress object for displaying progress

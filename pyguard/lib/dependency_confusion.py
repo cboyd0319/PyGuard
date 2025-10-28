@@ -32,8 +32,8 @@ References:
 """
 
 import ast
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.rule_engine import (
     FixApplicability,

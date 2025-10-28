@@ -343,8 +343,8 @@ References:
 import ast
 import base64
 import codecs
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier

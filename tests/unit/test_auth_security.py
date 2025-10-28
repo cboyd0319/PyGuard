@@ -473,11 +473,13 @@ class TestAuthSecurityChecker:
     def test_check_file_success(self):
         """Test checking a file with vulnerabilities."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write("""
+            f.write(
+                """
 import random
 session_id = random.randint(1000, 9999)
 password = "hardcoded123"
-""")
+"""
+            )
             f.flush()
             file_path = Path(f.name)
 
@@ -508,11 +510,13 @@ password = "hardcoded123"
     def test_fix_file_only_safe_fixes(self):
         """Test that only SAFE fixes are applied."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write("""
+            f.write(
+                """
 import random
 session_id = random.randint(1000, 9999)
 password = "hardcoded123"  # This should NOT be auto-fixed (WARNING_ONLY)
-""")
+"""
+            )
             f.flush()
             file_path = Path(f.name)
 

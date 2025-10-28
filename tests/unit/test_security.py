@@ -423,12 +423,14 @@ class TestScanFileForIssuesLegacy:
     def test_scan_file_for_issues_legacy_with_vulnerabilities(self, tmp_path):
         """Test legacy scanner detects multiple issues."""
         test_file = tmp_path / "vulnerable.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 password = "secret123"
 cursor.execute("SELECT * FROM users WHERE id = " + user_id)
 subprocess.call(cmd, shell=True)
 result = eval(input())
-""")
+"""
+        )
 
         issues = self.fixer.scan_file_for_issues_legacy(test_file)
         assert len(issues) > 0
@@ -438,12 +440,14 @@ result = eval(input())
     def test_scan_file_for_issues_legacy_safe_code(self, tmp_path):
         """Test legacy scanner on safe code."""
         test_file = tmp_path / "safe.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def add(a, b):
     return a + b
 
 result = add(1, 2)
-""")
+"""
+        )
 
         issues = self.fixer.scan_file_for_issues_legacy(test_file)
         assert len(issues) == 0
@@ -462,11 +466,13 @@ class TestFixFile:
         """Test fixing a file with security issues."""
         fixer = SecurityFixer()
         test_file = tmp_path / "vulnerable.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import yaml
 password = "admin123"
 data = yaml.load(file)
-""")
+"""
+        )
 
         success, fixes = fixer.fix_file(test_file)
         assert success
@@ -501,7 +507,8 @@ data = yaml.load(file)
         """Test fixing file with multiple security issues."""
         fixer = SecurityFixer()
         test_file = tmp_path / "multiple.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import yaml
 import random
 import hashlib
@@ -511,7 +518,8 @@ token = random.random()
 data = yaml.load(file)
 hash = hashlib.md5(data)
 result = eval(code)
-""")
+"""
+        )
 
         success, fixes = fixer.fix_file(test_file)
         assert success
@@ -632,9 +640,9 @@ class TestSecurityFixerProperties:
                 result_lines = result.count("\n")
 
                 # Line count should not decrease (may add warnings)
-                assert result_lines >= original_lines, (
-                    f"{method_name} decreased line count from {original_lines} to {result_lines}"
-                )
+                assert (
+                    result_lines >= original_lines
+                ), f"{method_name} decreased line count from {original_lines} to {result_lines}"
 
         check_line_count()
 
@@ -696,9 +704,9 @@ class TestSecurityFixerProperties:
         for pattern in safe_patterns:
             result = self.fixer._fix_hardcoded_passwords(pattern)
             # Should not add warnings to safe patterns
-            assert "SECURITY:" not in result or pattern in result, (
-                f"Modified safe pattern: {pattern}"
-            )
+            assert (
+                "SECURITY:" not in result or pattern in result
+            ), f"Modified safe pattern: {pattern}"
 
     def test_sql_injection_never_creates_new_vulnerabilities(self):
         """Property: SQL injection fixer never introduces new SQL issues."""
@@ -762,9 +770,9 @@ class TestSecurityFixerProperties:
         for pattern in safe_yaml_patterns:
             result = self.fixer._fix_yaml_load(pattern)
             # Should not modify already-safe code
-            assert "safe_load" in result or "safe_dump" in result, (
-                f"Modified safe YAML pattern: {pattern}"
-            )
+            assert (
+                "safe_load" in result or "safe_dump" in result
+            ), f"Modified safe YAML pattern: {pattern}"
 
     def test_weak_crypto_preserves_strong_algorithms(self):
         """Property: Weak crypto fixer doesn't flag strong algorithms."""
@@ -782,9 +790,9 @@ class TestSecurityFixerProperties:
             original_warning_count = pattern.count("SECURITY:")
             result_warning_count = result.count("SECURITY:")
 
-            assert result_warning_count == original_warning_count, (
-                f"Added unnecessary warning to strong algorithm: {pattern}"
-            )
+            assert (
+                result_warning_count == original_warning_count
+            ), f"Added unnecessary warning to strong algorithm: {pattern}"
 
 
 class TestSecurityFixerEdgeCases:

@@ -632,7 +632,9 @@ from celery import Celery, shared_task
 
 app = Celery('tasks', broker='redis://localhost')
 
-""" + "\n".join([f"@shared_task\ndef task_{i}(): return {i}" for i in range(50)])
+""" + "\n".join(
+            [f"@shared_task\ndef task_{i}(): return {i}" for i in range(50)]
+        )
 
         result = benchmark(lambda: analyze_celery_security(Path("test.py"), code))
         assert isinstance(result, list)
@@ -644,7 +646,9 @@ from celery import Celery, shared_task
 
 app = Celery('tasks', broker='redis://localhost')
 
-""" + "\n".join([f"@shared_task\ndef task_{i}(): return {i}" for i in range(200)])
+""" + "\n".join(
+            [f"@shared_task\ndef task_{i}(): return {i}" for i in range(200)]
+        )
 
         result = benchmark(lambda: analyze_celery_security(Path("test.py"), code))
         assert isinstance(result, list)

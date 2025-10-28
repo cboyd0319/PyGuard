@@ -73,9 +73,9 @@ class TestCLIIntegration:
         readme_version = readme_match.group(1)
 
         # Assert all versions match
-        assert init_version == pyproject_version == dockerfile_version == readme_version, (
-            f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
-        )
+        assert (
+            init_version == pyproject_version == dockerfile_version == readme_version
+        ), f"Version mismatch: __init__.py={init_version}, pyproject.toml={pyproject_version}, Dockerfile={dockerfile_version}, README.md={readme_version}"
 
 
 class TestEndToEnd:

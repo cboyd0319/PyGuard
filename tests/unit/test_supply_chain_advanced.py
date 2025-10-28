@@ -557,7 +557,9 @@ hash_value = hashlib.sha256(data).hexdigest()
 import hashlib
 import subprocess
 
-""" + "\n".join([f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(50)])
+""" + "\n".join(
+            [f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(50)]
+        )
 
         result = benchmark(lambda: analyze_supply_chain_advanced(Path("test.py"), code))
         assert isinstance(result, list)
@@ -569,7 +571,9 @@ import hashlib
 import subprocess
 import os
 
-""" + "\n".join([f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(200)])
+""" + "\n".join(
+            [f"hash_{i} = hashlib.sha256(b'data{i}').hexdigest()" for i in range(200)]
+        )
 
         result = benchmark(lambda: analyze_supply_chain_advanced(Path("test.py"), code))
         assert isinstance(result, list)

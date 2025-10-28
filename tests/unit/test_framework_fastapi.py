@@ -557,7 +557,8 @@ class TestFastAPISecurityChecker:
     def test_check_file_with_violations(self, tmp_path):
         """Test checking a file with FastAPI violations."""
         test_file = tmp_path / "test_app.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from fastapi import FastAPI
 
 app = FastAPI()  # Docs exposed
@@ -565,7 +566,8 @@ app = FastAPI()  # Docs exposed
 @app.delete("/users/{user_id}")
 async def delete_user(user_id: int):  # Missing auth
     return {"deleted": user_id}
-""")
+"""
+        )
 
         checker = FastAPISecurityChecker()
         violations = checker.check_file(test_file)
@@ -578,9 +580,11 @@ async def delete_user(user_id: int):  # Missing auth
     def test_check_file_syntax_error(self, tmp_path):
         """Test checking a file with syntax errors."""
         test_file = tmp_path / "bad_syntax.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def invalid syntax here
-""")
+"""
+        )
 
         checker = FastAPISecurityChecker()
         violations = checker.check_file(test_file)
@@ -591,7 +595,8 @@ def invalid syntax here
     def test_check_file_no_violations(self, tmp_path):
         """Test checking a secure FastAPI file."""
         test_file = tmp_path / "secure_app.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from fastapi import FastAPI, Depends
 
 app = FastAPI(docs_url=None, redoc_url=None)
@@ -603,7 +608,8 @@ async def list_users():
 @app.delete("/users/{user_id}")
 async def delete_user(user_id: int, user = Depends(get_current_user)):
     return {"deleted": user_id}
-""")
+"""
+        )
 
         checker = FastAPISecurityChecker()
         violations = checker.check_file(test_file)

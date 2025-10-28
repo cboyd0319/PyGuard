@@ -468,9 +468,9 @@ def assertion_helpers():
             matching = [i for i in issues if i.rule_id == rule_id]
             assert len(matching) > 0, f"Expected issue {rule_id} not found"
             if message_substring:
-                assert any(message_substring.lower() in i.message.lower() for i in matching), (
-                    f"No issue contains '{message_substring}'"
-                )
+                assert any(
+                    message_substring.lower() in i.message.lower() for i in matching
+                ), f"No issue contains '{message_substring}'"
             return matching[0]
 
         @staticmethod
@@ -483,9 +483,9 @@ def assertion_helpers():
         @staticmethod
         def assert_line_range(issue, min_line, max_line):
             """Assert issue is within line range."""
-            assert min_line <= issue.line <= max_line, (
-                f"Issue at line {issue.line} outside range [{min_line}, {max_line}]"
-            )
+            assert (
+                min_line <= issue.line <= max_line
+            ), f"Issue at line {issue.line} outside range [{min_line}, {max_line}]"
 
     return Helpers()
 

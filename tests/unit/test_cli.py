@@ -1563,8 +1563,9 @@ class TestMainFunctionAlternative:
                     captured = capsys.readouterr()
                     # Strip ANSI codes and normalize whitespace for easier assertion
                     import re
-                    clean_output = re.sub(r'\x1b\[[0-9;]*m', '', captured.out)
-                    clean_output = ' '.join(clean_output.split())  # Normalize whitespace
+
+                    clean_output = re.sub(r"\x1b\[[0-9;]*m", "", captured.out)
+                    clean_output = " ".join(clean_output.split())  # Normalize whitespace
                     assert "Warning:" in clean_output
                     assert "not a Python file" in clean_output
                     assert "notebook" in clean_output

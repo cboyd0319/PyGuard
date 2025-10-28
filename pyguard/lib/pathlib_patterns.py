@@ -152,8 +152,12 @@ class PathlibPatternVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_open_call(self, node: ast.Call) -> None:
-        """Check for open() calls that could use Path methods."""
+    def _check_open_call(self, _node: ast.Call) -> None:
+        """Check for open() calls that could use Path methods.
+        
+        Args:
+            _node: Call node (disabled - too many false positives)
+        """
         # Note: We only flag bare open() calls, not those within 'with' statements
         # as context managers are generally preferred for file operations
         return  # Disabled for now - too many false positives with context managers

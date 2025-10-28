@@ -335,9 +335,9 @@ def func():
         checker = PylintRulesChecker()
         violations = checker.check_file(file_path)
 
-        assert any(v.rule_id == expected_rule for v in violations), (
-            f"Expected {expected_rule} in {[v.rule_id for v in violations]}"
-        )
+        assert any(
+            v.rule_id == expected_rule for v in violations
+        ), f"Expected {expected_rule} in {[v.rule_id for v in violations]}"
 
     def test_checker_handles_syntax_errors(self, tmp_path):
         """Test graceful handling of syntax errors."""
