@@ -368,7 +368,7 @@ async def read_lines():
     def test_check_file_function_error(self):
         """Test check_file function with nonexistent file."""
         from pyguard.lib.async_patterns import check_file
-        
+
         # Should handle error gracefully
         issues = check_file("/nonexistent/file.py")
         assert issues == []
@@ -376,7 +376,7 @@ async def read_lines():
     def test_check_file_function_success(self, tmp_path):
         """Test check_file function with valid file."""
         from pyguard.lib.async_patterns import check_file
-        
+
         code = """
 import time
 
@@ -385,7 +385,7 @@ async def test():
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         issues = check_file(str(test_file))
         assert len(issues) > 0
 
@@ -410,7 +410,7 @@ async def test():
 """
         checker = AsyncChecker()
         checker.check_code(code)
-        
+
         issues = checker.get_issues()
         assert len(issues) > 0
         assert all(isinstance(issue, checker.visitor.issues[0].__class__) for issue in issues)

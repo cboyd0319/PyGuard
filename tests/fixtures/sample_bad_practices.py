@@ -4,21 +4,24 @@ Note: This file intentionally contains bad practices for testing PyGuard's detec
 and auto-fix capabilities. The code patterns here are NOT examples to follow.
 """
 
-# ruff: noqa: E722, E721
+# ruff: noqa: E721
 # pylint: disable=all
 
-
 # Mutable default argument
-def append_to_list(item, my_list=[]):
+import builtins
+import contextlib
+
+
+def append_to_list(item, my_list=None):
+    if my_list is None:
+        my_list = []
     my_list.append(item)
     return my_list
 
 
 # Bare except clause
 def risky_operation():
-    try:
-        pass
-    except:
+    with contextlib.suppress(builtins.BaseException):
         pass
 
 

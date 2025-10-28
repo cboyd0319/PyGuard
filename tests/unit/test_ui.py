@@ -17,12 +17,13 @@ Testing Strategy:
 - Test error handling and graceful degradation
 """
 
-import pytest
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
-from pyguard.lib.ui import UITheme, EnhancedConsole, ModernHTMLReporter
+import pytest
+
+from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter, UITheme
 
 
 class TestUITheme:
@@ -141,16 +142,18 @@ class TestEnhancedConsole:
 
         assert progress is not None
 
-    @patch('sys.platform', 'win32')
+    @patch("sys.platform", "win32")
     def test_create_progress_bar_windows_spinner(self):
         """Test create_progress_bar uses ASCII-safe spinner on Windows."""
         import importlib
+
         from pyguard.lib import ui
+
         importlib.reload(ui)
-        
+
         console = ui.EnhancedConsole()
         progress = console.create_progress_bar("Windows Test")
-        
+
         # Should create progress without errors on Windows
         assert progress is not None
         assert hasattr(progress, "add_task") or hasattr(progress, "tasks")
@@ -470,7 +473,7 @@ class TestModernHTMLReporter:
         assert "PyGuard" in html
 
     @pytest.mark.parametrize(
-        "severity,expected_class", [("HIGH", "high"), ("MEDIUM", "medium"), ("LOW", "low")]
+        ("severity", "expected_class"), [("HIGH", "high"), ("MEDIUM", "medium"), ("LOW", "low")]
     )
     def test_generate_report_severity_classes(self, severity, expected_class):
         """Test generate_report applies correct severity CSS classes."""
@@ -572,7 +575,7 @@ class TestIntegration:
         assert len(captured.out + captured.err) >= 0
         assert output_path.exists()
 
-        report_content = output_path.read_text(encoding='utf-8')
+        report_content = output_path.read_text(encoding="utf-8")
         assert "SQL Injection" in report_content
         assert "HIGH" in report_content or "high" in report_content.lower()
 
@@ -606,16 +609,18 @@ class TestIntegration:
 class TestWindowsCompatibility:
     """Tests for Windows-specific functionality."""
 
-    @patch('sys.platform', 'win32')
+    @patch("sys.platform", "win32")
     def test_safe_text_windows_emoji_replacement(self):
         """Test that emoji are replaced on Windows."""
         # Need to create a new console after patching sys.platform
         import importlib
+
         from pyguard.lib import ui
+
         importlib.reload(ui)
-        
+
         console = ui.EnhancedConsole()
-        
+
         # Test text handling on Windows (emoj removed from codebase for compatibility)
         text_no_emoji = "Security Fast Clean [OK] OK [X] Error [WARN] Warning"
         safe_text = console._safe_text(text_no_emoji)
@@ -626,11 +631,13 @@ class TestWindowsCompatibility:
         assert "[X]" in safe_text
         assert "[WARN]" in safe_text
 
-    @patch('sys.platform', 'linux')
+    @patch("sys.platform", "linux")
     def test_safe_text_non_windows_no_replacement(self):
         """Test that text is passed through on non-Windows platforms."""
         import importlib
+
         from pyguard.lib import ui
+
         importlib.reload(ui)
 
         console = ui.EnhancedConsole()
@@ -642,16 +649,18 @@ class TestWindowsCompatibility:
         # Verify text is passed through unchanged
         assert safe_text == text
 
-    @patch('sys.platform', 'win32')
+    @patch("sys.platform", "win32")
     def test_windows_banner(self, capsys):
         """Test Windows-specific banner rendering."""
         import importlib
+
         from pyguard.lib import ui
+
         importlib.reload(ui)
-        
+
         console = ui.EnhancedConsole()
         console.print_banner()
-        
+
         captured = capsys.readouterr()
         output = captured.out + captured.err
         # Banner should be printed (just verify something was printed)
@@ -664,12 +673,12 @@ class TestHTMLReporterEdgeCases:
     def test_save_report_exception_handling(self, tmp_path):
         """Test save_report handles exceptions gracefully."""
         reporter = ModernHTMLReporter()
-        
+
         # Try to save to an invalid path (path with file as parent)
         invalid_file = tmp_path / "somefile.txt"
         invalid_file.write_text("test")
         invalid_path = invalid_file / "subdir" / "report.html"
-        
+
         # This should fail but return False instead of raising
         result = reporter.save_report("<html>test</html>", invalid_path)
         assert result is False
@@ -677,13 +686,13 @@ class TestHTMLReporterEdgeCases:
     def test_save_report_permission_error(self, tmp_path, monkeypatch):
         """Test save_report handles permission errors."""
         reporter = ModernHTMLReporter()
-        
+
         # Mock open to raise PermissionError
         def mock_open(*args, **kwargs):
             raise PermissionError("Access denied")
-        
+
         monkeypatch.setattr("builtins.open", mock_open)
-        
+
         output_path = tmp_path / "report.html"
         result = reporter.save_report("<html>test</html>", output_path)
         assert result is False

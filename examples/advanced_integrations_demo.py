@@ -10,46 +10,32 @@ Demonstrates:
 """
 
 
-
 def demo_ci_integration():
     """Demonstrate CI/CD integration features."""
-    print("\n" + "=" * 60)
-    print("CI/CD INTEGRATION DEMO")
-    print("=" * 60)
 
     from pyguard.lib.ci_integration import CIIntegrationGenerator
 
     generator = CIIntegrationGenerator()
 
     # List supported platforms
-    platforms = generator.list_supported_platforms()
-    print(f"\n[OK] Supported CI/CD platforms: {', '.join(platforms)}")
+    generator.list_supported_platforms()
 
     # Generate GitHub Actions config
-    print("\n📝 Generating GitHub Actions workflow...")
-    gh_config = generator.generate_config("github_actions")
-    print(f"   Generated {len(gh_config)} bytes of YAML config")
-    print("\n   Preview (first 200 chars):")
-    print(f"   {gh_config[:200]}...")
+    generator.generate_config("github_actions")
 
     # Generate pre-commit hook
-    print("\n📝 Generating pre-commit hook...")
     from pyguard.lib.ci_integration import PreCommitHookGenerator
 
     hook_gen = PreCommitHookGenerator()
-    hook_script = hook_gen.generate_hook_script(security_only=True)
-    print(f"   Generated {len(hook_script)} bytes of bash script")
+    hook_gen.generate_hook_script(security_only=True)
 
 
 def demo_performance_profiler():
     """Demonstrate performance profiler features."""
-    print("\n" + "=" * 60)
-    print("PERFORMANCE PROFILER DEMO")
-    print("=" * 60)
 
     from pyguard.lib.performance_profiler import (
-        PerformanceProfiler,
         PerformanceOptimizationSuggester,
+        PerformanceProfiler,
     )
 
     profiler = PerformanceProfiler()
@@ -65,49 +51,37 @@ def process_data(items):
         if re.match(r'pattern', item):
             # Issue 2: List concatenation
             result += [item]
-    
+
     # Issue 3: Nested loops
     for i in range(len(result)):
         for j in range(len(result)):
             if i != j:
                 print(i, j)
-    
+
     return result
 """
 
-    print("\n🔍 Analyzing code for performance issues...")
     issues = profiler.analyze_code(code)
 
-    print(f"\n[OK] Found {len(issues)} performance issues:")
-    for i, issue in enumerate(issues, 1):
-        print(f"\n   {i}. {issue.severity}: {issue.category}")
-        print(f"      Line {issue.line_number}: {issue.message}")
-        print(f"      💡 {issue.suggestion}")
-        print(f"       {issue.estimated_impact}")
+    for _i, _issue in enumerate(issues, 1):
+        pass
 
     # Show optimization suggestions
-    print("\n Optimization suggestions:")
     suggester = PerformanceOptimizationSuggester()
     patterns = suggester.list_patterns()
 
     for pattern in patterns[:2]:  # Show first 2
-        suggestion = suggester.get_suggestion(pattern)
-        print(f"\n   Pattern: {pattern}")
-        print(f"   Speedup: {suggestion['speedup']}")
+        suggester.get_suggestion(pattern)
 
 
 def demo_dependency_analyzer():
     """Demonstrate dependency analyzer features."""
-    print("\n" + "=" * 60)
-    print("DEPENDENCY ANALYZER DEMO")
-    print("=" * 60)
 
     from pyguard.lib.dependency_analyzer import DependencyGraphAnalyzer
 
     analyzer = DependencyGraphAnalyzer()
 
     # Create sample dependency structure
-    print("\n🔍 Analyzing dependencies...")
     analyzer.dependencies["myapp.views"].add("myapp.models")
     analyzer.dependencies["myapp.views"].add("myapp.utils")
     analyzer.dependencies["myapp.models"].add("myapp.database")
@@ -118,53 +92,37 @@ def demo_dependency_analyzer():
     analyzer.dependencies["myapp.tests"].add("myapp.models")
 
     # Get statistics
-    stats = analyzer.get_dependency_stats()
-    print("\n[OK] Dependency statistics:")
-    print(f"   Total modules: {stats['total_modules']}")
-    print(f"   Total dependencies: {stats['total_dependencies']}")
-    print(f"   Average dependencies per module: {stats['average_dependencies_per_module']}")
-    print(f"   Max dependencies: {stats['max_dependencies']}")
+    analyzer.get_dependency_stats()
 
     # Find circular dependencies
-    print("\n🔍 Checking for circular dependencies...")
     cycles = analyzer.find_circular_dependencies()
     if cycles:
-        print(f"   [WARN] Found {len(cycles)} circular dependencies!")
-        for cycle in cycles:
-            print(f"      {' → '.join(cycle)}")
+        for _cycle in cycles:
+            pass
     else:
-        print("   [OK] No circular dependencies found")
+        pass
 
     # Find complex modules
-    print("\n🔍 Finding complex modules (>2 dependencies)...")
     complex_mods = analyzer.find_complex_dependencies(threshold=2)
     if complex_mods:
-        print(f"   Found {len(complex_mods)} complex modules:")
-        for mod, count in complex_mods.items():
-            print(f"      {mod}: {count} dependencies")
+        for _mod, _count in complex_mods.items():
+            pass
 
     # Generate Mermaid diagram
-    print("\n Generating Mermaid diagram...")
     diagram = analyzer.generate_mermaid_diagram()
     lines = diagram.split("\n")
-    print(f"   Generated diagram with {len(lines)} nodes/edges")
-    print("\n   Preview (first 5 lines):")
-    for line in lines[:5]:
-        print(f"      {line}")
+    for _line in lines[:5]:
+        pass
 
 
 def demo_custom_rules():
     """Demonstrate custom rules engine features."""
-    print("\n" + "=" * 60)
-    print("CUSTOM RULES ENGINE DEMO")
-    print("=" * 60)
 
     from pyguard.lib.custom_rules import CustomRuleEngine
 
     engine = CustomRuleEngine()
 
     # Add regex-based rules
-    print("\n📝 Adding custom rules...")
 
     engine.add_regex_rule(
         rule_id="NO_PRINT",
@@ -188,12 +146,10 @@ def demo_custom_rules():
 
     # List rules
     rules = engine.list_rules()
-    print(f"\n[OK] Added {len(rules)} custom rules:")
-    for rule in rules:
-        print(f"   {rule.rule_id}: {rule.name} ({rule.severity})")
+    for _rule in rules:
+        pass
 
     # Check code against rules
-    print("\n🔍 Checking code against custom rules...")
 
     code = """
 def start_server():
@@ -203,18 +159,12 @@ def start_server():
 """
 
     violations = engine.check_code(code)
-    print(f"\n[OK] Found {len(violations)} violations:")
-    for v in violations:
-        print(f"\n   {v.severity}: {v.rule_name}")
-        print(f"   Line {v.line_number}: {v.message}")
-        print(f"   💡 {v.suggestion}")
+    for _v in violations:
+        pass
 
 
 def demo_advanced_ast_rules():
     """Demonstrate AST-based custom rules."""
-    print("\n" + "=" * 60)
-    print("AST-BASED CUSTOM RULES DEMO")
-    print("=" * 60)
 
     import ast
 
@@ -224,14 +174,12 @@ def demo_advanced_ast_rules():
         """Find functions with too many arguments."""
         lines = []
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef):
-                if len(node.args.args) > 5:
-                    lines.append(node.lineno)
+            if isinstance(node, ast.FunctionDef) and len(node.args.args) > 5:
+                lines.append(node.lineno)
         return lines
 
     engine = CustomRuleEngine()
 
-    print("\n📝 Adding AST-based rule...")
     engine.add_ast_rule(
         rule_id="TOO_MANY_ARGS",
         name="Too many function arguments",
@@ -249,29 +197,17 @@ def complex_function(arg1, arg2, arg3, arg4, arg5, arg6):
     return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
 """
 
-    print("\n🔍 Checking code with AST rule...")
     violations = engine.check_code(code)
 
     if violations:
-        print(f"\n[OK] Found {len(violations)} violations:")
-        for v in violations:
-            print(f"\n   {v.severity}: {v.rule_name}")
-            print(f"   Line {v.line_number}: {v.message}")
-            print(f"   💡 {v.suggestion}")
+        for _v in violations:
+            pass
     else:
-        print("\n[OK] No violations found")
+        pass
 
 
 def main():
     """Run all demos."""
-    print("\n" + "=" * 60)
-    print("PYGUARD ADVANCED INTEGRATIONS DEMO")
-    print("=" * 60)
-    print("\nThis demo showcases PyGuard's advanced features:")
-    print("  • CI/CD Integration")
-    print("  • Performance Profiler")
-    print("  • Dependency Analyzer")
-    print("  • Custom Rules Engine")
 
     try:
         demo_ci_integration()
@@ -280,16 +216,7 @@ def main():
         demo_custom_rules()
         demo_advanced_ast_rules()
 
-        print("\n" + "=" * 60)
-        print("DEMO COMPLETE!")
-        print("=" * 60)
-        print("\n✨ All features demonstrated successfully!")
-        print("\n Learn more:")
-        print("   docs/guides/advanced-integrations.md")
-        print("   docs/reference/capabilities-reference.md")
-
-    except Exception as e:
-        print(f"\n[X] Error during demo: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()

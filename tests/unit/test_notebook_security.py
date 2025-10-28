@@ -1,8 +1,8 @@
 """Tests for Jupyter notebook security analysis."""
 
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -398,7 +398,7 @@ class TestNotebookFixer:
         assert "backup" in fixes[0].lower() or "Commented out" in fixes[0]
 
         # Verify the fix was applied
-        with open(temp_notebook, "r") as f:
+        with open(temp_notebook) as f:
             fixed_notebook = json.load(f)
 
         assert "SECURITY" in fixed_notebook["cells"][0]["source"]
@@ -880,7 +880,7 @@ class TestEdgeCases:
         assert any("Cleared outputs" in fix for fix in fixes)
 
         # Verify outputs were cleared
-        with open(temp_notebook, "r") as f:
+        with open(temp_notebook) as f:
             fixed_notebook = json.load(f)
 
         assert len(fixed_notebook["cells"][0]["outputs"]) == 0
@@ -908,7 +908,9 @@ class TestEdgeCases:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        github_issues = [i for i in issues if "GitHub" in i.message or "github" in i.message.lower()]
+        github_issues = [
+            i for i in issues if "GitHub" in i.message or "github" in i.message.lower()
+        ]
         assert len(github_issues) >= 1
 
         temp_notebook.unlink()
@@ -1004,7 +1006,9 @@ class TestEnhancedFeatures:
         issues = analyzer.analyze_notebook(temp_notebook)
 
         # Should not flag as unsafe since weights_only=True
-        torch_issues = [i for i in issues if "torch.load" in i.message and "arbitrary code" in i.message.lower()]
+        torch_issues = [
+            i for i in issues if "torch.load" in i.message and "arbitrary code" in i.message.lower()
+        ]
         assert len(torch_issues) == 0
 
         temp_notebook.unlink()
@@ -1069,7 +1073,9 @@ class TestEnhancedFeatures:
         issues = analyzer.analyze_notebook(temp_notebook)
 
         # Should not flag missing seed issue for PyTorch (seed is set)
-        repro_issues = [i for i in issues if "Reproducibility" in i.category and "seed not set" in i.message]
+        repro_issues = [
+            i for i in issues if "Reproducibility" in i.category and "seed not set" in i.message
+        ]
         assert len(repro_issues) == 0
 
         temp_notebook.unlink()
@@ -1161,7 +1167,9 @@ class TestEnhancedFeatures:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        secret_issues = [i for i in issues if "Secret" in i.category or "secret" in i.message.lower()]
+        secret_issues = [
+            i for i in issues if "Secret" in i.category or "secret" in i.message.lower()
+        ]
         assert len(secret_issues) >= 2
 
         temp_notebook.unlink()
@@ -1196,7 +1204,7 @@ class TestEnhancedFeatures:
         assert success
         assert len(fixes) > 0
 
-        with open(temp_notebook, "r") as f:
+        with open(temp_notebook) as f:
             fixed_notebook = json.load(f)
 
         fixed_source = fixed_notebook["cells"][0]["source"]
@@ -1237,7 +1245,7 @@ class TestEnhancedFeatures:
         assert success
         assert len(fixes) > 0
 
-        with open(temp_notebook, "r") as f:
+        with open(temp_notebook) as f:
             fixed_notebook = json.load(f)
 
         fixed_source = fixed_notebook["cells"][0]["source"]
@@ -1272,7 +1280,11 @@ class TestEnhancedFeatures:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        hf_issues = [i for i in issues if "Hugging Face" in i.message or "from_pretrained" in i.message.lower()]
+        hf_issues = [
+            i
+            for i in issues
+            if "Hugging Face" in i.message or "from_pretrained" in i.message.lower()
+        ]
         assert len(hf_issues) >= 1
         assert any(i.severity in ["HIGH", "CRITICAL"] for i in hf_issues)
 
@@ -1388,7 +1400,9 @@ class TestFilesystemSecurity:
 
         fs_issues = [i for i in issues if "Filesystem Security" in i.category]
         assert len(fs_issues) >= 1
-        assert any("shadow" in i.message.lower() or "password" in i.message.lower() for i in fs_issues)
+        assert any(
+            "shadow" in i.message.lower() or "password" in i.message.lower() for i in fs_issues
+        )
 
         temp_notebook.unlink()
 
@@ -1416,9 +1430,16 @@ class TestFilesystemSecurity:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "remove" in i.message.lower()]
+        fs_issues = [
+            i
+            for i in issues
+            if "Filesystem Security" in i.category and "remove" in i.message.lower()
+        ]
         assert len(fs_issues) >= 1
-        assert any("deletion" in i.message.lower() or "path validation" in i.message.lower() for i in fs_issues)
+        assert any(
+            "deletion" in i.message.lower() or "path validation" in i.message.lower()
+            for i in fs_issues
+        )
 
         temp_notebook.unlink()
 
@@ -1446,7 +1467,11 @@ class TestFilesystemSecurity:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "rmtree" in i.message.lower()]
+        fs_issues = [
+            i
+            for i in issues
+            if "Filesystem Security" in i.category and "rmtree" in i.message.lower()
+        ]
         assert len(fs_issues) >= 1
 
         temp_notebook.unlink()
@@ -1475,7 +1500,11 @@ class TestFilesystemSecurity:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        fs_issues = [i for i in issues if "Filesystem Security" in i.category and "mktemp" in i.message.lower()]
+        fs_issues = [
+            i
+            for i in issues
+            if "Filesystem Security" in i.category and "mktemp" in i.message.lower()
+        ]
         assert len(fs_issues) >= 1
         assert any(i.auto_fixable for i in fs_issues)
         assert any("race condition" in i.message.lower() for i in fs_issues)
@@ -1547,7 +1576,6 @@ class TestAdvancedXSS:
         temp_notebook.unlink()
 
 
-
 class TestNetworkExfiltration:
     """Tests for network and data exfiltration detection."""
 
@@ -1576,7 +1604,9 @@ class TestNetworkExfiltration:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        network_issues = [i for i in issues if "Network" in i.category or "Exfiltration" in i.category]
+        network_issues = [
+            i for i in issues if "Network" in i.category or "Exfiltration" in i.category
+        ]
         assert len(network_issues) >= 1
         assert any("POST" in i.message or "post" in i.code_snippet for i in network_issues)
 
@@ -1606,7 +1636,9 @@ class TestNetworkExfiltration:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        network_issues = [i for i in issues if "Network" in i.category or "database" in i.message.lower()]
+        network_issues = [
+            i for i in issues if "Network" in i.category or "database" in i.message.lower()
+        ]
         assert len(network_issues) >= 1
 
         temp_notebook.unlink()
@@ -1636,7 +1668,9 @@ class TestNetworkExfiltration:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        network_issues = [i for i in issues if "Network" in i.category or "socket" in i.message.lower()]
+        network_issues = [
+            i for i in issues if "Network" in i.category or "socket" in i.message.lower()
+        ]
         assert len(network_issues) >= 1
         assert any(i.severity == "CRITICAL" for i in network_issues)
 
@@ -1670,7 +1704,9 @@ class TestResourceExhaustion:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "Infinite loop" in i.message]
+        resource_issues = [
+            i for i in issues if "Resource Exhaustion" in i.category or "Infinite loop" in i.message
+        ]
         assert len(resource_issues) >= 1
         assert any(i.severity == "CRITICAL" for i in resource_issues)
 
@@ -1699,7 +1735,11 @@ class TestResourceExhaustion:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "memory" in i.message.lower()]
+        resource_issues = [
+            i
+            for i in issues
+            if "Resource Exhaustion" in i.category or "memory" in i.message.lower()
+        ]
         assert len(resource_issues) >= 1
 
         temp_notebook.unlink()
@@ -1729,7 +1769,9 @@ class TestResourceExhaustion:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        resource_issues = [i for i in issues if "Resource Exhaustion" in i.category or "fork" in i.message.lower()]
+        resource_issues = [
+            i for i in issues if "Resource Exhaustion" in i.category or "fork" in i.message.lower()
+        ]
         assert len(resource_issues) >= 1
         assert any(i.severity == "CRITICAL" for i in resource_issues)
 
@@ -1763,7 +1805,9 @@ class TestAdvancedCodeInjection:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        injection_issues = [i for i in issues if "Code Injection" in i.category and "dunder" in i.message.lower()]
+        injection_issues = [
+            i for i in issues if "Code Injection" in i.category and "dunder" in i.message.lower()
+        ]
         assert len(injection_issues) >= 1
         assert any(i.severity == "CRITICAL" for i in injection_issues)
 
@@ -1794,7 +1838,9 @@ class TestAdvancedCodeInjection:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        injection_issues = [i for i in issues if "Code Injection" in i.category and "run_cell" in i.message.lower()]
+        injection_issues = [
+            i for i in issues if "Code Injection" in i.category and "run_cell" in i.message.lower()
+        ]
         assert len(injection_issues) >= 1
 
         temp_notebook.unlink()
@@ -1864,7 +1910,15 @@ class TestAdvancedMLSecurity:
         issues = analyzer.analyze_notebook(temp_notebook)
 
         # Should detect input() and/or .predict() in ML context
-        ml_issues = [i for i in issues if "ML" in i.category or ("input" in i.message.lower() and "predict" in ' '.join([iss.code_snippet for iss in issues]).lower())]
+        ml_issues = [
+            i
+            for i in issues
+            if "ML" in i.category
+            or (
+                "input" in i.message.lower()
+                and "predict" in " ".join([iss.code_snippet for iss in issues]).lower()
+            )
+        ]
         # At minimum should detect input() usage
         input_issues = [i for i in issues if "input(" in i.code_snippet]
         assert len(ml_issues) >= 1 or len(input_issues) >= 1
@@ -1979,7 +2033,7 @@ class TestSARIFGeneration:
                     ],
                     "outputs": [],
                     "metadata": {},
-                }
+                },
             ],
             "metadata": {},
             "nbformat": 4,
@@ -2096,11 +2150,11 @@ class TestSARIFGeneration:
         run = sarif["runs"][0]
         assert len(run["results"]) == 0
         assert run["properties"]["total_issues"] == 0
-    
+
     def test_sarif_enhanced_metadata(self):
         """Test enhanced SARIF metadata with rollback commands and confidence scores."""
-        from pyguard.lib.notebook_security import generate_notebook_sarif, NotebookIssue
-        
+        from pyguard.lib.notebook_security import NotebookIssue, generate_notebook_sarif
+
         issues = [
             NotebookIssue(
                 severity="CRITICAL",
@@ -2108,18 +2162,18 @@ class TestSARIFGeneration:
                 message="Use of eval() enables code injection",
                 cell_index=0,
                 line_number=1,
-                code_snippet='eval(user_input)',
+                code_snippet="eval(user_input)",
                 rule_id="NB-INJECT-001",
                 fix_suggestion="Use ast.literal_eval() for safe evaluation",
                 cwe_id="CWE-95",
                 owasp_id="ASVS-5.2.1",
                 confidence=0.95,
-                auto_fixable=True
+                auto_fixable=True,
             )
         ]
-        
+
         sarif = generate_notebook_sarif("test.ipynb", issues)
-        
+
         # Check run properties include new metadata
         props = sarif["runs"][0]["properties"]
         assert "auto_fixable_issues" in props
@@ -2130,7 +2184,7 @@ class TestSARIFGeneration:
         assert "Code Injection" in props["categories_detected"]
         assert props["sarif_enhanced"] is True
         assert props["includes_rollback_commands"] is True
-        
+
         # Check result properties include enhanced metadata
         result = sarif["runs"][0]["results"][0]
         result_props = result["properties"]
@@ -2142,7 +2196,7 @@ class TestSARIFGeneration:
         assert result_props["cwe_id"] == "CWE-95"
         assert "owasp_id" in result_props
         assert result_props["owasp_id"] == "ASVS-5.2.1"
-        
+
         # Check fix includes rollback commands
         assert "fixes" in result
         fix = result["fixes"][0]
@@ -2154,7 +2208,7 @@ class TestSARIFGeneration:
         assert "backup_location" in fix_props
         assert "semantic_preservation" in fix_props
         assert fix_props["semantic_preservation"] == "verified"  # confidence >= 0.95
-        
+
         # Check markdown description includes rollback command
         assert "Rollback Command" in fix["description"]["markdown"]
         assert "cp " in fix["description"]["markdown"]
@@ -2175,7 +2229,7 @@ class TestEnhancedMLPatterns:
                         "# Load TensorFlow SavedModel\n",
                         "model = tf.saved_model.load('my_model')\n",
                         "# Load Keras model from JSON\n",
-                        "model2 = tf.keras.models.model_from_json(json_config)"
+                        "model2 = tf.keras.models.model_from_json(json_config)",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2195,7 +2249,7 @@ class TestEnhancedMLPatterns:
         # Should detect TensorFlow model loading
         ml_issues = [i for i in issues if i.category == "ML Pipeline Security"]
         assert len(ml_issues) >= 2, f"Expected at least 2 TensorFlow issues, got {len(ml_issues)}"
-        
+
         # Check for SavedModel and model_from_json
         patterns_found = [i.message for i in ml_issues]
         assert any("SavedModel" in msg or "saved_model" in msg for msg in patterns_found)
@@ -2215,7 +2269,7 @@ class TestEnhancedMLPatterns:
                         "import onnxruntime\n",
                         "# Load ONNX model\n",
                         "model = onnx.load('model.onnx')\n",
-                        "session = onnxruntime.InferenceSession('model.onnx')"
+                        "session = onnxruntime.InferenceSession('model.onnx')",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2250,7 +2304,7 @@ class TestEnhancedMLPatterns:
                         "# Load AutoModel\n",
                         "model = AutoModel.from_pretrained('bert-base-uncased')\n",
                         "# Use pipeline with custom model\n",
-                        "pipe = pipeline('sentiment-analysis', model='untrusted/model')"
+                        "pipe = pipeline('sentiment-analysis', model='untrusted/model')",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2287,7 +2341,7 @@ class TestComplianceLicensing:
                     "source": [
                         "# Using GPL-licensed library\n",
                         "from some_gpl_lib import feature  # GPL\n",
-                        "import another_lib  # GPL-3.0"
+                        "import another_lib  # GPL-3.0",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2320,7 +2374,7 @@ class TestComplianceLicensing:
                     "source": [
                         "from cryptography import fernet\n",
                         "import pycrypto\n",
-                        "from nacl import secret"
+                        "from nacl import secret",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2339,7 +2393,10 @@ class TestComplianceLicensing:
 
         compliance_issues = [i for i in issues if i.category == "Compliance & Licensing"]
         assert len(compliance_issues) >= 1
-        assert any("cryptography" in i.message.lower() or "export" in i.message.lower() for i in compliance_issues)
+        assert any(
+            "cryptography" in i.message.lower() or "export" in i.message.lower()
+            for i in compliance_issues
+        )
 
         temp_notebook.unlink()
 
@@ -2358,7 +2415,7 @@ class TestEnhancedNetworkPatterns:
                         "from gql import gql, Client\n",
                         "import graphql\n",
                         "query = gql('{ users { id name } }')\n",
-                        "result = client.execute(query)"
+                        "result = client.execute(query)",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2392,7 +2449,7 @@ class TestEnhancedNetworkPatterns:
                         "import dns.resolver\n",
                         "import dnspython\n",
                         "resolver = dns.resolver.Resolver()\n",
-                        "answers = resolver.query('example.com', 'A')"
+                        "answers = resolver.query('example.com', 'A')",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2429,7 +2486,7 @@ class TestEnhancedPIIPatterns:
                     "source": [
                         "# Banking information\n",
                         "iban = 'GB82WEST12345698765432'\n",
-                        "swift = 'DEUTDEFF500'"
+                        "swift = 'DEUTDEFF500'",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2462,7 +2519,7 @@ class TestEnhancedPIIPatterns:
                     "source": [
                         "# Medical data\n",
                         "patient_mrn = 'MRN: 1234567'\n",
-                        "diagnosis = 'A00.1'  # ICD-10 code"
+                        "diagnosis = 'A00.1'  # ICD-10 code",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2481,7 +2538,9 @@ class TestEnhancedPIIPatterns:
 
         pii_issues = [i for i in issues if i.category == "PII Exposure"]
         assert len(pii_issues) >= 1
-        assert any("Medical" in i.message or "MRN" in i.message or "ICD" in i.message for i in pii_issues)
+        assert any(
+            "Medical" in i.message or "MRN" in i.message or "ICD" in i.message for i in pii_issues
+        )
 
         temp_notebook.unlink()
 
@@ -2496,10 +2555,7 @@ class TestEnhancedShellMagics:
                 {
                     "cell_type": "code",
                     "execution_count": 1,
-                    "source": [
-                        "%conda install numpy\n",
-                        "%conda install -c conda-forge pandas"
-                    ],
+                    "source": ["%conda install numpy\n", "%conda install -c conda-forge pandas"],
                     "outputs": [],
                     "metadata": {},
                 }
@@ -2515,9 +2571,11 @@ class TestEnhancedShellMagics:
         analyzer = NotebookSecurityAnalyzer()
         issues = analyzer.analyze_notebook(temp_notebook)
 
-        magic_issues = [i for i in issues if i.category in ["Unsafe Magic Command", "Unpinned Dependency"]]
+        magic_issues = [
+            i for i in issues if i.category in ["Unsafe Magic Command", "Unpinned Dependency"]
+        ]
         assert len(magic_issues) >= 1
-        
+
         temp_notebook.unlink()
 
     def test_load_magic_detection(self, temp_notebook):
@@ -2529,7 +2587,7 @@ class TestEnhancedShellMagics:
                     "execution_count": 1,
                     "source": [
                         "%load https://example.com/script.py\n",
-                        "%loadpy external_script.py"
+                        "%loadpy external_script.py",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2551,4 +2609,3 @@ class TestEnhancedShellMagics:
         assert any("%load" in i.code_snippet for i in magic_issues)
 
         temp_notebook.unlink()
-

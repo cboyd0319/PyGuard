@@ -1,8 +1,8 @@
 """Tests for parallel processing module."""
 
+from pathlib import Path
 import tempfile
 import unittest
-from pathlib import Path
 
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor, ProcessingResult
 
@@ -20,11 +20,11 @@ class TestProcessingResult(unittest.TestCase):
             processing_time_ms=123.45,
         )
 
-        self.assertEqual(result.file_path, Path("test.py"))
-        self.assertTrue(result.success)
-        self.assertEqual(result.fixes_applied, ["fix1", "fix2"])
-        self.assertIsNone(result.error)
-        self.assertEqual(result.processing_time_ms, 123.45)
+        assert result.file_path == Path("test.py")
+        assert result.success
+        assert result.fixes_applied == ["fix1", "fix2"]
+        assert result.error is None
+        assert result.processing_time_ms == 123.45
 
     def test_processing_result_with_error(self):
         """Test ProcessingResult with error."""
@@ -32,9 +32,9 @@ class TestProcessingResult(unittest.TestCase):
             file_path=Path("test.py"), success=False, fixes_applied=[], error="Test error message"
         )
 
-        self.assertFalse(result.success)
-        self.assertEqual(result.error, "Test error message")
-        self.assertEqual(result.fixes_applied, [])
+        assert not result.success
+        assert result.error == "Test error message"
+        assert result.fixes_applied == []
 
 
 class TestParallelProcessor(unittest.TestCase):
@@ -46,13 +46,13 @@ class TestParallelProcessor(unittest.TestCase):
 
     def test_init(self):
         """Test ParallelProcessor initialization."""
-        self.assertIsNotNone(self.processor)
-        self.assertEqual(self.processor.max_workers, 2)
+        assert self.processor is not None
+        assert self.processor.max_workers == 2
 
     def test_init_default_workers(self):
         """Test initialization with default workers."""
         processor = ParallelProcessor()
-        self.assertGreater(processor.max_workers, 0)
+        assert processor.max_workers > 0
 
     def test_process_files_success(self):
         """Test processing files successfully."""
@@ -72,10 +72,10 @@ class TestParallelProcessor(unittest.TestCase):
             results = self.processor.process_files(test_files, mock_processor, show_progress=False)
 
             # Verify results
-            self.assertEqual(len(results), 3)
+            assert len(results) == 3
             for result in results:
-                self.assertTrue(result.success)
-                self.assertGreater(len(result.fixes_applied), 0)
+                assert result.success
+                assert len(result.fixes_applied) > 0
 
     def test_process_files_with_progress(self):
         """Test processing files with progress updates."""
@@ -90,7 +90,7 @@ class TestParallelProcessor(unittest.TestCase):
                 return (True, [])
 
             results = self.processor.process_files(test_files, mock_processor, show_progress=True)
-            self.assertEqual(len(results), 20)
+            assert len(results) == 20
 
     def test_process_files_with_errors(self):
         """Test processing files with errors."""
@@ -110,12 +110,12 @@ class TestParallelProcessor(unittest.TestCase):
             results = self.processor.process_files(test_files, mock_processor, show_progress=False)
 
             # Should have 2 results (one error, one success)
-            self.assertEqual(len(results), 2)
+            assert len(results) == 2
 
             # Find the error result
             error_results = [r for r in results if not r.success]
-            self.assertEqual(len(error_results), 1)
-            self.assertIn("Test error", error_results[0].error)
+            assert len(error_results) == 1
+            assert "Test error" in error_results[0].error
 
     def test_process_single_file_success(self):
         """Test processing a single file successfully."""
@@ -128,10 +128,10 @@ class TestParallelProcessor(unittest.TestCase):
 
             result = self.processor._process_single_file(file_path, mock_processor)
 
-            self.assertTrue(result.success)
-            self.assertEqual(result.fixes_applied, ["fix1"])
-            self.assertIsNone(result.error)
-            self.assertGreater(result.processing_time_ms, 0)
+            assert result.success
+            assert result.fixes_applied == ["fix1"]
+            assert result.error is None
+            assert result.processing_time_ms > 0
 
     def test_process_single_file_error(self):
         """Test processing a single file with error."""
@@ -144,11 +144,11 @@ class TestParallelProcessor(unittest.TestCase):
 
             result = self.processor._process_single_file(file_path, mock_processor)
 
-            self.assertFalse(result.success)
-            self.assertEqual(result.fixes_applied, [])
-            self.assertIsNotNone(result.error)
-            self.assertIn("Processing failed", result.error)
-            self.assertGreater(result.processing_time_ms, 0)
+            assert not result.success
+            assert result.fixes_applied == []
+            assert result.error is not None
+            assert "Processing failed" in result.error
+            assert result.processing_time_ms > 0
 
     def test_process_empty_file_list(self):
         """Test processing empty file list."""
@@ -157,7 +157,7 @@ class TestParallelProcessor(unittest.TestCase):
             return (True, [])
 
         results = self.processor.process_files([], mock_processor, show_progress=False)
-        self.assertEqual(len(results), 0)
+        assert len(results) == 0
 
 
 class TestBatchProcessor(unittest.TestCase):
@@ -169,14 +169,14 @@ class TestBatchProcessor(unittest.TestCase):
 
     def test_init(self):
         """Test BatchProcessor initialization."""
-        self.assertIsNotNone(self.processor)
-        self.assertEqual(self.processor.batch_size, 5)
-        self.assertIsNotNone(self.processor.parallel_processor)
+        assert self.processor is not None
+        assert self.processor.batch_size == 5
+        assert self.processor.parallel_processor is not None
 
     def test_init_default_batch_size(self):
         """Test initialization with default batch size."""
         processor = BatchProcessor()
-        self.assertEqual(processor.batch_size, 100)
+        assert processor.batch_size == 100
 
     def test_process_in_batches_single_batch(self):
         """Test processing files in a single batch."""
@@ -192,9 +192,9 @@ class TestBatchProcessor(unittest.TestCase):
 
             results = self.processor.process_in_batches(test_files, mock_processor)
 
-            self.assertEqual(len(results), 3)
+            assert len(results) == 3
             for result in results:
-                self.assertTrue(result.success)
+                assert result.success
 
     def test_process_in_batches_multiple_batches(self):
         """Test processing files in multiple batches."""
@@ -211,9 +211,9 @@ class TestBatchProcessor(unittest.TestCase):
             results = self.processor.process_in_batches(test_files, mock_processor)
 
             # Should process all files across 3 batches (5 + 5 + 2)
-            self.assertEqual(len(results), 12)
+            assert len(results) == 12
             for result in results:
-                self.assertTrue(result.success)
+                assert result.success
 
     def test_process_in_batches_with_errors(self):
         """Test batch processing with some errors."""
@@ -232,14 +232,14 @@ class TestBatchProcessor(unittest.TestCase):
 
             results = self.processor.process_in_batches(test_files, mock_processor)
 
-            self.assertEqual(len(results), 8)
+            assert len(results) == 8
 
             # Count successful and failed
             successful = sum(1 for r in results if r.success)
             failed = sum(1 for r in results if not r.success)
 
-            self.assertEqual(successful, 4)
-            self.assertEqual(failed, 4)
+            assert successful == 4
+            assert failed == 4
 
     def test_process_in_batches_empty_list(self):
         """Test batch processing with empty file list."""
@@ -248,7 +248,7 @@ class TestBatchProcessor(unittest.TestCase):
             return (True, [])
 
         results = self.processor.process_in_batches([], mock_processor)
-        self.assertEqual(len(results), 0)
+        assert len(results) == 0
 
     def test_process_in_batches_exact_batch_size(self):
         """Test processing when file count equals batch size."""
@@ -264,9 +264,9 @@ class TestBatchProcessor(unittest.TestCase):
 
             results = self.processor.process_in_batches(test_files, mock_processor)
 
-            self.assertEqual(len(results), 5)
+            assert len(results) == 5
             for result in results:
-                self.assertTrue(result.success)
+                assert result.success
 
 
 if __name__ == "__main__":

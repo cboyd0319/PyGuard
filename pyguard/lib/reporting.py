@@ -234,11 +234,11 @@ class HTMLReporter:
             severity_class = f"severity-{issue.get('severity', 'LOW').lower()}"
             issue_rows += f"""
             <tr class="{severity_class}">
-                <td>{issue.get('severity', 'UNKNOWN')}</td>
-                <td>{issue.get('category', 'Unknown')}</td>
-                <td>{issue.get('file', 'N/A')}</td>
-                <td>{issue.get('line', 0)}</td>
-                <td>{issue.get('message', '')}</td>
+                <td>{issue.get("severity", "UNKNOWN")}</td>
+                <td>{issue.get("category", "Unknown")}</td>
+                <td>{issue.get("file", "N/A")}</td>
+                <td>{issue.get("line", 0)}</td>
+                <td>{issue.get("message", "")}</td>
             </tr>
             """
 
@@ -336,7 +336,7 @@ class HTMLReporter:
 <body>
     <div class="header">
         <h1>🐍 PyGuard Analysis Report</h1>
-        <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p>Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     </div>
 
     <div class="metrics">
@@ -358,8 +358,8 @@ class HTMLReporter:
         </div>
     </div>
 
-    <div class="status {'passed' if metrics.total_issues == 0 else 'failed'}">
-        {'[OK] No issues found!' if metrics.total_issues == 0 else f'[WARN] {metrics.total_issues} issues detected'}
+    <div class="status {"passed" if metrics.total_issues == 0 else "failed"}">
+        {"[OK] No issues found!" if metrics.total_issues == 0 else f"[WARN] {metrics.total_issues} issues detected"}
     </div>
 
     <div class="issues-table">

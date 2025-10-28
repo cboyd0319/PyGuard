@@ -33,7 +33,8 @@ class FormattingFixer:
         try:
             result = subprocess.run(
                 ["black", "--line-length", str(line_length), str(file_path)],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -87,7 +88,8 @@ class FormattingFixer:
 
             result = subprocess.run(
                 args,
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -124,7 +126,8 @@ class FormattingFixer:
         try:
             result = subprocess.run(
                 ["isort", str(file_path)],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -204,7 +207,6 @@ class FormattingFixer:
             "formatters_applied": formatters_applied,
             "errors": errors,
         }
-
 
     def format_directory(
         self,

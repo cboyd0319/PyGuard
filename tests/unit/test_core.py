@@ -1,8 +1,7 @@
 """Unit tests for core module."""
 
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 
@@ -192,7 +191,8 @@ class TestDiffGenerator:
         diff = generator.generate_diff(old_code, new_code, "test.py")
         assert diff is not None
         assert "-" in diff or "+" in diff
-        assert "1" in diff and "2" in diff
+        assert "1" in diff
+        assert "2" in diff
 
     def test_generate_diff_no_changes(self):
         """Test diff generation with no changes."""
@@ -266,12 +266,9 @@ class TestFileOperations:
             (Path(tmpdir) / "test1.py").write_text("print('test1')")
             (Path(tmpdir) / "test2.py").write_text("print('test2')")
             (Path(tmpdir) / "exclude_me.py").write_text("print('excluded')")
-            
+
             ops = FileOperations()
-            python_files = ops.find_python_files(
-                Path(tmpdir),
-                exclude_patterns=["exclude_*"]
-            )
+            python_files = ops.find_python_files(Path(tmpdir), exclude_patterns=["exclude_*"])
             assert len(python_files) == 2
             assert all("exclude" not in str(f) for f in python_files)
 
@@ -282,7 +279,7 @@ class TestFileOperations:
             file_path = Path(tmpdir) / "latin1.py"
             with open(file_path, "w", encoding="latin-1") as f:
                 f.write("# Comment with special char: \xe9")
-            
+
             ops = FileOperations()
             # Should fallback to latin-1 encoding
             content = ops.read_file(file_path)
@@ -300,12 +297,12 @@ class TestFileOperations:
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "test.py"
             test_file.write_text("test content")
-            
+
             ops = FileOperations()
-            
+
             # Mock open to raise a permission error
             mocker.patch("builtins.open", side_effect=PermissionError("Access denied"))
-            
+
             content = ops.read_file(test_file)
             assert content is None
 
@@ -314,20 +311,20 @@ class TestFileOperations:
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = Path(tmpdir) / "test.py"
             test_file.write_bytes(b"\xff\xfe")  # Invalid UTF-8
-            
+
             ops = FileOperations()
-            
+
             # Make first open raise UnicodeDecodeError, second raise IOError
             call_count = [0]
+
             def mock_open(*args, **kwargs):
                 call_count[0] += 1
                 if call_count[0] == 1:
                     raise UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")
-                else:
-                    raise IOError("Disk error")
-            
+                raise OSError("Disk error")
+
             mocker.patch("builtins.open", side_effect=mock_open)
-            
+
             content = ops.read_file(test_file)
             assert content is None
 
@@ -348,9 +345,9 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Try to backup nonexistent file
             result = manager.create_backup(Path("/nonexistent/file.py"))
             assert result is None
@@ -360,13 +357,12 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Try to restore nonexistent backup
             result = manager.restore_backup(
-                Path("/nonexistent/backup.bak"),
-                Path(tmpdir) / "restored.py"
+                Path("/nonexistent/backup.bak"), Path(tmpdir) / "restored.py"
             )
             assert result is False
 
@@ -375,17 +371,17 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Create multiple backup files
             for i in range(5):
                 backup = backup_dir / f"test.py.{i}.bak"
                 backup.write_text(f"backup {i}")
-            
+
             # Cleanup, keeping only 2
             manager.cleanup_old_backups(keep_count=2)
-            
+
             # Should have at most 2 backups per file
             backups = list(backup_dir.glob("*.bak"))
             assert len(backups) <= 2
@@ -395,14 +391,14 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Create backup files
             for i in range(3):
                 backup = backup_dir / f"test.py.{i}.bak"
                 backup.write_text(f"backup {i}")
-            
+
             # Should not raise even if cleanup encounters issues
             manager.cleanup_old_backups(keep_count=1)
             # Test passes if no exception raised
@@ -414,12 +410,14 @@ class TestBackupManagerAdvanced:
             backup_dir.mkdir()
             test_file = Path(tmpdir) / "test.py"
             test_file.write_text("test")
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Mock shutil.copy2 to raise an exception
-            mocker.patch("pyguard.lib.core.shutil.copy2", side_effect=PermissionError("Access denied"))
-            
+            mocker.patch(
+                "pyguard.lib.core.shutil.copy2", side_effect=PermissionError("Access denied")
+            )
+
             result = manager.create_backup(test_file)
             assert result is None
 
@@ -431,12 +429,12 @@ class TestBackupManagerAdvanced:
             backup_file = backup_dir / "test.bak"
             backup_file.write_text("backup content")
             target_file = Path(tmpdir) / "target.py"
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Mock shutil.copy2 to raise an exception
-            mocker.patch("pyguard.lib.core.shutil.copy2", side_effect=IOError("Disk full"))
-            
+            mocker.patch("pyguard.lib.core.shutil.copy2", side_effect=OSError("Disk full"))
+
             result = manager.restore_backup(backup_file, target_file)
             assert result is False
 
@@ -445,23 +443,24 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Create backup files
             for i in range(5):
                 backup = backup_dir / f"test.py.{i}.bak"
                 backup.write_text(f"backup {i}")
-            
+
             # Mock unlink to raise an exception
             original_unlink = Path.unlink
+
             def mock_unlink(self, *args, **kwargs):
                 if "test.py.0.bak" in str(self):
                     raise OSError("Cannot delete file")
                 return original_unlink(self, *args, **kwargs)
-            
+
             mocker.patch.object(Path, "unlink", mock_unlink)
-            
+
             # Should not raise even if removal fails
             manager.cleanup_old_backups(keep_count=2)
 
@@ -471,37 +470,37 @@ class TestBackupManagerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Create exactly 2 backup files (equal to keep_count)
             for i in range(2):
                 backup = backup_dir / f"test.py.{i}.bak"
                 backup.write_text(f"backup {i}")
-            
+
             # Act - cleanup with keep_count=2, should not delete anything
             manager.cleanup_old_backups(keep_count=2)
-            
+
             # Assert - all backups should still exist
             backups = list(backup_dir.glob("*.bak"))
             assert len(backups) == 2
-            
+
     def test_cleanup_old_backups_fewer_than_keep_count(self):
         """Test cleanup when backups are fewer than keep_count."""
         # Arrange
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # Create only 1 backup file (less than keep_count)
             backup = backup_dir / "test.py.0.bak"
             backup.write_text("backup 0")
-            
+
             # Act - cleanup with keep_count=3, should not delete anything
             manager.cleanup_old_backups(keep_count=3)
-            
+
             # Assert - backup should still exist
             backups = list(backup_dir.glob("*.bak"))
             assert len(backups) == 1
@@ -517,10 +516,10 @@ class TestPyGuardLoggerAdvanced:
             readonly_dir = Path(tmpdir) / "readonly"
             readonly_dir.mkdir()
             readonly_dir.chmod(0o444)
-            
+
             log_file = readonly_dir / "log.jsonl"
             logger = PyGuardLogger(log_file=str(log_file))
-            
+
             # Should not raise exception, should fallback to console
             logger.info("Test message", category="Test")
             # If we get here, the fallback to console worked
@@ -529,9 +528,9 @@ class TestPyGuardLoggerAdvanced:
         """Test that error logging increments error count."""
         logger = PyGuardLogger()
         initial_errors = logger.metrics.get("errors", 0)
-        
+
         logger.error("Test error", category="Test")
-        
+
         assert logger.metrics["errors"] == initial_errors + 1
 
     def test_log_with_all_levels(self):
@@ -539,12 +538,12 @@ class TestPyGuardLoggerAdvanced:
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = Path(tmpdir) / "test.jsonl"
             logger = PyGuardLogger(log_file=str(log_file))
-            
+
             logger.debug("Debug message")
             logger.info("Info message")
             logger.warning("Warning message")
             logger.error("Error message")
-            
+
             content = log_file.read_text()
             assert "Debug message" in content
             assert "Info message" in content
@@ -558,10 +557,10 @@ class TestDiffGeneratorEdgeCases:
     def test_generate_diff_with_special_characters(self):
         """Test diff generation with special characters."""
         diff_gen = DiffGenerator()
-        
+
         original = "# Comment with émojis: 🔥\nx = 1"
         modified = "# Comment with émojis: 🔥\nx = 2"
-        
+
         diff = diff_gen.generate_diff(original, modified)
         assert diff is not None
         assert "🔥" in diff or "x = 1" in diff or "x = 2" in diff
@@ -569,10 +568,10 @@ class TestDiffGeneratorEdgeCases:
     def test_generate_diff_identical_content(self):
         """Test diff generation with identical content."""
         diff_gen = DiffGenerator()
-        
+
         content = "x = 1\ny = 2"
         diff = diff_gen.generate_diff(content, content)
-        
+
         # Diff should be minimal or empty for identical content
         assert isinstance(diff, str)
 
@@ -585,7 +584,7 @@ class TestPyGuardLoggerPathInit:
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = Path(tmpdir) / "test.jsonl"
             logger = PyGuardLogger(log_file=log_file)
-            
+
             logger.info("Test message")
             assert log_file.exists()
             content = log_file.read_text()
@@ -600,7 +599,7 @@ class TestBackupManagerListBackups:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             backups = manager.list_backups()
             assert backups == []
 
@@ -609,18 +608,18 @@ class TestBackupManagerListBackups:
         with tempfile.TemporaryDirectory() as tmpdir:
             backup_dir = Path(tmpdir) / "backups"
             backup_dir.mkdir()
-            
+
             # Create test backup files
             (backup_dir / "test.py.1.bak").write_text("test1")
             (backup_dir / "test.py.2.bak").write_text("test2")
             (backup_dir / "other.py.1.bak").write_text("other")
-            
+
             manager = BackupManager(backup_dir=backup_dir)
-            
+
             # List all backups
             all_backups = manager.list_backups()
             assert len(all_backups) == 3
-            
+
             # List specific backups
             test_backups = manager.list_backups(pattern="test.py*")
             assert len(test_backups) == 2
@@ -633,10 +632,10 @@ class TestDiffGeneratorComprehensive:
     def test_generate_diff_multiline(self):
         """Test diff generation with multiline content."""
         diff_gen = DiffGenerator()
-        
+
         original = "line1\nline2\nline3\nline4"
         modified = "line1\nmodified2\nline3\nline4"
-        
+
         diff = diff_gen.generate_diff(original, modified, "test.py")
         assert "line2" in diff or "modified2" in diff
         assert isinstance(diff, str)
@@ -644,10 +643,10 @@ class TestDiffGeneratorComprehensive:
     def test_generate_side_by_side_diff_multiline(self):
         """Test side-by-side diff with multiple lines."""
         diff_gen = DiffGenerator()
-        
+
         original = "line1\nline2\nline3"
         modified = "line1\nchanged\nline3"
-        
+
         html_diff = diff_gen.generate_side_by_side_diff(original, modified)
         assert isinstance(html_diff, str)
         # HTML diff should contain table elements

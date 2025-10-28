@@ -7,7 +7,6 @@ Following PyTest Architect Agent best practices:
 - Comprehensive coverage of error handling
 """
 
-
 import pytest
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
@@ -32,7 +31,7 @@ class TestBestPracticesFixer:
         assert fixer.ast_analyzer is not None
 
     @pytest.mark.parametrize(
-        "code,expected_in_result",
+        ("code", "expected_in_result"),
         [
             ("def foo(x=[]):\n    pass", "ANTI-PATTERN"),
             ("def bar(opts={}):\n    pass", "ANTI-PATTERN"),
@@ -60,7 +59,7 @@ class TestBestPracticesFixer:
         assert result.count("MUTABLE DEFAULT") == 1
 
     @pytest.mark.parametrize(
-        "code,expected",
+        ("code", "expected"),
         [
             ("try:\n    pass\nexcept:\n    pass", "except Exception:"),
             ("try:\n    x = 1\nexcept:\n    print('error')", "except Exception:"),
@@ -77,7 +76,7 @@ class TestBestPracticesFixer:
         assert expected in result
 
     @pytest.mark.parametrize(
-        "code,expected",
+        ("code", "expected"),
         [
             ("if x == None:", "if x is None:"),
             ("if x != None:", "if x is not None:"),
@@ -95,7 +94,7 @@ class TestBestPracticesFixer:
         assert expected in result
 
     @pytest.mark.parametrize(
-        "code,expected",
+        ("code", "expected"),
         [
             ("if type(x) == str:", "isinstance(x, str)"),
             ("if type(value) == list:", "isinstance(value, list)"),
@@ -123,7 +122,7 @@ class TestBestPracticesFixer:
         assert result.count("Better:") == 1
 
     @pytest.mark.parametrize(
-        "code,should_suggest",
+        ("code", "should_suggest"),
         [
             ("if x == True:\n    pass", True),
             ("if x == False:\n    pass", True),
@@ -166,10 +165,10 @@ class TestBestPracticesFixer:
         assert result.count("Consider list comprehension") == 1
 
     @pytest.mark.parametrize(
-        "code,should_warn",
+        ("code", "should_warn"),
         [
             ("for i in range(10):\n    s += 'x'", True),  # String literal
-            ("for i in range(10):\n    msg += \"hello\"", True),  # String literal
+            ('for i in range(10):\n    msg += "hello"', True),  # String literal
             ("for i in range(10):\n    msg += data", False),  # Variable, not detected
             ("s = ''.join(items)", False),  # Good practice
         ],
@@ -187,7 +186,7 @@ class TestBestPracticesFixer:
             assert result == code
 
     @pytest.mark.parametrize(
-        "code,should_suggest",
+        ("code", "should_suggest"),
         [
             ("f = open('file.txt')", True),
             ("file = open('data.json', 'r')", True),
@@ -207,12 +206,12 @@ class TestBestPracticesFixer:
             assert result == code
 
     @pytest.mark.parametrize(
-        "code,should_add_todo",
+        ("code", "should_add_todo"),
         [
             ("def foo():\n    return 42", True),
             ("class Bar:\n    pass", True),
             ("def baz():\n    '''Has docstring.'''\n    return 1", False),
-            ("def qux():\n    \"\"\"Also has docstring.\"\"\"\n    return 2", False),
+            ('def qux():\n    """Also has docstring."""\n    return 2', False),
         ],
         ids=["function_no_doc", "class_no_doc", "function_with_doc", "class_with_doc"],
     )
@@ -248,7 +247,7 @@ class TestBestPracticesFixer:
         assert "TODO: Add docstring" in result
 
     @pytest.mark.parametrize(
-        "code,should_warn",
+        ("code", "should_warn"),
         [
             ("global my_var\nmy_var = 10", True),
             ("global x, y, z", True),
@@ -454,7 +453,7 @@ class TestNamingConventionFixer:
         assert fixer.file_ops is not None
 
     @pytest.mark.parametrize(
-        "code,expected_violations",
+        ("code", "expected_violations"),
         [
             ("def myFunction():\n    pass", 1),  # camelCase - should be snake_case
             ("def MyFunc():\n    pass", 1),  # PascalCase - should be snake_case
@@ -480,7 +479,7 @@ class TestNamingConventionFixer:
             assert "snake_case" in violations[0]["issue"]
 
     @pytest.mark.parametrize(
-        "code,expected_violations",
+        ("code", "expected_violations"),
         [
             ("class myclass:\n    pass", 1),  # lowercase - should be PascalCase
             ("class my_class:\n    pass", 1),  # snake_case - should be PascalCase
@@ -569,13 +568,13 @@ class TestBestPracticesFixerEdgeCases:
         # Arrange
         test_file = tmp_path / "test.py"
         test_file.write_text("result = []\nfor x in range(10):\n    result.append(x)")
-        
+
         # Mock write_file to return False
         mocker.patch.object(self.fixer.file_ops, "write_file", return_value=False)
-        
+
         # Act
         success, fixes = self.fixer.fix_file(test_file)
-        
+
         # Assert - should return False when write fails
         assert success is False
         assert len(fixes) > 0  # Fixes were detected but not written
@@ -590,10 +589,10 @@ for x in range(10):
 result2 = []
 for y in range(5):  # Consider list comprehension
     result2.append(y)"""
-        
+
         # Act
         result = self.fixer._fix_list_comprehension(code)
-        
+
         # Assert - first loop gets comment, second already has it
         lines = result.split("\n")
         # Should have comments on both for loops now
@@ -608,10 +607,10 @@ for y in range(5):  # Consider list comprehension
         code = """result = ""
 for item in items:
     result += "item"  # Use list and join()"""
-        
-        # Act  
+
+        # Act
         result = self.fixer._fix_string_concatenation(code)
-        
+
         # Assert - should not add duplicate comment (check for PERFORMANCE: prefix)
         assert "PERFORMANCE:" not in result or result.count("PERFORMANCE:") == 0
         # Original comment should still be there
@@ -621,10 +620,10 @@ for item in items:
         """Test context manager suggestion when comment already exists."""
         # Arrange - code already has a comment matching the check pattern
         code = "f = open('file.txt')  # Use 'with' statement"
-        
+
         # Act
         result = self.fixer._fix_context_managers(code)
-        
+
         # Assert - should not add another comment when marker exists
         assert result == code
         # Should not have the "Best Practice:" prefix added

@@ -275,7 +275,9 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
             if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
                 return True
         # Check for % formatting
-        elif (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod)) or (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add)):
+        elif (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod)) or (
+            isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add)
+        ):
             return True
         return False
 

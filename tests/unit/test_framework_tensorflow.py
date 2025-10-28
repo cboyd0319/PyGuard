@@ -6,8 +6,9 @@ Covers 20 security checks for model security, training pipeline security,
 inference security, and distributed ML security.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pyguard.lib.framework_tensorflow import (
     analyze_tensorflow_security,
@@ -431,19 +432,17 @@ class TestTensorFlowRuleMetadata:
     def test_tensorflow_rules_registered(self):
         """Verify all TF rules are registered."""
         from pyguard.lib.framework_tensorflow import TENSORFLOW_RULES
-        
+
         assert len(TENSORFLOW_RULES) == 20
         rule_ids = {rule.rule_id for rule in TENSORFLOW_RULES}
-        
-        expected_ids = {
-            f"TF{str(i).zfill(3)}" for i in range(1, 21)
-        }
+
+        expected_ids = {f"TF{str(i).zfill(3)}" for i in range(1, 21)}
         assert rule_ids == expected_ids
 
     def test_tensorflow_rules_have_cwe_mapping(self):
         """Verify all rules have CWE mappings."""
         from pyguard.lib.framework_tensorflow import TENSORFLOW_RULES
-        
+
         for rule in TENSORFLOW_RULES:
             assert rule.cwe_mapping is not None
             assert rule.cwe_mapping.startswith("CWE-")
@@ -451,14 +450,14 @@ class TestTensorFlowRuleMetadata:
     def test_tensorflow_rules_have_owasp_mapping(self):
         """Verify all rules have OWASP mappings."""
         from pyguard.lib.framework_tensorflow import TENSORFLOW_RULES
-        
+
         for rule in TENSORFLOW_RULES:
             assert rule.owasp_mapping is not None
 
     def test_tensorflow_rules_have_severity(self):
         """Verify all rules have severity levels."""
         from pyguard.lib.framework_tensorflow import TENSORFLOW_RULES
-        
+
         for rule in TENSORFLOW_RULES:
             assert rule.severity in [
                 RuleSeverity.CRITICAL,
@@ -470,7 +469,7 @@ class TestTensorFlowRuleMetadata:
     def test_tensorflow_critical_rules_exist(self):
         """Verify critical severity rules exist."""
         from pyguard.lib.framework_tensorflow import TENSORFLOW_RULES
-        
+
         critical_rules = [r for r in TENSORFLOW_RULES if r.severity == RuleSeverity.CRITICAL]
         assert len(critical_rules) >= 1
         # TF001 and TF005 should be critical
@@ -491,10 +490,11 @@ model = tf.keras.Sequential([
 ])
 """
         import time
+
         start = time.time()
         analyze_tensorflow_security(Path("test.py"), code)
         elapsed = time.time() - start
-        
+
         assert elapsed < 0.1  # Should complete in <100ms
 
     def test_performance_medium_file(self):
@@ -502,12 +502,13 @@ model = tf.keras.Sequential([
         code = """
 import tensorflow as tf
 """ + "\n".join([f"layer{i} = tf.keras.layers.Dense(10)" for i in range(100)])
-        
+
         import time
+
         start = time.time()
         analyze_tensorflow_security(Path("test.py"), code)
         elapsed = time.time() - start
-        
+
         assert elapsed < 1.0  # Should complete in <1 second
 
     def test_no_false_positives_on_safe_code(self):

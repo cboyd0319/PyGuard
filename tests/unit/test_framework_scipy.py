@@ -38,7 +38,10 @@ result = minimize(objective_function, x0, bounds=[(0, 10)])
         violations = analyze_scipy_security(Path("test.py"), code)
         opt_violations = [v for v in violations if v.rule_id == "SCP001"]
         assert len(opt_violations) >= 1
-        assert any("maxiter" in v.message.lower() or "iteration" in v.message.lower() for v in opt_violations)
+        assert any(
+            "maxiter" in v.message.lower() or "iteration" in v.message.lower()
+            for v in opt_violations
+        )
 
     def test_detect_differential_evolution_without_bounds(self):
         """Detect differential_evolution() without bounds."""
@@ -61,7 +64,9 @@ result = minimize(objective_function, x0, bounds=[(0, 10)], options={'maxiter': 
         violations = analyze_scipy_security(Path("test.py"), code)
         opt_violations = [v for v in violations if v.rule_id == "SCP001"]
         # Should have minimal or no violations
-        assert len(opt_violations) <= 1  # May still flag if using options instead of direct parameter
+        assert (
+            len(opt_violations) <= 1
+        )  # May still flag if using options instead of direct parameter
 
     def test_no_violation_without_scipy_import(self):
         """Should not flag code without SciPy import."""
@@ -170,7 +175,10 @@ matrix = csr_matrix(data)
         violations = analyze_scipy_security(Path("test.py"), code)
         sparse_violations = [v for v in violations if v.rule_id == "SCP004"]
         assert len(sparse_violations) >= 1
-        assert any("shape" in v.message.lower() or "validation" in v.message.lower() for v in sparse_violations)
+        assert any(
+            "shape" in v.message.lower() or "validation" in v.message.lower()
+            for v in sparse_violations
+        )
 
     def test_detect_coo_matrix_without_validation(self):
         """Detect coo_matrix() without validation."""
@@ -329,7 +337,10 @@ data = loadmat('data.mat')
         violations = analyze_scipy_security(Path("test.py"), code)
         file_violations = [v for v in violations if v.rule_id == "SCP008"]
         assert len(file_violations) >= 1
-        assert any("arbitrary code" in v.message.lower() or "malicious" in v.message.lower() for v in file_violations)
+        assert any(
+            "arbitrary code" in v.message.lower() or "malicious" in v.message.lower()
+            for v in file_violations
+        )
         assert file_violations[0].severity == "HIGH"
 
     def test_detect_savemat_vulnerability(self):
@@ -397,7 +408,10 @@ tree = KDTree(data_points)
         violations = analyze_scipy_security(Path("test.py"), code)
         spatial_violations = [v for v in violations if v.rule_id == "SCP010"]
         assert len(spatial_violations) >= 1
-        assert any("size" in v.message.lower() or "validation" in v.message.lower() for v in spatial_violations)
+        assert any(
+            "size" in v.message.lower() or "validation" in v.message.lower()
+            for v in spatial_violations
+        )
 
     def test_detect_distance_matrix_without_validation(self):
         """Detect distance_matrix() without validation."""

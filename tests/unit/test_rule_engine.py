@@ -2,8 +2,6 @@
 
 import ast
 from pathlib import Path
-from typing import List, Optional
-
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -294,8 +292,8 @@ class TestRuleExecution:
         # Create a test rule
         class TestRule(Rule):
             def detect(
-                self, code: str, file_path: Path, tree: Optional[ast.AST] = None
-            ) -> List[RuleViolation]:
+                self, code: str, file_path: Path, tree: ast.AST | None = None
+            ) -> list[RuleViolation]:
                 # Simple test: flag any line with "bad_practice"
                 violations = []
                 for i, line in enumerate(code.split("\n"), 1):
@@ -676,8 +674,7 @@ class TestRuleRegistryEdgeCases:
         filtered = registry.filter_by_severity(rules, RuleSeverity.MEDIUM)
         assert len(filtered) == 3
         assert all(
-            r.severity
-            in [RuleSeverity.MEDIUM, RuleSeverity.HIGH, RuleSeverity.CRITICAL]
+            r.severity in [RuleSeverity.MEDIUM, RuleSeverity.HIGH, RuleSeverity.CRITICAL]
             for r in filtered
         )
 
@@ -718,7 +715,7 @@ class TestRuleRegistryEdgeCases:
             description="Test",
             fix_applicability=FixApplicability.AUTOMATIC,
         )
-        
+
         # Register a suggested fix rule
         rule2 = Rule(
             rule_id="TEST002",
@@ -729,7 +726,7 @@ class TestRuleRegistryEdgeCases:
             description="Test",
             fix_applicability=FixApplicability.SUGGESTED,
         )
-        
+
         # Register a non-fixable rule
         rule3 = Rule(
             rule_id="TEST003",
@@ -740,14 +737,17 @@ class TestRuleRegistryEdgeCases:
             description="Test",
             fix_applicability=FixApplicability.NONE,
         )
-        
+
         registry.register(rule1)
         registry.register(rule2)
         registry.register(rule3)
-        
+
         fixable = registry.get_fixable_rules()
         assert len(fixable) == 2
-        assert all(r.fix_applicability in (FixApplicability.AUTOMATIC, FixApplicability.SUGGESTED) for r in fixable)
+        assert all(
+            r.fix_applicability in (FixApplicability.AUTOMATIC, FixApplicability.SUGGESTED)
+            for r in fixable
+        )
 
 
 class TestRuleExecutorEdgeCases:
@@ -757,32 +757,35 @@ class TestRuleExecutorEdgeCases:
         """Test analyze_file handles file read errors."""
         registry = RuleRegistry()
         executor = RuleExecutor(registry)
-        
+
         # Try to analyze a non-existent file
         non_existent = tmp_path / "nonexistent.py"
         violations = executor.analyze_file(non_existent)
-        
+
         assert violations == []
 
     def test_executor_analyze_file_with_specific_rules(self, tmp_path):
         """Test analyze_file with specific rules list."""
         registry = RuleRegistry()
-        
+
         # Create a simple test rule
         violations_found = []
+
         def detect_func(code, file_path, tree=None):
             if "print" in code:
-                violations_found.append(RuleViolation(
-                    rule_id="TEST001",
-                    category=RuleCategory.STYLE,
-                    severity=RuleSeverity.LOW,
-                    message="Print statement found",
-                    file_path=file_path,
-                    line_number=1,
-                    column=0,
-                ))
+                violations_found.append(
+                    RuleViolation(
+                        rule_id="TEST001",
+                        category=RuleCategory.STYLE,
+                        severity=RuleSeverity.LOW,
+                        message="Print statement found",
+                        file_path=file_path,
+                        line_number=1,
+                        column=0,
+                    )
+                )
             return violations_found
-        
+
         rule = Rule(
             rule_id="TEST001",
             name="no-print",
@@ -792,13 +795,13 @@ class TestRuleExecutorEdgeCases:
             description="Test",
         )
         rule.detect = detect_func
-        
+
         executor = RuleExecutor(registry)
-        
+
         # Create test file
         test_file = tmp_path / "test.py"
         test_file.write_text("print('hello')")
-        
+
         # Analyze with specific rules
         violations = executor.analyze_file(test_file, rules=[rule])
         assert len(violations) == 1
@@ -806,11 +809,11 @@ class TestRuleExecutorEdgeCases:
     def test_executor_apply_fixes_with_automatic(self):
         """Test apply_fixes applies automatic fixes."""
         registry = RuleRegistry()
-        
+
         # Create a rule with a fix
         def fix_func(code, violation):
             return code.replace("print", "# print")
-        
+
         rule = Rule(
             rule_id="TEST001",
             name="no-print",
@@ -822,9 +825,9 @@ class TestRuleExecutorEdgeCases:
         )
         rule.fix = fix_func
         registry.register(rule)
-        
+
         executor = RuleExecutor(registry)
-        
+
         violation = RuleViolation(
             rule_id="TEST001",
             category=RuleCategory.STYLE,
@@ -835,10 +838,10 @@ class TestRuleExecutorEdgeCases:
             column=0,
             fix_applicability=FixApplicability.AUTOMATIC,
         )
-        
+
         code = "print('hello')"
         fixed_code, applied = executor.apply_fixes(code, [violation])
-        
+
         assert fixed_code == "# print('hello')"
         assert len(applied) == 1
 
@@ -846,7 +849,7 @@ class TestRuleExecutorEdgeCases:
         """Test apply_fixes skips non-automatic fixes."""
         registry = RuleRegistry()
         executor = RuleExecutor(registry)
-        
+
         violation = RuleViolation(
             rule_id="TEST001",
             category=RuleCategory.STYLE,
@@ -857,10 +860,10 @@ class TestRuleExecutorEdgeCases:
             column=0,
             fix_applicability=FixApplicability.SUGGESTED,
         )
-        
+
         code = "original code"
         fixed_code, applied = executor.apply_fixes(code, [violation])
-        
+
         assert fixed_code == code
         assert len(applied) == 0
 
@@ -925,8 +928,8 @@ class TestRuleExecutorAdditionalEdgeCases:
 
         class TestRule(Rule):
             def detect(
-                self, code: str, file_path: Path, tree: Optional[ast.AST] = None
-            ) -> List[RuleViolation]:
+                self, code: str, file_path: Path, tree: ast.AST | None = None
+            ) -> list[RuleViolation]:
                 violations = []
                 for i, line in enumerate(code.split("\n"), 1):
                     if "issue" in line:

@@ -3,7 +3,8 @@ Tests for suppression comment support in PyGuard.
 """
 
 import ast
-from pyguard.lib.ast_analyzer import SecurityVisitor, CodeQualityVisitor
+
+from pyguard.lib.ast_analyzer import CodeQualityVisitor, SecurityVisitor
 
 
 def test_security_visitor_suppression_generic():

@@ -278,4 +278,3 @@ empty_dict = dict({})
 
         # Should not crash on edge cases
         assert isinstance(visitor.issues, list)
-

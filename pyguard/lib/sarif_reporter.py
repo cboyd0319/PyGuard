@@ -137,7 +137,6 @@ class SARIFReporter:
             "runs": [run],
         }
 
-
     def _extract_rules(self, issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Extract unique rules from issues.

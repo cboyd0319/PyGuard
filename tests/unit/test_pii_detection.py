@@ -10,8 +10,9 @@ Comprehensive test coverage following Security Dominance Plan requirements:
 Total: 40+ tests exceeding minimum 38 requirement.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from pyguard.lib.pii_detection import check_pii
 from pyguard.lib.rule_engine import RuleSeverity
@@ -481,17 +482,20 @@ class TestPerformance:
 
     def test_performance_pii_heavy_file(self, benchmark):
         """Test performance on file with many PII patterns."""
-        code = """
+        code = (
+            """
 ssn = "123-45-6789"
 email = "user@example.com"
 phone = "555-123-4567"
 ip = "192.168.1.1"
 mac = "00:1A:2B:3C:4D:5E"
-""" * 100  # Repeat 100 times
+"""
+            * 100
+        )  # Repeat 100 times
         benchmark(lambda: check_pii(Path("test.py"), code))
         # Should still be fast even with many PII detections
         # Note: benchmark.stats is a dict-like object
-        assert benchmark.stats['mean'] < 0.100  # 100ms
+        assert benchmark.stats["mean"] < 0.100  # 100ms
 
 
 class TestDateOfBirthDetection:
@@ -694,14 +698,14 @@ class TestRuleRegistration:
     def test_rules_registered(self):
         """Verify all PII rules are registered."""
         from pyguard.lib.pii_detection import PII_RULES
-        
+
         # Should have 25 PII rules (target achieved!)
         assert len(PII_RULES) >= 25
-        
+
         # Verify rule IDs are unique
         rule_ids = [rule.rule_id for rule in PII_RULES]
         assert len(rule_ids) == len(set(rule_ids))
-        
+
         # Verify all rules have required fields
         for rule in PII_RULES:
             assert rule.rule_id.startswith("PII")
@@ -709,15 +713,24 @@ class TestRuleRegistration:
             assert rule.message_template
             assert rule.cwe_mapping == "CWE-359"
             assert rule.owasp_mapping == "A01:2021"
-        
+
         assert len(PII_RULES) >= 12  # We defined 12 rules
-        
+
         # Check rule IDs
         rule_ids = [rule.rule_id for rule in PII_RULES]
         expected_ids = [
-            "PII001", "PII002", "PII003", "PII004", "PII005",
-            "PII006", "PII007", "PII010", "PII011", "PII013",
-            "PII014", "PII015"
+            "PII001",
+            "PII002",
+            "PII003",
+            "PII004",
+            "PII005",
+            "PII006",
+            "PII007",
+            "PII010",
+            "PII011",
+            "PII013",
+            "PII014",
+            "PII015",
         ]
         for expected_id in expected_ids:
             assert expected_id in rule_ids
@@ -725,7 +738,7 @@ class TestRuleRegistration:
     def test_rules_have_cwe_mapping(self):
         """Verify all rules have CWE mappings."""
         from pyguard.lib.pii_detection import PII_RULES
-        
+
         for rule in PII_RULES:
             assert rule.cwe_mapping is not None
             assert rule.cwe_mapping.startswith("CWE-")
@@ -733,14 +746,14 @@ class TestRuleRegistration:
     def test_rules_have_owasp_mapping(self):
         """Verify all rules have OWASP mappings."""
         from pyguard.lib.pii_detection import PII_RULES
-        
+
         for rule in PII_RULES:
             assert rule.owasp_mapping is not None
 
     def test_critical_rules_severity(self):
         """Verify critical PII has CRITICAL or HIGH severity."""
         from pyguard.lib.pii_detection import PII_RULES
-        
+
         critical_pii = ["PII001", "PII002", "PII005", "PII007"]  # SSN, CC, Passport, Health
         for rule in PII_RULES:
             if rule.rule_id in critical_pii:

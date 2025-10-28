@@ -1,6 +1,5 @@
 """Tests for AI-powered explanation system."""
 
-
 from pyguard.lib.ai_explainer import (
     AIExplainer,
     FixRationale,
@@ -267,7 +266,7 @@ class TestAIExplainer:
         """Test all explanations have required fields."""
         explainer = AIExplainer()
 
-        for vuln_type, explanation in explainer.EXPLANATIONS.items():
+        for _vuln_type, explanation in explainer.EXPLANATIONS.items():
             assert explanation.vulnerability_name != ""
             assert explanation.severity in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
             assert explanation.description != ""
@@ -283,7 +282,7 @@ class TestAIExplainer:
         """Test all explanations have CWE IDs."""
         explainer = AIExplainer()
 
-        for vuln_type, explanation in explainer.EXPLANATIONS.items():
+        for _vuln_type, explanation in explainer.EXPLANATIONS.items():
             assert explanation.cwe_id is not None
             assert "CWE-" in explanation.cwe_id
 

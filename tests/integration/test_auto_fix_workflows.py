@@ -9,9 +9,9 @@ These tests verify complete workflows including:
 - Report generation workflows
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -144,14 +144,14 @@ def process_user(user_id, items=[]):
     # Load config
     with open("config.yml") as f:
         config = yaml.load(f)
-    
+
     # Check user
     if user_id == None:
         return None
-    
+
     # SQL query (vulnerable)
     query = "SELECT * FROM users WHERE id = " + str(user_id)
-    
+
     items.append(user_id)
     return items
 """
@@ -192,16 +192,16 @@ def load_and_query(config_file, user_id):
     # Safe fix opportunity: yaml.load
     with open(config_file) as f:
         config = yaml.load(f)
-    
+
     # Unsafe fix opportunity: SQL injection
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
-    
+
     # Safe fix opportunity: None comparison
     if config == None:
         return None
-    
+
     return cursor.fetchone()
 """
         )
@@ -406,6 +406,7 @@ config = yaml.load("file")
 
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--scan-only", str(test_file)],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,
@@ -426,6 +427,7 @@ config = yaml.load("file")
 
         result = subprocess.run(
             [sys.executable, "-m", "pyguard.cli", "--no-backup", str(test_file)],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,
@@ -453,6 +455,7 @@ config = yaml.load("file")
                 "--no-backup",
                 str(test_file),
             ],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,
@@ -480,6 +483,7 @@ config = yaml.load("file")
                 "--no-backup",
                 str(test_file),
             ],
+            check=False,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,
@@ -596,7 +600,7 @@ def incomplete_function(
             if isinstance(results, dict):
                 # If handled gracefully, should have results
                 assert "total" in results
-        except (FileNotFoundError, IOError):
+        except (OSError, FileNotFoundError):
             # Expected behavior for non-existent files
             pass
 
@@ -645,8 +649,9 @@ class TestPerformance:
     @pytest.mark.slow
     def test_batch_file_processing_time(self, temp_dir):
         """Test timing of batch file processing."""
-        from pyguard.cli import PyGuardCLI
         import time
+
+        from pyguard.cli import PyGuardCLI
 
         # Create multiple files
         files = []

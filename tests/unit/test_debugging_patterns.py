@@ -1,9 +1,8 @@
 """Tests for debugging pattern detection."""
 
-
 from pyguard.lib.debugging_patterns import (
-    DebuggingPatternChecker,
     DEBUGGING_RULES,
+    DebuggingPatternChecker,
 )
 from pyguard.lib.rule_engine import RuleCategory, RuleSeverity
 
@@ -415,11 +414,12 @@ breakpoint()
         """Test graceful handling of file read errors."""
         file_path = tmp_path / "test.py"
         file_path.write_text("print('test')")
-        
+
         # Make file unreadable
         import os
+
         os.chmod(file_path, 0o000)
-        
+
         try:
             checker = DebuggingPatternChecker()
             violations = checker.check_file(file_path)
@@ -436,11 +436,12 @@ breakpoint()
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
-        
+
         # Make file read-only after creation
         import os
+
         os.chmod(file_path, 0o444)
-        
+
         try:
             checker = DebuggingPatternChecker()
             success, count = checker.fix_file(file_path)
@@ -465,7 +466,7 @@ print("test")  # TODO: Replace with logging
         # Should not add another TODO comment
         assert success
         assert count == 0  # No fixes needed
-        
+
         fixed_code = file_path.read_text()
         # Should have only one TODO comment
         assert fixed_code.count("# TODO: Replace with logging") == 1

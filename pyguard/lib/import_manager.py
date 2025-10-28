@@ -101,7 +101,6 @@ class ImportAnalyzer:
         # Find unused
         return imported_names - used_names
 
-
     def sort_imports(self, code: str) -> str:
         """
         Sort imports in code following PEP 8 and isort conventions.

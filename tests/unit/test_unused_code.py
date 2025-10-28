@@ -198,7 +198,7 @@ print("hello")
         content = path.read_text()
         assert "import os" not in content
         assert "import sys" not in content
-        
+
         # Clean up
         path.unlink()
 
@@ -374,11 +374,11 @@ print(path.join("a", "b"))
 class MyClass:
     def instance_method(self, used, unused):
         return used
-    
+
     @classmethod
     def class_method(cls, used, unused):
         return used
-    
+
     @staticmethod
     def static_method(used, unused):
         return used
@@ -391,7 +391,7 @@ class MyClass:
         # Should detect all unused parameters but not self/cls
         unused_issues = [i for i in visitor.issues if i.name == "unused"]
         assert len(unused_issues) == 3  # One for each method
-        
+
         # Should not detect self or cls
         assert not any(i.name == "self" for i in visitor.issues)
         assert not any(i.name == "cls" for i in visitor.issues)
@@ -441,7 +441,7 @@ print(a, b)
 class MyClass:
     def __init__(self, x, unused):
         self.x = x
-    
+
     def __str__(self):
         return str(self.x)
 """
@@ -461,7 +461,7 @@ class MyClass:
     @property
     def value(self):
         return 42
-    
+
     @value.setter
     def value(self, val, unused):
         self._val = val
@@ -574,12 +574,12 @@ class TestUnusedCodeFixerEnhanced:
     def test_fix_file_nonexistent(self):
         """Test fixing nonexistent file."""
         from pathlib import Path
-        
+
         fixer = UnusedCodeFixer()
         nonexistent = Path("/tmp/nonexistent_file_12345.py")
-        
-        success, fixes = fixer.fix_file(nonexistent)
-        
+
+        success, _fixes = fixer.fix_file(nonexistent)
+
         # Should handle gracefully
         assert not success
 
@@ -587,7 +587,7 @@ class TestUnusedCodeFixerEnhanced:
         """Test fixing file with syntax errors."""
         from pathlib import Path
         from tempfile import NamedTemporaryFile
-        
+
         code = """
 def broken(
     # Unclosed paren
@@ -596,39 +596,39 @@ def broken(
             f.write(code)
             f.flush()
             path = Path(f.name)
-        
+
         fixer = UnusedCodeFixer()
-        success, fixes = fixer.fix_file(path)
-        
+        _success, _fixes = fixer.fix_file(path)
+
         # Should handle syntax errors gracefully
         # Might succeed with 0 fixes or fail gracefully
-        
+
         path.unlink()
 
     def test_scan_empty_file(self):
         """Test scanning empty file."""
         from pathlib import Path
         from tempfile import NamedTemporaryFile
-        
+
         code = ""
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             path = Path(f.name)
-        
+
         fixer = UnusedCodeFixer()
         issues = fixer.scan_file_for_issues(path)
-        
+
         # Empty file should have no issues
         assert len(issues) == 0
-        
+
         path.unlink()
 
     def test_fix_preserves_used_code(self):
         """Test that fixes preserve used code."""
         from pathlib import Path
         from tempfile import NamedTemporaryFile
-        
+
         # Code with all used elements - should not be modified
         code = """import os
 used_var = 10
@@ -643,11 +643,11 @@ print(result)
             f.write(code)
             f.flush()
             path = Path(f.name)
-        
+
         try:
             fixer = UnusedCodeFixer()
             success, fixes = fixer.fix_file(path)
-            
+
             # All code is used, so no fixes should be applied
             assert success
             assert len(fixes) == 0
@@ -673,7 +673,7 @@ print(argv)
             path = Path(f.name)
 
         fixer = UnusedCodeFixer()
-        success, fixes = fixer.fix_file(path)
+        success, _fixes = fixer.fix_file(path)
 
         assert success
 

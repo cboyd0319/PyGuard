@@ -77,7 +77,8 @@ class SecretScanner:
                         pattern,
                         path,
                     ],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                     timeout=60,
                 )

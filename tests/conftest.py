@@ -9,30 +9,31 @@ Following PyTest Architect Agent best practices:
 - No hidden state or dependencies
 """
 
+from pathlib import Path
 import random
 import shutil
 import tempfile
-from pathlib import Path
 
 import pytest
 
 
 # Deterministic random seed for all tests - PyTest Architect Agent principle
-@pytest.fixture(autouse=True, scope="function")
+@pytest.fixture(autouse=True)
 def _seed_rng(monkeypatch):
     """
     Seed random number generators for deterministic tests.
-    
+
     Applied automatically to all tests to prevent flakiness from randomness.
     Uses function scope to ensure fresh seed for each test.
     """
     random.seed(1337)
     try:
         import numpy as np
+
         np.random.seed(1337)
     except ImportError:
         pass
-    
+
     # Also seed hash randomization for dict/set ordering
     monkeypatch.setenv("PYTHONHASHSEED", "0")
 
@@ -48,10 +49,12 @@ def temp_dir():
 @pytest.fixture
 def temp_file(temp_dir):
     """Create a temporary file in the temp directory."""
+
     def _create_file(name: str, content: str = "") -> Path:
         file_path = temp_dir / name
         file_path.write_text(content)
         return file_path
+
     return _create_file
 
 
@@ -154,7 +157,7 @@ def mock_logger(monkeypatch):
 
         def error(self, message, exception=None, **kwargs):
             logs.append(("ERROR", message, kwargs))
-        
+
         def success(self, message, **kwargs):
             logs.append(("SUCCESS", message, kwargs))
 
@@ -165,15 +168,15 @@ def mock_logger(monkeypatch):
 def python_file_factory(temp_dir):
     """Factory to create Python files with various content."""
     created_files = []
-    
+
     def _create(filename: str, content: str) -> Path:
         path = temp_dir / filename
         path.write_text(content)
         created_files.append(path)
         return path
-    
+
     yield _create
-    
+
     # Cleanup
     for path in created_files:
         if path.exists():
@@ -202,6 +205,7 @@ def freeze_2025_01_01():
     """Freeze time to 2025-01-01 00:00:00 UTC for deterministic time testing."""
     try:
         from freezegun import freeze_time
+
         with freeze_time("2025-01-01 00:00:00"):
             yield
     except ImportError:
@@ -212,9 +216,11 @@ def freeze_2025_01_01():
 @pytest.fixture
 def env(monkeypatch):
     """Fixture to set environment variables safely."""
+
     def _set(**kwargs):
         for key, value in kwargs.items():
             monkeypatch.setenv(key, str(value))
+
     return _set
 
 
@@ -222,42 +228,43 @@ def env(monkeypatch):
 def ast_tree_factory():
     """Factory to create AST trees from code strings."""
     import ast
-    
+
     def _create(code: str):
         """Parse code and return AST tree."""
         try:
             return ast.parse(code)
         except SyntaxError:
             return None
-    
+
     return _create
 
 
 @pytest.fixture
 def code_fixer_factory():
     """Factory to create various code fixer instances for testing."""
+
     def _create(fixer_type: str):
         """Create a fixer instance based on type."""
-        from pyguard.lib import security, best_practices, formatting
-        
+        from pyguard.lib import best_practices, formatting, security
+
         fixers = {
             "security": security.SecurityFixer,
             "best_practices": best_practices.BestPracticesFixer,
             "formatting": formatting.FormattingFixer,
         }
-        
+
         fixer_class = fixers.get(fixer_type)
         if fixer_class:
             return fixer_class()
         raise ValueError(f"Unknown fixer type: {fixer_type}")
-    
+
     return _create
 
 
 @pytest.fixture(autouse=True)
 def reset_singleton_state():
     """Reset any singleton state between tests to ensure isolation."""
-    yield
+    return
     # Add any singleton reset logic here if needed
 
 
@@ -287,7 +294,7 @@ def sample_edge_cases():
 def isolated_temp_cwd(tmp_path, monkeypatch):
     """
     Create isolated temp directory and change to it.
-    
+
     Ensures tests don't pollute the working directory and are fully isolated.
     """
     monkeypatch.chdir(tmp_path)
@@ -298,7 +305,7 @@ def isolated_temp_cwd(tmp_path, monkeypatch):
 def mock_file_system(tmp_path):
     """
     Factory to create a mock file system structure for testing.
-    
+
     Returns a function that creates files/dirs from a dict structure.
     Example:
         fs = mock_file_system
@@ -307,6 +314,7 @@ def mock_file_system(tmp_path):
             "dir2/file2.py": "content2",
         })
     """
+
     def _create(structure: dict) -> dict:
         """Create file structure and return mapping of paths."""
         created = {}
@@ -316,7 +324,7 @@ def mock_file_system(tmp_path):
             full_path.write_text(content)
             created[path_str] = full_path
         return created
-    
+
     return _create
 
 
@@ -324,9 +332,10 @@ def mock_file_system(tmp_path):
 def capture_all_output(capsys, caplog):
     """
     Capture both stdout/stderr and log output.
-    
+
     Returns a function to get all captured output as a dict.
     """
+
     def _get_output():
         captured = capsys.readouterr()
         return {
@@ -335,7 +344,7 @@ def capture_all_output(capsys, caplog):
             "logs": [record.message for record in caplog.records],
             "log_records": caplog.records,
         }
-    
+
     return _get_output
 
 
@@ -343,7 +352,7 @@ def capture_all_output(capsys, caplog):
 def parametrized_code_samples():
     """
     Comprehensive code samples for parametrized testing.
-    
+
     Organized by category for easy parametrization with pytest.mark.parametrize.
     """
     return {
@@ -373,9 +382,10 @@ def parametrized_code_samples():
 def benchmark_code_factory():
     """
     Factory for creating code samples with known performance characteristics.
-    
+
     Useful for testing performance checks and optimizations.
     """
+
     def _create(complexity: str) -> str:
         """Create code with specific complexity."""
         templates = {
@@ -403,7 +413,7 @@ def process(items):
 """,
         }
         return templates.get(complexity, templates["linear"])
-    
+
     return _create
 
 
@@ -411,7 +421,7 @@ def process(items):
 def syntax_edge_cases():
     """
     Edge case Python syntax for robust parser testing.
-    
+
     Tests handling of valid but unusual Python constructs.
     """
     return {
@@ -432,7 +442,7 @@ def syntax_edge_cases():
 def error_cases():
     """
     Invalid inputs that should be handled gracefully.
-    
+
     Tests error handling and boundary conditions.
     """
     return {
@@ -447,9 +457,10 @@ def error_cases():
 def assertion_helpers():
     """
     Helper functions for common assertion patterns.
-    
+
     Promotes DRY principle in test assertions.
     """
+
     class Helpers:
         @staticmethod
         def assert_issue_present(issues, rule_id, message_substring=None):
@@ -457,25 +468,25 @@ def assertion_helpers():
             matching = [i for i in issues if i.rule_id == rule_id]
             assert len(matching) > 0, f"Expected issue {rule_id} not found"
             if message_substring:
-                assert any(
-                    message_substring.lower() in i.message.lower() 
-                    for i in matching
-                ), f"No issue contains '{message_substring}'"
+                assert any(message_substring.lower() in i.message.lower() for i in matching), (
+                    f"No issue contains '{message_substring}'"
+                )
             return matching[0]
-        
+
         @staticmethod
         def assert_no_false_positives(issues, expected_rule_ids):
             """Assert only expected rule IDs are present."""
             actual_ids = {i.rule_id for i in issues}
             unexpected = actual_ids - set(expected_rule_ids)
             assert not unexpected, f"Unexpected rule IDs: {unexpected}"
-        
+
         @staticmethod
         def assert_line_range(issue, min_line, max_line):
             """Assert issue is within line range."""
-            assert min_line <= issue.line <= max_line, \
+            assert min_line <= issue.line <= max_line, (
                 f"Issue at line {issue.line} outside range [{min_line}, {max_line}]"
-    
+            )
+
     return Helpers()
 
 
@@ -483,13 +494,13 @@ def assertion_helpers():
 def code_normalizer():
     """
     Utility to normalize code strings for comparison.
-    
+
     Removes indentation and trailing whitespace for easier test assertions.
     """
     import textwrap
-    
+
     def _normalize(code: str) -> str:
         """Normalize code string."""
         return textwrap.dedent(code).strip()
-    
+
     return _normalize

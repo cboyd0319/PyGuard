@@ -399,9 +399,11 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call):
             if isinstance(node.value.func, ast.Name) and node.value.func.id == "sorted":
                 if isinstance(node.slice, ast.UnaryOp):
-                    if isinstance(node.slice.op, ast.USub) and isinstance(
-                        node.slice.operand, ast.Constant
-                    ) and node.slice.operand.value == 1:
+                    if (
+                        isinstance(node.slice.op, ast.USub)
+                        and isinstance(node.slice.operand, ast.Constant)
+                        and node.slice.operand.value == 1
+                    ):
                         self.violations.append(
                             RuleViolation(
                                 rule_id="FURB132",
@@ -801,9 +803,11 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # FURB138: Use list.sort(key=str.lower) instead of list.sort(key=lambda x: x.lower())
         # FURB139: Use math.ceil(x/y) instead of -(-x//y)
         if isinstance(node.value, ast.UnaryOp) and isinstance(node.value.op, ast.USub):
-            if isinstance(node.value.operand, ast.UnaryOp) and isinstance(
-                node.value.operand.op, ast.USub
-            ) and isinstance(node.value.operand.operand, ast.BinOp):
+            if (
+                isinstance(node.value.operand, ast.UnaryOp)
+                and isinstance(node.value.operand.op, ast.USub)
+                and isinstance(node.value.operand.operand, ast.BinOp)
+            ):
                 if isinstance(node.value.operand.operand.op, ast.FloorDiv):
                     self.violations.append(
                         RuleViolation(

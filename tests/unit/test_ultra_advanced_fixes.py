@@ -45,7 +45,7 @@ result = graphql.execute(query)
 query = "{ user(id: $userId) { name } }"
 result = graphql.execute(query, variables={"userId": user_id})
 """
-        fixed, modified = fixer.fix_graphql_injection(code)
+        _fixed, modified = fixer.fix_graphql_injection(code)
         assert not modified
 
 
@@ -106,7 +106,7 @@ class TestSSTIFixes:
         """Should not modify safe template usage."""
         fixer = UltraAdvancedSecurityFixer()
         code = 'html = render_template("template.html", data=user_data)'
-        fixed, modified = fixer.fix_ssti_vulnerabilities(code)
+        _fixed, modified = fixer.fix_ssti_vulnerabilities(code)
         assert not modified
 
 
@@ -149,7 +149,7 @@ from flask_limiter import Limiter
 def get_data():
     return jsonify(data)
 """
-        fixed, modified = fixer.fix_api_rate_limiting(code)
+        _fixed, _modified = fixer.fix_api_rate_limiting(code)
         # Should not modify if limiter is already there
         assert 'limiter.limit("100/hour")' in code
 
@@ -189,7 +189,7 @@ class TestWeakCryptographyFixes:
         """Should not modify secure cryptography."""
         fixer = UltraAdvancedSecurityFixer()
         code = "hash = hashlib.sha256(data).hexdigest()"
-        fixed, modified = fixer.fix_weak_cryptography(code)
+        _fixed, modified = fixer.fix_weak_cryptography(code)
         assert not modified
 
 
@@ -241,7 +241,7 @@ services:
         """Should not modify non-container files."""
         fixer = UltraAdvancedSecurityFixer()
         code = 'USER = "admin"'
-        fixed, modified = fixer.fix_container_security(code, "app.py")
+        _fixed, modified = fixer.fix_container_security(code, "app.py")
         assert not modified
 
 
@@ -271,7 +271,7 @@ class TestSQLInjectionEnhancedFixes:
         """Should not modify parameterized queries."""
         fixer = UltraAdvancedSecurityFixer()
         code = 'cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))'
-        fixed, modified = fixer.fix_sql_injection_enhanced(code)
+        _fixed, modified = fixer.fix_sql_injection_enhanced(code)
         assert not modified
 
 
@@ -300,7 +300,7 @@ class TestXSSFixes:
         """Should not modify templates with autoescape."""
         fixer = UltraAdvancedSecurityFixer()
         code = 'env = Environment(loader=FileSystemLoader("templates"), autoescape=True)'
-        fixed, modified = fixer.fix_xss_vulnerabilities(code)
+        _fixed, modified = fixer.fix_xss_vulnerabilities(code)
         assert not modified
 
 

@@ -5,6 +5,13 @@ from pathlib import Path
 
 import pytest
 
+from pyguard.lib.rule_engine import (
+    FixApplicability,
+    RuleViolation,
+)
+from pyguard.lib.rule_engine import (
+    RuleSeverity as Severity,
+)
 from pyguard.lib.type_checker import (
     ANY_TYPE_USAGE_RULE,
     MISSING_PARAM_TYPE_RULE,
@@ -12,11 +19,6 @@ from pyguard.lib.type_checker import (
     TYPE_COMPARISON_RULE,
     TypeChecker,
     TypeInferenceEngine,
-)
-from pyguard.lib.rule_engine import (
-    RuleViolation,
-    RuleSeverity as Severity,
-    FixApplicability,
 )
 
 
@@ -255,7 +257,7 @@ class TestTypeInferenceEdgeCases:
     """Test type inference with edge cases and boundary conditions."""
 
     @pytest.mark.parametrize(
-        "value,expected_type",
+        ("value", "expected_type"),
         [
             (42, "int"),
             (3.14, "float"),
@@ -268,21 +270,21 @@ class TestTypeInferenceEdgeCases:
     )
     def test_infer_from_constant_values(self, value, expected_type):
         """Test type inference from various constant values.
-        
+
         Validates AAA pattern and parametrization for input matrix coverage.
         """
         # Arrange
         engine = TypeInferenceEngine()
         node = ast.Constant(value=value)
-        
+
         # Act
         result = engine.infer_from_default(node)
-        
+
         # Assert
         assert result == expected_type, f"Expected {expected_type} for {value}, got {result}"
 
     @pytest.mark.parametrize(
-        "node_type,expected",
+        ("node_type", "expected"),
         [
             (ast.List(elts=[], ctx=ast.Load()), "list"),
             (ast.Dict(keys=[], values=[]), "dict"),
@@ -293,63 +295,63 @@ class TestTypeInferenceEdgeCases:
     )
     def test_infer_from_collection_literals(self, node_type, expected):
         """Test type inference from collection literals.
-        
+
         Covers common container type patterns.
         """
         # Arrange
         engine = TypeInferenceEngine()
-        
+
         # Act
         result = engine.infer_from_default(node_type)
-        
+
         # Assert
         assert result == expected
 
     def test_infer_from_unknown_node_returns_none(self):
         """Test that unknown AST nodes return None gracefully.
-        
+
         Error handling: boundary condition where inference cannot proceed.
         """
         # Arrange
         engine = TypeInferenceEngine()
         # Use a node type that shouldn't have type inference
         unknown_node = ast.Name(id="unknown", ctx=ast.Load())
-        
+
         # Act
         result = engine.infer_from_default(unknown_node)
-        
+
         # Assert
         assert result is None
 
     def test_infer_from_constant_complex_number(self):
         """Test type inference from complex number constant.
-        
+
         Branch coverage: Tests Constant node with value type not in (bool, int, float, str, None).
         """
         # Arrange
         engine = TypeInferenceEngine()
         # Complex numbers are valid Python constants but not in the handled types
         node = ast.Constant(value=complex(1, 2))
-        
+
         # Act
         result = engine.infer_from_default(node)
-        
+
         # Assert
         # Should return None for unhandled constant types
         assert result is None
 
     def test_infer_from_constant_bytes(self):
         """Test type inference from bytes constant.
-        
+
         Branch coverage: Another constant type not in the handled set.
         """
         # Arrange
         engine = TypeInferenceEngine()
         node = ast.Constant(value=b"bytes")
-        
+
         # Act
         result = engine.infer_from_default(node)
-        
+
         # Assert
         # Should return None for bytes
         assert result is None
@@ -364,10 +366,10 @@ def get_number():
 """
         tree = ast.parse(code)
         func_node = tree.body[0]
-        
+
         # Act
         result = engine.infer_return_type(func_node)
-        
+
         # Assert
         assert result == "int"
 
@@ -383,10 +385,10 @@ def get_value(x):
 """
         tree = ast.parse(code)
         func_node = tree.body[0]
-        
+
         # Act
         result = engine.infer_return_type(func_node)
-        
+
         # Assert
         assert result == "int"
 
@@ -402,10 +404,10 @@ def get_value(x):
 """
         tree = ast.parse(code)
         func_node = tree.body[0]
-        
+
         # Act
         result = engine.infer_return_type(func_node)
-        
+
         # Assert
         assert result is not None
         assert "Union" in result
@@ -423,10 +425,10 @@ def no_return():
 """
         tree = ast.parse(code)
         func_node = tree.body[0]
-        
+
         # Act
         result = engine.infer_return_type(func_node)
-        
+
         # Assert
         assert result is None
 
@@ -435,10 +437,10 @@ def no_return():
         # Arrange
         engine = TypeInferenceEngine()
         node = ast.Constant(value=42)
-        
+
         # Act
         result = engine.infer_from_assignment(node)
-        
+
         # Assert
         assert result == "int"
 
@@ -456,11 +458,11 @@ x: Any = 5
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         assert any(v.rule_id == ANY_TYPE_USAGE_RULE.rule_id for v in violations)
 
@@ -473,11 +475,11 @@ y: str = "hello"
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         any_violations = [v for v in violations if v.rule_id == ANY_TYPE_USAGE_RULE.rule_id]
         assert len(any_violations) == 0
@@ -501,7 +503,7 @@ class TestSpecialMethodHandling:
     )
     def test_special_methods_skip_return_type_check(self, tmp_path, method_name):
         """Test that special methods don't require return type annotation.
-        
+
         Special methods have well-defined return types by convention.
         """
         # Arrange
@@ -512,11 +514,11 @@ class MyClass:
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         return_violations = [v for v in violations if v.rule_id == MISSING_RETURN_TYPE_RULE.rule_id]
         assert len(return_violations) == 0
@@ -531,11 +533,11 @@ class MyClass:
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should only flag 'other', not 'self'
         param_violations = [v for v in violations if v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id]
@@ -553,11 +555,11 @@ class MyClass:
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should only flag 'other', not 'cls'
         param_violations = [v for v in violations if v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id]
@@ -568,7 +570,7 @@ class TestTypeComparisonEdgeCases:
     """Test type comparison detection with various patterns."""
 
     @pytest.mark.parametrize(
-        "comparison_op,should_detect",
+        ("comparison_op", "should_detect"),
         [
             ("==", True),
             ("is", True),
@@ -579,7 +581,7 @@ class TestTypeComparisonEdgeCases:
     )
     def test_detect_type_comparison_operators(self, tmp_path, comparison_op, should_detect):
         """Test detection of various type() comparison operators.
-        
+
         Currently detects == and is operators. NotEq and IsNot are not detected
         but could be added in future enhancements.
         """
@@ -592,11 +594,11 @@ def check(obj):
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         has_violation = any(v.rule_id == TYPE_COMPARISON_RULE.rule_id for v in violations)
         if should_detect:
@@ -613,17 +615,17 @@ def check(obj):
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         assert any(v.rule_id == TYPE_COMPARISON_RULE.rule_id for v in violations)
 
     def test_comparison_without_type_call_left_side(self, tmp_path):
         """Test comparison where left side is not type() call.
-        
+
         Branch coverage: Tests Compare node where left is not a Call (line 278->275).
         """
         # Arrange
@@ -634,11 +636,11 @@ def check(value):
 """
         test_file = tmp_path / "regular_compare.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should not detect type comparison violation
         type_comp_violations = [v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id]
@@ -646,7 +648,7 @@ def check(value):
 
     def test_comparison_with_non_type_call(self, tmp_path):
         """Test comparison with a call that's not type().
-        
+
         Branch coverage: Tests Compare with Call node but not type() (line 279->275).
         """
         # Arrange
@@ -657,11 +659,11 @@ def check(obj):
 """
         test_file = tmp_path / "other_call.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should not detect type comparison violation
         type_comp_violations = [v for v in violations if v.rule_id == TYPE_COMPARISON_RULE.rule_id]
@@ -676,11 +678,11 @@ class TestBoundaryConditions:
         # Arrange
         test_file = tmp_path / "empty.py"
         test_file.write_text("")
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         assert violations == []
 
@@ -693,11 +695,11 @@ class TestBoundaryConditions:
 """
         test_file = tmp_path / "comments.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         assert violations == []
 
@@ -707,11 +709,11 @@ class TestBoundaryConditions:
         code = '"""Module docstring."""'
         test_file = tmp_path / "docstring.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         assert violations == []
 
@@ -724,18 +726,18 @@ def greet(name="World", count=1):
 """
         test_file = tmp_path / "defaults.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should detect missing types even with defaults
         assert any(v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id for v in violations)
 
     def test_function_with_uninferrable_defaults(self, tmp_path):
         """Test type inference when defaults cannot be inferred.
-        
+
         Branch coverage: Tests loop where no default can be inferred (line 118->116).
         """
         # Arrange
@@ -745,11 +747,11 @@ def process(callback=lambda x: x):
 """
         test_file = tmp_path / "uninferrable.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should detect missing param type with "Unknown" as inferred type
         assert any(v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id for v in violations)
@@ -766,18 +768,18 @@ def 处理数据(数据):
 """
         test_file = tmp_path / "unicode.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should detect missing types for unicode parameter names
         assert any(v.rule_id == MISSING_PARAM_TYPE_RULE.rule_id for v in violations)
 
     def test_lambda_functions_not_flagged(self, tmp_path):
         """Test that lambda functions are not flagged for missing types.
-        
+
         Lambdas cannot have type annotations in the same way.
         """
         # Arrange
@@ -786,11 +788,11 @@ square = lambda x: x * 2
 """
         test_file = tmp_path / "lambda.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Lambdas should not be flagged
         assert len(violations) == 0
@@ -806,11 +808,11 @@ def outer():
 """
         test_file = tmp_path / "nested.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Both outer and inner should be flagged
         assert any(v.rule_id == MISSING_RETURN_TYPE_RULE.rule_id for v in violations)
@@ -831,15 +833,16 @@ def process(items: List[int]) -> Dict[str, int]:
 """
         test_file = tmp_path / "generics.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         # Should not flag properly typed function
         type_violations = [
-            v for v in violations 
+            v
+            for v in violations
             if v.rule_id in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
         ]
         assert len(type_violations) == 0
@@ -857,14 +860,15 @@ def process(value: Union[int, str]) -> Union[int, None]:
 """
         test_file = tmp_path / "union.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         type_violations = [
-            v for v in violations 
+            v
+            for v in violations
             if v.rule_id in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
         ]
         assert len(type_violations) == 0
@@ -880,14 +884,15 @@ def apply(func: Callable[[int], int], value: int) -> int:
 """
         test_file = tmp_path / "callable.py"
         test_file.write_text(code)
-        
+
         # Act
         checker = TypeChecker()
         violations = checker.analyze_file(test_file)
-        
+
         # Assert
         type_violations = [
-            v for v in violations 
+            v
+            for v in violations
             if v.rule_id in (MISSING_RETURN_TYPE_RULE.rule_id, MISSING_PARAM_TYPE_RULE.rule_id)
         ]
         assert len(type_violations) == 0
@@ -902,11 +907,12 @@ class TestTypeCheckerSyntaxErrors:
         code = "def broken_syntax(\n    # Unclosed paren"
         test_file = tmp_path / "broken.py"
         test_file.write_text(code)
-        
+
         # Act
         from pyguard.lib.type_checker import _detect_type_hints
+
         violations = _detect_type_hints(code, test_file)
-        
+
         # Assert - should return empty list, not crash
         assert violations == []
 
@@ -916,11 +922,12 @@ class TestTypeCheckerSyntaxErrors:
         code = "if type(x) == int\n    # Missing colon"
         test_file = tmp_path / "broken.py"
         test_file.write_text(code)
-        
+
         # Act
         from pyguard.lib.type_checker import _detect_type_comparison
+
         violations = _detect_type_comparison(code, test_file)
-        
+
         # Assert - should return empty list, not crash
         assert violations == []
 
@@ -933,10 +940,10 @@ class TestTypeCheckerAutoFix:
         # Arrange
         nonexistent_file = tmp_path / "nonexistent.py"
         checker = TypeChecker()
-        
+
         # Act
         success, count = checker.add_type_hints(nonexistent_file, [])
-        
+
         # Assert
         assert success is False
         assert count == 0
@@ -947,10 +954,11 @@ class TestTypeCheckerAutoFix:
         code = "def func():\n    pass"
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         checker = TypeChecker()
         # Create violations without fix_data
         from pyguard.lib.rule_engine import RuleCategory
+
         violations = [
             RuleViolation(
                 rule_id="TC001",
@@ -964,10 +972,10 @@ class TestTypeCheckerAutoFix:
                 fix_data=None,  # No fix data
             )
         ]
-        
+
         # Act
         success, count = checker.add_type_hints(test_file, violations)
-        
+
         # Assert
         assert success is True
         assert count == 0
@@ -978,10 +986,11 @@ class TestTypeCheckerAutoFix:
         code = "def func():\n    return 42"
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
-        
+
         checker = TypeChecker()
         # Create violations with inferred types
         from pyguard.lib.rule_engine import RuleCategory
+
         violations = [
             RuleViolation(
                 rule_id=MISSING_RETURN_TYPE_RULE.rule_id,
@@ -995,10 +1004,10 @@ class TestTypeCheckerAutoFix:
                 fix_data={"inferred_type": "int"},
             )
         ]
-        
+
         # Act
         success, count = checker.add_type_hints(test_file, violations)
-        
+
         # Assert - currently returns 0 as it's a TODO
         assert success is True
         assert count == 0

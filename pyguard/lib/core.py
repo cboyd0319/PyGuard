@@ -364,7 +364,6 @@ class DiffGenerator:
         )
 
 
-
 class FileOperations:
     """Common file operations for PyGuard."""
 

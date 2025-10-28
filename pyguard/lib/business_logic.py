@@ -625,7 +625,9 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         if "parse" in call_name:
             # Check if this looks like an XML parsing call
             lower_call = call_name.lower()
-            if any(xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]) or (".parse" in call_name and call_name.count(".") <= 2):
+            if any(
+                xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]
+            ) or (".parse" in call_name and call_name.count(".") <= 2):
                 is_xml_parse = True
 
         if is_xml_parse:

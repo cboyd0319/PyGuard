@@ -816,14 +816,14 @@ class TestRuleCreation:
                 RuleSeverity.LOW,
                 RuleSeverity.MEDIUM,
                 RuleSeverity.HIGH,
-                RuleSeverity.CRITICAL
+                RuleSeverity.CRITICAL,
             ]
 
     def test_critical_rules_identified(self):
         """Verify critical severity rules."""
         rules = create_crypto_security_rules()
         critical_rules = [r for r in rules if r.severity == RuleSeverity.CRITICAL]
-        # CRYPTO004 (weak password hashing), CRYPTO008 (hardcoded keys), 
+        # CRYPTO004 (weak password hashing), CRYPTO008 (hardcoded keys),
         # CRYPTO014 (disabled cert validation) should be critical
         assert len(critical_rules) >= 3
 
@@ -833,32 +833,39 @@ class TestPerformance:
 
     def test_performance_small_file(self, benchmark):
         """Check performance on small file (100 lines)."""
-        code = """
+        code = (
+            """
 import hashlib
 hash_value = hashlib.sha256(data).hexdigest()
-""" * 50
+"""
+            * 50
+        )
         benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <5ms
         # Note: benchmark.stats returns a dict, not an object with .mean
-        mean_time = benchmark.stats['mean']
+        mean_time = benchmark.stats["mean"]
         assert mean_time < 0.005
 
     def test_performance_medium_file(self, benchmark):
         """Check performance on medium file (1000 lines)."""
-        code = """
+        code = (
+            """
 import hashlib
 from Crypto.Cipher import AES
 hash_value = hashlib.sha256(data).hexdigest()
 cipher = AES.new(key, AES.MODE_GCM)
-""" * 250
+"""
+            * 250
+        )
         benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <50ms
-        mean_time = benchmark.stats['mean']
+        mean_time = benchmark.stats["mean"]
         assert mean_time < 0.050
 
     def test_performance_large_file(self, benchmark):
         """Check performance on large file (10000 lines)."""
-        code = """
+        code = (
+            """
 import hashlib
 import os
 from Crypto.Cipher import AES
@@ -869,10 +876,12 @@ def secure_hash(data):
 def secure_encrypt(data, key):
     cipher = AES.new(key, AES.MODE_GCM)
     return cipher.encrypt(data)
-""" * 1000
+"""
+            * 1000
+        )
         benchmark(lambda: analyze_crypto_security(code))
         # Should complete in <500ms
-        mean_time = benchmark.stats['mean']
+        mean_time = benchmark.stats["mean"]
         assert mean_time < 0.500
 
 

@@ -1,6 +1,5 @@
 """Integration tests for file operations."""
 
-
 import pytest
 
 

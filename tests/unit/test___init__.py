@@ -10,7 +10,6 @@ Tests cover:
 Following pytest best practices with AAA pattern and proper isolation.
 """
 
-
 import pytest
 
 

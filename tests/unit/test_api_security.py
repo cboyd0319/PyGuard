@@ -671,12 +671,12 @@ schema = Schema(query=Query)
 class TestCORSWildcard:
     """
     Test suite for API011: CORS Wildcard Origin detection.
-    
+
     Coverage:
     - 10 vulnerable CORS configurations
     - 10 safe CORS configurations
     """
-    
+
     def test_detect_cors_wildcard_string(self):
         """Detect CORS with wildcard origin as string."""
         code = """
@@ -690,7 +690,7 @@ app.add_middleware(
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API011" for v in violations)
-    
+
     def test_detect_cors_wildcard_in_list(self):
         """Detect CORS with wildcard in origins list."""
         code = """
@@ -702,7 +702,7 @@ app.add_middleware(
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API011" for v in violations)
-    
+
     def test_detect_flask_cors_wildcard(self):
         """Detect Flask-CORS with wildcard."""
         code = """
@@ -712,7 +712,7 @@ CORS(app, origins='*')
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API011" for v in violations)
-    
+
     def test_safe_cors_specific_origins(self):
         """CORS with specific origins should not trigger."""
         code = """
@@ -725,7 +725,7 @@ app.add_middleware(
         violations = analyze_api_security(Path("test.py"), code)
         cors_violations = [v for v in violations if v.rule_id == "API011"]
         assert len(cors_violations) == 0
-    
+
     def test_safe_cors_env_variable(self):
         """CORS using environment variable should not trigger."""
         code = """
@@ -742,12 +742,12 @@ app.add_middleware(CORSMiddleware, allow_origins=allowed_origins)
 class TestXXEVulnerability:
     """
     Test suite for API012: XML External Entity (XXE) detection.
-    
+
     Coverage:
     - 10 vulnerable XML parsing patterns
     - 10 safe XML parsing patterns
     """
-    
+
     def test_detect_etree_parse_unsafe(self):
         """Detect unsafe ET.parse()."""
         code = """
@@ -758,7 +758,7 @@ root = tree.getroot()
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API012" for v in violations)
-    
+
     def test_detect_etree_fromstring_unsafe(self):
         """Detect unsafe ET.fromstring()."""
         code = """
@@ -768,7 +768,7 @@ root = ET.fromstring(xml_data)
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API012" for v in violations)
-    
+
     def test_detect_lxml_parse_unsafe(self):
         """Detect unsafe lxml.etree.parse()."""
         code = """
@@ -778,7 +778,7 @@ tree = etree.parse(xml_source)
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API012" for v in violations)
-    
+
     def test_safe_defusedxml_parse(self):
         """defusedxml.parse() should not trigger."""
         code = """
@@ -789,7 +789,7 @@ tree = ET.parse(xml_file)
         violations = analyze_api_security(Path("test.py"), code)
         xxe_violations = [v for v in violations if v.rule_id == "API012"]
         assert len(xxe_violations) == 0
-    
+
     def test_safe_lxml_with_resolve_entities_false(self):
         """lxml.XMLParser with resolve_entities=False inline should not flag parse()."""
         code = """
@@ -808,12 +808,12 @@ tree = etree.parse(xml_file, some_parser)
 class TestInsecureDeserialization:
     """
     Test suite for API013: Insecure Deserialization detection.
-    
+
     Coverage:
     - 10 insecure deserialization patterns
     - 10 safe serialization patterns
     """
-    
+
     def test_detect_pickle_loads(self):
         """Detect pickle.loads() usage."""
         code = """
@@ -823,7 +823,7 @@ data = pickle.loads(untrusted_input)
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API013" for v in violations)
-    
+
     def test_detect_marshal_loads(self):
         """Detect marshal.loads() usage."""
         code = """
@@ -833,7 +833,7 @@ obj = marshal.loads(data)
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API013" for v in violations)
-    
+
     def test_detect_dill_loads(self):
         """Detect dill.loads() usage."""
         code = """
@@ -843,7 +843,7 @@ result = dill.loads(serialized_data)
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API013" for v in violations)
-    
+
     def test_safe_json_loads(self):
         """json.loads() should not trigger (safe)."""
         code = """
@@ -854,7 +854,7 @@ data = json.loads(json_string)
         violations = analyze_api_security(Path("test.py"), code)
         deser_violations = [v for v in violations if v.rule_id == "API013"]
         assert len(deser_violations) == 0
-    
+
     def test_safe_yaml_safe_load(self):
         """yaml.safe_load() should not trigger."""
         code = """
@@ -870,12 +870,12 @@ data = yaml.safe_load(yaml_string)
 class TestOAuthRedirectUnvalidated:
     """
     Test suite for API014: OAuth Redirect Unvalidated detection.
-    
+
     Coverage:
     - 10 unvalidated OAuth redirect patterns
     - 10 safe OAuth redirect patterns
     """
-    
+
     def test_detect_oauth_callback_unvalidated_redirect(self):
         """Detect OAuth callback without redirect validation."""
         code = """
@@ -886,7 +886,7 @@ def oauth_callback(redirect_uri: str):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API014" for v in violations)
-    
+
     def test_detect_login_redirect_unvalidated(self):
         """Detect login handler with unvalidated redirect."""
         code = """
@@ -897,7 +897,7 @@ def login(next_url: str):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API014" for v in violations)
-    
+
     def test_detect_authorize_endpoint_redirect(self):
         """Detect authorize endpoint with redirect (must have route decorator)."""
         code = """
@@ -908,7 +908,7 @@ def oauth_authorize():
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API014" for v in violations)
-    
+
     def test_safe_oauth_with_validation(self):
         """OAuth with redirect validation should not trigger."""
         code = """
@@ -922,7 +922,7 @@ def oauth_callback():
         violations = analyze_api_security(Path("test.py"), code)
         oauth_violations = [v for v in violations if v.rule_id == "API014"]
         assert len(oauth_violations) == 0
-    
+
     def test_safe_login_without_redirect(self):
         """Login without redirect should not trigger."""
         code = """
@@ -939,12 +939,12 @@ def login():
 class TestCSRFTokenMissing:
     """
     Test suite for API015: CSRF Token Missing detection.
-    
+
     Coverage:
     - 10 state-changing endpoints without CSRF
     - 10 endpoints with proper CSRF protection
     """
-    
+
     def test_detect_post_without_csrf(self):
         """Detect POST endpoint without CSRF token."""
         code = """
@@ -954,7 +954,7 @@ def create_user(data: dict):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API015" for v in violations)
-    
+
     def test_detect_put_without_csrf(self):
         """Detect PUT endpoint without CSRF token."""
         code = """
@@ -964,7 +964,7 @@ def update_user(user_id: int, data: dict):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API015" for v in violations)
-    
+
     def test_detect_delete_without_csrf(self):
         """Detect DELETE endpoint without CSRF token."""
         code = """
@@ -975,7 +975,7 @@ def delete_user(user_id: int):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API015" for v in violations)
-    
+
     def test_detect_patch_without_csrf(self):
         """Detect PATCH endpoint without CSRF token."""
         code = """
@@ -985,7 +985,7 @@ def patch_user(user_id: int, updates: dict):
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API015" for v in violations)
-    
+
     def test_safe_post_with_csrf_check(self):
         """POST with CSRF validation should not trigger."""
         code = """
@@ -997,7 +997,7 @@ def create_user(data: dict, csrf_token: str):
         violations = analyze_api_security(Path("test.py"), code)
         csrf_violations = [v for v in violations if v.rule_id == "API015"]
         assert len(csrf_violations) == 0
-    
+
     def test_safe_get_endpoint_no_csrf_needed(self):
         """GET endpoint should not require CSRF (read-only)."""
         code = """
@@ -1008,7 +1008,7 @@ def list_users():
         violations = analyze_api_security(Path("test.py"), code)
         csrf_violations = [v for v in violations if v.rule_id == "API015"]
         assert len(csrf_violations) == 0
-    
+
     def test_safe_post_with_csrf_decorator(self):
         """POST with CSRF decorator should not trigger."""
         code = """
@@ -1075,17 +1075,15 @@ def redirect_user():  # Open redirect - API008
         assert "API001" in rule_ids or len(violations) > 0  # At least some detections
 
 
-
-
 class TestAPIVersioningSecurity:
     """
     Test suite for API016: API Versioning Security.
-    
+
     Coverage:
     - 15 vulnerable patterns (deprecated versions without validation)
     - 10 safe patterns (proper version management)
     """
-    
+
     def test_detect_v0_without_validation(self):
         """Detect deprecated v0 API endpoint without validation."""
         code = """
@@ -1100,7 +1098,7 @@ def get_users():
         api016_violations = [v for v in violations if v.rule_id == "API016"]
         assert len(api016_violations) == 1
         assert "deprecated version" in api016_violations[0].message.lower()
-    
+
     def test_detect_v1_without_validation(self):
         """Detect v1 API endpoint without version validation."""
         code = """
@@ -1114,7 +1112,7 @@ def get_users():
         violations = analyze_api_security(Path("test.py"), code)
         api016_violations = [v for v in violations if v.rule_id == "API016"]
         assert len(api016_violations) == 1
-    
+
     def test_detect_flask_v0_route(self):
         """Detect Flask route with v0 versioning."""
         code = """
@@ -1128,7 +1126,7 @@ def endpoint():
         violations = analyze_api_security(Path("test.py"), code)
         api016_violations = [v for v in violations if v.rule_id == "API016"]
         assert len(api016_violations) == 1
-    
+
     def test_safe_v2_api(self):
         """v2 API should not trigger (current version)."""
         code = """
@@ -1142,7 +1140,7 @@ def get_users():
         violations = analyze_api_security(Path("test.py"), code)
         api016_violations = [v for v in violations if v.rule_id == "API016"]
         assert len(api016_violations) == 0
-    
+
     def test_safe_with_version_validation(self):
         """API with version validation should not trigger."""
         code = """
@@ -1159,7 +1157,7 @@ def get_users():
         violations = analyze_api_security(Path("test.py"), code)
         api016_violations = [v for v in violations if v.rule_id == "API016"]
         assert len(api016_violations) == 0
-    
+
     def test_safe_version_in_header(self):
         """Version validation in header should not trigger."""
         code = """
@@ -1180,12 +1178,12 @@ def get_users():
 class TestSSRFVulnerability:
     """
     Test suite for API017: Server-Side Request Forgery (SSRF).
-    
+
     Coverage:
     - 15 vulnerable patterns (user-controlled URLs)
     - 10 safe patterns (validated URLs)
     """
-    
+
     def test_detect_requests_get_user_url(self):
         """Detect requests.get() with user-provided URL."""
         code = """
@@ -1199,7 +1197,7 @@ def fetch_data(url):
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 1
         assert "ssrf" in api017_violations[0].message.lower()
-    
+
     def test_detect_requests_post_with_redirect_param(self):
         """Detect requests.post() with redirect parameter."""
         code = """
@@ -1212,7 +1210,7 @@ def webhook(redirect_url):
         violations = analyze_api_security(Path("test.py"), code)
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 1
-    
+
     def test_detect_urllib_request_user_input(self):
         """Detect urllib with user input."""
         code = """
@@ -1225,7 +1223,7 @@ def fetch(link):
         violations = analyze_api_security(Path("test.py"), code)
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 1
-    
+
     def test_detect_flask_route_ssrf(self):
         """Detect SSRF in Flask route handler."""
         code = """
@@ -1243,7 +1241,7 @@ def fetch_url():
         violations = analyze_api_security(Path("test.py"), code)
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 1
-    
+
     def test_safe_with_url_validation(self):
         """URL validation should prevent SSRF detection."""
         code = """
@@ -1259,7 +1257,7 @@ def fetch_data(url):
         violations = analyze_api_security(Path("test.py"), code)
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 0
-    
+
     def test_safe_with_whitelist_check(self):
         """Whitelist check should prevent SSRF detection."""
         code = """
@@ -1273,7 +1271,7 @@ def fetch_data(url):
         violations = analyze_api_security(Path("test.py"), code)
         api017_violations = [v for v in violations if v.rule_id == "API017"]
         assert len(api017_violations) == 0
-    
+
     def test_safe_hardcoded_url(self):
         """Hardcoded URL should not trigger SSRF."""
         code = """
@@ -1291,12 +1289,12 @@ def fetch_data():
 class TestMissingHSTSHeader:
     """
     Test suite for API018: Missing HSTS Header.
-    
+
     Coverage:
     - 10 vulnerable patterns (missing HSTS)
     - 10 safe patterns (HSTS configured)
     """
-    
+
     def test_detect_flask_app_without_hsts(self):
         """Detect Flask app initialization without HSTS."""
         code = """
@@ -1307,7 +1305,7 @@ app = Flask(__name__)
         api018_violations = [v for v in violations if v.rule_id == "API018"]
         assert len(api018_violations) == 1
         assert "hsts" in api018_violations[0].message.lower()
-    
+
     def test_detect_fastapi_app_without_hsts(self):
         """Detect FastAPI app without HSTS."""
         code = """
@@ -1317,7 +1315,7 @@ app = FastAPI()
         violations = analyze_api_security(Path("test.py"), code)
         api018_violations = [v for v in violations if v.rule_id == "API018"]
         assert len(api018_violations) == 1
-    
+
     def test_safe_with_hsts_header(self):
         """App with HSTS header should not trigger."""
         code = """
@@ -1332,7 +1330,7 @@ def add_security_headers(response):
         violations = analyze_api_security(Path("test.py"), code)
         api018_violations = [v for v in violations if v.rule_id == "API018"]
         assert len(api018_violations) == 0
-    
+
     def test_safe_with_hsts_in_config(self):
         """HSTS in app config should not trigger."""
         code = """
@@ -1348,12 +1346,12 @@ app.config = {'HSTS_ENABLED': True, 'HSTS_MAX_AGE': 31536000}
 class TestMissingXFrameOptions:
     """
     Test suite for API019: Missing X-Frame-Options Header (Clickjacking).
-    
+
     Coverage:
     - 10 vulnerable patterns (missing X-Frame-Options)
     - 10 safe patterns (clickjacking protection)
     """
-    
+
     def test_detect_flask_app_without_xframe(self):
         """Detect Flask app without X-Frame-Options."""
         code = """
@@ -1364,7 +1362,7 @@ app = Flask(__name__)
         api019_violations = [v for v in violations if v.rule_id == "API019"]
         assert len(api019_violations) == 1
         assert "x-frame-options" in api019_violations[0].message.lower()
-    
+
     def test_detect_django_app_without_xframe(self):
         """Detect Django app without X-Frame-Options."""
         code = """
@@ -1375,7 +1373,7 @@ application = settings.WSGI_APPLICATION
         api019_violations = [v for v in violations if v.rule_id == "API019"]
         # Django detection might be different, just check it doesn't error
         assert isinstance(api019_violations, list)
-    
+
     def test_safe_with_xframe_header(self):
         """App with X-Frame-Options should not trigger."""
         code = """
@@ -1390,7 +1388,7 @@ def add_security_headers(response):
         violations = analyze_api_security(Path("test.py"), code)
         api019_violations = [v for v in violations if v.rule_id == "API019"]
         assert len(api019_violations) == 0
-    
+
     def test_safe_with_sameorigin(self):
         """X-Frame-Options: SAMEORIGIN should not trigger."""
         code = """
@@ -1410,12 +1408,12 @@ def add_headers(response):
 class TestMissingCSPHeader:
     """
     Test suite for API020: Missing Content-Security-Policy Header.
-    
+
     Coverage:
     - 10 vulnerable patterns (missing CSP)
     - 10 safe patterns (CSP configured)
     """
-    
+
     def test_detect_flask_app_without_csp(self):
         """Detect Flask app without CSP."""
         code = """
@@ -1426,7 +1424,7 @@ app = Flask(__name__)
         api020_violations = [v for v in violations if v.rule_id == "API020"]
         assert len(api020_violations) == 1
         assert "content-security-policy" in api020_violations[0].message.lower()
-    
+
     def test_detect_fastapi_app_without_csp(self):
         """Detect FastAPI app without CSP."""
         code = """
@@ -1436,7 +1434,7 @@ app = FastAPI()
         violations = analyze_api_security(Path("test.py"), code)
         api020_violations = [v for v in violations if v.rule_id == "API020"]
         assert len(api020_violations) == 1
-    
+
     def test_safe_with_csp_header(self):
         """App with CSP header should not trigger."""
         code = """
@@ -1451,7 +1449,7 @@ def add_security_headers(response):
         violations = analyze_api_security(Path("test.py"), code)
         api020_violations = [v for v in violations if v.rule_id == "API020"]
         assert len(api020_violations) == 0
-    
+
     def test_safe_with_csp_in_config(self):
         """CSP in app config should not trigger."""
         code = """
@@ -1472,13 +1470,13 @@ class TestPerformance:
         code = "\n".join(["def func(): pass"] * 50)
         benchmark(lambda: analyze_api_security(Path("test.py"), code))
         # Should complete quickly
-        assert benchmark.stats['mean'] < 0.050  # <50ms
+        assert benchmark.stats["mean"] < 0.050  # <50ms
 
     def test_medium_file_performance(self, benchmark):
         """Benchmark on 1000-line file."""
         code = "\n".join(["def func(): pass"] * 500)
         benchmark(lambda: analyze_api_security(Path("test.py"), code))
-        assert benchmark.stats['mean'] < 0.200  # <200ms
+        assert benchmark.stats["mean"] < 0.200  # <200ms
 
     def test_api_heavy_file_performance(self, benchmark):
         """Benchmark on file with many API routes."""
@@ -1491,7 +1489,7 @@ def endpoint{i}():
 """)
         code = "from flask import Flask\napp = Flask(__name__)\n" + "\n".join(routes)
         benchmark(lambda: analyze_api_security(Path("test.py"), code))
-        assert benchmark.stats['mean'] < 0.300  # <300ms for 50 routes
+        assert benchmark.stats["mean"] < 0.300  # <300ms for 50 routes
 
 
 # Run tests with: pytest tests/unit/test_api_security.py -v

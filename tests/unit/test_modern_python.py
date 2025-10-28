@@ -314,7 +314,7 @@ class TestModernPythonEdgeCases:
     """Test edge cases and boundary conditions for modern Python patterns."""
 
     @pytest.mark.parametrize(
-        "typing_import,expected_builtin",
+        ("typing_import", "expected_builtin"),
         [
             ("List", "list"),
             ("Dict", "dict"),
@@ -326,7 +326,7 @@ class TestModernPythonEdgeCases:
     )
     def test_detect_typing_builtins_pep585(self, typing_import, expected_builtin):
         """Test detection of typing imports that should use PEP 585 builtins.
-        
+
         PEP 585 allows using list[T] instead of typing.List[T] in Python 3.9+.
         """
         # Arrange
@@ -338,10 +338,10 @@ def func() -> {typing_import}[int]:
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert len(visitor.issues) > 0
         assert any(issue.rule_id == "UP006" for issue in visitor.issues)
@@ -356,30 +356,30 @@ result = os.path.dirname("/foo/bar")
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert - should process without errors
         # The visitor should handle nested attribute access
         assert isinstance(visitor, ModernPythonVisitor)
 
     def test_get_code_snippet_with_invalid_line_number(self):
         """Test _get_code_snippet with invalid line number.
-        
+
         Error handling: boundary condition where line doesn't exist.
         """
         # Arrange
         code = "x = 1"
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Create a mock node with invalid line number
         class MockNode:
             lineno = 999  # Beyond source length
-        
+
         # Act
         result = visitor._get_code_snippet(MockNode())
-        
+
         # Assert
         assert result == ""
 
@@ -388,14 +388,14 @@ result = os.path.dirname("/foo/bar")
         # Arrange
         code = "x = 1"
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Create a mock node with zero line number
         class MockNode:
             lineno = 0
-        
+
         # Act
         result = visitor._get_code_snippet(MockNode())
-        
+
         # Assert
         assert result == ""
 
@@ -404,10 +404,10 @@ result = os.path.dirname("/foo/bar")
         # Arrange
         visitor = ModernPythonVisitor([""])
         name_node = ast.Name(id="variable", ctx=ast.Load())
-        
+
         # Act
         result = visitor._get_full_name(name_node)
-        
+
         # Assert
         assert result == "variable"
 
@@ -417,14 +417,12 @@ result = os.path.dirname("/foo/bar")
         visitor = ModernPythonVisitor([""])
         # Create obj.attr
         attr_node = ast.Attribute(
-            value=ast.Name(id="obj", ctx=ast.Load()),
-            attr="attr",
-            ctx=ast.Load()
+            value=ast.Name(id="obj", ctx=ast.Load()), attr="attr", ctx=ast.Load()
         )
-        
+
         # Act
         result = visitor._get_full_name(attr_node)
-        
+
         # Assert
         assert result == "obj.attr"
 
@@ -433,10 +431,10 @@ result = os.path.dirname("/foo/bar")
         # Arrange
         visitor = ModernPythonVisitor([""])
         constant_node = ast.Constant(value=42)
-        
+
         # Act
         result = visitor._get_full_name(constant_node)
-        
+
         # Assert
         assert result == ""
 
@@ -448,11 +446,11 @@ class TestModernPythonFixerOperations:
         """Test that ModernPythonFixer initializes correctly."""
         # Arrange & Act
         fixer = ModernPythonFixer()
-        
+
         # Assert
         assert fixer is not None
-        assert hasattr(fixer, 'logger')
-        assert hasattr(fixer, 'file_ops')
+        assert hasattr(fixer, "logger")
+        assert hasattr(fixer, "file_ops")
 
     def test_scan_file_with_no_issues(self, tmp_path):
         """Test scanning file with modern Python code (no issues)."""
@@ -467,10 +465,10 @@ def process(items: list[int]) -> dict[str, int]:
         test_file = tmp_path / "modern.py"
         test_file.write_text(code)
         fixer = ModernPythonFixer()
-        
+
         # Act
         issues = fixer.scan_file_for_issues(test_file)
-        
+
         # Assert
         # May still have some issues, but should process without errors
         assert isinstance(issues, list)
@@ -485,10 +483,10 @@ def broken(
         test_file = tmp_path / "broken.py"
         test_file.write_text(code)
         fixer = ModernPythonFixer()
-        
+
         # Act
         issues = fixer.scan_file_for_issues(test_file)
-        
+
         # Assert
         assert issues == []
 
@@ -497,10 +495,10 @@ def broken(
         # Arrange
         fixer = ModernPythonFixer()
         non_existent = Path("/nonexistent/path/file.py")
-        
+
         # Act
         issues = fixer.scan_file_for_issues(non_existent)
-        
+
         # Assert
         assert issues == []
 
@@ -518,10 +516,10 @@ class MyClass(BaseClass):
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert any(issue.rule_id == "UP001" for issue in visitor.issues)
 
@@ -535,10 +533,10 @@ class MyClass(BaseClass):
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should not flag modern super()
         super_issues = [i for i in visitor.issues if i.rule_id == "UP001"]
@@ -559,17 +557,17 @@ class TestImportModernization:
     )
     def test_detect_six_imports(self, six_import):
         """Test detection of various six library imports.
-        
+
         The six library is for Python 2/3 compatibility and should be removed.
         """
         # Arrange
         code = f"{six_import}\n\nprint('hello')"
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert any(issue.rule_id == "UP004" for issue in visitor.issues)
         assert any("six" in issue.message for issue in visitor.issues)
@@ -585,10 +583,10 @@ def func(x: Optional[str]) -> None:
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should detect Optional import
         assert any(issue.rule_id == "UP007" for issue in visitor.issues)
@@ -604,10 +602,10 @@ def func(x: Union[str, int]) -> None:
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should detect Union import
         assert any(issue.rule_id == "UP007" for issue in visitor.issues)
@@ -632,10 +630,10 @@ def process(
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should detect multiple issues
         assert len(visitor.issues) >= 2
@@ -653,17 +651,17 @@ from typing import List
 class MyClass(BaseClass):
     def __init__(self):
         super(MyClass, self).__init__()
-    
+
     def process(self, items: List[int]):
         message = "Count: {}".format(len(items))
         return message
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should detect: six import, super(), typing.List, .format()
         rule_ids = {issue.rule_id for issue in visitor.issues}
@@ -681,10 +679,10 @@ class TestEmptyAndEdgeFiles:
         code = ""
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert len(visitor.issues) == 0
 
@@ -697,10 +695,10 @@ class TestEmptyAndEdgeFiles:
 """
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert len(visitor.issues) == 0
 
@@ -710,9 +708,9 @@ class TestEmptyAndEdgeFiles:
         code = '"""Module docstring."""'
         tree = ast.parse(code)
         visitor = ModernPythonVisitor(code.splitlines())
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         assert len(visitor.issues) == 0

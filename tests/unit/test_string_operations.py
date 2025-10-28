@@ -3,9 +3,8 @@ Tests for string operations module.
 """
 
 import ast
-import tempfile
 from pathlib import Path
-
+import tempfile
 
 from pyguard.lib.string_operations import (
     StringIssue,
@@ -343,7 +342,7 @@ for x in range(10):
 
             # Should detect multiple different types of issues
             assert len(issues) >= 3
-            rule_ids = set(i.rule_id for i in issues)
+            rule_ids = {i.rule_id for i in issues}
             assert len(rule_ids) >= 2  # At least 2 different rule types
         finally:
             temp_path.unlink()
@@ -394,10 +393,10 @@ class TestStringOperationsEdgeCases:
         fixer = StringOperationsFixer()
         file_path = tmp_path / "broken.py"
         file_path.write_text("def broken(\n")  # Syntax error
-        
+
         # Act
         issues = fixer.analyze_file(file_path)
-        
+
         # Assert - Should return empty list
         assert isinstance(issues, list)
         assert len(issues) == 0
@@ -407,10 +406,10 @@ class TestStringOperationsEdgeCases:
         # Arrange
         fixer = StringOperationsFixer()
         file_path = Path("/nonexistent/file.py")
-        
+
         # Act
         issues = fixer.analyze_file(file_path)
-        
+
         # Assert
         assert isinstance(issues, list)
         assert len(issues) == 0
@@ -421,7 +420,7 @@ class TestStringOperationsEdgeCases:
         fixer = StringOperationsFixer()
         file_path = tmp_path / "test.py"
         file_path.write_text("x = 'test'")
-        
+
         # Create issue with uncovered rule_id
         issues = [
             StringIssue(
@@ -435,10 +434,10 @@ class TestStringOperationsEdgeCases:
                 rule_id="PG-S004",
             )
         ]
-        
+
         # Act
         success, fixes = fixer.fix_file(file_path, issues)
-        
+
         # Assert
         assert isinstance(success, bool)
         assert isinstance(fixes, list)
@@ -446,17 +445,17 @@ class TestStringOperationsEdgeCases:
     def test_visitor_with_inconsistent_quotes(self):
         """Test detecting inconsistent quote styles."""
         # Arrange
-        code = '''
+        code = """
 x = "double quotes"
 y = 'single quotes'
-'''
+"""
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
         tree = ast.parse(code)
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert - Should detect quote style
         # First assignment sets the style, second should be flagged if inconsistent
         assert len(visitor.issues) >= 0  # May or may not flag depending on implementation
@@ -464,17 +463,17 @@ y = 'single quotes'
     def test_visitor_format_call_on_variable(self):
         """Test format() call on variable."""
         # Arrange
-        code = '''
+        code = """
 template = "Hello, {}"
 result = template.format("World")
-'''
+"""
         source_lines = code.splitlines()
         visitor = StringOperationsVisitor(source_lines, code)
         tree = ast.parse(code)
-        
+
         # Act
         visitor.visit(tree)
-        
+
         # Assert
         # Should detect format usage
         assert isinstance(visitor.issues, list)
@@ -483,14 +482,14 @@ result = template.format("World")
         """Test scanning directory with problematic files."""
         # Arrange
         fixer = StringOperationsFixer()
-        
+
         # Create a mix of files
         (tmp_path / "good.py").write_text("x = 'test'")
         (tmp_path / "bad.py").write_text("def broken(\n")
-        
+
         # Act
         issues = fixer.scan_directory(tmp_path)
-        
+
         # Assert - Should handle errors gracefully
         assert isinstance(issues, list)
         # bad.py should not crash the scan
@@ -504,14 +503,14 @@ class TestStringOperationsPerformance:
         """Test scanning directory with many files."""
         # Arrange
         fixer = StringOperationsFixer()
-        
+
         # Create multiple files
         for i in range(5):
             (tmp_path / f"file_{i}.py").write_text(f"x{i} = 'test {i}'")
-        
+
         # Act
         issues = fixer.scan_directory(tmp_path)
-        
+
         # Assert
         assert isinstance(issues, list)
         # At least 5 files should be scanned
@@ -524,9 +523,9 @@ class TestStringOperationsPerformance:
         file_path = tmp_path / "long_strings.py"
         long_string = "a" * 1000
         file_path.write_text(f"x = '{long_string}'")
-        
+
         # Act
         issues = fixer.analyze_file(file_path)
-        
+
         # Assert
         assert isinstance(issues, list)

@@ -251,9 +251,13 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                         )
             # Variable from user input: template(..., raw_html=content)
             elif isinstance(keyword.value, ast.Name):
-                if keyword.value.id in self.user_input_vars and keyword.arg and any(
-                    dangerous in keyword.arg.lower()
-                    for dangerous in ["html", "raw", "content", "body"]
+                if (
+                    keyword.value.id in self.user_input_vars
+                    and keyword.arg
+                    and any(
+                        dangerous in keyword.arg.lower()
+                        for dangerous in ["html", "raw", "content", "body"]
+                    )
                 ):
                     self.violations.append(
                         RuleViolation(

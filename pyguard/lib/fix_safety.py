@@ -154,14 +154,14 @@ class FixSafetyClassifier:
             "exception_narrowing",
             "quality",
             "Replace bare except with specific exception",
-            "Changes which exceptions are caught. " "May expose previously hidden errors.",
+            "Changes which exceptions are caught. May expose previously hidden errors.",
         )
 
         self._add_unsafe_fix(
             "mutable_default_arg",
             "quality",
             "Replace mutable default argument with None",
-            "Changes function signature and behavior. " "Requires adding initialization code.",
+            "Changes function signature and behavior. Requires adding initialization code.",
         )
 
         # ===== WARNING ONLY =====
@@ -194,7 +194,7 @@ class FixSafetyClassifier:
             "eval_exec_warning",
             "security",
             "Warn about dangerous eval/exec usage",
-            "No safe automatic replacement. " "Requires complete redesign of affected code.",
+            "No safe automatic replacement. Requires complete redesign of affected code.",
         )
 
         self._add_warning_only_fix(

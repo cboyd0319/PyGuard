@@ -5,10 +5,9 @@ Tests for exception handling pattern detection.
 import ast
 from pathlib import Path
 
-
 from pyguard.lib.exception_handling import (
-    ExceptionHandlingChecker,
     EXCEPTION_HANDLING_RULES,
+    ExceptionHandlingChecker,
 )
 
 
@@ -360,7 +359,7 @@ def good_function():
     except ValueError as e:
         logger.exception("Processing failed")
         raise CustomError("Custom error") from e
-    
+
     return result
 """
         checker = ExceptionHandlingChecker()
@@ -426,10 +425,10 @@ class TestExceptionHandlingCheckerErrorHandling:
         checker = ExceptionHandlingChecker()
         file_path = tmp_path / "syntax_error.py"
         file_path.write_text("def broken(\n")  # Syntax error
-        
+
         # Act
         violations = checker.check_file(file_path)
-        
+
         # Assert - Should return empty list, not raise
         assert isinstance(violations, list)
         assert len(violations) == 0
@@ -439,10 +438,10 @@ class TestExceptionHandlingCheckerErrorHandling:
         # Arrange
         checker = ExceptionHandlingChecker()
         file_path = Path("/nonexistent/file.py")
-        
+
         # Act
         violations = checker.check_file(file_path)
-        
+
         # Assert - Should handle gracefully
         assert isinstance(violations, list)
         assert len(violations) == 0
@@ -452,10 +451,10 @@ class TestExceptionHandlingCheckerErrorHandling:
         # Arrange
         checker = ExceptionHandlingChecker()
         code = "def broken(\n"  # Incomplete function
-        
+
         # Act
         violations = checker.check_code(code)
-        
+
         # Assert - Should return empty list
         assert isinstance(violations, list)
         assert len(violations) == 0
@@ -464,10 +463,10 @@ class TestExceptionHandlingCheckerErrorHandling:
         """Test check_code with empty string."""
         # Arrange
         checker = ExceptionHandlingChecker()
-        
+
         # Act
         violations = checker.check_code("")
-        
+
         # Assert
         assert isinstance(violations, list)
         assert len(violations) == 0
@@ -573,15 +572,15 @@ with mymodule.suppress(Exception):
         # Create a file that will cause an error during processing
         test_file = tmp_path / "test.py"
         test_file.write_text("# Valid Python\npass")
-        
+
         checker = ExceptionHandlingChecker()
-        
+
         # Mock the ast.parse to raise an exception (not SyntaxError)
         original_parse = ast.parse
-        
+
         def mock_parse_error(*args, **kwargs):
             raise RuntimeError("Simulated error")
-        
+
         ast.parse = mock_parse_error
         try:
             violations = checker.check_file(test_file)
@@ -594,13 +593,13 @@ with mymodule.suppress(Exception):
         """Test check_code handles general exceptions (lines 343-348)."""
         code = "pass"
         checker = ExceptionHandlingChecker()
-        
+
         # Mock ast.parse to raise a non-syntax exception
         original_parse = ast.parse
-        
+
         def mock_parse_error(*args, **kwargs):
             raise RuntimeError("Simulated processing error")
-        
+
         ast.parse = mock_parse_error
         try:
             violations = checker.check_code(code)

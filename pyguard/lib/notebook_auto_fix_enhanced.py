@@ -209,7 +209,6 @@ class EnhancedNotebookFixer(NotebookFixer):
                 references=references,
             )
 
-
         return None
 
     def _fix_secret_enhanced(

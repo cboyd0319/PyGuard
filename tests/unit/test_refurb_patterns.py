@@ -1,6 +1,5 @@
 """Tests for refurb patterns module."""
 
-
 import pytest
 
 from pyguard.lib.refurb_patterns import REFURB_RULES, RefurbPatternChecker
@@ -534,7 +533,7 @@ content = p.open().read()
         assert isinstance(violations, list)
 
     @pytest.mark.parametrize(
-        "code,expected_rule",
+        ("code", "expected_rule"),
         [
             # FURB102: sorted with list comprehension
             ("sorted([x*2 for x in range(10)])", "FURB102"),
@@ -555,8 +554,9 @@ content = p.open().read()
         checker = RefurbPatternChecker()
         violations = checker.check_file(file_path)
 
-        assert any(v.rule_id == expected_rule for v in violations), \
+        assert any(v.rule_id == expected_rule for v in violations), (
             f"Expected {expected_rule} in {[v.rule_id for v in violations]}"
+        )
 
     def test_checker_handles_syntax_errors_gracefully(self, tmp_path):
         """Test that checker handles files with syntax errors."""
@@ -821,10 +821,10 @@ another = -(-10 // 3)
 def func(x):
     # Lambda just calling function - unnecessary
     result = list(map(lambda x: func(x), items))
-    
+
     # Lambda with more complex expression - acceptable
     result2 = list(map(lambda x: x * 2 + 1, items))
-    
+
     return result, result2
 """
         file_path = tmp_path / "test.py"
@@ -845,7 +845,7 @@ def check_values(value, items):
     if type(value) == int:
         pass
 
-    # Type comparison with list - should trigger  
+    # Type comparison with list - should trigger
     if type(items) == list:
         pass
 

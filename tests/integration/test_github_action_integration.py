@@ -9,9 +9,9 @@ These tests verify:
 """
 
 import json
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -57,6 +57,7 @@ def load_config(file_path):
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -122,6 +123,7 @@ def add_numbers(a: int, b: int) -> int:
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -165,6 +167,7 @@ def load_data(data):
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -230,6 +233,7 @@ def hash_password(password):
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -282,6 +286,7 @@ def query(user_input):
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -330,6 +335,7 @@ def dangerous_exec(code):
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -377,6 +383,7 @@ def func():
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -501,6 +508,7 @@ class TestSARIFValidation:
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,
@@ -536,6 +544,7 @@ line 4
                 "--sarif",
                 "--no-html",
             ],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             text=True,

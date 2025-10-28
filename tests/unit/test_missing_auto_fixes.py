@@ -5,8 +5,8 @@ Tests all 29 newly implemented auto-fixes for security detections
 that previously only had warnings.
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 

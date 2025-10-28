@@ -1,6 +1,5 @@
 """Unit tests for ML detection module."""
 
-
 from pyguard.lib.ml_detection import (
     AnomalyDetector,
     CodeFeatureExtractor,
@@ -137,11 +136,11 @@ subprocess.run(cmd2, shell=True)
 subprocess.run(cmd3, shell=True)
 password = "secret"
 query1 = "SELECT * FROM users"
-query2 = "DELETE FROM data"  
+query2 = "DELETE FROM data"
 query3 = "INSERT INTO logs"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         assert score.score >= 0.8
         assert score.severity == "CRITICAL"
 
@@ -149,7 +148,7 @@ query3 = "INSERT INTO logs"
         """Test prediction for subprocess-based command injection."""
         code = "subprocess.run(user_cmd, shell=True)"
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "command_injection"
@@ -159,7 +158,7 @@ query3 = "INSERT INTO logs"
         """Test prediction for hardcoded credentials."""
         code = '''x = "api_key"'''
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "hardcoded_credentials"
@@ -174,7 +173,7 @@ query3 = "INSERT INTO logs"
 cursor.execute(query1)
 """
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "sql_injection"
@@ -250,7 +249,6 @@ ctypes.CDLL("malicious.dll")
                 assert "confidence" in anomaly
                 assert "description" in anomaly
 
-
     def test_detect_obfuscation_chr_usage(self):
         """Test obfuscation detection with excessive chr() usage."""
         # Use 6 chr() calls to exceed threshold of 5
@@ -259,7 +257,7 @@ x = chr(101) + chr(118) + chr(97) + chr(108) + chr(40) + chr(41)
 exec(x)
 """
         anomalies = self.detector.detect_anomalies(code)
-        
+
         assert any(a["type"] == "obfuscation" for a in anomalies)
         assert any(a["severity"] == "HIGH" for a in anomalies)
 
@@ -268,9 +266,9 @@ exec(x)
         # Create 4 lines longer than 200 characters to exceed threshold of 3
         long_line = "x = " + " + ".join([f'"{i}"' for i in range(50)])
         code = "\n".join([long_line] * 4)
-        
+
         anomalies = self.detector.detect_anomalies(code)
-        
+
         assert any(a["type"] == "obfuscation" for a in anomalies)
 
     def test_detect_obfuscation_base64(self):
@@ -280,7 +278,7 @@ import base64
 data = base64.b64decode(secret).decode()
 """
         anomalies = self.detector.detect_anomalies(code)
-        
+
         assert any(a["type"] == "obfuscation" for a in anomalies)
 
     def test_detect_unusual_strings_hex_encoding(self):
@@ -288,9 +286,9 @@ data = base64.b64decode(secret).decode()
         # Create string with more than 10 hex escape sequences
         hex_string = "\\x48" * 15  # 15 hex escapes
         code = f'data = "{hex_string}"'
-        
+
         anomalies = self.detector.detect_anomalies(code)
-        
+
         assert any(a["type"] == "unusual_strings" for a in anomalies)
 
     def test_detect_suspicious_socket_without_server(self):
@@ -301,7 +299,7 @@ sock = socket.socket()
 sock.connect(("evil.com", 1337))
 """
         anomalies = self.detector.detect_anomalies(code)
-        
+
         suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
         if suspicious_imports:
             assert "socket" in suspicious_imports[0]["description"]
@@ -313,7 +311,7 @@ import ctypes
 ctypes.windll.kernel32.SomeFunction()
 """
         anomalies = self.detector.detect_anomalies(code)
-        
+
         suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
         if suspicious_imports:
             assert "ctypes" in suspicious_imports[0]["description"]
@@ -325,7 +323,7 @@ module = __import__("os")
 module.system("ls")
 """
         anomalies = self.detector.detect_anomalies(code)
-        
+
         suspicious_imports = [a for a in anomalies if a["type"] == "suspicious_imports"]
         if suspicious_imports:
             assert "dynamic imports" in suspicious_imports[0]["description"]
@@ -333,7 +331,7 @@ module.system("ls")
 
 class TestMLRiskScorerEdgeCases:
     """Test edge cases for ML risk scoring."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.scorer = MLRiskScorer()
@@ -352,7 +350,7 @@ subprocess.run(user_command, shell=True)
 os.system(user_input)
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # With eval, exec, hardcoded secrets, and shell=True, score should be high
         assert score.severity == "CRITICAL"
 
@@ -363,7 +361,7 @@ import subprocess
 subprocess.run(user_input, shell=True)
 """
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "command_injection"
@@ -376,7 +374,7 @@ password = "secret123"
 api_key = "sk_test_1234"
 """
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "hardcoded_credentials"
@@ -391,7 +389,7 @@ query3 = "DELETE FROM data WHERE " + condition
 cursor.execute(query1)
 """
         prediction = self.scorer.predict_vulnerability_type(code)
-        
+
         assert prediction is not None
         vuln_type, confidence = prediction
         assert vuln_type == "sql_injection"
@@ -433,7 +431,7 @@ subprocess.run(['pwd'])
 subprocess.run(['echo', 'test'])
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should trigger subprocess_count > 2
         assert score.score > 0
         assert any("Command injection" in factor for factor in score.factors)
@@ -446,7 +444,7 @@ api_key = "sk-1234567890abcdef"
 token = "ghp_abcdefghijklmnop"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Hardcoded strings detection depends on feature extractor patterns
         # Just verify we get a valid score
         assert 0.0 <= score.score <= 1.0
@@ -461,7 +459,7 @@ query3 = "UPDATE settings SET value=1"
 query4 = "DELETE FROM temp"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should trigger sql_patterns > 2
         assert any("SQL injection" in factor for factor in score.factors)
 
@@ -474,7 +472,7 @@ except:
     pass
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should trigger bare_except > 0
         assert any("Error handling" in factor for factor in score.factors)
 
@@ -497,7 +495,7 @@ def deeply_nested():
                                                 pass
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should trigger max_nesting > 10
         assert any("Complexity risk" in factor for factor in score.factors)
 
@@ -512,7 +510,7 @@ socket.getaddrinfo('host', 80)
 socket.gethostbyname('example.com')
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should trigger network_count > 3
         assert any("Network security" in factor for factor in score.factors)
 
@@ -530,7 +528,7 @@ password = "secret123"
 api_key = "sk-test123"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Code with eval/exec should score high
         # At minimum should be MEDIUM or higher
         assert score.severity in ["MEDIUM", "HIGH", "CRITICAL"]
@@ -547,7 +545,7 @@ query2 = "DELETE FROM logs"
 query3 = "UPDATE data SET x=1"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Should be in HIGH range (0.6-0.8)
         assert score.severity in ["HIGH", "CRITICAL"]
 
@@ -562,7 +560,7 @@ except:
 query = "SELECT * FROM data"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Bare except should add some risk
         # Just verify we get a valid score
         assert 0.0 <= score.score <= 1.0
@@ -576,7 +574,7 @@ def simple_function():
     return x
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Clean code should have LOW severity
         assert score.severity == "LOW"
 
@@ -603,7 +601,7 @@ query3 = "UPDATE settings"
 query4 = "INSERT INTO logs"
 """
         score = self.scorer.calculate_risk_score(code)
-        
+
         # Score should be capped at 1.0
         assert score.score <= 1.0
 
@@ -696,10 +694,12 @@ server.listen(5)
 """
         # Act
         anomalies = self.detector.detect_anomalies(code)
-        
+
         # Assert - should not flag as suspicious because 'server' is in the code
         if anomalies:
-            suspicious_socket = [a for a in anomalies if a["type"] == "suspicious_imports" and "socket" in str(a)]
+            suspicious_socket = [
+                a for a in anomalies if a["type"] == "suspicious_imports" and "socket" in str(a)
+            ]
             # Should either have no anomalies or the socket anomaly should be filtered out
             # because "server" appears in the code
             assert len(suspicious_socket) == 0 or "backdoor" not in str(suspicious_socket)

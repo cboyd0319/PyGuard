@@ -12,10 +12,11 @@ Test Coverage Requirements (per Security Dominance Plan):
 - Total: 38+ tests minimum per check
 """
 
-import pytest
 from pathlib import Path
 
-from pyguard.lib.framework_asyncio import analyze_asyncio_security, ASYNCIO_RULES
+import pytest
+
+from pyguard.lib.framework_asyncio import ASYNCIO_RULES, analyze_asyncio_security
 
 
 class TestAsyncioSubprocessSecurity:
@@ -171,7 +172,7 @@ import asyncio
 
 async def run_tasks():
     results = await asyncio.gather(
-        task1(), task2(), task3(), 
+        task1(), task2(), task3(),
         return_exceptions=True
     )
 """
@@ -201,7 +202,7 @@ import asyncio
 
 async def wait_tasks():
     done, pending = await asyncio.wait(
-        [task1(), task2()], 
+        [task1(), task2()],
         timeout=5.0
     )
 """
@@ -526,10 +527,10 @@ import asyncio
 async def vulnerable_app():
     # ASYNCIO001: subprocess_shell
     proc = await asyncio.create_subprocess_shell("ls")
-    
+
     # ASYNCIO006: wait without timeout
     await asyncio.wait([task1(), task2()])
-    
+
     # ASYNCIO010: read without limit
     data = await reader.read()
 """
@@ -547,13 +548,13 @@ import asyncio
 async def safe_app():
     # Safe subprocess usage
     proc = await asyncio.create_subprocess_exec("ls", "-la")
-    
+
     # Safe wait with timeout
     await asyncio.wait([task1(), task2()], timeout=5.0)
-    
+
     # Safe gather with exception handling
     results = await asyncio.gather(
-        task1(), task2(), 
+        task1(), task2(),
         return_exceptions=True
     )
 """
@@ -567,18 +568,22 @@ class TestAsyncioPerformance:
 
     def test_performance_small_file(self, benchmark):
         """Test performance on small asyncio file."""
-        code = """
+        code = (
+            """
 import asyncio
 
 async def main():
     await asyncio.sleep(1)
-""" * 10
+"""
+            * 10
+        )
         benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
-        assert benchmark.stats['mean'] < 0.01  # Less than 10ms
+        assert benchmark.stats["mean"] < 0.01  # Less than 10ms
 
     def test_performance_medium_file(self, benchmark):
         """Test performance on medium asyncio file."""
-        code = """
+        code = (
+            """
 import asyncio
 
 async def task():
@@ -588,13 +593,16 @@ async def task():
 async def main():
     tasks = [task() for _ in range(10)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-""" * 50
+"""
+            * 50
+        )
         benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
-        assert benchmark.stats['mean'] < 0.05  # Less than 50ms
+        assert benchmark.stats["mean"] < 0.05  # Less than 50ms
 
     def test_performance_large_file(self, benchmark):
         """Test performance on large asyncio file."""
-        code = """
+        code = (
+            """
 import asyncio
 
 async def worker(name, queue):
@@ -609,19 +617,21 @@ async def worker(name, queue):
 async def main():
     queue = asyncio.Queue()
     workers = [asyncio.create_task(worker(f'worker-{i}', queue)) for i in range(5)]
-    
+
     for item in range(20):
         await queue.put(item)
-    
+
     await queue.join()
-    
+
     for _ in workers:
         await queue.put(None)
-    
+
     await asyncio.gather(*workers)
-""" * 20
+"""
+            * 20
+        )
         benchmark(lambda: analyze_asyncio_security(Path("test.py"), code))
-        assert benchmark.stats['mean'] < 0.5  # Less than 500ms
+        assert benchmark.stats["mean"] < 0.5  # Less than 500ms
 
 
 class TestAsyncioEdgeCases:
@@ -683,7 +693,7 @@ import asyncio
 async def use_multiple_locks():
     lock1 = asyncio.Lock()
     lock2 = asyncio.Lock()
-    
+
     async with lock1:
         async with lock2:
             # critical section

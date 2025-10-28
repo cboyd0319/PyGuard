@@ -793,7 +793,6 @@ def create_crypto_security_rules() -> list[Rule]:
     ]
 
 
-
 # Register all crypto security rules
 register_rules(create_crypto_security_rules())
 

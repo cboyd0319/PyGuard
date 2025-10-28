@@ -1,6 +1,5 @@
 """Unit tests for AST analyzer module."""
 
-
 from pyguard.lib.ast_analyzer import (
     ASTAnalyzer,
     CodeQualityIssue,

@@ -98,7 +98,10 @@ db = SqliteDatabase(db_name)
         violations = analyze_peewee_security(Path("test.py"), code)
         db_violations = [v for v in violations if v.rule_id == "PEE003"]
         assert len(db_violations) >= 1
-        assert any("user input" in v.message.lower() or "credentials" in v.message.lower() for v in db_violations)
+        assert any(
+            "user input" in v.message.lower() or "credentials" in v.message.lower()
+            for v in db_violations
+        )
 
     def test_detect_postgresql_from_config(self):
         """Detect PostgresqlDatabase with user input."""
@@ -140,7 +143,10 @@ User.create(username='test')
         violations = analyze_peewee_security(Path("test.py"), code)
         trans_violations = [v for v in violations if v.rule_id == "PEE004"]
         assert len(trans_violations) >= 1
-        assert any("exception" in v.message.lower() or "handling" in v.message.lower() for v in trans_violations)
+        assert any(
+            "exception" in v.message.lower() or "handling" in v.message.lower()
+            for v in trans_violations
+        )
 
     def test_detect_transaction_without_error_handling(self):
         """Detect transaction() without error handling."""
@@ -274,7 +280,10 @@ def get_user_schema():
         violations = analyze_peewee_security(Path("test.py"), code)
         meta_violations = [v for v in violations if v.rule_id == "PEE012"]
         assert len(meta_violations) >= 1
-        assert any("metadata" in v.message.lower() or "internal" in v.message.lower() for v in meta_violations)
+        assert any(
+            "metadata" in v.message.lower() or "internal" in v.message.lower()
+            for v in meta_violations
+        )
 
     def test_detect_dirty_fields_exposure(self):
         """Detect dirty_fields exposure."""
@@ -353,7 +362,7 @@ from peewee import *
 
 class User(Model):
     username = CharField()
-    
+
     class Meta:
         database = db
 """

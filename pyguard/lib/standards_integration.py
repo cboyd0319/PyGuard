@@ -774,7 +774,9 @@ class MitreATTACKMapper:
             "threat_exposure": (
                 "HIGH"
                 if len(techniques_enabled) > 5
-                else "MEDIUM" if len(techniques_enabled) > 2 else "LOW"
+                else "MEDIUM"
+                if len(techniques_enabled) > 2
+                else "LOW"
             ),
             "techniques_enabled": len(techniques_enabled),
             "attack_surface": techniques_enabled,

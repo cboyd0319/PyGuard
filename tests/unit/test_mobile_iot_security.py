@@ -14,9 +14,10 @@ Total: 20 security checks × 38 tests = 760+ tests minimum
 """
 
 from pathlib import Path
+
 from pyguard.lib.mobile_iot_security import (
-    analyze_mobile_iot_security,
     MOBILE_IOT_RULES,
+    analyze_mobile_iot_security,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -594,13 +595,13 @@ class TestRuleMetadata:
     def test_all_rules_registered(self):
         """Verify all 20 rules are registered."""
         assert len(MOBILE_IOT_RULES) == 20
-        
+
         # Check Mobile rules (MOBILE001-MOBILE010)
-        mobile_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith('MOBILE')]
+        mobile_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith("MOBILE")]
         assert len(mobile_rules) == 10
-        
+
         # Check IoT rules (IOT001-IOT010)
-        iot_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith('IOT')]
+        iot_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith("IOT")]
         assert len(iot_rules) == 10
 
     def test_rules_have_required_fields(self):
@@ -615,28 +616,28 @@ class TestRuleMetadata:
 
     def test_mobile_rules_have_owasp_mobile_category(self):
         """Verify mobile rules have OWASP Mobile category."""
-        mobile_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith('MOBILE')]
+        mobile_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith("MOBILE")]
         for rule in mobile_rules:
             assert rule.owasp_mapping is not None
-            assert rule.owasp_mapping.startswith('M')
+            assert rule.owasp_mapping.startswith("M")
 
     def test_iot_rules_have_owasp_iot_category(self):
         """Verify IoT rules have OWASP IoT category."""
-        iot_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith('IOT')]
+        iot_rules = [r for r in MOBILE_IOT_RULES if r.rule_id.startswith("IOT")]
         for rule in iot_rules:
             assert rule.owasp_mapping is not None
-            assert rule.owasp_mapping.startswith('I')
+            assert rule.owasp_mapping.startswith("I")
 
     def test_critical_severity_rules(self):
         """Verify critical severity rules."""
         critical_rules = [r for r in MOBILE_IOT_RULES if r.severity == RuleSeverity.CRITICAL]
         assert len(critical_rules) >= 3  # MOBILE004, IOT001, IOT003, IOT010
-        
+
         # Check specific critical rules
         critical_ids = [r.rule_id for r in critical_rules]
-        assert 'MOBILE004' in critical_ids  # Insecure Authentication
-        assert 'IOT001' in critical_ids  # Hardcoded Device Credentials
-        assert 'IOT003' in critical_ids  # Insecure Firmware Update
+        assert "MOBILE004" in critical_ids  # Insecure Authentication
+        assert "IOT001" in critical_ids  # Hardcoded Device Credentials
+        assert "IOT003" in critical_ids  # Insecure Firmware Update
 
 
 class TestPerformance:
@@ -647,21 +648,21 @@ class TestPerformance:
         code = "import os\npassword = os.getenv('PASSWORD')\n" * 50
         benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <5ms
-        assert benchmark.stats.stats.mean < 0.005 or True  # Allow flexibility
+        assert True  # Allow flexibility
 
     def test_performance_medium_file(self, benchmark):
         """Benchmark on medium file (1000 lines)."""
         code = "import os\napi_key = os.getenv('API_KEY')\n" * 500
         benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <50ms
-        assert benchmark.stats.stats.mean < 0.050 or True  # Allow flexibility
+        assert True  # Allow flexibility
 
     def test_performance_large_file(self, benchmark):
         """Benchmark on large file (10000 lines)."""
         code = "import os\ndevice_id = os.getenv('DEVICE_ID')\n" * 5000
         benchmark(lambda: analyze_mobile_iot_security(Path("test.py"), code))
         # Should complete in <500ms
-        assert benchmark.stats.stats.mean < 0.500 or True  # Allow flexibility
+        assert True  # Allow flexibility
 
 
 class TestEdgeCases:
@@ -698,7 +699,7 @@ actual_password = os.getenv('PASSWORD')
 """
         violations = analyze_mobile_iot_security(Path("test.py"), code)
         # Should not flag commented code
-        mobile_violations = [v for v in violations if 'MOBILE' in v.rule_id]
+        mobile_violations = [v for v in violations if "MOBILE" in v.rule_id]
         assert len(mobile_violations) == 0
 
 
@@ -711,7 +712,7 @@ class TestIntegration:
 class MobileConfig:
     API_URL = 'https://api.production.example.com'
     DEBUG = False
-    
+
     def __init__(self):
         self.api_key = os.getenv('API_KEY')
 """
@@ -728,7 +729,7 @@ class IoTDevice:
     def __init__(self):
         self.device_id = os.getenv('DEVICE_ID')
         self.mqtt_client = mqtt.Client()
-    
+
     def connect(self):
         self.mqtt_client.username_pw_set('device', 'password123')
         self.mqtt_client.connect('broker.example.com', 1883)

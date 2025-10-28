@@ -4,7 +4,6 @@ Tests for SARIF reporter module.
 
 import json
 
-
 from pyguard.lib.sarif_reporter import SARIFReporter
 
 
@@ -284,25 +283,33 @@ class TestSARIFReporter:
         assert output_path.exists()
 
         # Verify file content is valid JSON
-        with open(output_path, "r", encoding="utf-8") as f:
+        with open(output_path, encoding="utf-8") as f:
             loaded_report = json.load(f)
             assert loaded_report["version"] == "2.1.0"
 
     def test_save_report_handles_exceptions(self, tmp_path, monkeypatch):
         """Test save_report handles exceptions gracefully."""
         reporter = SARIFReporter()
-        issues = [{"severity": "HIGH", "category": "Test", "message": "Test", "file": "test.py", "line": 1}]
+        issues = [
+            {
+                "severity": "HIGH",
+                "category": "Test",
+                "message": "Test",
+                "file": "test.py",
+                "line": 1,
+            }
+        ]
         report = reporter.generate_report(issues)
-        
+
         # Mock open to raise an exception
         def mock_open(*args, **kwargs):
-            raise IOError("Disk full")
-        
+            raise OSError("Disk full")
+
         monkeypatch.setattr("builtins.open", mock_open)
-        
+
         output_path = tmp_path / "test-report.sarif"
         result = reporter.save_report(report, output_path)
-        
+
         # Should return False on exception
         assert result is False
 

@@ -375,7 +375,7 @@ def get_items() -> List[str]:
         test_file.write_text(code)
 
         manager = ImportManager()
-        success, fixes = manager.fix_imports(test_file)
+        success, _fixes = manager.fix_imports(test_file)
 
         assert success is True
 
@@ -396,7 +396,7 @@ def main():
         test_file.write_text(code)
 
         manager = ImportManager()
-        success, fixes = manager.fix_imports(test_file)
+        success, _fixes = manager.fix_imports(test_file)
 
         assert success is True
 
@@ -417,7 +417,7 @@ def process_data():
         test_file.write_text(code)
 
         manager = ImportManager()
-        success, fixes = manager.fix_imports(test_file)
+        success, _fixes = manager.fix_imports(test_file)
 
         assert success is True
 

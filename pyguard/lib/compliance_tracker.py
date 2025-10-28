@@ -43,7 +43,8 @@ class ComplianceTracker:
                     "--only-matching",
                     path,
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )
@@ -68,7 +69,8 @@ class ComplianceTracker:
                     "--only-matching",
                     path,
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=60,
             )

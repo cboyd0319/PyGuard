@@ -8,15 +8,14 @@ Following PyTest Architect Agent best practices:
 - Deterministic tests with frozen time
 """
 
-import time
 from pathlib import Path
+import time
 from unittest.mock import Mock, patch
 
 import pytest
 from watchdog.events import FileSystemEvent
 
 from pyguard.lib.watch import PyGuardWatcher, WatchMode, run_watch_mode
-
 
 # ============================================================================
 # PyGuardWatcher Tests
@@ -63,7 +62,7 @@ class TestPyGuardWatcherShouldProcess:
     """Test file filtering logic."""
 
     @pytest.mark.parametrize(
-        "path_str,expected",
+        ("path_str", "expected"),
         [
             ("test.py", True),
             ("/tmp/module.py", True),
@@ -184,7 +183,7 @@ class TestPyGuardWatcherOnModified:
 
         # Act
         watcher.on_modified(event)
-        
+
         # Wait briefly for background thread processing with timeout
         max_wait = 0.5  # Maximum 500ms wait
         interval = 0.05
@@ -281,7 +280,7 @@ class TestPyGuardWatcherOnModified:
 
         # Act
         watcher.on_modified(event)
-        
+
         # Wait for processing to complete with timeout
         max_wait = 0.5
         interval = 0.05
@@ -362,15 +361,17 @@ class TestWatchModeStartStop:
         watcher = WatchMode([test_file], callback)
 
         # Act
-        with patch.object(watcher.observer, "start"), \
-             patch.object(watcher.observer, "schedule") as mock_schedule:
+        with (
+            patch.object(watcher.observer, "start"),
+            patch.object(watcher.observer, "schedule") as mock_schedule,
+        ):
             watcher.observer.start = Mock()
             watcher.observer.join = Mock()
             watcher.observer.schedule = mock_schedule
-            
+
             # Start in separate thread to avoid infinite loop
             import threading
-            
+
             def run_with_timeout():
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
@@ -401,12 +402,15 @@ class TestWatchModeStartStop:
         watcher = WatchMode([nonexistent], callback)
 
         # Act
-        with patch.object(watcher.observer, "start"), \
-             patch.object(watcher.observer, "schedule") as mock_schedule:
+        with (
+            patch.object(watcher.observer, "start"),
+            patch.object(watcher.observer, "schedule") as mock_schedule,
+        ):
             watcher.observer.start = Mock()
             watcher.observer.join = Mock()
-            
+
             import threading
+
             def run_with_timeout():
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
@@ -432,12 +436,15 @@ class TestWatchModeStartStop:
         watcher = WatchMode([tmp_path], callback)
 
         # Act
-        with patch.object(watcher.observer, "start"), \
-             patch.object(watcher.observer, "schedule") as mock_schedule:
+        with (
+            patch.object(watcher.observer, "start"),
+            patch.object(watcher.observer, "schedule") as mock_schedule,
+        ):
             watcher.observer.start = Mock()
             watcher.observer.join = Mock()
-            
+
             import threading
+
             def run_with_timeout():
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
