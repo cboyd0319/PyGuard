@@ -28,7 +28,7 @@ try:
 except ImportError:
     PYTEST_AVAILABLE = False
 
-from pyguard.lib.notebook_security import NotebookSecurityAnalyzer, scan_notebook
+from pyguard.lib.notebook_security import NotebookSecurityAnalyzer
 
 
 def create_test_notebook(num_cells: int, cell_complexity: str = "simple") -> Path:
@@ -49,25 +49,25 @@ def create_test_notebook(num_cells: int, cell_complexity: str = "simple") -> Pat
             source = [
                 f"# Cell {i}\n",
                 f"x = {i}\n",
-                f"print(x)\n"
+                "print(x)\n"
             ]
         elif cell_complexity == "medium":
             source = [
                 f"# Cell {i} - Medium complexity\n",
-                f"import numpy as np\n",
-                f"data = np.random.rand(100)\n",
-                f"result = data.mean()\n",
-                f"print(f'Result: {{result}}')\n"
+                "import numpy as np\n",
+                "data = np.random.rand(100)\n",
+                "result = data.mean()\n",
+                "print(f'Result: {result}')\n"
             ]
         else:  # complex
             source = [
                 f"# Cell {i} - Complex\n",
-                f"import torch\n",
-                f"import pandas as pd\n",
-                f"model = torch.nn.Linear(10, 1)\n",
-                f"df = pd.DataFrame(np.random.rand(1000, 10))\n",
-                f"output = model(torch.tensor(df.values, dtype=torch.float32))\n",
-                f"print(f'Output shape: {{output.shape}}')\n"
+                "import torch\n",
+                "import pandas as pd\n",
+                "model = torch.nn.Linear(10, 1)\n",
+                "df = pd.DataFrame(np.random.rand(1000, 10))\n",
+                "output = model(torch.tensor(df.values, dtype=torch.float32))\n",
+                "print(f'Output shape: {output.shape}')\n"
             ]
         
         cells.append({
@@ -162,8 +162,8 @@ def run_benchmark_suite() -> List[Dict[str, float]]:
     print("=" * 70)
     print("PyGuard Jupyter Notebook Security - Performance Benchmarks")
     print("=" * 70)
-    print(f"Target: <100ms for notebooks with <10 cells")
-    print(f"Target: Linear scaling for larger notebooks")
+    print("Target: <100ms for notebooks with <10 cells")
+    print("Target: Linear scaling for larger notebooks")
     print("=" * 70)
     print()
     
@@ -200,7 +200,7 @@ def run_benchmark_suite() -> List[Dict[str, float]]:
     
     # Check linearity
     if len(results) >= 3:
-        print(f"\nScaling characteristics:")
+        print("\nScaling characteristics:")
         for i, result in enumerate(results):
             print(f"  {result['num_cells']:3d} cells: {result['elapsed_ms']:7.2f}ms "
                   f"({result['ms_per_cell']:.2f}ms/cell)")
@@ -218,7 +218,7 @@ if PYTEST_AVAILABLE:
         notebook_path = create_test_notebook(5, "simple")
         try:
             analyzer = NotebookSecurityAnalyzer()
-            result = benchmark(analyzer.analyze_notebook, notebook_path)
+            benchmark(analyzer.analyze_notebook, notebook_path)
             # Target: <100ms for small notebooks
             assert benchmark.stats.mean < 0.1, "Analysis took too long for small notebook"
         finally:
@@ -230,7 +230,7 @@ if PYTEST_AVAILABLE:
         notebook_path = create_test_notebook(50, "medium")
         try:
             analyzer = NotebookSecurityAnalyzer()
-            result = benchmark(analyzer.analyze_notebook, notebook_path)
+            benchmark(analyzer.analyze_notebook, notebook_path)
             # Should complete in reasonable time
             assert benchmark.stats.mean < 1.0, "Analysis took too long for medium notebook"
         finally:
@@ -242,7 +242,7 @@ if PYTEST_AVAILABLE:
         notebook_path = create_test_notebook(100, "medium")
         try:
             analyzer = NotebookSecurityAnalyzer()
-            result = benchmark(analyzer.analyze_notebook, notebook_path)
+            benchmark(analyzer.analyze_notebook, notebook_path)
             # Should scale linearly
             assert benchmark.stats.mean < 5.0, "Analysis took too long for large notebook"
         finally:

@@ -9,7 +9,6 @@ Demonstrates:
 - Custom Rules Engine
 """
 
-from pathlib import Path
 
 
 def demo_ci_integration():
@@ -120,7 +119,7 @@ def demo_dependency_analyzer():
 
     # Get statistics
     stats = analyzer.get_dependency_stats()
-    print(f"\n[OK] Dependency statistics:")
+    print("\n[OK] Dependency statistics:")
     print(f"   Total modules: {stats['total_modules']}")
     print(f"   Total dependencies: {stats['total_dependencies']}")
     print(f"   Average dependencies per module: {stats['average_dependencies_per_module']}")
@@ -149,7 +148,7 @@ def demo_dependency_analyzer():
     diagram = analyzer.generate_mermaid_diagram()
     lines = diagram.split("\n")
     print(f"   Generated diagram with {len(lines)} nodes/edges")
-    print(f"\n   Preview (first 5 lines):")
+    print("\n   Preview (first 5 lines):")
     for line in lines[:5]:
         print(f"      {line}")
 

@@ -92,25 +92,25 @@ def demo_ai_explanations():
 
     if explanation:
         print(f" {explanation.vulnerability_name} ({explanation.severity})")
-        print(f"\n🔍 What is it?")
+        print("\n🔍 What is it?")
         print(f"   {explanation.description[:150]}...")
 
-        print(f"\n[WARN]  Why is it dangerous?")
+        print("\n[WARN]  Why is it dangerous?")
         print(f"   {explanation.why_dangerous[:150]}...")
 
-        print(f"\n🛠️  How to fix:")
+        print("\n🛠️  How to fix:")
         for line in explanation.how_to_fix.split("\n")[:3]:
             print(f"   {line}")
 
-        print(f"\n💻 Vulnerable Code:")
+        print("\n💻 Vulnerable Code:")
         for line in explanation.example_vulnerable.split("\n")[:3]:
             print(f"   {line}")
 
-        print(f"\n[OK] Secure Code:")
+        print("\n[OK] Secure Code:")
         for line in explanation.example_secure.split("\n")[:3]:
             print(f"   {line}")
 
-        print(f"\n📖 Learn more:")
+        print("\n📖 Learn more:")
         for ref in explanation.references[:2]:
             print(f"   • {ref}")
 
@@ -123,24 +123,24 @@ def demo_ai_explanations():
 
     rationale = explainer.explain_fix(original, fixed, "SQL_INJECTION")
 
-    print(f"🔴 Original Code:")
+    print("🔴 Original Code:")
     print(f"   {original}")
 
-    print(f"\n[OK] Fixed Code:")
+    print("\n[OK] Fixed Code:")
     for line in fixed.split("\n"):
         print(f"   {line}")
 
-    print(f"\n💡 Why this fix?")
+    print("\n💡 Why this fix?")
     print(f"   {rationale.why_this_fix}")
 
-    print(f"\n🔄 Alternatives:")
+    print("\n🔄 Alternatives:")
     for alt in rationale.alternatives[:2]:
         print(f"   • {alt}")
 
-    print(f"\n🛡️  Security Impact:")
+    print("\n🛡️  Security Impact:")
     print(f"   {rationale.security_impact}")
 
-    print(f"\n⚡ Performance Impact:")
+    print("\n⚡ Performance Impact:")
     print(f"   {rationale.performance_impact}")
 
 
@@ -157,19 +157,19 @@ def demo_educational_mode():
 
     print(f" Risk Level: {content['risk_level']}\n")
 
-    print(f" Learning Objectives:")
+    print(" Learning Objectives:")
     for obj in content["learning_objectives"]:
         print(f"   • {obj}")
 
-    print(f"\n💻 Vulnerable Pattern:")
+    print("\n💻 Vulnerable Pattern:")
     for line in content["vulnerable_pattern"].split("\n")[:4]:
         print(f"   {line}")
 
-    print(f"\n[OK] Secure Pattern:")
+    print("\n[OK] Secure Pattern:")
     for line in content["secure_pattern"].split("\n")[:4]:
         print(f"   {line}")
 
-    print(f"\n❓ Quiz Question:")
+    print("\n❓ Quiz Question:")
     quiz = content["quiz_question"]
     print(f"   {quiz['question']}\n")
 
@@ -190,10 +190,10 @@ def demo_beginner_vs_advanced():
 
     if beginner_exp:
         print(f" {beginner_exp.vulnerability_name}")
-        print(f"\n🔍 Description (Simplified):")
+        print("\n🔍 Description (Simplified):")
         print(f"   {beginner_exp.description[:150]}...")
 
-        print(f"\n🛠️  How to fix:")
+        print("\n🛠️  How to fix:")
         for line in beginner_exp.how_to_fix.split("\n")[:2]:
             print(f"   {line}")
 
@@ -204,10 +204,10 @@ def demo_beginner_vs_advanced():
 
     if advanced_exp:
         print(f" {advanced_exp.vulnerability_name}")
-        print(f"\n🔍 How to exploit:")
+        print("\n🔍 How to exploit:")
         print(f"   {advanced_exp.how_to_exploit[:150]}...")
 
-        print(f"\n🏷️  Technical IDs:")
+        print("\n🏷️  Technical IDs:")
         print(f"   • CWE: {advanced_exp.cwe_id}")
         print(f"   • OWASP: {advanced_exp.owasp_id}")
 
