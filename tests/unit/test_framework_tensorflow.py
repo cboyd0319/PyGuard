@@ -474,7 +474,7 @@ class TestTensorFlowRuleMetadata:
         critical_rules = [r for r in TENSORFLOW_RULES if r.severity == RuleSeverity.CRITICAL]
         assert len(critical_rules) >= 1
         # TF001 and TF005 should be critical
-        critical_ids = {r.id for r in critical_rules}
+        critical_ids = {r.rule_id for r in critical_rules}
         assert "TF001" in critical_ids or "TF005" in critical_ids
 
 
