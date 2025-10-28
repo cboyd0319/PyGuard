@@ -8,9 +8,9 @@ References:
 - Google SRE | https://sre.google | Medium | Observability and monitoring patterns
 """
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-import json
 from pathlib import Path
 from typing import Any
 

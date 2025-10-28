@@ -103,11 +103,11 @@ This implementation targets:
 
 import ast
 import hashlib
-from dataclasses import dataclass
 import json
 import math
-from pathlib import Path
 import re
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger

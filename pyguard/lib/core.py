@@ -4,14 +4,14 @@ Core utilities for PyGuard.
 Provides logging, backup management, diff generation, and file operations.
 """
 
-from datetime import UTC, datetime
 import difflib
 import json
 import logging
-from pathlib import Path
 import shutil
-from typing import Any
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 
 class PyGuardLogger:

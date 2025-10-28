@@ -5,8 +5,8 @@ Integrates with black, isort, autopep8 for automated formatting.
 """
 
 import re
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger

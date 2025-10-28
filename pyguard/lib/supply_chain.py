@@ -12,11 +12,11 @@ References:
 - CycloneDX | https://cyclonedx.org/ | High | SBOM standard
 """
 
+import json
+import re
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
-import json
 from pathlib import Path
-import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

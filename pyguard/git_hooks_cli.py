@@ -1,8 +1,8 @@
 """CLI for PyGuard git hooks management."""
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from pyguard import __version__
 from pyguard.lib.core import PyGuardLogger

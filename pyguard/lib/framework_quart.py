@@ -393,7 +393,9 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         # Check for render_template_string with user input
         is_render_template_string = False
 
-        if (isinstance(node.func, ast.Attribute) and node.func.attr == "render_template_string") or (isinstance(node.func, ast.Name) and node.func.id == "render_template_string"):
+        if (
+            isinstance(node.func, ast.Attribute) and node.func.attr == "render_template_string"
+        ) or (isinstance(node.func, ast.Name) and node.func.id == "render_template_string"):
             is_render_template_string = True
 
         if is_render_template_string:

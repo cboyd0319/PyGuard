@@ -32,8 +32,8 @@ References:
 """
 
 import ast
-from pathlib import Path
 import re
+from pathlib import Path
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
@@ -416,7 +416,12 @@ def analyze_requirements_file(file_path: Path) -> list[RuleViolation]:
                 )
 
             # DEP_CONF006: Check for missing version pinning
-            if "==" not in stripped_line and ">=" not in stripped_line and "<=" not in stripped_line and "~=" not in stripped_line:
+            if (
+                "==" not in stripped_line
+                and ">=" not in stripped_line
+                and "<=" not in stripped_line
+                and "~=" not in stripped_line
+            ):
                 # Extract package name
                 package = re.split(r"[<>=!]", stripped_line)[0].strip()
                 if package and not stripped_line.startswith("-"):  # Skip pip flags

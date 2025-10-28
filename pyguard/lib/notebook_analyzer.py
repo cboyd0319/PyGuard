@@ -29,10 +29,12 @@ from pyguard.lib.notebook_security import (
     NotebookCell,
     NotebookFixer,
     NotebookIssue,
+)
+from pyguard.lib.notebook_security import NotebookSecurityAnalyzer as _BaseNotebookSecurityAnalyzer
+from pyguard.lib.notebook_security import (
     generate_notebook_sarif,
     scan_notebook,
 )
-from pyguard.lib.notebook_security import NotebookSecurityAnalyzer as _BaseNotebookSecurityAnalyzer
 
 # Type aliases for backward compatibility
 NotebookFinding = NotebookIssue
