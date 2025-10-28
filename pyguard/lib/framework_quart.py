@@ -58,6 +58,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         self.has_websocket_import = False
         self.route_functions: Set[str] = set()
         self.websocket_routes: Set[str] = set()
+        self.current_function_has_secure_filename = False
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Quart imports."""
@@ -83,6 +84,19 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         """Common logic for analyzing both sync and async functions."""
         if not self.has_quart_import:
             return
+
+        # Reset function-level tracking
+        self.current_function_has_secure_filename = False
+        
+        # Check if secure_filename is used anywhere in this function
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if isinstance(child.func, ast.Name) and "secure" in child.func.id.lower():
+                    self.current_function_has_secure_filename = True
+                    break
+                elif isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower():
+                    self.current_function_has_secure_filename = True
+                    break
 
         # Check decorators to identify routes
         is_route = False
@@ -159,15 +173,20 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                             )
                         )
 
-    def _check_websocket_auth(self, node: ast.FunctionDef) -> None:
+    def _check_websocket_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for WebSocket authentication issues (QUART002)."""
         has_auth_check = False
 
         # Look for authentication checks in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
+                # Check for function calls with auth-related names
                 if isinstance(child.func, ast.Attribute):
                     if child.func.attr in ("check_auth", "verify_token", "authenticate"):
+                        has_auth_check = True
+                        break
+                elif isinstance(child.func, ast.Name):
+                    if any(keyword in child.func.id.lower() for keyword in ["auth", "verify", "validate"]):
                         has_auth_check = True
                         break
             elif isinstance(child, ast.If):
@@ -176,6 +195,13 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     if "auth" in child.test.attr.lower() or "token" in child.test.attr.lower():
                         has_auth_check = True
                         break
+                # Also check for function calls in conditions
+                elif isinstance(child.test, ast.UnaryOp) and isinstance(child.test.op, ast.Not):
+                    if isinstance(child.test.operand, ast.Call):
+                        if isinstance(child.test.operand.func, ast.Name):
+                            if any(keyword in child.test.operand.func.id.lower() for keyword in ["verify", "auth", "validate"]):
+                                has_auth_check = True
+                                break
 
         if not has_auth_check:
             self.violations.append(
@@ -267,13 +293,22 @@ class QuartSecurityVisitor(ast.NodeVisitor):
     def _check_file_upload_security(self, node: ast.Call) -> None:
         """Check for file upload handling issues (QUART006)."""
         # Check if file save has path validation
-        has_validation = False
+        # Check if secure_filename was used in the current function
+        if self.current_function_has_secure_filename:
+            return  # Function uses secure_filename, so it's safe
 
+        # Otherwise, check direct usage in the save() call
+        has_validation = False
         for arg in node.args:
             if isinstance(arg, ast.Call):
                 if isinstance(arg.func, ast.Attribute):
                     if arg.func.attr in ("secure_filename", "sanitize"):
                         has_validation = True
+                        break
+                elif isinstance(arg.func, ast.Name):
+                    if "secure" in arg.func.id.lower() or "sanitize" in arg.func.id.lower():
+                        has_validation = True
+                        break
 
         if not has_validation:
             self.violations.append(
@@ -365,7 +400,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_csrf_protection(self, node: ast.FunctionDef) -> None:
+    def _check_csrf_protection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for CSRF protection gaps (QUART011)."""
         # Check if POST/PUT/DELETE routes have CSRF protection
         has_csrf_check = False
@@ -373,10 +408,20 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         # Look for CSRF token validation in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
+                # Check for csrf function calls (validate_csrf_token, check_csrf, etc.)
                 if isinstance(child.func, ast.Attribute):
                     if "csrf" in child.func.attr.lower():
                         has_csrf_check = True
                         break
+                elif isinstance(child.func, ast.Name):
+                    if "csrf" in child.func.id.lower():
+                        has_csrf_check = True
+                        break
+            # Also check for csrf_token variable access/validation
+            elif isinstance(child, ast.Name):
+                if "csrf" in child.id.lower():
+                    has_csrf_check = True
+                    break
 
         # Check if route uses unsafe HTTP methods
         for decorator in node.decorator_list:

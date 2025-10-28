@@ -92,6 +92,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         is_route = False
         is_websocket = False
         is_middleware = False
+        is_listener = False
         route_methods = []
 
         for decorator in node.decorator_list:
@@ -108,6 +109,16 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                 elif method == "middleware":
                     is_middleware = True
                     self.middleware_functions.add(node.name)
+                elif method in ("listener", "register_listener"):
+                    is_listener = True
+            # Also check for decorator without call (e.g., @app.middleware)
+            elif isinstance(decorator, ast.Attribute):
+                method = decorator.attr
+                if method == "middleware":
+                    is_middleware = True
+                    self.middleware_functions.add(node.name)
+                elif method in ("listener", "register_listener"):
+                    is_listener = True
 
         # Check for security issues in routes
         if is_route:
@@ -127,6 +138,10 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         # Check for async view injection
         if node.decorator_list and is_route:
             self._check_async_view_injection(node)
+
+        # Check for listener function security
+        if is_listener:
+            self._check_listener_function_body(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Analyze function calls for security issues."""
@@ -265,11 +280,24 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                 # Check if there's a size limit
                 has_size_limit = False
                 parent_func = node
+                # Look for comparisons involving len(data) or data length checks
                 for stmt in ast.walk(parent_func):
                     if isinstance(stmt, ast.Compare):
+                        # Check if comparing len() call or data size
+                        left_is_len = isinstance(stmt.left, ast.Call) and isinstance(stmt.left.func, ast.Name) and stmt.left.func.id == "len"
+                        # Check if any comparator mentions size-related variables
                         for comp in stmt.comparators:
-                            if isinstance(comp, ast.Constant) and isinstance(comp.value, int):
+                            comp_is_size = False
+                            if isinstance(comp, ast.Name) and any(keyword in comp.id.lower() for keyword in ["size", "limit", "max"]):
+                                comp_is_size = True
+                            elif isinstance(comp, ast.Constant) and isinstance(comp.value, int) and comp.value > 1000:
+                                comp_is_size = True
+                            
+                            if left_is_len and comp_is_size:
                                 has_size_limit = True
+                                break
+                        if has_size_limit:
+                            break
 
                 if not has_size_limit:
                     self.violations.append(
@@ -332,7 +360,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_middleware_order(self, node: ast.FunctionDef) -> None:
+    def _check_middleware_order(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for middleware order vulnerabilities (SANIC006)."""
         # Check if security middleware is defined but not applied first
         middleware_name = node.name.lower()
@@ -345,6 +373,11 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     for keyword in decorator.keywords:
                         if keyword.arg == "priority":
                             has_priority = True
+                            break
+                # Also check @app.middleware decorator without call (no priority)
+                # This means priority is missing
+                # Note: If it's ast.Attribute, it's @app.middleware without ()
+                # which means no priority specified
 
             if not has_priority:
                 self.violations.append(
@@ -360,7 +393,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
-    def _check_async_view_injection(self, node: ast.FunctionDef) -> None:
+    def _check_async_view_injection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for async view injection vulnerabilities (SANIC007)."""
         # Look for user input being used in async operations
         if not node.args.args:
@@ -374,29 +407,46 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         # Look for async operations with user input
         for child in ast.walk(node):
             if isinstance(child, ast.Await):
-                # Check if await is using request data
-                await_code = ast.get_source_segment(self.code, child)
-                if await_code and ("request." in await_code or "json" in await_code):
-                    # Check if there's validation
-                    has_validation = False
-                    for stmt in ast.walk(node):
-                        if isinstance(stmt, ast.If):
-                            has_validation = True
+                # Check if the await contains a call that uses request data
+                if isinstance(child.value, ast.Call):
+                    # Check the arguments to see if any use request.json or request.args
+                    for arg in child.value.args:
+                        uses_request_data = False
+                        if isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name):
+                            if arg.value.id == "request" and arg.attr in ("json", "args", "form", "body"):
+                                uses_request_data = True
+                        elif isinstance(arg, ast.Name):
+                            # Check if this variable was assigned from request data
+                            for stmt in ast.walk(node):
+                                if isinstance(stmt, ast.Assign):
+                                    for target in stmt.targets:
+                                        if isinstance(target, ast.Name) and target.id == arg.id:
+                                            if isinstance(stmt.value, ast.Attribute):
+                                                if isinstance(stmt.value.value, ast.Name) and stmt.value.value.id == "request":
+                                                    uses_request_data = True
+                        
+                        if uses_request_data:
+                            # Check if there's validation
+                            has_validation = False
+                            for stmt in ast.walk(node):
+                                if isinstance(stmt, ast.If):
+                                    has_validation = True
+                                    break
 
-                    if not has_validation:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="SANIC007",
-                                category=RuleCategory.SECURITY,
-                                message="Async operation using unvalidated request data",
-                                severity=RuleSeverity.MEDIUM,
-                                line_number=child.lineno,
-                                column=child.col_offset,
-                                file_path=self.file_path,
-                                code_snippet=self._get_code_snippet(child.lineno),
-                            )
-                        )
-                        break
+                            if not has_validation:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="SANIC007",
+                                        category=RuleCategory.SECURITY,
+                                        message="Async operation using unvalidated request data",
+                                        severity=RuleSeverity.MEDIUM,
+                                        line_number=child.lineno,
+                                        column=child.col_offset,
+                                        file_path=self.file_path,
+                                        code_snippet=self._get_code_snippet(child.lineno),
+                                    )
+                                )
+                                return  # Only report once per function
 
     def _check_cookie_security(self, node: ast.Call) -> None:
         """Check for insecure cookie handling (SANIC008)."""
@@ -440,25 +490,25 @@ class SanicSecurityVisitor(ast.NodeVisitor):
     def _check_static_file_exposure(self, node: ast.Call) -> None:
         """Check for static file exposure vulnerabilities (SANIC009)."""
         # Check if static files are exposed from sensitive directories
-        if node.args:
-            static_path_arg = node.args[0] if len(node.args) > 0 else None
-            if static_path_arg:
-                path_str = ast.get_source_segment(self.code, static_path_arg)
-                if path_str:
-                    sensitive_paths = [".env", "config", "secrets", ".git", "__pycache__", "node_modules"]
-                    if any(sensitive in path_str.lower() for sensitive in sensitive_paths):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="SANIC009",
-                                category=RuleCategory.SECURITY,
-                                message="Static file handler exposes sensitive directory",
-                                severity=RuleSeverity.HIGH,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                file_path=self.file_path,
-                                code_snippet=self._get_code_snippet(node.lineno),
-                            )
+        # app.static(uri, file_or_directory) - second argument is the path
+        if len(node.args) >= 2:
+            static_path_arg = node.args[1]
+            path_str = ast.get_source_segment(self.code, static_path_arg)
+            if path_str:
+                sensitive_paths = [".env", "config", "secrets", ".git", "__pycache__", "node_modules"]
+                if any(sensitive in path_str.lower() for sensitive in sensitive_paths):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="SANIC009",
+                            category=RuleCategory.SECURITY,
+                            message="Static file handler exposes sensitive directory",
+                            severity=RuleSeverity.HIGH,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            file_path=self.file_path,
+                            code_snippet=self._get_code_snippet(node.lineno),
                         )
+                    )
 
     def _check_background_task_security(self, node: ast.Call) -> None:
         """Check for background task security issues (SANIC010)."""
@@ -527,9 +577,52 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
+    def _check_listener_function_body(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        """Check listener function body for sensitive data exposure (SANIC013)."""
+        # Check for sensitive variable names in the function body
+        sensitive_keywords = ["password", "secret", "key", "token", "api_key", "private_key"]
+        
+        for child in ast.walk(node):
+            # Check variable assignments
+            if isinstance(child, ast.Name):
+                var_name = child.id.lower()
+                if any(keyword in var_name for keyword in sensitive_keywords):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="SANIC013",
+                            category=RuleCategory.SECURITY,
+                            message="Listener function may expose sensitive data",
+                            severity=RuleSeverity.MEDIUM,
+                            line_number=child.lineno,
+                            column=child.col_offset,
+                            file_path=self.file_path,
+                            code_snippet=self._get_code_snippet(child.lineno),
+                        )
+                    )
+                    return  # Only report once per function
+            
+            # Check string literals that look like secrets
+            if isinstance(child, ast.Constant) and isinstance(child.value, str):
+                value = child.value.lower()
+                if any(keyword in value for keyword in sensitive_keywords):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="SANIC013",
+                            category=RuleCategory.SECURITY,
+                            message="Listener function may expose sensitive data",
+                            severity=RuleSeverity.MEDIUM,
+                            line_number=child.lineno,
+                            column=child.col_offset,
+                            file_path=self.file_path,
+                            code_snippet=self._get_code_snippet(child.lineno),
+                        )
+                    )
+                    return  # Only report once per function
+
     def _check_listener_security(self, node: ast.Call) -> None:
         """Check for listener function risks (SANIC013)."""
-        # Listeners can be used to perform setup tasks, but can be risky
+        # Note: This method now primarily handles non-decorator listener calls
+        # Decorator-based listeners are handled by _check_listener_function_body
         if node.args:
             # listener_type = None  # Reserved for future use
             for keyword in node.keywords:
