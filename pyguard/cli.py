@@ -5,17 +5,10 @@ Enhanced with world-class UI using Rich library for beautiful, beginner-friendly
 """
 
 import argparse
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
-
-# Display constants
-MAX_ITEMS_TO_DISPLAY = 10
-MAX_UNTESTED_MODULES_TO_DISPLAY = 20
-
-if TYPE_CHECKING:
-    from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
 
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.compliance_tracker import ComplianceTracker
@@ -29,6 +22,13 @@ from pyguard.lib.secret_scanner import SecretScanner
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.test_coverage import TestCoverageAnalyzer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
+
+if TYPE_CHECKING:
+    from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
+
+# Display constants
+MAX_ITEMS_TO_DISPLAY = 10
+MAX_UNTESTED_MODULES_TO_DISPLAY = 20
 
 
 class PyGuardCLI:

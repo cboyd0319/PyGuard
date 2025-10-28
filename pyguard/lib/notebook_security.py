@@ -600,7 +600,7 @@ class NotebookSecurityAnalyzer:
             with open(notebook_path, encoding="utf-8") as f:
                 notebook_data = json.load(f)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid notebook JSON: {e}")
+            raise ValueError(f"Invalid notebook JSON: {e}") from e
 
         # Parse notebook cells
         cells = self._parse_cells(notebook_data)
