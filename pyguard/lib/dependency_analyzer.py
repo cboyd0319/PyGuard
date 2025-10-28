@@ -9,7 +9,7 @@ import ast
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 
 @dataclass
@@ -205,7 +205,7 @@ class DependencyGraphAnalyzer:
 
         return self.issues
 
-    def generate_graph_data(self) -> Dict[str, any]:
+    def generate_graph_data(self) -> Dict[str, Any]:
         """
         Generate data for dependency graph visualization.
 
@@ -248,7 +248,7 @@ class DependencyGraphAnalyzer:
 
         return "\n".join(lines)
 
-    def get_dependency_stats(self) -> Dict[str, any]:
+    def get_dependency_stats(self) -> Dict[str, Any]:
         """
         Get statistics about dependencies.
 

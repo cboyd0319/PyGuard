@@ -8226,7 +8226,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
     # Phase 2.2: Model Training Infrastructure (35 checks)
     # Phase 2.2.1: Distributed Training Security (15 checks - AIML191-AIML205)
     
-    def _check_parameter_server_vulnerabilities(self, node: ast.Call) -> None:
+    def _check_parameter_server_security(self, node: ast.Call) -> None:
         """AIML191: Detect parameter server vulnerabilities."""
         if not self.has_ml_framework:
             return
@@ -14513,7 +14513,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                 )
                 self.violations.append(violation)
     
-    def _check_model_metadata_injection(self, node: ast.Call) -> None:
+    def _check_model_metadata_tampering(self, node: ast.Call) -> None:
         """AIML439: Detect model metadata injection vulnerabilities."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
@@ -14540,7 +14540,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
                     )
                     self.violations.append(violation)
     
-    def _check_model_versioning_bypass(self, node: ast.Call) -> None:
+    def _check_model_versioning_pinning(self, node: ast.Call) -> None:
         """AIML440: Detect model versioning bypass vulnerabilities."""
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
         
