@@ -1,8 +1,8 @@
 """Tests for parallel processing module."""
 
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor, ProcessingResult
 

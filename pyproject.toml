@@ -134,6 +134,7 @@ select = [
     "RUF",    # Ruff-specific rules
 ]
 ignore = [
+    "E501",   # Line too long (handled by formatter)
     "S101",   # Use of assert (OK in tests and validation code)
     "S603",   # subprocess call (intentional for tool integration)
     "S607",   # Starting process with partial path (intentional)

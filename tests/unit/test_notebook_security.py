@@ -1,8 +1,8 @@
 """Tests for Jupyter notebook security analysis."""
 
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 

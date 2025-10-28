@@ -7,10 +7,10 @@ import pytest
 
 from pyguard.lib.rule_engine import (
     FixApplicability,
-    RuleViolation,
 )
+from pyguard.lib.rule_engine import RuleSeverity as Severity
 from pyguard.lib.rule_engine import (
-    RuleSeverity as Severity,
+    RuleViolation,
 )
 from pyguard.lib.type_checker import (
     ANY_TYPE_USAGE_RULE,

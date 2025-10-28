@@ -103,7 +103,9 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 r'(password|secret|token|key|api[_-]?key)\s*[:=]\s*["\']?[\w-]{20,}',
                 line,
                 re.IGNORECASE,
-            ) and not re.search(r"\$\{\{\s*secrets\.", line):  # Not using GitHub secrets
+            ) and not re.search(
+                r"\$\{\{\s*secrets\.", line
+            ):  # Not using GitHub secrets
                 self.violations.append(
                     RuleViolation(
                         rule_id="SUPPLY001",

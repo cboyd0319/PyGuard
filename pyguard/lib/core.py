@@ -281,7 +281,7 @@ class BackupManager:
             backup_groups.setdefault(base_name, []).append(backup)
 
         # Remove old backups
-        for base_name, group in backup_groups.items():
+        for _base_name, group in backup_groups.items():
             if len(group) > keep_count:
                 sorted_group = sorted(group, key=lambda p: p.stat().st_mtime, reverse=True)
                 for old_backup in sorted_group[keep_count:]:

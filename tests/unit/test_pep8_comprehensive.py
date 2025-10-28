@@ -1,7 +1,7 @@
 """Tests for PEP 8 comprehensive checking and fixing."""
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 

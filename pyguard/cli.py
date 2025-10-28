@@ -10,13 +10,6 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
-# Display constants
-MAX_ITEMS_TO_DISPLAY = 10
-MAX_UNTESTED_MODULES_TO_DISPLAY = 20
-
-if TYPE_CHECKING:
-    from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
-
 from pyguard.lib.best_practices import BestPracticesFixer, NamingConventionFixer
 from pyguard.lib.compliance_tracker import ComplianceTracker
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
@@ -29,6 +22,13 @@ from pyguard.lib.secret_scanner import SecretScanner
 from pyguard.lib.security import SecurityFixer
 from pyguard.lib.test_coverage import TestCoverageAnalyzer
 from pyguard.lib.ui import EnhancedConsole, ModernHTMLReporter
+
+if TYPE_CHECKING:
+    from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
+
+# Display constants
+MAX_ITEMS_TO_DISPLAY = 10
+MAX_UNTESTED_MODULES_TO_DISPLAY = 20
 
 
 class PyGuardCLI:
@@ -619,9 +619,7 @@ def main():
                     cli.ui.console.print(f"    {finding.match}")
 
                 if len(findings) > MAX_ITEMS_TO_DISPLAY:
-                    cli.ui.console.print(
-                        f"  ... and {len(findings) - MAX_ITEMS_TO_DISPLAY} more"
-                    )
+                    cli.ui.console.print(f"  ... and {len(findings) - MAX_ITEMS_TO_DISPLAY} more")
 
                 if args.sarif:
                     cli.ui.console.print("[green]SARIF report: pyguard-secrets.sarif[/green]")
@@ -652,9 +650,7 @@ def main():
                 for file_a, file_b in circular[:MAX_ITEMS_TO_DISPLAY]:
                     cli.ui.console.print(f"  - {file_a} ↔ {file_b}")
                 if len(circular) > MAX_ITEMS_TO_DISPLAY:
-                    cli.ui.console.print(
-                        f"  ... and {len(circular) - MAX_ITEMS_TO_DISPLAY} more"
-                    )
+                    cli.ui.console.print(f"  ... and {len(circular) - MAX_ITEMS_TO_DISPLAY} more")
             else:
                 cli.ui.console.print("[green]No circular imports detected.[/green]")
 

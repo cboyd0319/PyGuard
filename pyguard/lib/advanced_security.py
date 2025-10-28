@@ -21,6 +21,7 @@ import ast
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
@@ -47,7 +48,7 @@ class TaintAnalyzer(ast.NodeVisitor):
     """
 
     # Sources of untrusted data
-    TAINT_SOURCES = {
+    TAINT_SOURCES: ClassVar[dict[str, str]] = {
         "input": "user_input",
         "sys.argv": "command_line",
         "os.environ": "environment",
@@ -60,7 +61,7 @@ class TaintAnalyzer(ast.NodeVisitor):
     }
 
     # Dangerous sinks that shouldn't receive tainted data
-    DANGEROUS_SINKS = {
+    DANGEROUS_SINKS: ClassVar[set[str]] = {
         "eval",
         "exec",
         "compile",
@@ -157,7 +158,7 @@ class ReDoSDetector:
     """
 
     # Patterns that indicate potential ReDoS vulnerability
-    REDOS_PATTERNS = [
+    REDOS_PATTERNS: ClassVar[list[str]] = [
         r"\(.*\+.*\)\+",  # Nested quantifiers: (a+)+
         r"\(.*\*.*\)\+",  # Nested quantifiers: (a*)+
         r"\(.*\+.*\)\*",  # Nested quantifiers: (a+)*

@@ -2,8 +2,8 @@
 
 import secrets
 
-from argon2 import PasswordHasher
 import yaml
+from argon2 import PasswordHasher
 
 
 # Secure password handling

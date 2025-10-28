@@ -218,7 +218,8 @@ class EnhancedNotebookFixer(NotebookFixer):
         lines = source.split("\n")
 
         # Try to identify the secret variable name
-        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"
+        # Pattern to match variable assignment (not an actual password)
+        secret_pattern = r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]"  # noqa: S105
         matches = list(re.finditer(secret_pattern, source))
 
         if matches:

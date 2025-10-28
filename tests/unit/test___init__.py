@@ -374,9 +374,8 @@ class TestModuleImportIsolation:
     def test_reimporting_pyguard_returns_same_module(self):
         """Test that re-importing pyguard returns the same module instance."""
         # Arrange
-        import pyguard as pyguard1
-
         # Act
+        import pyguard as pyguard1
         import pyguard as pyguard2
 
         # Assert
