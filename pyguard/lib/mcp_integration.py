@@ -11,6 +11,7 @@ References:
 """
 
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger
@@ -211,7 +212,7 @@ class MCPIntegration:
             },
             confidence=confidence,
             source="local_kb",
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             recommendations=recommendations,
         )
 

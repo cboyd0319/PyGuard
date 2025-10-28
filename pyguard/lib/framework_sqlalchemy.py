@@ -313,22 +313,21 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
                     )
                     and isinstance(node.value, ast.Constant)
                     and isinstance(node.value.value, str)
-                ):
-                    if re.search(r"(password=|pwd=|:[^:@]+@)", node.value.value, re.I):
-                        violation = RuleViolation(
-                            rule_id="SQLA003",
-                            file_path=self.file_path,
-                            message=f"Hardcoded database password in variable '{target.id}'. "
-                            "Use environment variables or configuration files.",
-                            severity=RuleSeverity.CRITICAL,
-                            category=RuleCategory.SECURITY,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            cwe_id="CWE-798",
-                            owasp_id="A07-Auth",
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                        self.violations.append(violation)
+                ) and re.search(r"(password=|pwd=|:[^:@]+@)", node.value.value, re.I):
+                    violation = RuleViolation(
+                        rule_id="SQLA003",
+                        file_path=self.file_path,
+                        message=f"Hardcoded database password in variable '{target.id}'. "
+                        "Use environment variables or configuration files.",
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        cwe_id="CWE-798",
+                        owasp_id="A07-Auth",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                    self.violations.append(violation)
 
     def _check_query_parameter_injection(self, node: ast.Call) -> None:
         """

@@ -250,27 +250,26 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                             )
                         )
             # Variable from user input: template(..., raw_html=content)
-            elif isinstance(keyword.value, ast.Name):
-                if (
-                    keyword.value.id in self.user_input_vars
-                    and keyword.arg
-                    and any(
-                        dangerous in keyword.arg.lower()
-                        for dangerous in ["html", "raw", "content", "body"]
+            elif isinstance(keyword.value, ast.Name) and (
+                keyword.value.id in self.user_input_vars
+                and keyword.arg
+                and any(
+                    dangerous in keyword.arg.lower()
+                    for dangerous in ["html", "raw", "content", "body"]
+                )
+            ):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="BOTTLE002",
+                        category=RuleCategory.SECURITY,
+                        message="User input passed to template as raw HTML variable",
+                        severity=RuleSeverity.HIGH,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
-                ):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="BOTTLE002",
-                            category=RuleCategory.SECURITY,
-                            message="User input passed to template as raw HTML variable",
-                            severity=RuleSeverity.HIGH,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                    )
+                )
 
     def _check_static_file_security(self, node: ast.Call) -> None:
         """Check for static file path traversal vulnerabilities (BOTTLE003)."""

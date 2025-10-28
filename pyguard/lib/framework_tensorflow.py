@@ -163,7 +163,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Validate model path and use: tf.keras.models.load_model(path, compile=False)",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        owasp_id="A08:2021 - Software and Data Integrity Failures",
                         source_tool="pyguard",
                     )
                 )
@@ -198,7 +198,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Use: model = tf.keras.models.load_model(path, compile=False)",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        owasp_id="A08:2021 - Software and Data Integrity Failures",
                         source_tool="pyguard",
                     )
                 )
@@ -250,7 +250,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Add size validation: if tf.reduce_prod(shape) > MAX_ELEMENTS: raise ValueError()",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-400",
-                        owasp_id="A04:2021 – Insecure Design",
+                        owasp_id="A04:2021 - Insecure Design",
                         source_tool="pyguard",
                     )
                 )
@@ -288,7 +288,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                                 fix_suggestion="Use allowlist: SAFE_CALLBACKS = [EarlyStopping, ModelCheckpoint]",
                                 fix_applicability=FixApplicability.SAFE,
                                 cwe_id="CWE-94",
-                                owasp_id="A03:2021 – Injection",
+                                owasp_id="A03:2021 - Injection",
                                 source_tool="pyguard",
                             )
                         )
@@ -342,7 +342,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                                     fix_suggestion="Use: log_dir='logs/private/tensorboard'",
                                     fix_applicability=FixApplicability.SAFE,
                                     cwe_id="CWE-200",
-                                    owasp_id="A01:2021 – Broken Access Control",
+                                    owasp_id="A01:2021 - Broken Access Control",
                                     source_tool="pyguard",
                                 )
                             )
@@ -381,7 +381,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Validate data: check file types, sizes, and content before loading",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
-                        owasp_id="A03:2021 – Injection",
+                        owasp_id="A03:2021 - Injection",
                         source_tool="pyguard",
                     )
                 )
@@ -414,7 +414,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Add validation: if input.shape != expected_shape: raise ValueError()",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-20",
-                        owasp_id="A04:2021 – Insecure Design",
+                        owasp_id="A04:2021 - Insecure Design",
                         source_tool="pyguard",
                     )
                 )
@@ -459,7 +459,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
                         fix_suggestion="Use: verify_checkpoint_signature(checkpoint_path) before loading",
                         fix_applicability=FixApplicability.SAFE,
                         cwe_id="CWE-494",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        owasp_id="A08:2021 - Software and Data Integrity Failures",
                         source_tool="pyguard",
                     )
                 )
@@ -560,7 +560,7 @@ TENSORFLOW_RULES = [
         explanation="Detects unsafe loading of TensorFlow/Keras models that can execute arbitrary code",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-502",
-        owasp_mapping="A08:2021 – Software and Data Integrity Failures",
+        owasp_mapping="A08:2021 - Software and Data Integrity Failures",
     ),
     Rule(
         rule_id="TF002",
@@ -572,7 +572,7 @@ TENSORFLOW_RULES = [
         explanation="Detects tensor operations with user-controlled sizes that can exhaust GPU memory",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-400",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF003",
@@ -584,7 +584,7 @@ TENSORFLOW_RULES = [
         explanation="Detects injection vulnerabilities in custom training loops",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-94",
-        owasp_mapping="A03:2021 – Injection",
+        owasp_mapping="A03:2021 - Injection",
     ),
     Rule(
         rule_id="TF004",
@@ -596,7 +596,7 @@ TENSORFLOW_RULES = [
         explanation="Detects unsafe custom layer implementations",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-20",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF005",
@@ -608,7 +608,7 @@ TENSORFLOW_RULES = [
         explanation="Detects callback injection that can execute arbitrary code during training",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-94",
-        owasp_mapping="A03:2021 – Injection",
+        owasp_mapping="A03:2021 - Injection",
     ),
     Rule(
         rule_id="TF006",
@@ -620,7 +620,7 @@ TENSORFLOW_RULES = [
         explanation="Detects TensorBoard logs in web-accessible locations that expose sensitive data",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-200",
-        owasp_mapping="A01:2021 – Broken Access Control",
+        owasp_mapping="A01:2021 - Broken Access Control",
     ),
     Rule(
         rule_id="TF007",
@@ -632,7 +632,7 @@ TENSORFLOW_RULES = [
         explanation="Detects injection vulnerabilities in tf.data pipeline from user-controlled sources",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-20",
-        owasp_mapping="A03:2021 – Injection",
+        owasp_mapping="A03:2021 - Injection",
     ),
     Rule(
         rule_id="TF008",
@@ -644,7 +644,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues in distributed training setups",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-311",
-        owasp_mapping="A02:2021 – Cryptographic Failures",
+        owasp_mapping="A02:2021 - Cryptographic Failures",
     ),
     Rule(
         rule_id="TF009",
@@ -656,7 +656,7 @@ TENSORFLOW_RULES = [
         explanation="Detects unsafe model serving without input validation",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-20",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF010",
@@ -668,7 +668,7 @@ TENSORFLOW_RULES = [
         explanation="Detects loading of model checkpoints without integrity verification",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-494",
-        owasp_mapping="A08:2021 – Software and Data Integrity Failures",
+        owasp_mapping="A08:2021 - Software and Data Integrity Failures",
     ),
     Rule(
         rule_id="TF011",
@@ -680,7 +680,7 @@ TENSORFLOW_RULES = [
         explanation="Detects unsafe graph execution patterns",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-20",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF012",
@@ -692,7 +692,7 @@ TENSORFLOW_RULES = [
         explanation="Detects injection vulnerabilities in eager execution mode",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-94",
-        owasp_mapping="A03:2021 – Injection",
+        owasp_mapping="A03:2021 - Injection",
     ),
     Rule(
         rule_id="TF013",
@@ -704,7 +704,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues with AutoGraph transformations",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-94",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF014",
@@ -716,7 +716,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues with mixed precision training",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-1339",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF015",
@@ -728,7 +728,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues specific to TPU execution",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-400",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF016",
@@ -740,7 +740,7 @@ TENSORFLOW_RULES = [
         explanation="Detects tampering risks in model optimization processes",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-494",
-        owasp_mapping="A08:2021 – Software and Data Integrity Failures",
+        owasp_mapping="A08:2021 - Software and Data Integrity Failures",
     ),
     Rule(
         rule_id="TF017",
@@ -752,7 +752,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues in model quantization",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-1339",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF018",
@@ -764,7 +764,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues in model pruning operations",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-494",
-        owasp_mapping="A08:2021 – Software and Data Integrity Failures",
+        owasp_mapping="A08:2021 - Software and Data Integrity Failures",
     ),
     Rule(
         rule_id="TF019",
@@ -776,7 +776,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security risks in knowledge distillation",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-200",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="TF020",
@@ -788,7 +788,7 @@ TENSORFLOW_RULES = [
         explanation="Detects security issues in federated learning setups",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-311",
-        owasp_mapping="A02:2021 – Cryptographic Failures",
+        owasp_mapping="A02:2021 - Cryptographic Failures",
     ),
 ]
 

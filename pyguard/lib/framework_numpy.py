@@ -176,7 +176,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Set allow_pickle=False: np.load(file, allow_pickle=False)",
                         cwe_id="CWE-502",
-                        owasp_id="A08:2021 – Software and Data Integrity Failures",
+                        owasp_id="A08:2021 - Software and Data Integrity Failures",
                     )
                 )
 
@@ -216,7 +216,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Use: import secrets; key = secrets.token_bytes(32)",
                         cwe_id="CWE-338",
-                        owasp_id="A02:2021 – Cryptographic Failures",
+                        owasp_id="A02:2021 - Cryptographic Failures",
                     )
                 )
 
@@ -255,7 +255,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Add size validation: if size > MAX_SIZE: raise ValueError('Array too large')",
                         cwe_id="CWE-770",
-                        owasp_id="A04:2021 – Insecure Design",
+                        owasp_id="A04:2021 - Insecure Design",
                     )
                 )
 
@@ -288,7 +288,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Validate paths: from pathlib import Path; Path(filename).resolve().is_relative_to(SAFE_DIR)",
                         cwe_id="CWE-22",
-                        owasp_id="A01:2021 – Broken Access Control",
+                        owasp_id="A01:2021 - Broken Access Control",
                     )
                 )
 
@@ -320,7 +320,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                             file_path=self.file_path,
                             fix_suggestion="Check range: assert arr.min() >= dtype_min and arr.max() <= dtype_max",
                             cwe_id="CWE-190",
-                            owasp_id="A04:2021 – Insecure Design",
+                            owasp_id="A04:2021 - Insecure Design",
                         )
                     )
 
@@ -346,7 +346,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Use np.clip() or check for overflow: result = np.multiply(a, b, dtype=np.int64)",
                         cwe_id="CWE-190",
-                        owasp_id="A04:2021 – Insecure Design",
+                        owasp_id="A04:2021 - Insecure Design",
                     )
                 )
 
@@ -367,7 +367,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                         file_path=self.file_path,
                         fix_suggestion="Validate: if 0 <= index < len(array): arr[index]",
                         cwe_id="CWE-129",
-                        owasp_id="A04:2021 – Insecure Design",
+                        owasp_id="A04:2021 - Insecure Design",
                     )
                 )
 
@@ -467,7 +467,7 @@ NUMPY_RULES = [
         explanation="Buffer overflows can lead to memory corruption and security vulnerabilities",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-119",
-        owasp_mapping="A01:2021 – Broken Access Control",
+        owasp_mapping="A01:2021 - Broken Access Control",
     ),
     Rule(
         rule_id="NUMPY002",
@@ -479,7 +479,7 @@ NUMPY_RULES = [
         explanation="Integer overflow in arrays can silently produce incorrect results",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-190",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY003",
@@ -491,7 +491,7 @@ NUMPY_RULES = [
         explanation="np.load() allows pickle deserialization by default which can execute arbitrary code",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-502",
-        owasp_mapping="A08:2021 – Software and Data Integrity Failures",
+        owasp_mapping="A08:2021 - Software and Data Integrity Failures",
     ),
     Rule(
         rule_id="NUMPY004",
@@ -503,7 +503,7 @@ NUMPY_RULES = [
         explanation="Creating large arrays from user input can lead to denial of service",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-770",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY005",
@@ -515,7 +515,7 @@ NUMPY_RULES = [
         explanation="Concurrent access to arrays without synchronization can cause data corruption",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-362",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY006",
@@ -527,7 +527,7 @@ NUMPY_RULES = [
         explanation="NumPy random functions are not cryptographically secure",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-338",
-        owasp_mapping="A02:2021 – Cryptographic Failures",
+        owasp_mapping="A02:2021 - Cryptographic Failures",
     ),
     Rule(
         rule_id="NUMPY007",
@@ -539,7 +539,7 @@ NUMPY_RULES = [
         explanation="Type confusion can lead to unexpected behavior and security issues",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-843",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY008",
@@ -551,7 +551,7 @@ NUMPY_RULES = [
         explanation="Casting to smaller types without validation can lose data or overflow",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-190",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY009",
@@ -563,7 +563,7 @@ NUMPY_RULES = [
         explanation="Memory leaks can degrade performance and availability over time",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-401",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY010",
@@ -575,7 +575,7 @@ NUMPY_RULES = [
         explanation="Unvalidated indices can cause out-of-bounds access",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-129",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY011",
@@ -587,7 +587,7 @@ NUMPY_RULES = [
         explanation="Operations without bounds checking can access invalid memory",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-120",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY012",
@@ -599,7 +599,7 @@ NUMPY_RULES = [
         explanation="Precision loss in security-sensitive calculations can cause vulnerabilities",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-1339",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY013",
@@ -611,7 +611,7 @@ NUMPY_RULES = [
         explanation="Memory views can expose internal data representation",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-200",
-        owasp_mapping="A01:2021 – Broken Access Control",
+        owasp_mapping="A01:2021 - Broken Access Control",
     ),
     Rule(
         rule_id="NUMPY014",
@@ -623,7 +623,7 @@ NUMPY_RULES = [
         explanation="C extensions bypass Python safety mechanisms",
         fix_applicability=FixApplicability.MANUAL,
         cwe_mapping="CWE-676",
-        owasp_mapping="A04:2021 – Insecure Design",
+        owasp_mapping="A04:2021 - Insecure Design",
     ),
     Rule(
         rule_id="NUMPY015",
@@ -635,7 +635,7 @@ NUMPY_RULES = [
         explanation="Loading data from user-controlled paths can lead to path traversal",
         fix_applicability=FixApplicability.SAFE,
         cwe_mapping="CWE-22",
-        owasp_mapping="A01:2021 – Broken Access Control",
+        owasp_mapping="A01:2021 - Broken Access Control",
     ),
 ]
 

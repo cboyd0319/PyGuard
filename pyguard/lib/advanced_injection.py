@@ -55,7 +55,7 @@ OS & Code Execution (15 checks):
 Total Security Checks: 40 rules (INJECT001-INJECT040)
 
 References:
-- OWASP Top 10 2021 (A03:2021 – Injection) | https://owasp.org/Top10/A03_2021-Injection/ | Critical
+- OWASP Top 10 2021 (A03:2021 - Injection) | https://owasp.org/Top10/A03_2021-Injection/ | Critical
 - CWE-74 (Improper Neutralization) | https://cwe.mitre.org/data/definitions/74.html | Critical
 - CWE-89 (SQL Injection) | https://cwe.mitre.org/data/definitions/89.html | Critical
 - CWE-94 (Code Injection) | https://cwe.mitre.org/data/definitions/94.html | Critical

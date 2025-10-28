@@ -391,14 +391,14 @@ def analyze_requirements_file(file_path: Path) -> list[RuleViolation]:
         lines = content.splitlines()
 
         for line_num, line in enumerate(lines, start=1):
-            line = line.strip()
+            stripped_line = line.strip()
 
             # Skip comments and empty lines
-            if not line or line.startswith("#"):
+            if not stripped_line or stripped_line.startswith("#"):
                 continue
 
             # DEP_CONF005: Check for insecure HTTP protocol
-            if line.startswith("http://"):
+            if stripped_line.startswith("http://"):
                 violations.append(
                     RuleViolation(
                         rule_id="DEP_CONF005",
@@ -416,10 +416,10 @@ def analyze_requirements_file(file_path: Path) -> list[RuleViolation]:
                 )
 
             # DEP_CONF006: Check for missing version pinning
-            if "==" not in line and ">=" not in line and "<=" not in line and "~=" not in line:
+            if "==" not in stripped_line and ">=" not in stripped_line and "<=" not in stripped_line and "~=" not in stripped_line:
                 # Extract package name
-                package = re.split(r"[<>=!]", line)[0].strip()
-                if package and not line.startswith("-"):  # Skip pip flags
+                package = re.split(r"[<>=!]", stripped_line)[0].strip()
+                if package and not stripped_line.startswith("-"):  # Skip pip flags
                     violations.append(
                         RuleViolation(
                             rule_id="DEP_CONF006",
@@ -437,9 +437,9 @@ def analyze_requirements_file(file_path: Path) -> list[RuleViolation]:
                     )
 
             # DEP_CONF007: Check for missing hash verification
-            if "==" in line and "--hash=" not in line:
-                package = line.split("==")[0].strip()
-                if package and not line.startswith("-"):
+            if "==" in stripped_line and "--hash=" not in stripped_line:
+                package = stripped_line.split("==")[0].strip()
+                if package and not stripped_line.startswith("-"):
                     violations.append(
                         RuleViolation(
                             rule_id="DEP_CONF007",
