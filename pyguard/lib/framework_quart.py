@@ -365,7 +365,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_csrf_protection(self, node: ast.FunctionDef) -> None:
+    def _check_csrf_protection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for CSRF protection gaps (QUART011)."""
         # Check if POST/PUT/DELETE routes have CSRF protection
         has_csrf_check = False
@@ -373,10 +373,20 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         # Look for CSRF token validation in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
+                # Check for csrf function calls (validate_csrf_token, check_csrf, etc.)
                 if isinstance(child.func, ast.Attribute):
                     if "csrf" in child.func.attr.lower():
                         has_csrf_check = True
                         break
+                elif isinstance(child.func, ast.Name):
+                    if "csrf" in child.func.id.lower():
+                        has_csrf_check = True
+                        break
+            # Also check for csrf_token variable access/validation
+            elif isinstance(child, ast.Name):
+                if "csrf" in child.id.lower():
+                    has_csrf_check = True
+                    break
 
         # Check if route uses unsafe HTTP methods
         for decorator in node.decorator_list:
