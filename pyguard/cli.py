@@ -10,6 +10,10 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
+# Display constants
+MAX_ITEMS_TO_DISPLAY = 10
+MAX_UNTESTED_MODULES_TO_DISPLAY = 20
+
 if TYPE_CHECKING:
     from pyguard.lib.notebook_analyzer import NotebookSecurityAnalyzer
 
@@ -611,8 +615,10 @@ def main():
                     )
                     cli.ui.console.print(f"    {finding.match}")
 
-                if len(findings) > 10:
-                    cli.ui.console.print(f"  ... and {len(findings) - 10} more")
+                if len(findings) > MAX_ITEMS_TO_DISPLAY:
+                    cli.ui.console.print(
+                        f"  ... and {len(findings) - MAX_ITEMS_TO_DISPLAY} more"
+                    )
 
                 if args.sarif:
                     cli.ui.console.print("[green]SARIF report: pyguard-secrets.sarif[/green]")
@@ -640,10 +646,12 @@ def main():
             circular = ImportAnalyzer.find_circular_imports(path_str)
             if circular:
                 cli.ui.console.print("[red]Circular imports detected:[/red]")
-                for file_a, file_b in circular[:10]:  # Show first 10
+                for file_a, file_b in circular[:MAX_ITEMS_TO_DISPLAY]:
                     cli.ui.console.print(f"  - {file_a} ↔ {file_b}")
-                if len(circular) > 10:
-                    cli.ui.console.print(f"  ... and {len(circular) - 10} more")
+                if len(circular) > MAX_ITEMS_TO_DISPLAY:
+                    cli.ui.console.print(
+                        f"  ... and {len(circular) - MAX_ITEMS_TO_DISPLAY} more"
+                    )
             else:
                 cli.ui.console.print("[green]No circular imports detected.[/green]")
 
@@ -653,10 +661,12 @@ def main():
             god_modules = ImportAnalyzer.find_god_modules(path_str)
             if god_modules:
                 cli.ui.console.print("[yellow]God modules (>20 imports):[/yellow]")
-                for module, count in god_modules[:10]:  # Show first 10
+                for module, count in god_modules[:MAX_ITEMS_TO_DISPLAY]:
                     cli.ui.console.print(f"  - {module}: imported {count} times")
-                if len(god_modules) > 10:
-                    cli.ui.console.print(f"  ... and {len(god_modules) - 10} more")
+                if len(god_modules) > MAX_ITEMS_TO_DISPLAY:
+                    cli.ui.console.print(
+                        f"  ... and {len(god_modules) - MAX_ITEMS_TO_DISPLAY} more"
+                    )
             else:
                 cli.ui.console.print("[green]No god modules detected.[/green]")
 
@@ -698,10 +708,12 @@ def main():
             untested = TestCoverageAnalyzer.find_untested_modules(path_str, test_dir)
             if untested:
                 cli.ui.console.print(f"[yellow]Untested modules ({len(untested)}):[/yellow]")
-                for module in untested[:20]:  # Show first 20
+                for module in untested[:MAX_UNTESTED_MODULES_TO_DISPLAY]:
                     cli.ui.console.print(f"  - {module}")
-                if len(untested) > 20:
-                    cli.ui.console.print(f"  ... and {len(untested) - 20} more")
+                if len(untested) > MAX_UNTESTED_MODULES_TO_DISPLAY:
+                    cli.ui.console.print(
+                        f"  ... and {len(untested) - MAX_UNTESTED_MODULES_TO_DISPLAY} more"
+                    )
             else:
                 cli.ui.console.print("[green]All modules have test coverage![/green]")
 
