@@ -165,11 +165,11 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [ ] Publish SBOM with each release
 - [ ] Automated SBOM generation and scanning
 
-**GPG Signing**
-- [ ] GPG signing of release tags
-- [ ] GPG signing of artifacts
-- [ ] Publish public key
-- [ ] Document verification process
+**GPG Signing** ✅ COMPLETE
+- [x] GPG signing of release tags
+- [x] GPG signing of artifacts
+- [x] Publish public key
+- [x] Document verification process
 
 #### IDE Integration
 
