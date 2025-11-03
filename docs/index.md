@@ -25,6 +25,11 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [RipGrep Integration](guides/RIPGREP_INTEGRATION.md) - High-performance scanning (10-100x faster)
 - [Security Rules Reference](reference/security-rules.md) - All security checks
 
+### Security & Supply Chain
+- [Supply Chain Security Guide](guides/SUPPLY_CHAIN_SECURITY.md) - SLSA, Sigstore, SBOM ✨ NEW
+- [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md) - How to verify releases ✨ NEW
+- [Security Policy](../SECURITY.md) - Vulnerability disclosure
+
 ### Architecture & Implementation
 - [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
 - [Auto-Fix Analysis](reference/architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
@@ -53,6 +58,8 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### For Security Teams
 - **Compliance?** Review [Capabilities Reference](reference/capabilities-reference.md)
+- **Supply chain security?** See [Supply Chain Security Guide](guides/SUPPLY_CHAIN_SECURITY.md)
+- **Verifying releases?** Read [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md)
 - **Integration?** See [Git Hooks Guide](guides/git-hooks-guide.md)
 - **Custom rules?** Check [Security Rules Reference](reference/security-rules.md)
 
