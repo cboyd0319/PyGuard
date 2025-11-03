@@ -454,8 +454,43 @@ tests/
 - **Type Hints:** 100% coverage for public APIs
 - **Testing:** pytest, 90%+ coverage
 
+## Distribution Architecture (v0.7.0+)
+
+### Multi-Channel Distribution Strategy
+
+PyGuard will be available through multiple channels to meet developers where they work:
+
+1. **PyPI** (Current) - `pip install pyguard`
+2. **Homebrew** (v0.7.0) - `brew install pyguard`
+3. **GitHub Action** (Current) - Native CI/CD integration
+4. **Docker Hub** (v0.7.0) - Official container images
+5. **VS Code Extension** (v0.7.0) - IDE integration via LSP
+6. **PyCharm Plugin** (v0.8.0) - IntelliJ Platform integration
+
+### Language Server Protocol (LSP) Integration
+
+Real-time security linting in IDEs powered by LSP:
+
+- Real-time diagnostics as you type
+- Quick fix suggestions (CodeActions)
+- Hover information for security issues
+- Jupyter notebook cell-level scanning
+
+### Secure Supply Chain
+
+Following BazBOM's security-first approach:
+
+- **SLSA Level 3 Provenance** (v0.8.0) - Verifiable build integrity
+- **Sigstore/Cosign Signing** (v0.8.0) - Keyless release signing
+- **SBOM Generation** (v0.7.0) - Complete dependency transparency
+- **Reproducible Builds** (v1.0.0) - Bit-for-bit verification
+
+See [DISTRIBUTION.md](DISTRIBUTION.md) for comprehensive distribution strategy and [ROADMAP.md](ROADMAP.md) for detailed timelines.
+
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-10-28  
-**Maintainer:** Chad Boyd
+**Document Version:** 1.1  
+**Last Updated:** 2025-11-03  
+**Maintainer:** Chad Boyd  
+**Distribution:** [DISTRIBUTION.md](DISTRIBUTION.md)  
+**Roadmap:** [ROADMAP.md](ROADMAP.md)
