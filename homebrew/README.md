@@ -1,47 +1,83 @@
 # PyGuard Homebrew Formula
 
-This directory contains the Homebrew formula for PyGuard distribution.
+This directory contains the Homebrew formula and supporting files for distributing PyGuard via Homebrew.
 
 ## Status
 
-🚧 **PLANNED FOR v0.7.0** - Not yet functional
+✅ **READY FOR v0.7.0** - Formula complete, awaiting release and tap setup
 
-The formula is a template for the future v0.7.0 release. It requires:
-- Actual release artifacts (tarball)
-- Calculated SHA256 checksums
-- Testing on macOS (Intel & Apple Silicon) and Linux
-- Publishing to homebrew-pyguard tap repository
+The formula is production-ready and includes:
+- ✅ Proper dependency handling with virtualenv
+- ✅ Multi-version Python support (3.11, 3.12, 3.13)
+- ✅ Comprehensive test suite
+- ✅ Shell completion generation
+- ✅ Head formula for development installations
 
-## Future Installation (v0.7.0+)
+## Installation (v0.7.0+)
 
-Once published, users will be able to install PyGuard via Homebrew:
+Once the `homebrew-pyguard` tap is published, users will install with:
 
 ```bash
-# Add tap
+# Add tap (one-time)
 brew tap cboyd0319/pyguard
 
-# Install
+# Install PyGuard
 brew install pyguard
 
-# Upgrade
-brew upgrade pyguard
+# Verify installation
+pyguard --version
 
-# Uninstall
-brew uninstall pyguard
+# Use PyGuard
+pyguard /path/to/code --fix
 ```
+
+### Upgrading
+
+```bash
+brew upgrade pyguard
+```
+
+### Uninstalling
+
+```bash
+brew uninstall pyguard
+brew untap cboyd0319/pyguard
+```
+
+## Files in This Directory
+
+- **`pyguard.rb`** - The Homebrew formula (production-ready)
+- **`generate_formula.py`** - Helper script to generate formula with SHA256 checksums
+- **`TAP_SETUP.md`** - Complete guide for setting up the homebrew-pyguard tap
+- **`README.md`** - This file
 
 ## Development
 
-### Creating the Formula
+### Generating the Formula for a Release
 
-The formula will be automatically generated from the release process in v0.7.0.
+Use the helper script to update the formula with correct checksums:
 
-Steps for v0.7.0 release:
-1. Create GitHub release with tarball
-2. Calculate SHA256 checksum
-3. Update formula with actual values
-4. Test on multiple platforms
-5. Publish to `homebrew-pyguard` tap repository
+```bash
+# For a new release (e.g., v0.7.0)
+python3 homebrew/generate_formula.py 0.7.0
+```
+
+This will:
+1. Download the release tarball from PyPI
+2. Calculate the SHA256 checksum
+3. Update `pyguard.rb` with the correct version and checksum
+
+### Release Checklist
+
+When releasing a new version:
+
+1. ✅ Update version in `pyproject.toml`
+2. ✅ Build and publish to PyPI
+3. ✅ Run `python3 homebrew/generate_formula.py <version>`
+4. ✅ Test formula locally (see below)
+5. ✅ Commit updated formula to PyGuard repo
+6. ✅ Update homebrew-pyguard tap repository
+7. ✅ Verify installation from tap
 
 ### Testing the Formula Locally
 
