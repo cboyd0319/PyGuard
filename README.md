@@ -22,6 +22,8 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 [Quickstart](#quickstart) •
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
+[Roadmap](ROADMAP.md) •
+[Distribution](DISTRIBUTION.md) •
 [Documentation](docs/index.md) •
 [GitHub Action](docs/guides/github-action-guide.md)
 
@@ -997,7 +999,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 </details>
 
-**More help:** [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions)
+**More help:** [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions) • [GitHub Issues](https://github.com/cboyd0319/PyGuard/issues)
 
 ## ⚡ Performance
 
@@ -1024,21 +1026,42 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 ## 🗺️ Roadmap
 
+**Goal: Make PyGuard THE definitive Python security solution everywhere developers work**
+
 Current: v0.6.0 (3,800+ tests, 88% coverage, 720 security checks, 20 frameworks)
 
-Completed:
+### Completed Milestones
 
 - [x] v0.4.0 — API Security Module (101 checks, FastAPI support)
 - [x] v0.5.0 — Security Dominance Achievement (334 checks, Tornado, Celery, Supply Chain)
 - [x] v0.6.0 — **MISSION ACCOMPLISHED** (720 checks, 20 frameworks, Total Market Dominance)
 
-Planned:
+### Upcoming Releases
 
-- [ ] v0.7.0 — Watch mode, VS Code extension, advanced taint analysis
-- [ ] v0.8.0 — LSP support, git diff analysis
-- [ ] v1.0.0 — Production stable, >90% coverage, signed releases
+**v0.7.0 - "Easy Distribution" (Q1 2026)**
+- [ ] **Homebrew formula** - One-liner installation (`brew install pyguard`)
+- [ ] **VS Code extension** - Real-time security linting in IDE
+- [ ] **Docker Hub images** - Official multi-arch container images
+- [ ] **Watch mode** - Continuous scanning during development
+- [ ] **Advanced taint analysis** - Cross-function vulnerability tracking
 
-See [docs/development/UPDATEv06.md](docs/development/UPDATEv06.md) for v0.6.0 development status and [docs/development/UPDATEv2.md](docs/development/UPDATEv2.md) for v0.5.0 history.
+**v0.8.0 - "Secure Distribution" (Q2 2026)**
+- [ ] **SLSA Level 3 provenance** - Supply chain security attestation
+- [ ] **Sigstore/Cosign signing** - Keyless release signing
+- [ ] **PyCharm plugin** - IntelliJ Platform integration
+- [ ] **LSP server** - Language Server Protocol for IDE integration
+- [ ] **Git diff analysis** - Scan only changed code in PRs
+
+**v1.0.0 - "Production Excellence" (Q3 2026)**
+- [ ] **Reproducible builds** - Bit-for-bit build verification
+- [ ] **Enterprise features** - Air-gapped installation, compliance reporting
+- [ ] **95%+ test coverage** - Production-quality stability
+- [ ] **Professional support** - Commercial support options
+- [ ] **10+ distribution channels** - Homebrew, PyPI, Docker, IDEs, package managers
+
+**See [ROADMAP.md](ROADMAP.md) for comprehensive roadmap with timelines, metrics, and strategy**
+
+**See [DISTRIBUTION.md](DISTRIBUTION.md) for detailed distribution strategy and secure supply chain plan**
 
 ---
 
