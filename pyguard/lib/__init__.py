@@ -151,6 +151,15 @@ from pyguard.lib.notebook_security import (
 )
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 
+# NEW in v0.7.0: Performance optimization system
+from pyguard.lib.performance_optimizer import (
+    DependencyAnalyzer,
+    DependencyGraph,
+    FileMetrics,
+    OptimizedAnalyzer,
+    SmartAnalysisCache,
+)
+
 # NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
 from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
 from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
@@ -336,6 +345,12 @@ __all__ = [
     "PandasRulesChecker",
     # Parallel
     "ParallelProcessor",
+    # Performance Optimization (NEW v0.7.0)
+    "DependencyAnalyzer",
+    "DependencyGraph",
+    "FileMetrics",
+    "OptimizedAnalyzer",
+    "SmartAnalysisCache",
     # Pathlib Patterns (NEW v0.9.0)
     "PathlibChecker",
     "PathlibIssue",
