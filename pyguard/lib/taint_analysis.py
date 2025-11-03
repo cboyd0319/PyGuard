@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue
-from pyguard.lib.core import PyGuardLogger
+from pyguard.lib.core import FileOperations, PyGuardLogger
 
 
 @dataclass
