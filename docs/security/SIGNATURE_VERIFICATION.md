@@ -314,8 +314,8 @@ Multiple safeguards:
 
 ### PyGuard Security
 - [Security Policy](../../SECURITY.md)
-- [Supply Chain Security](../guides/SUPPLY_CHAIN_SECURITY.md) (coming soon)
-- [Release Workflow](.github/workflows/release.yml)
+- [Supply Chain Security Guide](../guides/SUPPLY_CHAIN_SECURITY.md)
+- [Release Workflow](../../.github/workflows/release.yml)
 
 ## Reporting Issues
 
