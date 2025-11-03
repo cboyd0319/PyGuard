@@ -95,6 +95,18 @@ jobs:
         sha256sum ./* > checksums.sha256
         cd ..
 
+    - name: Sign artifacts with Sigstore
+      uses: sigstore/gh-action-sigstore-python@f514d46b907ebcd5bedc05145c03b69c1edd8b46 # v3.0.0
+      with:
+        inputs: >-
+          dist/*.tar.gz
+          dist/*.whl
+          pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
+          pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json
+          dist/checksums.sha256
+        upload-signing-artifacts: true
+        release-signing-artifacts: true
+
     - name: Publish to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -183,6 +195,14 @@ jobs:
           dist/checksums.sha256
           pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json
           pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json
+          dist/*.sig
+          dist/*.crt
+          pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json.sig
+          pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json.crt
+          pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json.sig
+          pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json.crt
+          dist/checksums.sha256.sig
+          dist/checksums.sha256.crt
         body_path: release_notes.md
         draft: false
         prerelease: false
@@ -229,6 +249,8 @@ jobs:
           echo "- [OK] SBOM - CycloneDX format"
           echo "- [OK] Build provenance attestation (SLSA)"
           echo "- [OK] SHA256 checksums"
+          echo "- [OK] Sigstore signatures (.sig files)"
+          echo "- [OK] Sigstore certificates (.crt files)"
           echo "- [OK] Homebrew formula updated"
           echo ""
           echo "### Installation"
@@ -238,6 +260,19 @@ jobs:
           echo ""
           echo "### Security"
           echo "- Build provenance verifiable via GitHub attestations"
+          echo "- All artifacts signed with Sigstore (keyless signing)"
+          echo "- Signatures recorded in Rekor transparency log"
           echo "- All dependencies audited by pip-audit, OSV-Scanner, Safety"
           echo "- Code scanned by Bandit, Semgrep, CodeQL"
+          echo ""
+          echo "### Verify Signatures"
+          echo "\`\`\`bash"
+          echo "# Install sigstore CLI"
+          echo "pip install sigstore"
+          echo ""
+          echo "# Verify a release artifact"
+          echo "sigstore verify github pyguard-${{ steps.get_version.outputs.VERSION }}.tar.gz \\"
+          echo "  --cert-identity https://github.com/cboyd0319/PyGuard/.github/workflows/release.yml@refs/tags/v${{ steps.get_version.outputs.VERSION }} \\"
+          echo "  --cert-oidc-issuer https://token.actions.githubusercontent.com"
+          echo "\`\`\`"
         } >> "${GITHUB_STEP_SUMMARY}"

@@ -915,7 +915,12 @@ Single config file. Single command. Unified reports.
 
 **Least privilege:** Read access to scan files, write access to fix files. No network access required (runs offline). No elevated privileges needed.
 
-**Supply chain:** Releases signed with GPG (v1.0+). SBOM published at `/releases/tag/v*` (CycloneDX format). Dependencies: 14 packages from PyPI (see pyproject.toml).
+**Supply chain:** 
+- **Sigstore signing (v0.8.0+):** All releases cryptographically signed with keyless Sigstore
+- **SLSA Level 3:** Build provenance attestations for all artifacts
+- **SBOM:** Published at `/releases/tag/v*` (SPDX and CycloneDX formats)
+- **Transparency:** All signatures recorded in public Rekor log
+- **Verification:** See [docs/security/SIGNATURE_VERIFICATION.md](docs/security/SIGNATURE_VERIFICATION.md)
 
 **Disclosure:** GitHub Security Advisories or <https://github.com/cboyd0319> (see SECURITY.md)
 
