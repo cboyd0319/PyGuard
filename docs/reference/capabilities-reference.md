@@ -16,9 +16,9 @@
 | **Framework Rules** | 247+ | ✅ **20 Frameworks** 🎉 |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 102 | ✅ Comprehensive |
-| **Total Tests** | 3,657+ | ✅ Passing |
-| **Test Coverage** | 88%+ | 🎯 Exceeding target |
+| **Test Files** | 104 | ✅ Comprehensive |
+| **Total Tests** | 4,171+ | ✅ Passing |
+| **Test Coverage** | 84%+ | 🎯 On target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 
 **Updated: 2025-11-03** | **🎊 MISSION ACCOMPLISHED: 720/300 security checks (240%)** ✅ **20/20 frameworks (100%)** 🎊 **#1 TOTAL MARKET DOMINANCE!** 🏆 🚀
@@ -1013,7 +1013,52 @@ generate_ci_config("github_actions", ".github/workflows/pyguard.yml")
 install_pre_commit_hook()
 ```
 
-**See**: `docs/guides/advanced-integrations.md` for complete guide.
+**Git Diff Analysis** (v0.8.0) ✅ NEW!
+
+Analyze only changed files in PRs and branches for 10-100x faster CI/CD scans:
+
+```bash
+# Scan PR changes only
+pyguard --diff main..feature-branch .
+
+# Scan last commit
+pyguard --diff HEAD~1 .
+
+# Scan staged changes
+pyguard --diff staged .
+```
+
+**Benefits:**
+- 10-100x faster scans for large repositories
+- Focus on newly introduced vulnerabilities
+- Perfect for PR-based workflows
+- Reduces CI/CD time dramatically
+
+**Enhanced Compliance Reporting** (v0.8.0) ✅ NEW!
+
+Generate audit-ready compliance reports mapping issues to 10+ frameworks:
+
+```bash
+# HTML report with beautiful styling
+pyguard src/ --compliance-html report.html
+
+# JSON for programmatic access
+pyguard src/ --compliance-json report.json
+```
+
+**Supported Frameworks:**
+- OWASP ASVS, PCI-DSS, HIPAA, SOC 2
+- ISO 27001, NIST CSF, GDPR, CCPA
+- FedRAMP, SOX
+
+**Features:**
+- Automatic issue-to-framework mapping
+- Beautiful HTML reports with CSS styling
+- JSON output for automation
+- Severity summaries and statistics
+- Evidence collection for audits
+
+**See**: `docs/guides/GIT_DIFF_ANALYSIS.md` and `docs/guides/COMPLIANCE_REPORTING.md` for complete guides.
 
 ---
 
