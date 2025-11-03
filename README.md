@@ -999,7 +999,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 </details>
 
-**More help:** [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions)
+**More help:** [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions) • [GitHub Issues](https://github.com/cboyd0319/PyGuard/issues)
 
 ## ⚡ Performance
 
