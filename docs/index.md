@@ -9,13 +9,20 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Installation & Setup](../README.md#installation) - Detailed installation guide
 - [Examples](examples/README.md) - Code examples
 
+### Strategic Documentation
+- [🗺️ Roadmap](../ROADMAP.md) - Complete roadmap with v0.7.0-v1.0.0 plans ✨ NEW
+- [📦 Distribution Strategy](../DISTRIBUTION.md) - Multi-channel distribution & security ✨ NEW
+- [🎯 Capabilities Reference](reference/capabilities-reference.md) - Complete feature catalog
+- [🏗️ Architecture](../ARCHITECTURE.md) - System design and technical overview
+
 ### User Guides
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
-- [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules ✨ NEW
+- [GitHub Action Guide](guides/github-action-guide.md) - CI/CD integration with GitHub Actions ✨
+- [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules
 - [Auto-Fix Guide](guides/auto-fix-guide.md) - Automated code fixes
 - [Git Hooks Guide](guides/git-hooks-guide.md) - Pre-commit integration
 - [Notebook Security Guide](guides/notebook-security-guide.md) - Jupyter notebook scanning
-- [Capabilities Reference](reference/capabilities-reference.md) - Complete feature catalog
+- [RipGrep Integration](guides/RIPGREP_INTEGRATION.md) - High-performance scanning (10-100x faster)
 - [Security Rules Reference](reference/security-rules.md) - All security checks
 
 ### Architecture & Implementation
