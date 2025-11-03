@@ -478,7 +478,7 @@ Real-time security linting in IDEs powered by LSP:
 
 ### Secure Supply Chain
 
-Following BazBOM's security-first approach:
+PyGuard implements industry-leading security practices:
 
 - **SLSA Level 3 Provenance** (v0.8.0) - Verifiable build integrity
 - **Sigstore/Cosign Signing** (v0.8.0) - Keyless release signing
