@@ -415,6 +415,9 @@ class OptimizedAnalyzer:
         try:
             current_hash = self.cache._compute_hash(file_path)
             cached_entry = self.cache.cache[cache_key]
+            # Defensive check for file_hash attribute
+            if not hasattr(cached_entry, 'file_hash'):
+                return False
             return current_hash == cached_entry.file_hash
         except Exception:
             return False
