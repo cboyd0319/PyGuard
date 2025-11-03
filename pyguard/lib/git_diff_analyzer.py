@@ -219,12 +219,20 @@ class GitDiffAnalyzer:
         except subprocess.CalledProcessError as e:
             self.logger.warning(f"Failed to get diff stats: {e}", category="Git")
         
+        # Note: files are already Path objects (relative to repo), convert to absolute
+        abs_files = []
+        for f in files:
+            if f.is_absolute():
+                abs_files.append(f)
+            else:
+                abs_files.append((self.repo_path / f).resolve())
+        
         return DiffStats(
             total_changed_files=len(files),
             python_files=len(python_files),
             added_lines=added_lines,
             deleted_lines=deleted_lines,
-            modified_files=[self.repo_path / f for f in files],
+            modified_files=abs_files,
         )
     
     def get_current_branch(self) -> str:

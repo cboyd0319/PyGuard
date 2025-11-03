@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from pyguard import __version__
 from pyguard.lib.core import PyGuardLogger
 
 
@@ -78,7 +79,7 @@ class ComplianceReporter:
             "metadata": {
                 "generated_at": datetime.now().isoformat(),
                 "tool": "PyGuard",
-                "version": "0.6.0",
+                "version": __version__,
             },
             "summary": self._generate_summary(issues),
             "frameworks": self._organize_by_framework(issues),
@@ -134,9 +135,23 @@ class ComplianceReporter:
                 frameworks["FedRAMP"].append(issue)
                 frameworks["ISO27001"].append(issue)
         
-        # Remove duplicates and count
+        # Remove duplicates using tuple of hashable fields
         for framework in frameworks:
-            frameworks[framework] = list({json.dumps(i, sort_keys=True): i for i in frameworks[framework]}.values())
+            seen = set()
+            unique_issues = []
+            for issue in frameworks[framework]:
+                # Create a hashable key from the issue
+                key = (
+                    issue.get("file", ""),
+                    issue.get("line", 0),
+                    issue.get("rule_id", ""),
+                    issue.get("severity", ""),
+                    issue.get("message", ""),
+                )
+                if key not in seen:
+                    seen.add(key)
+                    unique_issues.append(issue)
+            frameworks[framework] = unique_issues
         
         return frameworks
     
