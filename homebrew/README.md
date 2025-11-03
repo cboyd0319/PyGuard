@@ -48,8 +48,8 @@ Steps for v0.7.0 release:
 Before publishing (once v0.7.0 is released):
 
 ```bash
-# Install from local formula
-brew install --build-from-source homebrew/pyguard.rb
+# Install from local formula (run from repository root)
+brew install --build-from-source ./homebrew/pyguard.rb
 
 # Test installation
 pyguard --version

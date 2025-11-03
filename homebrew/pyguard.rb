@@ -8,8 +8,9 @@ class Pyguard < Formula
   desc "Comprehensive Python security & code quality scanner with 720+ checks and auto-fixes"
   homepage "https://github.com/cboyd0319/PyGuard"
   url "https://github.com/cboyd0319/PyGuard/archive/refs/tags/v0.7.0.tar.gz"
-  # sha256 will be calculated from actual release artifact
-  sha256 "TBD_CALCULATE_FROM_RELEASE"
+  # TODO: sha256 will be calculated from actual v0.7.0 release artifact
+  # Calculate with: shasum -a 256 pyguard-0.7.0.tar.gz
+  sha256 "" # REQUIRED: Must be filled before publishing
   license "MIT"
   
   # Python dependency

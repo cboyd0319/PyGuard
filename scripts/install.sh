@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="cboyd0319/PyGuard"
+REPO="${PYGUARD_REPO:-cboyd0319/PyGuard}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.pyguard}"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 PYGUARD_VERSION="${PYGUARD_VERSION:-latest}"
@@ -145,24 +145,17 @@ EOF
 
 install_via_release() {
     # This will be implemented in v0.7.0+ with signed release artifacts
-    log_info "Installing from GitHub releases..."
-    
-    local version="${PYGUARD_VERSION#v}"
-    local filename="pyguard-${version}-${PLATFORM}-${ARCH}.tar.gz"
-    local download_url="https://github.com/$REPO/releases/download/$PYGUARD_VERSION/$filename"
-    
-    log_info "Downloading $filename..."
-    
-    # TODO v0.7.0: Implement release artifact download
-    # - Download tarball
-    # - Verify signature (Sigstore/cosign)
-    # - Verify SLSA provenance
-    # - Extract to INSTALL_DIR
-    # - Link binary to BIN_DIR
-    
-    log_warn "Release artifact installation not yet available"
+    log_warn "Release artifact installation not yet implemented (v0.7.0+)"
     log_info "Falling back to pip installation..."
     install_via_pip
+    
+    # TODO v0.7.0: Implement release artifact download
+    # Planned implementation:
+    # 1. Download tarball from GitHub releases
+    # 2. Verify signature with Sigstore/cosign
+    # 3. Verify SLSA provenance
+    # 4. Extract to INSTALL_DIR
+    # 5. Link binary to BIN_DIR
 }
 
 verify_installation() {
