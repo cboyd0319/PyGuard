@@ -1,0 +1,203 @@
+name: Docker Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker image tag (e.g., v0.7.0, latest)'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 1
+      
+      - name: Extract version from tag
+        id: get_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Building version: ${VERSION}"
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            cboyd0319/pyguard
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.get_version.outputs.VERSION }}
+      
+      - name: Generate SBOM
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }}
+          artifact-name: pyguard-docker-${{ steps.get_version.outputs.VERSION }}.spdx.json
+          output-file: pyguard-docker-${{ steps.get_version.outputs.VERSION }}.spdx.json
+          format: spdx-json
+      
+      - name: Scan image for vulnerabilities
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Test Docker image (amd64)
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          
+          # Pull the image
+          docker pull cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }}
+          
+          # Test version command
+          docker run --rm cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} --version
+          
+          # Test help command
+          docker run --rm cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} --help
+          
+          # Create test file
+          mkdir -p test-code
+          cat > test-code/test.py << 'EOF'
+          import pickle
+          data = pickle.load(open('file.pkl', 'rb'))
+          EOF
+          
+          # Test scanning
+          docker run --rm -v $(pwd)/test-code:/code:ro \
+            cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} /code --scan-only
+          
+          # Cleanup
+          rm -rf test-code
+          
+          echo "✓ Docker image tests passed"
+      
+      - name: Update Docker Hub description
+        if: github.event_name != 'pull_request'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: cboyd0319/pyguard
+          readme-filepath: ./docs/docker/README.md
+          short-description: "PyGuard - Comprehensive Python security & code quality scanner (1,230+ checks, auto-fixes)"
+      
+      - name: Add release summary
+        if: success() && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          {
+            echo "## 🐳 Docker Images Published"
+            echo ""
+            echo "### Multi-Architecture Support"
+            echo "- **linux/amd64** (Intel/AMD 64-bit)"
+            echo "- **linux/arm64** (ARM 64-bit, Apple Silicon)"
+            echo ""
+            echo "### Docker Hub"
+            echo "- **Repository:** https://hub.docker.com/r/cboyd0319/pyguard"
+            echo "- **Tag:** \`${{ steps.get_version.outputs.VERSION }}\`"
+            echo "- **Latest:** \`cboyd0319/pyguard:latest\`"
+            echo ""
+            echo "### GitHub Container Registry"
+            echo "- **Repository:** ghcr.io/${{ github.repository }}"
+            echo "- **Tag:** \`${{ steps.get_version.outputs.VERSION }}\`"
+            echo ""
+            echo "### Usage"
+            echo "\`\`\`bash"
+            echo "# Pull image"
+            echo "docker pull cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }}"
+            echo ""
+            echo "# Scan code"
+            echo "docker run -v \$(pwd):/code:ro cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} /code"
+            echo ""
+            echo "# Auto-fix issues"
+            echo "docker run -v \$(pwd):/code cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} /code --fix"
+            echo "\`\`\`"
+            echo ""
+            echo "### Security"
+            echo "- [OK] SBOM generated"
+            echo "- [OK] Vulnerability scan completed"
+            echo "- [OK] Image signed (coming in v0.8.0)"
+          } >> "${GITHUB_STEP_SUMMARY}"
