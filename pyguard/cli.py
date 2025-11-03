@@ -541,6 +541,22 @@ def main():
     )
 
     parser.add_argument(
+        "--compliance-html",
+        type=str,
+        metavar="FILE",
+        help="Generate HTML compliance report with issues mapped to frameworks "
+        "(OWASP, PCI-DSS, HIPAA, SOC2, ISO27001, etc.). Example: --compliance-html report.html",
+    )
+
+    parser.add_argument(
+        "--compliance-json",
+        type=str,
+        metavar="FILE",
+        help="Generate JSON compliance report for programmatic processing. "
+        "Example: --compliance-json report.json",
+    )
+
+    parser.add_argument(
         "--diff",
         type=str,
         metavar="SPEC",
@@ -943,6 +959,23 @@ def main():
             cli.ui.console.print(f"    CRITICAL: {notebook_results.get('critical_count', 0)}")
             cli.ui.console.print(f"    HIGH: {notebook_results.get('high_count', 0)}")
             cli.ui.console.print()
+
+    # Generate enhanced compliance reports if requested
+    if args.compliance_html or args.compliance_json:
+        from pyguard.lib.compliance_reporter import ComplianceReporter  # noqa: PLC0415 - Lazy import
+
+        reporter = ComplianceReporter()
+        
+        # Collect all issues from results
+        all_issues = results.get("all_issues", [])
+        
+        if args.compliance_html:
+            cli.ui.console.print(f"[cyan]Generating HTML compliance report: {args.compliance_html}[/cyan]")
+            reporter.generate_html_report(all_issues, args.compliance_html)
+        
+        if args.compliance_json:
+            cli.ui.console.print(f"[cyan]Generating JSON compliance report: {args.compliance_json}[/cyan]")
+            reporter.generate_json_report(all_issues, args.compliance_json)
 
     # Print results
     cli.print_results(results, generate_html=not args.no_html, generate_sarif=args.sarif)
