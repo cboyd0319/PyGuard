@@ -540,42 +540,109 @@ def main():
         help="Generate compliance report from OWASP/CWE annotations in code.",
     )
 
+    parser.add_argument(
+        "--compliance-html",
+        type=str,
+        metavar="FILE",
+        help="Generate HTML compliance report with issues mapped to frameworks "
+        "(OWASP, PCI-DSS, HIPAA, SOC2, ISO27001, etc.). Example: --compliance-html report.html",
+    )
+
+    parser.add_argument(
+        "--compliance-json",
+        type=str,
+        metavar="FILE",
+        help="Generate JSON compliance report for programmatic processing. "
+        "Example: --compliance-json report.json",
+    )
+
+    parser.add_argument(
+        "--diff",
+        type=str,
+        metavar="SPEC",
+        help="Analyze only changed files in git diff. "
+        "SPEC can be branch comparison (main..feature), commit range (HEAD~1), "
+        "or 'staged' for staged changes. Example: --diff main..feature-branch",
+    )
+
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Enable parallel processing for faster analysis of multiple files. "
+        "Uses multiple CPU cores to process files concurrently.",
+    )
+
     args = parser.parse_args()
 
     # Initialize CLI with unsafe fixes flag
     cli = PyGuardCLI(allow_unsafe_fixes=args.unsafe_fixes)
 
-    # Collect files
-    all_files = []
-    notebook_files = []
-    for path_str in args.paths:
-        path = Path(path_str)
+    # Handle git diff mode
+    if args.diff:
+        from pyguard.lib.git_diff_analyzer import GitDiffAnalyzer  # noqa: PLC0415 - Lazy import
 
-        if path.is_file():
-            if path.suffix == ".py":
-                all_files.append(path)
-            elif path.suffix == ".ipynb":
-                notebook_files.append(path)
-        elif path.is_dir():
-            # Find Python files
-            files = cli.file_ops.find_python_files(path, args.exclude)
-            all_files.extend(files)
+        try:
+            diff_analyzer = GitDiffAnalyzer()
+            
+            # Handle special cases
+            if args.diff == "staged":
+                all_files = diff_analyzer.get_changed_files(include_staged=True)
+            else:
+                all_files = diff_analyzer.get_changed_files(diff_spec=args.diff)
+            
+            if not all_files:
+                cli.ui.console.print(
+                    f"[yellow]No changed Python files found for diff: {args.diff}[/yellow]"
+                )
+                sys.exit(0)
+            
+            # Show what we're analyzing
+            stats = diff_analyzer.get_diff_stats(args.diff if args.diff != "staged" else "HEAD")
+            cli.ui.console.print("[bold cyan]Git Diff Analysis[/bold cyan]")
+            cli.ui.console.print(f"  Diff specification: {args.diff}")
+            cli.ui.console.print(f"  Changed files: {stats.total_changed_files}")
+            cli.ui.console.print(f"  Python files: {len(all_files)}")
+            cli.ui.console.print(f"  Lines added: +{stats.added_lines}")
+            cli.ui.console.print(f"  Lines deleted: -{stats.deleted_lines}")
+            cli.ui.console.print()
+            
+            notebook_files = []  # Don't analyze notebooks in diff mode for now
+            
+        except ValueError as e:
+            cli.ui.print_error("Git Diff Error", str(e))
+            sys.exit(1)
+    else:
+        # Collect files normally
+        all_files = []
+        notebook_files = []
+        for path_str in args.paths:
+            path = Path(path_str)
 
-            # Find Jupyter notebooks
-            for nb_file in path.rglob("*.ipynb"):
-                # Skip files in exclude patterns
-                skip = False
-                for pattern in args.exclude:
-                    if nb_file.match(pattern):
-                        skip = True
-                        break
-                if not skip and ".ipynb_checkpoints" not in str(nb_file):
-                    notebook_files.append(nb_file)
-        else:
-            # Path doesn't exist or is not a regular file/directory
-            cli.ui.console.print(
-                f"[yellow]Warning: {path_str} is not a Python file, notebook, or directory.[/yellow]"
-            )
+            if path.is_file():
+                if path.suffix == ".py":
+                    all_files.append(path)
+                elif path.suffix == ".ipynb":
+                    notebook_files.append(path)
+            elif path.is_dir():
+                # Find Python files
+                files = cli.file_ops.find_python_files(path, args.exclude)
+                all_files.extend(files)
+
+                # Find Jupyter notebooks
+                for nb_file in path.rglob("*.ipynb"):
+                    # Skip files in exclude patterns
+                    skip = False
+                    for pattern in args.exclude:
+                        if nb_file.match(pattern):
+                            skip = True
+                            break
+                    if not skip and ".ipynb_checkpoints" not in str(nb_file):
+                        notebook_files.append(nb_file)
+            else:
+                # Path doesn't exist or is not a regular file/directory
+                cli.ui.console.print(
+                    f"[yellow]Warning: {path_str} is not a Python file, notebook, or directory.[/yellow]"
+                )
 
     if not all_files and not notebook_files:
         cli.ui.print_error(
@@ -892,6 +959,23 @@ def main():
             cli.ui.console.print(f"    CRITICAL: {notebook_results.get('critical_count', 0)}")
             cli.ui.console.print(f"    HIGH: {notebook_results.get('high_count', 0)}")
             cli.ui.console.print()
+
+    # Generate enhanced compliance reports if requested
+    if args.compliance_html or args.compliance_json:
+        from pyguard.lib.compliance_reporter import ComplianceReporter  # noqa: PLC0415 - Lazy import
+
+        reporter = ComplianceReporter()
+        
+        # Collect all issues from results
+        all_issues = results.get("all_issues", [])
+        
+        if args.compliance_html:
+            cli.ui.console.print(f"[cyan]Generating HTML compliance report: {args.compliance_html}[/cyan]")
+            reporter.generate_html_report(all_issues, args.compliance_html)
+        
+        if args.compliance_json:
+            cli.ui.console.print(f"[cyan]Generating JSON compliance report: {args.compliance_json}[/cyan]")
+            reporter.generate_json_report(all_issues, args.compliance_json)
 
     # Print results
     cli.print_results(results, generate_html=not args.no_html, generate_sarif=args.sarif)

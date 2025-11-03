@@ -189,19 +189,25 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 #### Core Features
 
-**Git Diff Analysis**
-- [ ] Scan only changed files in PR
-- [ ] Compare security posture before/after
-- [ ] Focus on introduced vulnerabilities
-- [ ] Integration with GitHub PR checks
-- [ ] Usage: `pyguard --diff main..feature-branch`
+**Git Diff Analysis** ✅ COMPLETE
+- [x] Scan only changed files in PR
+- [x] Focus on introduced vulnerabilities
+- [x] Integration with GitHub PR checks
+- [x] Usage: `pyguard --diff main..feature-branch`
+- [x] Support for staged changes: `pyguard --diff staged`
+- [x] Diff statistics (files changed, lines added/deleted)
+- [ ] Compare security posture before/after (future enhancement)
 
-**Enhanced Compliance Reporting**
-- [ ] Generate compliance reports (PDF, HTML)
-- [ ] Evidence collection for audits
-- [ ] Historical compliance tracking
-- [ ] Custom compliance frameworks
-- [ ] Frameworks: OWASP ASVS, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST
+**Enhanced Compliance Reporting** ✅ COMPLETE
+- [x] Generate compliance reports (HTML, JSON)
+- [x] Evidence collection for audits
+- [x] Framework mapping for 10+ standards
+- [x] Frameworks: OWASP ASVS, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
+- [x] Beautiful HTML reports with CSS styling
+- [x] JSON reports for programmatic processing
+- [x] Usage: `pyguard --compliance-html report.html --compliance-json report.json`
+- [ ] PDF generation (future enhancement)
+- [ ] Historical compliance tracking (future enhancement)
 
 **API Enhancements**
 - [ ] Comprehensive Python API for programmatic use
@@ -213,6 +219,8 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - ✅ SLSA Level 3 provenance for all releases (COMPLETE)
 - ✅ All releases signed with Sigstore (COMPLETE)
 - ✅ SBOM published for PyGuard dependencies (COMPLETE)
+- ✅ Git Diff Analysis implemented (COMPLETE)
+- ✅ Enhanced Compliance Reporting (HTML/JSON) (COMPLETE)
 - ⏳ PyCharm plugin on JetBrains Marketplace
 - ⏳ LSP fully compliant with specification
 - ⏳ OpenSSF Scorecard >8.0
