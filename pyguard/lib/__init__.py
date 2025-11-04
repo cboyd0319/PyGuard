@@ -14,6 +14,16 @@ from pyguard.lib.advanced_security import (
     TaintAnalyzer,
 )
 
+# NEW in v0.7.0: Enhanced taint analysis with cross-function tracking
+from pyguard.lib.taint_analysis import (
+    EnhancedTaintAnalyzer,
+    TaintPath,
+    TaintSink,
+    TaintSource,
+    analyze_taint_flows,
+    get_taint_paths,
+)
+
 # NEW in v0.3.0: AI-powered explanations
 from pyguard.lib.ai_explainer import (
     AIExplainer,
@@ -140,6 +150,15 @@ from pyguard.lib.notebook_security import (
     scan_notebook,
 )
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
+
+# NEW in v0.7.0: Performance optimization system
+from pyguard.lib.performance_optimizer import (
+    DependencyAnalyzer,
+    DependencyGraph,
+    FileMetrics,
+    OptimizedAnalyzer,
+    SmartAnalysisCache,
+)
 
 # NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
 from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
@@ -326,6 +345,12 @@ __all__ = [
     "PandasRulesChecker",
     # Parallel
     "ParallelProcessor",
+    # Performance Optimization (NEW v0.7.0)
+    "DependencyAnalyzer",
+    "DependencyGraph",
+    "FileMetrics",
+    "OptimizedAnalyzer",
+    "SmartAnalysisCache",
     # Pathlib Patterns (NEW v0.9.0)
     "PathlibChecker",
     "PathlibIssue",
@@ -361,6 +386,11 @@ __all__ = [
     # Supply Chain
     "SupplyChainAnalyzer",
     "TaintAnalyzer",
+    # Enhanced Taint Analysis (NEW - v0.7.0)
+    "EnhancedTaintAnalyzer",
+    "TaintPath",
+    "TaintSink",
+    "TaintSource",
     "TensorFlowSecurityVisitor",
     "TornadoSecurityVisitor",
     "UltraAdvancedSecurityFixer",  # NEW v0.8.0
@@ -388,6 +418,9 @@ __all__ = [
     "analyze_sqlalchemy_security",
     # Supply Chain Advanced (NEW - Security Dominance Plan Week 11-12)
     "analyze_supply_chain_advanced",
+    # Enhanced Taint Analysis (NEW - v0.7.0)
+    "analyze_taint_flows",
+    "get_taint_paths",
     # TensorFlow Framework (NEW - Security Dominance Plan Week 13-14)
     "analyze_tensorflow_security",
     # Tornado Framework (NEW - Security Dominance Plan Week 11-12)

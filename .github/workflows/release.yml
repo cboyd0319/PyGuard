@@ -107,6 +107,62 @@ jobs:
         upload-signing-artifacts: true
         release-signing-artifacts: true
 
+    - name: Import GPG key
+      if: env.GPG_PRIVATE_KEY != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        echo "GPG key imported successfully"
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+    - name: Sign artifacts with GPG
+      if: env.GPG_PRIVATE_KEY != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        # Sign each distribution file
+        for file in dist/*.tar.gz dist/*.whl; do
+          if [ -f "$file" ]; then
+            gpg --batch --yes --detach-sign --armor "$file"
+            echo "Signed: $file"
+          fi
+        done
+        
+        # Sign SBOM files
+        if [ -f "pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json" ]; then
+          gpg --batch --yes --detach-sign --armor "pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json"
+          echo "Signed: SPDX SBOM"
+        fi
+        
+        if [ -f "pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json" ]; then
+          gpg --batch --yes --detach-sign --armor "pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json"
+          echo "Signed: CycloneDX SBOM"
+        fi
+        
+        # Sign checksums
+        if [ -f "dist/checksums.sha256" ]; then
+          gpg --batch --yes --detach-sign --armor "dist/checksums.sha256"
+          echo "Signed: checksums"
+        fi
+        
+        echo "All artifacts signed with GPG"
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+    - name: Export GPG public key
+      if: env.GPG_PRIVATE_KEY != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Export public key for users to verify signatures
+        gpg --armor --export > pyguard-pgp-public-key.asc
+        echo "Public key exported to pyguard-pgp-public-key.asc"
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
     - name: Publish to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -197,12 +253,17 @@ jobs:
           pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json
           dist/*.sig
           dist/*.crt
+          dist/*.asc
           pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json.sig
           pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json.crt
+          pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json.asc
           pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json.sig
           pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json.crt
+          pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json.asc
           dist/checksums.sha256.sig
           dist/checksums.sha256.crt
+          dist/checksums.sha256.asc
+          pyguard-pgp-public-key.asc
         body_path: release_notes.md
         draft: false
         prerelease: false
@@ -251,6 +312,8 @@ jobs:
           echo "- [OK] SHA256 checksums"
           echo "- [OK] Sigstore signatures (.sig files)"
           echo "- [OK] Sigstore certificates (.crt files)"
+          echo "- [OK] GPG signatures (.asc files)"
+          echo "- [OK] GPG public key (for verification)"
           echo "- [OK] Homebrew formula updated"
           echo ""
           echo "### Installation"
@@ -261,18 +324,22 @@ jobs:
           echo "### Security"
           echo "- Build provenance verifiable via GitHub attestations"
           echo "- All artifacts signed with Sigstore (keyless signing)"
+          echo "- All artifacts signed with GPG (traditional signing)"
           echo "- Signatures recorded in Rekor transparency log"
           echo "- All dependencies audited by pip-audit, OSV-Scanner, Safety"
           echo "- Code scanned by Bandit, Semgrep, CodeQL"
           echo ""
           echo "### Verify Signatures"
           echo "\`\`\`bash"
-          echo "# Install sigstore CLI"
+          echo "# Verify with Sigstore (keyless)"
           echo "pip install sigstore"
-          echo ""
-          echo "# Verify a release artifact"
           echo "sigstore verify github pyguard-${{ steps.get_version.outputs.VERSION }}.tar.gz \\"
           echo "  --cert-identity https://github.com/cboyd0319/PyGuard/.github/workflows/release.yml@refs/tags/v${{ steps.get_version.outputs.VERSION }} \\"
           echo "  --cert-oidc-issuer https://token.actions.githubusercontent.com"
+          echo ""
+          echo "# Verify with GPG (traditional)"
+          echo "wget https://github.com/cboyd0319/PyGuard/releases/download/v${{ steps.get_version.outputs.VERSION }}/pyguard-pgp-public-key.asc"
+          echo "gpg --import pyguard-pgp-public-key.asc"
+          echo "gpg --verify pyguard-${{ steps.get_version.outputs.VERSION }}.tar.gz.asc pyguard-${{ steps.get_version.outputs.VERSION }}.tar.gz"
           echo "\`\`\`"
         } >> "${GITHUB_STEP_SUMMARY}"
