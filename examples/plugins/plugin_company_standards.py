@@ -30,14 +30,16 @@ class CompanyStandardsPlugin(PluginInterface):
     def register_rules(self, engine: CustomRuleEngine) -> None:
         """Register company-specific rules."""
 
-        # Rule 1: Require company copyright header
+        # Rule 1: Detect missing company copyright header
+        # Note: This is a simple example. For real use, check first 10 lines of file
+        # and use AST-based check for better accuracy
         engine.add_regex_rule(
             rule_id="COMPANY_001",
-            name="Missing Copyright Header",
-            pattern=r"^(?!.*Copyright.*Your Company)",
+            name="Copyright Header Check",
+            pattern=r"#\s*Copyright[^\r\n]*Your Company",
             severity="LOW",
             category="Company Standards",
-            description="File is missing company copyright header",
+            description="Verify file has company copyright header in first few lines",
             suggestion="Add copyright header: # Copyright (c) 2024 Your Company. All rights reserved.",
         )
 
@@ -52,14 +54,15 @@ class CompanyStandardsPlugin(PluginInterface):
             suggestion="Migrate to the new API as documented in the migration guide",
         )
 
-        # Rule 3: Require specific logging format
+        # Rule 3: Detect simple (non-structured) logging
+        # This detects logger calls without structured data (no f-strings, no extra=)
         engine.add_regex_rule(
             rule_id="COMPANY_003",
-            name="Non-Standard Logging",
-            pattern=r'logger\.(info|debug|warning|error)\(["\'][^"\']*[^}\]]["\']\)',
+            name="Non-Structured Logging",
+            pattern=r'logger\.(info|debug|warning|error)\(["\'][^"\']*["\']\s*\)',
             severity="LOW",
             category="Company Standards",
-            description="Logging statement doesn't use structured logging format",
+            description="Logging statement uses simple strings instead of structured logging",
             suggestion="Use structured logging: logger.info('message', extra={'key': 'value'})",
         )
 

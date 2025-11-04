@@ -357,7 +357,7 @@ class ExampleSecurityPlugin(PluginInterface):
         engine.add_regex_rule(
             rule_id="PLUGIN_EXAMPLE_001",
             name="Hardcoded API Key",
-            pattern=r'api[_-]?key\s*=\s*["\'][^"\']{20,}["\']',
+            pattern=r'api[_\-]?key\s*=\s*["\'][^"\']{20,}["\']',
             severity="HIGH",
             category="Security",
             description="Hardcoded API key detected",
