@@ -55,7 +55,7 @@ class AnalysisResult:
         lines_analyzed: Number of lines analyzed
     """
 
-    issues: list[SecurityIssue] = field(default_factory=list)
+    issues: list[SecurityIssue | CodeQualityIssue] = field(default_factory=list)
     file_path: str | None = None
     execution_time_ms: float = 0.0
     lines_analyzed: int = 0
@@ -213,6 +213,13 @@ class PyGuardAPI:
         try:
             # Read file content
             content = self.file_ops.read_file(file_path)
+            if content is None:
+                return AnalysisResult(
+                    issues=[],
+                    file_path=str(file_path),
+                    execution_time_ms=0.0,
+                    lines_analyzed=0,
+                )
             source_lines = content.splitlines()
             lines_analyzed = len(source_lines)
 
@@ -363,7 +370,7 @@ class PyGuardAPI:
 
             # Import version from main package
             from pyguard import __version__
-            
+
             report_data = {
                 "tool": "pyguard",
                 "version": __version__,
@@ -418,13 +425,12 @@ class PyGuardAPI:
             return html
 
         elif format == "sarif":
-            from pyguard.lib.sarif_reporter import SARIFReporter
-
             # Import version from main package
             from pyguard import __version__
-            
+            from pyguard.lib.sarif_reporter import SARIFReporter
+
             # SARIF reporter expects a list of files, so we'll create a simple one
-            sarif_reporter = SARIFReporter([])
+            sarif_reporter = SARIFReporter()
             # Generate SARIF format manually
             import json
 

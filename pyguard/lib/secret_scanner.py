@@ -4,10 +4,10 @@ Fast secret scanning using ripgrep with comprehensive patterns.
 Detects hardcoded credentials, API keys, tokens, and other sensitive data.
 """
 
+from dataclasses import dataclass
 import json
 import re
 import subprocess
-from dataclasses import dataclass
 from typing import Any, ClassVar
 
 

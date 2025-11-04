@@ -20,13 +20,14 @@ Use Cases:
 - Enable users to test compatibility before upgrading
 """
 
+from dataclasses import dataclass, field
+from enum import Enum
 import functools
 import inspect
 import logging
-import warnings
-from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
+import warnings
+
 from packaging import version as pkg_version
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ class APIVersion:
     major: int
     minor: int
     patch: int
-    
+
     @classmethod
     def from_string(cls, version_str: str) -> 'APIVersion':
         """Parse version string (e.g., "1.2.3")."""
@@ -67,25 +68,25 @@ class APIVersion:
                 patch=parsed.micro,
             )
         raise ValueError(f"Invalid version string: {version_str}")
-    
+
     def __str__(self) -> str:
         """Convert to string."""
         return f"{self.major}.{self.minor}.{self.patch}"
-    
+
     def __lt__(self, other: 'APIVersion') -> bool:
         """Compare versions."""
         return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
-    
+
     def __le__(self, other: 'APIVersion') -> bool:
         """Compare versions."""
         return (self.major, self.minor, self.patch) <= (other.major, other.minor, other.patch)
-    
+
     def __eq__(self, other: object) -> bool:
         """Check equality."""
         if not isinstance(other, APIVersion):
             return NotImplemented
         return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
-    
+
     def is_compatible_with(self, other: 'APIVersion') -> bool:
         """
         Check if this version is compatible with another.
@@ -105,7 +106,7 @@ class DeprecationInfo:
     reason: Optional[str] = None
     migration_guide: Optional[str] = None
     phase: DeprecationPhase = DeprecationPhase.WARNING
-    
+
     def get_warning_message(self) -> str:
         """Generate deprecation warning message."""
         msg = f"{self.name} is deprecated since version {self.deprecated_in}"
@@ -130,11 +131,11 @@ class APIRegistration:
     module: str
     deprecation_info: Optional[DeprecationInfo] = None
     breaking_changes: List[str] = field(default_factory=list)
-    
+
     def is_stable(self) -> bool:
         """Check if API is stable."""
         return self.stability_level == StabilityLevel.STABLE
-    
+
     def is_deprecated(self) -> bool:
         """Check if API is deprecated."""
         return self.stability_level == StabilityLevel.DEPRECATED
@@ -147,7 +148,7 @@ class APIRegistry:
     Maintains catalog of public APIs with their stability levels,
     deprecation status, and version information.
     """
-    
+
     def __init__(self, current_version: str = "0.8.0"):
         """
         Initialize API registry.
@@ -159,7 +160,7 @@ class APIRegistry:
         self.apis: Dict[str, APIRegistration] = {}
         self.deprecations: Dict[str, DeprecationInfo] = {}
         logger.info(f"API registry initialized for version {self.current_version}")
-    
+
     def register_api(
         self,
         name: str,
@@ -178,11 +179,11 @@ class APIRegistry:
         """
         signature = ""
         module = ""
-        
+
         if func:
             signature = str(inspect.signature(func))
             module = func.__module__
-        
+
         registration = APIRegistration(
             name=name,
             stability_level=stability_level,
@@ -190,10 +191,10 @@ class APIRegistry:
             signature=signature,
             module=module,
         )
-        
+
         self.apis[name] = registration
         logger.debug(f"Registered API: {name} ({stability_level.value})")
-    
+
     def deprecate_api(
         self,
         name: str,
@@ -222,16 +223,16 @@ class APIRegistry:
             reason=reason,
             migration_guide=migration_guide,
         )
-        
+
         self.deprecations[name] = deprecation
-        
+
         # Update API registration if exists
         if name in self.apis:
             self.apis[name].stability_level = StabilityLevel.DEPRECATED
             self.apis[name].deprecation_info = deprecation
-        
+
         logger.info(f"Deprecated API: {name} (removal in {removal_in})")
-    
+
     def check_compatibility(
         self,
         target_version: str,
@@ -246,11 +247,11 @@ class APIRegistry:
             Compatibility report
         """
         target = APIVersion.from_string(target_version)
-        
+
         incompatible_apis = []
         removed_apis = []
         deprecated_apis = []
-        
+
         for name, api in self.apis.items():
             # Check if API is removed in target version
             if api.deprecation_info:
@@ -267,7 +268,7 @@ class APIRegistry:
                         'removal_in': str(api.deprecation_info.removal_in),
                         'replacement': api.deprecation_info.replacement,
                     })
-            
+
             # Check if API introduced after target
             if api.introduced_in > target:
                 incompatible_apis.append({
@@ -275,7 +276,7 @@ class APIRegistry:
                     'introduced_in': str(api.introduced_in),
                     'reason': f"API not available in version {target}",
                 })
-        
+
         return {
             'current_version': str(self.current_version),
             'target_version': str(target),
@@ -284,7 +285,7 @@ class APIRegistry:
             'deprecated_apis': deprecated_apis,
             'incompatible_apis': incompatible_apis,
         }
-    
+
     def get_migration_guide(
         self,
         from_version: str,
@@ -302,11 +303,11 @@ class APIRegistry:
         """
         from_ver = APIVersion.from_string(from_version)
         to_ver = APIVersion.from_string(to_version)
-        
+
         changes_required = []
         deprecation_warnings = []
         new_features = []
-        
+
         for name, api in self.apis.items():
             # APIs deprecated in range
             if api.deprecation_info:
@@ -319,7 +320,7 @@ class APIRegistry:
                         'replacement': api.deprecation_info.replacement,
                         'migration_guide': api.deprecation_info.migration_guide,
                     })
-                
+
                 # APIs removed in range
                 removal = api.deprecation_info.removal_in
                 if from_ver < removal <= to_ver:
@@ -329,7 +330,7 @@ class APIRegistry:
                         'replacement': api.deprecation_info.replacement,
                         'action': 'REQUIRED: Update code before upgrading',
                     })
-            
+
             # New APIs in range
             if from_ver < api.introduced_in <= to_ver:
                 new_features.append({
@@ -337,7 +338,7 @@ class APIRegistry:
                     'introduced_in': str(api.introduced_in),
                     'stability': api.stability_level.value,
                 })
-        
+
         return {
             'from_version': from_version,
             'to_version': to_version,
@@ -384,15 +385,15 @@ def stable_api(
             introduced_in=introduced_in,
             func=func,
         )
-        
+
         # Add metadata to function
-        func.__api_stability__ = {
+        setattr(func, '__api_stability__', {
             'introduced_in': introduced_in,
             'stability_level': stability_level.value,
-        }
-        
+        })
+
         return func
-    
+
     return decorator
 
 
@@ -424,7 +425,7 @@ def deprecated(
     """
     def decorator(func: Callable) -> Callable:
         name = f"{func.__module__}.{func.__qualname__}"
-        
+
         # Register deprecation
         _global_registry.deprecate_api(
             name=name,
@@ -434,7 +435,7 @@ def deprecated(
             reason=reason,
             migration_guide=migration_guide,
         )
-        
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Show deprecation warning
@@ -445,18 +446,18 @@ def deprecated(
                     DeprecationWarning,
                     stacklevel=2,
                 )
-            
+
             return func(*args, **kwargs)
-        
+
         # Add metadata
-        wrapper.__deprecated__ = {
+        setattr(wrapper, '__deprecated__', {
             'deprecated_in': deprecated_in,
             'removal_in': removal_in,
             'replacement': replacement,
-        }
-        
+        })
+
         return wrapper
-    
+
     return decorator
 
 
@@ -494,62 +495,62 @@ def generate_migration_guide(
 def register_core_apis() -> None:
     """Register core PyGuard APIs with stability guarantees."""
     registry = get_registry()
-    
+
     # Core scanning APIs (stable since 0.6.0)
     registry.register_api(
         "pyguard.api.scan_file",
         StabilityLevel.STABLE,
         "0.6.0",
     )
-    
+
     registry.register_api(
         "pyguard.api.scan_directory",
         StabilityLevel.STABLE,
         "0.6.0",
     )
-    
+
     # Configuration APIs (stable since 0.6.0)
     registry.register_api(
         "pyguard.api.load_config",
         StabilityLevel.STABLE,
         "0.6.0",
     )
-    
+
     # Reporting APIs (stable since 0.6.0)
     registry.register_api(
         "pyguard.api.generate_report",
         StabilityLevel.STABLE,
         "0.6.0",
     )
-    
+
     # Auto-fix APIs (stable since 0.6.0)
     registry.register_api(
         "pyguard.api.fix_issues",
         StabilityLevel.STABLE,
         "0.6.0",
     )
-    
+
     # JSON-RPC API (beta since 0.8.0)
     registry.register_api(
         "pyguard.lib.jsonrpc_api.JSONRPCServer",
         StabilityLevel.BETA,
         "0.8.0",
     )
-    
+
     # Webhook API (beta since 0.8.0)
     registry.register_api(
         "pyguard.lib.webhook_api.WebhookServer",
         StabilityLevel.BETA,
         "0.8.0",
     )
-    
+
     # Plugin system (beta since 0.8.0)
     registry.register_api(
         "pyguard.lib.plugin_system.PluginManager",
         StabilityLevel.BETA,
         "0.8.0",
     )
-    
+
     logger.info("Core APIs registered with stability guarantees")
 
 

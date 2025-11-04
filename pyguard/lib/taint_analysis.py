@@ -219,7 +219,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         """Get the full attribute name from an Attribute or Subscript node."""
         if isinstance(node, ast.Attribute):
             parts = []
-            current = node
+            current: ast.expr = node
             while isinstance(current, ast.Attribute):
                 parts.append(current.attr)
                 current = current.value
@@ -266,7 +266,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         value = node.value
         if isinstance(value, ast.Await):
             value = value.value
-        
+
         # Check if assigning from a taint source (function call)
         if isinstance(value, ast.Call):
             call_name = self._get_call_name(value)
@@ -288,7 +288,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                             self.tainted_vars[var_name] = taint_source
                     found_taint = True
                     break
-            
+
             # If not a taint source, check if it's a method call on a tainted object
             if not found_taint and isinstance(value.func, ast.Attribute):
                 if isinstance(value.func.value, ast.Name) and value.func.value.id in self.tainted_vars:
@@ -306,7 +306,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         # Check if assigning from attribute access (e.g., request.json, request.GET)
         elif isinstance(value, (ast.Attribute, ast.Subscript)):
             attr_name = self._get_attribute_name(value)
-            
+
             # Check if it's a taint source pattern
             for source_pattern, (source_type, severity) in self.TAINT_SOURCES.items():
                 if source_pattern in attr_name:
@@ -609,6 +609,8 @@ def analyze_taint_flows(file_path: Path) -> list[SecurityIssue]:
     try:
         file_ops = FileOperations()
         content = file_ops.read_file(file_path)
+        if content is None:
+            return []
         source_lines = content.splitlines()
 
         tree = ast.parse(content, filename=str(file_path))
@@ -640,6 +642,8 @@ def get_taint_paths(file_path: Path) -> list[TaintPath]:
     try:
         file_ops = FileOperations()
         content = file_ops.read_file(file_path)
+        if content is None:
+            return []
         source_lines = content.splitlines()
 
         tree = ast.parse(content, filename=str(file_path))

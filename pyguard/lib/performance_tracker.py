@@ -9,10 +9,10 @@ References:
 - OWASP ASVS v5.0 | https://owasp.org/ASVS | Low | Performance considerations
 """
 
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+import time
 from typing import Any
 
 

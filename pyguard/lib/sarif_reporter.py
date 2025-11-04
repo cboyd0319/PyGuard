@@ -8,12 +8,12 @@ SARIF Specification: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0
 GitHub Integration: https://docs.github.com/en/code-security/code-scanning
 """
 
-import json
-import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 from typing import Any, ClassVar
+import uuid
 
 from pyguard.lib.core import PyGuardLogger
 

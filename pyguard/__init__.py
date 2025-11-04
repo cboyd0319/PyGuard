@@ -95,10 +95,18 @@ from pyguard.lib.xss_detection import (
 )
 
 __all__ = [
+    # High-level API
+    "AnalysisResult",
+    "PyGuardAPI",
+    "Severity",
+    "analyze_code",
+    "analyze_file",
+    # Rule Sets
     "BUGBEAR_RULES",
     "DEBUGGING_RULES",
     "EXCEPTION_HANDLING_RULES",
     "XSS_RULES",
+    # Core Components
     "ASTAnalyzer",
     "AnalysisCache",
     "AnalysisMetrics",

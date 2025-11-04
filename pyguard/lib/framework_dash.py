@@ -48,7 +48,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
         self.violations: list[RuleViolation] = []
         self.has_dash_import = False
         self.has_plotly_import = False
-        self.callbacks = []
+        self.callbacks: list[dict[str, Any]] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Dash/Plotly imports."""
@@ -205,7 +205,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
     def _contains_sql_keywords(self, node: ast.AST) -> bool:
         """Check if an AST node contains SQL keywords."""
         sql_keywords = {"SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "WHERE", "JOIN"}
-        
+
         def check_node(n: ast.AST) -> bool:
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
@@ -213,7 +213,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
             elif isinstance(n, ast.BinOp):
                 return check_node(n.left) or check_node(n.right)
             return False
-        
+
         return check_node(node)
 
 

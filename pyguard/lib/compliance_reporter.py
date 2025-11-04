@@ -9,8 +9,8 @@ Generates comprehensive compliance reports in multiple formats:
 Supports frameworks: OWASP ASVS, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 """
 
-import json
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any
 
@@ -25,12 +25,12 @@ class ComplianceReporter:
     Produces audit-ready documentation showing security posture
     against various compliance frameworks.
     """
-    
+
     def __init__(self):
         """Initialize compliance reporter."""
         self.logger = PyGuardLogger()
         self.report_data: dict[str, Any] = {}
-    
+
     def generate_html_report(
         self,
         issues: list[dict[str, Any]],
@@ -46,21 +46,21 @@ class ComplianceReporter:
             framework: Specific framework or "ALL" for comprehensive report
         """
         output_path = Path(output_path)
-        
+
         # Organize issues by framework
         framework_issues = self._organize_by_framework(issues)
-        
+
         # Generate HTML content
         html_content = self._generate_html_content(framework_issues, framework)
-        
+
         # Write to file
         output_path.write_text(html_content, encoding="utf-8")
-        
+
         self.logger.success(
             f"HTML compliance report generated: {output_path}",
             category="Compliance",
         )
-    
+
     def generate_json_report(
         self,
         issues: list[dict[str, Any]],
@@ -74,7 +74,7 @@ class ComplianceReporter:
             output_path: Path to save the JSON report
         """
         output_path = Path(output_path)
-        
+
         report = {
             "metadata": {
                 "generated_at": datetime.now().isoformat(),
@@ -85,17 +85,17 @@ class ComplianceReporter:
             "frameworks": self._organize_by_framework(issues),
             "issues": issues,
         }
-        
+
         output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-        
+
         self.logger.success(
             f"JSON compliance report generated: {output_path}",
             category="Compliance",
         )
-    
+
     def _organize_by_framework(self, issues: list[dict[str, Any]]) -> dict[str, Any]:
         """Organize issues by compliance framework."""
-        frameworks = {
+        frameworks: dict[str, list[Any]] = {
             "OWASP": [],
             "PCI-DSS": [],
             "HIPAA": [],
@@ -107,34 +107,34 @@ class ComplianceReporter:
             "FedRAMP": [],
             "SOX": [],
         }
-        
+
         for issue in issues:
             # Map issue types to frameworks
             issue_type = issue.get("rule_id", "").lower()
             severity = issue.get("severity", "LOW")
-            
+
             # Map to multiple frameworks if applicable
             if any(x in issue_type for x in ["injection", "xss", "sql"]):
                 frameworks["OWASP"].append(issue)
                 frameworks["PCI-DSS"].append(issue)
                 frameworks["ISO27001"].append(issue)
-            
+
             if any(x in issue_type for x in ["credential", "secret", "password"]):
                 frameworks["OWASP"].append(issue)
                 frameworks["PCI-DSS"].append(issue)
                 frameworks["SOC2"].append(issue)
                 frameworks["ISO27001"].append(issue)
-            
+
             if any(x in issue_type for x in ["pii", "data", "privacy"]):
                 frameworks["HIPAA"].append(issue)
                 frameworks["GDPR"].append(issue)
                 frameworks["CCPA"].append(issue)
-            
+
             if "crypto" in issue_type or "encryption" in issue_type:
                 frameworks["NIST"].append(issue)
                 frameworks["FedRAMP"].append(issue)
                 frameworks["ISO27001"].append(issue)
-        
+
         # Remove duplicates using tuple of hashable fields
         for framework in frameworks:
             seen = set()
@@ -152,34 +152,34 @@ class ComplianceReporter:
                     seen.add(key)
                     unique_issues.append(issue)
             frameworks[framework] = unique_issues
-        
+
         return frameworks
-    
+
     def _generate_summary(self, issues: list[dict[str, Any]]) -> dict[str, Any]:
         """Generate summary statistics."""
         severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0}
-        
+
         for issue in issues:
             severity = issue.get("severity", "INFO")
             if severity in severity_counts:
                 severity_counts[severity] += 1
-        
+
         return {
             "total_issues": len(issues),
             "by_severity": severity_counts,
             "critical_high_count": severity_counts["CRITICAL"] + severity_counts["HIGH"],
         }
-    
+
     def _generate_html_content(
         self,
         framework_issues: dict[str, list[dict[str, Any]]],
         selected_framework: str = "ALL",
     ) -> str:
         """Generate HTML content for the report."""
-        
+
         # Calculate totals
         total_issues = sum(len(issues) for issues in framework_issues.values())
-        
+
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -378,12 +378,12 @@ class ComplianceReporter:
             </div>
         </div>
 """
-        
+
         # Add framework sections
         for framework, issues in framework_issues.items():
             if not issues:
                 continue
-            
+
             html += f"""
         <div class="framework-section">
             <div class="framework-header">
@@ -392,7 +392,7 @@ class ComplianceReporter:
             </div>
             <ul class="issue-list">
 """
-            
+
             for issue in issues[:10]:  # Show first 10 per framework
                 severity_class = issue.get("severity", "LOW").lower()
                 html += f"""
@@ -406,7 +406,7 @@ class ComplianceReporter:
                     </div>
                 </li>
 """
-            
+
             if len(issues) > 10:
                 html += f"""
                 <li class="issue-item">
@@ -415,12 +415,12 @@ class ComplianceReporter:
                     </div>
                 </li>
 """
-            
+
             html += """
             </ul>
         </div>
 """
-        
+
         html += """
         <div class="footer">
             <p>Generated by <strong>PyGuard</strong> - Python Security & Compliance Tool</p>
@@ -430,5 +430,5 @@ class ComplianceReporter:
 </body>
 </html>
 """
-        
+
         return html

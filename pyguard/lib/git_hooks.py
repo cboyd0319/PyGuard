@@ -5,9 +5,9 @@ PyGuard as a git pre-commit hook for automatic code quality checks.
 """
 
 import os
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 
 from pyguard.lib.core import PyGuardLogger
 

@@ -22,19 +22,18 @@ Security:
 - No telemetry or data collection
 """
 
+from collections import defaultdict
+from dataclasses import dataclass, field
+from enum import Enum
 import hashlib
 import hmac
 import json
 import logging
-import secrets
-import time
-from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from collections import defaultdict
+import secrets
 import threading
-
+import time
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -108,12 +107,12 @@ class ApiKey:
 
 class RateLimiter:
     """Simple rate limiter for API keys."""
-    
+
     def __init__(self):
         """Initialize rate limiter."""
         self.requests: Dict[str, List[float]] = defaultdict(list)
         self.lock = threading.Lock()
-    
+
     def is_allowed(self, key_id: str, limit: int, window_seconds: int = 60) -> bool:
         """
         Check if a request is allowed under rate limits.
@@ -129,16 +128,16 @@ class RateLimiter:
         with self.lock:
             now = time.time()
             cutoff = now - window_seconds
-            
+
             # Remove old requests outside the window
             self.requests[key_id] = [
                 ts for ts in self.requests[key_id] if ts > cutoff
             ]
-            
+
             # Check if under limit
             if len(self.requests[key_id]) >= limit:
                 return False
-            
+
             # Add current request
             self.requests[key_id].append(now)
             return True
@@ -154,7 +153,7 @@ class PyGuardWebhookAPI:
     - Managing webhooks
     - API key management
     """
-    
+
     def __init__(
         self,
         host: str = "127.0.0.1",
@@ -172,20 +171,20 @@ class PyGuardWebhookAPI:
         self.host = host
         self.port = port
         self.require_https = require_https
-        
+
         # Storage (in production, use database)
         self.api_keys: Dict[str, ApiKey] = {}
         self.scan_jobs: Dict[str, ScanJob] = {}
         self.webhooks: List[WebhookConfig] = []
-        
+
         # Rate limiting
         self.rate_limiter = RateLimiter()
-        
+
         # Server state
         self.running = False
-        
+
         logger.info(f"PyGuard Webhook API initialized on {host}:{port}")
-    
+
     def generate_api_key(
         self,
         description: str = "",
@@ -205,7 +204,7 @@ class PyGuardWebhookAPI:
         """
         key_id = f"pyguard_{secrets.token_urlsafe(16)}"
         key_secret = secrets.token_urlsafe(32)
-        
+
         api_key = ApiKey(
             key_id=key_id,
             key_secret=key_secret,
@@ -213,12 +212,12 @@ class PyGuardWebhookAPI:
             rate_limit_per_minute=rate_limit,
             permissions=permissions or ["scan:trigger", "scan:read"],
         )
-        
+
         self.api_keys[key_id] = api_key
         logger.info(f"Generated API key: {key_id}")
-        
+
         return api_key
-    
+
     def validate_api_key(self, key_id: str, key_secret: str) -> Optional[ApiKey]:
         """
         Validate an API key.
@@ -232,24 +231,24 @@ class PyGuardWebhookAPI:
         """
         if key_id not in self.api_keys:
             return None
-        
+
         api_key = self.api_keys[key_id]
-        
+
         # Check if enabled
         if not api_key.enabled:
             logger.warning(f"Disabled API key used: {key_id}")
             return None
-        
+
         # Verify secret with constant-time comparison
         if not secrets.compare_digest(api_key.key_secret, key_secret):
             logger.warning(f"Invalid secret for API key: {key_id}")
             return None
-        
+
         # Update last used timestamp
         api_key.last_used_at = time.time()
-        
+
         return api_key
-    
+
     def check_rate_limit(self, api_key: ApiKey) -> bool:
         """
         Check if an API key is within rate limits.
@@ -265,7 +264,7 @@ class PyGuardWebhookAPI:
             api_key.rate_limit_per_minute,
             window_seconds=60,
         )
-    
+
     def trigger_scan(
         self,
         api_key: ApiKey,
@@ -296,7 +295,7 @@ class PyGuardWebhookAPI:
                 "error": "Insufficient permissions",
                 "error_code": "PERMISSION_DENIED",
             }
-        
+
         # Validate input
         if not target_path and not repository:
             return {
@@ -304,7 +303,7 @@ class PyGuardWebhookAPI:
                 "error": "Either target_path or repository must be provided",
                 "error_code": "INVALID_INPUT",
             }
-        
+
         # Create scan job
         job_id = f"scan_{int(time.time())}_{secrets.token_urlsafe(8)}"
         scan_job = ScanJob(
@@ -316,21 +315,21 @@ class PyGuardWebhookAPI:
             target_commit=commit,
             metadata=metadata or {},
         )
-        
+
         self.scan_jobs[job_id] = scan_job
-        
+
         logger.info(f"Scan triggered: {job_id} by {api_key.key_id}")
-        
+
         # Trigger webhook for scan started
         self._trigger_webhooks(WebhookEvent.SCAN_STARTED, scan_job)
-        
+
         return {
             "success": True,
             "job_id": job_id,
             "status": scan_job.status.value,
             "message": "Scan job created successfully",
         }
-    
+
     def get_scan_status(
         self,
         api_key: ApiKey,
@@ -353,7 +352,7 @@ class PyGuardWebhookAPI:
                 "error": "Insufficient permissions",
                 "error_code": "PERMISSION_DENIED",
             }
-        
+
         # Check if job exists
         if job_id not in self.scan_jobs:
             return {
@@ -361,9 +360,9 @@ class PyGuardWebhookAPI:
                 "error": f"Scan job not found: {job_id}",
                 "error_code": "JOB_NOT_FOUND",
             }
-        
+
         scan_job = self.scan_jobs[job_id]
-        
+
         return {
             "success": True,
             "job_id": job_id,
@@ -382,7 +381,7 @@ class PyGuardWebhookAPI:
             "result_url": scan_job.result_url,
             "metadata": scan_job.metadata,
         }
-    
+
     def get_scan_results(
         self,
         api_key: ApiKey,
@@ -405,7 +404,7 @@ class PyGuardWebhookAPI:
                 "error": "Insufficient permissions",
                 "error_code": "PERMISSION_DENIED",
             }
-        
+
         # Check if job exists
         if job_id not in self.scan_jobs:
             return {
@@ -413,9 +412,9 @@ class PyGuardWebhookAPI:
                 "error": f"Scan job not found: {job_id}",
                 "error_code": "JOB_NOT_FOUND",
             }
-        
+
         scan_job = self.scan_jobs[job_id]
-        
+
         # Check if completed
         if scan_job.status not in [ScanStatus.COMPLETED, ScanStatus.FAILED]:
             return {
@@ -424,7 +423,7 @@ class PyGuardWebhookAPI:
                 "error_code": "SCAN_INCOMPLETE",
                 "status": scan_job.status.value,
             }
-        
+
         # In production, load full results from storage
         return {
             "success": True,
@@ -442,7 +441,7 @@ class PyGuardWebhookAPI:
             "issues": [],  # TODO: Load from storage
             "result_url": scan_job.result_url,
         }
-    
+
     def list_scan_jobs(
         self,
         api_key: ApiKey,
@@ -467,19 +466,19 @@ class PyGuardWebhookAPI:
                 "error": "Insufficient permissions",
                 "error_code": "PERMISSION_DENIED",
             }
-        
+
         # Filter and sort jobs
         jobs = list(self.scan_jobs.values())
-        
+
         if status_filter:
             jobs = [j for j in jobs if j.status == status_filter]
-        
+
         # Sort by created time (newest first)
         jobs.sort(key=lambda j: j.started_at or 0, reverse=True)
-        
+
         # Limit results
         jobs = jobs[:limit]
-        
+
         return {
             "success": True,
             "count": len(jobs),
@@ -495,7 +494,7 @@ class PyGuardWebhookAPI:
                 for job in jobs
             ],
         }
-    
+
     def register_webhook(
         self,
         api_key: ApiKey,
@@ -519,7 +518,7 @@ class PyGuardWebhookAPI:
         if "webhook:manage" not in api_key.permissions:
             # Allow basic webhook management for all
             pass
-        
+
         # Validate URL
         if not url.startswith("https://") and self.require_https:
             return {
@@ -527,7 +526,7 @@ class PyGuardWebhookAPI:
                 "error": "Webhook URL must use HTTPS",
                 "error_code": "INVALID_URL",
             }
-        
+
         # Create webhook config
         webhook = WebhookConfig(
             url=url,
@@ -535,11 +534,11 @@ class PyGuardWebhookAPI:
             secret=secret or secrets.token_urlsafe(32),
             enabled=True,
         )
-        
+
         self.webhooks.append(webhook)
-        
+
         logger.info(f"Webhook registered: {url}")
-        
+
         return {
             "success": True,
             "webhook_url": url,
@@ -547,7 +546,7 @@ class PyGuardWebhookAPI:
             "secret": webhook.secret,
             "message": "Webhook registered successfully",
         }
-    
+
     def _trigger_webhooks(self, event: WebhookEvent, scan_job: ScanJob) -> None:
         """
         Trigger webhooks for an event.
@@ -559,10 +558,10 @@ class PyGuardWebhookAPI:
         for webhook in self.webhooks:
             if not webhook.enabled:
                 continue
-            
+
             if event not in webhook.events:
                 continue
-            
+
             # Build payload
             payload = {
                 "event": event.value,
@@ -572,7 +571,7 @@ class PyGuardWebhookAPI:
                 "issues_found": scan_job.issues_found,
                 "critical_issues": scan_job.critical_issues,
             }
-            
+
             # Sign payload if secret is configured
             if webhook.secret:
                 payload_json = json.dumps(payload, sort_keys=True)
@@ -582,10 +581,10 @@ class PyGuardWebhookAPI:
                     hashlib.sha256,
                 ).hexdigest()
                 payload["signature"] = f"sha256={signature}"
-            
+
             # TODO: Send HTTP POST to webhook URL
             logger.info(f"Webhook triggered: {webhook.url} for {event.value}")
-    
+
     def verify_webhook_signature(
         self,
         payload: str,
@@ -605,23 +604,23 @@ class PyGuardWebhookAPI:
         """
         if not signature.startswith("sha256="):
             return False
-        
+
         expected_signature = signature[7:]  # Remove "sha256=" prefix
-        
+
         computed_signature = hmac.new(
             secret.encode(),
             payload.encode(),
             hashlib.sha256,
         ).hexdigest()
-        
+
         return secrets.compare_digest(computed_signature, expected_signature)
-    
+
     def start(self) -> None:
         """Start the webhook API server."""
         logger.info(f"Starting PyGuard Webhook API on {self.host}:{self.port}")
         self.running = True
         logger.info("Webhook API ready (use external HTTP server for production)")
-    
+
     def stop(self) -> None:
         """Stop the webhook API server."""
         logger.info("Stopping PyGuard Webhook API")
@@ -631,7 +630,7 @@ class PyGuardWebhookAPI:
 # Example usage for CI/CD platforms
 class GitHubActionsIntegration:
     """Integration helper for GitHub Actions."""
-    
+
     @staticmethod
     def parse_github_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
         """Parse GitHub webhook payload."""
@@ -649,7 +648,7 @@ class GitHubActionsIntegration:
 
 class GitLabCIIntegration:
     """Integration helper for GitLab CI."""
-    
+
     @staticmethod
     def parse_gitlab_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
         """Parse GitLab webhook payload."""
@@ -667,7 +666,7 @@ class GitLabCIIntegration:
 
 class JenkinsIntegration:
     """Integration helper for Jenkins."""
-    
+
     @staticmethod
     def parse_jenkins_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
         """Parse Jenkins webhook payload."""

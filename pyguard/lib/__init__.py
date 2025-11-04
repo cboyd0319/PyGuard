@@ -14,16 +14,6 @@ from pyguard.lib.advanced_security import (
     TaintAnalyzer,
 )
 
-# NEW in v0.7.0: Enhanced taint analysis with cross-function tracking
-from pyguard.lib.taint_analysis import (
-    EnhancedTaintAnalyzer,
-    TaintPath,
-    TaintSink,
-    TaintSource,
-    analyze_taint_flows,
-    get_taint_paths,
-)
-
 # NEW in v0.3.0: AI-powered explanations
 from pyguard.lib.ai_explainer import (
     AIExplainer,
@@ -151,6 +141,10 @@ from pyguard.lib.notebook_security import (
 )
 from pyguard.lib.parallel import BatchProcessor, ParallelProcessor
 
+# NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
+from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
+from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
+
 # NEW in v0.7.0: Performance optimization system
 from pyguard.lib.performance_optimizer import (
     DependencyAnalyzer,
@@ -159,10 +153,6 @@ from pyguard.lib.performance_optimizer import (
     OptimizedAnalyzer,
     SmartAnalysisCache,
 )
-
-# NEW in v0.9.0: Pathlib patterns, Async patterns, Logging patterns, Datetime patterns
-from pyguard.lib.pathlib_patterns import PathlibChecker, PathlibIssue
-from pyguard.lib.pep8_comprehensive import PEP8Checker, PEP8Rules
 
 # NEW in v0.10.0: PIE patterns (code smells)
 from pyguard.lib.pie_patterns import PIE_RULES, PIEPatternChecker
@@ -197,6 +187,16 @@ from pyguard.lib.supply_chain_advanced import SUPPLY_CHAIN_RULES as SUPPLY_CHAIN
 from pyguard.lib.supply_chain_advanced import (
     SupplyChainAdvancedVisitor,
     analyze_supply_chain_advanced,
+)
+
+# NEW in v0.7.0: Enhanced taint analysis with cross-function tracking
+from pyguard.lib.taint_analysis import (
+    EnhancedTaintAnalyzer,
+    TaintPath,
+    TaintSink,
+    TaintSource,
+    analyze_taint_flows,
+    get_taint_paths,
 )
 
 # NEW in v0.8.0: Ultra-advanced auto-fixes

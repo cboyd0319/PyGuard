@@ -18,9 +18,9 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue

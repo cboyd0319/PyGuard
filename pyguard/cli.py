@@ -5,11 +5,11 @@ Enhanced with world-class UI using Rich library for beautiful, beginner-friendly
 """
 
 import argparse
-import sys
-import time
 from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
+import sys
+import time
 from typing import TYPE_CHECKING, Any, Optional
 
 from pyguard import __version__
@@ -583,19 +583,19 @@ def main():
 
         try:
             diff_analyzer = GitDiffAnalyzer()
-            
+
             # Handle special cases
             if args.diff == "staged":
                 all_files = diff_analyzer.get_changed_files(include_staged=True)
             else:
                 all_files = diff_analyzer.get_changed_files(diff_spec=args.diff)
-            
+
             if not all_files:
                 cli.ui.console.print(
                     f"[yellow]No changed Python files found for diff: {args.diff}[/yellow]"
                 )
                 sys.exit(0)
-            
+
             # Show what we're analyzing
             stats = diff_analyzer.get_diff_stats(args.diff if args.diff != "staged" else "HEAD")
             cli.ui.console.print("[bold cyan]Git Diff Analysis[/bold cyan]")
@@ -605,9 +605,9 @@ def main():
             cli.ui.console.print(f"  Lines added: +{stats.added_lines}")
             cli.ui.console.print(f"  Lines deleted: -{stats.deleted_lines}")
             cli.ui.console.print()
-            
-            notebook_files = []  # Don't analyze notebooks in diff mode for now
-            
+
+            notebook_files: list[Path] = []  # Don't analyze notebooks in diff mode for now
+
         except ValueError as e:
             cli.ui.print_error("Git Diff Error", str(e))
             sys.exit(1)
@@ -962,17 +962,19 @@ def main():
 
     # Generate enhanced compliance reports if requested
     if args.compliance_html or args.compliance_json:
-        from pyguard.lib.compliance_reporter import ComplianceReporter  # noqa: PLC0415 - Lazy import
+        from pyguard.lib.compliance_reporter import (
+            ComplianceReporter,  # noqa: PLC0415 - Lazy import
+        )
 
         reporter = ComplianceReporter()
-        
+
         # Collect all issues from results
-        all_issues = results.get("all_issues", [])
-        
+        all_issues: list[dict[str, Any]] = results.get("all_issues", [])
+
         if args.compliance_html:
             cli.ui.console.print(f"[cyan]Generating HTML compliance report: {args.compliance_html}[/cyan]")
             reporter.generate_html_report(all_issues, args.compliance_html)
-        
+
         if args.compliance_json:
             cli.ui.console.print(f"[cyan]Generating JSON compliance report: {args.compliance_json}[/cyan]")
             reporter.generate_json_report(all_issues, args.compliance_json)

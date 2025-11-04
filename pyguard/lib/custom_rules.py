@@ -6,10 +6,10 @@ YAML/TOML configuration or Python code.
 """
 
 import ast
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 try:
     import tomli as tomllib  # Python < 3.11

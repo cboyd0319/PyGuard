@@ -48,7 +48,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
         self.violations: list[RuleViolation] = []
         self.has_gradio_import = False
         self.has_authentication = False
-        self.file_uploads = []
+        self.file_uploads: list[dict[str, Any]] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Gradio imports."""
@@ -161,7 +161,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
     def _check_file_upload(self, node: ast.Call) -> None:
         """Check for insecure file upload handling."""
         has_file_types = False
-        
+
         for keyword in node.keywords:
             if keyword.arg == "file_types":
                 has_file_types = True
@@ -260,7 +260,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
     def _contains_sql_keywords(self, node: ast.AST) -> bool:
         """Check if an AST node contains SQL keywords."""
         sql_keywords = {"SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "WHERE", "JOIN"}
-        
+
         def check_node(n: ast.AST) -> bool:
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
@@ -268,7 +268,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
             elif isinstance(n, ast.BinOp):
                 return check_node(n.left) or check_node(n.right)
             return False
-        
+
         return check_node(node)
 
 
