@@ -3,90 +3,43 @@
 # before attempting builds/tests/lints, improving PR quality and speed.
 
 steps:
-  - name: macOS — Install Rust toolchain
-    if: runner.os == 'macOS'
-    run: |
-      if ! command -v rustc &> /dev/null; then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-        source "$HOME/.cargo/env"
-      fi
-      rustup update stable
-      rustc --version
-      cargo --version
-
-  - name: macOS — Install Java and build tools
+  - name: macOS — Install Python and package manager
     if: runner.os == 'macOS'
     run: |
       brew update
-      brew install openjdk@17 maven gradle bazelisk node vale
-      echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
-      java -version
-      mvn --version
-      gradle --version
-      bazel --version
-
-  - name: macOS — Install Node.js tools
-    if: runner.os == 'macOS'
-    run: |
-      npm install -g markdownlint-cli typescript @vscode/vsce
-      markdownlint --version
-      tsc --version
-      vsce --version || echo "vsce installed but may need login"
-
-  - name: macOS — Install Python tools (optional for CI scripts only)
-    if: runner.os == 'macOS'
-    run: |
+      brew install python@3.13 || brew upgrade python@3.13
       python3 --version
-      pip3 install --upgrade pip
-      echo "Python available for optional CI scripts"
+      pip3 --version
 
-  - name: Linux — Install Rust toolchain
-    if: runner.os == 'Linux'
+  - name: macOS — Install documentation and linting tools
+    if: runner.os == 'macOS'
     run: |
-      if ! command -v rustc &> /dev/null; then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-        source "$HOME/.cargo/env"
-      fi
-      rustup update stable
-      rustc --version
-      cargo --version
+      brew install vale markdownlint-cli node
+      vale --version || echo "Vale installation may need manual verification"
+      markdownlint --version
 
-  - name: Linux — Install Java and Maven
+  - name: macOS — Install optional security tools
+    if: runner.os == 'macOS'
+    run: |
+      brew install ripgrep
+      rg --version
+
+  - name: Linux — Update package manager and install Python
     if: runner.os == 'Linux'
     run: |
       sudo apt-get update
-      sudo apt-get install -y openjdk-17-jdk maven curl unzip wget
-      java -version
-      mvn --version
+      sudo apt-get install -y python3 python3-pip python3-venv curl wget git
+      python3 --version
+      pip3 --version
 
-  - name: Linux — Install Bazel
-    if: runner.os == 'Linux'
-    run: |
-      if ! command -v bazel &> /dev/null; then
-        npm install -g @bazel/bazelisk
-        sudo ln -s $(npm root -g)/@bazel/bazelisk/bazelisk.js /usr/local/bin/bazel || true
-      fi
-      bazel --version
-
-  - name: Linux — Install Gradle
-    if: runner.os == 'Linux'
-    run: |
-      GRADLE_VERSION=8.5
-      wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp
-      sudo unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip || true
-      sudo ln -sf /opt/gradle/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle || true
-      gradle --version || echo "Gradle installation may need manual verification"
-
-  - name: Linux — Install Node.js and markdownlint
+  - name: Linux — Install Node.js and documentation tools
     if: runner.os == 'Linux'
     run: |
       sudo apt-get install -y npm
-      npm install -g markdownlint-cli typescript @vscode/vsce
+      npm install -g markdownlint-cli
       markdownlint --version
-      tsc --version
-      vsce --version || echo "vsce installed but may need login"
 
-  - name: Linux — Install Vale (optional)
+  - name: Linux — Install Vale (optional documentation linter)
     if: runner.os == 'Linux'
     run: |
       set -euo pipefail
@@ -97,67 +50,51 @@ steps:
       sudo mv vale /usr/local/bin/vale || true
       vale --version || true
 
-  - name: Linux — Install Python tools (optional for CI scripts only)
+  - name: Linux — Install ripgrep (optional performance tool)
     if: runner.os == 'Linux'
     run: |
-      sudo apt-get install -y python3 python3-pip
-      python3 --version
-      pip3 install --upgrade pip
-      echo "Python available for optional CI scripts"
+      sudo apt-get install -y ripgrep || echo "ripgrep not available in apt, skipping"
+      rg --version || echo "ripgrep not installed"
 
-  - name: Install Rust development tools
+  - name: Install PyGuard Python dependencies
     run: |
-      rustup component add rustfmt clippy llvm-tools-preview
-      cargo install cargo-llvm-cov --locked || echo "cargo-llvm-cov already installed or failed"
+      python3 -m pip install --upgrade pip setuptools wheel
+      echo "Installing PyGuard in editable mode with development dependencies..."
+      pip install -e ".[dev]" || echo "Failed to install package in editable mode"
 
-  - name: Phase 4 — Install VS Code extension dependencies
+  - name: Install pre-commit hooks (optional)
     run: |
-      if [ -d "crates/bazbom-vscode-extension" ]; then
-        echo "Installing VS Code extension dependencies..."
-        cd crates/bazbom-vscode-extension
-        npm install || echo "npm install failed or no package.json yet"
-        cd ../..
+      if command -v pre-commit &> /dev/null && [ -f ".pre-commit-config.yaml" ]; then
+        echo "Installing pre-commit hooks..."
+        pre-commit install || echo "pre-commit install failed"
       else
-        echo "VS Code extension directory not found, skipping"
+        echo "pre-commit not available or no config found, skipping"
       fi
 
-  - name: Phase 4 — Setup IntelliJ plugin environment
+  - name: Verify PyGuard installation
     run: |
-      if [ -d "crates/bazbom-intellij-plugin" ]; then
-        echo "Setting up IntelliJ plugin build environment..."
-        cd crates/bazbom-intellij-plugin
-        if [ -f "gradlew" ]; then
-          ./gradlew --version || echo "Gradle wrapper check failed"
-        else
-          gradle wrapper --gradle-version=8.5 || echo "Gradle wrapper init failed or gradle not available"
-        fi
-        cd ../..
-      else
-        echo "IntelliJ plugin directory not found, skipping"
-      fi
+      python3 -c "import pyguard; print(f'PyGuard version: {pyguard.__version__}')" || echo "PyGuard not yet installed"
+      pyguard --version || echo "PyGuard CLI not yet available"
 
-  - name: Confirm repo tools
+  - name: Confirm development environment
     run: |
-      echo "=== Core Build Tools ==="
-      echo "Rust: $(rustc --version 2>/dev/null || echo missing)"
-      echo "Cargo: $(cargo --version 2>/dev/null || echo missing)"
-      echo "Java: $(java -version 2>&1 | head -1 || echo missing)"
-      echo "Maven: $(mvn --version 2>&1 | head -1 || echo missing)"
-      echo "Gradle: $(gradle --version 2>&1 | grep Gradle || echo missing)"
-      echo "Bazel: $(bazel --version 2>/dev/null || echo missing)"
-      echo ""
-      echo "=== Language & Package Tools ==="
-      echo "Node: $(node --version 2>/dev/null || echo missing)"
-      echo "npm: $(npm --version 2>/dev/null || echo missing)"
-      echo "TypeScript: $(tsc --version 2>/dev/null || echo missing)"
+      echo "=== Python Environment ==="
       echo "Python: $(python3 --version 2>/dev/null || echo missing)"
+      echo "pip: $(pip3 --version 2>/dev/null | head -1 || echo missing)"
+      echo "venv: $(python3 -m venv --help > /dev/null 2>&1 && echo available || echo missing)"
+      echo ""
+      echo "=== Code Quality Tools ==="
+      echo "black: $(black --version 2>/dev/null | head -1 || echo missing)"
+      echo "ruff: $(ruff --version 2>/dev/null || echo missing)"
+      echo "pylint: $(pylint --version 2>/dev/null | head -1 || echo missing)"
+      echo "mypy: $(mypy --version 2>/dev/null || echo missing)"
+      echo "pytest: $(pytest --version 2>/dev/null | head -1 || echo missing)"
+      echo "bandit: $(bandit --version 2>/dev/null || echo missing)"
       echo ""
       echo "=== Documentation & Linting Tools ==="
       echo "markdownlint: $(markdownlint --version 2>/dev/null || echo missing)"
       echo "Vale: $(vale --version 2>/dev/null || echo missing)"
-      echo "rustfmt: $(rustfmt --version 2>/dev/null || echo missing)"
-      echo "clippy: $(cargo clippy --version 2>/dev/null || echo missing)"
       echo ""
-      echo "=== IDE Development Tools (Phase 4) ==="
-      echo "vsce (VS Code): $(vsce --version 2>/dev/null || echo missing)"
-      echo "Kotlin: $(kotlinc -version 2>/dev/null || echo missing)"
+      echo "=== Optional Performance Tools ==="
+      echo "ripgrep: $(rg --version 2>/dev/null | head -1 || echo missing)"
+      echo "PyGuard: $(pyguard --version 2>/dev/null || echo 'not yet installed')"
