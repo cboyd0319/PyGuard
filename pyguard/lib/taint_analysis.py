@@ -91,17 +91,22 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         "request.cookies": ("http_request", "HIGH"),
         "request.headers": ("http_request", "MEDIUM"),
         "request.values": ("http_request", "HIGH"),
-        # FastAPI framework
+        # FastAPI framework (both type name and variable name patterns)
         "Request.body": ("http_request", "HIGH"),
+        "request.body": ("http_request", "HIGH"),
         "Request.json": ("http_request", "HIGH"),
         "Request.form": ("http_request", "HIGH"),
         "Request.query_params": ("http_request", "HIGH"),
+        "request.query_params": ("http_request", "HIGH"),
         "Request.path_params": ("http_request", "HIGH"),
+        "request.path_params": ("http_request", "HIGH"),
         "Request.cookies": ("http_request", "HIGH"),
         "Request.headers": ("http_request", "MEDIUM"),
         # Network
         "socket.recv": ("network", "HIGH"),
         "socket.recvfrom": ("network", "HIGH"),
+        "sock.recv": ("network", "HIGH"),
+        "sock.recvfrom": ("network", "HIGH"),
         # File I/O
         "open": ("file", "MEDIUM"),
         "file.read": ("file", "MEDIUM"),
@@ -210,6 +215,25 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
             return self._get_call_name(ast.Call(func=node, args=[], keywords=[]))
         return None
 
+    def _get_attribute_name(self, node: ast.expr) -> str:
+        """Get the full attribute name from an Attribute or Subscript node."""
+        if isinstance(node, ast.Attribute):
+            parts = []
+            current = node
+            while isinstance(current, ast.Attribute):
+                parts.append(current.attr)
+                current = current.value
+            if isinstance(current, ast.Name):
+                parts.append(current.id)
+            return ".".join(reversed(parts))
+        elif isinstance(node, ast.Subscript):
+            # For subscript like request.GET['key'], get the value part
+            if isinstance(node.value, ast.Attribute):
+                return self._get_attribute_name(node.value)
+            elif isinstance(node.value, ast.Name):
+                return node.value.id
+        return ""
+
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Track function definitions and their parameters."""
         old_function = self.current_function
@@ -238,10 +262,17 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign):
         """Track variable assignments and taint propagation."""
-        # Check if assigning from a taint source
-        if isinstance(node.value, ast.Call):
-            call_name = self._get_call_name(node.value)
+        # Unwrap await expressions
+        value = node.value
+        if isinstance(value, ast.Await):
+            value = value.value
+        
+        # Check if assigning from a taint source (function call)
+        if isinstance(value, ast.Call):
+            call_name = self._get_call_name(value)
 
+            # Check if it's a taint source pattern
+            found_taint = False
             for source_pattern, (source_type, severity) in self.TAINT_SOURCES.items():
                 if call_name.startswith(source_pattern) or source_pattern in call_name:
                     # Mark all assigned variables as tainted
@@ -255,6 +286,56 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                                 severity=severity,
                             )
                             self.tainted_vars[var_name] = taint_source
+                    found_taint = True
+                    break
+            
+            # If not a taint source, check if it's a method call on a tainted object
+            if not found_taint and isinstance(value.func, ast.Attribute):
+                if isinstance(value.func.value, ast.Name) and value.func.value.id in self.tainted_vars:
+                    source_taint = self.tainted_vars[value.func.value.id]
+                    for target in node.targets:
+                        var_name = self._get_name(target)
+                        if var_name:
+                            self.tainted_vars[var_name] = TaintSource(
+                                name=var_name,
+                                type=source_taint.type,
+                                line_number=node.lineno,
+                                severity=source_taint.severity,
+                            )
+
+        # Check if assigning from attribute access (e.g., request.json, request.GET)
+        elif isinstance(value, (ast.Attribute, ast.Subscript)):
+            attr_name = self._get_attribute_name(value)
+            
+            # Check if it's a taint source pattern
+            for source_pattern, (source_type, severity) in self.TAINT_SOURCES.items():
+                if source_pattern in attr_name:
+                    # Mark all assigned variables as tainted
+                    for target in node.targets:
+                        var_name = self._get_name(target)
+                        if var_name:
+                            taint_source = TaintSource(
+                                name=var_name,
+                                type=source_type,
+                                line_number=node.lineno,
+                                severity=severity,
+                            )
+                            self.tainted_vars[var_name] = taint_source
+                    break
+            else:
+                # Check if subscripting a tainted variable (e.g., data['key'])
+                if isinstance(value, ast.Subscript):
+                    if isinstance(value.value, ast.Name) and value.value.id in self.tainted_vars:
+                        source_taint = self.tainted_vars[value.value.id]
+                        for target in node.targets:
+                            var_name = self._get_name(target)
+                            if var_name:
+                                self.tainted_vars[var_name] = TaintSource(
+                                    name=var_name,
+                                    type=source_taint.type,
+                                    line_number=node.lineno,
+                                    severity=source_taint.severity,
+                                )
 
         # Check if assigning from a tainted variable (taint propagation)
         if isinstance(node.value, ast.Name) and node.value.id in self.tainted_vars:
@@ -404,6 +485,18 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
         self.issues.append(issue)
 
+        # Track taint path
+        self.taint_paths.append(
+            TaintPath(
+                source=taint_source,
+                sink=TaintSink(
+                    name=func_name, type="command", line_number=node.lineno, severity="CRITICAL"
+                ),
+                variables=[var_name],
+                line_numbers=[taint_source.line_number, node.lineno],
+            )
+        )
+
     def _create_eval_injection_issue(
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
@@ -420,6 +513,18 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
             cwe_id="CWE-94",
         )
         self.issues.append(issue)
+
+        # Track taint path
+        self.taint_paths.append(
+            TaintPath(
+                source=taint_source,
+                sink=TaintSink(
+                    name=func_name, type="eval", line_number=node.lineno, severity="CRITICAL"
+                ),
+                variables=[var_name],
+                line_numbers=[taint_source.line_number, node.lineno],
+            )
+        )
 
     def _create_xss_issue(
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
@@ -438,6 +543,18 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
         self.issues.append(issue)
 
+        # Track taint path
+        self.taint_paths.append(
+            TaintPath(
+                source=taint_source,
+                sink=TaintSink(
+                    name=func_name, type="xss", line_number=node.lineno, severity="HIGH"
+                ),
+                variables=[var_name],
+                line_numbers=[taint_source.line_number, node.lineno],
+            )
+        )
+
     def _create_path_traversal_issue(
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
@@ -454,6 +571,18 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
             cwe_id="CWE-22",
         )
         self.issues.append(issue)
+
+        # Track taint path
+        self.taint_paths.append(
+            TaintPath(
+                source=taint_source,
+                sink=TaintSink(
+                    name=func_name, type="path_traversal", line_number=node.lineno, severity="HIGH"
+                ),
+                variables=[var_name],
+                line_numbers=[taint_source.line_number, node.lineno],
+            )
+        )
 
     def visit_Return(self, node: ast.Return):
         """Track tainted returns from functions."""

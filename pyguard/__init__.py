@@ -9,6 +9,16 @@ __version__ = "0.6.0"
 __author__ = "Chad Boyd"  # pyguard: disable=CWE-798
 __license__ = "MIT"
 
+# High-level API
+from pyguard.api import (
+    AnalysisResult,
+    PyGuardAPI,
+    Severity,
+    analyze_code,
+    analyze_file,
+)
+
+# Low-level components
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.best_practices import BestPracticesFixer
 from pyguard.lib.bugbear import BUGBEAR_RULES, BugbearChecker, BugbearVisitor
