@@ -83,8 +83,16 @@ import gpl_package
         assert isinstance(violations, list)
 
 
-class TestGitHubActionsInjection:
-    """Test SUPPLY001-SUPPLY005: GitHub Actions workflow security."""
+class TestGitHubActionsWorkflowSecurity:
+    """Test SUPPLY001-SUPPLY005: GitHub Actions workflow security checks.
+    
+    This class tests multiple supply chain security rules related to GitHub Actions:
+    - SUPPLY001: Hardcoded secrets in workflows
+    - SUPPLY002: Unpinned third-party actions
+    - SUPPLY003: Excessive permissions (write-all)
+    - SUPPLY004: workflow_dispatch inputs without validation
+    - SUPPLY005: Secret logging via echo/print
+    """
 
     def test_detect_hardcoded_secret_in_workflow(self):
         """Detect hardcoded secrets in GitHub Actions workflow."""
@@ -237,7 +245,17 @@ jobs:
 
 
 class TestDockerfileSecurityChecks:
-    """Test SUPPLY007-SUPPLY008, SUPPLY019-SUPPLY020: Dockerfile security."""
+    """Test Dockerfile security rules.
+    
+    Tests multiple supply chain security rules for Docker:
+    - SUPPLY007: Secrets passed as Docker build arguments
+    - SUPPLY008: Unpinned base images (not using @sha256)
+    - SUPPLY019: Container running as root user
+    - SUPPLY020: Insecure HTTP downloads in Dockerfile
+    
+    Note: Rule IDs are not sequential as they're organized by security domain,
+    not by implementation order.
+    """
 
     def test_detect_secret_in_build_arg(self):
         """Detect secrets passed as Docker build arguments."""

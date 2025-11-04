@@ -129,8 +129,12 @@ engine = create_engine('postgresql://admin:password123@localhost/mydb')
         violations = analyze_sqlalchemy_security(Path("test.py"), code)
         sqla003_violations = [v for v in violations if v.rule_id == "SQLA003"]
         assert len(sqla003_violations) > 0
-        assert any("credential" in v.message.lower() or "password" in v.message.lower() 
-                   for v in sqla003_violations)
+        # Check that message mentions credentials or passwords
+        has_credential_warning = any(
+            "credential" in v.message.lower() or "password" in v.message.lower()
+            for v in sqla003_violations
+        )
+        assert has_credential_warning
 
     def test_detect_mysql_hardcoded_password(self):
         """Detect hardcoded MySQL password."""
