@@ -276,7 +276,7 @@ class PyGuardJsonRpcServer:
                         "cwe_id": getattr(issue, 'cwe_id', None),
                         "owasp_id": getattr(issue, 'owasp_id', None),
                     })
-                elif isinstance(issue, dict):
+                elif isinstance(issue, dict):  # type: ignore[unreachable]
                     serialized_issues.append(issue)
 
             doc.issues = serialized_issues
@@ -339,7 +339,7 @@ class PyGuardJsonRpcServer:
                         "cwe_id": getattr(issue, 'cwe_id', None),
                         "owasp_id": getattr(issue, 'owasp_id', None),
                     })
-                elif isinstance(issue, dict):
+                elif isinstance(issue, dict):  # type: ignore[unreachable]
                     serialized_issues.append(issue)
 
             duration_ms = (time.time() - start_time) * 1000

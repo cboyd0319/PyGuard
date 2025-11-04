@@ -27,6 +27,7 @@ References:
 import ast
 from pathlib import Path
 import re
+from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (

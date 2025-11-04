@@ -29,7 +29,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
+from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
 
@@ -61,27 +61,27 @@ class AnalysisResult:
     lines_analyzed: int = 0
 
     @property
-    def critical_issues(self) -> list[SecurityIssue]:
+    def critical_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all CRITICAL severity issues."""
         return [i for i in self.issues if i.severity == "CRITICAL"]
 
     @property
-    def high_issues(self) -> list[SecurityIssue]:
+    def high_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all HIGH severity issues."""
         return [i for i in self.issues if i.severity == "HIGH"]
 
     @property
-    def medium_issues(self) -> list[SecurityIssue]:
+    def medium_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all MEDIUM severity issues."""
         return [i for i in self.issues if i.severity == "MEDIUM"]
 
     @property
-    def low_issues(self) -> list[SecurityIssue]:
+    def low_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all LOW severity issues."""
         return [i for i in self.issues if i.severity == "LOW"]
 
     @property
-    def info_issues(self) -> list[SecurityIssue]:
+    def info_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all INFO severity issues."""
         return [i for i in self.issues if i.severity == "INFO"]
 
@@ -109,7 +109,7 @@ class AnalysisResult:
                     return True
         return False
 
-    def get_issues_by_category(self, category: str) -> list[SecurityIssue]:
+    def get_issues_by_category(self, category: str) -> list[SecurityIssue | CodeQualityIssue]:
         """
         Get all issues of a specific category.
 
@@ -121,7 +121,7 @@ class AnalysisResult:
         """
         return [i for i in self.issues if i.category == category]
 
-    def get_issues_by_cwe(self, cwe_id: str) -> list[SecurityIssue]:
+    def get_issues_by_cwe(self, cwe_id: str) -> list[SecurityIssue | CodeQualityIssue]:
         """
         Get all issues matching a specific CWE ID.
 

@@ -969,7 +969,8 @@ def main():
         reporter = ComplianceReporter()
 
         # Collect all issues from results
-        all_issues: list[dict[str, Any]] = results.get("all_issues", [])
+        all_issues_raw: dict[str, Any] | list[Any] = results.get("all_issues", [])
+        all_issues: list[dict[str, Any]] = all_issues_raw if isinstance(all_issues_raw, list) else []
 
         if args.compliance_html:
             cli.ui.console.print(f"[cyan]Generating HTML compliance report: {args.compliance_html}[/cyan]")
