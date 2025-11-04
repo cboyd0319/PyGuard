@@ -295,10 +295,10 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 #### Additional Distribution
 
 **Package Managers**
-- [ ] Windows Chocolatey package
+- [x] Windows Chocolatey package ✅ **COMPLETE**
+- [x] Scoop package for Windows ✅ **COMPLETE**
+- [x] Snap package for Linux ✅ **COMPLETE**
 - [ ] Linux distribution repos (apt, yum, pacman)
-- [ ] Snap package for Linux
-- [ ] Scoop package for Windows
 
 **Additional IDE Support**
 - [ ] Sublime Text (LSP-based)
