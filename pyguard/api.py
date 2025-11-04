@@ -361,9 +361,12 @@ class PyGuardAPI:
                 for issue in all_issues
             ]
 
+            # Import version from main package
+            from pyguard import __version__
+            
             report_data = {
                 "tool": "pyguard",
-                "version": "0.6.0",
+                "version": __version__,
                 "timestamp": datetime.now(UTC).isoformat(),
                 "total_issues": len(all_issues),
                 "issues": issues_data,
@@ -417,6 +420,9 @@ class PyGuardAPI:
         elif format == "sarif":
             from pyguard.lib.sarif_reporter import SARIFReporter
 
+            # Import version from main package
+            from pyguard import __version__
+            
             # SARIF reporter expects a list of files, so we'll create a simple one
             sarif_reporter = SARIFReporter([])
             # Generate SARIF format manually
@@ -430,7 +436,7 @@ class PyGuardAPI:
                         "tool": {
                             "driver": {
                                 "name": "PyGuard",
-                                "version": "0.6.0",
+                                "version": __version__,
                                 "informationUri": "https://github.com/cboyd0319/PyGuard",
                             }
                         },
