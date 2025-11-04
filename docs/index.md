@@ -27,7 +27,11 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### Security & Supply Chain
 - [Supply Chain Security Guide](guides/SUPPLY_CHAIN_SECURITY.md) - SLSA, Sigstore, SBOM ✨ NEW
+- [SLSA Provenance Verification](security/SLSA_PROVENANCE_VERIFICATION.md) - Build integrity verification ✨ NEW
+- [SBOM Guide](security/SBOM_GUIDE.md) - Software Bill of Materials usage ✨ NEW
 - [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md) - How to verify releases ✨ NEW
+- [GPG Verification](security/GPG_VERIFICATION.md) - Traditional GPG signature verification
+- [Security Quickstart](security/SECURITY_QUICKSTART.md) - Quick security verification guide
 - [Security Policy](../SECURITY.md) - Vulnerability disclosure
 
 ### Architecture & Implementation
@@ -59,6 +63,8 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 ### For Security Teams
 - **Compliance?** Review [Capabilities Reference](reference/capabilities-reference.md)
 - **Supply chain security?** See [Supply Chain Security Guide](guides/SUPPLY_CHAIN_SECURITY.md)
+- **SLSA provenance?** Check [SLSA Provenance Verification](security/SLSA_PROVENANCE_VERIFICATION.md)
+- **SBOM analysis?** Read [SBOM Guide](security/SBOM_GUIDE.md)
 - **Verifying releases?** Read [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md)
 - **Integration?** See [Git Hooks Guide](guides/git-hooks-guide.md)
 - **Custom rules?** Check [Security Rules Reference](reference/security-rules.md)
