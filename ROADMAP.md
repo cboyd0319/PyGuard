@@ -340,12 +340,12 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [x] Streamlit security checks (20+) ✅ **COMPLETE** - 7 rules, 25 tests
 - [x] Gradio security checks (15+) ✅ **COMPLETE** - 6 rules, 24 tests
 - [x] Dash/Plotly security checks (15+) ✅ **COMPLETE** - 5 rules, 21 tests
-- [ ] PySpark security checks (25+)
-- [ ] Airflow security checks (30+)
+- [x] PySpark security checks (25+) ✅ **COMPLETE** - 10 rules, 24 tests
+- [x] Airflow security checks (30+) ✅ **COMPLETE** - 9 rules, 27 tests
 
-**Status:** 3/5 frameworks complete (60%) - 18 new security rules added
+**Status:** 5/5 frameworks complete (100%) ✅ - 37 new security rules added
 
-**Target:** 25+ frameworks total (currently at 23 frameworks)
+**Target:** 25+ frameworks total (currently at 25 frameworks) ✅ **TARGET ACHIEVED!**
 
 ### v1.2.0 - "AI/ML Security Enhancement"
 
