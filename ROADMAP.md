@@ -102,12 +102,12 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [x] Comprehensive tests (98% coverage)
 - [x] Documentation in capabilities reference
 
-**Advanced Taint Analysis**
-- [ ] Cross-function taint tracking
-- [ ] Source-to-sink analysis
-- [ ] Framework-aware taint flows (Django, Flask, FastAPI)
-- [ ] SQL injection path analysis
-- [ ] XSS vulnerability paths
+**Advanced Taint Analysis** ✅ **COMPLETE**
+- [x] Cross-function taint tracking
+- [x] Source-to-sink analysis
+- [x] Framework-aware taint flows (Django, Flask, FastAPI)
+- [x] SQL injection path analysis
+- [x] XSS vulnerability paths
 
 **Performance Enhancements** ✅ COMPLETE
 - [x] Parallel file processing (ThreadPoolExecutor with batch processing)
@@ -212,7 +212,7 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [ ] Historical compliance tracking (future enhancement)
 
 **API Enhancements**
-- [ ] Comprehensive Python API for programmatic use
+- [x] Comprehensive Python API for programmatic use ✅ **COMPLETE**
 - [ ] Webhook support for CI/CD integration
 - [ ] JSON-RPC API for IDE plugins
 - [ ] Plugin architecture for custom rules
@@ -224,6 +224,8 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - ✅ Git Diff Analysis implemented (COMPLETE)
 - ✅ Enhanced Compliance Reporting (HTML/JSON) (COMPLETE)
 - ✅ Supply chain security documentation (COMPLETE - 25,000+ words)
+- ✅ Advanced Taint Analysis (COMPLETE - 25 tests passing)
+- ✅ Comprehensive Python API (COMPLETE - 30 tests passing)
 - ⏳ PyCharm plugin on JetBrains Marketplace (planned)
 - ⏳ LSP fully compliant with specification (planned)
 - ⏳ OpenSSF Scorecard >8.0 (in progress)
