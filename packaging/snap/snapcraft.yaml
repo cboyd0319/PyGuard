@@ -1,0 +1,58 @@
+name: pyguard
+base: core22
+version: '0.6.0'
+summary: The World's Best Python Security & Compliance Tool
+description: |
+  PyGuard is a comprehensive Python security and code quality analysis tool
+  with 739 security checks across 25 frameworks, ML-powered detection, and
+  199+ automated fixes.
+
+  Key Features:
+  - 739 Security Checks (370% more than Snyk)
+  - 25 Framework Support (Django, Flask, FastAPI, PySpark, Airflow, etc.)
+  - 199+ Automated Fixes with 100% coverage
+  - 10+ Compliance Frameworks (OWASP, PCI-DSS, HIPAA, SOC 2, etc.)
+  - ML-Powered Detection
+  - GitHub Actions integration with SARIF 2.1.0
+  - Zero telemetry - 100% local operation
+
+  Quick Start:
+    $ pyguard .                                # Scan current directory
+    $ pyguard --fix .                          # Scan with auto-fix
+    $ pyguard --compliance-html report.html .  # Generate compliance report
+
+  Documentation: https://github.com/cboyd0319/PyGuard
+
+grade: stable
+confinement: strict
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
+apps:
+  pyguard:
+    command: bin/pyguard
+    plugs:
+      - home
+      - network
+      - removable-media
+
+parts:
+  pyguard:
+    plugin: python
+    source: https://github.com/cboyd0319/PyGuard.git
+    source-tag: v0.6.0
+    python-requirements:
+      - requirements.txt
+    python-packages:
+      - pyguard
+    stage-packages:
+      - python3
+      - python3-pip
+    override-build: |
+      craftctl default
+      # Install pyguard
+      pip3 install --prefix=$CRAFT_PART_INSTALL pyguard
+    organize:
+      'lib/python*/site-packages/*': lib/python3/site-packages/

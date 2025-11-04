@@ -1,0 +1,55 @@
+{
+    "version": "0.6.0",
+    "description": "The World's Best Python Security & Compliance Tool - 739 security checks, 25 frameworks, ML-powered detection",
+    "homepage": "https://github.com/cboyd0319/PyGuard",
+    "license": "MIT",
+    "notes": [
+        "PyGuard requires Python 3.11+ to be installed.",
+        "Quick Start:",
+        "  pyguard .                                # Scan current directory",
+        "  pyguard --fix .                          # Scan with auto-fix",
+        "  pyguard --compliance-html report.html .  # Generate compliance report"
+    ],
+    "suggest": {
+        "Python": "python"
+    },
+    "url": "https://github.com/cboyd0319/PyGuard/archive/refs/tags/v0.6.0.zip",
+    "hash": "PLACEHOLDER_SHA256_HASH",
+    "extract_dir": "PyGuard-0.6.0",
+    "bin": "pyguard.ps1",
+    "pre_install": [
+        "if (!(Get-Command python -ErrorAction SilentlyContinue)) {",
+        "    error 'Python is not installed. Please install Python 3.11+ first.'",
+        "    exit 1",
+        "}",
+        "$pythonVersion = & python --version 2>&1",
+        "if ($pythonVersion -match 'Python (\\d+)\\.(\\d+)') {",
+        "    $majorVersion = [int]$matches[1]",
+        "    $minorVersion = [int]$matches[2]",
+        "    if (($majorVersion -lt 3) -or (($majorVersion -eq 3) -and ($minorVersion -lt 11))) {",
+        "        error \"Python 3.11 or higher is required. Found: $pythonVersion\"",
+        "        exit 1",
+        "    }",
+        "}"
+    ],
+    "installer": {
+        "script": [
+            "$null = & python -m pip install pyguard --upgrade",
+            "if ($LASTEXITCODE -ne 0) { error 'Failed to install PyGuard via pip'; exit 1 }",
+            "@(",
+            "    '@echo off'",
+            "    'python -m pyguard %*'",
+            ") | Set-Content -Path \"$dir\\pyguard.ps1\""
+        ]
+    },
+    "uninstaller": {
+        "script": "python -m pip uninstall pyguard -y"
+    },
+    "checkver": {
+        "github": "https://github.com/cboyd0319/PyGuard"
+    },
+    "autoupdate": {
+        "url": "https://github.com/cboyd0319/PyGuard/archive/refs/tags/v$version.zip",
+        "extract_dir": "PyGuard-$version"
+    }
+}
