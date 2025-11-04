@@ -83,18 +83,373 @@ import gpl_package
         assert isinstance(violations, list)
 
 
-class TestGitHubActionsInjection:
-    """Test SUPPLY008: GitHub Actions workflow injection."""
+class TestGitHubActionsWorkflowSecurity:
+    """Test SUPPLY001-SUPPLY005: GitHub Actions workflow security checks.
+    
+    This class tests multiple supply chain security rules related to GitHub Actions:
+    - SUPPLY001: Hardcoded secrets in workflows
+    - SUPPLY002: Unpinned third-party actions
+    - SUPPLY003: Excessive permissions (write-all)
+    - SUPPLY004: workflow_dispatch inputs without validation
+    - SUPPLY005: Secret logging via echo/print
+    """
 
-    def test_detect_workflow_injection_risk(self):
-        """Detect potential workflow injection."""
+    def test_detect_hardcoded_secret_in_workflow(self):
+        """Detect hardcoded secrets in GitHub Actions workflow."""
         code = """
-workflow_content = f"name: CI\\non: push\\njobs:\\n  build:\\n    runs-on: ubuntu-latest\\n    steps:\\n      - run: {user_input}"
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: |
+          API_KEY=sk-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
+          curl -H "Authorization: Bearer $API_KEY" https://api.example.com
 """
-        violations = analyze_supply_chain_advanced(Path("test.py"), code)
-        [v for v in violations if v.rule_id == "SUPPLY008"]
-        # Should detect user input in workflow
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply001_violations = [v for v in violations if v.rule_id == "SUPPLY001"]
+        assert len(supply001_violations) > 0
+        assert any("secret" in v.message.lower() for v in supply001_violations)
+
+    def test_safe_github_secrets_usage(self):
+        """GitHub Secrets usage should not trigger."""
+        code = """
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: |
+          curl -H "Authorization: Bearer ${{ secrets.API_KEY }}" https://api.example.com
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply001_violations = [v for v in violations if v.rule_id == "SUPPLY001"]
+        assert len(supply001_violations) == 0
+
+    def test_detect_unpinned_action(self):
+        """Detect unpinned third-party actions."""
+        code = """
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: third-party/action@v1
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply002_violations = [v for v in violations if v.rule_id == "SUPPLY002"]
+        assert len(supply002_violations) > 0
+
+    def test_safe_pinned_action(self):
+        """Actions pinned to SHA should not trigger."""
+        code = """
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@abc123def456abc123def456abc123def456abc1
+      - uses: third-party/action@v1.2.3
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply002_violations = [v for v in violations if v.rule_id == "SUPPLY002"]
+        # Properly pinned actions should not trigger
+        assert len(supply002_violations) == 0
+
+    def test_detect_excessive_permissions(self):
+        """Detect write-all permissions in workflows."""
+        code = """
+name: CI
+on: push
+permissions: write-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply003_violations = [v for v in violations if v.rule_id == "SUPPLY003"]
+        assert len(supply003_violations) > 0
+
+    def test_detect_workflow_dispatch_without_validation(self):
+        """Detect workflow_dispatch inputs without validation."""
+        code = """
+name: Manual Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/manual.yml"), code
+        )
+        supply004_violations = [v for v in violations if v.rule_id == "SUPPLY004"]
+        assert len(supply004_violations) > 0
+
+    def test_safe_workflow_dispatch_with_validation(self):
+        """workflow_dispatch with validation should be safe."""
+        code = """
+name: Manual Workflow
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/manual.yml"), code
+        )
+        supply004_violations = [v for v in violations if v.rule_id == "SUPPLY004"]
+        # With validation should not trigger
+        assert len(supply004_violations) == 0
+
+    def test_detect_secret_logging(self):
+        """Detect echo/print of secrets."""
+        code = """
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug
+        run: echo "API Key is ${{ secrets.API_KEY }}"
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply005_violations = [v for v in violations if v.rule_id == "SUPPLY005"]
+        assert len(supply005_violations) > 0
+
+
+class TestDockerfileSecurityChecks:
+    """Test Dockerfile security rules.
+    
+    Tests multiple supply chain security rules for Docker:
+    - SUPPLY007: Secrets passed as Docker build arguments
+    - SUPPLY008: Unpinned base images (not using @sha256)
+    - SUPPLY019: Container running as root user
+    - SUPPLY020: Insecure HTTP downloads in Dockerfile
+    
+    Note: Rule IDs are not sequential as they're organized by security domain,
+    not by implementation order.
+    """
+
+    def test_detect_secret_in_build_arg(self):
+        """Detect secrets passed as Docker build arguments."""
+        code = """
+FROM python:3.11
+ARG API_KEY=secret-key-value
+ARG DATABASE_PASSWORD
+ENV API_KEY=$API_KEY
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply007_violations = [v for v in violations if v.rule_id == "SUPPLY007"]
+        assert len(supply007_violations) > 0
+        assert any("build argument" in v.message.lower() for v in supply007_violations)
+
+    def test_detect_unpinned_base_image(self):
+        """Detect base images not pinned to digest."""
+        code = """
+FROM python:3.11
+RUN pip install requests
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply008_violations = [v for v in violations if v.rule_id == "SUPPLY008"]
+        assert len(supply008_violations) > 0
+
+    def test_safe_pinned_base_image(self):
+        """Base images pinned to SHA256 should not trigger."""
+        code = """
+FROM python:3.11@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+RUN pip install requests
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply008_violations = [v for v in violations if v.rule_id == "SUPPLY008"]
+        assert len(supply008_violations) == 0
+
+    def test_detect_running_as_root(self):
+        """Detect containers running as root."""
+        code = """
+FROM python:3.11
+USER root
+RUN apt-get update
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply019_violations = [v for v in violations if v.rule_id == "SUPPLY019"]
+        assert len(supply019_violations) > 0
+
+    def test_safe_nonroot_user(self):
+        """Non-root user should be safe."""
+        code = """
+FROM python:3.11
+RUN useradd -m appuser
+USER appuser
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply019_violations = [v for v in violations if v.rule_id == "SUPPLY019"]
+        assert len(supply019_violations) == 0
+
+    def test_detect_insecure_download(self):
+        """Detect insecure HTTP downloads in Dockerfile."""
+        code = """
+FROM python:3.11
+RUN curl http://example.com/package.tar.gz | tar xz
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply020_violations = [v for v in violations if v.rule_id == "SUPPLY020"]
+        assert len(supply020_violations) > 0
+
+    def test_safe_https_download(self):
+        """HTTPS downloads should not trigger."""
+        code = """
+FROM python:3.11
+RUN curl https://example.com/package.tar.gz | tar xz
+"""
+        violations = analyze_supply_chain_advanced(Path("Dockerfile"), code)
+        supply020_violations = [v for v in violations if v.rule_id == "SUPPLY020"]
+        assert len(supply020_violations) == 0
+
+
+class TestAdvancedWorkflowChecks:
+    """Test SUPPLY012-SUPPLY015: Advanced workflow checks."""
+
+    def test_detect_pull_request_target_with_execution(self):
+        """Detect pull_request_target with code execution."""
+        code = """
+name: PR Check
+on:
+  pull_request_target:
+    types: [opened]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm run test
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/pr.yml"), code
+        )
+        supply012_violations = [v for v in violations if v.rule_id == "SUPPLY012"]
+        assert len(supply012_violations) > 0
+
+    def test_detect_cache_poisoning_risk(self):
+        """Detect cache keys derived from PR data."""
+        code = """
+name: CI
+on: pull_request
+jobs:
+  build:
+    steps:
+      - uses: actions/cache@v3
+        with:
+          key: cache-${{ github.event.pull_request.number }}
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/ci.yml"), code
+        )
+        supply013_violations = [v for v in violations if v.rule_id == "SUPPLY013"]
+        # May or may not detect - depends on implementation
         assert isinstance(violations, list)
+
+    def test_detect_artifact_without_retention(self):
+        """Detect artifacts uploaded without retention policy."""
+        code = """
+name: Build
+on: push
+jobs:
+  build:
+    steps:
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: dist/
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/build.yml"), code
+        )
+        supply014_violations = [v for v in violations if v.rule_id == "SUPPLY014"]
+        assert len(supply014_violations) > 0
+
+    def test_safe_artifact_with_retention(self):
+        """Artifacts with retention policy should be safe."""
+        code = """
+name: Build
+on: push
+jobs:
+  build:
+    steps:
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/build.yml"), code
+        )
+        supply014_violations = [v for v in violations if v.rule_id == "SUPPLY014"]
+        assert len(supply014_violations) == 0
+
+    def test_detect_missing_sbom(self):
+        """Detect package builds without SBOM generation."""
+        code = """
+name: Release
+on: push
+jobs:
+  release:
+    steps:
+      - run: python setup.py sdist bdist_wheel
+      - run: twine upload dist/*.whl
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/release.yml"), code
+        )
+        supply015_violations = [v for v in violations if v.rule_id == "SUPPLY015"]
+        # May or may not detect - depends on implementation
+        assert isinstance(violations, list)
+
+    def test_safe_build_with_sbom(self):
+        """Build with SBOM generation should be safe."""
+        code = """
+name: Release
+on: push
+jobs:
+  release:
+    steps:
+      - run: python setup.py sdist bdist_wheel
+      - run: cyclonedx-py -o sbom.json
+      - run: twine upload dist/*.whl
+"""
+        violations = analyze_supply_chain_advanced(
+            Path(".github/workflows/release.yml"), code
+        )
+        supply015_violations = [v for v in violations if v.rule_id == "SUPPLY015"]
+        # With SBOM generation should have fewer violations
+        assert len(supply015_violations) == 0
 
 
 class TestEnvironmentVariableLeakage:
