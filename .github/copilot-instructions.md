@@ -62,7 +62,7 @@ Target OS: Linux → macOS → Windows.
 - Docs checks: markdownlint, Vale, link check (lychee); verify docs are under `docs/` except allowlisted stubs and this file.
 - Security: CodeQL, Bandit scanning, supply chain policies, dependency scanning.
 - Linting: Ruff (primary), Pylint, Flake8, mypy type checking.
-- Quality gates: All PRs must pass before merge; no降低 existing coverage.
+- Quality gates: All PRs must pass before merge; no lowering existing coverage.
 
 ## Single Source of Truth
 
