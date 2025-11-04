@@ -27,6 +27,7 @@ References:
 import ast
 from pathlib import Path
 import re
+from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
@@ -48,8 +49,8 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
         self.lines = code.splitlines()
         self.violations: list[RuleViolation] = []
         self.has_streamlit_import = False
-        self.secrets_accessed = []
-        self.user_inputs = []
+        self.secrets_accessed: list[dict[str, Any]] = []
+        self.user_inputs: list[dict[str, Any]] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Streamlit imports."""
@@ -301,18 +302,21 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
         """Track user input variables for later checks."""
         for target in node.targets:
             if isinstance(target, ast.Name):
+                input_type = "unknown"
+                if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+                    input_type = node.value.func.attr
                 self.user_inputs.append(
                     {
                         "var_name": target.id,
                         "line": node.lineno,
-                        "input_type": node.value.func.attr if isinstance(node.value.func, ast.Attribute) else "unknown",
+                        "input_type": input_type,
                     }
                 )
 
     def _contains_sql_keywords(self, node: ast.AST) -> bool:
         """Check if an AST node contains SQL keywords."""
         sql_keywords = {"SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "WHERE", "JOIN"}
-        
+
         def check_node(n: ast.AST) -> bool:
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
@@ -320,7 +324,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
             elif isinstance(n, ast.BinOp):
                 return check_node(n.left) or check_node(n.right)
             return False
-        
+
         return check_node(node)
 
 

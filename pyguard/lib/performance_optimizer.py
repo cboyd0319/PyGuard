@@ -14,13 +14,13 @@ References:
 """
 
 import ast
+from collections import defaultdict
 import concurrent.futures
+from dataclasses import dataclass, field
 import hashlib
 import multiprocessing
-import time
-from collections import defaultdict
-from dataclasses import dataclass, field
 from pathlib import Path
+import time
 from typing import Any, Callable
 
 from pyguard.lib.cache import AnalysisCache, CacheEntry
@@ -80,6 +80,8 @@ class SmartAnalysisCache(AnalysisCache):
         """Compute hash of file content."""
         try:
             content = FileOperations().read_file(file_path)
+            if content is None:
+                return ""
             return hashlib.sha256(content.encode()).hexdigest()
         except Exception:
             return ""
@@ -128,6 +130,8 @@ class DependencyAnalyzer:
         for file_path in files:
             try:
                 content = file_ops.read_file(file_path)
+                if content is None:
+                    continue
                 tree = ast.parse(content)
 
                 imports = set()
@@ -346,6 +350,8 @@ class OptimizedAnalyzer:
                     parse_start = time.time()
                     file_ops = FileOperations()
                     content = file_ops.read_file(file_path)
+                    if content is None:
+                        return str(file_path), {"error": "empty_file", "issues": 0}
                     tree = ast.parse(content)
                     parse_time = (time.time() - parse_start) * 1000
 

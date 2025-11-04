@@ -54,8 +54,8 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
         self.lines = code.splitlines()
         self.violations: list[RuleViolation] = []
         self.has_pyspark_import = False
-        self.user_inputs = []
-        self.sql_queries = []
+        self.user_inputs: list[str] = []
+        self.sql_queries: list[str] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track PySpark imports."""
@@ -76,23 +76,23 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
             # SQL injection checks
             if node.func.attr == "sql":
                 self._check_sql_injection(node)
-            
+
             # File operation security
             elif node.func.attr in ("read", "load", "text", "csv", "json", "parquet", "orc"):
                 self._check_path_traversal(node)
-            
+
             # Unsafe deserialization
             elif node.func.attr in ("pickle", "unpickle"):
                 self._check_unsafe_deserialization(node)
-            
+
             # Dynamic code execution
             elif node.func.attr in ("map", "flatMap", "mapPartitions", "foreach", "foreachPartition"):
                 self._check_dynamic_execution(node)
-            
+
             # Configuration security
             elif node.func.attr in ("config", "set", "setAll"):
                 self._check_insecure_config(node)
-            
+
             # Credential handling
             elif node.func.attr in ("option", "options"):
                 self._check_credential_exposure(node)
@@ -238,13 +238,13 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
                 key = key_arg.value
                 if isinstance(key, str):
                     line_num = node.lineno
-                    
+
                     # Check for disabled authentication
                     value_arg = node.args[1]
                     value_is_false = False
                     if isinstance(value_arg, ast.Constant):
                         value_is_false = (value_arg.value == "false" or value_arg.value == False)
-                    
+
                     if "authenticate" in key.lower() and value_is_false:
                         self.violations.append(
                             RuleViolation(
@@ -258,7 +258,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
                                 code_snippet=self._get_code_snippet(line_num),
                             )
                         )
-                    
+
                     # Check for disabled SSL/TLS
                     elif "ssl" in key.lower() and value_is_false:
                         self.violations.append(
@@ -280,15 +280,15 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
             return
 
         line_num = node.lineno
-        
+
         # Check for password/key options
         if len(node.args) >= 2:
             key_arg = node.args[0]
             value_arg = node.args[1]
-            
+
             if isinstance(key_arg, ast.Constant) and isinstance(key_arg.value, str):
                 key_lower = key_arg.value.lower()
-                
+
                 # Check for hardcoded credentials
                 if any(term in key_lower for term in ["password", "secret", "key", "token", "credential"]):
                     if isinstance(value_arg, ast.Constant):
@@ -308,10 +308,11 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
     def _check_eval_exec(self, node: ast.Call) -> None:
         """Check for eval/exec usage."""
         line_num = node.lineno
+        func_name = getattr(node.func, 'id', 'unknown')
         self.violations.append(
             RuleViolation(
                 rule_id="PYSPARK010",
-                message=f"Use of {node.func.id}() in PySpark code - arbitrary code execution risk",
+                message=f"Use of {func_name}() in PySpark code - arbitrary code execution risk",
                 line_number=line_num,
                 column=node.col_offset,
                 severity=RuleSeverity.CRITICAL,
@@ -364,13 +365,13 @@ def fix_pyspark_security(
     """
     lines = code.splitlines(keepends=True)
     line_idx = violation.line_number - 1
-    
+
     if line_idx < 0 or line_idx >= len(lines):
         return code, False
-    
+
     original_line = lines[line_idx]
     modified = False
-    
+
     # Fix SQL injection - suggest parameterized queries
     if violation.rule_id in ["PYSPARK001", "PYSPARK002", "PYSPARK003"]:
         # Add comment suggesting fix
@@ -378,7 +379,7 @@ def fix_pyspark_security(
         comment = " " * indent + "# TODO: Use parameterized queries or DataFrame API instead of string formatting\n"
         lines.insert(line_idx, comment)
         modified = True
-    
+
     # Fix hardcoded credentials
     elif violation.rule_id == "PYSPARK009":
         # Replace hardcoded value with environment variable suggestion
@@ -388,10 +389,10 @@ def fix_pyspark_security(
             comment = " " * indent + "# TODO: Use os.environ.get() or secrets manager instead of hardcoded credentials\n"
             lines.insert(line_idx, comment)
             modified = True
-    
+
     if modified:
         return "".join(lines), True
-    
+
     return code, False
 
 

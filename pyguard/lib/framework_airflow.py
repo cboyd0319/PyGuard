@@ -54,8 +54,8 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         self.lines = code.splitlines()
         self.violations: list[RuleViolation] = []
         self.has_airflow_import = False
-        self.dag_operators = []
-        self.xcom_usage = []
+        self.dag_operators: list[str] = []
+        self.xcom_usage: list[str] = []
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track Airflow imports."""
@@ -76,16 +76,16 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             if any(op in node.func.id for op in ["Operator", "Sensor", "Hook"]):
                 self._check_operator_security(node)
-        
+
         if isinstance(node.func, ast.Attribute):
             # Check operator instantiation (Attribute nodes)
             if any(op in str(node.func.attr) for op in ["Operator", "Sensor", "Hook"]):
                 self._check_operator_security(node)
-            
+
             # XCom usage
             elif node.func.attr in ("xcom_push", "xcom_pull"):
                 self._check_xcom_security(node)
-            
+
             # Variable access
             elif node.func.attr == "get" and self._is_variable_access(node):
                 self._check_variable_security(node)
@@ -93,11 +93,11 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         # Check for BashOperator command injection
         if self._is_bash_operator(node):
             self._check_command_injection(node)
-        
+
         # Check for SQL operators
         if self._is_sql_operator(node):
             self._check_sql_injection(node)
-        
+
         # Check for eval/exec
         if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec"):
             self._check_eval_exec(node)
@@ -134,7 +134,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_operator_security(self, node: ast.Call) -> None:
         """Check security issues in operator configuration."""
         line_num = node.lineno
-        
+
         # Check for hardcoded secrets in operator parameters
         if node.keywords:
             for keyword in node.keywords:
@@ -160,7 +160,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_command_injection(self, node: ast.Call) -> None:
         """Check for command injection in BashOperator."""
         line_num = node.lineno
-        
+
         # Find bash_command parameter
         for keyword in node.keywords:
             if keyword.arg == "bash_command":
@@ -179,7 +179,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                         ),
                         )
                     )
-                
+
                 # Check for string concatenation
                 elif isinstance(keyword.value, ast.BinOp) and isinstance(keyword.value.op, ast.Add):
                     self.violations.append(
@@ -195,7 +195,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                         ),
                         )
                     )
-                
+
                 # Check for .format()
                 elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):
                     if keyword.value.func.attr == "format":
@@ -216,7 +216,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_sql_injection(self, node: ast.Call) -> None:
         """Check for SQL injection in SQL operators."""
         line_num = node.lineno
-        
+
         # Find sql parameter
         for keyword in node.keywords:
             if keyword.arg in ("sql", "query"):
@@ -235,7 +235,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                         ),
                         )
                     )
-                
+
                 # Check for string concatenation
                 elif isinstance(keyword.value, ast.BinOp) and isinstance(keyword.value.op, ast.Add):
                     self.violations.append(
@@ -251,7 +251,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                         ),
                         )
                     )
-                
+
                 # Check for .format()
                 elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):
                     if keyword.value.func.attr == "format":
@@ -272,16 +272,16 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_xcom_security(self, node: ast.Call) -> None:
         """Check XCom usage for security issues."""
         line_num = node.lineno
-        
+
         # Check if sensitive data might be in XCom
-        if node.func.attr == "xcom_push":
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "xcom_push":
             # Check if pushing potentially sensitive data
             for keyword in node.keywords:
                 if keyword.arg == "value":
                     # Check if value is a Name node with sensitive variable name
                     value_node = keyword.value
                     is_sensitive = False
-                    
+
                     if isinstance(value_node, ast.Name):
                         # Check variable name
                         var_name = value_node.id.lower()
@@ -290,7 +290,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                             for term in ["password", "secret", "token", "api_key", "credential", "private_key"]
                         ):
                             is_sensitive = True
-                    
+
                     if is_sensitive:
                         code_snippet = self._get_code_snippet(line_num)
                         self.violations.append(
@@ -309,7 +309,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_variable_security(self, node: ast.Call) -> None:
         """Check Variable.get() usage for security issues."""
         line_num = node.lineno
-        
+
         # Check if deserialize_json is used (pickle deserialization risk)
         for keyword in node.keywords:
             if keyword.arg == "deserialize_json" and isinstance(keyword.value, ast.Constant):
@@ -320,10 +320,11 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_eval_exec(self, node: ast.Call) -> None:
         """Check for eval/exec usage."""
         line_num = node.lineno
+        func_name = getattr(node.func, 'id', 'unknown')
         self.violations.append(
             RuleViolation(
                 rule_id="AIRFLOW009",
-                message=f"Use of {node.func.id}() in Airflow DAG - arbitrary code execution risk",
+                message=f"Use of {func_name}() in Airflow DAG - arbitrary code execution risk",
                 line_number=line_num,
                 column=node.col_offset,
                 severity=RuleSeverity.CRITICAL,
@@ -345,7 +346,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def _check_dag_security(self, node: ast.Call) -> None:
         """Check DAG configuration for security issues."""
         line_num = node.lineno
-        
+
         # Check for insecure default_args
         for keyword in node.keywords:
             if keyword.arg == "default_args":
@@ -400,44 +401,44 @@ def fix_airflow_security(
     """
     lines = code.splitlines(keepends=True)
     line_idx = violation.line_number - 1
-    
+
     if line_idx < 0 or line_idx >= len(lines):
         return code, False
-    
+
     original_line = lines[line_idx]
     modified = False
-    
+
     # Fix hardcoded credentials
     if violation.rule_id == "AIRFLOW001":
         indent = len(original_line) - len(original_line.lstrip())
         comment = " " * indent + "# TODO: Use Airflow Connections or Variables instead of hardcoded credentials\n"
         lines.insert(line_idx, comment)
         modified = True
-    
+
     # Fix command injection
     elif violation.rule_id in ["AIRFLOW002", "AIRFLOW003", "AIRFLOW004"]:
         indent = len(original_line) - len(original_line.lstrip())
         comment = " " * indent + "# TODO: Use Jinja templates or parameterized commands to prevent injection\n"
         lines.insert(line_idx, comment)
         modified = True
-    
+
     # Fix SQL injection
     elif violation.rule_id in ["AIRFLOW005", "AIRFLOW006", "AIRFLOW007"]:
         indent = len(original_line) - len(original_line.lstrip())
         comment = " " * indent + "# TODO: Use parameterized queries with parameters argument\n"
         lines.insert(line_idx, comment)
         modified = True
-    
+
     # Fix XCom sensitive data
     elif violation.rule_id == "AIRFLOW008":
         indent = len(original_line) - len(original_line.lstrip())
         comment = " " * indent + "# TODO: Avoid pushing sensitive data to XCom - use Airflow Connections/Secrets instead\n"
         lines.insert(line_idx, comment)
         modified = True
-    
+
     if modified:
         return "".join(lines), True
-    
+
     return code, False
 
 

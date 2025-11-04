@@ -8,11 +8,11 @@ References:
 - Google SRE | https://sre.google | Medium | Product-focused reliability engineering
 """
 
+from dataclasses import asdict, dataclass
 import hashlib
 import json
-import time
-from dataclasses import asdict, dataclass
 from pathlib import Path
+import time
 from typing import Any
 
 from pyguard.lib.core import PyGuardLogger

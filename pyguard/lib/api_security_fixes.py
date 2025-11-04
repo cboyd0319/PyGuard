@@ -35,8 +35,8 @@ References:
 - CWE Top 25 | https://cwe.mitre.org/top25/ | High
 """
 
-import re
 from pathlib import Path
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.fix_safety import FixSafetyClassifier

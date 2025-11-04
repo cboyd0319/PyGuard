@@ -22,14 +22,13 @@ API Stability:
 
 from __future__ import annotations
 
-import ast
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue
+from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
 
@@ -55,33 +54,33 @@ class AnalysisResult:
         lines_analyzed: Number of lines analyzed
     """
 
-    issues: list[SecurityIssue] = field(default_factory=list)
+    issues: list[SecurityIssue | CodeQualityIssue] = field(default_factory=list)
     file_path: str | None = None
     execution_time_ms: float = 0.0
     lines_analyzed: int = 0
 
     @property
-    def critical_issues(self) -> list[SecurityIssue]:
+    def critical_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all CRITICAL severity issues."""
         return [i for i in self.issues if i.severity == "CRITICAL"]
 
     @property
-    def high_issues(self) -> list[SecurityIssue]:
+    def high_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all HIGH severity issues."""
         return [i for i in self.issues if i.severity == "HIGH"]
 
     @property
-    def medium_issues(self) -> list[SecurityIssue]:
+    def medium_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all MEDIUM severity issues."""
         return [i for i in self.issues if i.severity == "MEDIUM"]
 
     @property
-    def low_issues(self) -> list[SecurityIssue]:
+    def low_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all LOW severity issues."""
         return [i for i in self.issues if i.severity == "LOW"]
 
     @property
-    def info_issues(self) -> list[SecurityIssue]:
+    def info_issues(self) -> list[SecurityIssue | CodeQualityIssue]:
         """Get all INFO severity issues."""
         return [i for i in self.issues if i.severity == "INFO"]
 
@@ -109,7 +108,7 @@ class AnalysisResult:
                     return True
         return False
 
-    def get_issues_by_category(self, category: str) -> list[SecurityIssue]:
+    def get_issues_by_category(self, category: str) -> list[SecurityIssue | CodeQualityIssue]:
         """
         Get all issues of a specific category.
 
@@ -121,7 +120,7 @@ class AnalysisResult:
         """
         return [i for i in self.issues if i.category == category]
 
-    def get_issues_by_cwe(self, cwe_id: str) -> list[SecurityIssue]:
+    def get_issues_by_cwe(self, cwe_id: str) -> list[SecurityIssue | CodeQualityIssue]:
         """
         Get all issues matching a specific CWE ID.
 
@@ -213,6 +212,13 @@ class PyGuardAPI:
         try:
             # Read file content
             content = self.file_ops.read_file(file_path)
+            if content is None:
+                return AnalysisResult(
+                    issues=[],
+                    file_path=str(file_path),
+                    execution_time_ms=0.0,
+                    lines_analyzed=0,
+                )
             source_lines = content.splitlines()
             lines_analyzed = len(source_lines)
 
@@ -363,7 +369,7 @@ class PyGuardAPI:
 
             # Import version from main package
             from pyguard import __version__
-            
+
             report_data = {
                 "tool": "pyguard",
                 "version": __version__,
@@ -418,13 +424,12 @@ class PyGuardAPI:
             return html
 
         elif format == "sarif":
-            from pyguard.lib.sarif_reporter import SARIFReporter
-
             # Import version from main package
             from pyguard import __version__
-            
+            from pyguard.lib.sarif_reporter import SARIFReporter
+
             # SARIF reporter expects a list of files, so we'll create a simple one
-            sarif_reporter = SARIFReporter([])
+            sarif_reporter = SARIFReporter()
             # Generate SARIF format manually
             import json
 

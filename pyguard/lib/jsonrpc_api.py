@@ -19,19 +19,18 @@ Security:
 - Secure authentication for multi-user systems
 """
 
-import json
-import logging
 from dataclasses import dataclass, field
 from enum import Enum
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import threading
 from queue import Queue
+import threading
 import time
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from pyguard.lib.ast_analyzer import ASTAnalyzer, SecurityIssue, CodeQualityIssue
-
+from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,7 @@ class JsonRpcResponse:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert response to dictionary for JSON serialization."""
-        response = {"jsonrpc": self.jsonrpc, "id": self.id}
+        response: Dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id}
         if self.error:
             response["error"] = self.error
         else:
@@ -142,10 +141,10 @@ class PyGuardJsonRpcServer:
         self.config: Dict[str, Any] = {}
         self.server: Optional[HTTPServer] = None
         self.running = False
-        
+
         # Register built-in methods
         self._register_methods()
-        
+
         logger.info(f"PyGuard JSON-RPC server initialized on {host}:{port}")
 
     def _register_methods(self) -> None:
@@ -155,23 +154,23 @@ class PyGuardJsonRpcServer:
         self.register_method("textDocument/didChange", self._did_change)
         self.register_method("textDocument/didClose", self._did_close)
         self.register_method("textDocument/didSave", self._did_save)
-        
+
         # Analysis methods
         self.register_method("pyguard/analyze", self._analyze_document)
         self.register_method("pyguard/analyzeFile", self._analyze_file)
         self.register_method("pyguard/getIssues", self._get_issues)
-        
+
         # Quick fix methods
         self.register_method("pyguard/getCodeActions", self._get_code_actions)
         self.register_method("pyguard/applyFix", self._apply_fix)
-        
+
         # Configuration methods
         self.register_method("pyguard/setConfig", self._set_config)
         self.register_method("pyguard/getConfig", self._get_config)
-        
+
         # Workspace methods
         self.register_method("workspace/didChangeWorkspaceFolders", self._change_workspace)
-        
+
         # Server lifecycle
         self.register_method("initialize", self._initialize)
         self.register_method("shutdown", self._shutdown)
@@ -189,7 +188,7 @@ class PyGuardJsonRpcServer:
         content = doc.get("text", "")
         version = doc.get("version", 0)
         language_id = doc.get("languageId", "python")
-        
+
         self.documents[uri] = DocumentInfo(
             uri=uri,
             content=content,
@@ -197,9 +196,9 @@ class PyGuardJsonRpcServer:
             language_id=language_id,
             last_analyzed=0.0,
         )
-        
+
         logger.info(f"Document opened: {uri}")
-        
+
         # Automatically analyze on open
         self._analyze_document({"uri": uri})
 
@@ -209,7 +208,7 @@ class PyGuardJsonRpcServer:
         uri = doc.get("uri", "")
         version = doc.get("version", 0)
         changes = params.get("contentChanges", [])
-        
+
         if uri in self.documents:
             # Full document sync (simpler approach)
             if changes and "text" in changes[0]:
@@ -221,7 +220,7 @@ class PyGuardJsonRpcServer:
         """Handle textDocument/didClose notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
-        
+
         if uri in self.documents:
             del self.documents[uri]
             logger.info(f"Document closed: {uri}")
@@ -230,7 +229,7 @@ class PyGuardJsonRpcServer:
         """Handle textDocument/didSave notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
-        
+
         # Analyze on save
         if uri in self.documents:
             self._analyze_document({"uri": uri})
@@ -247,19 +246,19 @@ class PyGuardJsonRpcServer:
             {"issues": [...], "timestamp": ..., "duration_ms": ...}
         """
         uri = params.get("uri", "")
-        
+
         if uri not in self.documents:
             raise ValueError(f"Document not open: {uri}")
-        
+
         doc = self.documents[uri]
         start_time = time.time()
-        
+
         try:
             # Analyze using PyGuard's AST analyzer
             analyzer = ASTAnalyzer()
             security_issues, quality_issues = analyzer.analyze_code(doc.content)
             issues = security_issues + quality_issues
-            
+
             # Convert issues to serializable format
             serialized_issues = []
             for issue in issues:
@@ -277,21 +276,21 @@ class PyGuardJsonRpcServer:
                         "cwe_id": getattr(issue, 'cwe_id', None),
                         "owasp_id": getattr(issue, 'owasp_id', None),
                     })
-                elif isinstance(issue, dict):
+                elif isinstance(issue, dict):  # type: ignore[unreachable]
                     serialized_issues.append(issue)
-            
+
             doc.issues = serialized_issues
             doc.last_analyzed = time.time()
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             return {
                 "issues": serialized_issues,
                 "timestamp": doc.last_analyzed,
                 "duration_ms": round(duration_ms, 2),
                 "issue_count": len(serialized_issues),
             }
-            
+
         except Exception as e:
             logger.error(f"Analysis failed for {uri}: {e}", exc_info=True)
             raise
@@ -307,22 +306,22 @@ class PyGuardJsonRpcServer:
             {"issues": [...], "timestamp": ..., "duration_ms": ...}
         """
         file_path = params.get("path", "")
-        
+
         if not file_path:
             raise ValueError("Missing 'path' parameter")
-        
+
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-        
+
         start_time = time.time()
-        
+
         try:
             content = path.read_text(encoding="utf-8")
             analyzer = ASTAnalyzer()
             security_issues, quality_issues = analyzer.analyze_code(content)
             issues = security_issues + quality_issues
-            
+
             # Convert issues to serializable format
             serialized_issues = []
             for issue in issues:
@@ -340,18 +339,18 @@ class PyGuardJsonRpcServer:
                         "cwe_id": getattr(issue, 'cwe_id', None),
                         "owasp_id": getattr(issue, 'owasp_id', None),
                     })
-                elif isinstance(issue, dict):
+                elif isinstance(issue, dict):  # type: ignore[unreachable]
                     serialized_issues.append(issue)
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             return {
                 "issues": serialized_issues,
                 "timestamp": time.time(),
                 "duration_ms": round(duration_ms, 2),
                 "issue_count": len(serialized_issues),
             }
-            
+
         except Exception as e:
             logger.error(f"Analysis failed for {file_path}: {e}", exc_info=True)
             raise
@@ -367,10 +366,10 @@ class PyGuardJsonRpcServer:
             {"issues": [...], "timestamp": ..., "cached": true}
         """
         uri = params.get("uri", "")
-        
+
         if uri not in self.documents:
             return {"issues": [], "timestamp": 0, "cached": False}
-        
+
         doc = self.documents[uri]
         return {
             "issues": doc.issues,
@@ -393,14 +392,14 @@ class PyGuardJsonRpcServer:
         """
         uri = params.get("uri", "")
         range_info = params.get("range", {})
-        
+
         if uri not in self.documents:
             return []
-        
+
         doc = self.documents[uri]
         start_line = range_info.get("start", {}).get("line", 0)
         end_line = range_info.get("end", {}).get("line", 999999)
-        
+
         # Filter issues in the specified range
         actions = []
         for issue in doc.issues:
@@ -416,7 +415,7 @@ class PyGuardJsonRpcServer:
                         "arguments": [uri, issue.get("rule_id"), issue_line],
                     },
                 })
-        
+
         return actions
 
     def _apply_fix(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -436,12 +435,12 @@ class PyGuardJsonRpcServer:
         uri = params.get("uri", "")
         rule_id = params.get("rule_id", "")
         line = params.get("line", 0)
-        
+
         # TODO: Implement actual fix application using PyGuard's auto-fix system
         # This would require integration with pyguard/lib/security.py fix functions
-        
+
         logger.info(f"Fix requested for {uri}, rule {rule_id} at line {line}")
-        
+
         return {
             "success": False,
             "message": "Auto-fix not yet implemented in JSON-RPC API",
@@ -463,13 +462,13 @@ class PyGuardJsonRpcServer:
         """Handle workspace folder changes."""
         added = params.get("event", {}).get("added", [])
         removed = params.get("event", {}).get("removed", [])
-        
+
         for folder in added:
             uri = folder.get("uri", "")
             if uri and uri not in self.workspace_folders:
                 self.workspace_folders.append(uri)
                 logger.info(f"Workspace folder added: {uri}")
-        
+
         for folder in removed:
             uri = folder.get("uri", "")
             if uri in self.workspace_folders:
@@ -480,7 +479,7 @@ class PyGuardJsonRpcServer:
         """Initialize the server with client capabilities."""
         client_info = params.get("clientInfo", {})
         logger.info(f"Client connected: {client_info}")
-        
+
         return {
             "capabilities": {
                 "textDocumentSync": {
@@ -523,7 +522,7 @@ class PyGuardJsonRpcServer:
             # Parse request
             data = json.loads(request_data)
             request = JsonRpcRequest.from_dict(data)
-            
+
             # Validate JSON-RPC version
             if request.jsonrpc != "2.0":
                 response = JsonRpcResponse.error_response(
@@ -532,7 +531,7 @@ class PyGuardJsonRpcServer:
                     request.id,
                 )
                 return json.dumps(response.to_dict())
-            
+
             # Find method handler
             if request.method not in self.methods:
                 response = JsonRpcResponse.error_response(
@@ -541,19 +540,19 @@ class PyGuardJsonRpcServer:
                     request.id,
                 )
                 return json.dumps(response.to_dict())
-            
+
             # Execute method
             try:
                 handler = self.methods[request.method]
                 result = handler(request.params or {})
-                
+
                 # Don't send response for notifications
                 if request.is_notification():
                     return None
-                
+
                 response = JsonRpcResponse.success(result, request.id)
                 return json.dumps(response.to_dict())
-                
+
             except Exception as e:
                 logger.error(f"Method execution failed: {e}", exc_info=True)
                 response = JsonRpcResponse.error_response(
@@ -563,7 +562,7 @@ class PyGuardJsonRpcServer:
                     data={"exception": type(e).__name__},
                 )
                 return json.dumps(response.to_dict())
-            
+
         except json.JSONDecodeError as e:
             response = JsonRpcResponse.error_response(
                 JsonRpcError.PARSE_ERROR.value,
@@ -584,7 +583,7 @@ class PyGuardJsonRpcServer:
         """Start the JSON-RPC server."""
         logger.info(f"Starting PyGuard JSON-RPC server on {self.host}:{self.port}")
         self.running = True
-        
+
         # Note: This is a basic implementation
         # For production, use async framework like aiohttp or FastAPI
         logger.info("JSON-RPC server ready (use external HTTP server for production)")

@@ -6,11 +6,11 @@ security rules, code quality checks, and auto-fixes.
 """
 
 import ast
+from dataclasses import dataclass, field
 import importlib.util
 import inspect
-import sys
-from dataclasses import dataclass, field
 from pathlib import Path
+import sys
 from typing import Any, Callable
 
 from pyguard.lib.custom_rules import CustomRule, CustomRuleEngine, RuleViolation

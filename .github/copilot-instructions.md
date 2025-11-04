@@ -13,6 +13,8 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with PyGu
 
 CRITICAL Repo Rules (must follow)
 - Zero telemetry. Never ship code that phones home or collects analytics.
+- Zero emojis in code, ever. Do not add emojis to source files, generated code, or code comments.
+  - Code examples in docs that users might copy/paste must also be emoji-free.
 - Avoid doc sprawl. Do not create a new doc for every small task. Prefer updating canonical docs under `docs/`. Create new documents only when a clear gap exists, and then link them from `docs/index.md`.
 - Use inclusive terminology: "allowlist/denylist" not "whitelist/blacklist", "main" not "master".
 
@@ -21,7 +23,7 @@ Target OS: Linux → macOS → Windows.
 
 ## Architecture Snapshot
 
-- Python 3.11+ codebase: 105 Python files, 102 library modules, 91,000+ lines of code
+- Python 3.11+ codebase: 117 Python files, 113 library modules, 97,209 lines of code
 - Core architecture: CLI → AST Analysis → Detection → Auto-Fix → Report Generation
 - Detection engines:
   - `pyguard/lib/security.py` — Core security vulnerability detection (720+ checks)
@@ -46,11 +48,11 @@ Target OS: Linux → macOS → Windows.
 
 ## Testing & Coverage Requirements
 
-- Repo‑wide coverage ≥ 70% (currently 84%); critical modules ~90% (security, AST analysis, auto-fix).
+- Repo‑wide coverage ≥ 70% (currently 81.24%); critical modules ~90% (security, AST analysis, auto-fix).
 - Coverage enforced in CI (fail‑under gates in pytest configuration).
 - pytest + pytest‑cov for all tests; coverage reports in HTML and XML.
 - Test structure:
-  - Unit tests: `tests/unit/` (112 test files)
+  - Unit tests: `tests/unit/` (126 test files total, 4701 test cases)
   - Integration tests: `tests/integration/` for CLI and multi-file operations
   - Fixtures: `tests/fixtures/` for deterministic test data
 - Test naming: `test_*.py` files, `Test*` classes, `test_*` methods.
@@ -94,10 +96,10 @@ Target OS: Linux → macOS → Windows.
 ## Current Statistics (Keep Updated)
 
 Track these in `docs/reference/capabilities-reference.md` and README.md:
-- **Library Modules:** 102 (verify with `find pyguard/lib -name "*.py" | wc -l`)
-- **Lines of Code:** 91,000+ (verify with `find pyguard/lib -name "*.py" | xargs wc -l`)
-- **Test Files:** 112 (verify with `find tests -name "test_*.py" | wc -l`)
-- **Test Coverage:** 84% (from pytest-cov output)
+- **Library Modules:** 113 (verify with `find pyguard/lib -name "*.py" | wc -l`)
+- **Lines of Code:** 97,209 (verify with `find pyguard/lib -name "*.py" | xargs wc -l | tail -1`)
+- **Test Files:** 126 (verify with `find tests -name "test_*.py" | wc -l`)
+- **Test Coverage:** 81.24% (from pytest-cov output - comprehensive run)
 - **Security Checks:** 720+ vulnerability types
 - **Auto-Fixes:** 199+ with 100% coverage (safe mode default, unsafe mode opt-in)
 - **Frameworks:** 20 (Django, Flask, FastAPI, Pandas, Pytest, Tornado, Celery, NumPy, TensorFlow, Pyramid, SQLAlchemy, asyncio, Sanic, Quart, Bottle, Scikit-learn, SciPy, Peewee, Pony, Tortoise)
@@ -154,17 +156,28 @@ Track these in `docs/reference/capabilities-reference.md` and README.md:
 - **Docstrings:** Required for all public functions; Google-style format
 - **Comments:** Minimal; code should be self-documenting; security notes marked with `# SECURITY:`
 
+## Code Quality Gates
+
+All code changes must pass these quality gates before merge:
+- **Type Checking:** `mypy pyguard/` must report "Success: no issues found"
+- **Linting:** `ruff check pyguard/` should have minimal warnings (complexity and style only)
+- **Code Quality:** `pylint pyguard/` should have no critical issues
+- **Security:** `bandit -r pyguard/ -ll` should report only false positives
+- **Testing:** All tests pass with coverage ≥70% (currently 81.24%)
+- **Format:** Code follows Black style (line length: 100)
+
 ## Sanity Checks Before Merge
 
 - [ ] Capabilities Reference updated with new features
-- [ ] Statistics match actual codebase (modules, lines, tests, coverage)
+- [ ] Statistics match actual codebase (113 modules, 97,209 lines, 126 tests, 81.24% coverage)
 - [ ] README.md reflects current capabilities
 - [ ] No duplicate capability docs (use pointers to capabilities-reference.md)
 - [ ] `docs/index.md` links to Capabilities Reference
 - [ ] CLI help text matches documentation
 - [ ] All cross-references valid (no broken links)
 - [ ] Tests pass with coverage ≥70%
-- [ ] Linters pass (ruff, pylint, mypy, flake8)
+- [ ] Type checking passes (mypy)
+- [ ] Linters pass (ruff, pylint, mypy, flake8, bandit)
 - [ ] No telemetry or outbound data collection
 - [ ] No secrets committed
 - [ ] Documentation only under `docs/` (except allowed stubs and this file)

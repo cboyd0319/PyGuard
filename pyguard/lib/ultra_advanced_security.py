@@ -23,8 +23,8 @@ References:
 """
 
 import ast
-import re
 from dataclasses import dataclass
+import re
 from typing import Any, ClassVar
 
 from pyguard.lib.ast_analyzer import SecurityIssue

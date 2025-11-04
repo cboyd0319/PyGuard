@@ -7,9 +7,9 @@ Aligned with flake8-quotes, flynt, and other string-focused linters.
 """
 
 import ast
-import re
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 

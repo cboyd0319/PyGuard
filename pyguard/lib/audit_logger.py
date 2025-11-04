@@ -21,17 +21,16 @@ Security:
 - Separation of duties (logs cannot be modified by scanner)
 """
 
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
 import hashlib
 import json
 import logging
-import time
-from dataclasses import dataclass, field, asdict
-from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from datetime import datetime, timezone
 import os
-
+from pathlib import Path
+import time
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -43,30 +42,30 @@ class AuditEventType(Enum):
     SCAN_COMPLETED = "scan.completed"
     SCAN_FAILED = "scan.failed"
     SCAN_CANCELLED = "scan.cancelled"
-    
+
     # Issue events
     ISSUE_DETECTED = "issue.detected"
     CRITICAL_ISSUE = "critical.issue.detected"
     FIX_APPLIED = "fix.applied"
     FIX_FAILED = "fix.failed"
-    
+
     # Configuration events
     CONFIG_CHANGED = "config.changed"
     RULE_ENABLED = "rule.enabled"
     RULE_DISABLED = "rule.disabled"
     SUPPRESSION_ADDED = "suppression.added"
-    
+
     # Authentication events
     API_KEY_CREATED = "api_key.created"
     API_KEY_REVOKED = "api_key.revoked"
     AUTH_SUCCESS = "auth.success"
     AUTH_FAILED = "auth.failed"
-    
+
     # Access events
     REPORT_ACCESSED = "report.accessed"
     RESULTS_EXPORTED = "results.exported"
     FILE_ACCESSED = "file.accessed"
-    
+
     # System events
     SYSTEM_START = "system.started"
     SYSTEM_STOP = "system.stopped"
@@ -99,7 +98,7 @@ class AuditEntry:
     client_ip: Optional[str] = None
     previous_hash: Optional[str] = None  # For tamper detection
     entry_hash: Optional[str] = None  # Hash of this entry
-    
+
     def compute_hash(self, include_previous: bool = True) -> str:
         """
         Compute cryptographic hash of entry for integrity verification.
@@ -121,13 +120,13 @@ class AuditEntry:
             "result": self.result,
             "details": json.dumps(self.details, sort_keys=True),
         }
-        
+
         if include_previous and self.previous_hash:
             data["previous_hash"] = self.previous_hash
-        
+
         canonical = json.dumps(data, sort_keys=True)
         return hashlib.sha256(canonical.encode()).hexdigest()
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         data = {
@@ -149,11 +148,11 @@ class AuditEntry:
             "entry_hash": self.entry_hash,
         }
         return {k: v for k, v in data.items() if v is not None}
-    
+
     def to_json(self) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict())
-    
+
     def to_cef(self) -> str:
         """
         Convert to Common Event Format (CEF) for SIEM integration.
@@ -170,16 +169,16 @@ class AuditEntry:
             AuditSeverity.ERROR: 8,
             AuditSeverity.CRITICAL: 10,
         }
-        
+
         cef_severity = severity_map.get(self.severity, 5)
-        
+
         # Build extension fields
         extensions = [
             f"act={self.action}",
             f"outcome={self.result}",
             f"rt={int(self.timestamp * 1000)}",  # milliseconds
         ]
-        
+
         if self.actor:
             extensions.append(f"suser={self.actor}")
         if self.resource:
@@ -189,9 +188,9 @@ class AuditEntry:
         if self.session_id:
             extensions.append(f"cs1={self.session_id}")
             extensions.append("cs1Label=SessionID")
-        
+
         extension_str = " ".join(extensions)
-        
+
         return (
             f"CEF:0|PyGuard|Security Scanner|0.8.0|"
             f"{self.event_type.value}|{self.action}|"
@@ -206,7 +205,7 @@ class AuditLogger:
     Provides tamper-evident logging with cryptographic integrity
     verification for compliance requirements.
     """
-    
+
     def __init__(
         self,
         log_file: Optional[Path] = None,
@@ -230,20 +229,20 @@ class AuditLogger:
         self.enable_integrity = enable_integrity
         self.rotate_size_mb = rotate_size_mb
         self.retention_days = retention_days
-        
+
         # Last entry hash for chaining
         self.last_hash: Optional[str] = None
-        
+
         # Load last hash from existing log
         self._load_last_hash()
-        
+
         logger.info(f"Audit logger initialized: {self.log_file}")
-    
+
     def _load_last_hash(self) -> None:
         """Load the last hash from existing log file."""
         if not self.log_file.exists():
             return
-        
+
         try:
             # Read last line
             with open(self.log_file, "r") as f:
@@ -256,7 +255,7 @@ class AuditLogger:
                         logger.debug(f"Loaded last hash: {self.last_hash[:8]}...")
         except Exception as e:
             logger.warning(f"Failed to load last hash: {e}")
-    
+
     def log(
         self,
         event_type: AuditEventType,
@@ -303,29 +302,29 @@ class AuditLogger:
             client_ip=client_ip,
             previous_hash=self.last_hash if self.enable_integrity else None,
         )
-        
+
         # Compute hash
         if self.enable_integrity:
             entry.entry_hash = entry.compute_hash()
             self.last_hash = entry.entry_hash
-        
+
         # Write to log
         self._write_entry(entry)
-        
+
         return entry
-    
+
     def _write_entry(self, entry: AuditEntry) -> None:
         """Write entry to log file."""
         try:
             # Ensure parent directory exists
             self.log_file.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Check if rotation needed
             if self.log_file.exists():
                 size_mb = self.log_file.stat().st_size / (1024 * 1024)
                 if size_mb >= self.rotate_size_mb:
                     self._rotate_log()
-            
+
             # Write entry based on format
             with open(self.log_file, "a") as f:
                 if self.format == "json":
@@ -334,25 +333,25 @@ class AuditLogger:
                     f.write(entry.to_cef() + "\n")
                 else:
                     f.write(str(entry.to_dict()) + "\n")
-                    
+
         except Exception as e:
             logger.error(f"Failed to write audit log: {e}", exc_info=True)
-    
+
     def _rotate_log(self) -> None:
         """Rotate the current log file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         rotated_file = self.log_file.with_suffix(f".{timestamp}.jsonl")
-        
+
         try:
             self.log_file.rename(rotated_file)
             logger.info(f"Rotated audit log to: {rotated_file}")
-            
+
             # Reset last hash for new file
             self.last_hash = None
-            
+
         except Exception as e:
             logger.error(f"Failed to rotate log: {e}")
-    
+
     def verify_integrity(self, start_index: int = 0) -> Dict[str, Any]:
         """
         Verify integrity of audit log using hash chain.
@@ -368,26 +367,26 @@ class AuditLogger:
                 "verified": False,
                 "message": "Integrity checking not enabled",
             }
-        
+
         if not self.log_file.exists():
             return {
                 "verified": True,
                 "entries_checked": 0,
                 "message": "No log file to verify",
             }
-        
+
         tampering_detected = []
         entries_checked = 0
         previous_hash = None
-        
+
         try:
             with open(self.log_file, "r") as f:
                 for i, line in enumerate(f):
                     if i < start_index:
                         continue
-                    
+
                     entry_dict = json.loads(line.strip())
-                    
+
                     # Recreate entry
                     entry = AuditEntry(
                         timestamp=entry_dict["timestamp"],
@@ -404,7 +403,7 @@ class AuditLogger:
                         previous_hash=entry_dict.get("previous_hash"),
                         entry_hash=entry_dict.get("entry_hash"),
                     )
-                    
+
                     # Verify hash chain
                     if previous_hash and entry.previous_hash != previous_hash:
                         tampering_detected.append({
@@ -414,7 +413,7 @@ class AuditLogger:
                             "expected_previous": previous_hash,
                             "actual_previous": entry.previous_hash,
                         })
-                    
+
                     # Verify entry hash
                     computed_hash = entry.compute_hash()
                     if entry.entry_hash and computed_hash != entry.entry_hash:
@@ -425,17 +424,17 @@ class AuditLogger:
                             "expected": entry.entry_hash,
                             "computed": computed_hash,
                         })
-                    
+
                     previous_hash = entry.entry_hash
                     entries_checked += 1
-                    
+
         except Exception as e:
             return {
                 "verified": False,
                 "error": str(e),
                 "entries_checked": entries_checked,
             }
-        
+
         if tampering_detected:
             return {
                 "verified": False,
@@ -443,13 +442,13 @@ class AuditLogger:
                 "tampering_detected": len(tampering_detected),
                 "details": tampering_detected,
             }
-        
+
         return {
             "verified": True,
             "entries_checked": entries_checked,
             "message": "Audit log integrity verified",
         }
-    
+
     def query(
         self,
         event_types: Optional[List[AuditEventType]] = None,
@@ -475,42 +474,42 @@ class AuditLogger:
         """
         if not self.log_file.exists():
             return []
-        
-        results = []
-        
+
+        results: List[Dict[str, Any]] = []
+
         try:
             with open(self.log_file, "r") as f:
                 for line in f:
                     if len(results) >= limit:
                         break
-                    
+
                     entry_dict = json.loads(line.strip())
-                    
+
                     # Apply filters
                     if event_types:
                         event_type_values = [et.value for et in event_types]
                         if entry_dict["event_type"] not in event_type_values:
                             continue
-                    
+
                     if actor and entry_dict.get("actor") != actor:
                         continue
-                    
+
                     if start_time and entry_dict["timestamp"] < start_time:
                         continue
-                    
+
                     if end_time and entry_dict["timestamp"] > end_time:
                         continue
-                    
+
                     if severity and entry_dict.get("severity") != severity.value:
                         continue
-                    
+
                     results.append(entry_dict)
-                    
+
         except Exception as e:
             logger.error(f"Failed to query audit log: {e}")
-        
+
         return results
-    
+
     def generate_compliance_report(
         self,
         start_time: float,
@@ -534,22 +533,22 @@ class AuditLogger:
             end_time=end_time,
             limit=100000,  # High limit for reports
         )
-        
+
         # Calculate statistics
-        event_counts = {}
-        severity_counts = {}
-        actor_counts = {}
-        
+        event_counts: Dict[str, int] = {}
+        severity_counts: Dict[str, int] = {}
+        actor_counts: Dict[str, int] = {}
+
         for entry in entries:
             event_type = entry["event_type"]
             event_counts[event_type] = event_counts.get(event_type, 0) + 1
-            
+
             severity = entry.get("severity", "info")
             severity_counts[severity] = severity_counts.get(severity, 0) + 1
-            
+
             actor = entry.get("actor", "unknown")
             actor_counts[actor] = actor_counts.get(actor, 0) + 1
-        
+
         return {
             "report_period": {
                 "start": start_time,
