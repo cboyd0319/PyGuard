@@ -1,0 +1,163 @@
+# Copilot pre-install steps for ephemeral dev environment
+# This file helps GitHub Copilot Agents install project dependencies
+# before attempting builds/tests/lints, improving PR quality and speed.
+
+steps:
+  - name: macOS — Install Rust toolchain
+    if: runner.os == 'macOS'
+    run: |
+      if ! command -v rustc &> /dev/null; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+        source "$HOME/.cargo/env"
+      fi
+      rustup update stable
+      rustc --version
+      cargo --version
+
+  - name: macOS — Install Java and build tools
+    if: runner.os == 'macOS'
+    run: |
+      brew update
+      brew install openjdk@17 maven gradle bazelisk node vale
+      echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+      java -version
+      mvn --version
+      gradle --version
+      bazel --version
+
+  - name: macOS — Install Node.js tools
+    if: runner.os == 'macOS'
+    run: |
+      npm install -g markdownlint-cli typescript @vscode/vsce
+      markdownlint --version
+      tsc --version
+      vsce --version || echo "vsce installed but may need login"
+
+  - name: macOS — Install Python tools (optional for CI scripts only)
+    if: runner.os == 'macOS'
+    run: |
+      python3 --version
+      pip3 install --upgrade pip
+      echo "Python available for optional CI scripts"
+
+  - name: Linux — Install Rust toolchain
+    if: runner.os == 'Linux'
+    run: |
+      if ! command -v rustc &> /dev/null; then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+        source "$HOME/.cargo/env"
+      fi
+      rustup update stable
+      rustc --version
+      cargo --version
+
+  - name: Linux — Install Java and Maven
+    if: runner.os == 'Linux'
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y openjdk-17-jdk maven curl unzip wget
+      java -version
+      mvn --version
+
+  - name: Linux — Install Bazel
+    if: runner.os == 'Linux'
+    run: |
+      if ! command -v bazel &> /dev/null; then
+        npm install -g @bazel/bazelisk
+        sudo ln -s $(npm root -g)/@bazel/bazelisk/bazelisk.js /usr/local/bin/bazel || true
+      fi
+      bazel --version
+
+  - name: Linux — Install Gradle
+    if: runner.os == 'Linux'
+    run: |
+      GRADLE_VERSION=8.5
+      wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp
+      sudo unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip || true
+      sudo ln -sf /opt/gradle/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle || true
+      gradle --version || echo "Gradle installation may need manual verification"
+
+  - name: Linux — Install Node.js and markdownlint
+    if: runner.os == 'Linux'
+    run: |
+      sudo apt-get install -y npm
+      npm install -g markdownlint-cli typescript @vscode/vsce
+      markdownlint --version
+      tsc --version
+      vsce --version || echo "vsce installed but may need login"
+
+  - name: Linux — Install Vale (optional)
+    if: runner.os == 'Linux'
+    run: |
+      set -euo pipefail
+      TMP=$(mktemp -d)
+      cd "$TMP"
+      curl -sSL -o vale.tar.gz https://github.com/errata-ai/vale/releases/latest/download/vale_Linux_64-bit.tar.gz || exit 0
+      tar -xzf vale.tar.gz || exit 0
+      sudo mv vale /usr/local/bin/vale || true
+      vale --version || true
+
+  - name: Linux — Install Python tools (optional for CI scripts only)
+    if: runner.os == 'Linux'
+    run: |
+      sudo apt-get install -y python3 python3-pip
+      python3 --version
+      pip3 install --upgrade pip
+      echo "Python available for optional CI scripts"
+
+  - name: Install Rust development tools
+    run: |
+      rustup component add rustfmt clippy llvm-tools-preview
+      cargo install cargo-llvm-cov --locked || echo "cargo-llvm-cov already installed or failed"
+
+  - name: Phase 4 — Install VS Code extension dependencies
+    run: |
+      if [ -d "crates/bazbom-vscode-extension" ]; then
+        echo "Installing VS Code extension dependencies..."
+        cd crates/bazbom-vscode-extension
+        npm install || echo "npm install failed or no package.json yet"
+        cd ../..
+      else
+        echo "VS Code extension directory not found, skipping"
+      fi
+
+  - name: Phase 4 — Setup IntelliJ plugin environment
+    run: |
+      if [ -d "crates/bazbom-intellij-plugin" ]; then
+        echo "Setting up IntelliJ plugin build environment..."
+        cd crates/bazbom-intellij-plugin
+        if [ -f "gradlew" ]; then
+          ./gradlew --version || echo "Gradle wrapper check failed"
+        else
+          gradle wrapper --gradle-version=8.5 || echo "Gradle wrapper init failed or gradle not available"
+        fi
+        cd ../..
+      else
+        echo "IntelliJ plugin directory not found, skipping"
+      fi
+
+  - name: Confirm repo tools
+    run: |
+      echo "=== Core Build Tools ==="
+      echo "Rust: $(rustc --version 2>/dev/null || echo missing)"
+      echo "Cargo: $(cargo --version 2>/dev/null || echo missing)"
+      echo "Java: $(java -version 2>&1 | head -1 || echo missing)"
+      echo "Maven: $(mvn --version 2>&1 | head -1 || echo missing)"
+      echo "Gradle: $(gradle --version 2>&1 | grep Gradle || echo missing)"
+      echo "Bazel: $(bazel --version 2>/dev/null || echo missing)"
+      echo ""
+      echo "=== Language & Package Tools ==="
+      echo "Node: $(node --version 2>/dev/null || echo missing)"
+      echo "npm: $(npm --version 2>/dev/null || echo missing)"
+      echo "TypeScript: $(tsc --version 2>/dev/null || echo missing)"
+      echo "Python: $(python3 --version 2>/dev/null || echo missing)"
+      echo ""
+      echo "=== Documentation & Linting Tools ==="
+      echo "markdownlint: $(markdownlint --version 2>/dev/null || echo missing)"
+      echo "Vale: $(vale --version 2>/dev/null || echo missing)"
+      echo "rustfmt: $(rustfmt --version 2>/dev/null || echo missing)"
+      echo "clippy: $(cargo clippy --version 2>/dev/null || echo missing)"
+      echo ""
+      echo "=== IDE Development Tools (Phase 4) ==="
+      echo "vsce (VS Code): $(vsce --version 2>/dev/null || echo missing)"
+      echo "Kotlin: $(kotlinc -version 2>/dev/null || echo missing)"
