@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Read this before publishing packages to Chocolatey.org: https://docs.chocolatey.org/en-us/create/create-packages -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>pyguard</id>
+    <version>0.6.0</version>
+    <packageSourceUrl>https://github.com/cboyd0319/PyGuard</packageSourceUrl>
+    <owners>cboyd0319</owners>
+    <title>PyGuard - Python Security &amp; Code Quality</title>
+    <authors>Chad Boyd</authors>
+    <projectUrl>https://github.com/cboyd0319/PyGuard</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/cboyd0319/PyGuard/main/docs/assets/pyguard-logo.png</iconUrl>
+    <copyright>2024 Chad Boyd</copyright>
+    <licenseUrl>https://github.com/cboyd0319/PyGuard/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/cboyd0319/PyGuard</projectSourceUrl>
+    <docsUrl>https://github.com/cboyd0319/PyGuard/tree/main/docs</docsUrl>
+    <bugTrackerUrl>https://github.com/cboyd0319/PyGuard/issues</bugTrackerUrl>
+    <tags>python security static-analysis linting code-quality sarif security-scanner vulnerability-detection compliance owasp pci-dss hipaa</tags>
+    <summary>The World's Best Python Security &amp; Compliance Tool - 739 security checks, 25 frameworks, ML-powered detection</summary>
+    <description><![CDATA[
+# PyGuard - The World's Best Python Security & Compliance Tool
+
+PyGuard is a comprehensive Python security and code quality analysis tool with 739 security checks across 25 frameworks.
+
+## Features
+
+- 739 Security Checks (370% more than Snyk)
+- 25 Framework Support (Django, Flask, FastAPI, PySpark, Airflow, etc.)
+- 199+ Automated Fixes with 100% coverage
+- 10+ Compliance Frameworks (OWASP, PCI-DSS, HIPAA, SOC 2, etc.)
+- ML-Powered Detection
+- GitHub Actions integration with SARIF 2.1.0
+- Zero telemetry - 100% local operation
+
+## Installation
+
+Via Chocolatey (recommended for Windows):
+```
+choco install pyguard
+```
+
+Via pip:
+```
+pip install pyguard
+```
+
+## Quick Start
+
+```
+pyguard .                              # Scan current directory
+pyguard --fix .                        # Scan with auto-fix
+pyguard --compliance-html report.html . # Generate compliance report
+```
+
+## Documentation
+
+- https://github.com/cboyd0319/PyGuard
+    ]]></description>
+    <releaseNotes>https://github.com/cboyd0319/PyGuard/releases/tag/v0.6.0</releaseNotes>
+    <dependencies>
+      <dependency id="python" version="3.11.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
