@@ -23,6 +23,7 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Git Hooks Guide](guides/git-hooks-guide.md) - Pre-commit integration
 - [Notebook Security Guide](guides/notebook-security-guide.md) - Jupyter notebook scanning
 - [RipGrep Integration](guides/RIPGREP_INTEGRATION.md) - High-performance scanning (10-100x faster)
+- [Plugin Architecture Guide](guides/PLUGIN_ARCHITECTURE.md) - Extend PyGuard with custom plugins ✨ NEW
 - [Security Rules Reference](reference/security-rules.md) - All security checks
 
 ### Security & Supply Chain
@@ -32,6 +33,8 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md) - How to verify releases ✨ NEW
 - [GPG Verification](security/GPG_VERIFICATION.md) - Traditional GPG signature verification
 - [Security Quickstart](security/SECURITY_QUICKSTART.md) - Quick security verification guide
+- [Reproducible Builds Guide](guides/REPRODUCIBLE_BUILDS.md) - Bit-for-bit build verification ✨ NEW
+- [Air-Gapped Installation Guide](guides/AIR_GAPPED_INSTALLATION.md) - Offline installation methods ✨ NEW
 - [Security Policy](../SECURITY.md) - Vulnerability disclosure
 
 ### Architecture & Implementation
@@ -66,8 +69,11 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - **SLSA provenance?** Check [SLSA Provenance Verification](security/SLSA_PROVENANCE_VERIFICATION.md)
 - **SBOM analysis?** Read [SBOM Guide](security/SBOM_GUIDE.md)
 - **Verifying releases?** Read [Signature Verification Guide](security/SIGNATURE_VERIFICATION.md)
+- **Reproducible builds?** See [Reproducible Builds Guide](guides/REPRODUCIBLE_BUILDS.md)
+- **Air-gapped environment?** Read [Air-Gapped Installation Guide](guides/AIR_GAPPED_INSTALLATION.md)
 - **Integration?** See [Git Hooks Guide](guides/git-hooks-guide.md)
-- **Custom rules?** Check [Security Rules Reference](reference/security-rules.md)
+- **Custom rules?** Check [Plugin Architecture Guide](guides/PLUGIN_ARCHITECTURE.md)
+- **Built-in rules?** Review [Security Rules Reference](reference/security-rules.md)
 
 ## 📖 Documentation Templates
 
