@@ -10,20 +10,23 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Examples](examples/README.md) - Code examples
 
 ### Strategic Documentation
-- [🗺️ Roadmap](../ROADMAP.md) - Complete roadmap with v0.7.0-v1.0.0 plans ✨ NEW
-- [📦 Distribution Strategy](../DISTRIBUTION.md) - Multi-channel distribution & security ✨ NEW
+- [🗺️ Roadmap](../ROADMAP.md) - Complete roadmap with v0.7.0-v1.0.0 plans
+- [📦 Distribution Strategy](reference/DISTRIBUTION_STRATEGY.md) - Multi-channel distribution & security
 - [🎯 Capabilities Reference](reference/capabilities-reference.md) - Complete feature catalog
-- [🏗️ Architecture](../ARCHITECTURE.md) - System design and technical overview
+- [🏗️ Architecture](reference/ARCHITECTURE.md) - System design and technical overview
 
 ### User Guides
+- [📚 Quickstart Guide](../QUICKSTART.md) - Get started in 2 minutes ✨ NEW
+- [🔧 Troubleshooting Guide](../TROUBLESHOOTING.md) - Common issues and solutions ✨ NEW
 - [Advanced Features Guide](guides/ADVANCED_FEATURES.md) - Jupyter notebook security & AI explanations
-- [GitHub Action Guide](guides/github-action-guide.md) - CI/CD integration with GitHub Actions ✨
+- [GitHub Action Guide](guides/github-action-guide.md) - CI/CD integration with GitHub Actions
+- [GitHub Marketplace Guide](guides/GITHUB_MARKETPLACE_GUIDE.md) - Publishing and using the GitHub Action
 - [Advanced Integrations Guide](guides/advanced-integrations.md) - CI/CD, Performance, Dependencies, Custom Rules
 - [Auto-Fix Guide](guides/auto-fix-guide.md) - Automated code fixes
 - [Git Hooks Guide](guides/git-hooks-guide.md) - Pre-commit integration
 - [Notebook Security Guide](guides/notebook-security-guide.md) - Jupyter notebook scanning
 - [RipGrep Integration](guides/RIPGREP_INTEGRATION.md) - High-performance scanning (10-100x faster)
-- [Plugin Architecture Guide](guides/PLUGIN_ARCHITECTURE.md) - Extend PyGuard with custom plugins ✨ NEW
+- [Plugin Architecture Guide](guides/PLUGIN_ARCHITECTURE.md) - Extend PyGuard with custom plugins
 - [Security Rules Reference](reference/security-rules.md) - All security checks
 
 ### Security & Supply Chain
@@ -38,11 +41,20 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 - [Security Policy](../SECURITY.md) - Vulnerability disclosure
 
 ### Architecture & Implementation
+- [Architecture](reference/ARCHITECTURE.md) - System design and technical overview
 - [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md) - Technical overview
 - [Auto-Fix Analysis](reference/architecture/AUTOFIX_ANALYSIS.md) - Fix safety classifications
-- [Development Updates](development/UPDATEv06.md) - v0.6.0 roadmap and progress tracker
-- [Development Archive](development/UPDATEv2.md) - v0.5.0 and earlier history
 - [Competing Products Analysis](reference/COMPETING_PRODUCTS_COVERAGE.md) - Feature comparison
+
+### Historical Reports & Analysis
+- [Reports Index](reports/README.md) - All historical reports
+- [2025-11-11 Deep Analysis](reports/2025-11-11-deep-analysis.md) - Comprehensive codebase analysis
+- [2025-11-11 Enhancements](reports/2025-11-11-enhancements-summary.md) - Usability improvements
+- [2024 Implementation Reports](reports/) - v0.7.0-v1.0.0 implementation summaries
+
+### Archived Documentation
+- [Archived Development Docs](development/archived/README.md) - Old version documentation
+- [Development Archive](development/archived/) - Historical development files
 
 ### Project Information
 - [Changelog](CHANGELOG.md) - Version history
@@ -60,8 +72,8 @@ Welcome to the comprehensive documentation for PyGuard - The World's Best Python
 
 ### For Developers
 - **Contributing?** Read [Contributing Guide](../CONTRIBUTING.md)
-- **Understanding code?** See [Architecture docs](reference/architecture/)
-- **Adding features?** Check [Development Updates](development/UPDATEv06.md) (v0.6.0)
+- **Understanding code?** See [Architecture](reference/ARCHITECTURE.md) and [Implementation Summary](reference/architecture/IMPLEMENTATION_SUMMARY.md)
+- **Historical context?** Check [Reports](reports/) and [Archived Docs](development/archived/)
 
 ### For Security Teams
 - **Compliance?** Review [Capabilities Reference](reference/capabilities-reference.md)

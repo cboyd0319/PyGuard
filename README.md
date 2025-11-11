@@ -23,7 +23,7 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Roadmap](ROADMAP.md) •
-[Distribution](DISTRIBUTION.md) •
+[Distribution](docs/reference/DISTRIBUTION_STRATEGY.md) •
 [Documentation](docs/index.md) •
 [GitHub Action](docs/guides/github-action-guide.md)
 
@@ -1067,7 +1067,7 @@ Current: v0.6.0 (4,701 tests, 84%+ coverage, 1,230+ security checks, 25 framewor
 
 **See [ROADMAP.md](ROADMAP.md) for comprehensive roadmap with timelines, metrics, and strategy**
 
-**See [DISTRIBUTION.md](DISTRIBUTION.md) for detailed distribution strategy and secure supply chain plan**
+**See [DISTRIBUTION_STRATEGY.md](docs/reference/DISTRIBUTION_STRATEGY.md) for detailed distribution strategy and secure supply chain plan**
 
 ---
 

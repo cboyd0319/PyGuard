@@ -579,10 +579,10 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 ## 🔗 Related Documentation
 
-- [DISTRIBUTION.md](DISTRIBUTION.md) - Detailed distribution strategy
+- [DISTRIBUTION_STRATEGY.md](docs/reference/DISTRIBUTION_STRATEGY.md) - Detailed distribution strategy
 - [README.md](README.md) - Main project documentation
 - [docs/reference/capabilities-reference.md](docs/reference/capabilities-reference.md) - Current capabilities
-- [docs/development/UPDATEv06.md](docs/development/UPDATEv06.md) - v0.6.0 development status
+- [docs/development/archived/UPDATEv06.md](docs/development/archived/UPDATEv06.md) - v0.6.0 development status (archived)
 - [SECURITY.md](SECURITY.md) - Security policy
 
 ---
