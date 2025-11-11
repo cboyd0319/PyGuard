@@ -95,12 +95,6 @@ from pyguard.lib.xss_detection import (
 )
 
 __all__ = [
-    # High-level API
-    "AnalysisResult",
-    "PyGuardAPI",
-    "Severity",
-    "analyze_code",
-    "analyze_file",
     # Rule Sets
     "BUGBEAR_RULES",
     "DEBUGGING_RULES",
@@ -110,6 +104,8 @@ __all__ = [
     "ASTAnalyzer",
     "AnalysisCache",
     "AnalysisMetrics",
+    # High-level API
+    "AnalysisResult",
     "BackupManager",
     "BatchProcessor",
     "BestPracticesFixer",
@@ -157,6 +153,7 @@ __all__ = [
     # Performance Profiler
     "PerformanceProfiler",
     "PreCommitHookGenerator",
+    "PyGuardAPI",
     "PyGuardLogger",
     # Rule Engine
     "Rule",
@@ -168,6 +165,7 @@ __all__ = [
     "SARIFReporter",
     "SecurityFixer",
     "SecurityIssue",
+    "Severity",
     "SimplificationIssue",
     # String Operations
     "StringIssue",
@@ -180,6 +178,8 @@ __all__ = [
     "UnusedCodeIssue",
     # XSS Detection
     "XSSDetector",
+    "analyze_code",
+    "analyze_file",
     "analyze_performance",
     "analyze_project_dependencies",
     "check_xss_vulnerabilities",

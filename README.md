@@ -1033,7 +1033,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 **Goal: Make PyGuard THE definitive Python security solution everywhere developers work**
 
-Current: v0.6.0 (3,870+ tests, 85% coverage, 738+ security checks, 23 frameworks)
+Current: v0.6.0 (4,701 tests, 84%+ coverage, 1,230+ security checks, 25 frameworks)
 
 ### Completed Milestones
 

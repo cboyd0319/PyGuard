@@ -19,16 +19,15 @@ Security:
 - Secure authentication for multi-user systems
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import HTTPServer
 import json
 import logging
 from pathlib import Path
-from queue import Queue
-import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 from pyguard.lib.ast_analyzer import ASTAnalyzer, CodeQualityIssue, SecurityIssue
 
@@ -51,11 +50,11 @@ class JsonRpcRequest:
     """JSON-RPC 2.0 request structure."""
     jsonrpc: str = "2.0"
     method: str = ""
-    params: Optional[Union[Dict, List]] = None
-    id: Optional[Union[str, int]] = None
+    params: dict | list | None = None
+    id: str | int | None = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "JsonRpcRequest":
+    def from_dict(cls, data: dict[str, Any]) -> "JsonRpcRequest":
         """Parse JSON-RPC request from dictionary."""
         return cls(
             jsonrpc=data.get("jsonrpc", "2.0"),
@@ -73,13 +72,13 @@ class JsonRpcRequest:
 class JsonRpcResponse:
     """JSON-RPC 2.0 response structure."""
     jsonrpc: str = "2.0"
-    result: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
-    id: Optional[Union[str, int]] = None
+    result: Any | None = None
+    error: dict[str, Any] | None = None
+    id: str | int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert response to dictionary for JSON serialization."""
-        response: Dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id}
+        response: dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id}
         if self.error:
             response["error"] = self.error
         else:
@@ -87,13 +86,13 @@ class JsonRpcResponse:
         return response
 
     @staticmethod
-    def success(result: Any, request_id: Optional[Union[str, int]]) -> "JsonRpcResponse":
+    def success(result: Any, request_id: str | int | None) -> "JsonRpcResponse":
         """Create success response."""
         return JsonRpcResponse(result=result, error=None, id=request_id)
 
     @staticmethod
     def error_response(
-        code: int, message: str, request_id: Optional[Union[str, int]], data: Any = None
+        code: int, message: str, request_id: str | int | None, data: Any = None
     ) -> "JsonRpcResponse":
         """Create error response."""
         error_obj = {"code": code, "message": message}
@@ -110,13 +109,13 @@ class DocumentInfo:
     version: int = 0
     language_id: str = "python"
     last_analyzed: float = 0.0
-    issues: List[Dict[str, Any]] = field(default_factory=list)
+    issues: list[dict[str, Any]] = field(default_factory=list)
 
 
 class PyGuardJsonRpcServer:
     """
     JSON-RPC 2.0 API server for PyGuard IDE integration.
-    
+
     Provides methods for:
     - Document management (open, close, change)
     - Real-time security analysis
@@ -128,18 +127,18 @@ class PyGuardJsonRpcServer:
     def __init__(self, host: str = "127.0.0.1", port: int = 5007):
         """
         Initialize JSON-RPC server.
-        
+
         Args:
             host: Host to bind to (default: 127.0.0.1 for security)
             port: Port to listen on (default: 5007)
         """
         self.host = host
         self.port = port
-        self.methods: Dict[str, Callable] = {}
-        self.documents: Dict[str, DocumentInfo] = {}
-        self.workspace_folders: List[str] = []
-        self.config: Dict[str, Any] = {}
-        self.server: Optional[HTTPServer] = None
+        self.methods: dict[str, Callable] = {}
+        self.documents: dict[str, DocumentInfo] = {}
+        self.workspace_folders: list[str] = []
+        self.config: dict[str, Any] = {}
+        self.server: HTTPServer | None = None
         self.running = False
 
         # Register built-in methods
@@ -181,7 +180,7 @@ class PyGuardJsonRpcServer:
         self.methods[name] = handler
         logger.debug(f"Registered method: {name}")
 
-    def _did_open(self, params: Dict[str, Any]) -> None:
+    def _did_open(self, params: dict[str, Any]) -> None:
         """Handle textDocument/didOpen notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
@@ -202,7 +201,7 @@ class PyGuardJsonRpcServer:
         # Automatically analyze on open
         self._analyze_document({"uri": uri})
 
-    def _did_change(self, params: Dict[str, Any]) -> None:
+    def _did_change(self, params: dict[str, Any]) -> None:
         """Handle textDocument/didChange notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
@@ -216,7 +215,7 @@ class PyGuardJsonRpcServer:
                 self.documents[uri].version = version
                 logger.debug(f"Document changed: {uri} (v{version})")
 
-    def _did_close(self, params: Dict[str, Any]) -> None:
+    def _did_close(self, params: dict[str, Any]) -> None:
         """Handle textDocument/didClose notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
@@ -225,7 +224,7 @@ class PyGuardJsonRpcServer:
             del self.documents[uri]
             logger.info(f"Document closed: {uri}")
 
-    def _did_save(self, params: Dict[str, Any]) -> None:
+    def _did_save(self, params: dict[str, Any]) -> None:
         """Handle textDocument/didSave notification."""
         doc = params.get("textDocument", {})
         uri = doc.get("uri", "")
@@ -235,13 +234,13 @@ class PyGuardJsonRpcServer:
             self._analyze_document({"uri": uri})
             logger.info(f"Document saved and analyzed: {uri}")
 
-    def _analyze_document(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_document(self, params: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze an open document for security issues.
-        
+
         Args:
             params: {"uri": "file:///path/to/file.py"}
-            
+
         Returns:
             {"issues": [...], "timestamp": ..., "duration_ms": ...}
         """
@@ -295,13 +294,13 @@ class PyGuardJsonRpcServer:
             logger.error(f"Analysis failed for {uri}: {e}", exc_info=True)
             raise
 
-    def _analyze_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_file(self, params: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze a file on disk (not necessarily open in IDE).
-        
+
         Args:
             params: {"path": "/path/to/file.py"}
-            
+
         Returns:
             {"issues": [...], "timestamp": ..., "duration_ms": ...}
         """
@@ -355,13 +354,13 @@ class PyGuardJsonRpcServer:
             logger.error(f"Analysis failed for {file_path}: {e}", exc_info=True)
             raise
 
-    def _get_issues(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_issues(self, params: dict[str, Any]) -> dict[str, Any]:
         """
         Get cached issues for a document.
-        
+
         Args:
             params: {"uri": "file:///path/to/file.py"}
-            
+
         Returns:
             {"issues": [...], "timestamp": ..., "cached": true}
         """
@@ -377,16 +376,16 @@ class PyGuardJsonRpcServer:
             "cached": True,
         }
 
-    def _get_code_actions(self, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _get_code_actions(self, params: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Get available code actions (quick fixes) for issues in a range.
-        
+
         Args:
             params: {
                 "uri": "file:///path/to/file.py",
                 "range": {"start": {"line": 10, "character": 0}, "end": {...}}
             }
-            
+
         Returns:
             List of code actions with fix information
         """
@@ -418,17 +417,17 @@ class PyGuardJsonRpcServer:
 
         return actions
 
-    def _apply_fix(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_fix(self, params: dict[str, Any]) -> dict[str, Any]:
         """
         Apply an automated fix to a document.
-        
+
         Args:
             params: {
                 "uri": "file:///path/to/file.py",
                 "rule_id": "S001",
                 "line": 10
             }
-            
+
         Returns:
             {"success": true, "edits": [...]}
         """
@@ -447,18 +446,18 @@ class PyGuardJsonRpcServer:
             "edits": [],
         }
 
-    def _set_config(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_config(self, params: dict[str, Any]) -> dict[str, Any]:
         """Set PyGuard configuration."""
         config = params.get("config", {})
         self.config.update(config)
         logger.info(f"Configuration updated: {list(config.keys())}")
         return {"success": True}
 
-    def _get_config(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_config(self, params: dict[str, Any]) -> dict[str, Any]:
         """Get current PyGuard configuration."""
         return {"config": self.config}
 
-    def _change_workspace(self, params: Dict[str, Any]) -> None:
+    def _change_workspace(self, params: dict[str, Any]) -> None:
         """Handle workspace folder changes."""
         added = params.get("event", {}).get("added", [])
         removed = params.get("event", {}).get("removed", [])
@@ -475,7 +474,7 @@ class PyGuardJsonRpcServer:
                 self.workspace_folders.remove(uri)
                 logger.info(f"Workspace folder removed: {uri}")
 
-    def _initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _initialize(self, params: dict[str, Any]) -> dict[str, Any]:
         """Initialize the server with client capabilities."""
         client_info = params.get("clientInfo", {})
         logger.info(f"Client connected: {client_info}")
@@ -498,23 +497,23 @@ class PyGuardJsonRpcServer:
             },
         }
 
-    def _shutdown(self, params: Dict[str, Any]) -> None:
+    def _shutdown(self, params: dict[str, Any]) -> None:
         """Prepare for server shutdown."""
         logger.info("Shutdown requested")
         self.running = False
 
-    def _exit(self, params: Dict[str, Any]) -> None:
+    def _exit(self, params: dict[str, Any]) -> None:
         """Exit the server."""
         logger.info("Exit requested")
         self.running = False
 
-    def handle_request(self, request_data: str) -> Optional[str]:
+    def handle_request(self, request_data: str) -> str | None:
         """
         Handle a JSON-RPC request and return response.
-        
+
         Args:
             request_data: JSON-RPC request as string
-            
+
         Returns:
             JSON-RPC response as string, or None for notifications
         """

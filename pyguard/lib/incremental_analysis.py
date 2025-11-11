@@ -10,11 +10,10 @@ References:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
 
 from pyguard.lib.core import FileOperations, PyGuardLogger
 
@@ -254,7 +253,7 @@ class IncrementalAnalyzer:
                 content_hash=content_hash,
                 size_bytes=stat.st_size,
                 mtime=stat.st_mtime,
-                last_analyzed=datetime.now(timezone.utc).isoformat(),
+                last_analyzed=datetime.now(UTC).isoformat(),
                 issues_count=issues_count,
                 fixes_applied=fixes_applied,
                 analysis_time_ms=analysis_time_ms,
@@ -343,7 +342,7 @@ class IncrementalAnalyzer:
         stats = self.get_statistics()
 
         self.logger.info(
-            f"Incremental analysis statistics:",
+            "Incremental analysis statistics:",
             category="Incremental",
             details={
                 "total_files": stats.total_files,

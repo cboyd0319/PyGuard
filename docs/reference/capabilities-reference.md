@@ -16,8 +16,8 @@
 | **Framework Rules** | 266+ | ✅ **25 Frameworks** 🎉 |
 | **Compliance Frameworks** | 10+ | ✅ Full Mapping |
 | **ML Features** | 5 | ✅ Active |
-| **Test Files** | 109 | ✅ Comprehensive |
-| **Total Tests** | 4,545+ | ✅ Passing |
+| **Test Files** | 126 | ✅ Comprehensive |
+| **Total Tests** | 4,701 | ✅ Passing |
 | **Test Coverage** | 84%+ | 🎯 On target |
 | **GitHub Actions** | ✅ Native | ✅ SARIF 2.1.0 |
 | **API Integration** | ✅ JSON-RPC + Webhook | ✅ IDE & CI/CD Ready |

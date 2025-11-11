@@ -290,14 +290,20 @@ __all__ = [
     "DebuggingPatternChecker",
     "DebuggingPatternVisitor",
     "Dependency",
+    # Performance Optimization (NEW v0.7.0)
+    "DependencyAnalyzer",
     "DependencyConfusionVisitor",
+    "DependencyGraph",
     "DiffGenerator",
     # Framework Rules (NEW v0.11.0)
     "DjangoRulesChecker",
     "EnhancedSecurityFixer",  # NEW Phase 2B - Real code transformations
+    # Enhanced Taint Analysis (NEW - v0.7.0)
+    "EnhancedTaintAnalyzer",
     # Exception Handling
     "ExceptionHandlingChecker",
     "ExceptionHandlingVisitor",
+    "FileMetrics",
     "FileOperations",
     "FixClassification",
     "FixRationale",
@@ -337,6 +343,7 @@ __all__ = [
     # Notebook Security (NEW v0.3.0)
     "NotebookSecurityAnalyzer",
     "NumPySecurityVisitor",
+    "OptimizedAnalyzer",
     # PEP 8 Comprehensive
     "PEP8Checker",
     "PEP8Rules",
@@ -345,12 +352,6 @@ __all__ = [
     "PandasRulesChecker",
     # Parallel
     "ParallelProcessor",
-    # Performance Optimization (NEW v0.7.0)
-    "DependencyAnalyzer",
-    "DependencyGraph",
-    "FileMetrics",
-    "OptimizedAnalyzer",
-    "SmartAnalysisCache",
     # Pathlib Patterns (NEW v0.9.0)
     "PathlibChecker",
     "PathlibIssue",
@@ -376,6 +377,7 @@ __all__ = [
     "SecurityFixer",
     "SecurityIntelligence",
     "SecurityIssue",
+    "SmartAnalysisCache",
     # Standards Integration
     "StandardsMapper",
     # String Operations
@@ -386,8 +388,6 @@ __all__ = [
     # Supply Chain
     "SupplyChainAnalyzer",
     "TaintAnalyzer",
-    # Enhanced Taint Analysis (NEW - v0.7.0)
-    "EnhancedTaintAnalyzer",
     "TaintPath",
     "TaintSink",
     "TaintSource",
@@ -420,7 +420,6 @@ __all__ = [
     "analyze_supply_chain_advanced",
     # Enhanced Taint Analysis (NEW - v0.7.0)
     "analyze_taint_flows",
-    "get_taint_paths",
     # TensorFlow Framework (NEW - Security Dominance Plan Week 13-14)
     "analyze_tensorflow_security",
     # Tornado Framework (NEW - Security Dominance Plan Week 11-12)
@@ -428,6 +427,7 @@ __all__ = [
     # Cloud Security (NEW - Security Dominance Plan Phase 1.3)
     "check_cloud_security",
     "explain",
+    "get_taint_paths",
     "install_git_hooks",
     "scan_notebook",
     "uninstall_git_hooks",

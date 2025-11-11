@@ -9,7 +9,7 @@ Example usage:
     >>> api = PyGuardAPI()
     >>> results = api.analyze_file("mycode.py")
     >>> print(f"Found {len(results.issues)} issues")
-    >>> 
+    >>>
     >>> if results.has_critical_issues():
     ...     print("Critical security issues found!")
     ...     for issue in results.critical_issues:
@@ -380,7 +380,7 @@ class PyGuardAPI:
 
             return json.dumps(report_data, indent=2)
 
-        elif format == "html":
+        if format == "html":
             # Generate simple HTML report
             html = f"""<!DOCTYPE html>
 <html>
@@ -423,13 +423,13 @@ class PyGuardAPI:
 """
             return html
 
-        elif format == "sarif":
+        if format == "sarif":
             # Import version from main package
             from pyguard import __version__
             from pyguard.lib.sarif_reporter import SARIFReporter
 
             # SARIF reporter expects a list of files, so we'll create a simple one
-            sarif_reporter = SARIFReporter()
+            SARIFReporter()
             # Generate SARIF format manually
             import json
 

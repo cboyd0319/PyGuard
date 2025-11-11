@@ -20,12 +20,13 @@ Use Cases:
 - Enable users to test compatibility before upgrading
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 import functools
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 import warnings
 
 from packaging import version as pkg_version
@@ -90,7 +91,7 @@ class APIVersion:
     def is_compatible_with(self, other: 'APIVersion') -> bool:
         """
         Check if this version is compatible with another.
-        
+
         Compatible if major version matches and this minor >= other minor.
         """
         return self.major == other.major and self.minor >= other.minor
@@ -102,9 +103,9 @@ class DeprecationInfo:
     name: str
     deprecated_in: APIVersion
     removal_in: APIVersion
-    replacement: Optional[str] = None
-    reason: Optional[str] = None
-    migration_guide: Optional[str] = None
+    replacement: str | None = None
+    reason: str | None = None
+    migration_guide: str | None = None
     phase: DeprecationPhase = DeprecationPhase.WARNING
 
     def get_warning_message(self) -> str:
@@ -129,8 +130,8 @@ class APIRegistration:
     introduced_in: APIVersion
     signature: str  # Function signature for tracking
     module: str
-    deprecation_info: Optional[DeprecationInfo] = None
-    breaking_changes: List[str] = field(default_factory=list)
+    deprecation_info: DeprecationInfo | None = None
+    breaking_changes: list[str] = field(default_factory=list)
 
     def is_stable(self) -> bool:
         """Check if API is stable."""
@@ -144,7 +145,7 @@ class APIRegistration:
 class APIRegistry:
     """
     Central registry for tracking API stability and deprecations.
-    
+
     Maintains catalog of public APIs with their stability levels,
     deprecation status, and version information.
     """
@@ -152,13 +153,13 @@ class APIRegistry:
     def __init__(self, current_version: str = "0.8.0"):
         """
         Initialize API registry.
-        
+
         Args:
             current_version: Current PyGuard version
         """
         self.current_version = APIVersion.from_string(current_version)
-        self.apis: Dict[str, APIRegistration] = {}
-        self.deprecations: Dict[str, DeprecationInfo] = {}
+        self.apis: dict[str, APIRegistration] = {}
+        self.deprecations: dict[str, DeprecationInfo] = {}
         logger.info(f"API registry initialized for version {self.current_version}")
 
     def register_api(
@@ -166,11 +167,11 @@ class APIRegistry:
         name: str,
         stability_level: StabilityLevel,
         introduced_in: str,
-        func: Optional[Callable] = None,
+        func: Callable | None = None,
     ) -> None:
         """
         Register an API with stability guarantees.
-        
+
         Args:
             name: API name (fully qualified)
             stability_level: Stability level
@@ -200,13 +201,13 @@ class APIRegistry:
         name: str,
         deprecated_in: str,
         removal_in: str,
-        replacement: Optional[str] = None,
-        reason: Optional[str] = None,
-        migration_guide: Optional[str] = None,
+        replacement: str | None = None,
+        reason: str | None = None,
+        migration_guide: str | None = None,
     ) -> None:
         """
         Mark an API as deprecated.
-        
+
         Args:
             name: API name
             deprecated_in: Version when deprecated
@@ -236,13 +237,13 @@ class APIRegistry:
     def check_compatibility(
         self,
         target_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Check compatibility with a target version.
-        
+
         Args:
             target_version: Version to check compatibility with
-            
+
         Returns:
             Compatibility report
         """
@@ -290,14 +291,14 @@ class APIRegistry:
         self,
         from_version: str,
         to_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate migration guide between versions.
-        
+
         Args:
             from_version: Starting version
             to_version: Target version
-            
+
         Returns:
             Migration guide with required changes
         """
@@ -366,11 +367,11 @@ def stable_api(
 ) -> Callable:
     """
     Decorator to mark a function/class as part of the stable API.
-    
+
     Args:
         introduced_in: Version when this API was introduced
         stability_level: Stability level
-        
+
     Example:
         @stable_api(introduced_in="1.0.0")
         def my_public_function():
@@ -387,10 +388,7 @@ def stable_api(
         )
 
         # Add metadata to function
-        setattr(func, '__api_stability__', {
-            'introduced_in': introduced_in,
-            'stability_level': stability_level.value,
-        })
+        func.__api_stability__ = {'introduced_in': introduced_in, 'stability_level': stability_level.value}
 
         return func
 
@@ -400,20 +398,20 @@ def stable_api(
 def deprecated(
     deprecated_in: str,
     removal_in: str,
-    replacement: Optional[str] = None,
-    reason: Optional[str] = None,
-    migration_guide: Optional[str] = None,
+    replacement: str | None = None,
+    reason: str | None = None,
+    migration_guide: str | None = None,
 ) -> Callable:
     """
     Decorator to mark a function/class as deprecated.
-    
+
     Args:
         deprecated_in: Version when deprecated
         removal_in: Version when removed
         replacement: Replacement API
         reason: Deprecation reason
         migration_guide: URL to migration guide
-        
+
     Example:
         @deprecated(
             deprecated_in="1.0.0",
@@ -450,24 +448,20 @@ def deprecated(
             return func(*args, **kwargs)
 
         # Add metadata
-        setattr(wrapper, '__deprecated__', {
-            'deprecated_in': deprecated_in,
-            'removal_in': removal_in,
-            'replacement': replacement,
-        })
+        wrapper.__deprecated__ = {'deprecated_in': deprecated_in, 'removal_in': removal_in, 'replacement': replacement}
 
         return wrapper
 
     return decorator
 
 
-def check_api_compatibility(target_version: str) -> Dict[str, Any]:
+def check_api_compatibility(target_version: str) -> dict[str, Any]:
     """
     Check if code is compatible with a target version.
-    
+
     Args:
         target_version: Version to check compatibility with
-        
+
     Returns:
         Compatibility report
     """
@@ -477,14 +471,14 @@ def check_api_compatibility(target_version: str) -> Dict[str, Any]:
 def generate_migration_guide(
     from_version: str,
     to_version: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate migration guide between versions.
-    
+
     Args:
         from_version: Starting version
         to_version: Target version
-        
+
     Returns:
         Migration guide
     """

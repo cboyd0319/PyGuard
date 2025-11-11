@@ -29,11 +29,10 @@ import hashlib
 import hmac
 import json
 import logging
-from pathlib import Path
 import secrets
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -61,13 +60,13 @@ class ScanJob:
     """Represents a scan job triggered via webhook."""
     job_id: str
     status: ScanStatus = ScanStatus.PENDING
-    target_path: Optional[str] = None
-    target_repository: Optional[str] = None
-    target_branch: Optional[str] = None
-    target_commit: Optional[str] = None
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
-    duration_seconds: Optional[float] = None
+    target_path: str | None = None
+    target_repository: str | None = None
+    target_branch: str | None = None
+    target_commit: str | None = None
+    started_at: float | None = None
+    completed_at: float | None = None
+    duration_seconds: float | None = None
     issues_found: int = 0
     critical_issues: int = 0
     high_issues: int = 0
@@ -75,21 +74,21 @@ class ScanJob:
     low_issues: int = 0
     files_scanned: int = 0
     lines_scanned: int = 0
-    error_message: Optional[str] = None
-    result_url: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
+    result_url: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class WebhookConfig:
     """Webhook configuration."""
     url: str
-    events: List[WebhookEvent]
-    secret: Optional[str] = None
+    events: list[WebhookEvent]
+    secret: str | None = None
     enabled: bool = True
     retry_count: int = 3
     timeout_seconds: int = 30
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -99,10 +98,10 @@ class ApiKey:
     key_secret: str
     description: str = ""
     created_at: float = field(default_factory=time.time)
-    last_used_at: Optional[float] = None
+    last_used_at: float | None = None
     rate_limit_per_minute: int = 60
     enabled: bool = True
-    permissions: List[str] = field(default_factory=lambda: ["scan:trigger", "scan:read"])
+    permissions: list[str] = field(default_factory=lambda: ["scan:trigger", "scan:read"])
 
 
 class RateLimiter:
@@ -110,18 +109,18 @@ class RateLimiter:
 
     def __init__(self):
         """Initialize rate limiter."""
-        self.requests: Dict[str, List[float]] = defaultdict(list)
+        self.requests: dict[str, list[float]] = defaultdict(list)
         self.lock = threading.Lock()
 
     def is_allowed(self, key_id: str, limit: int, window_seconds: int = 60) -> bool:
         """
         Check if a request is allowed under rate limits.
-        
+
         Args:
             key_id: API key ID
             limit: Maximum requests per window
             window_seconds: Time window in seconds
-            
+
         Returns:
             True if request is allowed, False if rate limited
         """
@@ -146,7 +145,7 @@ class RateLimiter:
 class PyGuardWebhookAPI:
     """
     Webhook API server for PyGuard CI/CD integration.
-    
+
     Provides REST endpoints for:
     - Triggering security scans
     - Querying scan status and results
@@ -162,7 +161,7 @@ class PyGuardWebhookAPI:
     ):
         """
         Initialize webhook API server.
-        
+
         Args:
             host: Host to bind to (default: 127.0.0.1)
             port: Port to listen on (default: 5008)
@@ -173,9 +172,9 @@ class PyGuardWebhookAPI:
         self.require_https = require_https
 
         # Storage (in production, use database)
-        self.api_keys: Dict[str, ApiKey] = {}
-        self.scan_jobs: Dict[str, ScanJob] = {}
-        self.webhooks: List[WebhookConfig] = []
+        self.api_keys: dict[str, ApiKey] = {}
+        self.scan_jobs: dict[str, ScanJob] = {}
+        self.webhooks: list[WebhookConfig] = []
 
         # Rate limiting
         self.rate_limiter = RateLimiter()
@@ -189,16 +188,16 @@ class PyGuardWebhookAPI:
         self,
         description: str = "",
         rate_limit: int = 60,
-        permissions: Optional[List[str]] = None,
+        permissions: list[str] | None = None,
     ) -> ApiKey:
         """
         Generate a new API key.
-        
+
         Args:
             description: Human-readable description
             rate_limit: Requests per minute limit
             permissions: List of permissions
-            
+
         Returns:
             ApiKey object with generated credentials
         """
@@ -218,14 +217,14 @@ class PyGuardWebhookAPI:
 
         return api_key
 
-    def validate_api_key(self, key_id: str, key_secret: str) -> Optional[ApiKey]:
+    def validate_api_key(self, key_id: str, key_secret: str) -> ApiKey | None:
         """
         Validate an API key.
-        
+
         Args:
             key_id: API key ID
             key_secret: API key secret
-            
+
         Returns:
             ApiKey if valid, None otherwise
         """
@@ -252,10 +251,10 @@ class PyGuardWebhookAPI:
     def check_rate_limit(self, api_key: ApiKey) -> bool:
         """
         Check if an API key is within rate limits.
-        
+
         Args:
             api_key: API key to check
-            
+
         Returns:
             True if allowed, False if rate limited
         """
@@ -268,15 +267,15 @@ class PyGuardWebhookAPI:
     def trigger_scan(
         self,
         api_key: ApiKey,
-        target_path: Optional[str] = None,
-        repository: Optional[str] = None,
-        branch: Optional[str] = None,
-        commit: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        target_path: str | None = None,
+        repository: str | None = None,
+        branch: str | None = None,
+        commit: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Trigger a security scan via webhook.
-        
+
         Args:
             api_key: Validated API key
             target_path: Local path to scan
@@ -284,7 +283,7 @@ class PyGuardWebhookAPI:
             branch: Git branch name
             commit: Git commit SHA
             metadata: Additional metadata
-            
+
         Returns:
             Response with job ID and status
         """
@@ -334,14 +333,14 @@ class PyGuardWebhookAPI:
         self,
         api_key: ApiKey,
         job_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get status of a scan job.
-        
+
         Args:
             api_key: Validated API key
             job_id: Scan job ID
-            
+
         Returns:
             Scan job status and details
         """
@@ -386,14 +385,14 @@ class PyGuardWebhookAPI:
         self,
         api_key: ApiKey,
         job_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed results of a completed scan.
-        
+
         Args:
             api_key: Validated API key
             job_id: Scan job ID
-            
+
         Returns:
             Detailed scan results
         """
@@ -446,16 +445,16 @@ class PyGuardWebhookAPI:
         self,
         api_key: ApiKey,
         limit: int = 100,
-        status_filter: Optional[ScanStatus] = None,
-    ) -> Dict[str, Any]:
+        status_filter: ScanStatus | None = None,
+    ) -> dict[str, Any]:
         """
         List recent scan jobs.
-        
+
         Args:
             api_key: Validated API key
             limit: Maximum number of jobs to return
             status_filter: Filter by status
-            
+
         Returns:
             List of scan jobs
         """
@@ -499,18 +498,18 @@ class PyGuardWebhookAPI:
         self,
         api_key: ApiKey,
         url: str,
-        events: List[WebhookEvent],
-        secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        events: list[WebhookEvent],
+        secret: str | None = None,
+    ) -> dict[str, Any]:
         """
         Register a webhook for receiving notifications.
-        
+
         Args:
             api_key: Validated API key
             url: Webhook URL
             events: List of events to subscribe to
             secret: Optional webhook secret for signing
-            
+
         Returns:
             Webhook registration status
         """
@@ -550,7 +549,7 @@ class PyGuardWebhookAPI:
     def _trigger_webhooks(self, event: WebhookEvent, scan_job: ScanJob) -> None:
         """
         Trigger webhooks for an event.
-        
+
         Args:
             event: Event type
             scan_job: Scan job that triggered the event
@@ -593,12 +592,12 @@ class PyGuardWebhookAPI:
     ) -> bool:
         """
         Verify webhook signature for incoming webhooks.
-        
+
         Args:
             payload: Webhook payload as JSON string
             signature: Signature from webhook headers
             secret: Webhook secret
-            
+
         Returns:
             True if signature is valid
         """
@@ -632,7 +631,7 @@ class GitHubActionsIntegration:
     """Integration helper for GitHub Actions."""
 
     @staticmethod
-    def parse_github_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_github_webhook(payload: dict[str, Any]) -> dict[str, Any]:
         """Parse GitHub webhook payload."""
         return {
             "repository": payload.get("repository", {}).get("full_name"),
@@ -650,7 +649,7 @@ class GitLabCIIntegration:
     """Integration helper for GitLab CI."""
 
     @staticmethod
-    def parse_gitlab_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_gitlab_webhook(payload: dict[str, Any]) -> dict[str, Any]:
         """Parse GitLab webhook payload."""
         return {
             "repository": payload.get("project", {}).get("path_with_namespace"),
@@ -668,7 +667,7 @@ class JenkinsIntegration:
     """Integration helper for Jenkins."""
 
     @staticmethod
-    def parse_jenkins_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_jenkins_webhook(payload: dict[str, Any]) -> dict[str, Any]:
         """Parse Jenkins webhook payload."""
         return {
             "repository": payload.get("scm", {}).get("url"),

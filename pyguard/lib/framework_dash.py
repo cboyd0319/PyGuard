@@ -28,7 +28,6 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
     FixApplicability,
     Rule,
@@ -73,7 +72,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
         """Detect security issues in function calls."""
         if isinstance(node.func, ast.Attribute):
             # Check for debug mode in production
-            if node.func.attr == "run_server" or node.func.attr == "run":
+            if node.func.attr in {"run_server", "run"}:
                 self._check_debug_mode(node)
 
             # Check for dangerously_allow_html
@@ -211,7 +210,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
                 return any(keyword in upper_str for keyword in sql_keywords)
-            elif isinstance(n, ast.BinOp):
+            if isinstance(n, ast.BinOp):
                 return check_node(n.left) or check_node(n.right)
             return False
 

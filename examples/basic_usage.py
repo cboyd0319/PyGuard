@@ -30,10 +30,10 @@ def main():
     file_path = Path("sample_code.py")
 
     if not file_path.exists():
-        logger.error("Sample file not found", file=str(file_path))
+        logger.error("Sample file not found", file_path=str(file_path))
         return
 
-    logger.info("Starting PyGuard analysis", file=str(file_path))
+    logger.info("Starting PyGuard analysis", file_path=str(file_path))
 
     # Read original code (kept for reference/comparison)
     # original_code = file_path.read_text()

@@ -32,11 +32,8 @@ References:
 
 import ast
 from pathlib import Path
-import re
 
-from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
-    FixApplicability,
     Rule,
     RuleCategory,
     RuleSeverity,
@@ -243,7 +240,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
                     value_arg = node.args[1]
                     value_is_false = False
                     if isinstance(value_arg, ast.Constant):
-                        value_is_false = (value_arg.value == "false" or value_arg.value == False)
+                        value_is_false = (value_arg.value in {"false", False})
 
                     if "authenticate" in key.lower() and value_is_false:
                         self.violations.append(
@@ -332,11 +329,11 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
 def analyze_pyspark_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze PySpark code for security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of security violations found
     """
@@ -354,12 +351,12 @@ def fix_pyspark_security(
 ) -> tuple[str, bool]:
     """
     Auto-fix PySpark security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being fixed
         code: Source code containing the vulnerability
         violation: The security violation to fix
-        
+
     Returns:
         Tuple of (fixed_code, was_modified)
     """

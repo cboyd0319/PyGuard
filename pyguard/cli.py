@@ -963,7 +963,7 @@ def main():
     # Generate enhanced compliance reports if requested
     if args.compliance_html or args.compliance_json:
         from pyguard.lib.compliance_reporter import (
-            ComplianceReporter,  # noqa: PLC0415 - Lazy import
+            ComplianceReporter,
         )
 
         reporter = ComplianceReporter()

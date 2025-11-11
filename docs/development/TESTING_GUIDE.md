@@ -44,9 +44,9 @@ pytest -m "unit and not slow"
 
 ### Current Performance Metrics
 
-- **Total tests**: 2,369 tests
-- **Full suite runtime**: ~22-25 seconds (sequential)
-- **Expected parallel runtime**: ~8-12 seconds (with -n auto)
+- **Total tests**: 4,701 tests
+- **Full suite runtime**: ~80-90 seconds (sequential)
+- **Expected parallel runtime**: ~30-40 seconds (with -n auto)
 - **Unit tests**: ~15 seconds
 - **Integration tests**: ~7-10 seconds
 
