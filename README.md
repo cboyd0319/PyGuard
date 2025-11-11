@@ -169,10 +169,11 @@ jobs:
 
 ### Option 2: Local Installation
 
-Install from source (PyPI coming soon):
+Install from source:
 
 ```bash
-# Install from source (PyPI coming soon)
+# Clone and install from source
+# Note: PyPI publication planned for v0.7.0 (Q1 2026)
 git clone https://github.com/cboyd0319/PyGuard.git
 cd PyGuard
 pip install -e .
@@ -445,7 +446,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 ### Quick Install
 
 ```bash
-# From source (PyPI coming soon)
+# From source (PyPI planned for v0.7.0 - Q1 2026)
 git clone https://github.com/cboyd0319/PyGuard.git
 cd PyGuard
 pip install -e .
@@ -609,7 +610,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: # PyGuard is not yet on PyPI - install from source
+      - run: pip install git+https://github.com/cboyd0319/PyGuard.git
       - run: pyguard . --scan-only --sarif --no-html
       - uses: github/codeql-action/upload-sarif@v3
         with:

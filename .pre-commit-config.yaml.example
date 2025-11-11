@@ -1,0 +1,110 @@
+# Example .pre-commit-config.yaml for PyGuard
+#
+# Copy this file to .pre-commit-config.yaml and customize as needed:
+#   cp .pre-commit-config.yaml.example .pre-commit-config.yaml
+#
+# Then install pre-commit hooks:
+#   pip install pre-commit
+#   pre-commit install
+#
+# For more information, see: https://pre-commit.com/
+
+repos:
+  # PyGuard Security Scanner
+  - repo: https://github.com/cboyd0319/PyGuard
+    rev: v0.6.0  # Use the latest release tag
+    hooks:
+      # Security-only scan (fast, catches critical issues)
+      - id: pyguard-security
+        name: PyGuard Security Scan
+        entry: pyguard
+        args: ['--security-only', '--scan-only']
+        language: python
+        types: [python]
+        pass_filenames: true
+        stages: [commit]
+
+      # Full scan (slower, catches all issues)
+      # Uncomment to enable:
+      # - id: pyguard-full
+      #   name: PyGuard Full Scan
+      #   entry: pyguard
+      #   args: ['--scan-only']
+      #   language: python
+      #   types: [python]
+      #   pass_filenames: true
+      #   stages: [commit]
+
+  # Optional: Add other pre-commit hooks
+
+  # Black code formatter
+  - repo: https://github.com/psf/black
+    rev: 25.11.0
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  # isort import sorter
+  - repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        args: ['--profile', 'black']
+
+  # Ruff linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
+    hooks:
+      - id: ruff
+        args: ['--fix']
+
+  # mypy type checker
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+        args: ['--ignore-missing-imports']
+
+  # Basic pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: detect-private-key
+
+# Configuration for pre-commit.ci (optional)
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
+
+# Alternative: Minimal PyGuard-only configuration
+# If you only want PyGuard, use this instead:
+#
+# repos:
+#   - repo: https://github.com/cboyd0319/PyGuard
+#     rev: v0.6.0
+#     hooks:
+#       - id: pyguard
+#         name: PyGuard Security & Quality
+#         entry: pyguard
+#         args: ['--scan-only', '--exclude', 'tests/', 'venv/']
+#         language: python
+#         types: [python]
+#         pass_filenames: true

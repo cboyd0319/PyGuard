@@ -30,21 +30,27 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 ## 📅 Release Timeline
 
-### Current: v0.6.0 (Released 2025-10)
+### Current: v0.6.0 (Released 2025-10) + v1.1.0 Features
 
-**"Market Dominance Achieved"**
+**"Market Dominance Achieved + Framework Expansion"**
 
 ✅ **Completed:**
-- 720 security checks (360% more than Snyk)
-- 20 framework integrations
+- **1,230+ security checks** (720 general + 510 AI/ML)
+- **25 framework integrations** (includes v1.1.0: PySpark, Airflow, Streamlit, Gradio, Dash)
 - 199+ auto-fixes with 100% coverage
-- 88% test coverage with 3,800+ tests
+- **4,701 tests** with 84%+ coverage
 - GitHub Action native integration
 - Jupyter notebook security (unique capability)
 - 10+ compliance frameworks
 - RipGrep integration (10-100x performance)
+- Plugin architecture
+- Historical scan tracking
+- API stability framework
+- JSON-RPC & Webhook APIs
 
 **Status:** Production-ready, market-leading capabilities
+
+**Note:** v1.1.0 framework features have been integrated into current release.
 
 ---
 
@@ -334,7 +340,9 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 ## 🚀 Future Versions (Post-1.0)
 
-### v1.1.0 - "Framework Expansion"
+### v1.1.0 - "Framework Expansion" ✅ **RELEASED & INTEGRATED**
+
+> **Note:** These features have been completed and integrated into the current release (v0.6.0+). This section is kept for historical reference.
 
 **Additional Frameworks:**
 - [x] Streamlit security checks (20+) ✅ **COMPLETE** - 7 rules, 25 tests
@@ -346,6 +354,8 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 **Status:** 5/5 frameworks complete (100%) ✅ - 37 new security rules added
 
 **Target:** 25+ frameworks total (currently at 25 frameworks) ✅ **TARGET ACHIEVED!**
+
+**Release Status:** Features integrated into v0.6.0 - available now!
 
 ### v1.2.0 - "AI/ML Security Enhancement"
 
