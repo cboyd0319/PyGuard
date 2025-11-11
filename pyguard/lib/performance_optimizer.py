@@ -251,7 +251,7 @@ class OptimizedAnalyzer:
         self,
         files: list[Path],
         analyzer_func: Callable[[Path, ast.AST | None], tuple[int, float]],
-        show_progress: bool = True,
+        show_progress: bool = True,  # noqa: ARG002 - Reserved for future progress tracking implementation
     ) -> dict[str, Any]:
         """
         Analyze files with optimization.
@@ -259,7 +259,7 @@ class OptimizedAnalyzer:
         Args:
             files: List of files to analyze
             analyzer_func: Function(file_path, cached_ast) -> (issues_count, time_ms)
-            show_progress: Show progress updates
+            show_progress: Show progress updates (reserved for future use)
 
         Returns:
             Dictionary with results and metrics

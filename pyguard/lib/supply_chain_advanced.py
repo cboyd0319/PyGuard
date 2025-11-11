@@ -92,7 +92,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
             "Jenkinsfile",
         )
 
-    def analyze_yaml_workflow(self) -> None:
+    def analyze_yaml_workflow(self) -> None:  # noqa: PLR0912 - Complex CI/CD workflow analysis requires many checks
         """Analyze GitHub Actions workflows and other CI YAML files."""
         if not (self.is_github_workflow or self.is_ci_config):
             return
@@ -124,8 +124,8 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY002: Check for unpinned third-party actions
-            if "uses:" in line and "@" in line:
-                if not re.search(r"@[0-9a-f]{40}", line):  # Not a commit SHA
+            if "uses:" in line and "@" in line:  # noqa: SIM102
+                if not re.search(r"@[0-9a-f]{40}", line):  # noqa: SIM102  Not a commit SHA
                     if not re.search(r"@v\d+\.\d+\.\d+$", line):  # Not a specific version
                         self.violations.append(
                             RuleViolation(
@@ -164,7 +164,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY004: Check for workflow_dispatch without input validation
-            if "workflow_dispatch:" in line:
+            if "workflow_dispatch:" in line:  # noqa: SIM102
                 # Look ahead for inputs without validation
                 if line_num < len(self.lines):
                     next_lines = self.lines[line_num : line_num + 10]
@@ -410,7 +410,7 @@ class SupplyChainAdvancedVisitor(ast.NodeVisitor):
                 )
 
             # SUPPLY008: Check for unsigned base images
-            if line.strip().startswith("FROM "):
+            if line.strip().startswith("FROM "):  # noqa: SIM102
                 # Check if image is from trusted registry with content trust
                 if not re.search(r"@sha256:", line):
                     self.violations.append(

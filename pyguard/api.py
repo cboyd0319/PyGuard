@@ -201,7 +201,7 @@ class PyGuardAPI:
             FileNotFoundError: If the file doesn't exist
             SyntaxError: If the file has invalid Python syntax
         """
-        import time
+        import time  # noqa: PLC0415 - Lazy import for performance
 
         start_time = time.perf_counter()
 
@@ -260,7 +260,7 @@ class PyGuardAPI:
         Raises:
             SyntaxError: If the code has invalid Python syntax
         """
-        import time
+        import time  # noqa: PLC0415 - Lazy import for performance
 
         start_time = time.perf_counter()
 
@@ -350,7 +350,7 @@ class PyGuardAPI:
             all_issues.extend(result.issues)
 
         if format == "json":
-            import json
+            import json  # noqa: PLC0415 - Lazy import for performance, only needed for JSON format
 
             issues_data = [
                 {
@@ -368,7 +368,7 @@ class PyGuardAPI:
             ]
 
             # Import version from main package
-            from pyguard import __version__
+            from pyguard import __version__  # noqa: PLC0415 - Lazy import to avoid circular imports
 
             report_data = {
                 "tool": "pyguard",
@@ -425,13 +425,15 @@ class PyGuardAPI:
 
         if format == "sarif":
             # Import version from main package
-            from pyguard import __version__
-            from pyguard.lib.sarif_reporter import SARIFReporter
+            from pyguard import __version__  # noqa: PLC0415 - Lazy import to avoid circular imports
+            from pyguard.lib.sarif_reporter import (  # noqa: PLC0415 - Lazy import, only needed for SARIF format
+                SARIFReporter,
+            )
 
             # SARIF reporter expects a list of files, so we'll create a simple one
             SARIFReporter()
             # Generate SARIF format manually
-            import json
+            import json  # noqa: PLC0415 - Lazy import for performance, only needed for SARIF format
 
             sarif_data = {
                 "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",

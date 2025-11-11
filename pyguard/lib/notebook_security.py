@@ -547,7 +547,7 @@ class NotebookSecurityAnalyzer:
                 entropy = self._calculate_entropy(candidate)
 
                 # High entropy threshold (cryptographic material typically > 4.5)
-                if entropy > 4.5 and len(candidate) >= 20:
+                if entropy > 4.5 and len(candidate) >= 20:  # noqa: PLR2004 - entropy threshold, min length
                     # Additional validation: check if it's base64-like
                     base64_chars = set(
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
@@ -560,7 +560,7 @@ class NotebookSecurityAnalyzer:
                                 message=f"High-entropy string detected (entropy: {entropy:.2f}) - likely a cryptographic secret",
                                 cell_index=cell_index,
                                 line_number=line_num,
-                                code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                code_snippet=line[:50] + "..." if len(line) > 50 else line,  # noqa: PLR2004 - length
                                 rule_id="NB-SECRET-ENTROPY",
                                 fix_suggestion=(
                                     "Replace high-entropy secrets with environment variables. "
@@ -726,7 +726,7 @@ class NotebookSecurityAnalyzer:
                             message=f"Potential {description} detected in notebook",
                             cell_index=cell_index,
                             line_number=line_num,
-                            code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                            code_snippet=line[:50] + "..." if len(line) > 50 else line,  # noqa: PLR2004 - max snippet length
                             fix_suggestion=(
                                 "Remove or redact PII from notebooks before sharing. "
                                 "Use placeholder values or environment variables."
@@ -759,19 +759,12 @@ class NotebookSecurityAnalyzer:
                 return True
 
         # Skip IP addresses that are clearly local/private
-        if pii_type == "IPv4 address":
-            if text.startswith("127.") or text.startswith("192.168.") or text.startswith("10."):
-                return True
+        if pii_type == "IPv4 address" and (text.startswith("127.") or text.startswith("192.168.") or text.startswith("10.")):
+            return True
 
         # Skip SWIFT/BIC false positives (common English words that match the pattern)
-        if pii_type == "SWIFT/BIC code":
-            # SWIFT/BIC codes should be all uppercase or contain numbers
-            # Common words like "Replaced", "literals", "Improper" should be filtered out
-            if text.isalpha() and not text.isupper():
-                # If it's all letters but not all uppercase, likely a false positive
-                return True
-
-        return False
+        # If it's all letters but not all uppercase, likely a false positive
+        return pii_type == "SWIFT/BIC code" and text.isalpha() and not text.isupper()
 
     def _check_ml_security(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
         """Check for ML/Data Science security issues."""
@@ -846,25 +839,24 @@ class NotebookSecurityAnalyzer:
                         )
 
         # Check for data validation issues in ML pipelines
-        if "pd.read_csv" in cell.source or "pd.read_excel" in cell.source:
-            if "dtype=" not in cell.source and "converters=" not in cell.source:
-                issues.append(
-                    NotebookIssue(
-                        severity="MEDIUM",
-                        category="Data Validation",
-                        message="Data loading without type validation (data poisoning risk)",
-                        cell_index=cell_index,
-                        line_number=0,
-                        code_snippet="Data loading detected",
-                        rule_id="NB-DATA-001",
-                        fix_suggestion=(
-                            "Specify dtypes and use converters to validate data types. "
-                            "Implement schema validation for input data using pandera or similar."
-                        ),
-                        confidence=0.6,
-                        auto_fixable=True,
-                    )
+        if ("pd.read_csv" in cell.source or "pd.read_excel" in cell.source) and "dtype=" not in cell.source and "converters=" not in cell.source:
+            issues.append(
+                NotebookIssue(
+                    severity="MEDIUM",
+                    category="Data Validation",
+                    message="Data loading without type validation (data poisoning risk)",
+                    cell_index=cell_index,
+                    line_number=0,
+                    code_snippet="Data loading detected",
+                    rule_id="NB-DATA-001",
+                    fix_suggestion=(
+                        "Specify dtypes and use converters to validate data types. "
+                        "Implement schema validation for input data using pandera or similar."
+                    ),
+                    confidence=0.6,
+                    auto_fixable=True,
                 )
+            )
 
         return issues
 
@@ -978,7 +970,7 @@ class NotebookSecurityAnalyzer:
                 for pattern, description in self.SECRET_PATTERNS.items():
                     matches = re.finditer(pattern, output_text)
                     for match in matches:
-                        value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
+                        value = match.group(2) if len(match.groups()) >= 2 else match.group(0)  # noqa: PLR2004 - expected groups
                         # Skip common test/placeholder values
                         if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
                             # Determine rule_id and severity based on secret type (same logic as _check_secrets)
@@ -1041,7 +1033,7 @@ class NotebookSecurityAnalyzer:
             for pattern, description in self.SECRET_PATTERNS.items():
                 matches = re.finditer(pattern, line)
                 for match in matches:
-                    value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
+                    value = match.group(2) if len(match.groups()) >= 2 else match.group(0)  # noqa: PLR2004 - expected groups
                     # Skip common test/placeholder values
                     if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
                         issues.append(
@@ -1130,55 +1122,51 @@ class NotebookSecurityAnalyzer:
             line_stripped = line.strip()
 
             # Check for extremely dangerous curl|bash patterns first (highest priority)
-            if line_stripped.startswith("!") or line_stripped.startswith("%system"):
-                # Detect curl|bash, wget|bash, or similar remote code execution
-                if re.search(r"(curl|wget)\s+.*\|\s*(bash|sh|python|ruby|perl)", line_stripped):
-                    issues.append(
-                        NotebookIssue(
-                            severity="CRITICAL",
-                            category="Remote Code Execution",
-                            message="Remote code execution via curl|bash or similar - CRITICAL security risk",
-                            cell_index=cell_index,
-                            line_number=line_num,
-                            code_snippet=line_stripped,
-                            rule_id="NB-SHELL-002",
-                            fix_suggestion=(
-                                "Never pipe remote scripts directly to interpreters. "
-                                "Download, verify checksum, review content, then execute if safe. "
-                                "Use subprocess with explicit validation instead."
-                            ),
-                            cwe_id="CWE-494",  # Download of Code Without Integrity Check
-                            owasp_id="ASVS-5.3.3",
-                            confidence=1.0,
-                            auto_fixable=False,  # Too dangerous to auto-fix
-                        )
+            if (line_stripped.startswith("!") or line_stripped.startswith("%system")) and re.search(r"(curl|wget)\s+.*\|\s*(bash|sh|python|ruby|perl)", line_stripped):
+                issues.append(
+                    NotebookIssue(
+                        severity="CRITICAL",
+                        category="Remote Code Execution",
+                        message="Remote code execution via curl|bash or similar - CRITICAL security risk",
+                        cell_index=cell_index,
+                        line_number=line_num,
+                        code_snippet=line_stripped,
+                        rule_id="NB-SHELL-002",
+                        fix_suggestion=(
+                            "Never pipe remote scripts directly to interpreters. "
+                            "Download, verify checksum, review content, then execute if safe. "
+                            "Use subprocess with explicit validation instead."
+                        ),
+                        cwe_id="CWE-494",  # Download of Code Without Integrity Check
+                        owasp_id="ASVS-5.3.3",
+                        confidence=1.0,
+                        auto_fixable=False,  # Too dangerous to auto-fix
                     )
-                    continue  # Don't also flag as generic shell command
+                )
+                continue  # Don't also flag as generic shell command
 
             # Check for %run with remote URLs
-            if line_stripped.startswith("%run"):
-                # Detect http:// or https:// URLs
-                if re.search(r"%run\s+(https?://|ftp://)", line_stripped):
-                    issues.append(
-                        NotebookIssue(
-                            severity="CRITICAL",
-                            category="Remote Code Execution",
-                            message="%run with remote URL - downloading and executing untrusted code",
-                            cell_index=cell_index,
-                            line_number=line_num,
-                            code_snippet=line_stripped,
-                            rule_id="NB-SHELL-003",
-                            fix_suggestion=(
-                                "Do not use %run with remote URLs. "
-                                "Download file, verify integrity (checksum), review code, then run locally."
-                            ),
-                            cwe_id="CWE-494",
-                            owasp_id="ASVS-5.3.3",
-                            confidence=1.0,
-                            auto_fixable=False,
-                        )
+            if line_stripped.startswith("%run") and re.search(r"%run\s+(https?://|ftp://)", line_stripped):
+                issues.append(
+                    NotebookIssue(
+                        severity="CRITICAL",
+                        category="Remote Code Execution",
+                        message="%run with remote URL - downloading and executing untrusted code",
+                        cell_index=cell_index,
+                        line_number=line_num,
+                        code_snippet=line_stripped,
+                        rule_id="NB-SHELL-003",
+                        fix_suggestion=(
+                            "Do not use %run with remote URLs. "
+                            "Download file, verify integrity (checksum), review code, then run locally."
+                        ),
+                        cwe_id="CWE-494",
+                        owasp_id="ASVS-5.3.3",
+                        confidence=1.0,
+                        auto_fixable=False,
                     )
-                    continue
+                )
+                continue
 
             # Check for generic dangerous magics
             for magic, description in self.DANGEROUS_MAGICS.items():
@@ -1220,7 +1208,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_secrets(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
+    def _check_secrets(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:  # noqa: PLR0912, PLR0915 - Complex secret detection requires many checks
         """Check for hardcoded secrets in cell code."""
         lines = cell.source.split("\n")
         seen_secrets: dict[tuple[int, str], dict[str, Any]] = (
@@ -1232,7 +1220,7 @@ class NotebookSecurityAnalyzer:
                 matches = re.finditer(pattern, line)
                 for match in matches:
                     # Exclude common test/placeholder values
-                    value = match.group(2) if len(match.groups()) >= 2 else match.group(0)
+                    value = match.group(2) if len(match.groups()) >= 2 else match.group(0)  # noqa: PLR2004 - expected groups
                     if value not in ["test", "example", "YOUR_KEY_HERE", "***"]:
                         # Determine rule_id, severity, priority, and specific message based on secret type
                         rule_id = "NB-SECRET-001"  # default
@@ -1296,7 +1284,7 @@ class NotebookSecurityAnalyzer:
                             )
                         # JWT tokens (HIGH)
                         elif "JWT" in description or (
-                            value.startswith("eyJ") and value.count(".") >= 2
+                            value.startswith("eyJ") and value.count(".") >= 2  # noqa: PLR2004 - expected JWT parts
                         ):
                             rule_id = "NB-SECRET-JWT-001"
                             severity = "HIGH"
@@ -1319,7 +1307,7 @@ class NotebookSecurityAnalyzer:
                                     message=specific_message,
                                     cell_index=cell_index,
                                     line_number=line_num,
-                                    code_snippet=line[:50] + "..." if len(line) > 50 else line,
+                                    code_snippet=line[:50] + "..." if len(line) > 50 else line,  # noqa: PLR2004 - max snippet length
                                     rule_id=rule_id,
                                     fix_suggestion=(
                                         "Use environment variables or secure credential storage. "
@@ -1347,58 +1335,55 @@ class NotebookSecurityAnalyzer:
 
         for node in ast.walk(tree):
             # Check for eval/exec/compile
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name):
-                    if node.func.id in ["eval", "exec", "compile"]:
-                        # Determine rule_id based on function
-                        if node.func.id == "eval":
-                            rule_id = "NB-INJECT-001"
-                        elif node.func.id == "exec":
-                            rule_id = "NB-INJECT-002"
-                        else:
-                            rule_id = "NB-INJECT-003"
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ["eval", "exec", "compile"]:
+                # Determine rule_id based on function
+                if node.func.id == "eval":
+                    rule_id = "NB-INJECT-001"
+                elif node.func.id == "exec":
+                    rule_id = "NB-INJECT-002"
+                else:
+                    rule_id = "NB-INJECT-003"
 
-                        issues.append(
-                            NotebookIssue(
-                                severity="CRITICAL",
-                                category="Code Injection",
-                                message=f"Use of {node.func.id}() enables code injection",
-                                cell_index=cell_index,
-                                line_number=getattr(node, "lineno", 0),
-                                code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
-                                rule_id=rule_id,
-                                fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",
-                                cwe_id="CWE-95",
-                                owasp_id="ASVS-5.2.1",
-                                auto_fixable=(
-                                    node.func.id == "eval"
-                                ),  # eval can be auto-fixed to ast.literal_eval
-                            )
-                        )
+                issues.append(
+                    NotebookIssue(
+                        severity="CRITICAL",
+                        category="Code Injection",
+                        message=f"Use of {node.func.id}() enables code injection",
+                        cell_index=cell_index,
+                        line_number=getattr(node, "lineno", 0),
+                        code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                        rule_id=rule_id,
+                        fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",
+                        cwe_id="CWE-95",
+                        owasp_id="ASVS-5.2.1",
+                        auto_fixable=(
+                            node.func.id == "eval"
+                        ),  # eval can be auto-fixed to ast.literal_eval
+                    )
+                )
 
             # Check for pickle usage
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute):
-                    if (
-                        isinstance(node.func.value, ast.Name)
-                        and node.func.value.id == "pickle"
-                        and node.func.attr == "load"
-                    ):
-                        issues.append(
-                            NotebookIssue(
-                                severity="CRITICAL",
-                                category="Unsafe Deserialization",
-                                message="pickle.load() can execute arbitrary code",
-                                cell_index=cell_index,
-                                line_number=getattr(node, "lineno", 0),
-                                code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
-                                rule_id="NB-DESERIAL-001",
-                                fix_suggestion="Use JSON or safer serialization formats. If pickle is required, validate source and use signatures.",
-                                cwe_id="CWE-502",
-                                owasp_id="ASVS-5.5.3",
-                                auto_fixable=True,  # Can add warning comment
-                            )
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):  # noqa: SIM102
+                if (
+                    isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "pickle"
+                    and node.func.attr == "load"
+                ):
+                    issues.append(
+                        NotebookIssue(
+                            severity="CRITICAL",
+                            category="Unsafe Deserialization",
+                            message="pickle.load() can execute arbitrary code",
+                            cell_index=cell_index,
+                            line_number=getattr(node, "lineno", 0),
+                            code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
+                            rule_id="NB-DESERIAL-001",
+                            fix_suggestion="Use JSON or safer serialization formats. If pickle is required, validate source and use signatures.",
+                            cwe_id="CWE-502",
+                            owasp_id="ASVS-5.5.3",
+                            auto_fixable=True,  # Can add warning comment
                         )
+                    )
 
         return issues
 
@@ -1413,31 +1398,29 @@ class NotebookSecurityAnalyzer:
 
         for node in ast.walk(tree):
             # Check subprocess calls with shell=True
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute):
-                    if isinstance(node.func.value, ast.Name) and node.func.value.id in [
-                        "subprocess",
-                        "os",
-                    ]:
-                        # Check for shell=True
-                        for keyword in node.keywords:
-                            if keyword.arg == "shell" and isinstance(keyword.value, ast.Constant):
-                                if keyword.value.value is True:
-                                    issues.append(
-                                        NotebookIssue(
-                                            severity="CRITICAL",
-                                            category="Command Injection",
-                                            message="subprocess call with shell=True enables command injection",
-                                            cell_index=cell_index,
-                                            line_number=getattr(node, "lineno", 0),
-                                            code_snippet=(
-                                                ast.unparse(node) if hasattr(ast, "unparse") else ""
-                                            ),
-                                            fix_suggestion="Use shell=False and pass command as list of arguments",
-                                            cwe_id="CWE-78",
-                                            owasp_id="ASVS-5.3.3",
-                                        )
-                                    )
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):  # noqa: SIM102
+                if isinstance(node.func.value, ast.Name) and node.func.value.id in [
+                    "subprocess",
+                    "os",
+                ]:
+                    # Check for shell=True
+                    for keyword in node.keywords:
+                        if keyword.arg == "shell" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                            issues.append(
+                                NotebookIssue(
+                                    severity="CRITICAL",
+                                    category="Command Injection",
+                                    message="subprocess call with shell=True enables command injection",
+                                    cell_index=cell_index,
+                                    line_number=getattr(node, "lineno", 0),
+                                    code_snippet=(
+                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                    ),
+                                    fix_suggestion="Use shell=False and pass command as list of arguments",
+                                    cwe_id="CWE-78",
+                                    owasp_id="ASVS-5.3.3",
+                                )
+                            )
 
         return issues
 
@@ -1459,7 +1442,7 @@ class NotebookSecurityAnalyzer:
                                 message="Cell output contains system paths that may leak sensitive information",
                                 cell_index=cell_index,
                                 line_number=0,
-                                code_snippet=line[:100] + "..." if len(line) > 100 else line,
+                                code_snippet=line[:100] + "..." if len(line) > 100 else line,  # noqa: PLR2004 - max snippet length
                                 fix_suggestion="Clear cell outputs before sharing notebooks. Use relative paths instead of absolute paths.",
                                 cwe_id="CWE-209",
                             )
@@ -1540,7 +1523,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _analyze_cell_dependencies(self, cells: list[NotebookCell]) -> list[NotebookIssue]:
+    def _analyze_cell_dependencies(self, cells: list[NotebookCell]) -> list[NotebookIssue]:  # noqa: PLR0912 - Complex dependency analysis requires many branches
         """Analyze dependencies and data flow between cells."""
         issues: list[NotebookIssue] = []
 
@@ -1590,7 +1573,7 @@ class NotebookSecurityAnalyzer:
 
         return issues
 
-    def _check_reproducibility(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:
+    def _check_reproducibility(self, cell: NotebookCell, cell_index: int) -> list[NotebookIssue]:  # noqa: PLR0912 - Complex reproducibility checks require many branches
         """
         Check for reproducibility issues in ML/AI notebooks.
 
@@ -1629,7 +1612,7 @@ class NotebookSecurityAnalyzer:
                     for alias in node.names:
                         if alias.name in ml_frameworks:
                             imports_found.append((alias.name, ml_frameworks[alias.name]))
-                elif isinstance(node, ast.ImportFrom):
+                elif isinstance(node, ast.ImportFrom):  # noqa: SIM102
                     if node.module and node.module.split(".")[0] in ml_frameworks:
                         imports_found.append(
                             (node.module.split(".")[0], ml_frameworks[node.module.split(".")[0]])
@@ -1697,27 +1680,25 @@ class NotebookSecurityAnalyzer:
                 )
 
         # Check for PyTorch non-deterministic operations
-        if any(fw == "torch" for fw, _ in imports_found):
-            if "torch.backends.cudnn.deterministic" not in cell.source:
-                if "torch.nn" in cell.source or "torch.cuda" in cell.source:
-                    issues.append(
-                        NotebookIssue(
-                            severity="LOW",
-                            category="Reproducibility Issue",
-                            message="PyTorch used without deterministic mode - GPU operations may be non-reproducible",
-                            cell_index=cell_index,
-                            line_number=0,
-                            code_snippet="PyTorch GPU operations detected",
-                            fix_suggestion=(
-                                "Enable deterministic mode:\n"
-                                "torch.backends.cudnn.deterministic = True\n"
-                                "torch.backends.cudnn.benchmark = False\n"
-                                "torch.use_deterministic_algorithms(True)"
-                            ),
-                            confidence=0.6,
-                            auto_fixable=True,
-                        )
-                    )
+        if any(fw == "torch" for fw, _ in imports_found) and ("torch.backends.cudnn.deterministic" not in cell.source and ("torch.nn" in cell.source or "torch.cuda" in cell.source)):
+            issues.append(
+                NotebookIssue(
+                    severity="LOW",
+                    category="Reproducibility Issue",
+                    message="PyTorch used without deterministic mode - GPU operations may be non-reproducible",
+                    cell_index=cell_index,
+                    line_number=0,
+                    code_snippet="PyTorch GPU operations detected",
+                    fix_suggestion=(
+                        "Enable deterministic mode:\n"
+                        "torch.backends.cudnn.deterministic = True\n"
+                        "torch.backends.cudnn.benchmark = False\n"
+                        "torch.use_deterministic_algorithms(True)"
+                    ),
+                    confidence=0.6,
+                    auto_fixable=True,
+                )
+            )
 
         return issues
 
@@ -1780,73 +1761,72 @@ class NotebookSecurityAnalyzer:
 
             for node in ast.walk(tree):
                 # Check for os.remove, shutil.rmtree without validation
-                if isinstance(node, ast.Call):
-                    if isinstance(node.func, ast.Attribute):
-                        module = None
-                        if isinstance(node.func.value, ast.Name):
-                            module = node.func.value.id
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                    module = None
+                    if isinstance(node.func.value, ast.Name):
+                        module = node.func.value.id
 
-                        # Dangerous file operations
-                        if module == "os" and node.func.attr in ["remove", "unlink", "rmdir"]:
-                            issues.append(
-                                NotebookIssue(
-                                    severity="MEDIUM",
-                                    category="Filesystem Security",
-                                    message=f"os.{node.func.attr}() without path validation - file deletion risk",
-                                    cell_index=cell_index,
-                                    line_number=getattr(node, "lineno", 0),
-                                    code_snippet=(
-                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
-                                    ),
-                                    fix_suggestion=(
-                                        "Validate file paths before deletion. Check against allowlist. "
-                                        "Prevent path traversal and ensure file exists before deleting."
-                                    ),
-                                    cwe_id="CWE-22",
-                                    confidence=0.7,
-                                )
+                    # Dangerous file operations
+                    if module == "os" and node.func.attr in ["remove", "unlink", "rmdir"]:
+                        issues.append(
+                            NotebookIssue(
+                                severity="MEDIUM",
+                                category="Filesystem Security",
+                                message=f"os.{node.func.attr}() without path validation - file deletion risk",
+                                cell_index=cell_index,
+                                line_number=getattr(node, "lineno", 0),
+                                code_snippet=(
+                                    ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                ),
+                                fix_suggestion=(
+                                    "Validate file paths before deletion. Check against allowlist. "
+                                    "Prevent path traversal and ensure file exists before deleting."
+                                ),
+                                cwe_id="CWE-22",
+                                confidence=0.7,
                             )
+                        )
 
-                        elif module == "shutil" and node.func.attr in ["rmtree", "move", "copy"]:
-                            issues.append(
-                                NotebookIssue(
-                                    severity="MEDIUM",
-                                    category="Filesystem Security",
-                                    message=f"shutil.{node.func.attr}() without path validation - unsafe file operation",
-                                    cell_index=cell_index,
-                                    line_number=getattr(node, "lineno", 0),
-                                    code_snippet=(
-                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
-                                    ),
-                                    fix_suggestion=(
-                                        "Validate and sanitize file paths. Implement allowlist checking. "
-                                        "Be careful with recursive operations like rmtree()."
-                                    ),
-                                    cwe_id="CWE-22",
-                                    confidence=0.7,
-                                )
+                    elif module == "shutil" and node.func.attr in ["rmtree", "move", "copy"]:
+                        issues.append(
+                            NotebookIssue(
+                                severity="MEDIUM",
+                                category="Filesystem Security",
+                                message=f"shutil.{node.func.attr}() without path validation - unsafe file operation",
+                                cell_index=cell_index,
+                                line_number=getattr(node, "lineno", 0),
+                                code_snippet=(
+                                    ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                ),
+                                fix_suggestion=(
+                                    "Validate and sanitize file paths. Implement allowlist checking. "
+                                    "Be careful with recursive operations like rmtree()."
+                                ),
+                                cwe_id="CWE-22",
+                                confidence=0.7,
                             )
+                        )
 
-                        # Check for chmod/chown that could elevate privileges
-                        elif module == "os" and node.func.attr in ["chmod", "chown"]:
-                            issues.append(
-                                NotebookIssue(
-                                    severity="MEDIUM",
-                                    category="Filesystem Security",
-                                    message=f"os.{node.func.attr}() - privilege manipulation risk",
-                                    cell_index=cell_index,
-                                    line_number=getattr(node, "lineno", 0),
-                                    code_snippet=(
-                                        ast.unparse(node) if hasattr(ast, "unparse") else ""
-                                    ),
-                                    fix_suggestion=(
-                                        "Avoid changing file permissions unless absolutely necessary. "
-                                        "Ensure proper permission model (least privilege)."
-                                    ),
-                                    cwe_id="CWE-732",
-                                    confidence=0.6,
-                                )
+                    # Check for chmod/chown that could elevate privileges
+                    elif module == "os" and node.func.attr in ["chmod", "chown"]:
+                        issues.append(
+                            NotebookIssue(
+                                severity="MEDIUM",
+                                category="Filesystem Security",
+                                message=f"os.{node.func.attr}() - privilege manipulation risk",
+                                cell_index=cell_index,
+                                line_number=getattr(node, "lineno", 0),
+                                code_snippet=(
+                                    ast.unparse(node) if hasattr(ast, "unparse") else ""
+                                ),
+                                fix_suggestion=(
+                                    "Avoid changing file permissions unless absolutely necessary. "
+                                    "Ensure proper permission model (least privilege)."
+                                ),
+                                cwe_id="CWE-732",
+                                confidence=0.6,
                             )
+                        )
 
         except SyntaxError:
             pass
@@ -2149,7 +2129,7 @@ class NotebookFixer:
         """Initialize notebook fixer."""
         self.logger = PyGuardLogger()
 
-    def fix_notebook(
+    def fix_notebook(  # noqa: PLR0912, PLR0915 - Comprehensive notebook fixing requires many statements
         self, notebook_path: Path, issues: list[NotebookIssue]
     ) -> tuple[bool, list[str]]:
         """
@@ -2470,7 +2450,7 @@ class NotebookFixer:
                 modified = False
 
                 for node in ast.walk(tree):
-                    if isinstance(node, ast.Call):
+                    if isinstance(node, ast.Call):  # noqa: SIM102
                         # Check if this is a torch.load call
                         if isinstance(node.func, ast.Attribute) and (
                             isinstance(node.func.value, ast.Name)
@@ -2532,7 +2512,7 @@ class NotebookFixer:
 
         return source
 
-    def _add_seed_setting(self, source: str, message: str) -> str:
+    def _add_seed_setting(self, source: str, message: str) -> str:  # noqa: PLR0912, PLR0915 - Complex seed configuration requires many branches and statements
         """
         Add comprehensive random seed setting for ML frameworks.
 
@@ -2642,15 +2622,13 @@ class NotebookFixer:
         # Fallback to simple seed additions if comprehensive setup not appropriate
         seed_additions = []
 
-        if "PyTorch" in message or "torch" in message.lower():
-            if "torch.manual_seed" not in source:
-                seed_additions.append(
-                    "torch.manual_seed(42)  # Set PyTorch seed for reproducibility"
-                )
+        if ("PyTorch" in message or "torch" in message.lower()) and "torch.manual_seed" not in source:
+            seed_additions.append(
+                "torch.manual_seed(42)  # Set PyTorch seed for reproducibility"
+            )
 
-        if "NumPy" in message or "numpy" in message.lower():
-            if "np.random.seed" not in source and "numpy.random.seed" not in source:
-                seed_additions.append("np.random.seed(42)  # Set NumPy seed for reproducibility")
+        if ("NumPy" in message or "numpy" in message.lower()) and "np.random.seed" not in source and "numpy.random.seed" not in source:
+            seed_additions.append("np.random.seed(42)  # Set NumPy seed for reproducibility")
 
         if "TensorFlow" in message and "tf.random.set_seed" not in source:
             seed_additions.append(
@@ -2867,8 +2845,8 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                     "security-severity": str(_severity_to_score(issue.severity)),
                     "precision": (
                         "high"
-                        if issue.confidence >= 0.9
-                        else "medium" if issue.confidence >= 0.7 else "low"
+                        if issue.confidence >= 0.9  # noqa: PLR2004 - confidence threshold
+                        else "medium" if issue.confidence >= 0.7 else "low"  # noqa: PLR2004 - confidence threshold
                     ),
                     "tags": _get_tags_for_issue(issue),
                 },
@@ -2935,13 +2913,13 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                 "rule_id": issue.rule_id or _get_rule_id_from_issue(issue),
                 "fix_quality": (
                     "excellent"
-                    if issue.confidence >= 0.95
-                    else "good" if issue.confidence >= 0.85 else "fair"
+                    if issue.confidence >= 0.95  # noqa: PLR2004 - confidence threshold
+                    else "good" if issue.confidence >= 0.85 else "fair"  # noqa: PLR2004 - confidence threshold
                 ),
                 "semantic_risk": (
                     "low"
-                    if issue.confidence >= 0.9
-                    else "medium" if issue.confidence >= 0.7 else "high"
+                    if issue.confidence >= 0.9  # noqa: PLR2004 - confidence threshold
+                    else "medium" if issue.confidence >= 0.7 else "high"  # noqa: PLR2004 - confidence threshold
                 ),
             },
         }
@@ -2967,7 +2945,7 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                         "rollback_command": rollback_cmd,
                         "backup_location": backup_path,
                         "semantic_preservation": (
-                            "verified" if issue.confidence >= 0.95 else "probable"
+                            "verified" if issue.confidence >= 0.95 else "probable"  # noqa: PLR2004 - confidence threshold
                         ),
                     },
                 }
@@ -3007,7 +2985,7 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                     "medium_issues": sum(1 for i in issues if i.severity == "MEDIUM"),
                     "low_issues": sum(1 for i in issues if i.severity == "LOW"),
                     "auto_fixable_issues": sum(1 for i in issues if i.auto_fixable),
-                    "high_confidence_issues": sum(1 for i in issues if i.confidence >= 0.9),
+                    "high_confidence_issues": sum(1 for i in issues if i.confidence >= 0.9),  # noqa: PLR2004 - confidence threshold
                     "categories_detected": list({i.category for i in issues}),
                     "pyguard_version": "0.3.0",
                     "sarif_enhanced": True,

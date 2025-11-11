@@ -75,12 +75,11 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         for decorator in node.decorator_list:
             # Route decorators: @route(), @get(), @post(), etc.
             if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Name):
-                    if decorator.func.id in ("route", "get", "post", "put", "delete", "patch"):
-                        is_route = True
-                        self.route_functions.add(node.name)
-                        self._check_route_injection(decorator)
-            elif isinstance(decorator, ast.Name):
+                if isinstance(decorator.func, ast.Name) and decorator.func.id in ("route", "get", "post", "put", "delete", "patch"):
+                    is_route = True
+                    self.route_functions.add(node.name)
+                    self._check_route_injection(decorator)
+            elif isinstance(decorator, ast.Name):  # noqa: SIM102
                 if decorator.id in ("route", "get", "post", "put", "delete", "patch"):
                     is_route = True
                     self.route_functions.add(node.name)
@@ -126,36 +125,30 @@ class BottleSecurityVisitor(ast.NodeVisitor):
             if isinstance(child, ast.Assign):
                 # Pattern 1: request.forms.get("field")
                 if isinstance(child.value, ast.Call):
-                    if isinstance(child.value.func, ast.Attribute):
-                        # request.forms.get(), request.query.get(), etc.
-                        if child.value.func.attr == "get":
-                            if isinstance(child.value.func.value, ast.Attribute):
-                                if child.value.func.value.attr in (
-                                    "forms",
-                                    "query",
-                                    "params",
-                                    "json",
-                                ):
-                                    # Track the variable name
-                                    for target in child.targets:
-                                        if isinstance(target, ast.Name):
-                                            self.user_input_vars.add(target.id)
-                # Pattern 2: request.query.field (direct attribute access)
-                elif isinstance(child.value, ast.Attribute):
-                    if isinstance(child.value.value, ast.Attribute):
-                        # Check if it's request.query.X or request.forms.X
-                        if child.value.value.attr in ("query", "forms", "params", "json"):
+                    if isinstance(child.value.func, ast.Attribute) and child.value.func.attr == "get" and isinstance(child.value.func.value, ast.Attribute):  # noqa: SIM102
+                        if child.value.func.value.attr in (
+                            "forms",
+                            "query",
+                            "params",
+                            "json",
+                        ):
+                            # Track the variable name
                             for target in child.targets:
                                 if isinstance(target, ast.Name):
                                     self.user_input_vars.add(target.id)
+                # Pattern 2: request.query.field (direct attribute access)
+                elif isinstance(child.value, ast.Attribute):  # noqa: SIM102
+                    if isinstance(child.value.value, ast.Attribute) and child.value.value.attr in ("query", "forms", "params", "json"):
+                        for target in child.targets:
+                            if isinstance(target, ast.Name):
+                                self.user_input_vars.add(target.id)
 
     def _track_secure_filename_usage(self, node: ast.FunctionDef) -> None:
         """Track if secure_filename or similar function is used in the function."""
         for child in ast.walk(node):
-            if isinstance(child, ast.Call) and isinstance(child.func, ast.Name):
-                if child.func.id in ("secure_filename", "sanitize_filename"):
-                    self.current_function_has_secure_filename = True
-                    break
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Name) and child.func.id in ("secure_filename", "sanitize_filename"):
+                self.current_function_has_secure_filename = True
+                break
 
     def _check_route_injection(self, decorator: ast.Call) -> None:
         """Check for route decorator injection vulnerabilities (BOTTLE001)."""
@@ -175,7 +168,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                         fix_applicability=FixApplicability.MANUAL,
                     )
                 )
-            elif isinstance(arg, ast.Call):
+            elif isinstance(arg, ast.Call):  # noqa: SIM102
                 if isinstance(arg.func, ast.Attribute) and arg.func.attr == "format":
                     # .format() in route definition
                     self.violations.append(
@@ -230,7 +223,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             # Direct attribute access: template(..., raw_html=request.query.content)
             if isinstance(keyword.value, ast.Attribute):
-                if keyword.value.attr in ("forms", "query", "params", "json"):
+                if keyword.value.attr in ("forms", "query", "params", "json"):  # noqa: SIM102
                     # This is less severe - passing user data to template is common
                     # Only flag if variable name suggests raw HTML injection
                     if keyword.arg and any(
@@ -375,7 +368,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                         has_csrf_check = True
                         break
                 # Check for function calls like validate_csrf() or check_csrf()
-                elif isinstance(child.func, ast.Name):
+                elif isinstance(child.func, ast.Name):  # noqa: SIM102
                     if "csrf" in child.func.id.lower():
                         has_csrf_check = True
                         break
@@ -410,7 +403,7 @@ class BottleSecurityVisitor(ast.NodeVisitor):
                 if isinstance(child.func, ast.Name):
                     if child.func.id in ("validate", "sanitize", "clean", "check"):
                         has_validation = True
-                elif isinstance(child.func, ast.Attribute):
+                elif isinstance(child.func, ast.Attribute):  # noqa: SIM102
                     if child.func.attr in ("validate", "sanitize", "clean"):
                         has_validation = True
 

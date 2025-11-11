@@ -99,7 +99,7 @@ class CustomRuleEngine:
         """
         self.rules[rule.rule_id] = rule
 
-    def add_regex_rule(
+    def add_regex_rule(  # noqa: PLR0913 - Custom rule definition requires many parameters
         self,
         rule_id: str,
         name: str,
@@ -132,7 +132,7 @@ class CustomRuleEngine:
         )
         self.add_rule(rule)
 
-    def add_ast_rule(
+    def add_ast_rule(  # noqa: PLR0913 - Custom AST rule definition requires many parameters
         self,
         rule_id: str,
         name: str,
@@ -382,7 +382,7 @@ def check_no_global_variables(tree: ast.AST) -> list[int]:
     """Check for global variable assignments."""
     lines = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assign):
+        if isinstance(node, ast.Assign):  # noqa: SIM102
             # Check if at module level
             if isinstance(node, ast.Assign):
                 lines.append(node.lineno)

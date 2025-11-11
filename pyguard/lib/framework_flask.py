@@ -68,24 +68,22 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         """Detect security issues in function calls."""
         # Flask app.run() with debug=True
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "run":
-                for keyword in node.keywords:
-                    if keyword.arg == "debug":
-                        if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FLASK001",
-                                    message="Flask debug mode enabled - this should never be used in production (CWE-489)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                    fix_data={"keyword": "debug", "new_value": "False"},
-                                )
-                            )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "run":
+            for keyword in node.keywords:
+                if keyword.arg == "debug" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FLASK001",
+                            message="Flask debug mode enabled - this should never be used in production (CWE-489)",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.CRITICAL,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data={"keyword": "debug", "new_value": "False"},
+                        )
+                    )
 
         # make_response() without secure cookie settings
         if isinstance(node.func, ast.Name) and node.func.id == "make_response":
@@ -93,41 +91,34 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
             pass
 
         # render_template_string with user input (SSTI vulnerability)
-        if isinstance(node.func, ast.Name) and node.func.id == "render_template_string":
-            if len(node.args) > 0:
-                # Check if first argument contains f-string or string concatenation
-                if isinstance(node.args[0], ast.JoinedStr):  # f-string
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FLASK002",
-                            message="Server-Side Template Injection (SSTI) risk: render_template_string with f-string or string concatenation (CWE-1336)",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.MANUAL,
-                        )
-                    )
+        if isinstance(node.func, ast.Name) and node.func.id == "render_template_string" and len(node.args) > 0 and isinstance(node.args[0], ast.JoinedStr):  # f-string:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FLASK002",
+                    message="Server-Side Template Injection (SSTI) risk: render_template_string with f-string or string concatenation (CWE-1336)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.HIGH,
+                    category=RuleCategory.SECURITY,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.MANUAL,
+                )
+            )
 
         # jsonify() with user-controlled keys
-        if isinstance(node.func, ast.Name) and node.func.id == "jsonify":
-            # Potential mass assignment vulnerability
-            if len(node.args) > 0 and isinstance(node.args[0], ast.Call):
-                if isinstance(node.args[0].func, ast.Attribute):
-                    if node.args[0].func.attr in ("to_dict", "dict"):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FLASK003",
-                                message="Potential mass assignment vulnerability: jsonify with to_dict() (CWE-915)",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.SECURITY,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
+        if isinstance(node.func, ast.Name) and node.func.id == "jsonify" and len(node.args) > 0 and isinstance(node.args[0], ast.Call) and isinstance(node.args[0].func, ast.Attribute) and node.args[0].func.attr in ("to_dict", "dict"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FLASK003",
+                    message="Potential mass assignment vulnerability: jsonify with to_dict() (CWE-915)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
 
         self.generic_visit(node)
 
@@ -135,14 +126,14 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
         """Detect insecure configuration assignments."""
         # app.secret_key = "hardcoded"
         for target in node.targets:
-            if isinstance(target, ast.Attribute):
-                if (
+            if isinstance(target, ast.Attribute):  # noqa: SIM102
+                if (  # noqa: SIM102
                     target.attr == "secret_key"
                 ):  # pyguard: disable=CWE-208  # Pattern detection, not vulnerable code
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         # Check if it's a weak/default secret key
                         secret_key = node.value.value
-                        if len(secret_key) < 16 or secret_key in [
+                        if len(secret_key) < 16 or secret_key in [  # noqa: PLR2004 - length check
                             "dev",
                             "secret",
                             "changeme",
@@ -162,25 +153,21 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
                             )
 
             # CORS(app, origins="*")
-            if isinstance(target, ast.Name):
-                if isinstance(node.value, ast.Call):
-                    if isinstance(node.value.func, ast.Name) and node.value.func.id == "CORS":
-                        for keyword in node.value.keywords:
-                            if keyword.arg == "origins":
-                                if isinstance(keyword.value, ast.Constant):
-                                    if keyword.value.value == "*":
-                                        self.violations.append(
-                                            RuleViolation(
-                                                rule_id="FLASK005",
-                                                message="Insecure CORS configuration: origins='*' allows any origin (CWE-942)",
-                                                line_number=node.lineno,
-                                                column=node.col_offset,
-                                                severity=RuleSeverity.HIGH,
-                                                category=RuleCategory.SECURITY,
-                                                file_path=self.file_path,
-                                                fix_applicability=FixApplicability.SUGGESTED,
-                                            )
-                                        )
+            if isinstance(target, ast.Name) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == "CORS":
+                for keyword in node.value.keywords:
+                    if keyword.arg == "origins" and isinstance(keyword.value, ast.Constant) and keyword.value.value == "*":
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FLASK005",
+                                message="Insecure CORS configuration: origins='*' allows any origin (CWE-942)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                            )
+                        )
 
         self.generic_visit(node)
 
@@ -189,33 +176,28 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
         # Check if this is a Flask route
         has_route_decorator = False
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr in ("route", "get", "post", "put", "delete"):
-                        has_route_decorator = True
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr in ("route", "get", "post", "put", "delete"):
+                has_route_decorator = True
 
         if has_route_decorator:
             # Check for SQL injection patterns
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Call):
-                    # Check for string formatting in SQL queries
-                    if isinstance(stmt.func, ast.Attribute):
-                        if stmt.func.attr in ("execute", "executemany"):
-                            # Check if any argument uses string formatting
-                            for arg in stmt.args:
-                                if isinstance(arg, (ast.JoinedStr, ast.BinOp)):
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FLASK006",
-                                            message="Potential SQL injection in route handler - use parameterized queries (CWE-89)",
-                                            line_number=stmt.lineno,
-                                            column=stmt.col_offset,
-                                            severity=RuleSeverity.CRITICAL,
-                                            category=RuleCategory.SECURITY,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.MANUAL,
-                                        )
-                                    )
+                if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr in ("execute", "executemany"):
+                    # Check if any argument uses string formatting
+                    for arg in stmt.args:
+                        if isinstance(arg, (ast.JoinedStr, ast.BinOp)):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FLASK006",
+                                    message="Potential SQL injection in route handler - use parameterized queries (CWE-89)",
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.CRITICAL,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                )
+                            )
 
         self.generic_visit(node)
 

@@ -206,22 +206,21 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
                     self.violations.append(violation)
 
         # Also check execute() with raw strings
-        if isinstance(node.func, ast.Attribute) and node.func.attr == "execute":
-            if node.args and isinstance(node.args[0], (ast.JoinedStr, ast.BinOp)):
-                violation = RuleViolation(
-                    rule_id="SQLA001",
-                    file_path=self.file_path,
-                    message="SQL injection risk in execute(). "
-                    "Use SQLAlchemy ORM methods or parameterized queries.",
-                    severity=RuleSeverity.CRITICAL,
-                    category=RuleCategory.SECURITY,
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    cwe_id="CWE-89",
-                    owasp_id="A03-Injection",
-                    fix_applicability=FixApplicability.SAFE,
-                )
-                self.violations.append(violation)
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "execute" and node.args and isinstance(node.args[0], (ast.JoinedStr, ast.BinOp)):
+            violation = RuleViolation(
+                rule_id="SQLA001",
+                file_path=self.file_path,
+                message="SQL injection risk in execute(). "
+                "Use SQLAlchemy ORM methods or parameterized queries.",
+                severity=RuleSeverity.CRITICAL,
+                category=RuleCategory.SECURITY,
+                line_number=node.lineno,
+                column=node.col_offset,
+                cwe_id="CWE-89",
+                owasp_id="A03-Injection",
+                fix_applicability=FixApplicability.SAFE,
+            )
+            self.violations.append(violation)
 
     def _check_session_security(self, node: ast.Assign) -> None:
         """
@@ -236,30 +235,29 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Track Session() creations
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
-            if node.value.func.id in ["Session", "sessionmaker"]:
-                # Check if expire_on_commit is explicitly set
-                has_expire_on_commit = False
-                for keyword in node.value.keywords:
-                    if keyword.arg == "expire_on_commit":
-                        has_expire_on_commit = True
-                        break
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id in ["Session", "sessionmaker"]:
+            # Check if expire_on_commit is explicitly set
+            has_expire_on_commit = False
+            for keyword in node.value.keywords:
+                if keyword.arg == "expire_on_commit":
+                    has_expire_on_commit = True
+                    break
 
-                if not has_expire_on_commit:
-                    violation = RuleViolation(
-                        rule_id="SQLA002",
-                        file_path=self.file_path,
-                        message="Session created without explicit expire_on_commit setting. "
-                        "Consider setting expire_on_commit=False for better performance.",
-                        severity=RuleSeverity.MEDIUM,
-                        category=RuleCategory.SECURITY,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        cwe_id="CWE-404",
-                        owasp_id="A05-Misconfiguration",
-                        fix_applicability=FixApplicability.SAFE,
-                    )
-                    self.violations.append(violation)
+            if not has_expire_on_commit:
+                violation = RuleViolation(
+                    rule_id="SQLA002",
+                    file_path=self.file_path,
+                    message="Session created without explicit expire_on_commit setting. "
+                    "Consider setting expire_on_commit=False for better performance.",
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    cwe_id="CWE-404",
+                    owasp_id="A05-Misconfiguration",
+                    fix_applicability=FixApplicability.SAFE,
+                )
+                self.violations.append(violation)
 
     def _check_connection_string_exposure(self, node: ast.Call) -> None:
         """
@@ -274,28 +272,25 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Check create_engine() calls
-        if isinstance(node.func, ast.Name) and node.func.id == "create_engine":
-            if node.args:
-                conn_str = node.args[0]
+        if isinstance(node.func, ast.Name) and node.func.id == "create_engine" and node.args:
+            conn_str = node.args[0]
 
-                # Check for string literal with credentials
-                if isinstance(conn_str, ast.Constant) and isinstance(conn_str.value, str):
-                    # Check for password patterns
-                    if re.search(r"(password=|pwd=|:[^:@]+@)", conn_str.value, re.I):
-                        violation = RuleViolation(
-                            rule_id="SQLA003",
-                            file_path=self.file_path,
-                            message="Hardcoded database password in connection string. "
-                            "Use environment variables or configuration files.",
-                            severity=RuleSeverity.CRITICAL,
-                            category=RuleCategory.SECURITY,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            cwe_id="CWE-798",
-                            owasp_id="A07-Auth",
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                        self.violations.append(violation)
+            # Check for string literal with credentials
+            if isinstance(conn_str, ast.Constant) and isinstance(conn_str.value, str) and re.search(r"(password=|pwd=|:[^:@]+@)", conn_str.value, re.I):
+                violation = RuleViolation(
+                    rule_id="SQLA003",
+                    file_path=self.file_path,
+                    message="Hardcoded database password in connection string. "
+                    "Use environment variables or configuration files.",
+                    severity=RuleSeverity.CRITICAL,
+                    category=RuleCategory.SECURITY,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    cwe_id="CWE-798",
+                    owasp_id="A07-Auth",
+                    fix_applicability=FixApplicability.SAFE,
+                )
+                self.violations.append(violation)
 
     def _check_connection_string_assignment(self, node: ast.Assign) -> None:
         """Check assignments for connection string exposure."""
@@ -342,26 +337,24 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for query filter with formatted strings
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ["filter", "filter_by", "where"]:
-                for arg in node.args:
-                    # Check for .format() call
-                    if isinstance(arg, ast.Call):
-                        if isinstance(arg.func, ast.Attribute) and arg.func.attr == "format":
-                            violation = RuleViolation(
-                                rule_id="SQLA004",
-                                file_path=self.file_path,
-                                message="SQL injection risk: using .format() in query filter. "
-                                "Use SQLAlchemy parameter binding.",
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                cwe_id="CWE-89",
-                                owasp_id="A03-Injection",
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                            self.violations.append(violation)
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["filter", "filter_by", "where"]:
+            for arg in node.args:
+                # Check for .format() call
+                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Attribute) and arg.func.attr == "format":
+                    violation = RuleViolation(
+                        rule_id="SQLA004",
+                        file_path=self.file_path,
+                        message="SQL injection risk: using .format() in query filter. "
+                        "Use SQLAlchemy parameter binding.",
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        cwe_id="CWE-89",
+                        owasp_id="A03-Injection",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                    self.violations.append(violation)
 
     def _check_lazy_loading(self, node: ast.Call) -> None:
         """
@@ -421,7 +414,7 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
         if is_model:
             # Check for relationships without cascade settings
             for item in node.body:
-                if isinstance(item, ast.Assign):
+                if isinstance(item, ast.Assign):  # noqa: SIM102
                     if isinstance(item.value, ast.Call) and (
                         isinstance(item.value.func, ast.Name)
                         and item.value.func.id == "relationship"
@@ -464,37 +457,36 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
         for item in node.body:
             if isinstance(item, ast.FunctionDef):
                 for decorator in item.decorator_list:
-                    if isinstance(decorator, ast.Attribute):
-                        if decorator.attr == "hybrid_property":
-                            # Check if property returns sensitive fields
-                            for subnode in ast.walk(item):
-                                if isinstance(subnode, ast.Attribute):
-                                    attr_name = subnode.attr.lower()
-                                    if any(
-                                        sensitive in attr_name
-                                        for sensitive in [
-                                            "password",
-                                            "secret",
-                                            "token",
-                                            "key",
-                                            "credential",
-                                        ]
-                                    ):
-                                        violation = RuleViolation(
-                                            rule_id="SQLA009",
-                                            file_path=self.file_path,
-                                            message=f"Hybrid property may expose sensitive field '{subnode.attr}'. "
-                                            "Add access control checks.",
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            line_number=item.lineno,
-                                            column=item.col_offset,
-                                            cwe_id="CWE-200",
-                                            owasp_id="A01-Access",
-                                            fix_applicability=FixApplicability.MANUAL,
-                                        )
-                                        self.violations.append(violation)
-                                        break
+                    if isinstance(decorator, ast.Attribute) and decorator.attr == "hybrid_property":
+                        # Check if property returns sensitive fields
+                        for subnode in ast.walk(item):
+                            if isinstance(subnode, ast.Attribute):
+                                attr_name = subnode.attr.lower()
+                                if any(
+                                    sensitive in attr_name
+                                    for sensitive in [
+                                        "password",
+                                        "secret",
+                                        "token",
+                                        "key",
+                                        "credential",
+                                    ]
+                                ):
+                                    violation = RuleViolation(
+                                        rule_id="SQLA009",
+                                        file_path=self.file_path,
+                                        message=f"Hybrid property may expose sensitive field '{subnode.attr}'. "
+                                        "Add access control checks.",
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        line_number=item.lineno,
+                                        column=item.col_offset,
+                                        cwe_id="CWE-200",
+                                        owasp_id="A01-Access",
+                                        fix_applicability=FixApplicability.MANUAL,
+                                    )
+                                    self.violations.append(violation)
+                                    break
 
     def _check_event_listener_injection(self, node: ast.Call) -> None:
         """
@@ -509,22 +501,20 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for event.listen() calls
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "listen":
-                if isinstance(node.func.value, ast.Name) and node.func.value.id == "event":
-                    violation = RuleViolation(
-                        rule_id="SQLA010",
-                        file_path=self.file_path,
-                        message="Event listener detected. Ensure listener function validates all inputs.",
-                        severity=RuleSeverity.MEDIUM,
-                        category=RuleCategory.SECURITY,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        cwe_id="CWE-94",
-                        owasp_id="A03-Injection",
-                        fix_applicability=FixApplicability.MANUAL,
-                    )
-                    self.violations.append(violation)
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "listen" and isinstance(node.func.value, ast.Name) and node.func.value.id == "event":
+            violation = RuleViolation(
+                rule_id="SQLA010",
+                file_path=self.file_path,
+                message="Event listener detected. Ensure listener function validates all inputs.",
+                severity=RuleSeverity.MEDIUM,
+                category=RuleCategory.SECURITY,
+                line_number=node.lineno,
+                column=node.col_offset,
+                cwe_id="CWE-94",
+                owasp_id="A03-Injection",
+                fix_applicability=FixApplicability.MANUAL,
+            )
+            self.violations.append(violation)
 
     def _check_engine_creation(self, node: ast.Call) -> None:
         """
@@ -541,22 +531,21 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name) and node.func.id == "create_engine":
             # Check for echo=True in production (information disclosure)
             for keyword in node.keywords:
-                if keyword.arg == "echo":
-                    if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
-                        violation = RuleViolation(
-                            rule_id="SQLA011",
-                            file_path=self.file_path,
-                            message="Engine created with echo=True. "
-                            "This logs SQL queries and may expose sensitive data.",
-                            severity=RuleSeverity.MEDIUM,
-                            category=RuleCategory.SECURITY,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            cwe_id="CWE-311",
-                            owasp_id="A02-Crypto",
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                        self.violations.append(violation)
+                if keyword.arg == "echo" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                    violation = RuleViolation(
+                        rule_id="SQLA011",
+                        file_path=self.file_path,
+                        message="Engine created with echo=True. "
+                        "This logs SQL queries and may expose sensitive data.",
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        cwe_id="CWE-311",
+                        owasp_id="A02-Crypto",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                    self.violations.append(violation)
 
     def _check_schema_reflection(self, node: ast.Call) -> None:
         """
@@ -641,25 +630,23 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for op.execute() in migrations
-        if isinstance(node.func, ast.Attribute) and node.func.attr == "execute":
-            if isinstance(node.func.value, ast.Name) and node.func.value.id == "op":
-                if node.args:
-                    sql_arg = node.args[0]
-                    if isinstance(sql_arg, (ast.JoinedStr, ast.BinOp)):
-                        violation = RuleViolation(
-                            rule_id="SQLA017",
-                            file_path=self.file_path,
-                            message="SQL injection risk in Alembic migration. "
-                            "Use Alembic operations or parameterized queries.",
-                            severity=RuleSeverity.CRITICAL,
-                            category=RuleCategory.SECURITY,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            cwe_id="CWE-89",
-                            owasp_id="A03-Injection",
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                        self.violations.append(violation)
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "execute" and isinstance(node.func.value, ast.Name) and node.func.value.id == "op" and node.args:
+            sql_arg = node.args[0]
+            if isinstance(sql_arg, (ast.JoinedStr, ast.BinOp)):
+                violation = RuleViolation(
+                    rule_id="SQLA017",
+                    file_path=self.file_path,
+                    message="SQL injection risk in Alembic migration. "
+                    "Use Alembic operations or parameterized queries.",
+                    severity=RuleSeverity.CRITICAL,
+                    category=RuleCategory.SECURITY,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    cwe_id="CWE-89",
+                    owasp_id="A03-Injection",
+                    fix_applicability=FixApplicability.SAFE,
+                )
+                self.violations.append(violation)
 
     def _check_column_defaults(self, node: ast.ClassDef) -> None:
         """
@@ -675,32 +662,28 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
 
         # Check Column() definitions with defaults
         for item in node.body:
-            if isinstance(item, ast.Assign) and isinstance(item.value, ast.Call):
-                if isinstance(item.value.func, ast.Name) and item.value.func.id == "Column":
-                    for keyword in item.value.keywords:
-                        if keyword.arg in ["default", "server_default"]:
-                            # Check for hardcoded sensitive defaults
-                            if isinstance(keyword.value, ast.Constant):
-                                if isinstance(keyword.value.value, str):
-                                    value_lower = keyword.value.value.lower()
-                                    if any(
-                                        sensitive in value_lower
-                                        for sensitive in ["password", "secret", "token", "key"]
-                                    ):
-                                        violation = RuleViolation(
-                                            rule_id="SQLA018",
-                                            file_path=self.file_path,
-                                            message="Column has hardcoded sensitive default value. "
-                                            "Generate defaults dynamically.",
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            line_number=item.lineno,
-                                            column=item.col_offset,
-                                            cwe_id="CWE-1188",
-                                            owasp_id="A05-Misconfiguration",
-                                            fix_applicability=FixApplicability.SAFE,
-                                        )
-                                        self.violations.append(violation)
+            if isinstance(item, ast.Assign) and isinstance(item.value, ast.Call) and isinstance(item.value.func, ast.Name) and item.value.func.id == "Column":
+                for keyword in item.value.keywords:
+                    if keyword.arg in ["default", "server_default"] and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                        value_lower = keyword.value.value.lower()
+                        if any(
+                            sensitive in value_lower
+                            for sensitive in ["password", "secret", "token", "key"]
+                        ):
+                            violation = RuleViolation(
+                                rule_id="SQLA018",
+                                file_path=self.file_path,
+                                message="Column has hardcoded sensitive default value. "
+                                "Generate defaults dynamically.",
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                line_number=item.lineno,
+                                column=item.col_offset,
+                                cwe_id="CWE-1188",
+                                owasp_id="A05-Misconfiguration",
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                            self.violations.append(violation)
 
     def _check_constraint_bypass(self, node: ast.Call) -> None:
         """
@@ -715,22 +698,21 @@ class SQLAlchemySecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for bulk_update_mappings or bulk_insert_mappings (bypass validation)
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ["bulk_update_mappings", "bulk_insert_mappings"]:
-                violation = RuleViolation(
-                    rule_id="SQLA020",
-                    file_path=self.file_path,
-                    message=f"Using {node.func.attr} bypasses model validation and constraints. "
-                    "Ensure manual validation of all data.",
-                    severity=RuleSeverity.HIGH,
-                    category=RuleCategory.SECURITY,
-                    line_number=node.lineno,
-                    column=node.col_offset,
-                    cwe_id="CWE-20",
-                    owasp_id="A03-Injection",
-                    fix_applicability=FixApplicability.MANUAL,
-                )
-                self.violations.append(violation)
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ["bulk_update_mappings", "bulk_insert_mappings"]:
+            violation = RuleViolation(
+                rule_id="SQLA020",
+                file_path=self.file_path,
+                message=f"Using {node.func.attr} bypasses model validation and constraints. "
+                "Ensure manual validation of all data.",
+                severity=RuleSeverity.HIGH,
+                category=RuleCategory.SECURITY,
+                line_number=node.lineno,
+                column=node.col_offset,
+                cwe_id="CWE-20",
+                owasp_id="A03-Injection",
+                fix_applicability=FixApplicability.MANUAL,
+            )
+            self.violations.append(violation)
 
 
 def analyze_sqlalchemy_security(file_path: Path, code: str) -> list[RuleViolation]:

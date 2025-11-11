@@ -160,25 +160,24 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     "aws_key",
                 ]
 
-                if any(pattern in var_name for pattern in aws_patterns):
-                    if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        # Check for AWS key patterns (AKIA*, ASIA*)
-                        value = node.value.value
-                        if re.match(r"^(AKIA|ASIA)[A-Z0-9]{16}$", value):
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-aws-credentials",
-                                    message=f"Hardcoded AWS access key detected in variable '{target.id}'. "
-                                    "Use AWS Secrets Manager or environment variables.",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-798",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
+                if any(pattern in var_name for pattern in aws_patterns) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    # Check for AWS key patterns (AKIA*, ASIA*)
+                    value = node.value.value
+                    if re.match(r"^(AKIA|ASIA)[A-Z0-9]{16}$", value):
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-aws-credentials",
+                                message=f"Hardcoded AWS access key detected in variable '{target.id}'. "
+                                "Use AWS Secrets Manager or environment variables.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-798",
+                                fix_applicability=FixApplicability.SAFE,
                             )
+                        )
 
     def _check_azure_credentials(self, node: ast.Assign) -> None:
         """Detect hardcoded Azure credentials."""
@@ -196,25 +195,24 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     "azure_sas",
                 ]
 
-                if any(pattern in var_name for pattern in azure_patterns):
-                    if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        value = node.value.value
-                        # Azure connection strings typically contain "AccountKey=" or "SharedAccessSignature="
-                        if "AccountKey=" in value or "SharedAccessSignature=" in value:
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-azure-credentials",
-                                    message=f"Hardcoded Azure credential detected in variable '{target.id}'. "
-                                    "Use Azure Key Vault for credential management.",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-798",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
+                if any(pattern in var_name for pattern in azure_patterns) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    value = node.value.value
+                    # Azure connection strings typically contain "AccountKey=" or "SharedAccessSignature="
+                    if "AccountKey=" in value or "SharedAccessSignature=" in value:
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-azure-credentials",
+                                message=f"Hardcoded Azure credential detected in variable '{target.id}'. "
+                                "Use Azure Key Vault for credential management.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-798",
+                                fix_applicability=FixApplicability.SAFE,
                             )
+                        )
 
     def _check_gcp_credentials(self, node: ast.Assign) -> None:
         """Detect hardcoded GCP service account keys."""
@@ -230,35 +228,34 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     "firebase_key",
                 ]
 
-                if any(pattern in var_name for pattern in gcp_patterns):
-                    if isinstance(node.value, (ast.Dict, ast.Constant)):
-                        # GCP service account keys are JSON objects with specific fields
-                        if isinstance(node.value, ast.Constant) and isinstance(
-                            node.value.value, str
+                if any(pattern in var_name for pattern in gcp_patterns) and isinstance(node.value, (ast.Dict, ast.Constant)):  # noqa: SIM102
+                    # GCP service account keys are JSON objects with specific fields
+                    if isinstance(node.value, ast.Constant) and isinstance(  # noqa: SIM102
+                        node.value.value, str
+                    ):
+                        if (
+                            '"private_key":' in node.value.value
+                            and '"type": "service_account"' in node.value.value
                         ):
-                            if (
-                                '"private_key":' in node.value.value
-                                and '"type": "service_account"' in node.value.value
-                            ):
-                                self.violations.append(
-                                    RuleViolation(
-                                        file_path=self.file_path,
-                                        rule_id="cloud-security-gcp-credentials",
-                                        message=f"Hardcoded GCP service account key detected in variable '{target.id}'. "
-                                        "Use Google Secret Manager or Workload Identity.",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.CRITICAL,
-                                        category=RuleCategory.SECURITY,
-                                        cwe_id="CWE-798",
-                                        fix_applicability=FixApplicability.SAFE,
-                                    )
+                            self.violations.append(
+                                RuleViolation(
+                                    file_path=self.file_path,
+                                    rule_id="cloud-security-gcp-credentials",
+                                    message=f"Hardcoded GCP service account key detected in variable '{target.id}'. "
+                                    "Use Google Secret Manager or Workload Identity.",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.CRITICAL,
+                                    category=RuleCategory.SECURITY,
+                                    cwe_id="CWE-798",
+                                    fix_applicability=FixApplicability.SAFE,
                                 )
+                            )
 
     def _check_docker_secrets(self, node: ast.Assign) -> None:
         """Detect Docker secrets exposed in environment variables."""
         # Check for environment variable access patterns
-        if isinstance(node.value, ast.Call):
+        if isinstance(node.value, ast.Call):  # noqa: SIM102
             if (
                 isinstance(node.value.func, ast.Attribute)
                 and isinstance(node.value.func.value, ast.Name)
@@ -269,7 +266,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 for target in node.targets:
                     if isinstance(target, ast.Name):
                         var_name = target.id.lower()
-                        if any(
+                        if any(  # noqa: SIM102
                             secret in var_name for secret in ["secret", "key", "token", "password"]
                         ):
                             # Check if there's a default value (insecure)
@@ -298,22 +295,21 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 var_name = target.id.lower()
 
                 # Check for hardcoded K8s secrets
-                if "k8s_secret" in var_name or "kubernetes_secret" in var_name:
-                    if isinstance(node.value, ast.Constant):
-                        self.violations.append(
-                            RuleViolation(
-                                file_path=self.file_path,
-                                rule_id="cloud-security-k8s-secret-hardcoded",
-                                message=f"Hardcoded Kubernetes secret in variable '{target.id}'. "
-                                "Use Kubernetes Secret objects or external secret management.",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                cwe_id="CWE-798",
-                                fix_applicability=FixApplicability.SAFE,
-                            )
+                if ("k8s_secret" in var_name or "kubernetes_secret" in var_name) and isinstance(node.value, ast.Constant):
+                    self.violations.append(
+                        RuleViolation(
+                            file_path=self.file_path,
+                            rule_id="cloud-security-k8s-secret-hardcoded",
+                            message=f"Hardcoded Kubernetes secret in variable '{target.id}'. "
+                            "Use Kubernetes Secret objects or external secret management.",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-798",
+                            fix_applicability=FixApplicability.SAFE,
                         )
+                    )
 
     def _check_s3_acl_issues(self, node: ast.Call) -> None:
         """Detect S3 bucket ACL configuration issues."""
@@ -321,33 +317,31 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for S3 put_bucket_acl with public-read or public-read-write
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "put_bucket_acl":
-                for keyword in node.keywords:
-                    if keyword.arg == "ACL":
-                        if isinstance(keyword.value, ast.Constant):
-                            acl_value = keyword.value.value
-                            # Convert bytes to string if needed
-                            if isinstance(acl_value, bytes):
-                                acl_value = acl_value.decode("utf-8", errors="ignore")
-                            if isinstance(acl_value, str) and acl_value in (
-                                "public-read",
-                                "public-read-write",
-                            ):
-                                self.violations.append(
-                                    RuleViolation(
-                                        file_path=self.file_path,
-                                        rule_id="cloud-security-s3-public-acl",
-                                        message=f"S3 bucket ACL set to '{acl_value}' which allows public access. "
-                                        "Use bucket policies with least privilege.",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.CRITICAL,
-                                        category=RuleCategory.SECURITY,
-                                        cwe_id="CWE-732",
-                                        fix_applicability=FixApplicability.SUGGESTED,
-                                    )
-                                )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "put_bucket_acl":
+            for keyword in node.keywords:
+                if keyword.arg == "ACL" and isinstance(keyword.value, ast.Constant):
+                    acl_value = keyword.value.value
+                    # Convert bytes to string if needed
+                    if isinstance(acl_value, bytes):
+                        acl_value = acl_value.decode("utf-8", errors="ignore")
+                    if isinstance(acl_value, str) and acl_value in (
+                        "public-read",
+                        "public-read-write",
+                    ):
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-s3-public-acl",
+                                message=f"S3 bucket ACL set to '{acl_value}' which allows public access. "
+                                "Use bucket policies with least privilege.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-732",
+                                fix_applicability=FixApplicability.SUGGESTED,
+                            )
+                        )
 
     def _check_iam_misconfiguration(self, node: ast.Call) -> None:
         """Detect IAM policy misconfigurations."""
@@ -355,28 +349,27 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for overly permissive IAM policies (Action: "*")
-        if isinstance(node.func, ast.Attribute):
-            if "put_" in node.func.attr and "policy" in node.func.attr.lower():
-                # Look for PolicyDocument argument
-                for keyword in node.keywords:
-                    if keyword.arg and "Policy" in keyword.arg:
-                        # Check if policy contains wildcard actions
-                        policy_str = ast.unparse(keyword.value)
-                        if '"Action": "*"' in policy_str or "'Action': '*'" in policy_str:
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-iam-wildcard-action",
-                                    message="IAM policy uses wildcard ('*') for Action. "
-                                    "Specify explicit permissions for least privilege.",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-732",
-                                    fix_applicability=FixApplicability.MANUAL,
-                                )
+        if isinstance(node.func, ast.Attribute) and "put_" in node.func.attr and "policy" in node.func.attr.lower():
+            # Look for PolicyDocument argument
+            for keyword in node.keywords:
+                if keyword.arg and "Policy" in keyword.arg:
+                    # Check if policy contains wildcard actions
+                    policy_str = ast.unparse(keyword.value)
+                    if '"Action": "*"' in policy_str or "'Action': '*'" in policy_str:
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-iam-wildcard-action",
+                                message="IAM policy uses wildcard ('*') for Action. "
+                                "Specify explicit permissions for least privilege.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-732",
+                                fix_applicability=FixApplicability.MANUAL,
                             )
+                        )
 
     def _check_privileged_container(self, node: ast.Call) -> None:
         """Detect privileged container usage."""
@@ -384,25 +377,23 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for Docker container run with privileged=True
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("run", "create"):
-                for keyword in node.keywords:
-                    if keyword.arg == "privileged":
-                        if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-privileged-container",
-                                    message="Container running with privileged=True grants excessive permissions. "
-                                    "Use specific capabilities instead (--cap-add).",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-732",
-                                    fix_applicability=FixApplicability.SUGGESTED,
-                                )
-                            )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("run", "create"):
+            for keyword in node.keywords:
+                if keyword.arg == "privileged" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                    self.violations.append(
+                        RuleViolation(
+                            file_path=self.file_path,
+                            rule_id="cloud-security-privileged-container",
+                            message="Container running with privileged=True grants excessive permissions. "
+                            "Use specific capabilities instead (--cap-add).",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-732",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
     def _check_container_escape_risks(self, node: ast.Call) -> None:
         """Detect container escape attempt patterns."""
@@ -410,76 +401,70 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for Docker socket mounting (/var/run/docker.sock)
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("run", "create"):
-                for keyword in node.keywords:
-                    if keyword.arg == "volumes":
-                        # Check if docker.sock is mounted
-                        volumes_str = ast.unparse(keyword.value)
-                        if "/var/run/docker.sock" in volumes_str:
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-docker-socket-mount",
-                                    message="Docker socket (/var/run/docker.sock) mounted in container. "
-                                    "This allows container escape. Use Docker API with authentication.",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-250",
-                                    fix_applicability=FixApplicability.MANUAL,
-                                )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("run", "create"):
+            for keyword in node.keywords:
+                if keyword.arg == "volumes":
+                    # Check if docker.sock is mounted
+                    volumes_str = ast.unparse(keyword.value)
+                    if "/var/run/docker.sock" in volumes_str:
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-docker-socket-mount",
+                                message="Docker socket (/var/run/docker.sock) mounted in container. "
+                                "This allows container escape. Use Docker API with authentication.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-250",
+                                fix_applicability=FixApplicability.MANUAL,
                             )
+                        )
 
     def _check_storage_public_access(self, node: ast.Call) -> None:
         """Detect cloud storage public access configurations."""
         # Check for Azure Blob Storage public access
-        if self.has_azure and isinstance(node.func, ast.Attribute):
-            if "set_container_access_policy" in node.func.attr:
-                for keyword in node.keywords:
-                    if keyword.arg == "public_access":
-                        if isinstance(keyword.value, ast.Constant):
-                            if keyword.value.value in ("blob", "container"):
-                                self.violations.append(
-                                    RuleViolation(
-                                        file_path=self.file_path,
-                                        rule_id="cloud-security-azure-public-storage",
-                                        message="Azure Blob Container configured with public access. "
-                                        "Use SAS tokens or Azure AD authentication.",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        cwe_id="CWE-732",
-                                        fix_applicability=FixApplicability.SUGGESTED,
-                                    )
-                                )
+        if self.has_azure and isinstance(node.func, ast.Attribute) and "set_container_access_policy" in node.func.attr:
+            for keyword in node.keywords:
+                if keyword.arg == "public_access" and isinstance(keyword.value, ast.Constant) and keyword.value.value in ("blob", "container"):
+                    self.violations.append(
+                        RuleViolation(
+                            file_path=self.file_path,
+                            rule_id="cloud-security-azure-public-storage",
+                            message="Azure Blob Container configured with public access. "
+                            "Use SAS tokens or Azure AD authentication.",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-732",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
     def _check_serverless_timeout_abuse(self, node: ast.Call) -> None:
         """Detect serverless function timeout abuse risks."""
         # Check for AWS Lambda or Azure Functions with very long timeouts
-        if isinstance(node.func, ast.Attribute):
-            if "create_function" in node.func.attr or "update_function" in node.func.attr:
-                for keyword in node.keywords:
-                    if keyword.arg == "Timeout":
-                        if isinstance(keyword.value, ast.Constant):
-                            timeout = keyword.value.value
-                            if isinstance(timeout, int) and timeout > 600:  # > 10 minutes
-                                self.violations.append(
-                                    RuleViolation(
-                                        file_path=self.file_path,
-                                        rule_id="cloud-security-serverless-long-timeout",
-                                        message=f"Serverless function timeout set to {timeout}s (>10 min). "
-                                        "Long timeouts can lead to resource exhaustion.",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.MEDIUM,
-                                        category=RuleCategory.SECURITY,
-                                        cwe_id="CWE-770",
-                                        fix_applicability=FixApplicability.SAFE,
-                                    )
-                                )
+        if isinstance(node.func, ast.Attribute) and ("create_function" in node.func.attr or "update_function" in node.func.attr):
+            for keyword in node.keywords:
+                if keyword.arg == "Timeout" and isinstance(keyword.value, ast.Constant):
+                    timeout = keyword.value.value
+                    if isinstance(timeout, int) and timeout > 600:  # > 10 minutes  # noqa: PLR2004 - limit
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-serverless-long-timeout",
+                                message=f"Serverless function timeout set to {timeout}s (>10 min). "
+                                "Long timeouts can lead to resource exhaustion.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.MEDIUM,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-770",
+                                fix_applicability=FixApplicability.SAFE,
+                            )
+                        )
 
     def _check_terraform_state_secrets(self, node: ast.Assign) -> None:
         """Detect Terraform state file secrets exposure."""
@@ -488,35 +473,33 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                 var_name = target.id.lower()
 
                 # Check for Terraform state file references with secrets
-                if "terraform" in var_name and "state" in var_name:
-                    if isinstance(node.value, ast.Constant):
-                        if isinstance(node.value.value, str):
-                            # Check for common secret patterns in Terraform state
-                            secret_patterns = [
-                                "password",
-                                "secret",
-                                "api_key",
-                                "access_key",
-                                "private_key",
-                                "token",
-                                "credential",
-                            ]
-                            value_lower = node.value.value.lower()
-                            if any(pattern in value_lower for pattern in secret_patterns):
-                                self.violations.append(
-                                    RuleViolation(
-                                        file_path=self.file_path,
-                                        rule_id="cloud-security-terraform-state-secrets",
-                                        message=f"Terraform state file may contain secrets in variable '{target.id}'. "
-                                        "Use remote state with encryption and secret management.",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        cwe_id="CWE-798",
-                                        fix_applicability=FixApplicability.MANUAL,
-                                    )
-                                )
+                if "terraform" in var_name and "state" in var_name and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    # Check for common secret patterns in Terraform state
+                    secret_patterns = [
+                        "password",
+                        "secret",
+                        "api_key",
+                        "access_key",
+                        "private_key",
+                        "token",
+                        "credential",
+                    ]
+                    value_lower = node.value.value.lower()
+                    if any(pattern in value_lower for pattern in secret_patterns):
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-terraform-state-secrets",
+                                message=f"Terraform state file may contain secrets in variable '{target.id}'. "
+                                "Use remote state with encryption and secret management.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-798",
+                                fix_applicability=FixApplicability.MANUAL,
+                            )
+                        )
 
     def _check_serverless_cold_start(self, node: ast.FunctionDef) -> None:
         """Detect serverless cold start vulnerabilities."""
@@ -528,7 +511,7 @@ class CloudSecurityVisitor(ast.NodeVisitor):
                     for target in stmt.targets:
                         if isinstance(target, ast.Name):
                             var_name = target.id.lower()
-                            if any(
+                            if any(  # noqa: SIM102
                                 cred in var_name
                                 for cred in ["client", "session", "connection", "credentials"]
                             ):
@@ -556,27 +539,26 @@ class CloudSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for overly permissive RBAC rules
-        if isinstance(node.func, ast.Attribute):
-            if "create_role" in node.func.attr or "create_cluster_role" in node.func.attr:
-                for keyword in node.keywords:
-                    if keyword.arg == "rules":
-                        # Check for wildcard permissions
-                        rules_str = ast.unparse(keyword.value)
-                        if '"*"' in rules_str or "'*'" in rules_str:
-                            self.violations.append(
-                                RuleViolation(
-                                    file_path=self.file_path,
-                                    rule_id="cloud-security-k8s-rbac-wildcard",
-                                    message="Kubernetes RBAC rule uses wildcard ('*') permissions. "
-                                    "Apply least privilege principle with specific resource permissions.",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    cwe_id="CWE-732",
-                                    fix_applicability=FixApplicability.MANUAL,
-                                )
+        if isinstance(node.func, ast.Attribute) and ("create_role" in node.func.attr or "create_cluster_role" in node.func.attr):
+            for keyword in node.keywords:
+                if keyword.arg == "rules":
+                    # Check for wildcard permissions
+                    rules_str = ast.unparse(keyword.value)
+                    if '"*"' in rules_str or "'*'" in rules_str:
+                        self.violations.append(
+                            RuleViolation(
+                                file_path=self.file_path,
+                                rule_id="cloud-security-k8s-rbac-wildcard",
+                                message="Kubernetes RBAC rule uses wildcard ('*') permissions. "
+                                "Apply least privilege principle with specific resource permissions.",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                cwe_id="CWE-732",
+                                fix_applicability=FixApplicability.MANUAL,
                             )
+                        )
 
     def _check_container_escape_attempts(self, node: ast.Call) -> None:
         """Detect container escape attempt patterns in code."""

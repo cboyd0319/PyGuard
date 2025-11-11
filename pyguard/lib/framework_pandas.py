@@ -50,7 +50,7 @@ class PandasVisitor(ast.NodeVisitor):
 
         # PD002: inplace=True usage
         for keyword in node.keywords:
-            if keyword.arg == "inplace":
+            if keyword.arg == "inplace":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     self.violations.append(
                         RuleViolation(
@@ -105,7 +105,7 @@ class PandasVisitor(ast.NodeVisitor):
                 )
 
             # PD011: Use .to_numpy() instead of np.asarray() on DataFrame/Series
-            if isinstance(node.func.value, ast.Name) and node.func.value.id == "np":
+            if isinstance(node.func.value, ast.Name) and node.func.value.id == "np":  # noqa: SIM102
                 if node.func.attr in ("asarray", "array") and len(node.args) > 0:
                     self.violations.append(
                         RuleViolation(
@@ -134,7 +134,7 @@ class PandasVisitor(ast.NodeVisitor):
             return
 
         # PD007: Iterating over DataFrame with .iterrows()
-        if isinstance(node.iter, ast.Call):
+        if isinstance(node.iter, ast.Call):  # noqa: SIM102
             if isinstance(node.iter.func, ast.Attribute):
                 if node.iter.func.attr == "iterrows":
                     self.violations.append(

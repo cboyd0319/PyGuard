@@ -92,8 +92,8 @@ class DashSecurityVisitor(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check assignments for security issues."""
         # Check for SQL injection in query assignments
-        if isinstance(node.value, ast.BinOp):
-            if isinstance(node.value.op, (ast.Add, ast.Mod)):
+        if isinstance(node.value, ast.BinOp):  # noqa: SIM102
+            if isinstance(node.value.op, (ast.Add, ast.Mod)):  # noqa: SIM102
                 if self._contains_sql_keywords(node.value):
                     self.violations.append(
                         RuleViolation(
@@ -114,7 +114,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
     def _check_debug_mode(self, node: ast.Call) -> None:
         """Check for debug mode enabled in production."""
         for keyword in node.keywords:
-            if keyword.arg == "debug":
+            if keyword.arg == "debug":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     self.violations.append(
                         RuleViolation(
@@ -134,7 +134,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
         """Check for XSS risks in HTML/Markdown components."""
         # Check for dangerously_allow_html or similar dangerous options
         for keyword in node.keywords:
-            if keyword.arg == "dangerously_allow_html":
+            if keyword.arg == "dangerously_allow_html":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     # Check if content includes user input
                     for arg in node.args:
@@ -157,7 +157,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute) and node.func.attr == "Markdown":
             # Check if children property contains f-strings
             for keyword in node.keywords:
-                if keyword.arg == "children":
+                if keyword.arg == "children":  # noqa: SIM102
                     if isinstance(keyword.value, ast.JoinedStr):
                         self.violations.append(
                             RuleViolation(
@@ -179,7 +179,7 @@ class DashSecurityVisitor(ast.NodeVisitor):
 
     def _is_database_query(self, node: ast.Call) -> bool:
         """Check if this is a database query call."""
-        if isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
             if node.func.attr in ("execute", "query", "raw", "sql"):
                 return True
         return False
@@ -264,7 +264,7 @@ def fix_dash_security(
     original_line = lines[line_idx]
 
     # Fix debug mode
-    if violation.rule_id == "DASH001" and violation.fix_applicability == FixApplicability.SAFE:
+    if violation.rule_id == "DASH001" and violation.fix_applicability == FixApplicability.SAFE:  # noqa: SIM102
         if "debug=True" in original_line:
             fixed_line = original_line.replace("debug=True", "debug=False")
             lines[line_idx] = fixed_line

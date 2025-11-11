@@ -1,7 +1,7 @@
 """Unit tests for enhanced detections module."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.enhanced_detections import (
     AuthenticationBypassDetector,

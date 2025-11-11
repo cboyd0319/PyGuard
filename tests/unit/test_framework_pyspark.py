@@ -13,12 +13,13 @@ Tests cover:
 
 import ast
 from pathlib import Path
+
 import pytest
 
 from pyguard.lib.framework_pyspark import (
+    PySparkSecurityVisitor,
     analyze_pyspark_security,
     fix_pyspark_security,
-    PySparkSecurityVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -322,8 +323,8 @@ class TestPySparkAutoFix:
     def test_fix_sql_injection(self):
         """Test auto-fix adds comment for SQL injection."""
         code = """spark.sql(f"SELECT * FROM users WHERE id = {user_id}")"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="PYSPARK001",
             message="SQL injection",
@@ -334,7 +335,7 @@ class TestPySparkAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_pyspark_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -343,8 +344,8 @@ class TestPySparkAutoFix:
     def test_fix_hardcoded_credentials(self):
         """Test auto-fix adds comment for hardcoded credentials."""
         code = """.option("password", "secret123")"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="PYSPARK009",
             message="Hardcoded credential",
@@ -355,7 +356,7 @@ class TestPySparkAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_pyspark_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -364,8 +365,8 @@ class TestPySparkAutoFix:
     def test_no_fix_for_safe_code(self):
         """Test that safe code is not modified."""
         code = """spark.read.table("users")"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="PYSPARK999",  # Non-existent rule
             message="Test",
@@ -376,7 +377,7 @@ class TestPySparkAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_pyspark_security(Path("test.py"), code, violation)
         assert not modified
         assert fixed_code == code

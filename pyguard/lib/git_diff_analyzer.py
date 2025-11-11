@@ -208,7 +208,7 @@ class GitDiffAnalyzer:
                 if line:
                     # Format: added\tdeleted\tfilename
                     parts = line.split("\t")
-                    if len(parts) >= 3:
+                    if len(parts) >= 3:  # noqa: PLR2004 - threshold
                         try:
                             added_lines += int(parts[0])
                             deleted_lines += int(parts[1])

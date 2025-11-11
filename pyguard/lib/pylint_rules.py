@@ -39,7 +39,7 @@ class PylintVisitor(ast.NodeVisitor):
         """Detect function-related issues (PLR0911-PLR0917, PLW0120-PLW0129)."""
         # PLR0911: Too many return statements
         returns = [n for n in ast.walk(node) if isinstance(n, ast.Return)]
-        if len(returns) > 6:
+        if len(returns) > 6:  # noqa: PLR2004 - max returns
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0911",
@@ -59,7 +59,7 @@ class PylintVisitor(ast.NodeVisitor):
             if isinstance(child, (ast.If, ast.For, ast.While, ast.ExceptHandler)):
                 branches += 1
 
-        if branches > 12:
+        if branches > 12:  # noqa: PLR2004 - max branches
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0912",
@@ -78,7 +78,7 @@ class PylintVisitor(ast.NodeVisitor):
         if node.args.vararg or node.args.kwarg:
             total_args += 1
 
-        if total_args > 5:
+        if total_args > 5:  # noqa: PLR2004 - max args
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0913",
@@ -94,7 +94,7 @@ class PylintVisitor(ast.NodeVisitor):
 
         # PLR0915: Too many statements
         statements = [n for n in ast.walk(node) if isinstance(n, ast.stmt)]
-        if len(statements) > 50:
+        if len(statements) > 50:  # noqa: PLR2004 - max statements
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0915",
@@ -134,7 +134,7 @@ class PylintVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: PLR0912 - Complex class analysis requires many checks
         """Detect class-related issues (PLR0901-PLR0904, PLE0102-PLE0116)."""
         # PLR0902: Too many instance attributes
         instance_attrs = set()
@@ -148,7 +148,7 @@ class PylintVisitor(ast.NodeVisitor):
                             ):
                                 instance_attrs.add(target.attr)
 
-        if len(instance_attrs) > 7:
+        if len(instance_attrs) > 7:  # noqa: PLR2004 - max attributes
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0902",
@@ -168,7 +168,7 @@ class PylintVisitor(ast.NodeVisitor):
             if isinstance(child, ast.FunctionDef) and not child.name.startswith("_"):
                 public_methods += 1
 
-        if public_methods < 2 and len(node.body) > 1:
+        if public_methods < 2 and len(node.body) > 1:  # noqa: PLR2004 - min methods
             # Only flag if class has more than just __init__
             methods = [m for m in node.body if isinstance(m, ast.FunctionDef)]
             if len(methods) > 1 or (len(methods) == 1 and methods[0].name != "__init__"):
@@ -186,7 +186,7 @@ class PylintVisitor(ast.NodeVisitor):
                 )
 
         # PLR0904: Too many public methods
-        if public_methods > 20:
+        if public_methods > 20:  # noqa: PLR2004 - max methods
             self.violations.append(
                 RuleViolation(
                     rule_id="PLR0904",
@@ -227,11 +227,11 @@ class PylintVisitor(ast.NodeVisitor):
         if isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.Or):
             isinstance_calls = []
             for value in node.test.values:
-                if isinstance(value, ast.Call):
+                if isinstance(value, ast.Call):  # noqa: SIM102
                     if isinstance(value.func, ast.Name) and value.func.id == "isinstance":
                         isinstance_calls.append(value)
 
-            if len(isinstance_calls) >= 2:
+            if len(isinstance_calls) >= 2:  # noqa: PLR2004 - min isinstance calls
                 # Check if they all check the same variable
                 first_arg = isinstance_calls[0].args[0]
                 if all(
@@ -254,7 +254,7 @@ class PylintVisitor(ast.NodeVisitor):
                     )
 
         # PLW0125: Using type() instead of isinstance()
-        if isinstance(node.test, ast.Compare) and isinstance(node.test.left, ast.Call):
+        if isinstance(node.test, ast.Compare) and isinstance(node.test.left, ast.Call):  # noqa: SIM102
             if isinstance(node.test.left.func, ast.Name) and node.test.left.func.id == "type":
                 self.violations.append(
                     RuleViolation(
@@ -313,8 +313,8 @@ class PylintVisitor(ast.NodeVisitor):
                     )
 
         # PLW0127: Self-comparison (x == x)
-        if len(node.ops) == 1 and len(node.comparators) == 1:
-            if isinstance(node.left, ast.Name) and isinstance(node.comparators[0], ast.Name):
+        if len(node.ops) == 1 and len(node.comparators) == 1:  # noqa: SIM102
+            if isinstance(node.left, ast.Name) and isinstance(node.comparators[0], ast.Name):  # noqa: SIM102
                 if node.left.id == node.comparators[0].id:
                     self.violations.append(
                         RuleViolation(

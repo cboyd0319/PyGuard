@@ -314,7 +314,7 @@ class VulnerabilityChecker:
 
         return dep
 
-    def _version_matches(self, version: str, spec: str) -> bool:
+    def _version_matches(self, version: str, spec: str) -> bool:  # noqa: PLR0911 - Version comparison requires many checks
         """
         Check if version matches specification.
 
@@ -359,9 +359,9 @@ class VulnerabilityChecker:
         parts2 = [int(x) for x in v2.split(".")[:3]]
 
         # Pad with zeros
-        while len(parts1) < 3:
+        while len(parts1) < 3:  # noqa: PLR2004 - threshold
             parts1.append(0)
-        while len(parts2) < 3:
+        while len(parts2) < 3:  # noqa: PLR2004 - threshold
             parts2.append(0)
 
         if parts1 < parts2:

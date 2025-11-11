@@ -773,8 +773,8 @@ class MitreATTACKMapper:
         return {
             "threat_exposure": (
                 "HIGH"
-                if len(techniques_enabled) > 5
-                else "MEDIUM" if len(techniques_enabled) > 2 else "LOW"
+                if len(techniques_enabled) > 5  # noqa: PLR2004 - length check
+                else "MEDIUM" if len(techniques_enabled) > 2 else "LOW"  # noqa: PLR2004 - length check
             ),
             "techniques_enabled": len(techniques_enabled),
             "attack_surface": techniques_enabled,

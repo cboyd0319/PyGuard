@@ -53,7 +53,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
     def _check_unnecessary_return_none(self, node: ast.FunctionDef) -> None:
         """RET501: Check for explicit 'return None' that can be simplified."""
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Return) and isinstance(stmt.value, ast.Constant):
+            if isinstance(stmt, ast.Return) and isinstance(stmt.value, ast.Constant):  # noqa: SIM102
                 if stmt.value.value is None:
                     self.violations.append(
                         RuleViolation(
@@ -144,7 +144,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
                 if isinstance(target, ast.Name):
                     # Check if next statement is return with same variable
                     next_stmt = node.body[i + 1]
-                    if isinstance(next_stmt, ast.Return) and isinstance(next_stmt.value, ast.Name):
+                    if isinstance(next_stmt, ast.Return) and isinstance(next_stmt.value, ast.Name):  # noqa: SIM102
                         if next_stmt.value.id == target.id:
                             self.violations.append(
                                 RuleViolation(

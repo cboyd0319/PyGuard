@@ -72,7 +72,7 @@ class PerformanceProfiler(ast.NodeVisitor):
         self.current_line = node.lineno
 
         # Check for repeated list() or dict() calls
-        if isinstance(node.func, ast.Name):
+        if isinstance(node.func, ast.Name):  # noqa: SIM102
             if node.func.id in ["list", "dict", "set", "tuple"]:
                 # Check if called multiple times with same argument
                 pass
@@ -164,14 +164,14 @@ class PerformanceProfiler(ast.NodeVisitor):
     def _has_list_append_in_loop(self, node: ast.For) -> bool:
         """Check if loop uses list.append()."""
         for child in ast.walk(node):
-            if isinstance(child, ast.Call):
+            if isinstance(child, ast.Call):  # noqa: SIM102
                 if isinstance(child.func, ast.Attribute) and child.func.attr == "append":
                     return True
         return False
 
     def _is_re_match_call(self, node: ast.Call) -> bool:
         """Check if call is re.match()."""
-        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):  # noqa: SIM102
             if node.func.value.id == "re" and node.func.attr in [
                 "match",
                 "search",
@@ -190,7 +190,7 @@ class PerformanceProfiler(ast.NodeVisitor):
 
     def _is_sum_with_list(self, node: ast.Call) -> bool:
         """Check if sum() is called with list comprehension."""
-        if isinstance(node.func, ast.Name) and node.func.id == "sum":
+        if isinstance(node.func, ast.Name) and node.func.id == "sum":  # noqa: SIM102
             if node.args and isinstance(node.args[0], ast.ListComp):
                 return True
         return False
@@ -198,11 +198,11 @@ class PerformanceProfiler(ast.NodeVisitor):
     def _is_complex_comprehension(self, node: ast.ListComp) -> bool:
         """Check if list comprehension is complex."""
         # Count number of generators
-        if len(node.generators) > 2:
+        if len(node.generators) > 2:  # noqa: PLR2004 - threshold
             return True
 
         # Check for complex expressions
-        return len(list(ast.walk(node.elt))) > 10
+        return len(list(ast.walk(node.elt))) > 10  # noqa: PLR2004 - length check
 
     def analyze_file(self, file_path: Path) -> list[PerformanceIssue]:
         """

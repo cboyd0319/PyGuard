@@ -88,7 +88,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
 
     def visit_Await(self, node: ast.Await) -> None:
         """Check await expressions for async security issues."""
-        if self.has_tortoise_import:
+        if self.has_tortoise_import:  # noqa: SIM102
             # Check if awaiting a query that might have injection
             if isinstance(node.value, ast.Call):
                 self._check_async_query_injection(node.value)
@@ -200,7 +200,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
         func_name = self._get_func_name(node)
 
         # Check for aggregate functions with user input
-        if "aggregate" in func_name or "annotate" in func_name:
+        if "aggregate" in func_name or "annotate" in func_name:  # noqa: SIM102
             if self._uses_user_input_in_context(node.lineno):
                 self.violations.append(
                     RuleViolation(

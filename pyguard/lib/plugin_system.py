@@ -128,7 +128,7 @@ class PluginManager:
             return []
 
         plugin_files = []
-        import re
+        import re  # noqa: PLC0415 - Lazy import for performance, only needed when discovering plugins
 
         # Pattern: either 'plugin_*.py' or '<word>_plugin.py' where word is alphanumeric
         pattern = re.compile(r"^(plugin_\w+|[a-zA-Z0-9]+_plugin)\.py$")
@@ -368,7 +368,7 @@ class ExampleSecurityPlugin(PluginInterface):
             """Detect eval() function calls."""
             lines = []
             for node in ast.walk(tree):
-                if isinstance(node, ast.Call):
+                if isinstance(node, ast.Call):  # noqa: SIM102
                     if isinstance(node.func, ast.Name) and node.func.id == "eval":
                         lines.append(node.lineno)
             return lines

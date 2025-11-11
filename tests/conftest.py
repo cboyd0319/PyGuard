@@ -9,10 +9,10 @@ Following PyTest Architect Agent best practices:
 - No hidden state or dependencies
 """
 
+from pathlib import Path
 import random
 import shutil
 import tempfile
-from pathlib import Path
 
 import pytest
 

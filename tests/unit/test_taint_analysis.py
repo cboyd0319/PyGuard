@@ -1,9 +1,6 @@
 """Tests for enhanced taint analysis with cross-function tracking."""
 
 import ast
-from pathlib import Path
-
-import pytest
 
 from pyguard.lib.taint_analysis import (
     EnhancedTaintAnalyzer,

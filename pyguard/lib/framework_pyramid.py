@@ -292,7 +292,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             self.has_pyramid_import = True
         self.generic_visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef):  # noqa: PLR0912 - Complex Pyramid view analysis requires many checks
         """Analyze Pyramid view functions."""
         if not self.has_pyramid_import:
             self.generic_visit(node)
@@ -502,7 +502,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             if isinstance(child, ast.BinOp) and isinstance(child.op, ast.Add):
                 code = self._get_code_snippet(child)
                 # Check if concatenating paths with key
-                if any(keyword in code for keyword in ["/data/", "/path/", "path =", "key"]):
+                if any(keyword in code for keyword in ["/data/", "/path/", "path =", "key"]):  # noqa: SIM102
                     # Check if the parameter (key) is used without validation
                     if "key" in code:
                         self.issues.append(
@@ -541,7 +541,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
                     )
                     break
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call):  # noqa: PLR0912 - Complex Pyramid configuration analysis requires many checks
         """Analyze Pyramid configuration calls."""
         if not self.has_pyramid_import:
             self.generic_visit(node)
@@ -583,8 +583,8 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             elif len(node.args) >= 1 and isinstance(node.args[0], ast.Constant):
                 secret = str(node.args[0].value)
 
-            if secret:
-                if len(secret) < 32 or secret in ["secret", "changeme", "default"]:
+            if secret:  # noqa: SIM102
+                if len(secret) < 32 or secret in ["secret", "changeme", "default"]:  # noqa: PLR2004 - threshold
                     self.issues.append(
                         SecurityIssue(
                             severity="HIGH",
@@ -631,7 +631,7 @@ class PyramidSecurityVisitor(ast.NodeVisitor):
             pattern = None
             if "pattern" in kwargs:
                 pattern = kwargs["pattern"]
-            elif len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):
+            elif len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):  # noqa: PLR2004 - threshold
                 pattern = node.args[1].value
 
             if pattern and isinstance(pattern, str) and "/api" in pattern and "/v" not in pattern:

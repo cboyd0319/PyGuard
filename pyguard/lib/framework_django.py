@@ -49,7 +49,7 @@ class DjangoVisitor(ast.NodeVisitor):
 
         # DJ001: Django ORM .raw() SQL query - potential SQL injection
         if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "raw":
+            if node.func.attr == "raw":  # noqa: SIM102
                 # Check if SQL is using string formatting
                 if len(node.args) > 0:
                     sql_arg = node.args[0]
@@ -74,7 +74,7 @@ class DjangoVisitor(ast.NodeVisitor):
             # This is checked in visit_ClassDef
 
             # DJ012: Model .objects.get() without exception handling
-            if node.func.attr == "get" and isinstance(node.func.value, ast.Attribute):
+            if node.func.attr == "get" and isinstance(node.func.value, ast.Attribute):  # noqa: SIM102
                 if node.func.value.attr == "objects":
                     # Check if wrapped in try-except
                     # This requires parent context, handled in checker
@@ -91,7 +91,7 @@ class DjangoVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: PLR0912 - Complex Django model analysis requires many checks
         """Detect Django model and form issues (DJ006-DJ013)."""
         if not self.is_django_file:
             self.generic_visit(node)
@@ -189,7 +189,7 @@ class DjangoVisitor(ast.NodeVisitor):
         # DJ013: Django settings - DEBUG = True in production
         for target in node.targets:
             if isinstance(target, ast.Name):
-                if target.id == "DEBUG":
+                if target.id == "DEBUG":  # noqa: SIM102
                     if isinstance(node.value, ast.Constant) and node.value.value is True:
                         self.violations.append(
                             RuleViolation(
@@ -205,7 +205,7 @@ class DjangoVisitor(ast.NodeVisitor):
                         )
 
                 # DJ010: SECRET_KEY hardcoded
-                if target.id == "SECRET_KEY":
+                if target.id == "SECRET_KEY":  # noqa: SIM102
                     if isinstance(node.value, ast.Constant):
                         self.violations.append(
                             RuleViolation(

@@ -142,7 +142,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         # Check for Database initialization with user-controlled strings
         database_funcs = ["Database", "SqliteDatabase", "PostgresqlDatabase", "MySQLDatabase"]
 
-        if any(db_func in func_name for db_func in database_funcs):
+        if any(db_func in func_name for db_func in database_funcs):  # noqa: SIM102
             # Check if argument is a variable (not a constant string)
             if node.args:
                 first_arg = node.args[0]
@@ -171,7 +171,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         func_name = self._get_func_name(node)
 
         # Check for transactions without proper exception handling
-        if "atomic" in func_name or "transaction" in func_name:
+        if "atomic" in func_name or "transaction" in func_name:  # noqa: SIM102
             if not self._has_exception_handling_nearby(node):
                 self.violations.append(
                     RuleViolation(
@@ -214,7 +214,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         # Check for insert_many or bulk operations without validation
         bulk_operations = ["insert_many", "bulk_create", "bulk_update"]
 
-        if any(bulk in func_name for bulk in bulk_operations):
+        if any(bulk in func_name for bulk in bulk_operations):  # noqa: SIM102
             if not self._has_validation_nearby(node):
                 self.violations.append(
                     RuleViolation(
@@ -234,7 +234,7 @@ class PeeweeSecurityVisitor(ast.NodeVisitor):
         # Check for exposure of internal metadata
         sensitive_attrs = ["_meta", "_schema", "_data", "dirty_fields"]
 
-        if node.attr in sensitive_attrs:
+        if node.attr in sensitive_attrs:  # noqa: SIM102
             # Check if this is in a potentially public context
             if self._in_public_context(node):
                 self.violations.append(

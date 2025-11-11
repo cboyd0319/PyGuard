@@ -240,28 +240,26 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         """Check for account enumeration via timing attacks (AUTH003)."""
         # Look for string comparison in authentication functions
         for child in ast.walk(node):
-            if isinstance(child, ast.Compare):
-                # Check if comparing passwords or credentials directly
-                if isinstance(child.left, ast.Name):
-                    if any(
-                        term in child.left.id.lower()
-                        for term in ["password", "pwd", "secret", "token"]
-                    ):
-                        # Using == operator instead of constant-time comparison
-                        if any(isinstance(op, ast.Eq) for op in child.ops):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="AUTH003",
-                                    file_path=self.file_path,
-                                    line_number=child.lineno,
-                                    column=child.col_offset,
-                                    code_snippet=self._get_line(child.lineno),
-                                    message="Password comparison vulnerable to timing attacks (use constant-time comparison)",
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    fix_applicability=FixApplicability.SUGGESTED,
-                                )
+            if isinstance(child, ast.Compare) and isinstance(child.left, ast.Name):  # noqa: SIM102
+                if any(  # noqa: SIM102
+                    term in child.left.id.lower()
+                    for term in ["password", "pwd", "secret", "token"]
+                ):
+                    # Using == operator instead of constant-time comparison
+                    if any(isinstance(op, ast.Eq) for op in child.ops):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="AUTH003",
+                                file_path=self.file_path,
+                                line_number=child.lineno,
+                                column=child.col_offset,
+                                code_snippet=self._get_line(child.lineno),
+                                message="Password comparison vulnerable to timing attacks (use constant-time comparison)",
+                                severity=RuleSeverity.MEDIUM,
+                                category=RuleCategory.SECURITY,
+                                fix_applicability=FixApplicability.SUGGESTED,
                             )
+                        )
 
     def _check_session_fixation(self, node: ast.FunctionDef) -> None:
         """Check for session fixation vulnerabilities (AUTH004)."""
@@ -277,7 +275,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     if child.func.attr in ("regenerate", "regenerate_id", "new"):
                         has_regeneration = True
                         break
-                elif isinstance(child.func, ast.Name):
+                elif isinstance(child.func, ast.Name):  # noqa: SIM102
                     if "regenerate" in child.func.id.lower():
                         has_regeneration = True
                         break
@@ -297,7 +295,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_missing_authentication(self, node: ast.FunctionDef) -> None:
+    def _check_missing_authentication(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex authentication detection requires many checks
         """Check for missing authentication on sensitive operations (AUTH005)."""
         # Skip login/auth/public routes (they don't need authentication)
         if any(
@@ -316,7 +314,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 ):
                     has_auth_decorator = True
                     break
-            elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):
+            elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):  # noqa: SIM102
                 if any(
                     term in decorator.func.id.lower()
                     for term in ["login", "auth", "require", "permission"]
@@ -328,15 +326,14 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         is_route = False
         is_sensitive_method = False
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Attribute):
-                    method = decorator.func.attr
-                    if method in ("route", "get", "post", "put", "delete", "patch"):
-                        is_route = True
-                        # POST, PUT, DELETE, PATCH are typically sensitive
-                        if method in ("post", "put", "delete", "patch"):
-                            is_sensitive_method = True
-                        break
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
+                method = decorator.func.attr
+                if method in ("route", "get", "post", "put", "delete", "patch"):
+                    is_route = True
+                    # POST, PUT, DELETE, PATCH are typically sensitive
+                    if method in ("post", "put", "delete", "patch"):
+                        is_sensitive_method = True
+                    break
 
         # Check for sensitive path patterns in route decorator arguments
         has_sensitive_path = False
@@ -369,7 +366,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_idor_vulnerability(self, node: ast.FunctionDef) -> None:
+    def _check_idor_vulnerability(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex IDOR detection requires many checks
         """Check for Insecure Direct Object References (AUTH006)."""
         # Check if function accesses objects by ID
         has_id_param = False
@@ -404,7 +401,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
             elif isinstance(child, ast.If):
                 # Check for ownership verification
                 for cmp_child in ast.walk(child.test):
-                    if isinstance(cmp_child, ast.Compare):
+                    if isinstance(cmp_child, ast.Compare):  # noqa: SIM102
                         if isinstance(cmp_child.left, ast.Attribute) and (
                             "user" in cmp_child.left.attr.lower()
                             or "owner" in cmp_child.left.attr.lower()
@@ -466,24 +463,21 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                     has_exp = True
                     break
                 # Check if it's a tracked variable with exp
-                if isinstance(keyword.value, ast.Name):
-                    if keyword.value.id in self.jwt_payloads_with_exp:
-                        has_exp = True
-                        break
+                if isinstance(keyword.value, ast.Name) and keyword.value.id in self.jwt_payloads_with_exp:
+                    has_exp = True
+                    break
 
         # Check positional arguments
-        if not has_exp and node.args:
-            # First argument is usually the payload
-            if node.args:
-                first_arg = node.args[0]
+        if not has_exp and node.args and node.args:
+            first_arg = node.args[0]
 
-                # Check if it's a dict literal
-                if dict_has_exp(first_arg):
+            # Check if it's a dict literal
+            if dict_has_exp(first_arg):
+                has_exp = True
+            # Check if it's a tracked variable with exp
+            elif isinstance(first_arg, ast.Name):  # noqa: SIM102
+                if first_arg.id in self.jwt_payloads_with_exp:
                     has_exp = True
-                # Check if it's a tracked variable with exp
-                elif isinstance(first_arg, ast.Name):
-                    if first_arg.id in self.jwt_payloads_with_exp:
-                        has_exp = True
 
         if not has_exp:
             self.violations.append(
@@ -537,7 +531,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 elif isinstance(arg, ast.GeneratorExp):
                     # Check generator expression for random usage
                     for child in ast.walk(arg):
-                        if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                        if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):  # noqa: SIM102
                             if (
                                 isinstance(child.func.value, ast.Name)
                                 and child.func.value.id == "random"
@@ -568,7 +562,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
             # Check for setting user roles/permissions from request
             attr_name = target.attr.lower()
-            if any(
+            if any(  # noqa: SIM102
                 term in attr_name
                 for term in ["role", "permission", "admin", "is_staff", "is_superuser"]
             ):
@@ -591,7 +585,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                                     fix_applicability=FixApplicability.NONE,
                                 )
                             )
-                    elif isinstance(node.value.value, ast.Name):
+                    elif isinstance(node.value.value, ast.Name):  # noqa: SIM102
                         # Check patterns like request['role'], form['role'], data['role']
                         if node.value.value.id in (
                             "request",
@@ -669,10 +663,8 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         cookie_value_var = None
 
         # Check positional and keyword arguments
-        if len(node.args) >= 1:
-            # First arg is usually the cookie name
-            if isinstance(node.args[0], ast.Constant):
-                cookie_name = node.args[0].value
+        if len(node.args) >= 1 and isinstance(node.args[0], ast.Constant):
+            cookie_name = node.args[0].value
 
         for keyword in node.keywords:
             if keyword.arg in ("key", "name"):
@@ -682,11 +674,11 @@ class AuthSecurityVisitor(ast.NodeVisitor):
                 cookie_value_var = keyword.value.id
 
         # Also check second positional arg for value
-        if len(node.args) >= 2 and isinstance(node.args[1], ast.Name):
+        if len(node.args) >= 2 and isinstance(node.args[1], ast.Name):  # noqa: PLR2004 - threshold
             cookie_value_var = node.args[1].id
 
         # Check if it's a remember me cookie storing sensitive data
-        if cookie_name and isinstance(cookie_name, str) and "remember" in cookie_name.lower():
+        if cookie_name and isinstance(cookie_name, str) and "remember" in cookie_name.lower():  # noqa: SIM102
             if cookie_value_var and any(
                 term in cookie_value_var.lower()
                 for term in ["password", "pwd", "credential", "secret"]
@@ -715,18 +707,15 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         min_length = 0
 
         for child in ast.walk(node):
-            if isinstance(child, ast.Compare):
-                # Check for len(password) comparisons
-                if isinstance(child.left, ast.Call):
-                    if isinstance(child.left.func, ast.Name) and child.left.func.id == "len":
-                        for comparator in child.comparators:
-                            if isinstance(comparator, ast.Constant) and isinstance(
-                                comparator.value, int
-                            ):
-                                min_length = comparator.value
-                                has_length_check = True
+            if isinstance(child, ast.Compare) and isinstance(child.left, ast.Call) and isinstance(child.left.func, ast.Name) and child.left.func.id == "len":
+                for comparator in child.comparators:
+                    if isinstance(comparator, ast.Constant) and isinstance(
+                        comparator.value, int
+                    ):
+                        min_length = comparator.value
+                        has_length_check = True
 
-        if has_length_check and min_length < 8:
+        if has_length_check and min_length < 8:  # noqa: PLR2004 - threshold
             self.violations.append(
                 RuleViolation(
                     rule_id="AUTH013",
@@ -746,26 +735,24 @@ class AuthSecurityVisitor(ast.NodeVisitor):
         # Check if comparing authentication-related strings
         if isinstance(node.left, ast.Name):
             var_name = node.left.id.lower()
-            if any(term in var_name for term in ["password", "token", "user", "auth"]):
-                # Check if using == without null byte protection
-                if any(isinstance(op, ast.Eq) for op in node.ops):
-                    # Look for string comparisons without encoding checks
-                    for comparator in node.comparators:
-                        if isinstance(comparator, (ast.Constant, ast.Name, ast.Subscript)):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="AUTH014",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    code_snippet=self._get_line(node.lineno),
-                                    message="Authentication comparison may be vulnerable to null byte injection",
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    fix_applicability=FixApplicability.NONE,
-                                )
+            if any(term in var_name for term in ["password", "token", "user", "auth"]) and any(isinstance(op, ast.Eq) for op in node.ops):
+                # Look for string comparisons without encoding checks
+                for comparator in node.comparators:
+                    if isinstance(comparator, (ast.Constant, ast.Name, ast.Subscript)):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="AUTH014",
+                                file_path=self.file_path,
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                code_snippet=self._get_line(node.lineno),
+                                message="Authentication comparison may be vulnerable to null byte injection",
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                fix_applicability=FixApplicability.NONE,
                             )
-                            break
+                        )
+                        break
 
     def _check_ldap_injection(self, node: ast.Call) -> None:
         """Check for LDAP injection in authentication (AUTH015)."""

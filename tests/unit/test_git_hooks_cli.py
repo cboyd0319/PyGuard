@@ -1,9 +1,9 @@
 """Tests for git hooks CLI."""
 
+from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

@@ -222,7 +222,7 @@ class MLRiskScorer:
                 f"Credential exposure risk: {int(features['hardcoded_strings'])} hardcoded secrets"
             )
 
-        if features.get("sql_patterns", 0) > 2:
+        if features.get("sql_patterns", 0) > 2:  # noqa: PLR2004 - threshold
             score += 0.15
             factors.append(
                 f"SQL injection risk: {int(features['sql_patterns'])} SQL patterns detected"
@@ -234,12 +234,12 @@ class MLRiskScorer:
                 f"Error handling issue: {int(features['bare_except'])} bare except clauses"
             )
 
-        if features.get("max_nesting", 0) > 10:
+        if features.get("max_nesting", 0) > 10:  # noqa: PLR2004 - threshold
             score += 0.1
             factors.append(f"Complexity risk: nesting level {int(features['max_nesting'])}")
 
         # Network operations increase risk
-        if features.get("network_count", 0) > 3:
+        if features.get("network_count", 0) > 3:  # noqa: PLR2004 - threshold
             score += 0.1
             factors.append(f"Network security: {int(features['network_count'])} network operations")
 
@@ -247,11 +247,11 @@ class MLRiskScorer:
         score = min(1.0, score)
 
         # Determine severity
-        if score >= 0.8:
+        if score >= 0.8:  # noqa: PLR2004 - threshold
             severity = "CRITICAL"
-        elif score >= 0.6:
+        elif score >= 0.6:  # noqa: PLR2004 - threshold
             severity = "HIGH"
-        elif score >= 0.3:
+        elif score >= 0.3:  # noqa: PLR2004 - threshold
             severity = "MEDIUM"
         else:
             severity = "LOW"
@@ -285,7 +285,7 @@ class MLRiskScorer:
         if features.get("hardcoded_strings", 0) > 0:
             predictions.append(("hardcoded_credentials", 0.80))
 
-        if features.get("sql_patterns", 0) > 2:
+        if features.get("sql_patterns", 0) > 2:  # noqa: PLR2004 - threshold
             predictions.append(("sql_injection", 0.75))
 
         # Return highest confidence prediction
@@ -361,12 +361,12 @@ class AnomalyDetector:
         """Check for code obfuscation indicators."""
         # Long single-line statements
         lines = code.split("\n")
-        long_lines = [line for line in lines if len(line) > 200]
-        if len(long_lines) > 3:
+        long_lines = [line for line in lines if len(line) > 200]  # noqa: PLR2004 - max line length
+        if len(long_lines) > 3:  # noqa: PLR2004 - threshold
             return True
 
         # Excessive use of chr() or ord()
-        if code.count("chr(") > 5 or code.count("ord(") > 5:
+        if code.count("chr(") > 5 or code.count("ord(") > 5:  # noqa: PLR2004 - threshold
             return True
 
         # Base64 patterns
@@ -381,14 +381,14 @@ class AnomalyDetector:
 
         # Hex encoded strings
         hex_pattern = r"\\x[0-9a-fA-F]{2}"
-        return len(re.findall(hex_pattern, code)) > 10
+        return len(re.findall(hex_pattern, code)) > 10  # noqa: PLR2004 - threshold
 
     def _check_suspicious_imports(self, code: str) -> list[str]:
         """Check for suspicious import statements."""
         suspicious = []
 
         # Network-related imports that could indicate malware
-        if "socket" in code and ("connect" in code or "bind" in code):
+        if "socket" in code and ("connect" in code or "bind" in code):  # noqa: SIM102
             if "server" not in code.lower():
                 suspicious.append("socket (potential backdoor)")
 

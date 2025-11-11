@@ -3,8 +3,8 @@ Tests for string operations module.
 """
 
 import ast
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.string_operations import (
     StringIssue,

@@ -60,7 +60,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
                 self._check_datetime_method(node, method_name)
         elif isinstance(node.func.value, ast.Attribute):
             # datetime.datetime.now(), datetime.date.today(), etc.
-            if isinstance(node.func.value.value, ast.Name):
+            if isinstance(node.func.value.value, ast.Name):  # noqa: SIM102
                 if node.func.value.value.id == "datetime":
                     parent_class = node.func.value.attr
                     self._check_datetime_class_method(node, parent_class, method_name)
@@ -166,7 +166,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
                 return True
 
         # For some methods, second positional argument is tz
-        return len(node.args) >= 2
+        return len(node.args) >= 2  # noqa: PLR2004 - length check
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Check for datetime attribute access."""

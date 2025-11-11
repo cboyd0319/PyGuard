@@ -105,9 +105,8 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 self.authenticated_routes.add(node.name)
 
             # Check for missing authentication on sensitive routes
-            if is_route and not has_auth_dependency:
-                if any(method in ("post", "put", "delete", "patch") for method in route_methods):
-                    self._check_missing_authentication(node, route_methods)
+            if is_route and not has_auth_dependency and any(method in ("post", "put", "delete", "patch") for method in route_methods):
+                self._check_missing_authentication(node, route_methods)
 
             # Check WebSocket-specific security
             if is_websocket:
@@ -161,7 +160,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         )
         self.visit_FunctionDef(func_def)
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: PLR0912 - Complex FastAPI security detection requires many checks
         """Detect security issues in function calls."""
         # Check for FastAPI app configuration issues
         if isinstance(node.func, ast.Name):
@@ -184,9 +183,8 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for add_middleware with CORSMiddleware
             if node.func.attr == "add_middleware":
                 # Check if first argument is CORSMiddleware
-                if len(node.args) > 0 and isinstance(node.args[0], ast.Name):
-                    if node.args[0].id == "CORSMiddleware":
-                        self._check_cors_misconfiguration(node)
+                if len(node.args) > 0 and isinstance(node.args[0], ast.Name) and node.args[0].id == "CORSMiddleware":
+                    self._check_cors_misconfiguration(node)
                 # Check middleware ordering
                 self._check_middleware_ordering(node)
 
@@ -236,54 +234,52 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 # Check if assigning from app.dependency_overrides
-                if isinstance(node.value, ast.Attribute):
-                    if node.value.attr == "dependency_overrides":
-                        filename = self.file_path.name.lower()
-                        if not (
-                            filename.startswith("test_")
-                            or filename.endswith("_test.py")
-                            or "tests/" in str(self.file_path)
-                        ):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI025",
-                                    message="Dependency override detected in production code - security risk (CWE-94)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.MANUAL,
-                                    fix_data={
-                                        "suggestion": "Remove dependency_overrides from production code - only use in tests",
-                                    },
-                                )
+                if isinstance(node.value, ast.Attribute) and node.value.attr == "dependency_overrides":
+                    filename = self.file_path.name.lower()
+                    if not (
+                        filename.startswith("test_")
+                        or filename.endswith("_test.py")
+                        or "tests/" in str(self.file_path)
+                    ):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI025",
+                                message="Dependency override detected in production code - security risk (CWE-94)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Remove dependency_overrides from production code - only use in tests",
+                                },
                             )
-            elif isinstance(target, ast.Subscript):
+                        )
+            elif isinstance(target, ast.Subscript):  # noqa: SIM102
                 # Check for app.dependency_overrides[key] = value
-                if isinstance(target.value, ast.Attribute):
-                    if target.value.attr == "dependency_overrides":
-                        filename = self.file_path.name.lower()
-                        if not (
-                            filename.startswith("test_")
-                            or filename.endswith("_test.py")
-                            or "tests/" in str(self.file_path)
-                        ):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI025",
-                                    message="Dependency override detected in production code - security risk (CWE-94)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.MANUAL,
-                                    fix_data={
-                                        "suggestion": "Remove dependency_overrides from production code - only use in tests",
-                                    },
-                                )
+                if isinstance(target.value, ast.Attribute) and target.value.attr == "dependency_overrides":
+                    filename = self.file_path.name.lower()
+                    if not (
+                        filename.startswith("test_")
+                        or filename.endswith("_test.py")
+                        or "tests/" in str(self.file_path)
+                    ):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI025",
+                                message="Dependency override detected in production code - security risk (CWE-94)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Remove dependency_overrides from production code - only use in tests",
+                                },
                             )
+                        )
 
         self.generic_visit(node)
 
@@ -300,23 +296,19 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
                 if arg_index >= default_offset:
                     default_value = node.args.defaults[arg_index - default_offset]
-                    if isinstance(default_value, ast.Call):
-                        if isinstance(default_value.func, ast.Name):
-                            if default_value.func.id == "Depends":
-                                return True
+                    if isinstance(default_value, ast.Call) and isinstance(default_value.func, ast.Name) and default_value.func.id == "Depends":
+                        return True
 
             # Check annotations
             if arg.annotation:
                 # Check for Depends(...) with authentication
                 if isinstance(arg.annotation, ast.Subscript):
-                    if isinstance(arg.annotation.value, ast.Name):
-                        if arg.annotation.value.id == "Annotated":
-                            # Look for Depends in the annotation
-                            return True
-                elif isinstance(arg.annotation, ast.Call):
-                    if isinstance(arg.annotation.func, ast.Name):
-                        if arg.annotation.func.id == "Depends":
-                            return True
+                    if isinstance(arg.annotation.value, ast.Name) and arg.annotation.value.id == "Annotated":
+                        # Look for Depends in the annotation
+                        return True
+                elif isinstance(arg.annotation, ast.Call):  # noqa: SIM102
+                    if isinstance(arg.annotation.func, ast.Name) and arg.annotation.func.id == "Depends":
+                        return True
         return False
 
     def _check_missing_authentication(self, node: ast.FunctionDef, methods: list[str]) -> None:
@@ -348,14 +340,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 has_origin_check = True
                 break
             # Look for .headers.get() calls
-            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
-                if stmt.func.attr == "get":
-                    # Check if getting 'origin' header
-                    if len(stmt.args) > 0:
-                        if isinstance(stmt.args[0], ast.Constant):
-                            if stmt.args[0].value == "origin":
-                                has_origin_check = True
-                                break
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr == "get" and len(stmt.args) > 0 and isinstance(stmt.args[0], ast.Constant) and stmt.args[0].value == "origin":
+                has_origin_check = True
+                break
 
         if not has_origin_check:
             self.violations.append(
@@ -380,56 +367,49 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for Query parameters used in unsafe operations
         query_params = []
         for arg in node.args.args:
-            if arg.annotation and isinstance(arg.annotation, ast.Call):
-                if isinstance(arg.annotation.func, ast.Name):
-                    if arg.annotation.func.id == "Query":
-                        query_params.append(arg.arg)
+            if arg.annotation and isinstance(arg.annotation, ast.Call) and isinstance(arg.annotation.func, ast.Name) and arg.annotation.func.id == "Query":
+                query_params.append(arg.arg)
 
         if query_params:
             # Check if query params are used in SQL/command operations
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Call):
-                    if isinstance(stmt.func, ast.Attribute):
-                        if stmt.func.attr in ("execute", "raw", "exec"):
-                            # Check if any query param is in the call
-                            for call_arg in stmt.args:
-                                if isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FASTAPI003",
-                                            message=f"Potential injection vulnerability: Query parameter may be used unsafely in {node.name}() (CWE-89)",
-                                            line_number=stmt.lineno,
-                                            column=stmt.col_offset,
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.MANUAL,
-                                            fix_data={
-                                                "suggestion": "Use parameterized queries or ORM methods instead of string formatting",
-                                            },
-                                        )
-                                    )
-                                    break
+                if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr in ("execute", "raw", "exec"):
+                    # Check if any query param is in the call
+                    for call_arg in stmt.args:
+                        if isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI003",
+                                    message=f"Potential injection vulnerability: Query parameter may be used unsafely in {node.name}() (CWE-89)",
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "suggestion": "Use parameterized queries or ORM methods instead of string formatting",
+                                    },
+                                )
+                            )
+                            break
 
     def _check_file_upload_security(self, node: ast.FunctionDef) -> None:
         """Check file upload routes for security issues."""
         # Look for File or UploadFile parameters
         has_file_upload = False
         for arg in node.args.args:
-            if arg.annotation and isinstance(arg.annotation, ast.Name):
-                if arg.annotation.id in ("File", "UploadFile"):
-                    has_file_upload = True
-                    break
+            if arg.annotation and isinstance(arg.annotation, ast.Name) and arg.annotation.id in ("File", "UploadFile"):
+                has_file_upload = True
+                break
 
         if has_file_upload:
             # Check for missing file size validation
             has_size_check = False
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Compare):
-                    if isinstance(stmt.left, ast.Attribute):
-                        if stmt.left.attr in ("size", "content_length"):
-                            has_size_check = True
-                            break
+                if isinstance(stmt, ast.Compare) and isinstance(stmt.left, ast.Attribute) and stmt.left.attr in ("size", "content_length"):
+                    has_size_check = True
+                    break
 
             if not has_size_check:
                 self.violations.append(
@@ -452,27 +432,23 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         """Check background tasks for privilege escalation risks."""
         # Look for BackgroundTasks usage
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr == "add_task":
-                        # Check if user context is preserved
-                        if len(stmt.args) > 0:
-                            # Warn about privilege escalation
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI005",
-                                    message=f"Background task in {node.name}() may execute with elevated privileges (CWE-269)",
-                                    line_number=stmt.lineno,
-                                    column=stmt.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.MANUAL,
-                                    fix_data={
-                                        "suggestion": "Ensure user context is passed to background task to prevent privilege escalation",
-                                    },
-                                )
-                            )
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr == "add_task" and len(stmt.args) > 0:
+                # Warn about privilege escalation
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI005",
+                        message=f"Background task in {node.name}() may execute with elevated privileges (CWE-269)",
+                        line_number=stmt.lineno,
+                        column=stmt.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Ensure user context is passed to background task to prevent privilege escalation",
+                        },
+                    )
+                )
 
     def _check_docs_exposure(self, node: ast.Call) -> None:
         """Check for API docs exposed in production."""
@@ -484,7 +460,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             if keyword.arg == "docs_url":
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is None:
                     docs_disabled = True
-            elif keyword.arg == "redoc_url":
+            elif keyword.arg == "redoc_url":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is None:
                     redoc_disabled = True
 
@@ -508,50 +484,46 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     def _check_cors_misconfiguration(self, node: ast.Call) -> None:
         """Check for CORS misconfiguration."""
         for keyword in node.keywords:
-            if keyword.arg == "allow_origins":
-                if isinstance(keyword.value, ast.List):
-                    for elt in keyword.value.elts:
-                        if isinstance(elt, ast.Constant):
-                            if elt.value == "*":
+            if keyword.arg == "allow_origins" and isinstance(keyword.value, ast.List):
+                for elt in keyword.value.elts:
+                    if isinstance(elt, ast.Constant) and elt.value == "*":
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI007",
+                                message="CORS configured with wildcard origin (*) - allows any origin (CWE-942)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Specify allowed origins explicitly instead of using wildcard",
+                                },
+                            )
+                        )
+
+            if keyword.arg == "allow_credentials" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                # Check if allow_origins is wildcard
+                for kw in node.keywords:
+                    if kw.arg == "allow_origins" and isinstance(kw.value, ast.List):
+                        for elt in kw.value.elts:
+                            if isinstance(elt, ast.Constant) and elt.value == "*":
                                 self.violations.append(
                                     RuleViolation(
-                                        rule_id="FASTAPI007",
-                                        message="CORS configured with wildcard origin (*) - allows any origin (CWE-942)",
+                                        rule_id="FASTAPI008",
+                                        message="CORS allows credentials with wildcard origin - dangerous configuration (CWE-942)",
                                         line_number=node.lineno,
                                         column=node.col_offset,
-                                        severity=RuleSeverity.HIGH,
+                                        severity=RuleSeverity.CRITICAL,
                                         category=RuleCategory.SECURITY,
                                         file_path=self.file_path,
                                         fix_applicability=FixApplicability.MANUAL,
                                         fix_data={
-                                            "suggestion": "Specify allowed origins explicitly instead of using wildcard",
+                                            "suggestion": "Cannot use allow_credentials=True with allow_origins=['*']",
                                         },
                                     )
                                 )
-
-            if keyword.arg == "allow_credentials":
-                if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
-                    # Check if allow_origins is wildcard
-                    for kw in node.keywords:
-                        if kw.arg == "allow_origins":
-                            if isinstance(kw.value, ast.List):
-                                for elt in kw.value.elts:
-                                    if isinstance(elt, ast.Constant) and elt.value == "*":
-                                        self.violations.append(
-                                            RuleViolation(
-                                                rule_id="FASTAPI008",
-                                                message="CORS allows credentials with wildcard origin - dangerous configuration (CWE-942)",
-                                                line_number=node.lineno,
-                                                column=node.col_offset,
-                                                severity=RuleSeverity.CRITICAL,
-                                                category=RuleCategory.SECURITY,
-                                                file_path=self.file_path,
-                                                fix_applicability=FixApplicability.MANUAL,
-                                                fix_data={
-                                                    "suggestion": "Cannot use allow_credentials=True with allow_origins=['*']",
-                                                },
-                                            )
-                                        )
 
     def _check_oauth2_misconfiguration(self, node: ast.Call) -> None:
         """Check OAuth2 configuration for security issues."""
@@ -570,28 +542,25 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
         # Check for insecure tokenUrl (HTTP instead of HTTPS)
         for keyword in node.keywords:
-            if keyword.arg == "tokenUrl":
-                if isinstance(keyword.value, ast.Constant):
-                    if isinstance(keyword.value.value, str):
-                        if keyword.value.value.startswith("http://"):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI009",
-                                    message="OAuth2 tokenUrl uses insecure HTTP - should use HTTPS (CWE-319)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                    fix_data={
-                                        "old_value": keyword.value.value,
-                                        "new_value": keyword.value.value.replace(
-                                            "http://", "https://"
-                                        ),
-                                    },
-                                )
-                            )
+            if keyword.arg == "tokenUrl" and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str) and keyword.value.value.startswith("http://"):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI009",
+                        message="OAuth2 tokenUrl uses insecure HTTP - should use HTTPS (CWE-319)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                        fix_data={
+                            "old_value": keyword.value.value,
+                            "new_value": keyword.value.value.replace(
+                                "http://", "https://"
+                            ),
+                        },
+                    )
+                )
 
     def _check_pydantic_validation_bypass(self, node: ast.Call) -> None:
         """Check for Pydantic validation bypasses."""
@@ -628,7 +597,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             elif keyword.arg == "httponly":
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     has_httponly = True
-            elif keyword.arg == "samesite" and isinstance(keyword.value, ast.Constant):
+            elif keyword.arg == "samesite" and isinstance(keyword.value, ast.Constant):  # noqa: SIM102
                 if keyword.value.value in ("lax", "strict"):
                     has_samesite = True
 
@@ -686,87 +655,84 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_jwt_algorithm_confusion(self, node: ast.FunctionDef) -> None:
+    def _check_jwt_algorithm_confusion(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex JWT validation requires many checks
         """Check for JWT algorithm confusion vulnerabilities (RS256 vs HS256)."""
         # Look for jwt.decode() calls in function body
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                # Check for jwt.decode() or JWT.decode()
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr == "decode":
-                        # Check if it's a JWT decode
-                        func_name = self._get_name(stmt.func.value)
-                        if func_name and "jwt" in func_name.lower():
-                            # Check for missing algorithm verification
-                            has_algorithms = False
-                            has_verify_signature = True  # Default is True
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr == "decode":
+                # Check if it's a JWT decode
+                func_name = self._get_name(stmt.func.value)
+                if func_name and "jwt" in func_name.lower():
+                    # Check for missing algorithm verification
+                    has_algorithms = False
+                    has_verify_signature = True  # Default is True
 
-                            for keyword in stmt.keywords:
-                                if keyword.arg == "algorithms":
-                                    has_algorithms = True
-                                    # Check for 'none' algorithm
-                                    if isinstance(keyword.value, ast.List):
-                                        for elt in keyword.value.elts:
-                                            if isinstance(elt, ast.Constant):
-                                                if (
-                                                    isinstance(elt.value, str)
-                                                    and elt.value.lower() == "none"
-                                                ):
-                                                    self.violations.append(
-                                                        RuleViolation(
-                                                            rule_id="FASTAPI014",
-                                                            message="JWT decode allows 'none' algorithm - bypasses signature verification (CWE-347)",
-                                                            line_number=stmt.lineno,
-                                                            column=stmt.col_offset,
-                                                            severity=RuleSeverity.CRITICAL,
-                                                            category=RuleCategory.SECURITY,
-                                                            file_path=self.file_path,
-                                                            fix_applicability=FixApplicability.SAFE,
-                                                            fix_data={
-                                                                "suggestion": "Remove 'none' from algorithms list",
-                                                            },
-                                                        )
-                                                    )
-                                elif keyword.arg == "verify_signature":
-                                    if (
-                                        isinstance(keyword.value, ast.Constant)
-                                        and keyword.value.value is False
-                                    ):
-                                        has_verify_signature = False
+                    for keyword in stmt.keywords:
+                        if keyword.arg == "algorithms":
+                            has_algorithms = True
+                            # Check for 'none' algorithm
+                            if isinstance(keyword.value, ast.List):
+                                for elt in keyword.value.elts:
+                                    if isinstance(elt, ast.Constant):  # noqa: SIM102
+                                        if (
+                                            isinstance(elt.value, str)
+                                            and elt.value.lower() == "none"
+                                        ):
+                                            self.violations.append(
+                                                RuleViolation(
+                                                    rule_id="FASTAPI014",
+                                                    message="JWT decode allows 'none' algorithm - bypasses signature verification (CWE-347)",
+                                                    line_number=stmt.lineno,
+                                                    column=stmt.col_offset,
+                                                    severity=RuleSeverity.CRITICAL,
+                                                    category=RuleCategory.SECURITY,
+                                                    file_path=self.file_path,
+                                                    fix_applicability=FixApplicability.SAFE,
+                                                    fix_data={
+                                                        "suggestion": "Remove 'none' from algorithms list",
+                                                    },
+                                                )
+                                            )
+                        elif keyword.arg == "verify_signature":
+                            if (
+                                isinstance(keyword.value, ast.Constant)
+                                and keyword.value.value is False
+                            ):
+                                has_verify_signature = False
 
-                            if not has_algorithms and has_verify_signature:
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FASTAPI015",
-                                        message="JWT decode missing 'algorithms' parameter - vulnerable to algorithm confusion (CWE-347)",
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.SAFE,
-                                        fix_data={
-                                            "suggestion": "Add algorithms=['HS256'] or algorithms=['RS256'] to jwt.decode()",
-                                        },
-                                    )
-                                )
+                    if not has_algorithms and has_verify_signature:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI015",
+                                message="JWT decode missing 'algorithms' parameter - vulnerable to algorithm confusion (CWE-347)",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data={
+                                    "suggestion": "Add algorithms=['HS256'] or algorithms=['RS256'] to jwt.decode()",
+                                },
+                            )
+                        )
 
-                            if not has_verify_signature:
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FASTAPI016",
-                                        message="JWT decode has signature verification disabled (CWE-347)",
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.CRITICAL,
-                                        category=RuleCategory.SECURITY,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.SAFE,
-                                        fix_data={
-                                            "suggestion": "Remove verify_signature=False or set to True",
-                                        },
-                                    )
-                                )
+                    if not has_verify_signature:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI016",
+                                message="JWT decode has signature verification disabled (CWE-347)",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
+                                fix_data={
+                                    "suggestion": "Remove verify_signature=False or set to True",
+                                },
+                            )
+                        )
 
     def _check_missing_rate_limiting(self, node: ast.FunctionDef) -> None:
         """Check for missing rate limiting on API routes."""
@@ -775,11 +741,9 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
 
         for decorator in node.decorator_list:
             # Check for @limiter.limit() or similar decorators
-            if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr in ("limit", "rate_limit"):
-                        has_rate_limit = True
-                        break
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr in ("limit", "rate_limit"):
+                has_rate_limit = True
+                break
 
         # Check for rate limiting dependency in function parameters
         for arg in node.args.args:
@@ -828,46 +792,26 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         if url_params:
             # Check if these params are used in HTTP request libraries
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Call):
-                    # Check for requests.get/post, httpx.get/post, urllib.request.urlopen
-                    if isinstance(stmt.func, ast.Attribute):
-                        if stmt.func.attr in (
-                            "get",
-                            "post",
-                            "put",
-                            "delete",
-                            "patch",
-                            "request",
-                            "urlopen",
-                        ):
-                            func_name = self._get_name(stmt.func.value)
-                            if func_name and func_name.lower() in ("requests", "httpx", "urllib"):
-                                # Check if URL param is used directly
-                                for call_arg in stmt.args:
-                                    if isinstance(call_arg, ast.Name):
-                                        if call_arg.id in url_params:
-                                            self.violations.append(
-                                                RuleViolation(
-                                                    rule_id="FASTAPI018",
-                                                    message=f"Potential SSRF: URL parameter '{call_arg.id}' used in HTTP request without validation (CWE-918)",
-                                                    line_number=stmt.lineno,
-                                                    column=stmt.col_offset,
-                                                    severity=RuleSeverity.HIGH,
-                                                    category=RuleCategory.SECURITY,
-                                                    file_path=self.file_path,
-                                                    fix_applicability=FixApplicability.MANUAL,
-                                                    fix_data={
-                                                        "parameter": call_arg.id,
-                                                        "suggestion": "Validate URL against allowlist or use URL parsing to check scheme/host",
-                                                    },
-                                                )
-                                            )
-                                    elif isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
-                                        # f-string or string concatenation with URL param
+                if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):  # noqa: SIM102
+                    if stmt.func.attr in (
+                        "get",
+                        "post",
+                        "put",
+                        "delete",
+                        "patch",
+                        "request",
+                        "urlopen",
+                    ):
+                        func_name = self._get_name(stmt.func.value)
+                        if func_name and func_name.lower() in ("requests", "httpx", "urllib"):
+                            # Check if URL param is used directly
+                            for call_arg in stmt.args:
+                                if isinstance(call_arg, ast.Name):
+                                    if call_arg.id in url_params:
                                         self.violations.append(
                                             RuleViolation(
                                                 rule_id="FASTAPI018",
-                                                message=f"Potential SSRF: URL constructed from user input in {node.name}() (CWE-918)",
+                                                message=f"Potential SSRF: URL parameter '{call_arg.id}' used in HTTP request without validation (CWE-918)",
                                                 line_number=stmt.lineno,
                                                 column=stmt.col_offset,
                                                 severity=RuleSeverity.HIGH,
@@ -875,10 +819,28 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                                 file_path=self.file_path,
                                                 fix_applicability=FixApplicability.MANUAL,
                                                 fix_data={
-                                                    "suggestion": "Validate URL against allowlist before making request",
+                                                    "parameter": call_arg.id,
+                                                    "suggestion": "Validate URL against allowlist or use URL parsing to check scheme/host",
                                                 },
                                             )
                                         )
+                                elif isinstance(call_arg, (ast.JoinedStr, ast.BinOp)):
+                                    # f-string or string concatenation with URL param
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FASTAPI018",
+                                            message=f"Potential SSRF: URL constructed from user input in {node.name}() (CWE-918)",
+                                            line_number=stmt.lineno,
+                                            column=stmt.col_offset,
+                                            severity=RuleSeverity.HIGH,
+                                            category=RuleCategory.SECURITY,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.MANUAL,
+                                            fix_data={
+                                                "suggestion": "Validate URL against allowlist before making request",
+                                            },
+                                        )
+                                    )
 
     def _check_missing_security_headers(self, node: ast.FunctionDef) -> None:
         """Check for missing security headers in responses."""
@@ -889,88 +851,77 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check for response.headers assignments
             if isinstance(stmt, ast.Assign):
                 for target in stmt.targets:
-                    if isinstance(target, ast.Subscript):
-                        if isinstance(target.value, ast.Attribute):
-                            if target.value.attr == "headers":
-                                has_response_headers = True
-                                # Check if security headers are set
-                                if isinstance(target.slice, ast.Constant):
-                                    header_name = target.slice.value
-                                    if isinstance(header_name, str):
-                                        if header_name.lower() in (
-                                            "strict-transport-security",
-                                            "hsts",
-                                        ):
-                                            return  # HSTS is set, no violation
+                    if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Attribute) and target.value.attr == "headers":
+                        has_response_headers = True
+                        # Check if security headers are set
+                        if isinstance(target.slice, ast.Constant):
+                            header_name = target.slice.value
+                            if isinstance(header_name, str):  # noqa: SIM102
+                                if header_name.lower() in (
+                                    "strict-transport-security",
+                                    "hsts",
+                                ):
+                                    return  # HSTS is set, no violation
 
         # Look for @app decorators to check if this is a route
         is_route = False
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
-                if decorator.func.attr in ("get", "post", "put", "delete", "patch"):
-                    is_route = True
-                    break
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr in ("get", "post", "put", "delete", "patch"):
+                is_route = True
+                break
 
         # Only warn for routes that return responses
         if is_route:
             # Check if function returns a Response object
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Return) and stmt.value:
-                    # Only flag if we see explicit response handling but no headers
-                    if isinstance(stmt.value, ast.Call):
-                        if isinstance(stmt.value.func, ast.Name):
-                            if stmt.value.func.id in ("Response", "JSONResponse", "HTMLResponse"):
-                                if not has_response_headers:
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FASTAPI019",
-                                            message=f"Route {node.name}() missing HSTS security header (CWE-523)",
-                                            line_number=node.lineno,
-                                            column=node.col_offset,
-                                            severity=RuleSeverity.MEDIUM,
-                                            category=RuleCategory.SECURITY,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.MANUAL,
-                                            fix_data={
-                                                "suggestion": "Add response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'",
-                                            },
-                                        )
-                                    )
+                if isinstance(stmt, ast.Return) and stmt.value and isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Name) and stmt.value.func.id in ("Response", "JSONResponse", "HTMLResponse") and not has_response_headers:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FASTAPI019",
+                            message=f"Route {node.name}() missing HSTS security header (CWE-523)",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.MANUAL,
+                            fix_data={
+                                "suggestion": "Add response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'",
+                            },
+                        )
+                    )
 
     def _check_graphql_introspection(self, node: ast.FunctionDef) -> None:
         """Check for GraphQL introspection enabled in production."""
         # Look for GraphQL schema or app creation
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Name):
-                    # Check for GraphQL or Strawberry initialization
-                    if "graphql" in stmt.func.id.lower() or "strawberry" in stmt.func.id.lower():
-                        # Check for introspection parameter
-                        has_introspection_disabled = False
-                        for keyword in stmt.keywords:
-                            if keyword.arg and "introspection" in keyword.arg.lower():
-                                if (
-                                    isinstance(keyword.value, ast.Constant)
-                                    and keyword.value.value is False
-                                ):
-                                    has_introspection_disabled = True
+            if isinstance(stmt, ast.Call) and (isinstance(stmt.func, ast.Name) and ("graphql" in stmt.func.id.lower() or "strawberry" in stmt.func.id.lower())):
+                # Check for introspection parameter
+                has_introspection_disabled = False
+                for keyword in stmt.keywords:
+                    if keyword.arg and "introspection" in keyword.arg.lower():  # noqa: SIM102
+                        if (
+                            isinstance(keyword.value, ast.Constant)
+                            and keyword.value.value is False
+                        ):
+                            has_introspection_disabled = True
 
-                        if not has_introspection_disabled:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI020",
-                                    message="GraphQL introspection enabled - should be disabled in production (CWE-200)",
-                                    line_number=stmt.lineno,
-                                    column=stmt.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                    fix_data={
-                                        "suggestion": "Add introspection=False to GraphQL initialization",
-                                    },
-                                )
-                            )
+                if not has_introspection_disabled:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FASTAPI020",
+                            message="GraphQL introspection enabled - should be disabled in production (CWE-200)",
+                            line_number=stmt.lineno,
+                            column=stmt.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
+                            fix_data={
+                                "suggestion": "Add introspection=False to GraphQL initialization",
+                            },
+                        )
+                    )
 
     def _get_name(self, node: ast.AST) -> str | None:
         """Get the name from an AST node."""
@@ -984,49 +935,68 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         """Check for Server-Sent Events injection vulnerabilities."""
         # Look for EventSource or SSE responses
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Name):
-                    # Check for SSE response creation
-                    if "event" in stmt.func.id.lower() and "source" in stmt.func.id.lower():
-                        # Check if user input is used in event data
-                        for arg in stmt.args:
-                            if isinstance(arg, (ast.FormattedValue, ast.JoinedStr)):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FASTAPI021",
-                                        message="Server-Sent Events data includes user input - injection risk (CWE-79)",
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.MANUAL,
-                                        fix_data={
-                                            "suggestion": "Sanitize user input before including in SSE data",
-                                        },
-                                    )
-                                )
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Name) and "event" in stmt.func.id.lower() and "source" in stmt.func.id.lower():
+                # Check if user input is used in event data
+                for arg in stmt.args:
+                    if isinstance(arg, (ast.FormattedValue, ast.JoinedStr)):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI021",
+                                message="Server-Sent Events data includes user input - injection risk (CWE-79)",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Sanitize user input before including in SSE data",
+                                },
+                            )
+                        )
 
     def _check_exception_handler_leakage(self, node: ast.FunctionDef) -> None:
         """Check for information leakage in exception handlers."""
         # Check if this is an exception handler
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
-                if decorator.func.attr == "exception_handler":
-                    # Check for exception details being returned
-                    for stmt in ast.walk(node):
-                        if isinstance(stmt, ast.Return) and stmt.value:
-                            # Check if exception message is in return value
-                            if isinstance(stmt.value, ast.Call):
-                                # Check arguments of the return call
-                                for arg in stmt.value.args:
-                                    if isinstance(
-                                        arg, (ast.FormattedValue, ast.JoinedStr, ast.Attribute)
-                                    ):
-                                        if (
-                                            isinstance(arg, ast.Attribute)
-                                            and "exc" in getattr(arg.value, "id", "").lower()
-                                        ):
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.func.attr == "exception_handler":
+                # Check for exception details being returned
+                for stmt in ast.walk(node):
+                    if isinstance(stmt, ast.Return) and stmt.value and isinstance(stmt.value, ast.Call):
+                        # Check arguments of the return call
+                        for arg in stmt.value.args:
+                            if isinstance(  # noqa: SIM102
+                                arg, (ast.FormattedValue, ast.JoinedStr, ast.Attribute)
+                            ):
+                                if (
+                                    isinstance(arg, ast.Attribute)
+                                    and "exc" in getattr(arg.value, "id", "").lower()
+                                ):
+                                    self.violations.append(
+                                        RuleViolation(
+                                            rule_id="FASTAPI023",
+                                            message="Exception handler exposes sensitive error details (CWE-209)",
+                                            line_number=stmt.lineno,
+                                            column=stmt.col_offset,
+                                            severity=RuleSeverity.MEDIUM,
+                                            category=RuleCategory.SECURITY,
+                                            file_path=self.file_path,
+                                            fix_applicability=FixApplicability.SAFE,
+                                            fix_data={
+                                                "suggestion": "Return generic error message instead of exception details",
+                                            },
+                                        )
+                                    )
+                        # Check keywords (e.g., content={...})
+                        for kw in stmt.value.keywords:
+                            # Walk through the keyword value
+                            for sub_node in ast.walk(kw.value):
+                                if isinstance(
+                                    sub_node, (ast.FormattedValue, ast.JoinedStr)
+                                ):
+                                    # Check if 'exc' is in the f-string
+                                    for val in ast.walk(sub_node):
+                                        if isinstance(val, ast.Name) and val.id == "exc":
                                             self.violations.append(
                                                 RuleViolation(
                                                     rule_id="FASTAPI023",
@@ -1042,32 +1012,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                                                     },
                                                 )
                                             )
-                                # Check keywords (e.g., content={...})
-                                for kw in stmt.value.keywords:
-                                    # Walk through the keyword value
-                                    for sub_node in ast.walk(kw.value):
-                                        if isinstance(
-                                            sub_node, (ast.FormattedValue, ast.JoinedStr)
-                                        ):
-                                            # Check if 'exc' is in the f-string
-                                            for val in ast.walk(sub_node):
-                                                if isinstance(val, ast.Name) and val.id == "exc":
-                                                    self.violations.append(
-                                                        RuleViolation(
-                                                            rule_id="FASTAPI023",
-                                                            message="Exception handler exposes sensitive error details (CWE-209)",
-                                                            line_number=stmt.lineno,
-                                                            column=stmt.col_offset,
-                                                            severity=RuleSeverity.MEDIUM,
-                                                            category=RuleCategory.SECURITY,
-                                                            file_path=self.file_path,
-                                                            fix_applicability=FixApplicability.SAFE,
-                                                            fix_data={
-                                                                "suggestion": "Return generic error message instead of exception details",
-                                                            },
-                                                        )
-                                                    )
-                                                    break
+                                            break
 
     def _check_form_validation_bypass(self, node: ast.FunctionDef) -> None:
         """Check for form data validation bypasses."""
@@ -1080,40 +1025,38 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                 defaults_start = len(node.args.args) - len(node.args.defaults)
                 if arg_index >= defaults_start:
                     default_value = node.args.defaults[arg_index - defaults_start]
-                    if isinstance(default_value, ast.Call):
-                        if isinstance(default_value.func, ast.Name):
-                            if default_value.func.id == "Form":
-                                # Check if Form has validation constraints
-                                has_validation = False
-                                for keyword in default_value.keywords:
-                                    if keyword.arg in (
-                                        "min_length",
-                                        "max_length",
-                                        "regex",
-                                        "ge",
-                                        "le",
-                                        "gt",
-                                        "lt",
-                                    ):
-                                        has_validation = True
-                                        break
+                    if isinstance(default_value, ast.Call) and isinstance(default_value.func, ast.Name) and default_value.func.id == "Form":
+                        # Check if Form has validation constraints
+                        has_validation = False
+                        for keyword in default_value.keywords:
+                            if keyword.arg in (
+                                "min_length",
+                                "max_length",
+                                "regex",
+                                "ge",
+                                "le",
+                                "gt",
+                                "lt",
+                            ):
+                                has_validation = True
+                                break
 
-                                if not has_validation:
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FASTAPI028",
-                                            message=f"Form field '{arg.arg}' missing validation constraints (CWE-20)",
-                                            line_number=arg.lineno,
-                                            column=arg.col_offset,
-                                            severity=RuleSeverity.MEDIUM,
-                                            category=RuleCategory.SECURITY,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.MANUAL,
-                                            fix_data={
-                                                "suggestion": "Add validation constraints like min_length, max_length, or regex pattern",
-                                            },
-                                        )
-                                    )
+                        if not has_validation:
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI028",
+                                    message=f"Form field '{arg.arg}' missing validation constraints (CWE-20)",
+                                    line_number=arg.lineno,
+                                    column=arg.col_offset,
+                                    severity=RuleSeverity.MEDIUM,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "suggestion": "Add validation constraints like min_length, max_length, or regex pattern",
+                                    },
+                                )
+                            )
 
     def _check_async_sql_injection(self, node: ast.FunctionDef) -> None:
         """Check for SQL injection in async database queries."""
@@ -1122,51 +1065,44 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
             # Check variable assignments
             if isinstance(stmt, ast.Assign):
                 for target in stmt.targets:
-                    if isinstance(target, ast.Name):
-                        if "query" in target.id.lower() or "sql" in target.id.lower():
-                            # Check if query is built with string concatenation or f-strings
-                            if isinstance(stmt.value, (ast.BinOp, ast.JoinedStr)):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FASTAPI030",
-                                        message=f"SQL query variable '{target.id}' uses string concatenation - SQL injection risk (CWE-89)",
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.CRITICAL,
-                                        category=RuleCategory.SECURITY,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.SUGGESTED,
-                                        fix_data={
-                                            "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
-                                        },
-                                    )
-                                )
+                    if isinstance(target, ast.Name) and (("query" in target.id.lower() or "sql" in target.id.lower()) and isinstance(stmt.value, (ast.BinOp, ast.JoinedStr))):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI030",
+                                message=f"SQL query variable '{target.id}' uses string concatenation - SQL injection risk (CWE-89)",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                                fix_data={
+                                    "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
+                                },
+                            )
+                        )
 
             # Check await expressions for database methods
-            if isinstance(stmt, ast.Await):
-                if isinstance(stmt.value, ast.Call):
-                    if isinstance(stmt.value.func, ast.Attribute):
-                        method = stmt.value.func.attr
-                        if method in ("execute", "executemany", "fetch", "fetchall", "fetchone"):
-                            # Check if first argument uses string concatenation or f-strings
-                            if stmt.value.args:
-                                arg = stmt.value.args[0]
-                                if isinstance(arg, (ast.BinOp, ast.JoinedStr)):
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FASTAPI030",
-                                            message="Async SQL query uses string concatenation - SQL injection risk (CWE-89)",
-                                            line_number=stmt.lineno,
-                                            column=stmt.col_offset,
-                                            severity=RuleSeverity.CRITICAL,
-                                            category=RuleCategory.SECURITY,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.SUGGESTED,
-                                            fix_data={
-                                                "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
-                                            },
-                                        )
-                                    )
+            if isinstance(stmt, ast.Await) and isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Attribute):
+                method = stmt.value.func.attr
+                if method in ("execute", "executemany", "fetch", "fetchall", "fetchone") and stmt.value.args:
+                    arg = stmt.value.args[0]
+                    if isinstance(arg, (ast.BinOp, ast.JoinedStr)):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI030",
+                                message="Async SQL query uses string concatenation - SQL injection risk (CWE-89)",
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SUGGESTED,
+                                fix_data={
+                                    "suggestion": "Use parameterized queries with placeholders (?, $1, etc.)",
+                                },
+                            )
+                        )
 
     def _check_testclient_import(self, node: ast.ImportFrom) -> None:
         """Check for TestClient import in production code."""
@@ -1222,43 +1158,35 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     def _check_static_mount_security(self, node: ast.Call) -> None:
         """Check app.mount() calls for StaticFiles security."""
         # Check if mounting StaticFiles
-        if len(node.args) >= 2:
-            # Second argument should be the app/handler
-            if isinstance(node.args[1], ast.Call):
-                if isinstance(node.args[1].func, ast.Name):
-                    if node.args[1].func.id == "StaticFiles":
-                        self._check_static_files_security(node.args[1])
+        if len(node.args) >= 2 and isinstance(node.args[1], ast.Call) and isinstance(node.args[1].func, ast.Name) and node.args[1].func.id == "StaticFiles":  # noqa: PLR2004 - threshold
+            self._check_static_files_security(node.args[1])
 
     def _check_middleware_ordering(self, node: ast.Call) -> None:
         """Check for dangerous middleware ordering issues."""
         # Check if adding authentication middleware
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "add_middleware":
-                # Check for authentication/authorization middleware
-                if len(node.args) > 0:
-                    if isinstance(node.args[0], ast.Name):
-                        middleware_name = node.args[0].id
-                        # Check for security-critical middleware
-                        if any(
-                            keyword in middleware_name.lower()
-                            for keyword in ["auth", "security", "cors"]
-                        ):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI024",
-                                    message=f"Security middleware '{middleware_name}' ordering may be incorrect - ensure CORS before auth (CWE-863)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.MANUAL,
-                                    fix_data={
-                                        "middleware": middleware_name,
-                                        "suggestion": "Ensure middleware ordering: CORS -> TrustedHost -> Authentication -> Authorization",
-                                    },
-                                )
-                            )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "add_middleware" and len(node.args) > 0 and isinstance(node.args[0], ast.Name):
+            middleware_name = node.args[0].id
+            # Check for security-critical middleware
+            if any(
+                keyword in middleware_name.lower()
+                for keyword in ["auth", "security", "cors"]
+            ):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI024",
+                        message=f"Security middleware '{middleware_name}' ordering may be incorrect - ensure CORS before auth (CWE-863)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "middleware": middleware_name,
+                            "suggestion": "Ensure middleware ordering: CORS -> TrustedHost -> Authentication -> Authorization",
+                        },
+                    )
+                )
 
     def _check_dependency_override_security(self, node: ast.Call) -> None:
         """Check for dependency override security risks in Call nodes."""
@@ -1268,28 +1196,25 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     def _check_redis_cache_poisoning(self, node: ast.Call) -> None:
         """Check for Redis cache poisoning vulnerabilities."""
         # Look for Redis set/setex operations with user-controlled keys
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("set", "setex", "hset", "hmset"):
-                # Check if key includes user input
-                if node.args:
-                    key_arg = node.args[0]
-                    # Check for f-strings or string concatenation in key
-                    if isinstance(key_arg, (ast.JoinedStr, ast.BinOp)):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FASTAPI026",
-                                message="Redis cache key uses user input - cache poisoning risk (CWE-639)",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.MANUAL,
-                                fix_data={
-                                    "suggestion": "Sanitize/hash user input before using in cache keys",
-                                },
-                            )
-                        )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("set", "setex", "hset", "hmset") and node.args:
+            key_arg = node.args[0]
+            # Check for f-strings or string concatenation in key
+            if isinstance(key_arg, (ast.JoinedStr, ast.BinOp)):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI026",
+                        message="Redis cache key uses user input - cache poisoning risk (CWE-639)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Sanitize/hash user input before using in cache keys",
+                        },
+                    )
+                )
 
     def _check_mass_assignment(self, node: ast.Call) -> None:
         """Check for mass assignment vulnerabilities."""
@@ -1297,29 +1222,27 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Check for Model(**request_data) patterns
         if node.keywords:
             for keyword in node.keywords:
-                if keyword.arg is None:  # **kwargs pattern
-                    # Check if the value is user input (common names)
-                    if isinstance(keyword.value, ast.Name):
-                        var_name = keyword.value.id.lower()
-                        if any(
-                            pattern in var_name
-                            for pattern in ["request", "data", "body", "payload", "input"]
-                        ):
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FASTAPI027",
-                                    message=f"Potential mass assignment: {keyword.value.id} unpacked into model (CWE-915)",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.MANUAL,
-                                    fix_data={
-                                        "suggestion": "Use explicit field assignment or Pydantic model with restricted fields",
-                                    },
-                                )
+                if keyword.arg is None and isinstance(keyword.value, ast.Name):  # **kwargs pattern
+                    var_name = keyword.value.id.lower()
+                    if any(
+                        pattern in var_name
+                        for pattern in ["request", "data", "body", "payload", "input"]
+                    ):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FASTAPI027",
+                                message=f"Potential mass assignment: {keyword.value.id} unpacked into model (CWE-915)",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.MANUAL,
+                                fix_data={
+                                    "suggestion": "Use explicit field assignment or Pydantic model with restricted fields",
+                                },
                             )
+                        )
 
     def _check_insecure_http_methods(self, node: ast.FunctionDef) -> None:
         """Check for insecure HTTP methods (TRACE, OPTIONS) enabled."""
@@ -1350,31 +1273,25 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for routes that should require API tokens
         is_api_route = False
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call):
-                # Check if route path suggests API endpoint
-                if decorator.args and isinstance(decorator.args[0], ast.Constant):
-                    path = decorator.args[0].value
-                    if isinstance(path, str) and "/api/" in path:
-                        is_api_route = True
-                        break
+            if isinstance(decorator, ast.Call) and decorator.args and isinstance(decorator.args[0], ast.Constant):
+                path = decorator.args[0].value
+                if isinstance(path, str) and "/api/" in path:
+                    is_api_route = True
+                    break
 
         if is_api_route:
             # Check if function has X-API-Key or Authorization header check
             has_auth_check = False
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Subscript):
-                    if isinstance(stmt.value, ast.Attribute):
-                        if stmt.value.attr == "headers":
-                            if isinstance(stmt.slice, ast.Constant):
-                                header_name = stmt.slice.value
-                                if isinstance(header_name, str):
-                                    if header_name.lower() in (
-                                        "x-api-key",
-                                        "authorization",
-                                        "api-key",
-                                    ):
-                                        has_auth_check = True
-                                        break
+                if isinstance(stmt, ast.Subscript) and isinstance(stmt.value, ast.Attribute) and stmt.value.attr == "headers" and isinstance(stmt.slice, ast.Constant):
+                    header_name = stmt.slice.value
+                    if isinstance(header_name, str) and header_name.lower() in (
+                        "x-api-key",
+                        "authorization",
+                        "api-key",
+                    ):
+                        has_auth_check = True
+                        break
 
             if not has_auth_check and not self._check_authentication_dependency(node):
                 self.violations.append(
@@ -1399,7 +1316,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 var_name = target.id
-                if any(
+                if any(  # noqa: SIM102
                     keyword in var_name.upper()
                     for keyword in ["JWT_SECRET", "SECRET_KEY", "TOKEN_SECRET"]
                 ):
@@ -1407,7 +1324,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
                     if isinstance(node.value, ast.Constant):
                         secret_value = node.value.value
                         if isinstance(secret_value, str):
-                            if len(secret_value) < 32:
+                            if len(secret_value) < 32:  # noqa: PLR2004 - threshold
                                 self.violations.append(
                                     RuleViolation(
                                         rule_id="FASTAPI035",
@@ -1456,25 +1373,22 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
         # Look for OAuth callback routes
         is_oauth_route = False
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call):
-                if decorator.args and isinstance(decorator.args[0], ast.Constant):
-                    path = decorator.args[0].value
-                    if isinstance(path, str) and any(
-                        keyword in path.lower() for keyword in ["oauth", "callback", "redirect"]
-                    ):
-                        is_oauth_route = True
-                        break
+            if isinstance(decorator, ast.Call) and decorator.args and isinstance(decorator.args[0], ast.Constant):
+                path = decorator.args[0].value
+                if isinstance(path, str) and any(
+                    keyword in path.lower() for keyword in ["oauth", "callback", "redirect"]
+                ):
+                    is_oauth_route = True
+                    break
 
         if is_oauth_route:
             # Check for redirect_uri validation
             has_validation = False
             for stmt in ast.walk(node):
                 # Look for redirect_uri checks
-                if isinstance(stmt, ast.Compare):
-                    if isinstance(stmt.left, ast.Name):
-                        if "redirect" in stmt.left.id.lower():
-                            has_validation = True
-                            break
+                if isinstance(stmt, ast.Compare) and isinstance(stmt.left, ast.Name) and "redirect" in stmt.left.id.lower():
+                    has_validation = True
+                    break
 
             if not has_validation:
                 self.violations.append(
@@ -1496,64 +1410,55 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     def _check_graphql_injection(self, node: ast.Call) -> None:
         """Check for GraphQL injection vulnerabilities."""
         # Look for GraphQL query execution with user input
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("execute", "execute_sync"):
-                # Check if it's being called on a graphql module/object
-                # This handles: graphql.execute(), schema.execute(), etc.
-                # We look for any execute/execute_sync call with string manipulation in first arg
-                if node.args:
-                    query_arg = node.args[0]
-                    if isinstance(query_arg, (ast.JoinedStr, ast.BinOp)):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FASTAPI037",
-                                message="GraphQL query constructed from user input - injection risk (CWE-943)",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.CRITICAL,
-                                category=RuleCategory.SECURITY,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.MANUAL,
-                                fix_data={
-                                    "suggestion": "Use parameterized GraphQL queries with variables",
-                                },
-                            )
-                        )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("execute", "execute_sync") and node.args:
+            query_arg = node.args[0]
+            if isinstance(query_arg, (ast.JoinedStr, ast.BinOp)):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FASTAPI037",
+                        message="GraphQL query constructed from user input - injection risk (CWE-943)",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.MANUAL,
+                        fix_data={
+                            "suggestion": "Use parameterized GraphQL queries with variables",
+                        },
+                    )
+                )
 
     def _check_api_key_in_url(self, node: ast.Call) -> None:
         """Check for API keys exposed in URLs."""
         # Look for URL construction with API keys
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("get", "post", "put", "delete", "request"):
-                # Check if URL includes api_key or token
-                if node.args:
-                    url_arg = node.args[0]
-                    # Check f-strings with api_key or token
-                    if isinstance(url_arg, ast.JoinedStr):
-                        for value in url_arg.values:
-                            if isinstance(value, ast.FormattedValue):
-                                if isinstance(value.value, ast.Name):
-                                    var_name = value.value.id.lower()
-                                    if any(
-                                        keyword in var_name
-                                        for keyword in ["api_key", "token", "secret", "password"]
-                                    ):
-                                        self.violations.append(
-                                            RuleViolation(
-                                                rule_id="FASTAPI038",
-                                                message=f"API key '{value.value.id}' exposed in URL - should use headers (CWE-598)",
-                                                line_number=node.lineno,
-                                                column=node.col_offset,
-                                                severity=RuleSeverity.HIGH,
-                                                category=RuleCategory.SECURITY,
-                                                file_path=self.file_path,
-                                                fix_applicability=FixApplicability.MANUAL,
-                                                fix_data={
-                                                    "variable": value.value.id,
-                                                    "suggestion": "Pass API keys in Authorization header, not URL query parameters",
-                                                },
-                                            )
-                                        )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("get", "post", "put", "delete", "request") and node.args:
+            url_arg = node.args[0]
+            # Check f-strings with api_key or token
+            if isinstance(url_arg, ast.JoinedStr):
+                for value in url_arg.values:
+                    if isinstance(value, ast.FormattedValue) and isinstance(value.value, ast.Name):
+                        var_name = value.value.id.lower()
+                        if any(
+                            keyword in var_name
+                            for keyword in ["api_key", "token", "secret", "password"]
+                        ):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FASTAPI038",
+                                    message=f"API key '{value.value.id}' exposed in URL - should use headers (CWE-598)",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.MANUAL,
+                                    fix_data={
+                                        "variable": value.value.id,
+                                        "suggestion": "Pass API keys in Authorization header, not URL query parameters",
+                                    },
+                                )
+                            )
 
 
 class FastAPISecurityChecker:

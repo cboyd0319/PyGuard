@@ -6,11 +6,9 @@ Covers 25+ security checks for ORM usage, SQL injection, session management,
 connection security, and query vulnerabilities.
 """
 
-import ast
 from pathlib import Path
 
 from pyguard.lib.framework_sqlalchemy import (
-    SQLAlchemySecurityVisitor,
     analyze_sqlalchemy_security,
 )
 

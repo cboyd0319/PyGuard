@@ -225,7 +225,7 @@ class UltraAdvancedSecurityFixer:
             line = lines[i]
 
             # Check if this is an API route decorator
-            if re.search(r"@(app|api|router)\.(route|get|post|put|delete)", line):
+            if re.search(r"@(app|api|router)\.(route|get|post|put|delete)", line):  # noqa: SIM102
                 # Check if next line is the function definition (no rate limiter)
                 if i + 1 < len(lines):
                     next_line = lines[i + 1]
@@ -326,7 +326,7 @@ class UltraAdvancedSecurityFixer:
             return content, modified
 
         # Fix Dockerfile
-        if "dockerfile" in file_path.lower():
+        if "dockerfile" in file_path.lower():  # noqa: SIM102
             # Fix USER root
             if "USER root" in content:
                 content = re.sub(

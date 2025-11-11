@@ -27,7 +27,7 @@ class TypeInferenceEngine:
         """Initialize type inference engine."""
         self.logger = PyGuardLogger()
 
-    def infer_from_default(self, default_value: ast.AST) -> str | None:
+    def infer_from_default(self, default_value: ast.AST) -> str | None:  # noqa: PLR0911 - Type inference requires many type checks
         """Infer type from default value."""
         if isinstance(default_value, ast.Constant):
             value = default_value.value
@@ -270,7 +270,7 @@ def _detect_type_comparison(code: str, file_path: Path, tree: ast.AST | None = N
     violations = []
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Compare):
+        if isinstance(node, ast.Compare):  # noqa: SIM102
             # Check for type(x) == SomeClass or type(x) is SomeClass
             if isinstance(node.left, ast.Call) and (
                 isinstance(node.left.func, ast.Name)

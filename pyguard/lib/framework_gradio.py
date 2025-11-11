@@ -91,9 +91,9 @@ class GradioSecurityVisitor(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check assignments for security issues."""
         # Check for SQL injection in query assignments
-        if isinstance(node.value, ast.BinOp):
+        if isinstance(node.value, ast.BinOp):  # noqa: SIM102
             # Check if this is a SQL query with string concatenation
-            if isinstance(node.value.op, (ast.Add, ast.Mod)):
+            if isinstance(node.value.op, (ast.Add, ast.Mod)):  # noqa: SIM102
                 # Check if any part looks like SQL
                 if self._contains_sql_keywords(node.value):
                     self.violations.append(
@@ -142,7 +142,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
 
         # Check for insecure server configuration
         for keyword in node.keywords:
-            if keyword.arg == "server_name":
+            if keyword.arg == "server_name":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value == "0.0.0.0":
                     self.violations.append(
                         RuleViolation(
@@ -191,7 +191,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
 
     def _is_database_query(self, node: ast.Call) -> bool:
         """Check if this is a database query call."""
-        if isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
             if node.func.attr in ("execute", "query", "raw", "sql"):
                 return True
         return False
@@ -213,7 +213,7 @@ class GradioSecurityVisitor(ast.NodeVisitor):
                         fix_data={"issue": "sql_injection"},
                     )
                 )
-            elif isinstance(arg, ast.BinOp) and isinstance(arg.op, (ast.Add, ast.Mod)):
+            elif isinstance(arg, ast.BinOp) and isinstance(arg.op, (ast.Add, ast.Mod)):  # noqa: SIM102
                 # Check if it looks like SQL
                 if self._contains_sql_keywords(arg):
                     self.violations.append(
@@ -319,8 +319,8 @@ def fix_gradio_security(
     original_line = lines[line_idx]
 
     # Fix file upload without file_types
-    if violation.rule_id == "GRADIO003" and violation.fix_applicability == FixApplicability.SAFE:
-        if "gr.File(" in original_line or ".File(" in original_line:
+    if violation.rule_id == "GRADIO003" and violation.fix_applicability == FixApplicability.SAFE:  # noqa: SIM102
+        if "gr.File(" in original_line or ".File(" in original_line:  # noqa: SIM102
             if "file_types=" not in original_line:
                 # Add file_types parameter
                 fixed_line = original_line.replace(
@@ -331,7 +331,7 @@ def fix_gradio_security(
                 return "".join(lines), True
 
     # Fix insecure server binding
-    if violation.rule_id == "GRADIO002" and violation.fix_applicability == FixApplicability.SAFE:
+    if violation.rule_id == "GRADIO002" and violation.fix_applicability == FixApplicability.SAFE:  # noqa: SIM102
         if "server_name=\"0.0.0.0\"" in original_line or "server_name='0.0.0.0'" in original_line:
             fixed_line = original_line.replace(
                 "server_name=\"0.0.0.0\"", "server_name=\"127.0.0.1\""

@@ -11,8 +11,8 @@ Test Coverage Requirements (per Security Dominance Plan):
 Total Tests: 100+ (exceeds minimum requirement of 38 per check × 7 checks)
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.dependency_confusion import (
     DependencyConfusionVisitor,

@@ -111,25 +111,23 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             if node.func.attr in ("create_subprocess_shell", "create_subprocess_exec"):
                 func_name = node.func.attr
-        elif isinstance(node.func, ast.Name):
+        elif isinstance(node.func, ast.Name):  # noqa: SIM102
             if node.func.id in ("create_subprocess_shell", "create_subprocess_exec"):
                 func_name = node.func.id
 
-        if func_name == "create_subprocess_shell":
-            # Any use of create_subprocess_shell is potentially dangerous
-            if node.args:
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="ASYNCIO001",
-                        message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.HIGH,
-                        category=RuleCategory.SECURITY,
-                        code_snippet=self._get_snippet(node),
-                    )
+        if func_name == "create_subprocess_shell" and node.args:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="ASYNCIO001",
+                    message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.HIGH,
+                    category=RuleCategory.SECURITY,
+                    code_snippet=self._get_snippet(node),
                 )
+            )
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Analyze regular functions for asyncio security issues."""
@@ -150,22 +148,19 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "set_event_loop":
-                # Check if loop is from user input or untrusted source
-                if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO002",
-                            message="Potential event loop injection. Setting event loop from untrusted source.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                        )
-                    )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "set_event_loop" and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="ASYNCIO002",
+                    message="Potential event loop injection. Setting event loop from untrusted source.",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.HIGH,
+                    category=RuleCategory.SECURITY,
+                    code_snippet=self._get_snippet(node),
+                )
+            )
 
     def _check_create_task_security(self, node: ast.Call) -> None:
         """ASYNCIO003: Check for task creation without proper error handling."""
@@ -203,21 +198,20 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "set_result":
-                # Check if setting result without proper validation
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="ASYNCIO004",
-                        message="Future.set_result() called without validation. Ensure result is from trusted source.",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.MEDIUM,
-                        category=RuleCategory.SECURITY,
-                        code_snippet=self._get_snippet(node),
-                    )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "set_result":
+            # Check if setting result without proper validation
+            self.violations.append(
+                RuleViolation(
+                    rule_id="ASYNCIO004",
+                    message="Future.set_result() called without validation. Ensure result is from trusted source.",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    code_snippet=self._get_snippet(node),
                 )
+            )
 
     def _check_gather_security(self, node: ast.Call) -> None:
         """ASYNCIO005: Check for asyncio.gather() without proper exception handling."""
@@ -273,42 +267,39 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
 
     def _check_semaphore_security(self, node: ast.Call) -> None:
         """ASYNCIO007: Check for Semaphore with value from user input."""
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in {"Semaphore", "BoundedSemaphore"}:
-                if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                    # Value might be from user input
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO007",
-                            message="Semaphore created with potentially user-controlled value. This can lead to resource exhaustion.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.MEDIUM,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                        )
-                    )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in {"Semaphore", "BoundedSemaphore"} and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            # Value might be from user input
+            self.violations.append(
+                RuleViolation(
+                    rule_id="ASYNCIO007",
+                    message="Semaphore created with potentially user-controlled value. This can lead to resource exhaustion.",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    code_snippet=self._get_snippet(node),
+                )
+            )
 
     def _check_lock_security(self, node: ast.Call) -> None:
         """ASYNCIO008: Check for Lock acquisition without timeout."""
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "acquire":
-                # Check if timeout is set
-                has_timeout = any(kw.arg == "timeout" for kw in node.keywords)
-                if not has_timeout:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO008",
-                            message="Lock.acquire() without timeout. This can cause indefinite blocking.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                        )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "acquire":
+            # Check if timeout is set
+            has_timeout = any(kw.arg == "timeout" for kw in node.keywords)
+            if not has_timeout:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO008",
+                        message="Lock.acquire() without timeout. This can cause indefinite blocking.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
                     )
+                )
 
     def _check_queue_poisoning(self, node: ast.Call, _func_node: ast.AsyncFunctionDef) -> None:
         """Check for queue poisoning vulnerabilities (ASYNCIO009).
@@ -320,45 +311,37 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("put", "put_nowait"):
-                # Check if data is validated
-                if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO009",
-                            message="Queue.put() with potentially untrusted data. Validate input before queuing.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.MEDIUM,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                        )
-                    )
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("put", "put_nowait") and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="ASYNCIO009",
+                    message="Queue.put() with potentially untrusted data. Validate input before queuing.",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    code_snippet=self._get_snippet(node),
+                )
+            )
 
     def _check_stream_security(self, node: ast.Call) -> None:
         """ASYNCIO010: Check for StreamReader.read() without size limit."""
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "read":
-                # Check if n parameter (size limit) is provided
-                if not node.args and not any(kw.arg == "n" for kw in node.keywords):
-                    # Check if this is likely a StreamReader
-                    if isinstance(node.func.value, ast.Name):
-                        var_name = node.func.value.id
-                        if "reader" in var_name.lower() or "stream" in var_name.lower():
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="ASYNCIO010",
-                                    message="StreamReader.read() without size limit. This can lead to memory exhaustion.",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    code_snippet=self._get_snippet(node),
-                                )
-                            )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "read" and not node.args and not any(kw.arg == "n" for kw in node.keywords) and isinstance(node.func.value, ast.Name):
+            var_name = node.func.value.id
+            if "reader" in var_name.lower() or "stream" in var_name.lower():
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO010",
+                        message="StreamReader.read() without size limit. This can lead to memory exhaustion.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
+                    )
+                )
 
     def _check_executor_security(self, node: ast.Call, _func_node: ast.AsyncFunctionDef) -> None:
         """Check for executor security issues (ASYNCIO011).
@@ -370,46 +353,40 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             node: Call node to check
             _func_node: Function node (reserved for context analysis)
         """
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "run_in_executor":
-                # Check if executor is None (default executor)
-                if node.args:
-                    executor = node.args[0]
-                    if isinstance(executor, ast.Constant) and executor.value is None:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="ASYNCIO011",
-                                message="run_in_executor() using default executor. Consider using a custom executor with resource limits.",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SECURITY,
-                                code_snippet=self._get_snippet(node),
-                            )
-                        )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "run_in_executor" and node.args:
+            executor = node.args[0]
+            if isinstance(executor, ast.Constant) and executor.value is None:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO011",
+                        message="run_in_executor() using default executor. Consider using a custom executor with resource limits.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
+                    )
+                )
 
     def visit_AsyncWith(self, node: ast.AsyncWith) -> None:
         """ASYNCIO012: Check for async context manager security."""
         # Check for proper exception handling in async context managers
         for item in node.items:
-            if isinstance(item.context_expr, ast.Call):
-                # Check if it's a lock or semaphore without timeout
-                if isinstance(item.context_expr.func, ast.Attribute):
-                    if item.context_expr.func.attr in ("Lock", "Semaphore"):
-                        # Suggest using timeout
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="ASYNCIO012",
-                                message="Async context manager for Lock/Semaphore without timeout. Consider using wait_for() with timeout.",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SECURITY,
-                                code_snippet=self._get_snippet(node),
-                            )
-                        )
+            if isinstance(item.context_expr, ast.Call) and isinstance(item.context_expr.func, ast.Attribute) and item.context_expr.func.attr in ("Lock", "Semaphore"):
+                # Suggest using timeout
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO012",
+                        message="Async context manager for Lock/Semaphore without timeout. Consider using wait_for() with timeout.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
+                    )
+                )
 
         self.generic_visit(node)
 
@@ -435,21 +412,19 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
     def visit_ListComp(self, node: ast.ListComp) -> None:
         """ASYNCIO014: Check for async comprehension security."""
         for generator in node.generators:
-            if generator.is_async:
-                # Check if iterating over untrusted source
-                if isinstance(generator.iter, ast.Call):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="ASYNCIO014",
-                            message="Async comprehension over potentially untrusted source. Validate input.",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SECURITY,
-                            code_snippet=self._get_snippet(node),
-                        )
+            if generator.is_async and isinstance(generator.iter, ast.Call):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="ASYNCIO014",
+                        message="Async comprehension over potentially untrusted source. Validate input.",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SECURITY,
+                        code_snippet=self._get_snippet(node),
                     )
+                )
 
         self.generic_visit(node)
 
@@ -457,27 +432,25 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
         """ASYNCIO015: Check for proper async exception handling."""
         # Check if catching asyncio.CancelledError
         for handler in node.handlers:
-            if handler.type:
-                if isinstance(handler.type, ast.Name):
-                    if handler.type.id == "CancelledError":
-                        # Check if re-raising
-                        has_reraise = any(
-                            isinstance(stmt, ast.Raise) and stmt.exc is None
-                            for stmt in handler.body
+            if handler.type and isinstance(handler.type, ast.Name) and handler.type.id == "CancelledError":
+                # Check if re-raising
+                has_reraise = any(
+                    isinstance(stmt, ast.Raise) and stmt.exc is None
+                    for stmt in handler.body
+                )
+                if not has_reraise:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="ASYNCIO015",
+                            message="CancelledError caught but not re-raised. This can prevent proper task cancellation.",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            code_snippet=self._get_snippet(node),
                         )
-                        if not has_reraise:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="ASYNCIO015",
-                                    message="CancelledError caught but not re-raised. This can prevent proper task cancellation.",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    code_snippet=self._get_snippet(node),
-                                )
-                            )
+                    )
 
         self.generic_visit(node)
 

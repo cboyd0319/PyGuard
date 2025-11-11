@@ -1,9 +1,8 @@
 """Tests for incremental analysis with file caching."""
 
-import json
+from pathlib import Path
 import tempfile
 import time
-from pathlib import Path
 
 import pytest
 

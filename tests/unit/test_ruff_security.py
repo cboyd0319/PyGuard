@@ -1,7 +1,7 @@
 """Tests for Ruff S (Security) rules implementation."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.ruff_security import check_ruff_security
 

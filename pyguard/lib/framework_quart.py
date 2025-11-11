@@ -100,7 +100,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
 
         # Check if secure_filename is used anywhere in this function
         for child in ast.walk(node):
-            if isinstance(child, ast.Call):
+            if isinstance(child, ast.Call):  # noqa: SIM102
                 if (isinstance(child.func, ast.Name) and "secure" in child.func.id.lower()) or (
                     isinstance(child.func, ast.Attribute) and "secure" in child.func.attr.lower()
                 ):
@@ -154,7 +154,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 self._check_file_upload_security(node)
 
         # Check for directly imported render_template_string
-        elif isinstance(node.func, ast.Name):
+        elif isinstance(node.func, ast.Name):  # noqa: SIM102
             if node.func.id in ("render_template_string", "render_template"):
                 self._check_template_rendering(node)
 
@@ -171,38 +171,36 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         if isinstance(node, ast.FunctionDef) and not isinstance(node, ast.AsyncFunctionDef):
             # This is a sync function (non-async) - check if it accesses request
             for child in ast.walk(node):
-                if isinstance(child, ast.Attribute):
-                    # Check for request.* access
-                    if isinstance(child.value, ast.Name) and child.value.id == "request":
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="QUART001",
-                                category=RuleCategory.SECURITY,
-                                severity=RuleSeverity.HIGH,
-                                message="Request accessed outside async context in Quart. "
-                                "Use 'async def' for route handlers that access request.",
-                                file_path=self.file_path,
-                                line_number=getattr(child, "lineno", 0),
-                                column=getattr(child, "col_offset", 0),
-                                end_line_number=getattr(
-                                    child, "end_lineno", getattr(child, "lineno", 0)
-                                ),
-                                end_column=getattr(
-                                    child, "end_col_offset", getattr(child, "col_offset", 0)
-                                ),
-                                code_snippet=(
-                                    self.lines[getattr(child, "lineno", 1) - 1]
-                                    if getattr(child, "lineno", 1) <= len(self.lines)
-                                    else ""
-                                ),
-                                fix_suggestion="Change 'def' to 'async def' and use 'await' for request operations",
-                                fix_applicability=FixApplicability.UNSAFE,
-                                cwe_id=None,
-                                owasp_id=None,
-                                source_tool="pyguard",
-                            )
+                if isinstance(child, ast.Attribute) and isinstance(child.value, ast.Name) and child.value.id == "request":
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="QUART001",
+                            category=RuleCategory.SECURITY,
+                            severity=RuleSeverity.HIGH,
+                            message="Request accessed outside async context in Quart. "
+                            "Use 'async def' for route handlers that access request.",
+                            file_path=self.file_path,
+                            line_number=getattr(child, "lineno", 0),
+                            column=getattr(child, "col_offset", 0),
+                            end_line_number=getattr(
+                                child, "end_lineno", getattr(child, "lineno", 0)
+                            ),
+                            end_column=getattr(
+                                child, "end_col_offset", getattr(child, "col_offset", 0)
+                            ),
+                            code_snippet=(
+                                self.lines[getattr(child, "lineno", 1) - 1]
+                                if getattr(child, "lineno", 1) <= len(self.lines)
+                                else ""
+                            ),
+                            fix_suggestion="Change 'def' to 'async def' and use 'await' for request operations",
+                            fix_applicability=FixApplicability.UNSAFE,
+                            cwe_id=None,
+                            owasp_id=None,
+                            source_tool="pyguard",
                         )
-                        break  # Only report once per function
+                    )
+                    break  # Only report once per function
 
     def _check_websocket_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for WebSocket authentication issues (QUART002)."""
@@ -228,15 +226,14 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                         has_auth_check = True
                         break
                 # Also check for function calls in conditions
-                elif isinstance(child.test, ast.UnaryOp) and isinstance(child.test.op, ast.Not):
-                    if isinstance(child.test.operand, ast.Call):
-                        if isinstance(child.test.operand.func, ast.Name):
-                            if any(
-                                keyword in child.test.operand.func.id.lower()
-                                for keyword in ["verify", "auth", "validate"]
-                            ):
-                                has_auth_check = True
-                                break
+                elif isinstance(child.test, ast.UnaryOp) and isinstance(child.test.op, ast.Not):  # noqa: SIM102
+                    if isinstance(child.test.operand, ast.Call) and isinstance(child.test.operand.func, ast.Name):  # noqa: SIM102
+                        if any(
+                            keyword in child.test.operand.func.id.lower()
+                            for keyword in ["verify", "auth", "validate"]
+                        ):
+                            has_auth_check = True
+                            break
 
         if not has_auth_check:
             self.violations.append(
@@ -292,30 +289,29 @@ class QuartSecurityVisitor(ast.NodeVisitor):
     def _check_session_management(self, node: ast.FunctionDef) -> None:
         """Check for session management issues in async context (QUART004)."""
         for child in ast.walk(node):
-            if isinstance(child, ast.Subscript):
-                if isinstance(child.value, ast.Name) and child.value.id == "session":
-                    # Check if session is modified without proper async handling
-                    parent = None
-                    for n in ast.walk(node):
-                        if isinstance(n, (ast.Assign, ast.AugAssign)):
-                            for target in n.targets if isinstance(n, ast.Assign) else [n.target]:
-                                if target == child:
-                                    parent = n
-                                    break
+            if isinstance(child, ast.Subscript) and isinstance(child.value, ast.Name) and child.value.id == "session":
+                # Check if session is modified without proper async handling
+                parent = None
+                for n in ast.walk(node):
+                    if isinstance(n, (ast.Assign, ast.AugAssign)):
+                        for target in n.targets if isinstance(n, ast.Assign) else [n.target]:
+                            if target == child:
+                                parent = n
+                                break
 
-                    if parent and not isinstance(node, ast.AsyncFunctionDef):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="QUART004",
-                                category=RuleCategory.SECURITY,
-                                message="Session modified in non-async context",
-                                severity=RuleSeverity.MEDIUM,
-                                line_number=child.lineno,
-                                column=child.col_offset,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
+                if parent and not isinstance(node, ast.AsyncFunctionDef):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="QUART004",
+                            category=RuleCategory.SECURITY,
+                            message="Session modified in non-async context",
+                            severity=RuleSeverity.MEDIUM,
+                            line_number=child.lineno,
+                            column=child.col_offset,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SAFE,
                         )
+                    )
 
     def _check_cors_configuration(self, node: ast.Call) -> None:
         """Check for CORS configuration issues (QUART005)."""
@@ -325,9 +321,8 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg == "origins":
                 has_origins = True
-                if isinstance(keyword.value, ast.Constant):
-                    if keyword.value.value == "*":
-                        wildcard_origin = True
+                if isinstance(keyword.value, ast.Constant) and keyword.value.value == "*":
+                    wildcard_origin = True
 
         if not has_origins or wildcard_origin:
             self.violations.append(
@@ -369,7 +364,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     if arg.func.attr in ("secure_filename", "sanitize"):
                         has_validation = True
                         break
-                elif isinstance(arg.func, ast.Name):
+                elif isinstance(arg.func, ast.Name):  # noqa: SIM102
                     if "secure" in arg.func.id.lower() or "sanitize" in arg.func.id.lower():
                         has_validation = True
                         break
@@ -486,7 +481,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                 )
             )
 
-    def _check_csrf_protection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def _check_csrf_protection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:  # noqa: PLR0912 - Complex CSRF detection requires many checks
         """Check for CSRF protection gaps (QUART011)."""
         # Check if POST/PUT/DELETE routes have CSRF protection
         has_csrf_check = False
@@ -499,7 +494,7 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                     if "csrf" in child.func.attr.lower():
                         has_csrf_check = True
                         break
-                elif isinstance(child.func, ast.Name):
+                elif isinstance(child.func, ast.Name):  # noqa: SIM102
                     if "csrf" in child.func.id.lower():
                         has_csrf_check = True
                         break
@@ -536,21 +531,20 @@ class QuartSecurityVisitor(ast.NodeVisitor):
                                 for elt in methods_value.elts:
                                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                         method_name = elt.value.upper()
-                                        if method_name in ("POST", "PUT", "DELETE", "PATCH"):
-                                            if not has_csrf_check:
-                                                self.violations.append(
-                                                    RuleViolation(
-                                                        rule_id="QUART011",
-                                                        category=RuleCategory.SECURITY,
-                                                        message=f"Route with {method_name} method missing CSRF protection",
-                                                        severity=RuleSeverity.HIGH,
-                                                        line_number=node.lineno,
-                                                        column=node.col_offset,
-                                                        file_path=self.file_path,
-                                                        fix_applicability=FixApplicability.UNSAFE,
-                                                    )
+                                        if method_name in ("POST", "PUT", "DELETE", "PATCH") and not has_csrf_check:
+                                            self.violations.append(
+                                                RuleViolation(
+                                                    rule_id="QUART011",
+                                                    category=RuleCategory.SECURITY,
+                                                    message=f"Route with {method_name} method missing CSRF protection",
+                                                    severity=RuleSeverity.HIGH,
+                                                    line_number=node.lineno,
+                                                    column=node.col_offset,
+                                                    file_path=self.file_path,
+                                                    fix_applicability=FixApplicability.UNSAFE,
                                                 )
-                                                break  # Only report once per route
+                                            )
+                                            break  # Only report once per route
 
     def _check_missing_auth(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """Check for authentication decorator issues (QUART012)."""
@@ -560,10 +554,9 @@ class QuartSecurityVisitor(ast.NodeVisitor):
             if isinstance(decorator, ast.Name):
                 if "auth" in decorator.id.lower() or "login" in decorator.id.lower():
                     has_auth_decorator = True
-            elif isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Name):
-                    if "auth" in decorator.func.id.lower() or "login" in decorator.func.id.lower():
-                        has_auth_decorator = True
+            elif isinstance(decorator, ast.Call):  # noqa: SIM102
+                if isinstance(decorator.func, ast.Name) and ("auth" in decorator.func.id.lower() or "login" in decorator.func.id.lower()):
+                    has_auth_decorator = True
 
         # Check if route accesses sensitive data without auth
         has_sensitive_access = False
@@ -611,17 +604,14 @@ class QuartSecurityVisitor(ast.NodeVisitor):
         """Check if an expression represents user input (request.form, request.args, etc.)."""
         if isinstance(node, ast.Attribute):
             # Check for request.form, request.args, request.json, etc.
-            if node.attr in ("form", "args", "json", "data", "values", "files"):
-                if isinstance(node.value, ast.Name) and node.value.id == "request":
-                    return True
+            if node.attr in ("form", "args", "json", "data", "values", "files") and isinstance(node.value, ast.Name) and node.value.id == "request":
+                return True
             return self._is_user_input(node.value)
         if isinstance(node, ast.Await):
             # Handle await request.form
             return self._is_user_input(node.value)
-        if isinstance(node, ast.Call):
-            # Handle method calls like request.form.get(), request.args.get(), etc.
-            if isinstance(node.func, ast.Attribute):
-                return self._is_user_input(node.func)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            return self._is_user_input(node.func)
         return False
 
 

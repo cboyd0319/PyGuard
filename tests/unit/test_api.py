@@ -5,8 +5,6 @@ Tests the high-level API for using PyGuard programmatically in
 Python applications, IDEs, and CI/CD systems.
 """
 
-import tempfile
-from pathlib import Path
 
 import pytest
 

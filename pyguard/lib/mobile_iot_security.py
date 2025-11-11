@@ -181,7 +181,7 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         line_text = ast.get_source_segment(self.code, node) or ""
 
         for pattern in sensitive_patterns:
-            if re.search(pattern, line_text, re.IGNORECASE):
+            if re.search(pattern, line_text, re.IGNORECASE):  # noqa: SIM102
                 # Check if stored in files (not env vars or secure storage)
                 if not any(
                     x in line_text.lower() for x in ["environ", "getenv", "keychain", "keystore"]
@@ -214,40 +214,38 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         # Check for HTTP (not HTTPS) connections
         if func_name in ["urlopen", "request", "get", "post", "put", "delete"]:
             for arg in node.args:
-                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    if arg.value.startswith("http://"):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="MOBILE002",
-                                message="Insufficient transport layer protection: Using HTTP instead of HTTPS",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                cwe_id="CWE-319",
-                                owasp_id="M3",
-                            )
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value.startswith("http://"):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="MOBILE002",
+                            message="Insufficient transport layer protection: Using HTTP instead of HTTPS",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-319",
+                            owasp_id="M3",
                         )
+                    )
 
         # Check for SSL verification disabled
         if func_name in ["request", "get", "post", "put", "delete", "Session"]:
             for keyword in node.keywords:
-                if keyword.arg == "verify" and isinstance(keyword.value, ast.Constant):
-                    if keyword.value.value is False:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="MOBILE002",
-                                message="Insufficient transport layer protection: SSL verification disabled",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                cwe_id="CWE-319",
-                                owasp_id="M3",
-                            )
+                if keyword.arg == "verify" and isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="MOBILE002",
+                            message="Insufficient transport layer protection: SSL verification disabled",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            cwe_id="CWE-319",
+                            owasp_id="M3",
                         )
+                    )
 
     def _check_mobile_encryption(self, node: ast.Call) -> None:
         """
@@ -361,10 +359,9 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             # Check if any args contain URLs
             has_https_url = False
             for arg in node.args:
-                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    if arg.value.startswith("https://"):
-                        has_https_url = True
-                        break
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value.startswith("https://"):
+                    has_https_url = True
+                    break
 
             if has_https_url and not has_cert_pin:
                 self.violations.append(
@@ -392,21 +389,20 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         line_text = ast.get_source_segment(self.code, node) or ""
 
         # Check for debug mode enabled
-        if re.search(r"debug\s*=\s*True", line_text, re.IGNORECASE):
-            if "production" in line_text.lower() or "prod" in line_text.lower():
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="MOBILE006",
-                        message="Debuggable build in production: Debug mode enabled",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.MEDIUM,
-                        category=RuleCategory.SECURITY,
-                        cwe_id="CWE-489",
-                        owasp_id="M7",
-                    )
+        if re.search(r"debug\s*=\s*True", line_text, re.IGNORECASE) and ("production" in line_text.lower() or "prod" in line_text.lower()):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="MOBILE006",
+                    message="Debuggable build in production: Debug mode enabled",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    cwe_id="CWE-489",
+                    owasp_id="M7",
                 )
+            )
 
     def _check_hardcoded_api_endpoints(self, node: ast.Assign) -> None:
         """
@@ -420,24 +416,20 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
             return
 
         value = node.value.value
-        if isinstance(value, str):
-            # Check for hardcoded API URLs
-            if value.startswith(("http://", "https://")):
-                # Check if it's an internal or production endpoint
-                if any(x in value.lower() for x in ["api", "internal", "prod", "staging"]):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="MOBILE007",
-                            message="Hardcoded API endpoint: API URL embedded in source code",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SECURITY,
-                            cwe_id="CWE-615",
-                            owasp_id="M7",
-                        )
-                    )
+        if isinstance(value, str) and value.startswith(("http://", "https://")) and any(x in value.lower() for x in ["api", "internal", "prod", "staging"]):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="MOBILE007",
+                    message="Hardcoded API endpoint: API URL embedded in source code",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SECURITY,
+                    cwe_id="CWE-615",
+                    owasp_id="M7",
+                )
+            )
 
     def _check_code_obfuscation(self, node: ast.FunctionDef) -> None:
         """
@@ -451,22 +443,20 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         # Check for functions with security-sensitive names
         sensitive_names = ["decrypt", "unlock", "authenticate", "verify_license"]
 
-        if any(name in node.name.lower() for name in sensitive_names):
-            # Check if function has obvious logic (not obfuscated)
-            if len(node.body) < 10:  # Simple heuristic
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="MOBILE008",
-                        message="Missing code obfuscation: Security-sensitive function may be reverse-engineered",
-                        file_path=self.file_path,
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.SECURITY,
-                        cwe_id="CWE-656",
-                        owasp_id="M7",
-                    )
+        if any(name in node.name.lower() for name in sensitive_names) and len(node.body) < 10:  # Simple heuristic  # noqa: PLR2004 - length check:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="MOBILE008",
+                    message="Missing code obfuscation: Security-sensitive function may be reverse-engineered",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SECURITY,
+                    cwe_id="CWE-656",
+                    owasp_id="M7",
                 )
+            )
 
     def _check_insecure_ipc(self, node: ast.Call) -> None:
         """
@@ -712,23 +702,22 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
 
             # Check if connecting to a device (IoT context)
             line_text = ast.get_source_segment(self.code, node) or ""
-            if any(x in line_text.lower() for x in ["device", "sensor", "actuator"]):
-                if not has_encryption:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="IOT005",
-                            message="Unencrypted IoT communications: Device communication without encryption",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.HIGH,
-                            category=RuleCategory.SECURITY,
-                            cwe_id="CWE-319",
-                            owasp_id="I3",
-                        )
+            if any(x in line_text.lower() for x in ["device", "sensor", "actuator"]) and not has_encryption:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="IOT005",
+                        message="Unencrypted IoT communications: Device communication without encryption",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.HIGH,
+                        category=RuleCategory.SECURITY,
+                        cwe_id="CWE-319",
+                        owasp_id="I3",
                     )
+                )
 
-    def _check_mqtt_security(self, node: ast.Call) -> None:
+    def _check_mqtt_security(self, node: ast.Call) -> None:  # noqa: PLR0912 - Complex MQTT security detection requires many checks
         """
         IOT006: Detect MQTT security issues.
 
@@ -741,27 +730,24 @@ class MobileIoTSecurityVisitor(ast.NodeVisitor):
         # Track username_pw_set and tls_set calls
         if func_name == "username_pw_set":
             # Get the client object name if available
-            if isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name):
-                    mqtt_client_name = node.func.value.id
-                    self.mqtt_clients_with_auth.add(mqtt_client_name)
+            if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                mqtt_client_name = node.func.value.id
+                self.mqtt_clients_with_auth.add(mqtt_client_name)
             return
 
         if func_name == "tls_set":
             # Get the client object name if available
-            if isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name):
-                    mqtt_client_name = node.func.value.id
-                    self.mqtt_clients_with_tls.add(mqtt_client_name)
+            if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                mqtt_client_name = node.func.value.id
+                self.mqtt_clients_with_tls.add(mqtt_client_name)
             return
 
         # Check for MQTT connections
         if "mqtt" in func_name.lower() or (self.has_mqtt and "connect" in func_name.lower()):
             # Get the client object name
             client_name: str | None = None
-            if isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name):
-                    client_name = node.func.value.id
+            if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                client_name = node.func.value.id
 
             # Check for authentication (either in keywords or previously configured)
             has_auth = False

@@ -52,7 +52,7 @@ class ComplianceTracker:
             for line in owasp_result.stdout.strip().split("\n"):
                 if line:
                     parts = line.split(":", 2)
-                    if len(parts) >= 3:
+                    if len(parts) >= 3:  # noqa: PLR2004 - threshold
                         file_path, line_num, ref = parts
                         annotations["OWASP"].append(
                             {"file": file_path, "line": int(line_num), "reference": ref.strip()}
@@ -78,7 +78,7 @@ class ComplianceTracker:
             for line in cwe_result.stdout.strip().split("\n"):
                 if line:
                     parts = line.split(":", 2)
-                    if len(parts) >= 3:
+                    if len(parts) >= 3:  # noqa: PLR2004 - threshold
                         file_path, line_num, ref = parts
                         annotations["CWE"].append(
                             {"file": file_path, "line": int(line_num), "reference": ref.strip()}

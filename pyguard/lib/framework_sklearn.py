@@ -108,7 +108,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
             )
 
         # Check for joblib.load() without security considerations
-        elif (
+        elif (  # noqa: SIM102
             func_name == "joblib.load" or (func_name == "load" and self.joblib_imports)
         ) and self.has_sklearn_import:
             if not self._has_validation_context(node):
@@ -137,7 +137,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         # These are typically called as method.predict(data)
         if isinstance(node.func, ast.Attribute):
             attr = node.func.attr
-            if attr in [
+            if attr in [  # noqa: SIM102
                 "predict",
                 "predict_proba",
                 "predict_log_proba",

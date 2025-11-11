@@ -12,12 +12,11 @@ Tests cover:
 
 import ast
 from pathlib import Path
-import pytest
 
 from pyguard.lib.framework_streamlit import (
+    StreamlitSecurityVisitor,
     analyze_streamlit_security,
     fix_streamlit_security,
-    StreamlitSecurityVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -154,10 +153,10 @@ uploaded_file = st.file_uploader("Upload CSV", type=['csv'])
     def test_fix_file_upload_security(self):
         """Test auto-fix for file upload without type filter."""
         code = """uploaded_file = st.file_uploader("Upload file")"""
-        
+
         # Create a mock violation
-        from pyguard.lib.rule_engine import RuleViolation, FixApplicability, RuleCategory
-        
+        from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleViolation
+
         violation = RuleViolation(
             rule_id="STREAMLIT005",
             message="File uploader should specify allowed file types",
@@ -169,7 +168,7 @@ uploaded_file = st.file_uploader("Upload CSV", type=['csv'])
             fix_applicability=FixApplicability.SAFE,
             fix_data={"add_parameter": "type=['txt', 'csv']"},
         )
-        
+
         fixed_code, success = fix_streamlit_security(code, violation)
         assert success
         assert "type=['txt', 'csv']" in fixed_code
@@ -239,7 +238,7 @@ email = st.text_input("Email")
         tree = ast.parse(code)
         visitor = StreamlitSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert len(visitor.user_inputs) == 2
         assert any(inp["var_name"] == "username" for inp in visitor.user_inputs)
         assert any(inp["var_name"] == "email" for inp in visitor.user_inputs)
@@ -257,7 +256,7 @@ choice = st.selectbox("Choice", ["A", "B"])
         tree = ast.parse(code)
         visitor = StreamlitSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert len(visitor.user_inputs) == 4
         input_types = [inp["input_type"] for inp in visitor.user_inputs]
         assert "text_input" in input_types
@@ -279,7 +278,7 @@ st.title("My App")
         tree = ast.parse(code)
         visitor = StreamlitSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_streamlit_import is True
 
     def test_detect_streamlit_from_import(self):
@@ -292,7 +291,7 @@ title("My App")
         tree = ast.parse(code)
         visitor = StreamlitSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_streamlit_import is True
 
     def test_no_violations_without_streamlit_import(self):
@@ -357,10 +356,10 @@ user_input = st.text_input("Input")
 st.markdown(f"<div>{user_input}</div>", unsafe_allow_html=True)  # STREAMLIT003
 """
         violations = analyze_streamlit_security(Path("test.py"), code)
-        
+
         # Should have violations for multiple issues
         assert len(violations) >= 4
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "STREAMLIT001" in rule_ids
         assert "STREAMLIT002" in rule_ids

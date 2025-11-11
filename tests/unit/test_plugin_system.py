@@ -1,6 +1,5 @@
 """Tests for plugin system."""
 
-import ast
 from pathlib import Path
 
 import pytest

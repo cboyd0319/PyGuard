@@ -189,59 +189,55 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Call):
                 for kw in decorator.keywords:
-                    if kw.arg == "serializer" and isinstance(kw.value, ast.Constant):
-                        if kw.value.value == "pickle":
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="CELERY001",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    message="Task uses pickle serializer - vulnerable to arbitrary code execution",
-                                    fix_suggestion="Use JSON serializer instead: @task(serializer='json'). "
-                                    "Pickle can deserialize malicious payloads leading to RCE.",
-                                    cwe_id="CWE-502",
-                                    owasp_id="A08:2021 - Software and Data Integrity Failures",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
+                    if kw.arg == "serializer" and isinstance(kw.value, ast.Constant) and kw.value.value == "pickle":
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="CELERY001",
+                                file_path=self.file_path,
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.CRITICAL,
+                                category=RuleCategory.SECURITY,
+                                message="Task uses pickle serializer - vulnerable to arbitrary code execution",
+                                fix_suggestion="Use JSON serializer instead: @task(serializer='json'). "
+                                "Pickle can deserialize malicious payloads leading to RCE.",
+                                cwe_id="CWE-502",
+                                owasp_id="A08:2021 - Software and Data Integrity Failures",
+                                fix_applicability=FixApplicability.SAFE,
                             )
+                        )
 
     def _check_task_signature_spoofing(self, node: ast.FunctionDef) -> None:
         """CELERY002: Detect task signature spoofing vulnerabilities."""
         # Check if task accepts untrusted input without validation
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Attribute):
-                    # Check for apply_async with user-controlled args
-                    if stmt.func.attr == "apply_async":
-                        for kw in stmt.keywords:
-                            if kw.arg in {"args", "kwargs"}:
-                                # Simplified check - in production would track data flow
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="CELERY002",
-                                        file_path=self.file_path,
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        message="Task signature may accept untrusted arguments - spoofing risk",
-                                        fix_suggestion="Validate all task arguments. Use task.signature() with bind=True and validate self.request. "
-                                        "Consider using task_protocol=2 for enhanced security.",
-                                        cwe_id="CWE-345",
-                                        owasp_id="A08:2021 - Software and Data Integrity Failures",
-                                        fix_applicability=FixApplicability.MANUAL,
-                                    )
-                                )
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr == "apply_async":
+                for kw in stmt.keywords:
+                    if kw.arg in {"args", "kwargs"}:
+                        # Simplified check - in production would track data flow
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="CELERY002",
+                                file_path=self.file_path,
+                                line_number=stmt.lineno,
+                                column=stmt.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                message="Task signature may accept untrusted arguments - spoofing risk",
+                                fix_suggestion="Validate all task arguments. Use task.signature() with bind=True and validate self.request. "
+                                "Consider using task_protocol=2 for enhanced security.",
+                                cwe_id="CWE-345",
+                                owasp_id="A08:2021 - Software and Data Integrity Failures",
+                                fix_applicability=FixApplicability.MANUAL,
+                            )
+                        )
 
     def _check_missing_task_auth(self, node: ast.FunctionDef) -> None:
         """CELERY003: Detect tasks without authentication checks."""
         # Check if task has any authentication/authorization
         has_auth_check = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):  # noqa: SIM102
                 # Look for common auth patterns
                 if stmt.func.attr in (
                     "authenticate",
@@ -255,10 +251,9 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         # Check for sensitive operations without auth
         has_sensitive_ops = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
-                if stmt.func.attr in ("delete", "remove", "drop", "execute", "system"):
-                    has_sensitive_ops = True
-                    break
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr in ("delete", "remove", "drop", "execute", "system"):
+                has_sensitive_ops = True
+                break
 
         if has_sensitive_ops and not has_auth_check:
             self.violations.append(
@@ -281,71 +276,66 @@ class CelerySecurityVisitor(ast.NodeVisitor):
     def _check_task_argument_injection(self, node: ast.FunctionDef) -> None:
         """CELERY004: Detect task argument injection vulnerabilities."""
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                # Check for SQL/command execution with task args
-                if isinstance(stmt.func, ast.Attribute):
-                    if stmt.func.attr in ("execute", "system", "call", "Popen"):
-                        # Check if function parameters are used directly
-                        for arg in node.args.args:
-                            arg_name = arg.arg
-                            # Check if task arg is used in dangerous call
-                            for call_arg in stmt.args:
-                                if isinstance(call_arg, ast.Name) and call_arg.id == arg_name:
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="CELERY004",
-                                            file_path=self.file_path,
-                                            line_number=stmt.lineno,
-                                            column=stmt.col_offset,
-                                            severity=RuleSeverity.CRITICAL,
-                                            category=RuleCategory.SECURITY,
-                                            message="Task argument used directly in dangerous operation - injection risk",
-                                            fix_suggestion="Validate and sanitize all task arguments. Use parameterized queries for SQL, "
-                                            "whitelist validation for commands, and escape special characters.",
-                                            cwe_id="CWE-94",
-                                            owasp_id="A03:2021 - Injection",
-                                            fix_applicability=FixApplicability.MANUAL,
-                                        )
-                                    )
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr in ("execute", "system", "call", "Popen"):
+                # Check if function parameters are used directly
+                for arg in node.args.args:
+                    arg_name = arg.arg
+                    # Check if task arg is used in dangerous call
+                    for call_arg in stmt.args:
+                        if isinstance(call_arg, ast.Name) and call_arg.id == arg_name:
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="CELERY004",
+                                    file_path=self.file_path,
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.CRITICAL,
+                                    category=RuleCategory.SECURITY,
+                                    message="Task argument used directly in dangerous operation - injection risk",
+                                    fix_suggestion="Validate and sanitize all task arguments. Use parameterized queries for SQL, "
+                                    "whitelist validation for commands, and escape special characters.",
+                                    cwe_id="CWE-94",
+                                    owasp_id="A03:2021 - Injection",
+                                    fix_applicability=FixApplicability.MANUAL,
+                                )
+                            )
 
     def _check_result_exposure(self, node: ast.FunctionDef) -> None:
         """CELERY005: Detect sensitive data exposure in task results."""
         # Check for return statements with potentially sensitive data
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Return) and stmt.value:
-                # Check for dict with sensitive keys
-                if isinstance(stmt.value, ast.Dict):
-                    for key in stmt.value.keys:
-                        if isinstance(key, ast.Constant):
-                            key_str = str(key.value).lower()
-                            if any(
-                                sensitive in key_str
-                                for sensitive in [
-                                    "password",
-                                    "secret",
-                                    "token",
-                                    "key",
-                                    "credential",
-                                    "private",
-                                ]
-                            ):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="CELERY005",
-                                        file_path=self.file_path,
-                                        line_number=stmt.lineno,
-                                        column=stmt.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        message="Task returns sensitive data - exposure via result backend",
-                                        fix_suggestion="Never return passwords, secrets, or credentials in task results. "
-                                        "Use secure storage and return only references/IDs. "
-                                        "Ensure result backend is encrypted (Redis TLS, encrypted DB).",
-                                        cwe_id="CWE-200",
-                                        owasp_id="A01:2021 - Broken Access Control",
-                                        fix_applicability=FixApplicability.MANUAL,
-                                    )
+            if isinstance(stmt, ast.Return) and stmt.value and isinstance(stmt.value, ast.Dict):
+                for key in stmt.value.keys:
+                    if isinstance(key, ast.Constant):
+                        key_str = str(key.value).lower()
+                        if any(
+                            sensitive in key_str
+                            for sensitive in [
+                                "password",
+                                "secret",
+                                "token",
+                                "key",
+                                "credential",
+                                "private",
+                            ]
+                        ):
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="CELERY005",
+                                    file_path=self.file_path,
+                                    line_number=stmt.lineno,
+                                    column=stmt.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    message="Task returns sensitive data - exposure via result backend",
+                                    fix_suggestion="Never return passwords, secrets, or credentials in task results. "
+                                    "Use secure storage and return only references/IDs. "
+                                    "Ensure result backend is encrypted (Redis TLS, encrypted DB).",
+                                    cwe_id="CWE-200",
+                                    owasp_id="A01:2021 - Broken Access Control",
+                                    fix_applicability=FixApplicability.MANUAL,
                                 )
+                            )
 
     def _check_retry_logic(self, node: ast.FunctionDef) -> None:
         """CELERY006: Detect insecure retry logic."""
@@ -409,10 +399,9 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         # Check if task seems to do expensive operations
         has_expensive_ops = False
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute):
-                if stmt.func.attr in ("request", "get", "post", "execute", "query"):
-                    has_expensive_ops = True
-                    break
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Attribute) and stmt.func.attr in ("request", "get", "post", "execute", "query"):
+                has_expensive_ops = True
+                break
 
         if has_expensive_ops and not has_rate_limit:
             self.violations.append(
@@ -436,28 +425,25 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         """CELERY008: Detect potential worker pool exhaustion."""
         # Check for blocking operations in tasks
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Call):
-                if isinstance(stmt.func, ast.Name):
-                    # Check for blocking calls without timeout
-                    if stmt.func.id in ("sleep", "input", "wait"):
-                        has_timeout = any(kw.arg == "timeout" for kw in stmt.keywords)
-                        if not has_timeout:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="CELERY008",
-                                    file_path=self.file_path,
-                                    line_number=stmt.lineno,
-                                    column=stmt.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.PERFORMANCE,
-                                    message="Task uses blocking operation without timeout - worker pool exhaustion risk",
-                                    fix_suggestion="Add timeout parameter to prevent indefinite blocking. "
-                                    "Use task time_limit and soft_time_limit decorators.",
-                                    cwe_id="CWE-400",
-                                    owasp_id="A04:2021 - Insecure Design",
-                                    fix_applicability=FixApplicability.MANUAL,
-                                )
-                            )
+            if isinstance(stmt, ast.Call) and isinstance(stmt.func, ast.Name) and stmt.func.id in ("sleep", "input", "wait"):
+                has_timeout = any(kw.arg == "timeout" for kw in stmt.keywords)
+                if not has_timeout:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="CELERY008",
+                            file_path=self.file_path,
+                            line_number=stmt.lineno,
+                            column=stmt.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.PERFORMANCE,
+                            message="Task uses blocking operation without timeout - worker pool exhaustion risk",
+                            fix_suggestion="Add timeout parameter to prevent indefinite blocking. "
+                            "Use task time_limit and soft_time_limit decorators.",
+                            cwe_id="CWE-400",
+                            owasp_id="A04:2021 - Insecure Design",
+                            fix_applicability=FixApplicability.MANUAL,
+                        )
+                    )
 
     def _check_broker_url_security(self, node: ast.Call) -> None:
         """CELERY009: Detect insecure broker URL configuration."""
@@ -469,24 +455,23 @@ class CelerySecurityVisitor(ast.NodeVisitor):
                     self.broker_urls.append(broker_url)
 
                     # Check for insecure protocols
-                    if broker_url.startswith(("redis://", "amqp://", "mongodb://")):
-                        if "localhost" not in broker_url and "127.0.0.1" not in broker_url:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="CELERY009",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.HIGH,
-                                    category=RuleCategory.SECURITY,
-                                    message="Broker URL uses unencrypted protocol - credentials exposed in transit",
-                                    fix_suggestion="Use encrypted protocols: rediss:// for Redis, amqps:// for RabbitMQ, "
-                                    "mongodb+srv:// for MongoDB. Enable TLS/SSL on broker.",
-                                    cwe_id="CWE-311",
-                                    owasp_id="A02:2021 - Cryptographic Failures",
-                                    fix_applicability=FixApplicability.MANUAL,
-                                )
+                    if broker_url.startswith(("redis://", "amqp://", "mongodb://")) and "localhost" not in broker_url and "127.0.0.1" not in broker_url:
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="CELERY009",
+                                file_path=self.file_path,
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.HIGH,
+                                category=RuleCategory.SECURITY,
+                                message="Broker URL uses unencrypted protocol - credentials exposed in transit",
+                                fix_suggestion="Use encrypted protocols: rediss:// for Redis, amqps:// for RabbitMQ, "
+                                "mongodb+srv:// for MongoDB. Enable TLS/SSL on broker.",
+                                cwe_id="CWE-311",
+                                owasp_id="A02:2021 - Cryptographic Failures",
+                                fix_applicability=FixApplicability.MANUAL,
                             )
+                        )
 
                     # Check for credentials in URL
                     if "@" in broker_url and (
@@ -514,306 +499,275 @@ class CelerySecurityVisitor(ast.NodeVisitor):
         # Check for backend configuration with user input
         if isinstance(node.func, ast.Name) and node.func.id == "Celery":
             for kw in node.keywords:
-                if kw.arg == "backend":
-                    # Check if backend URL comes from user input (simplified)
-                    if isinstance(kw.value, ast.Call):
-                        if isinstance(kw.value.func, ast.Attribute):
-                            if kw.value.func.attr in ("get", "getenv", "input"):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="CELERY010",
-                                        file_path=self.file_path,
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.HIGH,
-                                        category=RuleCategory.SECURITY,
-                                        message="Result backend URL from user input - injection and SSRF risk",
-                                        fix_suggestion="Use hardcoded backend URLs or validate against whitelist. "
-                                        "Never accept backend URLs from user input.",
-                                        cwe_id="CWE-943",
-                                        owasp_id="A03:2021 - Injection",
-                                        fix_applicability=FixApplicability.MANUAL,
-                                    )
-                                )
-
-    def _check_canvas_security(self, node: ast.Call) -> None:
-        """CELERY011: Detect insecure canvas operations (chain/chord/group)."""
-        if isinstance(node.func, ast.Name):
-            # Check for canvas primitives
-            if node.func.id in ("chain", "chord", "group"):
-                # Check for task signatures from user input
-                for arg in node.args:
-                    if isinstance(arg, ast.Call):
-                        # Simplified check for apply_async or signature
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="CELERY011",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.SECURITY,
-                                message=f"Canvas operation ({node.func.id}) may use untrusted task signatures",
-                                fix_suggestion="Validate all task signatures in canvas workflows. "
-                                "Use immutable signatures to prevent tampering. "
-                                "Apply task-level authentication.",
-                                cwe_id="CWE-345",
-                                owasp_id="A08:2021 - Software and Data Integrity Failures",
-                                fix_applicability=FixApplicability.MANUAL,
-                            )
-                        )
-
-    def _check_task_revocation(self, node: ast.Call) -> None:
-        """CELERY012: Detect task revocation bypass vulnerabilities."""
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "revoke":
-                # Check if revoke is called without terminate
-                has_terminate = any(kw.arg == "terminate" for kw in node.keywords)
-                if not has_terminate:
+                if kw.arg == "backend" and isinstance(kw.value, ast.Call) and isinstance(kw.value.func, ast.Attribute) and kw.value.func.attr in ("get", "getenv", "input"):
                     self.violations.append(
                         RuleViolation(
-                            rule_id="CELERY012",
-                            file_path=self.file_path,
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SECURITY,
-                            message="Task revocation without terminate flag - task may continue execution",
-                            fix_suggestion="Use revoke(terminate=True) to forcefully stop running tasks. "
-                            "Also check task_reject_on_worker_lost setting.",
-                            cwe_id="CWE-400",
-                            owasp_id="A04:2021 - Insecure Design",
-                            fix_applicability=FixApplicability.SUGGESTED,
-                        )
-                    )
-
-    def _check_monitoring_security(self, node: ast.Call) -> None:
-        """CELERY013: Detect insecure monitoring interface configuration."""
-        # Check for celery events or control commands without auth
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr in ("control", "events"):
-                line_num = node.lineno
-                if line_num < len(self.lines):
-                    line = self.lines[line_num - 1]
-                    # Check if authentication is configured
-                    if "broker_use_ssl" not in line and "security" not in line.lower():
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="CELERY013",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.SECURITY,
-                                message="Monitoring interface accessed without security configuration",
-                                fix_suggestion="Configure broker_use_ssl and enable authentication for monitoring. "
-                                "Restrict network access to monitoring ports. Use Celery security features.",
-                                cwe_id="CWE-306",
-                                owasp_id="A07:2021 - Identification and Authentication Failures",
-                                fix_applicability=FixApplicability.MANUAL,
-                            )
-                        )
-
-    def _check_flower_security(self, node: ast.Call) -> None:
-        """CELERY014: Detect insecure Flower dashboard configuration."""
-        # Check for Flower app initialization
-        if isinstance(node.func, ast.Attribute):
-            if "flower" in str(node.func).lower():
-                # Check for basic_auth or auth configuration
-                has_auth = any(
-                    kw.arg in ("basic_auth", "auth", "oauth2_key", "oauth2_secret")
-                    for kw in node.keywords
-                )
-                if not has_auth:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="CELERY014",
+                            rule_id="CELERY010",
                             file_path=self.file_path,
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.HIGH,
                             category=RuleCategory.SECURITY,
-                            message="Flower dashboard configured without authentication",
-                            fix_suggestion="Configure Flower authentication: --basic_auth=user:password or OAuth2. "
-                            "Never expose Flower dashboard publicly without auth.",
+                            message="Result backend URL from user input - injection and SSRF risk",
+                            fix_suggestion="Use hardcoded backend URLs or validate against whitelist. "
+                            "Never accept backend URLs from user input.",
+                            cwe_id="CWE-943",
+                            owasp_id="A03:2021 - Injection",
+                            fix_applicability=FixApplicability.MANUAL,
+                        )
+                    )
+
+    def _check_canvas_security(self, node: ast.Call) -> None:
+        """CELERY011: Detect insecure canvas operations (chain/chord/group)."""
+        if isinstance(node.func, ast.Name) and node.func.id in ("chain", "chord", "group"):
+            # Check for task signatures from user input
+            for arg in node.args:
+                if isinstance(arg, ast.Call):
+                    # Simplified check for apply_async or signature
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="CELERY011",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            message=f"Canvas operation ({node.func.id}) may use untrusted task signatures",
+                            fix_suggestion="Validate all task signatures in canvas workflows. "
+                            "Use immutable signatures to prevent tampering. "
+                            "Apply task-level authentication.",
+                            cwe_id="CWE-345",
+                            owasp_id="A08:2021 - Software and Data Integrity Failures",
+                            fix_applicability=FixApplicability.MANUAL,
+                        )
+                    )
+
+    def _check_task_revocation(self, node: ast.Call) -> None:
+        """CELERY012: Detect task revocation bypass vulnerabilities."""
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "revoke":
+            # Check if revoke is called without terminate
+            has_terminate = any(kw.arg == "terminate" for kw in node.keywords)
+            if not has_terminate:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="CELERY012",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SECURITY,
+                        message="Task revocation without terminate flag - task may continue execution",
+                        fix_suggestion="Use revoke(terminate=True) to forcefully stop running tasks. "
+                        "Also check task_reject_on_worker_lost setting.",
+                        cwe_id="CWE-400",
+                        owasp_id="A04:2021 - Insecure Design",
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
+    def _check_monitoring_security(self, node: ast.Call) -> None:
+        """CELERY013: Detect insecure monitoring interface configuration."""
+        # Check for celery events or control commands without auth
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("control", "events"):
+            line_num = node.lineno
+            if line_num < len(self.lines):
+                line = self.lines[line_num - 1]
+                # Check if authentication is configured
+                if "broker_use_ssl" not in line and "security" not in line.lower():
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="CELERY013",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            message="Monitoring interface accessed without security configuration",
+                            fix_suggestion="Configure broker_use_ssl and enable authentication for monitoring. "
+                            "Restrict network access to monitoring ports. Use Celery security features.",
                             cwe_id="CWE-306",
                             owasp_id="A07:2021 - Identification and Authentication Failures",
                             fix_applicability=FixApplicability.MANUAL,
                         )
                     )
 
-    def _check_broker_connection_config(self, node: ast.Assign) -> None:
-        """CELERY015: Detect insecure broker connection configuration."""
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                # Check for broker connection settings
-                if target.id in ("broker_use_ssl", "BROKER_USE_SSL"):
-                    if isinstance(node.value, ast.Constant) and node.value.value is False:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="CELERY015",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.HIGH,
-                                category=RuleCategory.SECURITY,
-                                message="Broker SSL/TLS explicitly disabled - unencrypted communication",
-                                fix_suggestion="Enable SSL/TLS for broker: broker_use_ssl=True. "
-                                "Configure broker_ssl_options with cert validation.",
-                                cwe_id="CWE-319",
-                                owasp_id="A02:2021 - Cryptographic Failures",
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
-
-                # Check for result backend SSL
-                if target.id in ("result_backend_use_ssl", "RESULT_BACKEND_USE_SSL"):
-                    if isinstance(node.value, ast.Constant) and node.value.value is False:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="CELERY015",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.SECURITY,
-                                message="Result backend SSL/TLS explicitly disabled",
-                                fix_suggestion="Enable SSL/TLS for result backend to protect task results in transit.",
-                                cwe_id="CWE-319",
-                                owasp_id="A02:2021 - Cryptographic Failures",
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
-
-    def _check_task_routing_config(self, node: ast.Assign) -> None:
-        """CELERY016: Detect task routing manipulation risks."""
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                # Check for task_routes configuration
-                if target.id in ("task_routes", "CELERY_ROUTES"):
-                    # Check if routes come from user input (simplified)
-                    if isinstance(node.value, ast.Call):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="CELERY016",
-                                file_path=self.file_path,
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.SECURITY,
-                                message="Task routing configuration from dynamic source - manipulation risk",
-                                fix_suggestion="Use static routing configuration. Never accept routing rules from user input. "
-                                "Validate queue names against whitelist.",
-                                cwe_id="CWE-15",
-                                owasp_id="A04:2021 - Insecure Design",
-                                fix_applicability=FixApplicability.MANUAL,
-                            )
-                        )
-
-    def _check_beat_scheduler_config(self, node: ast.Assign) -> None:
-        """CELERY017: Detect Beat scheduler injection vulnerabilities."""
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                # Check for beat_schedule configuration
-                if target.id in ("beat_schedule", "CELERYBEAT_SCHEDULE"):
-                    # Check if schedule is modified at runtime
-                    if isinstance(node.value, ast.Dict):
-                        for _key, value in zip(node.value.keys, node.value.values, strict=False):
-                            # Check for task names from variables (potential injection)
-                            if isinstance(value, ast.Dict):
-                                for k, v in zip(value.keys, value.values, strict=False):
-                                    if isinstance(k, ast.Constant) and k.value == "task":
-                                        if not isinstance(v, ast.Constant):
-                                            self.violations.append(
-                                                RuleViolation(
-                                                    rule_id="CELERY017",
-                                                    file_path=self.file_path,
-                                                    line_number=node.lineno,
-                                                    column=node.col_offset,
-                                                    severity=RuleSeverity.HIGH,
-                                                    category=RuleCategory.SECURITY,
-                                                    message="Beat schedule task name from variable - injection risk",
-                                                    fix_suggestion="Use hardcoded task names in beat_schedule. "
-                                                    "Never accept task names from user input or configuration files.",
-                                                    cwe_id="CWE-94",
-                                                    owasp_id="A03:2021 - Injection",
-                                                    fix_applicability=FixApplicability.MANUAL,
-                                                )
-                                            )
-
-    def _check_worker_privilege_config(self, node: ast.Assign) -> None:
-        """CELERY018: Detect worker privilege escalation risks."""
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                # Check for worker user/group settings
-                if target.id in ("worker_user", "worker_group", "C_FORCE_ROOT"):
-                    if target.id == "C_FORCE_ROOT":
-                        if isinstance(node.value, ast.Constant) and node.value.value is True:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="CELERY018",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.CRITICAL,
-                                    category=RuleCategory.SECURITY,
-                                    message="Worker configured to run as root - privilege escalation risk",
-                                    fix_suggestion="Never run Celery workers as root. Create dedicated unprivileged user. "
-                                    "Remove C_FORCE_ROOT setting and run as non-root user.",
-                                    cwe_id="CWE-250",
-                                    owasp_id="A04:2021 - Insecure Design",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
-                            )
-
-    def _check_insecure_rpc_calls(self, node: ast.Call) -> None:
-        """CELERY019: Detect insecure RPC calls to workers."""
-        if isinstance(node.func, ast.Attribute):
-            # Check for direct RPC calls without authentication
-            if node.func.attr in ("control.inspect", "control.broadcast", "control.pool_restart"):
+    def _check_flower_security(self, node: ast.Call) -> None:
+        """CELERY014: Detect insecure Flower dashboard configuration."""
+        # Check for Flower app initialization
+        if isinstance(node.func, ast.Attribute) and "flower" in str(node.func).lower():
+            # Check for basic_auth or auth configuration
+            has_auth = any(
+                kw.arg in ("basic_auth", "auth", "oauth2_key", "oauth2_secret")
+                for kw in node.keywords
+            )
+            if not has_auth:
                 self.violations.append(
                     RuleViolation(
-                        rule_id="CELERY019",
+                        rule_id="CELERY014",
                         file_path=self.file_path,
                         line_number=node.lineno,
                         column=node.col_offset,
-                        severity=RuleSeverity.MEDIUM,
+                        severity=RuleSeverity.HIGH,
                         category=RuleCategory.SECURITY,
-                        message="Worker RPC call without authentication check",
-                        fix_suggestion="Implement authentication for worker control RPC calls. "
-                        "Use broker_use_ssl and validate caller identity. "
-                        "Restrict network access to management interfaces.",
+                        message="Flower dashboard configured without authentication",
+                        fix_suggestion="Configure Flower authentication: --basic_auth=user:password or OAuth2. "
+                        "Never expose Flower dashboard publicly without auth.",
                         cwe_id="CWE-306",
                         owasp_id="A07:2021 - Identification and Authentication Failures",
                         fix_applicability=FixApplicability.MANUAL,
                     )
                 )
 
+    def _check_broker_connection_config(self, node: ast.Assign) -> None:
+        """CELERY015: Detect insecure broker connection configuration."""
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                # Check for broker connection settings
+                if target.id in ("broker_use_ssl", "BROKER_USE_SSL") and isinstance(node.value, ast.Constant) and node.value.value is False:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="CELERY015",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.HIGH,
+                            category=RuleCategory.SECURITY,
+                            message="Broker SSL/TLS explicitly disabled - unencrypted communication",
+                            fix_suggestion="Enable SSL/TLS for broker: broker_use_ssl=True. "
+                            "Configure broker_ssl_options with cert validation.",
+                            cwe_id="CWE-319",
+                            owasp_id="A02:2021 - Cryptographic Failures",
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+
+                # Check for result backend SSL
+                if target.id in ("result_backend_use_ssl", "RESULT_BACKEND_USE_SSL") and isinstance(node.value, ast.Constant) and node.value.value is False:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="CELERY015",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            message="Result backend SSL/TLS explicitly disabled",
+                            fix_suggestion="Enable SSL/TLS for result backend to protect task results in transit.",
+                            cwe_id="CWE-319",
+                            owasp_id="A02:2021 - Cryptographic Failures",
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
+
+    def _check_task_routing_config(self, node: ast.Assign) -> None:
+        """CELERY016: Detect task routing manipulation risks."""
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in ("task_routes", "CELERY_ROUTES") and isinstance(node.value, ast.Call):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="CELERY016",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        message="Task routing configuration from dynamic source - manipulation risk",
+                        fix_suggestion="Use static routing configuration. Never accept routing rules from user input. "
+                        "Validate queue names against whitelist.",
+                        cwe_id="CWE-15",
+                        owasp_id="A04:2021 - Insecure Design",
+                        fix_applicability=FixApplicability.MANUAL,
+                    )
+                )
+
+    def _check_beat_scheduler_config(self, node: ast.Assign) -> None:
+        """CELERY017: Detect Beat scheduler injection vulnerabilities."""
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in ("beat_schedule", "CELERYBEAT_SCHEDULE") and isinstance(node.value, ast.Dict):
+                for _key, value in zip(node.value.keys, node.value.values, strict=False):
+                    # Check for task names from variables (potential injection)
+                    if isinstance(value, ast.Dict):
+                        for k, v in zip(value.keys, value.values, strict=False):
+                            if isinstance(k, ast.Constant) and k.value == "task" and not isinstance(v, ast.Constant):
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="CELERY017",
+                                        file_path=self.file_path,
+                                        line_number=node.lineno,
+                                        column=node.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        message="Beat schedule task name from variable - injection risk",
+                                        fix_suggestion="Use hardcoded task names in beat_schedule. "
+                                        "Never accept task names from user input or configuration files.",
+                                        cwe_id="CWE-94",
+                                        owasp_id="A03:2021 - Injection",
+                                        fix_applicability=FixApplicability.MANUAL,
+                                    )
+                                )
+
+    def _check_worker_privilege_config(self, node: ast.Assign) -> None:
+        """CELERY018: Detect worker privilege escalation risks."""
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in ("worker_user", "worker_group", "C_FORCE_ROOT") and target.id == "C_FORCE_ROOT" and isinstance(node.value, ast.Constant) and node.value.value is True:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="CELERY018",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.CRITICAL,
+                        category=RuleCategory.SECURITY,
+                        message="Worker configured to run as root - privilege escalation risk",
+                        fix_suggestion="Never run Celery workers as root. Create dedicated unprivileged user. "
+                        "Remove C_FORCE_ROOT setting and run as non-root user.",
+                        cwe_id="CWE-250",
+                        owasp_id="A04:2021 - Insecure Design",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
+    def _check_insecure_rpc_calls(self, node: ast.Call) -> None:
+        """CELERY019: Detect insecure RPC calls to workers."""
+        if isinstance(node.func, ast.Attribute) and node.func.attr in ("control.inspect", "control.broadcast", "control.pool_restart"):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="CELERY019",
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.MEDIUM,
+                    category=RuleCategory.SECURITY,
+                    message="Worker RPC call without authentication check",
+                    fix_suggestion="Implement authentication for worker control RPC calls. "
+                    "Use broker_use_ssl and validate caller identity. "
+                    "Restrict network access to management interfaces.",
+                    cwe_id="CWE-306",
+                    owasp_id="A07:2021 - Identification and Authentication Failures",
+                    fix_applicability=FixApplicability.MANUAL,
+                )
+            )
+
     def _check_task_protocol_security(self, node: ast.Assign) -> None:
         """CELERY020: Detect insecure task protocol version."""
         for target in node.targets:
-            if isinstance(target, ast.Name):
-                # Check for task_protocol setting
-                if target.id in ("task_protocol", "CELERY_TASK_PROTOCOL"):
-                    if isinstance(node.value, ast.Constant):
-                        # Protocol 1 is less secure than protocol 2
-                        if node.value.value == 1:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="CELERY020",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    message="Task protocol version 1 is less secure than version 2",
-                                    fix_suggestion="Upgrade to task_protocol=2 for enhanced security. "
-                                    "Protocol 2 includes better error handling and security features.",
-                                    cwe_id="CWE-757",
-                                    owasp_id="A05:2021 - Security Misconfiguration",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
-                            )
+            if isinstance(target, ast.Name) and target.id in ("task_protocol", "CELERY_TASK_PROTOCOL") and isinstance(node.value, ast.Constant) and node.value.value == 1:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="CELERY020",
+                        file_path=self.file_path,
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.SECURITY,
+                        message="Task protocol version 1 is less secure than version 2",
+                        fix_suggestion="Upgrade to task_protocol=2 for enhanced security. "
+                        "Protocol 2 includes better error handling and security features.",
+                        cwe_id="CWE-757",
+                        owasp_id="A05:2021 - Security Misconfiguration",
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
 
 
 def analyze_celery_security(file_path: Path, code: str) -> list[RuleViolation]:

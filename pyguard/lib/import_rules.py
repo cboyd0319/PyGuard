@@ -74,7 +74,7 @@ class ImportVisitor(ast.NodeVisitor):
         self.from_imports.append(node)
 
         # TID002: Relative imports beyond parent level
-        if node.level and node.level > 2:
+        if node.level and node.level > 2:  # noqa: PLR2004 - threshold
             self.violations.append(
                 RuleViolation(
                     rule_id="TID002",
@@ -89,9 +89,9 @@ class ImportVisitor(ast.NodeVisitor):
             )
 
         # TID004: Import from future should be at top
-        if node.module == "__future__":
+        if node.module == "__future__":  # noqa: SIM102
             # Check if it's not at the top (allowing docstring)
-            if node.lineno > 10:  # Heuristic: should be in first 10 lines
+            if node.lineno > 10:  # Heuristic: should be in first 10 lines  # noqa: PLR2004 - threshold
                 self.violations.append(
                     RuleViolation(
                         rule_id="TID004",
@@ -106,7 +106,7 @@ class ImportVisitor(ast.NodeVisitor):
                 )
 
         # TID005: Banned from imports
-        if node.module and node.module.startswith("typing"):
+        if node.module and node.module.startswith("typing"):  # noqa: SIM102
             # Check if we're in TYPE_CHECKING block
             if not self.type_checking_block:
                 # TCH001: Type checking imports should be in TYPE_CHECKING block

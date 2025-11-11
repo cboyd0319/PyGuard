@@ -11,12 +11,11 @@ Tests cover:
 
 import ast
 from pathlib import Path
-import pytest
 
 from pyguard.lib.framework_dash import (
+    DashSecurityVisitor,
     analyze_dash_security,
     fix_dash_security,
-    DashSecurityVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -56,9 +55,9 @@ app.run_server(debug=False)
     def test_fix_debug_mode(self):
         """Test auto-fix for debug mode."""
         code = """app.run_server(debug=True)"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, FixApplicability, RuleCategory
-        
+
+        from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleViolation
+
         violation = RuleViolation(
             rule_id="DASH001",
             message="Debug mode enabled",
@@ -70,7 +69,7 @@ app.run_server(debug=False)
             fix_applicability=FixApplicability.SAFE,
             fix_data={"keyword": "debug", "new_value": "False"},
         )
-        
+
         fixed_code, success = fix_dash_security(code, violation)
         assert success
         assert "debug=False" in fixed_code
@@ -193,7 +192,7 @@ app = dash.Dash(__name__)
         tree = ast.parse(code)
         visitor = DashSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_dash_import is True
 
     def test_detect_dash_from_import(self):
@@ -206,7 +205,7 @@ app = Dash(__name__)
         tree = ast.parse(code)
         visitor = DashSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_dash_import is True
 
     def test_detect_plotly_import(self):
@@ -219,7 +218,7 @@ fig = go.Figure()
         tree = ast.parse(code)
         visitor = DashSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_plotly_import is True
 
     def test_no_violations_without_dash_import(self):
@@ -294,10 +293,10 @@ def update_data(user_input, search_term):
 app.run_server(debug=True)
 """
         violations = analyze_dash_security(Path("test.py"), code)
-        
+
         # Should have multiple violations
         assert len(violations) >= 3
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "DASH001" in rule_ids  # Debug mode
         assert "DASH003" in rule_ids  # XSS in Markdown
@@ -383,7 +382,7 @@ app.run_server(debug=True, host='0.0.0.0')
         violations = analyze_dash_security(Path("test.py"), code)
         # Should detect multiple issues
         assert len(violations) >= 2
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "DASH001" in rule_ids  # Debug mode
         assert "DASH003" in rule_ids  # XSS in Markdown
@@ -407,6 +406,6 @@ def update(value):
         tree = ast.parse(code)
         visitor = DashSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert len(visitor.callbacks) == 1
         assert visitor.callbacks[0]["line"] == 7

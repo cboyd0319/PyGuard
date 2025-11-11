@@ -12,12 +12,11 @@ Tests cover:
 
 import ast
 from pathlib import Path
-import pytest
 
 from pyguard.lib.framework_gradio import (
+    GradioSecurityVisitor,
     analyze_gradio_security,
     fix_gradio_security,
-    GradioSecurityVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -99,9 +98,9 @@ demo.launch(server_name="127.0.0.1")
     def test_fix_insecure_server_binding(self):
         """Test auto-fix for insecure server binding."""
         code = """demo.launch(server_name="0.0.0.0")"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, FixApplicability, RuleCategory
-        
+
+        from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleViolation
+
         violation = RuleViolation(
             rule_id="GRADIO002",
             message="Insecure server binding",
@@ -113,7 +112,7 @@ demo.launch(server_name="127.0.0.1")
             fix_applicability=FixApplicability.SAFE,
             fix_data={"suggested_value": "127.0.0.1"},
         )
-        
+
         fixed_code, success = fix_gradio_security(code, violation)
         assert success
         assert "127.0.0.1" in fixed_code
@@ -151,9 +150,9 @@ upload = gr.File(file_types=['.csv', '.txt'])
     def test_fix_file_upload_security(self):
         """Test auto-fix for file upload without type restrictions."""
         code = """upload = gr.File()"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, FixApplicability, RuleCategory
-        
+
+        from pyguard.lib.rule_engine import FixApplicability, RuleCategory, RuleViolation
+
         violation = RuleViolation(
             rule_id="GRADIO003",
             message="File upload needs type restrictions",
@@ -165,7 +164,7 @@ upload = gr.File(file_types=['.csv', '.txt'])
             fix_applicability=FixApplicability.SAFE,
             fix_data={"add_parameter": "file_types=['.txt', '.csv']"},
         )
-        
+
         fixed_code, success = fix_gradio_security(code, violation)
         assert success
         assert "file_types=" in fixed_code
@@ -277,7 +276,7 @@ demo = gr.Interface(fn=process, inputs="text", outputs="text")
         tree = ast.parse(code)
         visitor = GradioSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_gradio_import is True
 
     def test_detect_gradio_from_import(self):
@@ -290,7 +289,7 @@ demo = Interface(fn=process, inputs="text", outputs="text")
         tree = ast.parse(code)
         visitor = GradioSecurityVisitor(Path("test.py"), code)
         visitor.visit(tree)
-        
+
         assert visitor.has_gradio_import is True
 
     def test_no_violations_without_gradio_import(self):
@@ -364,10 +363,10 @@ demo = gr.Interface(fn=process, inputs=["text", gr.File()], outputs="text")
 demo.launch(share=True, server_name="0.0.0.0")
 """
         violations = analyze_gradio_security(Path("test.py"), code)
-        
+
         # Should have multiple violations
         assert len(violations) >= 4
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "GRADIO001" in rule_ids  # No auth
         assert "GRADIO002" in rule_ids  # Insecure binding
@@ -443,7 +442,7 @@ demo.launch(share=True)
         violations = analyze_gradio_security(Path("test.py"), code)
         # Should detect multiple issues
         assert len(violations) >= 3
-        
+
         rule_ids = [v.rule_id for v in violations]
         assert "GRADIO001" in rule_ids  # No auth
         assert "GRADIO003" in rule_ids  # No file types

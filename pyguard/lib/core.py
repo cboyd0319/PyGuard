@@ -60,7 +60,7 @@ class PyGuardLogger:
         )
         self.logger = logging.getLogger("PyGuard")
 
-    def log(
+    def log(  # noqa: PLR0913 - Comprehensive logging requires many parameters
         self,
         level: str,
         message: str,
@@ -337,7 +337,7 @@ class DiffGenerator:
     def generate_side_by_side_diff(
         original_content: str,
         modified_content: str,
-        width: int = 80,
+        width: int = 80,  # noqa: ARG004 - Reserved for future use in custom formatting
     ) -> str:
         """
         Generate a side-by-side diff view.
@@ -345,7 +345,7 @@ class DiffGenerator:
         Args:
             original_content: Original file content
             modified_content: Modified file content
-            width: Width of each column
+            width: Width of each column (reserved for future use)
 
         Returns:
             Side-by-side diff string

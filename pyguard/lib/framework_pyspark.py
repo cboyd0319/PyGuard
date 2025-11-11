@@ -140,7 +140,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
             )
 
         # Check for .format() in SQL
-        elif isinstance(query_arg, ast.Call) and isinstance(query_arg.func, ast.Attribute):
+        elif isinstance(query_arg, ast.Call) and isinstance(query_arg.func, ast.Attribute):  # noqa: SIM102
             if query_arg.func.attr == "format":
                 self.violations.append(
                     RuleViolation(
@@ -207,7 +207,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
         if isinstance(func_arg, ast.Lambda):
             # Check lambda body for eval/exec
             for subnode in ast.walk(func_arg.body):
-                if isinstance(subnode, ast.Call) and isinstance(subnode.func, ast.Name):
+                if isinstance(subnode, ast.Call) and isinstance(subnode.func, ast.Name):  # noqa: SIM102
                     if subnode.func.id in ("eval", "exec"):
                         line_num = node.lineno
                         self.violations.append(
@@ -229,7 +229,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
             return
 
         # Check for config keys
-        if len(node.args) >= 2:
+        if len(node.args) >= 2:  # noqa: PLR2004 - threshold
             key_arg = node.args[0]
             if isinstance(key_arg, ast.Constant):
                 key = key_arg.value
@@ -279,7 +279,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
         line_num = node.lineno
 
         # Check for password/key options
-        if len(node.args) >= 2:
+        if len(node.args) >= 2:  # noqa: PLR2004 - threshold
             key_arg = node.args[0]
             value_arg = node.args[1]
 
@@ -287,7 +287,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
                 key_lower = key_arg.value.lower()
 
                 # Check for hardcoded credentials
-                if any(term in key_lower for term in ["password", "secret", "key", "token", "credential"]):
+                if any(term in key_lower for term in ["password", "secret", "key", "token", "credential"]):  # noqa: SIM102
                     if isinstance(value_arg, ast.Constant):
                         self.violations.append(
                             RuleViolation(
@@ -347,13 +347,13 @@ def analyze_pyspark_security(file_path: Path, code: str) -> list[RuleViolation]:
 
 
 def fix_pyspark_security(
-    file_path: Path, code: str, violation: RuleViolation
+    file_path: Path, code: str, violation: RuleViolation  # noqa: ARG001 - file_path required by fix function API signature
 ) -> tuple[str, bool]:
     """
     Auto-fix PySpark security vulnerabilities.
 
     Args:
-        file_path: Path to the file being fixed
+        file_path: Path to the file being fixed (required by API)
         code: Source code containing the vulnerability
         violation: The security violation to fix
 

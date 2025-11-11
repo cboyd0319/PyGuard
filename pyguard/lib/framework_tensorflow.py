@@ -262,7 +262,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         # Check for model.fit() with user-controlled callbacks
         if func_name and func_name.endswith(".fit"):
             for kw in node.keywords:
-                if kw.arg == "callbacks":
+                if kw.arg == "callbacks":  # noqa: SIM102
                     if self._is_user_controlled(kw.value):
                         self.violations.append(
                             RuleViolation(
@@ -309,7 +309,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             # Check if log_dir is exposed
             # has_log_dir = False  # Not used
             for kw in node.keywords:
-                if kw.arg == "log_dir":
+                if kw.arg == "log_dir":  # noqa: SIM102
                     # has_log_dir = True
                     # Check if log directory is in web-accessible location
                     if isinstance(kw.value, ast.Constant):
@@ -359,7 +359,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             "tensorflow.data.Dataset.from_tensor_slices",
         ]
 
-        if func_name in dataset_funcs and node.args:
+        if func_name in dataset_funcs and node.args:  # noqa: SIM102
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
@@ -391,7 +391,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
         func_name = self._get_function_name(node)
 
         # Check for model.predict() with user input
-        if func_name and func_name.endswith(".predict"):
+        if func_name and func_name.endswith(".predict"):  # noqa: SIM102
             if node.args and self._is_user_controlled(node.args[0]):
                 # Check if input validation is present
                 self.violations.append(
@@ -437,7 +437,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             or func_name.endswith(".load_weights")
         )
 
-        if is_checkpoint_load and node.args:
+        if is_checkpoint_load and node.args:  # noqa: SIM102
             if self._is_user_controlled(node.args[0]):
                 self.violations.append(
                     RuleViolation(
@@ -479,7 +479,7 @@ class TensorFlowSecurityVisitor(ast.NodeVisitor):
             return ".".join(reversed(parts))
         return ""
 
-    def _is_user_controlled(self, node: ast.AST) -> bool:
+    def _is_user_controlled(self, node: ast.AST) -> bool:  # noqa: PLR0911 - Complex taint analysis requires many checks
         """Check if value comes from user input (heuristic with taint tracking)."""
         if isinstance(node, ast.Name):
             # Check if variable is in tainted set

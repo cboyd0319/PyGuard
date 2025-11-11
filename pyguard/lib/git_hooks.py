@@ -299,7 +299,7 @@ exit 0
 
         return result
 
-    def test_hook(self, hook_type: str = "pre-commit") -> bool:
+    def test_hook(self, hook_type: str = "pre-commit") -> bool:  # noqa: PLR0911 - Hook testing requires many validation checks
         """Test a git hook by running it.
 
         Args:

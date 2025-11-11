@@ -120,7 +120,7 @@ class ConsoleReporter:
 
         print()
 
-    def print_issue_details(
+    def print_issue_details(  # noqa: PLR0913 - Detailed issue reporting requires many parameters
         self,
         severity: str,
         category: str,

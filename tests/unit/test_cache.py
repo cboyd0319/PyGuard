@@ -1,7 +1,7 @@
 """Unit tests for cache module."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.cache import AnalysisCache, ConfigCache
 
