@@ -103,7 +103,7 @@ jobs:
       
       - name: Generate SBOM
         if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@aa0e114b2e19480f157109b9922bda359bd98b90 # v0.20.8
         with:
           image: cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }}
           artifact-name: pyguard-docker-${{ steps.get_version.outputs.VERSION }}.spdx.json
