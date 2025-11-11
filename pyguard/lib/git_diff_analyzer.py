@@ -7,7 +7,6 @@ Critical for PR-based workflows and efficient CI/CD scanning.
 
 from dataclasses import dataclass
 from pathlib import Path
-import re
 import subprocess
 from typing import Any
 
@@ -28,7 +27,7 @@ class DiffStats:
 class GitDiffAnalyzer:
     """
     Analyzer for git diffs to identify changed Python files.
-    
+
     Supports:
     - Comparing branches (main..feature-branch)
     - Analyzing staged changes
@@ -39,7 +38,7 @@ class GitDiffAnalyzer:
     def __init__(self, repo_path: Path | None = None):
         """
         Initialize git diff analyzer.
-        
+
         Args:
             repo_path: Path to git repository (defaults to current directory)
         """
@@ -72,13 +71,13 @@ class GitDiffAnalyzer:
     ) -> list[Path]:
         """
         Get list of changed files based on diff specification.
-        
+
         Args:
             diff_spec: Git diff specification (e.g., "main..feature", "HEAD~1", "v1.0..HEAD")
             include_staged: Include staged changes
             include_unstaged: Include unstaged changes
             python_only: Only return Python files
-        
+
         Returns:
             List of changed file paths
         """
@@ -182,10 +181,10 @@ class GitDiffAnalyzer:
     def get_diff_stats(self, diff_spec: str) -> DiffStats:
         """
         Get statistics about the diff.
-        
+
         Args:
             diff_spec: Git diff specification
-        
+
         Returns:
             DiffStats with information about the changes
         """
@@ -257,17 +256,17 @@ class GitDiffAnalyzer:
     ) -> dict[str, Any]:
         """
         Compare security posture between branches.
-        
+
         This is a placeholder for future implementation that would:
         1. Scan base branch for issues
         2. Scan compare branch for issues
         3. Identify newly introduced vulnerabilities
         4. Identify fixed vulnerabilities
-        
+
         Args:
             base_branch: Base branch to compare against (e.g., "main")
             compare_branch: Branch to compare (defaults to current branch)
-        
+
         Returns:
             Dictionary with comparison results
         """

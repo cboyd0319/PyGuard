@@ -18,7 +18,6 @@ References:
 """
 
 import ast
-from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
@@ -93,7 +92,6 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         "request.values": ("http_request", "HIGH"),
         # FastAPI framework (both type name and variable name patterns)
         "Request.body": ("http_request", "HIGH"),
-        "request.body": ("http_request", "HIGH"),
         "Request.json": ("http_request", "HIGH"),
         "Request.form": ("http_request", "HIGH"),
         "Request.query_params": ("http_request", "HIGH"),
@@ -226,11 +224,11 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
             if isinstance(current, ast.Name):
                 parts.append(current.id)
             return ".".join(reversed(parts))
-        elif isinstance(node, ast.Subscript):
+        if isinstance(node, ast.Subscript):
             # For subscript like request.GET['key'], get the value part
             if isinstance(node.value, ast.Attribute):
                 return self._get_attribute_name(node.value)
-            elif isinstance(node.value, ast.Name):
+            if isinstance(node.value, ast.Name):
                 return node.value.id
         return ""
 
@@ -351,17 +349,16 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                     )
 
         # Check if assigning from tainted operation (e.g., string concatenation)
-        if isinstance(node.value, ast.BinOp):
-            if self._is_tainted_binop(node.value):
-                for target in node.targets:
-                    var_name = self._get_name(target)
-                    if var_name:
-                        self.tainted_vars[var_name] = TaintSource(
-                            name=var_name,
-                            type="derived",
-                            line_number=node.lineno,
-                            severity="HIGH",
-                        )
+        if isinstance(node.value, ast.BinOp) and self._is_tainted_binop(node.value):
+            for target in node.targets:
+                var_name = self._get_name(target)
+                if var_name:
+                    self.tainted_vars[var_name] = TaintSource(
+                        name=var_name,
+                        type="derived",
+                        line_number=node.lineno,
+                        severity="HIGH",
+                    )
 
         self.generic_visit(node)
 
@@ -374,9 +371,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         # Recursively check nested operations
         if isinstance(node.left, ast.BinOp) and self._is_tainted_binop(node.left):
             return True
-        if isinstance(node.right, ast.BinOp) and self._is_tainted_binop(node.right):
-            return True
-        return False
+        return bool(isinstance(node.right, ast.BinOp) and self._is_tainted_binop(node.right))
 
     def _find_tainted_in_binop(self, node: ast.BinOp) -> str | None:
         """Find the first tainted variable name in a binary operation."""

@@ -26,10 +26,8 @@ References:
 
 import ast
 from pathlib import Path
-import re
 from typing import Any
 
-from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
     FixApplicability,
     Rule,
@@ -321,7 +319,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
                 return any(keyword in upper_str for keyword in sql_keywords)
-            elif isinstance(n, ast.BinOp):
+            if isinstance(n, ast.BinOp):
                 return check_node(n.left) or check_node(n.right)
             return False
 

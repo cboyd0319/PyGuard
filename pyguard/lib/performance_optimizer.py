@@ -14,18 +14,17 @@ References:
 """
 
 import ast
-from collections import defaultdict
+from collections.abc import Callable
 import concurrent.futures
 from dataclasses import dataclass, field
 import hashlib
-import multiprocessing
 from pathlib import Path
 import time
-from typing import Any, Callable
+from typing import Any
 
-from pyguard.lib.cache import AnalysisCache, CacheEntry
+from pyguard.lib.cache import AnalysisCache
 from pyguard.lib.core import FileOperations, PyGuardLogger
-from pyguard.lib.parallel import ParallelProcessor, ProcessingResult
+from pyguard.lib.parallel import ParallelProcessor
 
 
 @dataclass
@@ -139,9 +138,8 @@ class DependencyAnalyzer:
                     if isinstance(node, ast.Import):
                         for alias in node.names:
                             imports.add(alias.name.split(".")[0])
-                    elif isinstance(node, ast.ImportFrom):
-                        if node.module:
-                            imports.add(node.module.split(".")[0])
+                    elif isinstance(node, ast.ImportFrom) and node.module:
+                        imports.add(node.module.split(".")[0])
 
                 graph.imports[file_path] = imports
 
@@ -176,8 +174,7 @@ class DependencyAnalyzer:
         # Replace path separators with dots
         module = module.replace("/", ".").replace("\\", ".")
         # Remove leading dots and underscores
-        module = module.lstrip("._")
-        return module
+        return module.lstrip("._")
 
     def topological_sort(self, files: list[Path], graph: DependencyGraph) -> list[Path]:
         """

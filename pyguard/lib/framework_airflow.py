@@ -32,11 +32,8 @@ References:
 
 import ast
 from pathlib import Path
-import re
 
-from pyguard.lib.core import FileOperations, PyGuardLogger
 from pyguard.lib.rule_engine import (
-    FixApplicability,
     Rule,
     RuleCategory,
     RuleSeverity,
@@ -108,7 +105,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         """Check if node is a BashOperator instantiation."""
         if isinstance(node.func, ast.Name):
             return "BashOperator" in node.func.id
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return "BashOperator" in node.func.attr
         return False
 
@@ -120,15 +117,14 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         ]
         if isinstance(node.func, ast.Name):
             return any(op in node.func.id for op in sql_operators)
-        elif isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):
             return any(op in node.func.attr for op in sql_operators)
         return False
 
     def _is_variable_access(self, node: ast.Call) -> bool:
         """Check if this is accessing Airflow Variable."""
-        if isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                return node.func.value.id == "Variable"
+        if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+            return node.func.value.id == "Variable"
         return False
 
     def _check_operator_security(self, node: ast.Call) -> None:
@@ -308,7 +304,6 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
 
     def _check_variable_security(self, node: ast.Call) -> None:
         """Check Variable.get() usage for security issues."""
-        line_num = node.lineno
 
         # Check if deserialize_json is used (pickle deserialization risk)
         for keyword in node.keywords:
@@ -345,18 +340,16 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
 
     def _check_dag_security(self, node: ast.Call) -> None:
         """Check DAG configuration for security issues."""
-        line_num = node.lineno
 
         # Check for insecure default_args
         for keyword in node.keywords:
-            if keyword.arg == "default_args":
-                if isinstance(keyword.value, ast.Dict):
-                    for key, value in zip(keyword.value.keys, keyword.value.values):
-                        if isinstance(key, ast.Constant):
-                            # Check for insecure configurations
-                            if key.value == "provide_context" and isinstance(value, ast.Constant):
-                                # provide_context is deprecated but check anyway
-                                pass
+            if keyword.arg == "default_args" and isinstance(keyword.value, ast.Dict):
+                for key, value in zip(keyword.value.keys, keyword.value.values, strict=False):
+                    if isinstance(key, ast.Constant):
+                        # Check for insecure configurations
+                        if key.value == "provide_context" and isinstance(value, ast.Constant):
+                            # provide_context is deprecated but check anyway
+                            pass
 
     def _get_code_snippet(self, line_number: int) -> str:
         """Get code snippet around the given line."""
@@ -368,11 +361,11 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
 def analyze_airflow_security(file_path: Path, code: str) -> list[RuleViolation]:
     """
     Analyze Airflow code for security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being analyzed
         code: Source code to analyze
-        
+
     Returns:
         List of security violations found
     """
@@ -390,12 +383,12 @@ def fix_airflow_security(
 ) -> tuple[str, bool]:
     """
     Auto-fix Airflow security vulnerabilities.
-    
+
     Args:
         file_path: Path to the file being fixed
         code: Source code containing the vulnerability
         violation: The security violation to fix
-        
+
     Returns:
         Tuple of (fixed_code, was_modified)
     """

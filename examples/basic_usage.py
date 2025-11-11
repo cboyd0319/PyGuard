@@ -30,10 +30,10 @@ def main():
     file_path = Path("sample_code.py")
 
     if not file_path.exists():
-        logger.error("Sample file not found", file=str(file_path))
+        logger.error("Sample file not found", file_path=str(file_path))
         return
 
-    logger.info("Starting PyGuard analysis", file=str(file_path))
+    logger.info("Starting PyGuard analysis", file_path=str(file_path))
 
     # Read original code (kept for reference/comparison)
     # original_code = file_path.read_text()
@@ -41,18 +41,25 @@ def main():
     # Apply security fixes
     logger.info("Applying security fixes...")
     security_result = security.fix_file(file_path)
-    logger.info(f"Security: {len(security_result)} fixes applied", fixes=security_result)
+    logger.info(
+        f"Security: {len(security_result)} fixes applied",
+        details={"fix_count": len(security_result), "fixes": str(security_result)[:200]}
+    )
 
     # Apply best practices
     logger.info("Applying best practices...")
     bp_result = best_practices.fix_file(file_path)
-    logger.info(f"Best practices: {len(bp_result)} fixes applied", fixes=bp_result)
+    logger.info(
+        f"Best practices: {len(bp_result)} fixes applied",
+        details={"fix_count": len(bp_result), "fixes": str(bp_result)[:200]}
+    )
 
     # Format code
     logger.info("Formatting code...")
     format_result = formatter.format_file(file_path)
     logger.info(
-        f"Formatting: {'success' if format_result['success'] else 'failed'}", result=format_result
+        f"Formatting: {'success' if format_result['success'] else 'failed'}",
+        details={"success": format_result.get('success', False)}
     )
 
     logger.info("Analysis complete!")

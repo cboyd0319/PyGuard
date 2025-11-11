@@ -21,7 +21,7 @@ Use Cases:
 """
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 import hashlib
 import json
@@ -29,7 +29,7 @@ import logging
 from pathlib import Path
 import sqlite3
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -59,17 +59,17 @@ class ScanMetadata:
     low_issues: int
     info_issues: int
     issues_fixed: int = 0
-    git_commit: Optional[str] = None
-    git_branch: Optional[str] = None
-    ci_build_id: Optional[str] = None
-    scan_config: Dict[str, Any] = field(default_factory=dict)
+    git_commit: str | None = None
+    git_branch: str | None = None
+    ci_build_id: str | None = None
+    scan_config: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
         data['status'] = self.status.value
         data['timestamp_iso'] = datetime.fromtimestamp(
-            self.timestamp, tz=timezone.utc
+            self.timestamp, tz=UTC
         ).isoformat()
         return data
 
@@ -84,20 +84,20 @@ class IssueRecord:
     issue_type: str
     severity: str
     message: str
-    cwe_id: Optional[str] = None
-    rule_id: Optional[str] = None
-    code_snippet: Optional[str] = None
+    cwe_id: str | None = None
+    rule_id: str | None = None
+    code_snippet: str | None = None
     fixed: bool = False
     suppressed: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
 
     def get_fingerprint(self) -> str:
         """
         Generate a fingerprint for this issue to track it across scans.
-        
+
         Uses file path, line number, issue type, and code snippet to identify
         the same issue even if the scan_id changes.
         """
@@ -112,10 +112,10 @@ class ScanComparison:
     current_scan_id: str
     baseline_timestamp: float
     current_timestamp: float
-    new_issues: List[IssueRecord] = field(default_factory=list)
-    fixed_issues: List[IssueRecord] = field(default_factory=list)
-    unchanged_issues: List[IssueRecord] = field(default_factory=list)
-    severity_changes: Dict[str, int] = field(default_factory=dict)
+    new_issues: list[IssueRecord] = field(default_factory=list)
+    fixed_issues: list[IssueRecord] = field(default_factory=list)
+    unchanged_issues: list[IssueRecord] = field(default_factory=list)
+    severity_changes: dict[str, int] = field(default_factory=dict)
 
     @property
     def is_regression(self) -> bool:
@@ -127,18 +127,18 @@ class ScanComparison:
         """Check if current scan shows improvement (fixed issues, no new)."""
         return len(self.fixed_issues) > 0 and len(self.new_issues) == 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'baseline_scan_id': self.baseline_scan_id,
             'current_scan_id': self.current_scan_id,
             'baseline_timestamp': self.baseline_timestamp,
             'baseline_timestamp_iso': datetime.fromtimestamp(
-                self.baseline_timestamp, tz=timezone.utc
+                self.baseline_timestamp, tz=UTC
             ).isoformat(),
             'current_timestamp': self.current_timestamp,
             'current_timestamp_iso': datetime.fromtimestamp(
-                self.current_timestamp, tz=timezone.utc
+                self.current_timestamp, tz=UTC
             ).isoformat(),
             'summary': {
                 'new_issues': len(self.new_issues),
@@ -156,15 +156,15 @@ class ScanComparison:
 class ScanHistoryStorage:
     """
     Persistent storage for security scan history.
-    
+
     Uses SQLite for efficient querying and storage of scan results over time.
     Provides API for storing, retrieving, and analyzing scan data.
     """
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         """
         Initialize scan history storage.
-        
+
         Args:
             db_path: Path to SQLite database (default: .pyguard/scan_history.db)
         """
@@ -225,27 +225,27 @@ class ScanHistoryStorage:
 
             # Create indexes for efficient querying
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_scans_timestamp 
+                CREATE INDEX IF NOT EXISTS idx_scans_timestamp
                 ON scans(timestamp)
             """)
 
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_scans_target 
+                CREATE INDEX IF NOT EXISTS idx_scans_target
                 ON scans(target_path)
             """)
 
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_issues_scan_id 
+                CREATE INDEX IF NOT EXISTS idx_issues_scan_id
                 ON issues(scan_id)
             """)
 
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_issues_fingerprint 
+                CREATE INDEX IF NOT EXISTS idx_issues_fingerprint
                 ON issues(fingerprint)
             """)
 
             conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_issues_severity 
+                CREATE INDEX IF NOT EXISTS idx_issues_severity
                 ON issues(severity)
             """)
 
@@ -254,11 +254,11 @@ class ScanHistoryStorage:
     def store_scan(
         self,
         metadata: ScanMetadata,
-        issues: List[IssueRecord],
+        issues: list[IssueRecord],
     ) -> None:
         """
         Store a scan and its issues.
-        
+
         Args:
             metadata: Scan metadata
             issues: List of issues found in scan
@@ -318,13 +318,13 @@ class ScanHistoryStorage:
 
         logger.info(f"Stored scan {metadata.scan_id} with {len(issues)} issues")
 
-    def get_scan(self, scan_id: str) -> Optional[ScanMetadata]:
+    def get_scan(self, scan_id: str) -> ScanMetadata | None:
         """
         Retrieve scan metadata by ID.
-        
+
         Args:
             scan_id: Scan identifier
-            
+
         Returns:
             Scan metadata or None if not found
         """
@@ -360,13 +360,13 @@ class ScanHistoryStorage:
                 scan_config=json.loads(row['scan_config']) if row['scan_config'] else {},
             )
 
-    def get_scan_issues(self, scan_id: str) -> List[IssueRecord]:
+    def get_scan_issues(self, scan_id: str) -> list[IssueRecord]:
         """
         Retrieve all issues for a scan.
-        
+
         Args:
             scan_id: Scan identifier
-            
+
         Returns:
             List of issues
         """
@@ -398,20 +398,20 @@ class ScanHistoryStorage:
 
     def list_scans(
         self,
-        target_path: Optional[str] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        target_path: str | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
         limit: int = 100,
-    ) -> List[ScanMetadata]:
+    ) -> list[ScanMetadata]:
         """
         List scans with optional filtering.
-        
+
         Args:
             target_path: Filter by target path
             start_time: Filter by start timestamp
             end_time: Filter by end timestamp
             limit: Maximum number of scans to return
-            
+
         Returns:
             List of scan metadata, sorted by timestamp (newest first)
         """
@@ -419,7 +419,7 @@ class ScanHistoryStorage:
             conn.row_factory = sqlite3.Row
 
             query = "SELECT * FROM scans WHERE 1=1"
-            params: List[Any] = []
+            params: list[Any] = []
 
             if target_path:
                 query += " AND target_path = ?"
@@ -470,11 +470,11 @@ class ScanHistoryStorage:
     ) -> ScanComparison:
         """
         Compare two scans to identify new, fixed, and unchanged issues.
-        
+
         Args:
             baseline_scan_id: Baseline scan identifier
             current_scan_id: Current scan identifier
-            
+
         Returns:
             Comparison results
         """
@@ -533,14 +533,14 @@ class ScanHistoryStorage:
         self,
         target_path: str,
         days: int = 30,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get trend data for a target over time.
-        
+
         Args:
             target_path: Target path to analyze
             days: Number of days to look back
-            
+
         Returns:
             Trend data with time-series statistics
         """
@@ -560,10 +560,10 @@ class ScanHistoryStorage:
             }
 
         # Extract time-series data
-        timestamps = [scan.timestamp for scan in scans]
+        [scan.timestamp for scan in scans]
         total_issues = [scan.total_issues for scan in scans]
-        critical_issues = [scan.critical_issues for scan in scans]
-        high_issues = [scan.high_issues for scan in scans]
+        [scan.critical_issues for scan in scans]
+        [scan.high_issues for scan in scans]
 
         # Calculate statistics
         return {
@@ -571,10 +571,10 @@ class ScanHistoryStorage:
             'days': days,
             'scan_count': len(scans),
             'first_scan': datetime.fromtimestamp(
-                scans[-1].timestamp, tz=timezone.utc
+                scans[-1].timestamp, tz=UTC
             ).isoformat(),
             'last_scan': datetime.fromtimestamp(
-                scans[0].timestamp, tz=timezone.utc
+                scans[0].timestamp, tz=UTC
             ).isoformat(),
             'current_total_issues': scans[0].total_issues,
             'baseline_total_issues': scans[-1].total_issues,
@@ -589,7 +589,7 @@ class ScanHistoryStorage:
                 {
                     'timestamp': scan.timestamp,
                     'timestamp_iso': datetime.fromtimestamp(
-                        scan.timestamp, tz=timezone.utc
+                        scan.timestamp, tz=UTC
                     ).isoformat(),
                     'total_issues': scan.total_issues,
                     'critical_issues': scan.critical_issues,
@@ -607,10 +607,10 @@ class ScanHistoryStorage:
     ) -> int:
         """
         Delete scans older than specified days.
-        
+
         Args:
             days: Delete scans older than this many days
-            
+
         Returns:
             Number of scans deleted
         """

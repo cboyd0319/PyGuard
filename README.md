@@ -23,7 +23,7 @@ Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Roadmap](ROADMAP.md) •
-[Distribution](DISTRIBUTION.md) •
+[Distribution](docs/reference/DISTRIBUTION_STRATEGY.md) •
 [Documentation](docs/index.md) •
 [GitHub Action](docs/guides/github-action-guide.md)
 
@@ -169,10 +169,11 @@ jobs:
 
 ### Option 2: Local Installation
 
-Install from source (PyPI coming soon):
+Install from source:
 
 ```bash
-# Install from source (PyPI coming soon)
+# Clone and install from source
+# Note: PyPI publication planned for v0.7.0 (Q1 2026)
 git clone https://github.com/cboyd0319/PyGuard.git
 cd PyGuard
 pip install -e .
@@ -445,7 +446,7 @@ Static analysis tool for Python. Finds security vulnerabilities, enforces code q
 ### Quick Install
 
 ```bash
-# From source (PyPI coming soon)
+# From source (PyPI planned for v0.7.0 - Q1 2026)
 git clone https://github.com/cboyd0319/PyGuard.git
 cd PyGuard
 pip install -e .
@@ -609,7 +610,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: # PyGuard is not yet on PyPI - install from source
+      - run: pip install git+https://github.com/cboyd0319/PyGuard.git
       - run: pyguard . --scan-only --sarif --no-html
       - uses: github/codeql-action/upload-sarif@v3
         with:
@@ -1033,7 +1034,7 @@ See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tip
 
 **Goal: Make PyGuard THE definitive Python security solution everywhere developers work**
 
-Current: v0.6.0 (3,870+ tests, 85% coverage, 738+ security checks, 23 frameworks)
+Current: v0.6.0 (4,701 tests, 84%+ coverage, 1,230+ security checks, 25 frameworks)
 
 ### Completed Milestones
 
@@ -1066,7 +1067,7 @@ Current: v0.6.0 (3,870+ tests, 85% coverage, 738+ security checks, 23 frameworks
 
 **See [ROADMAP.md](ROADMAP.md) for comprehensive roadmap with timelines, metrics, and strategy**
 
-**See [DISTRIBUTION.md](DISTRIBUTION.md) for detailed distribution strategy and secure supply chain plan**
+**See [DISTRIBUTION_STRATEGY.md](docs/reference/DISTRIBUTION_STRATEGY.md) for detailed distribution strategy and secure supply chain plan**
 
 ---
 

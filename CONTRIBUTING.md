@@ -32,7 +32,7 @@ npx linkinator README.md docs/**/*.md
 
 ### Running Tests
 
-PyGuard has a comprehensive test suite with 2,369 tests. For detailed testing documentation, see [docs/development/TESTING_GUIDE.md](docs/development/TESTING_GUIDE.md).
+PyGuard has a comprehensive test suite with 4,701 tests. For detailed testing documentation, see [docs/development/TESTING_GUIDE.md](docs/development/TESTING_GUIDE.md).
 
 Quick reference:
 

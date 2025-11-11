@@ -10,7 +10,7 @@ References:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 import time
 from typing import Any
@@ -79,7 +79,7 @@ class PerformanceTracker:
     def __init__(self):
         """Initialize performance tracker."""
         self.metrics = PerformanceMetrics(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             total_files=0,
             total_lines=0,
             duration_ms=0.0,
@@ -224,17 +224,17 @@ class PerformanceTracker:
         print("PyGuard Performance Report")
         print("=" * 70)
 
-        print(f"\n📊 Overall Statistics:")
+        print("\n📊 Overall Statistics:")
         print(f"  Files analyzed:     {summary['files']}")
         print(f"  Total lines:        {summary['lines']}")
         print(f"  Duration:           {summary['duration_sec']}s")
 
-        print(f"\n⚡ Throughput:")
+        print("\n⚡ Throughput:")
         print(f"  Files per second:   {summary['throughput']['files_per_sec']}")
         print(f"  Lines per second:   {summary['throughput']['lines_per_sec']}")
 
         features = summary["features"]
-        print(f"\n🔧 Features Used:")
+        print("\n🔧 Features Used:")
         print(f"  Incremental:        {'✓' if features['incremental'] else '✗'}")
         print(f"  RipGrep:            {'✓' if features['ripgrep'] else '✗'}")
         print(f"  Parallel workers:   {features['parallel_workers']}")
@@ -246,7 +246,7 @@ class PerformanceTracker:
             print(f"  Memory usage:       {summary['memory_mb']} MB")
 
         if "phases" in summary:
-            print(f"\n⏱️  Phase Timings:")
+            print("\n⏱️  Phase Timings:")
             for phase, duration in summary["phases"].items():
                 print(f"  {phase:20s} {duration:>10s}")
 

@@ -21,16 +21,15 @@ Security:
 - Separation of duties (logs cannot be modified by scanner)
 """
 
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 import hashlib
 import json
 import logging
-import os
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -90,22 +89,22 @@ class AuditEntry:
     severity: AuditSeverity
     actor: str  # Who performed the action (user, system, API key)
     action: str  # Human-readable action description
-    resource: Optional[str] = None  # What was acted upon
-    resource_type: Optional[str] = None  # Type of resource
+    resource: str | None = None  # What was acted upon
+    resource_type: str | None = None  # Type of resource
     result: str = "success"  # success, failure, error
-    details: Dict[str, Any] = field(default_factory=dict)
-    session_id: Optional[str] = None
-    client_ip: Optional[str] = None
-    previous_hash: Optional[str] = None  # For tamper detection
-    entry_hash: Optional[str] = None  # Hash of this entry
+    details: dict[str, Any] = field(default_factory=dict)
+    session_id: str | None = None
+    client_ip: str | None = None
+    previous_hash: str | None = None  # For tamper detection
+    entry_hash: str | None = None  # Hash of this entry
 
     def compute_hash(self, include_previous: bool = True) -> str:
         """
         Compute cryptographic hash of entry for integrity verification.
-        
+
         Args:
             include_previous: Include previous hash in computation
-            
+
         Returns:
             SHA256 hash as hex string
         """
@@ -127,12 +126,12 @@ class AuditEntry:
         canonical = json.dumps(data, sort_keys=True)
         return hashlib.sha256(canonical.encode()).hexdigest()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         data = {
             "timestamp": self.timestamp,
             "timestamp_iso": datetime.fromtimestamp(
-                self.timestamp, tz=timezone.utc
+                self.timestamp, tz=UTC
             ).isoformat(),
             "event_type": self.event_type.value,
             "severity": self.severity.value,
@@ -156,7 +155,7 @@ class AuditEntry:
     def to_cef(self) -> str:
         """
         Convert to Common Event Format (CEF) for SIEM integration.
-        
+
         CEF Format:
         CEF:Version|Device Vendor|Device Product|Device Version|
         Signature ID|Name|Severity|Extension
@@ -201,14 +200,14 @@ class AuditEntry:
 class AuditLogger:
     """
     Audit trail logger for PyGuard security scans.
-    
+
     Provides tamper-evident logging with cryptographic integrity
     verification for compliance requirements.
     """
 
     def __init__(
         self,
-        log_file: Optional[Path] = None,
+        log_file: Path | None = None,
         format: str = "json",
         enable_integrity: bool = True,
         rotate_size_mb: int = 100,
@@ -216,7 +215,7 @@ class AuditLogger:
     ):
         """
         Initialize audit logger.
-        
+
         Args:
             log_file: Path to audit log file (default: audit.jsonl)
             format: Log format (json, cef, syslog)
@@ -231,7 +230,7 @@ class AuditLogger:
         self.retention_days = retention_days
 
         # Last entry hash for chaining
-        self.last_hash: Optional[str] = None
+        self.last_hash: str | None = None
 
         # Load last hash from existing log
         self._load_last_hash()
@@ -245,7 +244,7 @@ class AuditLogger:
 
         try:
             # Read last line
-            with open(self.log_file, "r") as f:
+            with open(self.log_file) as f:
                 lines = f.readlines()
                 if lines:
                     last_line = lines[-1].strip()
@@ -262,16 +261,16 @@ class AuditLogger:
         actor: str,
         action: str,
         severity: AuditSeverity = AuditSeverity.INFO,
-        resource: Optional[str] = None,
-        resource_type: Optional[str] = None,
+        resource: str | None = None,
+        resource_type: str | None = None,
         result: str = "success",
-        details: Optional[Dict[str, Any]] = None,
-        session_id: Optional[str] = None,
-        client_ip: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        session_id: str | None = None,
+        client_ip: str | None = None,
     ) -> AuditEntry:
         """
         Log an audit event.
-        
+
         Args:
             event_type: Type of audit event
             actor: Who performed the action
@@ -283,7 +282,7 @@ class AuditLogger:
             details: Additional details
             session_id: Session identifier
             client_ip: Client IP address
-            
+
         Returns:
             Created audit entry
         """
@@ -352,13 +351,13 @@ class AuditLogger:
         except Exception as e:
             logger.error(f"Failed to rotate log: {e}")
 
-    def verify_integrity(self, start_index: int = 0) -> Dict[str, Any]:
+    def verify_integrity(self, start_index: int = 0) -> dict[str, Any]:
         """
         Verify integrity of audit log using hash chain.
-        
+
         Args:
             start_index: Start verification from this entry
-            
+
         Returns:
             Verification result with any tampering detected
         """
@@ -380,7 +379,7 @@ class AuditLogger:
         previous_hash = None
 
         try:
-            with open(self.log_file, "r") as f:
+            with open(self.log_file) as f:
                 for i, line in enumerate(f):
                     if i < start_index:
                         continue
@@ -451,16 +450,16 @@ class AuditLogger:
 
     def query(
         self,
-        event_types: Optional[List[AuditEventType]] = None,
-        actor: Optional[str] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
-        severity: Optional[AuditSeverity] = None,
+        event_types: list[AuditEventType] | None = None,
+        actor: str | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        severity: AuditSeverity | None = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query audit log entries.
-        
+
         Args:
             event_types: Filter by event types
             actor: Filter by actor
@@ -468,17 +467,17 @@ class AuditLogger:
             end_time: Filter by end timestamp
             severity: Filter by severity
             limit: Maximum entries to return
-            
+
         Returns:
             List of matching audit entries
         """
         if not self.log_file.exists():
             return []
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
 
         try:
-            with open(self.log_file, "r") as f:
+            with open(self.log_file) as f:
                 for line in f:
                     if len(results) >= limit:
                         break
@@ -514,16 +513,16 @@ class AuditLogger:
         self,
         start_time: float,
         end_time: float,
-        include_events: Optional[List[AuditEventType]] = None,
-    ) -> Dict[str, Any]:
+        include_events: list[AuditEventType] | None = None,
+    ) -> dict[str, Any]:
         """
         Generate compliance report for audit period.
-        
+
         Args:
             start_time: Report start timestamp
             end_time: Report end timestamp
             include_events: Event types to include
-            
+
         Returns:
             Compliance report with statistics and entries
         """
@@ -535,9 +534,9 @@ class AuditLogger:
         )
 
         # Calculate statistics
-        event_counts: Dict[str, int] = {}
-        severity_counts: Dict[str, int] = {}
-        actor_counts: Dict[str, int] = {}
+        event_counts: dict[str, int] = {}
+        severity_counts: dict[str, int] = {}
+        actor_counts: dict[str, int] = {}
 
         for entry in entries:
             event_type = entry["event_type"]
@@ -553,11 +552,11 @@ class AuditLogger:
             "report_period": {
                 "start": start_time,
                 "start_iso": datetime.fromtimestamp(
-                    start_time, tz=timezone.utc
+                    start_time, tz=UTC
                 ).isoformat(),
                 "end": end_time,
                 "end_iso": datetime.fromtimestamp(
-                    end_time, tz=timezone.utc
+                    end_time, tz=UTC
                 ).isoformat(),
             },
             "summary": {
@@ -639,7 +638,7 @@ def audit_auth_attempt(
     audit_logger: AuditLogger,
     actor: str,
     success: bool,
-    client_ip: Optional[str] = None,
+    client_ip: str | None = None,
     **kwargs
 ) -> AuditEntry:
     """Log authentication attempt."""

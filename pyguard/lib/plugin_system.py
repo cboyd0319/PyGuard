@@ -11,9 +11,8 @@ import importlib.util
 import inspect
 from pathlib import Path
 import sys
-from typing import Any, Callable
 
-from pyguard.lib.custom_rules import CustomRule, CustomRuleEngine, RuleViolation
+from pyguard.lib.custom_rules import CustomRuleEngine, RuleViolation
 
 
 @dataclass
@@ -164,7 +163,7 @@ class PluginManager:
 
             # Find plugin class (must inherit from PluginInterface)
             plugin_class = None
-            for name, obj in inspect.getmembers(module, inspect.isclass):
+            for _name, obj in inspect.getmembers(module, inspect.isclass):
                 if (
                     issubclass(obj, PluginInterface)
                     and obj is not PluginInterface

@@ -1,5 +1,9 @@
 """Tests for debugging pattern detection."""
 
+import os
+
+import pytest
+
 from pyguard.lib.debugging_patterns import (
     DEBUGGING_RULES,
     DebuggingPatternChecker,
@@ -410,14 +414,13 @@ breakpoint()
         assert success2
         assert count2 == 0
 
+    @pytest.mark.skipif(os.getuid() == 0, reason="Test requires non-root user (root can read files regardless of permissions)")
     def test_check_file_with_read_error(self, tmp_path, monkeypatch):
         """Test graceful handling of file read errors."""
         file_path = tmp_path / "test.py"
         file_path.write_text("print('test')")
 
         # Make file unreadable
-        import os
-
         os.chmod(file_path, 0o000)
 
         try:
@@ -429,6 +432,7 @@ breakpoint()
             # Restore permissions for cleanup
             os.chmod(file_path, 0o644)
 
+    @pytest.mark.skipif(os.getuid() == 0, reason="Test requires non-root user (root can write to read-only files)")
     def test_fix_file_with_write_error(self, tmp_path, monkeypatch):
         """Test graceful handling of file write errors."""
         code = """
@@ -438,8 +442,6 @@ breakpoint()
         file_path.write_text(code)
 
         # Make file read-only after creation
-        import os
-
         os.chmod(file_path, 0o444)
 
         try:

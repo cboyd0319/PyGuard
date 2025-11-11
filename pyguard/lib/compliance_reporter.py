@@ -21,7 +21,7 @@ from pyguard.lib.core import PyGuardLogger
 class ComplianceReporter:
     """
     Generate comprehensive compliance reports.
-    
+
     Produces audit-ready documentation showing security posture
     against various compliance frameworks.
     """
@@ -39,7 +39,7 @@ class ComplianceReporter:
     ) -> None:
         """
         Generate HTML compliance report.
-        
+
         Args:
             issues: List of security issues found
             output_path: Path to save the HTML report
@@ -68,7 +68,7 @@ class ComplianceReporter:
     ) -> None:
         """
         Generate JSON compliance report for programmatic processing.
-        
+
         Args:
             issues: List of security issues found
             output_path: Path to save the JSON report
@@ -111,7 +111,7 @@ class ComplianceReporter:
         for issue in issues:
             # Map issue types to frameworks
             issue_type = issue.get("rule_id", "").lower()
-            severity = issue.get("severity", "LOW")
+            issue.get("severity", "LOW")
 
             # Map to multiple frameworks if applicable
             if any(x in issue_type for x in ["injection", "xss", "sql"]):
@@ -192,7 +192,7 @@ class ComplianceReporter:
             padding: 0;
             box-sizing: border-box;
         }}
-        
+
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
@@ -200,7 +200,7 @@ class ComplianceReporter:
             background: #f5f5f5;
             padding: 20px;
         }}
-        
+
         .container {{
             max-width: 1200px;
             margin: 0 auto;
@@ -209,13 +209,13 @@ class ComplianceReporter:
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }}
-        
+
         h1 {{
             color: #2c3e50;
             margin-bottom: 10px;
             font-size: 2.5em;
         }}
-        
+
         h2 {{
             color: #34495e;
             margin-top: 30px;
@@ -223,32 +223,32 @@ class ComplianceReporter:
             padding-bottom: 10px;
             border-bottom: 2px solid #3498db;
         }}
-        
+
         h3 {{
             color: #7f8c8d;
             margin-top: 20px;
             margin-bottom: 10px;
         }}
-        
+
         .metadata {{
             background: #ecf0f1;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 30px;
         }}
-        
+
         .metadata p {{
             margin: 5px 0;
             color: #7f8c8d;
         }}
-        
+
         .summary {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }}
-        
+
         .summary-card {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -256,39 +256,39 @@ class ComplianceReporter:
             border-radius: 8px;
             text-align: center;
         }}
-        
+
         .summary-card.critical {{
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }}
-        
+
         .summary-card.high {{
             background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
         }}
-        
+
         .summary-card h3 {{
             color: white;
             margin: 0 0 10px 0;
         }}
-        
+
         .summary-card .count {{
             font-size: 3em;
             font-weight: bold;
         }}
-        
+
         .framework-section {{
             margin: 30px 0;
             padding: 20px;
             background: #f8f9fa;
             border-radius: 8px;
         }}
-        
+
         .framework-header {{
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }}
-        
+
         .badge {{
             display: inline-block;
             padding: 5px 15px;
@@ -296,31 +296,31 @@ class ComplianceReporter:
             font-size: 0.9em;
             font-weight: bold;
         }}
-        
+
         .badge.critical {{
             background: #e74c3c;
             color: white;
         }}
-        
+
         .badge.high {{
             background: #e67e22;
             color: white;
         }}
-        
+
         .badge.medium {{
             background: #f39c12;
             color: white;
         }}
-        
+
         .badge.low {{
             background: #3498db;
             color: white;
         }}
-        
+
         .issue-list {{
             list-style: none;
         }}
-        
+
         .issue-item {{
             background: white;
             padding: 15px;
@@ -328,25 +328,25 @@ class ComplianceReporter:
             border-left: 4px solid #3498db;
             border-radius: 4px;
         }}
-        
+
         .issue-item.critical {{
             border-left-color: #e74c3c;
         }}
-        
+
         .issue-item.high {{
             border-left-color: #e67e22;
         }}
-        
+
         .issue-title {{
             font-weight: bold;
             margin-bottom: 5px;
         }}
-        
+
         .issue-details {{
             color: #7f8c8d;
             font-size: 0.9em;
         }}
-        
+
         .footer {{
             margin-top: 40px;
             padding-top: 20px;
@@ -359,13 +359,13 @@ class ComplianceReporter:
 <body>
     <div class="container">
         <h1>🛡️ PyGuard Compliance Report</h1>
-        
+
         <div class="metadata">
             <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
             <p><strong>Framework Focus:</strong> {selected_framework}</p>
             <p><strong>Total Issues:</strong> {total_issues}</p>
         </div>
-        
+
         <h2>Summary</h2>
         <div class="summary">
             <div class="summary-card critical">
