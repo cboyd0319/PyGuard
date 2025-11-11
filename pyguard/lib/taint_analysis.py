@@ -258,7 +258,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign):  # noqa: PLR0912 - Complex taint tracking requires many checks
         """Track variable assignments and taint propagation."""
         # Unwrap await expressions
         value = node.value
@@ -288,7 +288,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                     break
 
             # If not a taint source, check if it's a method call on a tainted object
-            if not found_taint and isinstance(value.func, ast.Attribute):
+            if not found_taint and isinstance(value.func, ast.Attribute):  # noqa: SIM102
                 if isinstance(value.func.value, ast.Name) and value.func.value.id in self.tainted_vars:
                     source_taint = self.tainted_vars[value.func.value.id]
                     for target in node.targets:
@@ -322,7 +322,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                     break
             else:
                 # Check if subscripting a tainted variable (e.g., data['key'])
-                if isinstance(value, ast.Subscript):
+                if isinstance(value, ast.Subscript):  # noqa: SIM102
                     if isinstance(value.value, ast.Name) and value.value.id in self.tainted_vars:
                         source_taint = self.tainted_vars[value.value.id]
                         for target in node.targets:
@@ -390,7 +390,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
                 return result
         return None
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call):  # noqa: PLR0912 - Complex taint sink detection requires many checks
         """Check if tainted data flows into dangerous sinks."""
         func_name = self._get_call_name(node)
 

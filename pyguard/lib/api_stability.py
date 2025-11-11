@@ -88,6 +88,10 @@ class APIVersion:
             return NotImplemented
         return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
 
+    def __hash__(self) -> int:
+        """Make the object hashable."""
+        return hash((self.major, self.minor, self.patch))
+
     def is_compatible_with(self, other: 'APIVersion') -> bool:
         """
         Check if this version is compatible with another.
@@ -196,7 +200,7 @@ class APIRegistry:
         self.apis[name] = registration
         logger.debug(f"Registered API: {name} ({stability_level.value})")
 
-    def deprecate_api(
+    def deprecate_api(  # noqa: PLR0913 - API deprecation requires many parameters for full context
         self,
         name: str,
         deprecated_in: str,
@@ -388,7 +392,7 @@ def stable_api(
         )
 
         # Add metadata to function
-        func.__api_stability__ = {'introduced_in': introduced_in, 'stability_level': stability_level.value}
+        func.__api_stability__ = {'introduced_in': introduced_in, 'stability_level': stability_level.value}  # type: ignore[attr-defined]
 
         return func
 
@@ -448,7 +452,7 @@ def deprecated(
             return func(*args, **kwargs)
 
         # Add metadata
-        wrapper.__deprecated__ = {'deprecated_in': deprecated_in, 'removal_in': removal_in, 'replacement': replacement}
+        wrapper.__deprecated__ = {'deprecated_in': deprecated_in, 'removal_in': removal_in, 'replacement': replacement}  # type: ignore[attr-defined]
 
         return wrapper
 

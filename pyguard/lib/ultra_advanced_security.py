@@ -454,8 +454,8 @@ class PrototypePollutionDetector(ast.NodeVisitor):
         call_name = self._get_call_name(node)
 
         # setattr with user input
-        if call_name == "setattr":
-            if len(node.args) >= 2:
+        if call_name == "setattr":  # noqa: SIM102
+            if len(node.args) >= 2:  # noqa: SIM102, PLR2004 - threshold
                 # Check if attribute name comes from variable (potential user input)
                 if isinstance(node.args[1], (ast.Name, ast.Subscript)):
                     self.issues.append(
@@ -477,7 +477,7 @@ class PrototypePollutionDetector(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign):
         """Check for __dict__ manipulation."""
         # Check if assigning to __dict__
-        if isinstance(node.value, ast.Subscript):
+        if isinstance(node.value, ast.Subscript):  # noqa: SIM102
             if self._is_dict_access(node.value):
                 for target in node.targets:
                     if isinstance(target, ast.Attribute) and target.attr == "__dict__":

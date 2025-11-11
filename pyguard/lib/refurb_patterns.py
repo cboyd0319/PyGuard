@@ -36,44 +36,40 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         """Detect while loops that should be for loops (FURB101)."""
         # Check for pattern: while line := file.read(...):
         # Better: for line in file:
-        if isinstance(node.test, ast.NamedExpr):
-            # Check if it's a file.read() or file.readline() pattern
-            if isinstance(node.test.value, ast.Call):
-                if isinstance(node.test.value.func, ast.Attribute):
-                    attr = node.test.value.func
-                    if attr.attr in ("read", "readline", "readlines"):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB101",
-                                message=f"Use 'for {node.test.target.id if isinstance(node.test.target, ast.Name) else 'line'} in file' instead of while with assignment",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.REFACTOR,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
-
-        self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> None:
-        """Detect various refactoring opportunities in function calls (FURB102-118)."""
-        # FURB102: sorted() on list comprehension - use generator instead
-        if isinstance(node.func, ast.Name) and node.func.id == "sorted":
-            if len(node.args) > 0 and isinstance(node.args[0], ast.ListComp):
+        if isinstance(node.test, ast.NamedExpr) and isinstance(node.test.value, ast.Call) and isinstance(node.test.value.func, ast.Attribute):
+            attr = node.test.value.func
+            if attr.attr in ("read", "readline", "readlines"):
                 self.violations.append(
                     RuleViolation(
-                        rule_id="FURB102",
-                        message="Use generator expression instead of list comprehension with sorted()",
+                        rule_id="FURB101",
+                        message=f"Use 'for {node.test.target.id if isinstance(node.test.target, ast.Name) else 'line'} in file' instead of while with assignment",
                         line_number=node.lineno,
                         column=node.col_offset,
                         severity=RuleSeverity.LOW,
-                        category=RuleCategory.PERFORMANCE,
+                        category=RuleCategory.REFACTOR,
                         file_path=self.file_path,
-                        fix_applicability=FixApplicability.SAFE,
+                        fix_applicability=FixApplicability.SUGGESTED,
                     )
                 )
+
+        self.generic_visit(node)
+
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: PLR0912 - Complex refactoring pattern detection requires many checks
+        """Detect various refactoring opportunities in function calls (FURB102-118)."""
+        # FURB102: sorted() on list comprehension - use generator instead
+        if isinstance(node.func, ast.Name) and node.func.id == "sorted" and len(node.args) > 0 and isinstance(node.args[0], ast.ListComp):
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB102",
+                    message="Use generator expression instead of list comprehension with sorted()",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.PERFORMANCE,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SAFE,
+                )
+            )
 
         # FURB103: open() without context manager
         if isinstance(node.func, ast.Name) and node.func.id == "open":
@@ -82,63 +78,60 @@ class RefurbPatternVisitor(ast.NodeVisitor):
             pass
 
         # FURB104: Unnecessary list() around sorted()
-        if isinstance(node.func, ast.Name) and node.func.id == "list":
-            if len(node.args) > 0 and isinstance(node.args[0], ast.Call):
-                inner_call = node.args[0]
-                if isinstance(inner_call.func, ast.Name) and inner_call.func.id == "sorted":
+        if isinstance(node.func, ast.Name) and node.func.id == "list" and len(node.args) > 0 and isinstance(node.args[0], ast.Call):
+            inner_call = node.args[0]
+            if isinstance(inner_call.func, ast.Name) and inner_call.func.id == "sorted":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB104",
+                        message="Unnecessary list() wrapper around sorted() - sorted() already returns a list",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
+        # FURB105: print() with sep="" - use ''.join() instead
+        if isinstance(node.func, ast.Name) and node.func.id == "print":
+            for keyword in node.keywords:
+                if keyword.arg == "sep" and isinstance(keyword.value, ast.Constant) and keyword.value.value == "":
                     self.violations.append(
                         RuleViolation(
-                            rule_id="FURB104",
-                            message="Unnecessary list() wrapper around sorted() - sorted() already returns a list",
+                            rule_id="FURB105",
+                            message="Use ''.join() instead of print() with sep=''",
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.SIMPLIFICATION,
                             file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                    )
-
-        # FURB105: print() with sep="" - use ''.join() instead
-        if isinstance(node.func, ast.Name) and node.func.id == "print":
-            for keyword in node.keywords:
-                if keyword.arg == "sep" and isinstance(keyword.value, ast.Constant):
-                    if keyword.value.value == "":
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB105",
-                                message="Use ''.join() instead of print() with sep=''",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SIMPLIFICATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
-
-        # FURB106: String path with open() - use Path
-        if isinstance(node.func, ast.Name) and node.func.id == "open":
-            if len(node.args) > 0:
-                first_arg = node.args[0]
-                # Check if first argument is a string constant (not a Path object)
-                if isinstance(first_arg, ast.Constant) and isinstance(first_arg.value, str):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB106",
-                            message="Use pathlib.Path for file paths instead of strings",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.MODERNIZATION,
-                            file_path=self.file_path,
                             fix_applicability=FixApplicability.SUGGESTED,
                         )
                     )
 
+        # FURB106: String path with open() - use Path
+        if isinstance(node.func, ast.Name) and node.func.id == "open" and len(node.args) > 0:
+            first_arg = node.args[0]
+            # Check if first argument is a string constant (not a Path object)
+            if isinstance(first_arg, ast.Constant) and isinstance(first_arg.value, str):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB106",
+                        message="Use pathlib.Path for file paths instead of strings",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.MODERNIZATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
         # FURB109: Use int() instead of math.floor()/ceil() for integers
-        if isinstance(node.func, ast.Attribute):
-            if (
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
+            if (  # noqa: SIM102
                 isinstance(node.func.value, ast.Name)
                 and node.func.value.id == "math"
                 and node.func.attr in ("floor", "ceil")
@@ -210,29 +203,26 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # This requires checking if-not-in-dict pattern, handled separately
 
         # FURB122: Use str.removeprefix()/removesuffix() (Python 3.9+)
-        if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "replace" and len(node.args) == 2:
-                # Check if replacing prefix/suffix with empty string
-                if isinstance(node.args[1], ast.Constant) and node.args[1].value == "":
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB122",
-                            message="Consider using str.removeprefix() or str.removesuffix() for Python 3.9+",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.MODERNIZATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SUGGESTED,
-                        )
-                    )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "replace" and len(node.args) == 2 and isinstance(node.args[1], ast.Constant) and node.args[1].value == "":  # noqa: PLR2004 - threshold
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB122",
+                    message="Consider using str.removeprefix() or str.removesuffix() for Python 3.9+",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.MODERNIZATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
 
         # FURB128: Merge isinstance() calls
         if isinstance(node.func, ast.Name) and node.func.id == "isinstance":
-            if len(node.args) == 2 and isinstance(node.args[1], ast.Tuple):
+            if len(node.args) == 2 and isinstance(node.args[1], ast.Tuple):  # noqa: PLR2004 - threshold
                 # Good pattern - already using tuple
                 pass
-            elif len(node.args) == 2:
+            elif len(node.args) == 2:  # noqa: PLR2004 - threshold
                 # Could suggest tuple for future combining
                 pass
 
@@ -252,80 +242,72 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         """Detect with statement patterns (FURB106, FURB116, 118-119, 123-127)."""
         # Check for pathlib usage opportunities (FURB106)
         for item in node.items:
-            if isinstance(item.context_expr, ast.Call):
-                if isinstance(item.context_expr.func, ast.Name):
-                    if item.context_expr.func.id == "open":
-                        # Check if using string paths instead of Path objects
-                        if len(item.context_expr.args) > 0:
-                            arg = item.context_expr.args[0]
-                            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FURB106",
-                                        message="Consider using pathlib.Path instead of string paths with open()",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.LOW,
-                                        category=RuleCategory.MODERNIZATION,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.SUGGESTED,
-                                    )
-                                )
+            if isinstance(item.context_expr, ast.Call) and isinstance(item.context_expr.func, ast.Name) and item.context_expr.func.id == "open" and len(item.context_expr.args) > 0:
+                arg = item.context_expr.args[0]
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB106",
+                            message="Consider using pathlib.Path instead of string paths with open()",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.MODERNIZATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
         # FURB123: Unnecessary assignment before return in context manager
-        if len(node.body) >= 2:
-            if isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):
-                ret = node.body[-1]
-                assign = node.body[-2]
-                if isinstance(ret.value, ast.Name) and isinstance(assign.targets[0], ast.Name):
-                    if ret.value.id == assign.targets[0].id:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB123",
-                                message="Unnecessary assignment before return - return the expression directly",
-                                line_number=assign.lineno,
-                                column=assign.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SIMPLIFICATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
+        if len(node.body) >= 2 and isinstance(node.body[-2], ast.Assign) and isinstance(node.body[-1], ast.Return):  # noqa: PLR2004 - threshold
+            ret = node.body[-1]
+            assign = node.body[-2]
+            if isinstance(ret.value, ast.Name) and isinstance(assign.targets[0], ast.Name) and ret.value.id == assign.targets[0].id:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB123",
+                        message="Unnecessary assignment before return - return the expression directly",
+                        line_number=assign.lineno,
+                        column=assign.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
 
         self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:
         """Detect comparison patterns (FURB107, FURB150, FURB152, FURB154)."""
         # FURB107: sys.version_info >= (3, x) - use sys.version_info >= (3, x, 0) for clarity
-        if isinstance(node.left, ast.Attribute):
+        if isinstance(node.left, ast.Attribute):  # noqa: SIM102
             if (
                 isinstance(node.left.value, ast.Name)
                 and node.left.value.id == "sys"
                 and node.left.attr == "version_info"
             ):
                 for comparator in node.comparators:
-                    if isinstance(comparator, ast.Tuple):
-                        if len(comparator.elts) == 2:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FURB107",
-                                    message="Use full version tuple (3, x, 0) for sys.version_info comparisons",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.LOW,
-                                    category=RuleCategory.CONVENTION,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
+                    if isinstance(comparator, ast.Tuple) and len(comparator.elts) == 2:  # noqa: PLR2004 - threshold
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="FURB107",
+                                message="Use full version tuple (3, x, 0) for sys.version_info comparisons",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                severity=RuleSeverity.LOW,
+                                category=RuleCategory.CONVENTION,
+                                file_path=self.file_path,
+                                fix_applicability=FixApplicability.SAFE,
                             )
+                        )
 
         # FURB150: Use operator.eq() instead of == in certain contexts
         # FURB152: Use math.log() instead of log2/log10 where applicable
         # FURB154: Use math.perm/comb instead of manual calculation
-        if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq):
-            if isinstance(node.left, ast.BinOp):
-                # Check for factorial/combinatorial patterns
-                pass
+        if len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq) and isinstance(node.left, ast.BinOp):
+            # Check for factorial/combinatorial patterns
+            pass
 
         self.generic_visit(node)
 
@@ -396,32 +378,17 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Detect subscript patterns (FURB132, FURB133)."""
         # FURB132: Use max() instead of sorted()[-1]
-        if isinstance(node.value, ast.Call):
-            if isinstance(node.value.func, ast.Name) and node.value.func.id == "sorted":
-                if isinstance(node.slice, ast.UnaryOp):
-                    if (
-                        isinstance(node.slice.op, ast.USub)
-                        and isinstance(node.slice.operand, ast.Constant)
-                        and node.slice.operand.value == 1
-                    ):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB132",
-                                message="Use max() instead of sorted()[-1] for better performance",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.MEDIUM,
-                                category=RuleCategory.PERFORMANCE,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
-                # FURB133: Use min() instead of sorted()[0]
-                elif isinstance(node.slice, ast.Constant) and node.slice.value == 0:
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == "sorted":
+            if isinstance(node.slice, ast.UnaryOp):
+                if (
+                    isinstance(node.slice.op, ast.USub)
+                    and isinstance(node.slice.operand, ast.Constant)
+                    and node.slice.operand.value == 1
+                ):
                     self.violations.append(
                         RuleViolation(
-                            rule_id="FURB133",
-                            message="Use min() instead of sorted()[0] for better performance",
+                            rule_id="FURB132",
+                            message="Use max() instead of sorted()[-1] for better performance",
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.MEDIUM,
@@ -430,6 +397,20 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
+            # FURB133: Use min() instead of sorted()[0]
+            elif isinstance(node.slice, ast.Constant) and node.slice.value == 0:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB133",
+                        message="Use min() instead of sorted()[0] for better performance",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.PERFORMANCE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
 
         self.generic_visit(node)
 
@@ -437,50 +418,47 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         """Detect if statement patterns (FURB110, FURB120)."""
         # FURB110: Use if-else expression instead of separate if statements
         # Check for pattern: if cond: x = a; else: x = b → x = a if cond else b
-        if len(node.body) == 1 and len(node.orelse) == 1:
-            if isinstance(node.body[0], ast.Assign) and isinstance(node.orelse[0], ast.Assign):
-                if_assign = node.body[0]
-                else_assign = node.orelse[0]
-                # Check if assigning to same target
-                if (
-                    len(if_assign.targets) == 1
-                    and len(else_assign.targets) == 1
-                    and isinstance(if_assign.targets[0], ast.Name)
-                    and isinstance(else_assign.targets[0], ast.Name)
-                    and if_assign.targets[0].id == else_assign.targets[0].id
-                ):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB110",
-                            message="Use conditional expression: x = a if cond else b",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
+        if len(node.body) == 1 and len(node.orelse) == 1 and isinstance(node.body[0], ast.Assign) and isinstance(node.orelse[0], ast.Assign):
+            if_assign = node.body[0]
+            else_assign = node.orelse[0]
+            # Check if assigning to same target
+            if (
+                len(if_assign.targets) == 1
+                and len(else_assign.targets) == 1
+                and isinstance(if_assign.targets[0], ast.Name)
+                and isinstance(else_assign.targets[0], ast.Name)
+                and if_assign.targets[0].id == else_assign.targets[0].id
+            ):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB110",
+                        message="Use conditional expression: x = a if cond else b",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
+                )
 
         # FURB120: Use dict.setdefault()
         # Pattern: if key not in dict: dict[key] = value
-        if isinstance(node.test, ast.Compare):
-            if len(node.test.ops) == 1 and isinstance(node.test.ops[0], ast.NotIn):
-                if len(node.body) == 1 and isinstance(node.body[0], ast.Assign):
-                    assign = node.body[0]
-                    if len(assign.targets) == 1 and isinstance(assign.targets[0], ast.Subscript):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB120",
-                                message="Use dict.setdefault(key, value) instead of if-not-in pattern",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.SIMPLIFICATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SAFE,
-                            )
-                        )
+        if isinstance(node.test, ast.Compare) and len(node.test.ops) == 1 and isinstance(node.test.ops[0], ast.NotIn) and len(node.body) == 1 and isinstance(node.body[0], ast.Assign):
+            assign = node.body[0]
+            if len(assign.targets) == 1 and isinstance(assign.targets[0], ast.Subscript):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB120",
+                        message="Use dict.setdefault(key, value) instead of if-not-in pattern",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
 
         self.generic_visit(node)
 
@@ -489,22 +467,19 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # FURB113: Use extend() instead of repeated append() in loop
         if len(node.body) == 1 and isinstance(node.body[0], ast.Expr):
             expr = node.body[0].value
-            if isinstance(expr, ast.Call):
-                if isinstance(expr.func, ast.Attribute) and expr.func.attr == "append":
-                    # Check if appending loop variable
-                    if len(expr.args) == 1:
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB113",
-                                message="Use list.extend() or list comprehension instead of append() in loop",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.PERFORMANCE,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
+            if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute) and expr.func.attr == "append" and len(expr.args) == 1:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB113",
+                        message="Use list.extend() or list comprehension instead of append() in loop",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.PERFORMANCE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
 
         self.generic_visit(node)
 
@@ -521,38 +496,34 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     def visit_Lambda(self, node: ast.Lambda) -> None:
         """Detect lambda patterns that could use operator module (FURB118-119)."""
         # FURB118: lambda x: x[key] -> operator.itemgetter(key)
-        if isinstance(node.body, ast.Subscript):
-            if isinstance(node.body.value, ast.Name) and len(node.args.args) == 1:
-                if node.body.value.id == node.args.args[0].arg:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB118",
-                            message="Use operator.itemgetter() instead of lambda for item access",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SUGGESTED,
-                        )
-                    )
+        if isinstance(node.body, ast.Subscript) and isinstance(node.body.value, ast.Name) and len(node.args.args) == 1 and node.body.value.id == node.args.args[0].arg:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB118",
+                    message="Use operator.itemgetter() instead of lambda for item access",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
 
         # FURB119: lambda x: x.attr -> operator.attrgetter('attr')
-        if isinstance(node.body, ast.Attribute):
-            if isinstance(node.body.value, ast.Name) and len(node.args.args) == 1:
-                if node.body.value.id == node.args.args[0].arg:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB119",
-                            message="Use operator.attrgetter() instead of lambda for attribute access",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SUGGESTED,
-                        )
-                    )
+        if isinstance(node.body, ast.Attribute) and isinstance(node.body.value, ast.Name) and len(node.args.args) == 1 and node.body.value.id == node.args.args[0].arg:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB119",
+                    message="Use operator.attrgetter() instead of lambda for attribute access",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.SIMPLIFICATION,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SUGGESTED,
+                )
+            )
 
         self.generic_visit(node)
 
@@ -577,14 +548,51 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         # FURB136: Delete instead of assigning None/empty
         for stmt in node.body:
-            if isinstance(stmt, ast.Assign) and isinstance(stmt.value, ast.Constant):
-                if stmt.value.value is None or stmt.value.value in ("", []):
+            if isinstance(stmt, ast.Assign) and isinstance(stmt.value, ast.Constant) and (stmt.value.value is None or stmt.value.value in ("", [])):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB136",
+                        message="Use 'del' instead of assigning None/empty value",
+                        line_number=stmt.lineno,
+                        column=stmt.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.STYLE,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
+
+        self.generic_visit(node)
+
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        """Detect list comprehension patterns (FURB129-131, 144-148)."""
+        # FURB129: Use list.copy() instead of list comprehension for copying
+        if len(node.generators) == 1:
+            gen = node.generators[0]
+            if isinstance(node.elt, ast.Name) and isinstance(gen.target, ast.Name) and node.elt.id == gen.target.id and not gen.ifs:
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB129",
+                        message="Use list.copy() or list() instead of identity list comprehension",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
+        # FURB145: Use startswith/endswith instead of slice comparison in comprehension
+        for generator in node.generators:
+            for if_clause in generator.ifs:
+                if isinstance(if_clause, ast.Compare) and isinstance(if_clause.left, ast.Subscript):
                     self.violations.append(
                         RuleViolation(
-                            rule_id="FURB136",
-                            message="Use 'del' instead of assigning None/empty value",
-                            line_number=stmt.lineno,
-                            column=stmt.col_offset,
+                            rule_id="FURB145",
+                            message="Consider using str.startswith() or str.endswith() instead of slice comparison",
+                            line_number=if_clause.lineno,
+                            column=if_clause.col_offset,
                             severity=RuleSeverity.LOW,
                             category=RuleCategory.STYLE,
                             file_path=self.file_path,
@@ -594,69 +602,28 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_ListComp(self, node: ast.ListComp) -> None:
-        """Detect list comprehension patterns (FURB129-131, 144-148)."""
-        # FURB129: Use list.copy() instead of list comprehension for copying
-        if len(node.generators) == 1:
-            gen = node.generators[0]
-            if isinstance(node.elt, ast.Name) and isinstance(gen.target, ast.Name):
-                if node.elt.id == gen.target.id and not gen.ifs:
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB129",
-                            message="Use list.copy() or list() instead of identity list comprehension",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
-                    )
-
-        # FURB145: Use startswith/endswith instead of slice comparison in comprehension
-        for generator in node.generators:
-            for if_clause in generator.ifs:
-                if isinstance(if_clause, ast.Compare):
-                    if isinstance(if_clause.left, ast.Subscript):
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB145",
-                                message="Consider using str.startswith() or str.endswith() instead of slice comparison",
-                                line_number=if_clause.lineno,
-                                column=if_clause.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.STYLE,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
-
-        self.generic_visit(node)
-
     def visit_DictComp(self, node: ast.DictComp) -> None:
         """Detect dict comprehension patterns (FURB140-141)."""
         # FURB140: Use dict() constructor instead of dict comprehension for simple cases
         if len(node.generators) == 1:
             gen = node.generators[0]
-            if isinstance(gen.target, ast.Tuple) and len(gen.target.elts) == 2:
-                if isinstance(node.key, ast.Name) and isinstance(node.value, ast.Name):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB140",
-                            message="Use dict() constructor instead of dict comprehension for unpacking",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
+            if isinstance(gen.target, ast.Tuple) and len(gen.target.elts) == 2 and isinstance(node.key, ast.Name) and isinstance(node.value, ast.Name):  # noqa: PLR2004 - threshold
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB140",
+                        message="Use dict() constructor instead of dict comprehension for unpacking",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
+                )
 
         self.generic_visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex function pattern detection requires many checks
         """Detect function definition patterns (FURB112, FURB125-127, FURB131)."""
         # FURB112: Use contextlib.suppress() instead of delete-except-pass
         # This is partially covered by FURB124 in visit_Try
@@ -669,58 +636,51 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                 if isinstance(func, ast.Name) and func.id in ("sorted", "map", "filter"):
                     # Check if there's a lambda argument
                     for arg in stmt.args:
-                        if isinstance(arg, ast.Lambda):
-                            # Check if lambda is just calling another function
-                            if isinstance(arg.body, ast.Call):
-                                if isinstance(arg.body.func, ast.Name):
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="FURB125",
-                                            message=f"Replace lambda with direct function reference in {func.id}()",
-                                            line_number=arg.lineno,
-                                            column=arg.col_offset,
-                                            severity=RuleSeverity.LOW,
-                                            category=RuleCategory.SIMPLIFICATION,
-                                            file_path=self.file_path,
-                                            fix_applicability=FixApplicability.SAFE,
-                                        )
-                                    )
-
-        # FURB126: Use isinstance() check instead of type() == check
-        for stmt in ast.walk(node):
-            if isinstance(stmt, ast.Compare):
-                if len(stmt.ops) == 1 and isinstance(stmt.ops[0], ast.Eq):
-                    if isinstance(stmt.left, ast.Call):
-                        if isinstance(stmt.left.func, ast.Name) and stmt.left.func.id == "type":
+                        if isinstance(arg, ast.Lambda) and isinstance(arg.body, ast.Call) and isinstance(arg.body.func, ast.Name):
                             self.violations.append(
                                 RuleViolation(
-                                    rule_id="FURB126",
-                                    message="Use isinstance() instead of type() == comparison",
-                                    line_number=stmt.lineno,
-                                    column=stmt.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.CONVENTION,
+                                    rule_id="FURB125",
+                                    message=f"Replace lambda with direct function reference in {func.id}()",
+                                    line_number=arg.lineno,
+                                    column=arg.col_offset,
+                                    severity=RuleSeverity.LOW,
+                                    category=RuleCategory.SIMPLIFICATION,
                                     file_path=self.file_path,
                                     fix_applicability=FixApplicability.SAFE,
                                 )
                             )
 
+        # FURB126: Use isinstance() check instead of type() == check
+        for stmt in ast.walk(node):
+            if isinstance(stmt, ast.Compare) and len(stmt.ops) == 1 and isinstance(stmt.ops[0], ast.Eq) and isinstance(stmt.left, ast.Call) and isinstance(stmt.left.func, ast.Name) and stmt.left.func.id == "type":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB126",
+                        message="Use isinstance() instead of type() == comparison",
+                        line_number=stmt.lineno,
+                        column=stmt.col_offset,
+                        severity=RuleSeverity.MEDIUM,
+                        category=RuleCategory.CONVENTION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
+                    )
+                )
+
         # FURB127: Use dict.fromkeys() instead of dict comprehension with constant value
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.DictComp):
-                if isinstance(stmt.value, ast.Constant):
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB127",
-                            message="Use dict.fromkeys() instead of dict comprehension with constant value",
-                            line_number=stmt.lineno,
-                            column=stmt.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.SIMPLIFICATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SAFE,
-                        )
+            if isinstance(stmt, ast.DictComp) and isinstance(stmt.value, ast.Constant):
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB127",
+                        message="Use dict.fromkeys() instead of dict comprehension with constant value",
+                        line_number=stmt.lineno,
+                        column=stmt.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.SIMPLIFICATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SAFE,
                     )
+                )
 
         # FURB131: Delete exception and re-raise instead of using raise
         for stmt in ast.walk(node):
@@ -731,7 +691,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                             if body_stmt.exc is None:
                                 # This is a bare raise, which is good
                                 pass
-                            elif isinstance(body_stmt.exc, ast.Name):
+                            elif isinstance(body_stmt.exc, ast.Name):  # noqa: SIM102
                                 # Check if it's the same as the caught exception
                                 if handler.name and body_stmt.exc.id == handler.name:
                                     self.violations.append(
@@ -755,21 +715,19 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call):
             func = node.value.func
             # Check for pattern: content = open('file').read()
-            if isinstance(func, ast.Attribute) and func.attr == "read":
-                if isinstance(func.value, ast.Call):
-                    if isinstance(func.value.func, ast.Name) and func.value.func.id == "open":
-                        self.violations.append(
-                            RuleViolation(
-                                rule_id="FURB130",
-                                message="Use Path.read_text() instead of open().read()",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                severity=RuleSeverity.LOW,
-                                category=RuleCategory.MODERNIZATION,
-                                file_path=self.file_path,
-                                fix_applicability=FixApplicability.SUGGESTED,
-                            )
-                        )
+            if isinstance(func, ast.Attribute) and func.attr == "read" and isinstance(func.value, ast.Call) and isinstance(func.value.func, ast.Name) and func.value.func.id == "open":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB130",
+                        message="Use Path.read_text() instead of open().read()",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.MODERNIZATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
+                    )
+                )
 
         # FURB134: Use Path.exists() instead of try-except FileNotFoundError
         # This is complex - needs context from try-except block
@@ -777,27 +735,26 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # FURB135: Use datetime.now() instead of datetime.fromtimestamp(time.time())
         if isinstance(node.value, ast.Call):
             func = node.value.func
-            if isinstance(func, ast.Attribute):
-                if (
+            if isinstance(func, ast.Attribute):  # noqa: SIM102
+                if (  # noqa: SIM102
                     func.attr == "fromtimestamp"
                 ):  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
                     # Check if argument is time.time()
                     if len(node.value.args) > 0:
                         arg = node.value.args[0]
-                        if isinstance(arg, ast.Call):
-                            if isinstance(arg.func, ast.Attribute) and arg.func.attr == "time":
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="FURB135",
-                                        message="Use datetime.now() instead of datetime.fromtimestamp(time.time())",
-                                        line_number=node.lineno,
-                                        column=node.col_offset,
-                                        severity=RuleSeverity.LOW,
-                                        category=RuleCategory.SIMPLIFICATION,
-                                        file_path=self.file_path,
-                                        fix_applicability=FixApplicability.SAFE,
-                                    )
+                        if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Attribute) and arg.func.attr == "time":
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="FURB135",
+                                    message="Use datetime.now() instead of datetime.fromtimestamp(time.time())",
+                                    line_number=node.lineno,
+                                    column=node.col_offset,
+                                    severity=RuleSeverity.LOW,
+                                    category=RuleCategory.SIMPLIFICATION,
+                                    file_path=self.file_path,
+                                    fix_applicability=FixApplicability.SAFE,
                                 )
+                            )
 
         # FURB137: Use min/max with default instead of try-except ValueError
         # FURB138: Use list.sort(key=str.lower) instead of list.sort(key=lambda x: x.lower())
@@ -840,23 +797,21 @@ class RefurbPatternVisitor(ast.NodeVisitor):
 
             # FURB143: Use enumerate() instead of range(len())
             # Check for pattern: for i in range(len(seq)): ... seq[i] ...
-            if isinstance(func, ast.Name) and func.id == "range":
-                if len(node.value.args) == 1:
-                    arg = node.value.args[0]
-                    if isinstance(arg, ast.Call):
-                        if isinstance(arg.func, ast.Name) and arg.func.id == "len":
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="FURB143",
-                                    message="Use enumerate() instead of range(len())",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.LOW,
-                                    category=RuleCategory.SIMPLIFICATION,
-                                    file_path=self.file_path,
-                                    fix_applicability=FixApplicability.SUGGESTED,
-                                )
-                            )
+            if isinstance(func, ast.Name) and func.id == "range" and len(node.value.args) == 1:
+                arg = node.value.args[0]
+                if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name) and arg.func.id == "len":
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="FURB143",
+                            message="Use enumerate() instead of range(len())",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.LOW,
+                            category=RuleCategory.SIMPLIFICATION,
+                            file_path=self.file_path,
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
             # FURB144: Use any()/all() instead of for-loop with flag
             # This requires more complex analysis
@@ -884,20 +839,19 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                     )
 
             # FURB147: Use Path.glob() instead of glob.glob() with pathlib
-            if isinstance(func, ast.Attribute) and func.attr == "glob":
-                if isinstance(func.value, ast.Name) and func.value.id == "glob":
-                    self.violations.append(
-                        RuleViolation(
-                            rule_id="FURB147",
-                            message="Use Path.glob() instead of glob.glob() for better path handling",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            severity=RuleSeverity.LOW,
-                            category=RuleCategory.MODERNIZATION,
-                            file_path=self.file_path,
-                            fix_applicability=FixApplicability.SUGGESTED,
-                        )
+            if isinstance(func, ast.Attribute) and func.attr == "glob" and isinstance(func.value, ast.Name) and func.value.id == "glob":
+                self.violations.append(
+                    RuleViolation(
+                        rule_id="FURB147",
+                        message="Use Path.glob() instead of glob.glob() for better path handling",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        severity=RuleSeverity.LOW,
+                        category=RuleCategory.MODERNIZATION,
+                        file_path=self.file_path,
+                        fix_applicability=FixApplicability.SUGGESTED,
                     )
+                )
 
             # FURB148: Use enumerate() with start parameter
             if isinstance(func, ast.Name) and func.id == "enumerate":
@@ -913,20 +867,19 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Detect augmented assignment patterns (FURB141)."""
         # FURB141: Use list.extend() instead of list += [item]
-        if isinstance(node.op, ast.Add) and isinstance(node.value, ast.List):
-            if len(node.value.elts) == 1:
-                self.violations.append(
-                    RuleViolation(
-                        rule_id="FURB141",
-                        message="Use list.append() instead of list += [item]",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        severity=RuleSeverity.LOW,
-                        category=RuleCategory.PERFORMANCE,
-                        file_path=self.file_path,
-                        fix_applicability=FixApplicability.SAFE,
-                    )
+        if isinstance(node.op, ast.Add) and isinstance(node.value, ast.List) and len(node.value.elts) == 1:
+            self.violations.append(
+                RuleViolation(
+                    rule_id="FURB141",
+                    message="Use list.append() instead of list += [item]",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    severity=RuleSeverity.LOW,
+                    category=RuleCategory.PERFORMANCE,
+                    file_path=self.file_path,
+                    fix_applicability=FixApplicability.SAFE,
                 )
+            )
 
         self.generic_visit(node)
 

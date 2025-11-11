@@ -239,7 +239,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
             return node.attr
         return ""
 
-    def _check_pii_patterns(self, node: ast.AST, var_name: str, value: str) -> None:
+    def _check_pii_patterns(self, node: ast.AST, var_name: str, value: str) -> None:  # noqa: PLR0912 - Complex PII pattern detection requires many checks
         """Check for various PII patterns in a value."""
         # Check for SSN
         if SSN_PATTERN.search(value):
@@ -555,7 +555,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         # Remove spaces and dashes
         digits = re.sub(r"[-\s]", "", value)
 
-        if not digits.isdigit() or len(digits) < 13 or len(digits) > 19:
+        if not digits.isdigit() or len(digits) < 13 or len(digits) > 19:  # noqa: PLR2004 - threshold
             return False
 
         # Luhn algorithm
@@ -568,7 +568,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
             for i in range(1, len(digits_list), 2):
                 digits_list[i] *= 2
                 # If result is > 9, subtract 9
-                if digits_list[i] > 9:
+                if digits_list[i] > 9:  # noqa: PLR2004 - threshold
                     digits_list[i] -= 9
             # Sum all digits
             return sum(digits_list) % 10

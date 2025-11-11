@@ -43,7 +43,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
     def visit_Raise(self, node: ast.Raise) -> None:
         """Check raise statement patterns."""
         # TRY001: Raise without from inside except
-        if self.in_except_handler and node.exc and not node.cause:
+        if self.in_except_handler and node.exc and not node.cause:  # noqa: SIM102
             # Check if this is a re-raise of a different exception type
             # (raising the same exception or bare raise is OK)
             if node.exc is not None:  # bare raise is OK
@@ -63,7 +63,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                 )
 
         # TRY002: Raise vanilla Exception
-        if node.exc and isinstance(node.exc, ast.Call):
+        if node.exc and isinstance(node.exc, ast.Call):  # noqa: SIM102
             if isinstance(node.exc.func, ast.Name) and node.exc.func.id == "Exception":
                 self.violations.append(
                     RuleViolation(
@@ -81,12 +81,12 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                 )
 
         # TRY003: Long messages in exception strings
-        if node.exc and isinstance(node.exc, ast.Call):
+        if node.exc and isinstance(node.exc, ast.Call):  # noqa: SIM102
             if node.exc.args:
                 for arg in node.exc.args:
                     if isinstance(arg, ast.Constant):
                         msg = arg.value
-                        if isinstance(msg, str) and len(msg) > 200:
+                        if isinstance(msg, str) and len(msg) > 200:  # noqa: PLR2004 - threshold
                             self.violations.append(
                                 RuleViolation(
                                     rule_id="TRY003",
@@ -139,7 +139,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                 pass  # Simplified for now
 
         # TRY301: Abstract raise to inner function
-        if len(node.handlers) > 3:
+        if len(node.handlers) > 3:  # noqa: PLR2004 - threshold
             self.violations.append(
                 RuleViolation(
                     rule_id="TRY301",
@@ -207,7 +207,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
         # TRY401: Verbose logging
         # Check for logging with exc_info in except handler
         for stmt in node.body:
-            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):  # noqa: SIM102
                 if isinstance(stmt.value.func, ast.Attribute):
                     method = stmt.value.func.attr
                     if method in ("error", "critical", "warning"):
@@ -249,7 +249,7 @@ class ExceptionHandlingVisitor(ast.NodeVisitor):
                 elif isinstance(item.context_expr.func, ast.Attribute):
                     func_name = item.context_expr.func.attr
 
-                if func_name == "suppress":
+                if func_name == "suppress":  # noqa: SIM102
                     # Using suppress - check if exception types are specific
                     if item.context_expr.args:
                         for arg in item.context_expr.args:

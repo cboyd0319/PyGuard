@@ -505,7 +505,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
     # Race Conditions & Timing Checks
     # =========================================================================
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call):  # noqa: PLR0912 - Complex business logic detection requires many checks
         """Check for file operations and other race condition patterns."""
         call_name = self._get_call_name(node)
 
@@ -523,7 +523,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         if any(op in call_name for op in file_ops):
             # Check if this follows a file check (TOCTOU)
             for check_line, _check_var, _ in self.file_checks:
-                if node.lineno > check_line and node.lineno - check_line <= 5:
+                if node.lineno > check_line and node.lineno - check_line <= 5:  # noqa: PLR2004 - threshold
                     self.issues.append(
                         SecurityIssue(
                             severity="HIGH",
@@ -627,7 +627,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             lower_call = call_name.lower()
             if any(
                 xml_marker in lower_call for xml_marker in ["xml", "etree", "minidom", "lxml"]
-            ) or (".parse" in call_name and call_name.count(".") <= 2):
+            ) or (".parse" in call_name and call_name.count(".") <= 2):  # noqa: PLR2004 - threshold
                 is_xml_parse = True
 
         if is_xml_parse:
@@ -653,13 +653,13 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             var_name = node.targets[0].id
             # Check if this looks like a pattern variable
-            if "pattern" in var_name.lower() or "regex" in var_name.lower():
+            if "pattern" in var_name.lower() or "regex" in var_name.lower():  # noqa: SIM102
                 if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                     self.regex_patterns[var_name] = node.value.value
 
         self.generic_visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef):  # noqa: PLR0912, PLR0915 - Comprehensive function analysis requires many checks
         """Analyze function definitions for business logic issues."""
         func_name = node.name
 
@@ -704,7 +704,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                     has_refund_validation = True
 
             # Check for float usage in financial context
-            if is_financial and isinstance(child, ast.BinOp):
+            if is_financial and isinstance(child, ast.BinOp):  # noqa: SIM102
                 if isinstance(child.op, (ast.Mult, ast.Div, ast.Add, ast.Sub)):
                     # Check if operands might be floats
                     snippet = self._get_code_snippet(child)
@@ -739,7 +739,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
                                     uses_user_input_price = True
                             elif isinstance(child.value, ast.Attribute):
                                 # request.args pattern
-                                if isinstance(child.value.value, ast.Name):
+                                if isinstance(child.value.value, ast.Name):  # noqa: SIM102
                                     if "request" in child.value.value.id.lower():
                                         uses_user_input_price = True
 
@@ -779,7 +779,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             )
 
         # BIZLOGIC013: Negative quantity validation
-        if (is_financial and "order" in func_name.lower()) or "quantity" in func_name.lower():
+        if (is_financial and "order" in func_name.lower()) or "quantity" in func_name.lower():  # noqa: SIM102
             if not has_negative_check:
                 self.issues.append(
                     SecurityIssue(
@@ -895,7 +895,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
         for child in ast.walk(node):
             if isinstance(child, ast.Subscript):
                 snippet = self._get_code_snippet(child)
-                if any(
+                if any(  # noqa: SIM102
                     id_field in snippet for id_field in ["user_id", "account_id", "customer_id"]
                 ):
                     # Check if it's from request without ownership check
@@ -931,7 +931,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
             # Check for Delete statements (del keyword)
             if isinstance(child, ast.Delete):
                 for target in child.targets:
-                    if isinstance(target, ast.Subscript):
+                    if isinstance(target, ast.Subscript):  # noqa: SIM102
                         # del collection[key] pattern
                         if isinstance(target.value, ast.Name):
                             self.issues.append(
@@ -976,7 +976,7 @@ class BusinessLogicVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_With(self, node: ast.With):
+    def visit_With(self, node: ast.With):  # noqa: PLR0912 - Complex lock analysis requires many branches
         """Track lock acquisitions for deadlock detection."""
         # BIZLOGIC009-010: Lock ordering and deadlock
         has_lock = False

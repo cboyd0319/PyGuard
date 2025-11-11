@@ -9,7 +9,7 @@ from pyguard.lib.core import PyGuardLogger
 from pyguard.lib.git_hooks import GitHooksManager
 
 
-def main():
+def main():  # noqa: PLR0912, PLR0915 - CLI main function handles many options
     """Main CLI entry point for git hooks management."""
 
     parser = argparse.ArgumentParser(

@@ -423,7 +423,7 @@ class ImportManager:
 
         return violations
 
-    def fix_imports(self, file_path: Path) -> tuple[bool, list[str]]:
+    def fix_imports(self, file_path: Path) -> tuple[bool, list[str]]:  # noqa: PLR0912 - Complex import fixing requires many checks
         """
         Fix import issues in a file.
 

@@ -208,7 +208,7 @@ class PyGuardJsonRpcServer:
         version = doc.get("version", 0)
         changes = params.get("contentChanges", [])
 
-        if uri in self.documents:
+        if uri in self.documents:  # noqa: SIM102
             # Full document sync (simpler approach)
             if changes and "text" in changes[0]:
                 self.documents[uri].content = changes[0]["text"]
@@ -453,7 +453,7 @@ class PyGuardJsonRpcServer:
         logger.info(f"Configuration updated: {list(config.keys())}")
         return {"success": True}
 
-    def _get_config(self, params: dict[str, Any]) -> dict[str, Any]:
+    def _get_config(self, params: dict[str, Any]) -> dict[str, Any]:  # noqa: ARG002 - params required by JSON-RPC handler signature
         """Get current PyGuard configuration."""
         return {"config": self.config}
 
@@ -497,17 +497,17 @@ class PyGuardJsonRpcServer:
             },
         }
 
-    def _shutdown(self, params: dict[str, Any]) -> None:
+    def _shutdown(self, params: dict[str, Any]) -> None:  # noqa: ARG002 - params required by JSON-RPC handler signature
         """Prepare for server shutdown."""
         logger.info("Shutdown requested")
         self.running = False
 
-    def _exit(self, params: dict[str, Any]) -> None:
+    def _exit(self, params: dict[str, Any]) -> None:  # noqa: ARG002 - params required by JSON-RPC handler signature
         """Exit the server."""
         logger.info("Exit requested")
         self.running = False
 
-    def handle_request(self, request_data: str) -> str | None:
+    def handle_request(self, request_data: str) -> str | None:  # noqa: PLR0911 - Request handling requires many error checks
         """
         Handle a JSON-RPC request and return response.
 

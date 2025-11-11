@@ -13,8 +13,8 @@ Tests cover:
 """
 
 import ast
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 

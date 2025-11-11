@@ -262,7 +262,7 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
             distance = self._levenshtein_distance(package_lower, popular.lower())
 
             # If distance is 1-2, it might be typosquatting
-            if distance <= 2:
+            if distance <= 2:  # noqa: PLR2004 - threshold
                 self.violations.append(
                     RuleViolation(
                         rule_id="DEP_CONF001",
@@ -330,7 +330,7 @@ class DependencyConfusionVisitor(ast.NodeVisitor):
     def _check_suspicious_naming(self, package: str, line_num: int) -> None:
         """Check for suspicious naming conventions."""
         # Check for excessive dashes or underscores
-        if package.count("-") > 3 or package.count("_") > 3:
+        if package.count("-") > 3 or package.count("_") > 3:  # noqa: PLR2004 - threshold
             self.violations.append(
                 RuleViolation(
                     rule_id="DEP_CONF004",

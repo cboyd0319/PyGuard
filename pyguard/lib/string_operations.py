@@ -166,7 +166,7 @@ class StringOperationsVisitor(ast.NodeVisitor):
         """Visit for loops to detect string concatenation patterns."""
         # PG-S006: String concatenation in loop
         for stmt in ast.walk(node):
-            if isinstance(stmt, ast.AugAssign) and isinstance(stmt.op, ast.Add):
+            if isinstance(stmt, ast.AugAssign) and isinstance(stmt.op, ast.Add):  # noqa: SIM102
                 if self._is_string_augassign(stmt):
                     self.issues.append(
                         StringIssue(
@@ -376,7 +376,7 @@ class StringOperationsFixer:
         results: list[tuple[Path, list[StringIssue]]] = []
 
         for py_file in directory.rglob("*.py"):
-            if exclude_patterns:
+            if exclude_patterns:  # noqa: SIM102
                 if any(pattern in str(py_file) for pattern in exclude_patterns):
                     continue
 

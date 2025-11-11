@@ -121,7 +121,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
 
     def _check_time_sleep(self, node: ast.Call) -> None:
         """Check for time.sleep() in async function."""
-        if isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
             if (
                 isinstance(node.func.value, ast.Name)
                 and node.func.value.id == "time"
@@ -154,7 +154,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
 
     def _check_sync_requests(self, node: ast.Call) -> None:
         """Check for synchronous HTTP requests in async function."""
-        if isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
             if (
                 isinstance(node.func.value, ast.Name)
                 and node.func.value.id == "requests"
@@ -202,7 +202,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
 
     def visit_For(self, node: ast.For) -> None:
         """Check for non-async iteration in async functions."""
-        if self.in_async_function and not isinstance(node, ast.AsyncFor):
+        if self.in_async_function and not isinstance(node, ast.AsyncFor):  # noqa: SIM102
             # Check if we're iterating over something that should be async
             if isinstance(node.iter, ast.Call):
                 call_name = self._get_call_name(node.iter)

@@ -51,7 +51,7 @@ class FixSafetyClassifier:
         self._classifications: dict[str, FixClassification] = {}
         self._initialize_classifications()
 
-    def _initialize_classifications(self) -> None:
+    def _initialize_classifications(self) -> None:  # noqa: PLR0915 - Comprehensive fix classification requires many statements
         """Initialize predefined fix classifications."""
 
         # ===== SAFE FIXES =====

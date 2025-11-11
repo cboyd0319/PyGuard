@@ -69,8 +69,8 @@ class PerformanceVisitor(ast.NodeVisitor):
 
         # PERF102: Detect list concatenation in loop
         for stmt_node in ast.walk(node):
-            if isinstance(stmt_node, ast.AugAssign) and isinstance(stmt_node.op, ast.Add):
-                if isinstance(stmt_node.target, ast.Name):
+            if isinstance(stmt_node, ast.AugAssign) and isinstance(stmt_node.op, ast.Add):  # noqa: SIM102
+                if isinstance(stmt_node.target, ast.Name):  # noqa: SIM102
                     # Check if augmenting a list
                     if isinstance(stmt_node.value, (ast.List, ast.ListComp)):
                         self.issues.append(
@@ -104,7 +104,7 @@ class PerformanceVisitor(ast.NodeVisitor):
         # This is complex and requires analyzing loop patterns
 
         # PERF402: Use list() or dict() instead of comprehension when converting
-        if func_name == "list":
+        if func_name == "list":  # noqa: SIM102
             if len(node.args) == 1 and isinstance(node.args[0], ast.ListComp):
                 self.issues.append(
                     PerformanceIssue(
@@ -119,7 +119,7 @@ class PerformanceVisitor(ast.NodeVisitor):
                     )
                 )
 
-        if func_name == "set":
+        if func_name == "set":  # noqa: SIM102
             if len(node.args) == 1 and isinstance(node.args[0], ast.SetComp):
                 self.issues.append(
                     PerformanceIssue(
@@ -134,7 +134,7 @@ class PerformanceVisitor(ast.NodeVisitor):
                     )
                 )
 
-        if func_name == "dict":
+        if func_name == "dict":  # noqa: SIM102
             if len(node.args) == 1 and isinstance(node.args[0], ast.DictComp):
                 self.issues.append(
                     PerformanceIssue(
@@ -152,7 +152,7 @@ class PerformanceVisitor(ast.NodeVisitor):
         # PERF403: Use dict comprehension instead of dict([(k, v) ...])
         if func_name == "dict" and len(node.args) == 1:
             arg = node.args[0]
-            if isinstance(arg, ast.ListComp):
+            if isinstance(arg, ast.ListComp):  # noqa: SIM102
                 # Check if generating tuples
                 if isinstance(arg.elt, ast.Tuple):
                     self.issues.append(
@@ -196,7 +196,7 @@ class PerformanceVisitor(ast.NodeVisitor):
     def visit_Subscript(self, node: ast.Subscript):
         """Visit subscript nodes."""
         # PERF405: Using list copy with [:] when list.copy() is clearer
-        if isinstance(node.slice, ast.Slice):
+        if isinstance(node.slice, ast.Slice):  # noqa: SIM102
             if node.slice.lower is None and node.slice.upper is None and node.slice.step is None:
                 self.issues.append(
                     PerformanceIssue(

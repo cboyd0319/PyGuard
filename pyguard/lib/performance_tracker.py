@@ -310,7 +310,7 @@ def compare_benchmarks(benchmarks: list[PerformanceBenchmark]) -> None:
 
 
 # Context manager for timing phases
-class timed_phase:
+class timed_phase:  # noqa: N801 - Intentionally lowercase to match Python's context manager conventions
     """Context manager for timing analysis phases."""
 
     def __init__(self, tracker: PerformanceTracker, phase: AnalysisPhase):

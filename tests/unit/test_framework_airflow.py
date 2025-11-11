@@ -11,12 +11,13 @@ Tests cover:
 
 import ast
 from pathlib import Path
+
 import pytest
 
 from pyguard.lib.framework_airflow import (
+    AirflowSecurityVisitor,
     analyze_airflow_security,
     fix_airflow_security,
-    AirflowSecurityVisitor,
 )
 from pyguard.lib.rule_engine import RuleSeverity
 
@@ -311,8 +312,8 @@ class TestAirflowAutoFix:
     def test_fix_hardcoded_credentials(self):
         """Test auto-fix adds comment for hardcoded credentials."""
         code = """password="secret123\""""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="AIRFLOW001",
             message="Hardcoded credential",
@@ -323,7 +324,7 @@ class TestAirflowAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_airflow_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -332,8 +333,8 @@ class TestAirflowAutoFix:
     def test_fix_command_injection(self):
         """Test auto-fix adds comment for command injection."""
         code = """bash_command=f"cat {file}\""""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="AIRFLOW002",
             message="Command injection",
@@ -344,7 +345,7 @@ class TestAirflowAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_airflow_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -353,8 +354,8 @@ class TestAirflowAutoFix:
     def test_fix_sql_injection(self):
         """Test auto-fix adds comment for SQL injection."""
         code = """sql=f"SELECT * FROM {table}\""""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="AIRFLOW005",
             message="SQL injection",
@@ -365,7 +366,7 @@ class TestAirflowAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_airflow_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -374,8 +375,8 @@ class TestAirflowAutoFix:
     def test_fix_xcom_sensitive_data(self):
         """Test auto-fix adds comment for XCom sensitive data."""
         code = """xcom_push(key='password', value=pwd)"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="AIRFLOW008",
             message="Sensitive data in XCom",
@@ -386,7 +387,7 @@ class TestAirflowAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_airflow_security(Path("test.py"), code, violation)
         assert modified
         assert "TODO" in fixed_code
@@ -395,8 +396,8 @@ class TestAirflowAutoFix:
     def test_no_fix_for_unknown_rule(self):
         """Test that unknown rules don't modify code."""
         code = """task = BashOperator(task_id="test")"""
-        
-        from pyguard.lib.rule_engine import RuleViolation, RuleCategory
+
+        from pyguard.lib.rule_engine import RuleCategory, RuleViolation
         violation = RuleViolation(
             rule_id="AIRFLOW999",  # Non-existent rule
             message="Test",
@@ -407,7 +408,7 @@ class TestAirflowAutoFix:
             file_path=Path("test.py"),
             code_snippet=code,
         )
-        
+
         fixed_code, modified = fix_airflow_security(Path("test.py"), code, violation)
         assert not modified
         assert fixed_code == code
@@ -506,7 +507,7 @@ with DAG('my_dag') as dag:
         violations = analyze_airflow_security(Path("test.py"), code)
         # Should detect multiple violations
         assert len(violations) >= 3
-        
+
         # Check we have different types of violations
         rule_ids = {v.rule_id for v in violations}
         assert any(rid.startswith("AIRFLOW00") for rid in rule_ids)

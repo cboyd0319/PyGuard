@@ -6,20 +6,19 @@ and compliance reporting capabilities.
 """
 
 import json
-import pytest
 import time
-from pathlib import Path
-from datetime import datetime, timezone
+
+import pytest
 
 from pyguard.lib.audit_logger import (
-    AuditEventType,
-    AuditSeverity,
     AuditEntry,
+    AuditEventType,
     AuditLogger,
-    audit_scan_started,
-    audit_scan_completed,
-    audit_config_changed,
+    AuditSeverity,
     audit_auth_attempt,
+    audit_config_changed,
+    audit_scan_completed,
+    audit_scan_started,
 )
 
 
@@ -67,7 +66,7 @@ class TestAuditEntry:
             actor="test_user",
             action="Started scan",
         )
-        
+
         assert entry.event_type == AuditEventType.SCAN_STARTED
         assert entry.severity == AuditSeverity.INFO
         assert entry.actor == "test_user"
@@ -80,7 +79,7 @@ class TestAuditEntry:
             "target": "/path/to/code",
             "files_scanned": 50,
         }
-        
+
         entry = AuditEntry(
             timestamp=time.time(),
             event_type=AuditEventType.SCAN_COMPLETED,
@@ -91,7 +90,7 @@ class TestAuditEntry:
             resource_type="directory",
             details=details,
         )
-        
+
         assert entry.details == details
         assert entry.resource == "/path/to/code"
         assert entry.resource_type == "directory"
@@ -105,10 +104,10 @@ class TestAuditEntry:
             actor="test_user",
             action="Test action",
         )
-        
+
         hash1 = entry.compute_hash(include_previous=False)
         hash2 = entry.compute_hash(include_previous=False)
-        
+
         # Same entry should produce same hash
         assert hash1 == hash2
         assert len(hash1) == 64  # SHA256 hex string
@@ -123,10 +122,10 @@ class TestAuditEntry:
             action="Test",
             previous_hash="abc123",
         )
-        
+
         hash_with_prev = entry.compute_hash(include_previous=True)
         hash_without_prev = entry.compute_hash(include_previous=False)
-        
+
         # Hashes should be different
         assert hash_with_prev != hash_without_prev
 
@@ -140,9 +139,9 @@ class TestAuditEntry:
             action="Test action",
             resource="/path/to/file",
         )
-        
+
         data = entry.to_dict()
-        
+
         assert data["timestamp"] == 1234567890.0
         assert data["event_type"] == "scan.started"
         assert data["severity"] == "info"
@@ -159,9 +158,9 @@ class TestAuditEntry:
             actor="test_user",
             action="Test",
         )
-        
+
         json_str = entry.to_json()
-        
+
         # Should be valid JSON
         parsed = json.loads(json_str)
         assert parsed["event_type"] == "scan.started"
@@ -178,9 +177,9 @@ class TestAuditEntry:
             resource="/path/to/code",
             client_ip="192.168.1.100",
         )
-        
+
         cef = entry.to_cef()
-        
+
         # Check CEF format
         assert cef.startswith("CEF:0|PyGuard|Security Scanner|")
         assert "scan.started" in cef
@@ -200,7 +199,7 @@ class TestAuditEntry:
         )
         cef = entry_critical.to_cef()
         assert "|10|" in cef
-        
+
         # Info should map to 3
         entry_info = AuditEntry(
             timestamp=time.time(),
@@ -243,7 +242,7 @@ class TestAuditLogger:
             actor="test_user",
             action="Started security scan",
         )
-        
+
         assert entry.event_type == AuditEventType.SCAN_STARTED
         assert entry.actor == "test_user"
         assert entry.severity == AuditSeverity.INFO
@@ -252,13 +251,13 @@ class TestAuditLogger:
     def test_log_creates_file(self, logger, temp_log_file):
         """Test that logging creates log file."""
         assert not temp_log_file.exists()
-        
+
         logger.log(
             event_type=AuditEventType.SCAN_STARTED,
             actor="test",
             action="Test",
         )
-        
+
         assert temp_log_file.exists()
 
     def test_log_with_details(self, logger):
@@ -268,7 +267,7 @@ class TestAuditLogger:
             "files": 100,
             "issues": 5,
         }
-        
+
         entry = logger.log(
             event_type=AuditEventType.SCAN_COMPLETED,
             actor="system",
@@ -276,7 +275,7 @@ class TestAuditLogger:
             resource="/path/to/code",
             details=details,
         )
-        
+
         assert entry.details == details
         assert entry.resource == "/path/to/code"
 
@@ -288,7 +287,7 @@ class TestAuditLogger:
             action="Error occurred",
             severity=AuditSeverity.ERROR,
         )
-        
+
         assert entry.severity == AuditSeverity.ERROR
 
     def test_log_chain_integrity(self, logger):
@@ -299,19 +298,19 @@ class TestAuditLogger:
             actor="user1",
             action="First scan",
         )
-        
+
         entry2 = logger.log(
             event_type=AuditEventType.SCAN_COMPLETED,
             actor="user1",
             action="First scan complete",
         )
-        
+
         entry3 = logger.log(
             event_type=AuditEventType.SCAN_STARTED,
             actor="user2",
             action="Second scan",
         )
-        
+
         # Check hash chain
         assert entry1.previous_hash is None
         assert entry2.previous_hash == entry1.entry_hash
@@ -326,10 +325,10 @@ class TestAuditLogger:
                 actor=f"user{i}",
                 action=f"Scan {i}",
             )
-        
+
         # Verify integrity
         result = logger.verify_integrity()
-        
+
         assert result["verified"] is True
         assert result["entries_checked"] == 5
         assert "message" in result
@@ -343,23 +342,23 @@ class TestAuditLogger:
                 actor=f"user{i}",
                 action=f"Scan {i}",
             )
-        
+
         # Manually tamper with log file
-        with open(temp_log_file, "r") as f:
+        with open(temp_log_file) as f:
             lines = f.readlines()
-        
+
         # Modify second entry
         if len(lines) > 1:
             entry = json.loads(lines[1])
             entry["actor"] = "TAMPERED"
             lines[1] = json.dumps(entry) + "\n"
-            
+
             with open(temp_log_file, "w") as f:
                 f.writelines(lines)
-        
+
         # Verify integrity - should detect tampering
         result = logger.verify_integrity()
-        
+
         assert result["verified"] is False
         assert "tampering_detected" in result
         assert result["tampering_detected"] > 0
@@ -373,9 +372,9 @@ class TestAuditLogger:
                 actor=f"user{i}",
                 action=f"Scan {i}",
             )
-        
+
         results = logger.query()
-        
+
         assert len(results) == 5
 
     def test_query_by_event_type(self, logger):
@@ -396,12 +395,12 @@ class TestAuditLogger:
             actor="user2",
             action="Start",
         )
-        
+
         # Query only SCAN_STARTED
         results = logger.query(
             event_types=[AuditEventType.SCAN_STARTED]
         )
-        
+
         assert len(results) == 2
         assert all(r["event_type"] == "scan.started" for r in results)
 
@@ -422,35 +421,35 @@ class TestAuditLogger:
             actor="alice",
             action="Another scan",
         )
-        
+
         results = logger.query(actor="alice")
-        
+
         assert len(results) == 2
         assert all(r["actor"] == "alice" for r in results)
 
     def test_query_by_time_range(self, logger):
         """Test querying by time range."""
         start_time = time.time()
-        
+
         logger.log(
             event_type=AuditEventType.SCAN_STARTED,
             actor="user1",
             action="Scan 1",
         )
-        
+
         time.sleep(0.1)
         mid_time = time.time()
         time.sleep(0.1)
-        
+
         logger.log(
             event_type=AuditEventType.SCAN_STARTED,
             actor="user2",
             action="Scan 2",
         )
-        
+
         # Query from mid_time onward
         results = logger.query(start_time=mid_time)
-        
+
         assert len(results) == 1
         assert results[0]["actor"] == "user2"
 
@@ -463,16 +462,16 @@ class TestAuditLogger:
                 actor=f"user{i}",
                 action=f"Scan {i}",
             )
-        
+
         # Query with limit of 5
         results = logger.query(limit=5)
-        
+
         assert len(results) == 5
 
     def test_generate_compliance_report(self, logger):
         """Test generating compliance report."""
         start_time = time.time()
-        
+
         # Create various entries
         logger.log(
             event_type=AuditEventType.SCAN_STARTED,
@@ -490,14 +489,14 @@ class TestAuditLogger:
             action="Login failed",
             severity=AuditSeverity.WARNING,
         )
-        
+
         end_time = time.time()
-        
+
         report = logger.generate_compliance_report(
             start_time=start_time,
             end_time=end_time,
         )
-        
+
         assert "report_period" in report
         assert "summary" in report
         assert report["summary"]["total_events"] == 3
@@ -509,7 +508,7 @@ class TestAuditLogger:
         """Test log rotation when size limit reached."""
         # Set small rotation size
         logger.rotate_size_mb = 0.001  # Very small for testing
-        
+
         # Write enough data to trigger rotation
         for i in range(100):
             logger.log(
@@ -518,7 +517,7 @@ class TestAuditLogger:
                 action=f"Scan {i}" * 100,  # Make entry larger
                 details={"data": "x" * 1000},
             )
-        
+
         # Should have created rotated files
         rotated_files = list(temp_log_file.parent.glob("test_audit.*.jsonl"))
         assert len(rotated_files) > 0
@@ -540,7 +539,7 @@ class TestConvenienceFunctions:
             actor="test_user",
             target="/path/to/code",
         )
-        
+
         assert entry.event_type == AuditEventType.SCAN_STARTED
         assert entry.actor == "test_user"
         assert entry.details["scan_id"] == "scan-123"
@@ -553,7 +552,7 @@ class TestConvenienceFunctions:
             actor="system",
             issues_found=10,
         )
-        
+
         assert entry.event_type == AuditEventType.SCAN_COMPLETED
         assert entry.details["issues_found"] == 10
 
@@ -566,7 +565,7 @@ class TestConvenienceFunctions:
             old_value="medium",
             new_value="high",
         )
-        
+
         assert entry.event_type == AuditEventType.CONFIG_CHANGED
         assert entry.severity == AuditSeverity.WARNING
         assert entry.details["config_key"] == "max_severity"
@@ -581,7 +580,7 @@ class TestConvenienceFunctions:
             success=True,
             client_ip="192.168.1.100",
         )
-        
+
         assert entry.event_type == AuditEventType.AUTH_SUCCESS
         assert entry.severity == AuditSeverity.INFO
         assert entry.result == "success"
@@ -595,7 +594,7 @@ class TestConvenienceFunctions:
             success=False,
             client_ip="10.0.0.1",
         )
-        
+
         assert entry.event_type == AuditEventType.AUTH_FAILED
         assert entry.severity == AuditSeverity.WARNING
         assert entry.result == "failure"
@@ -616,14 +615,14 @@ class TestAuditLoggerIntegration:
         """Test logging complete scan workflow."""
         # Start scan
         scan_id = "scan-integration-001"
-        
+
         entry1 = audit_scan_started(
             audit_logger=logger,
             scan_id=scan_id,
             actor="ci_system",
             target="/repo/myproject",
         )
-        
+
         # Complete scan
         entry2 = audit_scan_completed(
             audit_logger=logger,
@@ -632,7 +631,7 @@ class TestAuditLoggerIntegration:
             issues_found=5,
             critical_issues=1,
         )
-        
+
         # Query scan events
         results = logger.query(
             event_types=[
@@ -640,10 +639,10 @@ class TestAuditLoggerIntegration:
                 AuditEventType.SCAN_COMPLETED,
             ]
         )
-        
+
         assert len(results) == 2
         assert results[0]["details"]["scan_id"] == scan_id
-        
+
         # Verify integrity
         verification = logger.verify_integrity()
         assert verification["verified"] is True
@@ -651,7 +650,7 @@ class TestAuditLoggerIntegration:
     def test_multiple_user_activity(self, logger):
         """Test logging activity from multiple users."""
         users = ["alice", "bob", "charlie"]
-        
+
         for user in users:
             # Each user performs multiple actions
             audit_scan_started(
@@ -660,24 +659,24 @@ class TestAuditLoggerIntegration:
                 actor=user,
                 target=f"/home/{user}/code",
             )
-            
+
             audit_auth_attempt(
                 audit_logger=logger,
                 actor=user,
                 success=True,
             )
-        
+
         # Query each user's activity
         for user in users:
             results = logger.query(actor=user)
             assert len(results) == 2
-        
+
         # Generate compliance report
         report = logger.generate_compliance_report(
             start_time=time.time() - 1000,
             end_time=time.time(),
         )
-        
+
         assert report["summary"]["total_events"] == 6
         assert len(report["summary"]["actor_counts"]) == 3
 
@@ -690,24 +689,24 @@ class TestAuditLoggerIntegration:
                 actor=f"user{i}",
                 action=f"Scan {i}",
             )
-        
+
         # Verify integrity (should pass)
         result1 = logger.verify_integrity()
         assert result1["verified"] is True
-        
+
         # Tamper with log
         log_file = tmp_path / "integration_audit.jsonl"
-        with open(log_file, "r") as f:
+        with open(log_file) as f:
             lines = f.readlines()
-        
+
         # Modify middle entry
         entry = json.loads(lines[2])
         entry["actor"] = "TAMPERED_ACTOR"
         lines[2] = json.dumps(entry) + "\n"
-        
+
         with open(log_file, "w") as f:
             f.writelines(lines)
-        
+
         # Verify integrity (should fail)
         result2 = logger.verify_integrity()
         assert result2["verified"] is False

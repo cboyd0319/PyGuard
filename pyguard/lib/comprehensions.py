@@ -17,7 +17,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
         self.violations: list[RuleViolation] = []
         self.file_path = file_path
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: PLR0912, PLR0915 - Complex comprehension detection requires many checks
         """Visit function calls to detect comprehension opportunities."""
         if isinstance(node.func, ast.Name):
             func_name = node.func.id
@@ -57,7 +57,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                             )
                         )
                     # C411: Unnecessary list call around sorted()
-                    elif isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                    elif isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):  # noqa: SIM102
                         if arg.func.id == "sorted":
                             self.violations.append(
                                 RuleViolation(
@@ -77,7 +77,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                         comp = arg
                         if len(comp.generators) == 1:
                             gen = comp.generators[0]
-                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):
+                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):  # noqa: SIM102
                                 if comp.elt.id == gen.target.id and not gen.ifs:
                                     self.violations.append(
                                         RuleViolation(
@@ -141,7 +141,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
                         comp = arg
                         if len(comp.generators) == 1:
                             gen = comp.generators[0]
-                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):
+                            if isinstance(comp.elt, ast.Name) and isinstance(gen.target, ast.Name):  # noqa: SIM102
                                 if comp.elt.id == gen.target.id and not gen.ifs:
                                     self.violations.append(
                                         RuleViolation(
@@ -218,7 +218,7 @@ class ComprehensionVisitor(ast.NodeVisitor):
 
                 elif func_name == "sorted":
                     # C413: Unnecessary list/reversed call around sorted()
-                    if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
+                    if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):  # noqa: SIM102
                         if arg.func.id in ("reversed", "list"):
                             self.violations.append(
                                 RuleViolation(
@@ -234,12 +234,12 @@ class ComprehensionVisitor(ast.NodeVisitor):
                             )
 
                 # C414: Unnecessary list/reversed/sorted call inside set/sorted/list/tuple
-                if func_name in ("set", "sorted", "list", "tuple"):
+                if func_name in ("set", "sorted", "list", "tuple"):  # noqa: SIM102
                     if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
                         inner_func = arg.func.id
                         # Avoid duplicate C411 (list(sorted())) and C413 (sorted(list/reversed()))
-                        if inner_func in ("list", "reversed", "sorted", "tuple"):
-                            if not (func_name == "list" and inner_func == "sorted"):  # Skip C411
+                        if inner_func in ("list", "reversed", "sorted", "tuple"):  # noqa: SIM102
+                            if not (func_name == "list" and inner_func == "sorted"):  # noqa: SIM102  Skip C411
                                 if not (
                                     func_name == "sorted" and inner_func in ("list", "reversed")
                                 ):  # Skip C413

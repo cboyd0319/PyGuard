@@ -156,7 +156,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for filter design functions with user input
         signal_funcs = ["butter", "cheby1", "cheby2", "ellip", "bessel", "iirfilter"]
 
-        if any(sig in func_name for sig in signal_funcs):
+        if any(sig in func_name for sig in signal_funcs):  # noqa: SIM102
             # Check if filter order comes from user input or is a variable (not a constant)
             if node.args and self._is_potentially_user_input_or_variable(node.args[0]):
                 self.violations.append(
@@ -179,7 +179,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for FFT functions without input validation
         fft_funcs = ["fft", "fft2", "fftn", "rfft", "irfft", "ifft"]
 
-        if any(fft in func_name for fft in fft_funcs):
+        if any(fft in func_name for fft in fft_funcs):  # noqa: SIM102
             if not self._has_input_validation_nearby(node):
                 self.violations.append(
                     RuleViolation(
@@ -209,7 +209,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
             "bsr_matrix",
         ]
 
-        if any(sparse in func_name for sparse in sparse_constructors):
+        if any(sparse in func_name for sparse in sparse_constructors):  # noqa: SIM102
             # Check if shape is validated
             if not self._has_shape_validation_nearby(node):
                 self.violations.append(
@@ -256,7 +256,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for matrix decomposition without error handling
         linalg_funcs = ["inv", "solve", "lstsq", "eig", "svd", "qr", "cholesky"]
 
-        if any(linalg in func_name for linalg in linalg_funcs):
+        if any(linalg in func_name for linalg in linalg_funcs):  # noqa: SIM102
             # Check if there's error handling for singular matrices
             if not self._has_error_handling_nearby(node):
                 self.violations.append(
@@ -279,7 +279,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for interpolation functions with user input
         interp_funcs = ["interp1d", "interp2d", "interpn", "griddata", "Rbf"]
 
-        if any(interp in func_name for interp in interp_funcs):
+        if any(interp in func_name for interp in interp_funcs):  # noqa: SIM102
             # Check if interpolation points are validated
             if not self._has_input_validation_nearby(node):
                 self.violations.append(
@@ -323,7 +323,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for statistical functions without input validation
         stats_funcs = ["ttest_ind", "kstest", "mannwhitneyu", "wilcoxon", "kruskal"]
 
-        if any(stat in func_name for stat in stats_funcs):
+        if any(stat in func_name for stat in stats_funcs):  # noqa: SIM102
             # Check if sample size is validated
             if not self._has_input_validation_nearby(node):
                 self.violations.append(
@@ -346,7 +346,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
         # Check for spatial algorithms without size limits
         spatial_funcs = ["KDTree", "cKDTree", "distance_matrix", "cdist", "pdist"]
 
-        if any(spatial in func_name for spatial in spatial_funcs):
+        if any(spatial in func_name for spatial in spatial_funcs):  # noqa: SIM102
             # Check if data size is validated
             if not self._has_size_validation_nearby(node):
                 self.violations.append(

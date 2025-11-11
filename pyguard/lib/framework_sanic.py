@@ -81,7 +81,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         self._analyze_function(node)
         self.generic_visit(node)
 
-    def _analyze_function(self, node) -> None:
+    def _analyze_function(self, node) -> None:  # noqa: PLR0912 - Complex Sanic route analysis requires many checks
         """Common logic for analyzing both sync and async functions."""
         if not self.has_sanic_import:
             return
@@ -196,33 +196,30 @@ class SanicSecurityVisitor(ast.NodeVisitor):
 
         # Second pass: check if formatted variables are used in SQL queries
         for child in ast.walk(node):
-            if isinstance(child, ast.Call):
-                # Check for SQL query with route parameter
-                if isinstance(child.func, ast.Attribute):
-                    if child.func.attr in ("execute", "raw", "query"):
-                        for arg in child.args:
-                            # Direct formatting in the call
-                            if (
-                                isinstance(arg, ast.JoinedStr)
-                                or (
-                                    isinstance(arg, ast.Call)
-                                    and isinstance(arg.func, ast.Attribute)
-                                    and arg.func.attr == "format"
-                                )
-                                or (isinstance(arg, ast.Name) and arg.id in formatted_vars)
-                            ):
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="SANIC001",
-                                        category=RuleCategory.SECURITY,
-                                        message="Route parameter used in SQL query without sanitization",
-                                        severity=RuleSeverity.HIGH,
-                                        line_number=child.lineno,
-                                        column=child.col_offset,
-                                        file_path=self.file_path,
-                                        code_snippet=self._get_code_snippet(child.lineno),
-                                    )
-                                )
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute) and child.func.attr in ("execute", "raw", "query"):
+                for arg in child.args:
+                    # Direct formatting in the call
+                    if (
+                        isinstance(arg, ast.JoinedStr)
+                        or (
+                            isinstance(arg, ast.Call)
+                            and isinstance(arg.func, ast.Attribute)
+                            and arg.func.attr == "format"
+                        )
+                        or (isinstance(arg, ast.Name) and arg.id in formatted_vars)
+                    ):
+                        self.violations.append(
+                            RuleViolation(
+                                rule_id="SANIC001",
+                                category=RuleCategory.SECURITY,
+                                message="Route parameter used in SQL query without sanitization",
+                                severity=RuleSeverity.HIGH,
+                                line_number=child.lineno,
+                                column=child.col_offset,
+                                file_path=self.file_path,
+                                code_snippet=self._get_code_snippet(child.lineno),
+                            )
+                        )
 
     def _check_missing_auth(self, node: ast.FunctionDef) -> None:
         """Check for routes without authentication (SANIC002)."""
@@ -234,7 +231,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
             if isinstance(decorator, ast.Name):
                 if "auth" in decorator.id.lower() or "protected" in decorator.id.lower():
                     has_auth_decorator = True
-            elif isinstance(decorator, ast.Call):
+            elif isinstance(decorator, ast.Call):  # noqa: SIM102
                 if isinstance(decorator.func, ast.Name) and (
                     "auth" in decorator.func.id.lower() or "protected" in decorator.func.id.lower()
                 ):
@@ -242,9 +239,8 @@ class SanicSecurityVisitor(ast.NodeVisitor):
 
         # Check for auth checks in function body
         for child in ast.walk(node):
-            if isinstance(child, ast.Attribute):
-                if child.attr in ("token", "user", "current_user", "authorized"):
-                    has_auth_check = True
+            if isinstance(child, ast.Attribute) and child.attr in ("token", "user", "current_user", "authorized"):
+                has_auth_check = True
 
         # Flag routes that handle sensitive data without auth
         function_code = ast.get_source_segment(self.code, node)
@@ -293,7 +289,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                             ) or (
                                 isinstance(comp, ast.Constant)
                                 and isinstance(comp.value, int)
-                                and comp.value > 1000
+                                and comp.value > 1000  # noqa: PLR2004 - threshold
                             ):
                                 comp_is_size = True
 
@@ -323,9 +319,8 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         has_auth_check = False
 
         for child in ast.walk(node):
-            if isinstance(child, ast.Attribute):
-                if child.attr in ("token", "user", "authorized"):
-                    has_auth_check = True
+            if isinstance(child, ast.Attribute) and child.attr in ("token", "user", "authorized"):
+                has_auth_check = True
 
         if not has_auth_check:
             self.violations.append(
@@ -397,7 +392,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
-    def _check_async_view_injection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def _check_async_view_injection(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:  # noqa: PLR0912 - Complex async injection detection requires many checks
         """Check for async view injection vulnerabilities (SANIC007)."""
         # Look for user input being used in async operations
         if not node.args.args:
@@ -410,55 +405,52 @@ class SanicSecurityVisitor(ast.NodeVisitor):
 
         # Look for async operations with user input
         for child in ast.walk(node):
-            if isinstance(child, ast.Await):
-                # Check if the await contains a call that uses request data
-                if isinstance(child.value, ast.Call):
-                    # Check the arguments to see if any use request.json or request.args
-                    for arg in child.value.args:
-                        uses_request_data = False
-                        if isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name):
-                            if arg.value.id == "request" and arg.attr in (
-                                "json",
-                                "args",
-                                "form",
-                                "body",
-                            ):
-                                uses_request_data = True
-                        elif isinstance(arg, ast.Name):
-                            # Check if this variable was assigned from request data
-                            for stmt in ast.walk(node):
-                                if isinstance(stmt, ast.Assign):
-                                    for target in stmt.targets:
-                                        if isinstance(target, ast.Name) and target.id == arg.id:
-                                            if isinstance(stmt.value, ast.Attribute):
-                                                if (
-                                                    isinstance(stmt.value.value, ast.Name)
-                                                    and stmt.value.value.id == "request"
-                                                ):
-                                                    uses_request_data = True
+            if isinstance(child, ast.Await) and isinstance(child.value, ast.Call):
+                # Check the arguments to see if any use request.json or request.args
+                for arg in child.value.args:
+                    uses_request_data = False
+                    if isinstance(arg, ast.Attribute) and isinstance(arg.value, ast.Name):
+                        if arg.value.id == "request" and arg.attr in (
+                            "json",
+                            "args",
+                            "form",
+                            "body",
+                        ):
+                            uses_request_data = True
+                    elif isinstance(arg, ast.Name):
+                        # Check if this variable was assigned from request data
+                        for stmt in ast.walk(node):
+                            if isinstance(stmt, ast.Assign):
+                                for target in stmt.targets:
+                                    if isinstance(target, ast.Name) and target.id == arg.id and isinstance(stmt.value, ast.Attribute):  # noqa: SIM102
+                                        if (
+                                            isinstance(stmt.value.value, ast.Name)
+                                            and stmt.value.value.id == "request"
+                                        ):
+                                            uses_request_data = True
 
-                        if uses_request_data:
-                            # Check if there's validation
-                            has_validation = False
-                            for stmt in ast.walk(node):
-                                if isinstance(stmt, ast.If):
-                                    has_validation = True
-                                    break
+                    if uses_request_data:
+                        # Check if there's validation
+                        has_validation = False
+                        for stmt in ast.walk(node):
+                            if isinstance(stmt, ast.If):
+                                has_validation = True
+                                break
 
-                            if not has_validation:
-                                self.violations.append(
-                                    RuleViolation(
-                                        rule_id="SANIC007",
-                                        category=RuleCategory.SECURITY,
-                                        message="Async operation using unvalidated request data",
-                                        severity=RuleSeverity.MEDIUM,
-                                        line_number=child.lineno,
-                                        column=child.col_offset,
-                                        file_path=self.file_path,
-                                        code_snippet=self._get_code_snippet(child.lineno),
-                                    )
+                        if not has_validation:
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="SANIC007",
+                                    category=RuleCategory.SECURITY,
+                                    message="Async operation using unvalidated request data",
+                                    severity=RuleSeverity.MEDIUM,
+                                    line_number=child.lineno,
+                                    column=child.col_offset,
+                                    file_path=self.file_path,
+                                    code_snippet=self._get_code_snippet(child.lineno),
                                 )
-                                return  # Only report once per function
+                            )
+                            return  # Only report once per function
 
     def _check_cookie_security(self, node: ast.Call) -> None:
         """Check for insecure cookie handling (SANIC008)."""
@@ -503,7 +495,7 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         """Check for static file exposure vulnerabilities (SANIC009)."""
         # Check if static files are exposed from sensitive directories
         # app.static(uri, file_or_directory) - second argument is the path
-        if len(node.args) >= 2:
+        if len(node.args) >= 2:  # noqa: PLR2004 - threshold
             static_path_arg = node.args[1]
             path_str = ast.get_source_segment(self.code, static_path_arg)
             if path_str:
@@ -557,10 +549,8 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         # Check for wildcard CORS origins
         has_wildcard = False
         for keyword in node.keywords:
-            if keyword.arg in ("origins", "origin"):
-                if isinstance(keyword.value, ast.Constant):
-                    if keyword.value.value == "*":
-                        has_wildcard = True
+            if keyword.arg in ("origins", "origin") and isinstance(keyword.value, ast.Constant) and keyword.value.value == "*":
+                has_wildcard = True
 
         if has_wildcard:
             self.violations.append(
@@ -645,9 +635,8 @@ class SanicSecurityVisitor(ast.NodeVisitor):
         if node.args:
             # listener_type = None  # Reserved for future use
             for keyword in node.keywords:
-                if keyword.arg == "when":
-                    if isinstance(keyword.value, ast.Constant):
-                        pass  # listener_type = keyword.value.value
+                if keyword.arg == "when" and isinstance(keyword.value, ast.Constant):
+                    pass  # listener_type = keyword.value.value
 
             # Check for listeners that might expose secrets
             listener_code = ast.get_source_segment(self.code, node)

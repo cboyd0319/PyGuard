@@ -264,7 +264,7 @@ class PyGuardWebhookAPI:
             window_seconds=60,
         )
 
-    def trigger_scan(
+    def trigger_scan(  # noqa: PLR0913 - Flexible scan triggering requires many parameters
         self,
         api_key: ApiKey,
         target_path: str | None = None,

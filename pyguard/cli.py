@@ -234,7 +234,7 @@ class PyGuardCLI:
 
         return results
 
-    def run_full_analysis(
+    def run_full_analysis(  # noqa: PLR0915 - Comprehensive analysis requires many statements
         self, files: list[Path], create_backup: bool = True, fix: bool = True
     ) -> dict[str, Any]:
         """
@@ -412,7 +412,7 @@ class PyGuardCLI:
         self.ui.print_help_message()
 
 
-def main():
+def main():  # noqa: PLR0912, PLR0915 - CLI main function handles many options
     """Main CLI entry point."""
 
     parser = argparse.ArgumentParser(
@@ -962,7 +962,7 @@ def main():
 
     # Generate enhanced compliance reports if requested
     if args.compliance_html or args.compliance_json:
-        from pyguard.lib.compliance_reporter import (
+        from pyguard.lib.compliance_reporter import (  # noqa: PLC0415 - Lazy import, only needed when compliance reports requested
             ComplianceReporter,
         )
 

@@ -107,7 +107,7 @@ class SecurityVisitor(ast.NodeVisitor):
 
         return False
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call):  # noqa: PLR0912, PLR0915 - Comprehensive AST analysis requires many checks
         """Visit function call nodes."""
         func_name = self._get_call_name(node)
 
@@ -200,43 +200,40 @@ class SecurityVisitor(ast.NodeVisitor):
             )
 
         # OWASP ASVS-6.3.1, CWE-330: Weak Random
-        if func_name.startswith("random.") and func_name not in ["random.seed", "random.choice"]:
-            # Check if in security context
-            if self._in_security_context(node):
+        if func_name.startswith("random.") and func_name not in ["random.seed", "random.choice"] and self._in_security_context(node):
+            self._add_issue(
+                node,
+                SecurityIssue(
+                    severity="MEDIUM",
+                    category="Weak Random",
+                    message="random module is not cryptographically secure",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use secrets module: secrets.token_urlsafe(), secrets.token_hex(), or secrets.randbelow()",
+                    owasp_id="ASVS-6.3.1",
+                    cwe_id="CWE-330",
+                ),
+            )
+
+        # OWASP ASVS-9.1.1, CWE-319: Insecure HTTP
+        if func_name in ["requests.get", "requests.post", "urllib.request.urlopen"] and node.args and isinstance(node.args[0], ast.Constant):
+            url = node.args[0].value
+            if isinstance(url, str) and url.startswith("http://"):
                 self._add_issue(
                     node,
                     SecurityIssue(
                         severity="MEDIUM",
-                        category="Weak Random",
-                        message="random module is not cryptographically secure",
+                        category="Insecure Communication",
+                        message="Using insecure HTTP instead of HTTPS",
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Use secrets module: secrets.token_urlsafe(), secrets.token_hex(), or secrets.randbelow()",
-                        owasp_id="ASVS-6.3.1",
-                        cwe_id="CWE-330",
+                        fix_suggestion="Use HTTPS for secure communication",
+                        owasp_id="ASVS-9.1.1",
+                        cwe_id="CWE-319",
                     ),
                 )
-
-        # OWASP ASVS-9.1.1, CWE-319: Insecure HTTP
-        if func_name in ["requests.get", "requests.post", "urllib.request.urlopen"]:
-            if node.args and isinstance(node.args[0], ast.Constant):
-                url = node.args[0].value
-                if isinstance(url, str) and url.startswith("http://"):
-                    self._add_issue(
-                        node,
-                        SecurityIssue(
-                            severity="MEDIUM",
-                            category="Insecure Communication",
-                            message="Using insecure HTTP instead of HTTPS",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion="Use HTTPS for secure communication",
-                            owasp_id="ASVS-9.1.1",
-                            cwe_id="CWE-319",
-                        ),
-                    )
 
         # OWASP ASVS-8.2.2, CWE-326: Weak SSL/TLS
         if "ssl.wrap_socket" in func_name or "SSLContext" in func_name:
@@ -272,7 +269,7 @@ class SecurityVisitor(ast.NodeVisitor):
             )
 
         # OWASP ASVS-13.1.1, CWE-918: Server-Side Request Forgery (SSRF)
-        if func_name in [
+        if func_name in [  # noqa: SIM102
             "requests.get",
             "requests.post",
             "urllib.request.urlopen",
@@ -297,26 +294,24 @@ class SecurityVisitor(ast.NodeVisitor):
                 )
 
         # OWASP ASVS-12.3.1, CWE-22: Path Traversal (Enhanced)
-        if func_name in ["open", "os.path.join", "pathlib.Path"]:
-            # Check if path uses user input
-            if node.args:
-                for arg in node.args:
-                    if isinstance(arg, (ast.Name, ast.Call, ast.BinOp)):
-                        self._add_issue(
-                            node,
-                            SecurityIssue(
-                                severity="HIGH",
-                                category="Path Traversal",
-                                message=f"{func_name}() with dynamic path may allow directory traversal",
-                                line_number=node.lineno,
-                                column=node.col_offset,
-                                code_snippet=self._get_code_snippet(node),
-                                fix_suggestion="Validate paths: use os.path.normpath() and check if path starts with allowed directory",
-                                owasp_id="ASVS-12.3.1",
-                                cwe_id="CWE-22",
-                            ),
-                        )
-                        break
+        if func_name in ["open", "os.path.join", "pathlib.Path"] and node.args:
+            for arg in node.args:
+                if isinstance(arg, (ast.Name, ast.Call, ast.BinOp)):
+                    self._add_issue(
+                        node,
+                        SecurityIssue(
+                            severity="HIGH",
+                            category="Path Traversal",
+                            message=f"{func_name}() with dynamic path may allow directory traversal",
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            code_snippet=self._get_code_snippet(node),
+                            fix_suggestion="Validate paths: use os.path.normpath() and check if path starts with allowed directory",
+                            owasp_id="ASVS-12.3.1",
+                            cwe_id="CWE-22",
+                        ),
+                    )
+                    break
 
         # CWE-377: Insecure Temporary File Creation
         if func_name in ["tempfile.mktemp"]:
@@ -336,82 +331,75 @@ class SecurityVisitor(ast.NodeVisitor):
             )
 
         # CWE-918: Template Injection (Jinja2, Mako)
-        if func_name in ["jinja2.Template", "Template", "mako.template.Template"]:
-            # Check if template string is dynamic
-            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self._add_issue(
-                    node,
-                    SecurityIssue(
-                        severity="HIGH",
-                        category="Template Injection",
-                        message=f"{func_name}() with dynamic template enables Server-Side Template Injection (SSTI)",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Use pre-defined templates; sanitize user input with autoescape=True; avoid user-controlled templates",
-                        owasp_id="ASVS-5.2.6",
-                        cwe_id="CWE-1336",
-                    ),
-                )
+        if func_name in ["jinja2.Template", "Template", "mako.template.Template"] and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            self._add_issue(
+                node,
+                SecurityIssue(
+                    severity="HIGH",
+                    category="Template Injection",
+                    message=f"{func_name}() with dynamic template enables Server-Side Template Injection (SSTI)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use pre-defined templates; sanitize user input with autoescape=True; avoid user-controlled templates",
+                    owasp_id="ASVS-5.2.6",
+                    cwe_id="CWE-1336",
+                ),
+            )
 
         # CWE-798: JWT Security Issues
         if func_name in ["jwt.encode", "jwt.decode"]:
             # Check for weak algorithms
             algorithm_arg = self._get_keyword_arg(node, "algorithm")
-            if algorithm_arg and isinstance(algorithm_arg, ast.Constant):
-                if algorithm_arg.value in ["none", "HS256"]:
-                    self._add_issue(
-                        node,
-                        SecurityIssue(
-                            severity="HIGH",
-                            category="Weak JWT Algorithm",
-                            message=f"JWT using weak algorithm '{algorithm_arg.value!r}'",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion="Use RS256 or ES256 for JWT signing; avoid 'none' algorithm",
-                            owasp_id="ASVS-6.2.1",
-                            cwe_id="CWE-327",
-                        ),
-                    )
+            if algorithm_arg and isinstance(algorithm_arg, ast.Constant) and algorithm_arg.value in ["none", "HS256"]:
+                self._add_issue(
+                    node,
+                    SecurityIssue(
+                        severity="HIGH",
+                        category="Weak JWT Algorithm",
+                        message=f"JWT using weak algorithm '{algorithm_arg.value!r}'",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use RS256 or ES256 for JWT signing; avoid 'none' algorithm",
+                        owasp_id="ASVS-6.2.1",
+                        cwe_id="CWE-327",
+                    ),
+                )
 
         # CWE-639: Insecure Direct Object Reference (IDOR)
-        if func_name in ["query.get", "get_object_or_404", "filter"]:
-            # Check if using user-supplied ID without authorization check
-            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self._add_issue(
-                    node,
-                    SecurityIssue(
-                        severity="HIGH",
-                        category="IDOR",
-                        message=f"{func_name}() may allow unauthorized access to objects (IDOR)",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Verify user authorization before accessing objects; use permission checks",
-                        owasp_id="ASVS-4.1.1",
-                        cwe_id="CWE-639",
-                    ),
-                )
+        if func_name in ["query.get", "get_object_or_404", "filter"] and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            self._add_issue(
+                node,
+                SecurityIssue(
+                    severity="HIGH",
+                    category="IDOR",
+                    message=f"{func_name}() may allow unauthorized access to objects (IDOR)",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Verify user authorization before accessing objects; use permission checks",
+                    owasp_id="ASVS-4.1.1",
+                    cwe_id="CWE-639",
+                ),
+            )
 
         # CWE-502: GraphQL Injection
-        if func_name in ["graphql.execute", "execute_graphql"]:
-            # Check for dynamic queries
-            if node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
-                self._add_issue(
-                    node,
-                    SecurityIssue(
-                        severity="HIGH",
-                        category="GraphQL Injection",
-                        message=f"{func_name}() with dynamic query enables GraphQL injection",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Use parameterized queries; validate and sanitize user input; implement query depth limiting",
-                        owasp_id="ASVS-5.3.8",
-                        cwe_id="CWE-943",
-                    ),
-                )
+        if func_name in ["graphql.execute", "execute_graphql"] and node.args and isinstance(node.args[0], (ast.Name, ast.Call)):
+            self._add_issue(
+                node,
+                SecurityIssue(
+                    severity="HIGH",
+                    category="GraphQL Injection",
+                    message=f"{func_name}() with dynamic query enables GraphQL injection",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use parameterized queries; validate and sanitize user input; implement query depth limiting",
+                    owasp_id="ASVS-5.3.8",
+                    cwe_id="CWE-943",
+                ),
+            )
 
         # CWE-1004: Sensitive Cookie Without HttpOnly Flag
         if func_name in ["set_cookie", "response.set_cookie"]:
@@ -436,23 +424,21 @@ class SecurityVisitor(ast.NodeVisitor):
                 )
 
         # CWE-134: Format String Vulnerability
-        if isinstance(node.func, ast.Attribute) and node.func.attr == "format":
-            # Check if format string comes from a variable (potential user input)
-            if isinstance(node.func.value, ast.Name):
-                self._add_issue(
-                    node,
-                    SecurityIssue(
-                        severity="MEDIUM",
-                        category="Format String",
-                        message="Dynamic format strings can lead to information disclosure",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion="Use template strings or f-strings with explicit values; avoid user-controlled format strings",
-                        owasp_id="ASVS-5.2.8",
-                        cwe_id="CWE-134",
-                    ),
-                )
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "format" and isinstance(node.func.value, ast.Name):
+            self._add_issue(
+                node,
+                SecurityIssue(
+                    severity="MEDIUM",
+                    category="Format String",
+                    message="Dynamic format strings can lead to information disclosure",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion="Use template strings or f-strings with explicit values; avoid user-controlled format strings",
+                    owasp_id="ASVS-5.2.8",
+                    cwe_id="CWE-134",
+                ),
+            )
 
         # CWE-90: LDAP Injection
         if "ldap" in func_name.lower() and any(
@@ -480,7 +466,7 @@ class SecurityVisitor(ast.NodeVisitor):
             )
 
         # CWE-943: NoSQL Injection (MongoDB)
-        if func_name in [
+        if func_name in [  # noqa: SIM102
             "pymongo.collection.find",
             "pymongo.collection.find_one",
             "pymongo.collection.update",
@@ -504,7 +490,7 @@ class SecurityVisitor(ast.NodeVisitor):
                 )
 
         # CWE-489: Debug Code Detection
-        if func_name in [
+        if func_name in [  # noqa: SIM102
             "pdb.set_trace",
             "ipdb.set_trace",
             "breakpoint",
@@ -561,49 +547,47 @@ class SecurityVisitor(ast.NodeVisitor):
                     "jwt_secret",
                 ]
 
-                if any(name in var_name for name in sensitive_names):
-                    # Check if value is a hardcoded string
-                    if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-                        value_str = node.value.value
-                        if value_str and value_str not in [
-                            "",
-                            "None",
-                            "null",
-                            "YOUR_KEY_HERE",
-                            "TODO",
-                        ]:
-                            # Enhanced detection with pattern matching
-                            secret_patterns = {
-                                r"AKIA[0-9A-Z]{16}": "AWS Access Key",
-                                r"AIza[0-9A-Za-z\-_]{35}": "Google API Key",
-                                r"xox[baprs]-[0-9]{10,12}-[0-9]{10,12}-[0-9a-zA-Z]{24}": "Slack Token",
-                                r"sk_live_[0-9a-zA-Z]{24}": "Stripe Live Key",
-                                r"ghp_[0-9a-zA-Z]{36}": "GitHub Personal Access Token",
-                                r"mongodb(\+srv)?://[^/]+:[^@]+@": "MongoDB Connection String",
-                                r"postgres://[^/]+:[^@]+@": "PostgreSQL Connection String",
-                                r"mysql://[^/]+:[^@]+@": "MySQL Connection String",
-                            }
+                if any(name in var_name for name in sensitive_names) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    value_str = node.value.value
+                    if value_str and value_str not in [
+                        "",
+                        "None",
+                        "null",
+                        "YOUR_KEY_HERE",
+                        "TODO",
+                    ]:
+                        # Enhanced detection with pattern matching
+                        secret_patterns = {
+                            r"AKIA[0-9A-Z]{16}": "AWS Access Key",
+                            r"AIza[0-9A-Za-z\-_]{35}": "Google API Key",
+                            r"xox[baprs]-[0-9]{10,12}-[0-9]{10,12}-[0-9a-zA-Z]{24}": "Slack Token",
+                            r"sk_live_[0-9a-zA-Z]{24}": "Stripe Live Key",
+                            r"ghp_[0-9a-zA-Z]{36}": "GitHub Personal Access Token",
+                            r"mongodb(\+srv)?://[^/]+:[^@]+@": "MongoDB Connection String",
+                            r"postgres://[^/]+:[^@]+@": "PostgreSQL Connection String",
+                            r"mysql://[^/]+:[^@]+@": "MySQL Connection String",
+                        }
 
-                            detected_type = "Hardcoded Credentials"
-                            for pattern, secret_type in secret_patterns.items():
-                                if re.search(pattern, value_str):
-                                    detected_type = secret_type
-                                    break
+                        detected_type = "Hardcoded Credentials"
+                        for pattern, secret_type in secret_patterns.items():
+                            if re.search(pattern, value_str):
+                                detected_type = secret_type
+                                break
 
-                            self._add_issue(
-                                node,
-                                SecurityIssue(
-                                    severity="HIGH",
-                                    category=detected_type,
-                                    message=f"Hardcoded {detected_type} detected in variable '{var_name}'",
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    code_snippet=self._get_code_snippet(node),
-                                    fix_suggestion="Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)",
-                                    owasp_id="ASVS-2.6.3",
-                                    cwe_id="CWE-798",
-                                ),
-                            )
+                        self._add_issue(
+                            node,
+                            SecurityIssue(
+                                severity="HIGH",
+                                category=detected_type,
+                                message=f"Hardcoded {detected_type} detected in variable '{var_name}'",
+                                line_number=node.lineno,
+                                column=node.col_offset,
+                                code_snippet=self._get_code_snippet(node),
+                                fix_suggestion="Use environment variables (os.environ.get('VAR_NAME')), config files, or secure vaults (AWS Secrets Manager, HashiCorp Vault)",
+                                owasp_id="ASVS-2.6.3",
+                                cwe_id="CWE-798",
+                            ),
+                        )
 
         self.generic_visit(node)
 
@@ -774,24 +758,23 @@ class CodeQualityVisitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """Visit function definition nodes."""
         # Check for missing docstrings (except private functions)
-        if not node.name.startswith("_"):
-            if not ast.get_docstring(node) and not self._is_suppressed(node, "DOCUMENTATION"):
-                self._add_issue(
-                    node,
-                    CodeQualityIssue(
-                        severity="LOW",
-                        category="Documentation",
-                        message=f"Function '{node.name}' lacks docstring",
-                        line_number=node.lineno,
-                        column=node.col_offset,
-                        code_snippet=self._get_code_snippet(node),
-                        fix_suggestion='Add docstring: """Brief description."""',
-                    ),
-                )
+        if not node.name.startswith("_") and not ast.get_docstring(node) and not self._is_suppressed(node, "DOCUMENTATION"):
+            self._add_issue(
+                node,
+                CodeQualityIssue(
+                    severity="LOW",
+                    category="Documentation",
+                    message=f"Function '{node.name}' lacks docstring",
+                    line_number=node.lineno,
+                    column=node.col_offset,
+                    code_snippet=self._get_code_snippet(node),
+                    fix_suggestion='Add docstring: """Brief description."""',
+                ),
+            )
 
         # Check for too many parameters
         num_params = len(node.args.args)
-        if num_params > 6:
+        if num_params > 6:  # noqa: PLR2004 - count check
             self._add_issue(
                 node,
                 CodeQualityIssue(
@@ -825,8 +808,8 @@ class CodeQualityVisitor(ast.NodeVisitor):
         complexity = self._calculate_complexity(node)
         self.complexity_by_function[node.name] = complexity
 
-        if complexity > 10:
-            severity = "HIGH" if complexity > 20 else "MEDIUM"
+        if complexity > 10:  # noqa: PLR2004 - threshold
+            severity = "HIGH" if complexity > 20 else "MEDIUM"  # noqa: PLR2004 - threshold
             self._add_issue(
                 node,
                 CodeQualityIssue(
@@ -842,8 +825,8 @@ class CodeQualityVisitor(ast.NodeVisitor):
 
         # Check for long methods (SWEBOK: functions should be < 50 lines)
         loc = self._count_lines_of_code(node)
-        if loc > 50:
-            severity = "HIGH" if loc > 100 else "MEDIUM"
+        if loc > 50:  # noqa: PLR2004 - threshold
+            severity = "HIGH" if loc > 100 else "MEDIUM"  # noqa: PLR2004 - threshold
             self._add_issue(
                 node,
                 CodeQualityIssue(
@@ -882,37 +865,35 @@ class CodeQualityVisitor(ast.NodeVisitor):
         """Visit comparison nodes to check for anti-patterns."""
         # Check for comparison with None using == instead of is
         for _i, (op, comparator) in enumerate(zip(node.ops, node.comparators, strict=False)):
-            if isinstance(comparator, ast.Constant) and comparator.value is None:
-                if isinstance(op, (ast.Eq, ast.NotEq)):
-                    suggested_op = "is None" if isinstance(op, ast.Eq) else "is not None"
-                    self._add_issue(
-                        node,
-                        CodeQualityIssue(
-                            severity="LOW",
-                            category="Style",
-                            message="Use 'is None' instead of '== None'",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion=f"Replace with '{suggested_op}'",
-                        ),
-                    )
+            if isinstance(comparator, ast.Constant) and comparator.value is None and isinstance(op, (ast.Eq, ast.NotEq)):
+                suggested_op = "is None" if isinstance(op, ast.Eq) else "is not None"
+                self._add_issue(
+                    node,
+                    CodeQualityIssue(
+                        severity="LOW",
+                        category="Style",
+                        message="Use 'is None' instead of '== None'",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion=f"Replace with '{suggested_op}'",
+                    ),
+                )
 
             # Check for comparison with True/False
-            if isinstance(comparator, ast.Constant) and isinstance(comparator.value, bool):
-                if isinstance(op, ast.Eq):
-                    self._add_issue(
-                        node,
-                        CodeQualityIssue(
-                            severity="LOW",
-                            category="Style",
-                            message=f"Avoid explicit comparison with {comparator.value}",
-                            line_number=node.lineno,
-                            column=node.col_offset,
-                            code_snippet=self._get_code_snippet(node),
-                            fix_suggestion="Use 'if var:' or 'if not var:' instead",
-                        ),
-                    )
+            if isinstance(comparator, ast.Constant) and isinstance(comparator.value, bool) and isinstance(op, ast.Eq):
+                self._add_issue(
+                    node,
+                    CodeQualityIssue(
+                        severity="LOW",
+                        category="Style",
+                        message=f"Avoid explicit comparison with {comparator.value}",
+                        line_number=node.lineno,
+                        column=node.col_offset,
+                        code_snippet=self._get_code_snippet(node),
+                        fix_suggestion="Use 'if var:' or 'if not var:' instead",
+                    ),
+                )
 
         self.generic_visit(node)
 

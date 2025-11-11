@@ -99,7 +99,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign) -> None:
         """Check assignments for security issues."""
         # Check if user input is stored without validation
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):  # noqa: SIM102
             if node.value.func.attr in (
                 "text_input",
                 "text_area",
@@ -112,9 +112,9 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
                 self._track_user_input(node)
 
         # Check for SQL injection in query assignments
-        if isinstance(node.value, ast.BinOp):
+        if isinstance(node.value, ast.BinOp):  # noqa: SIM102
             # Check if this is a SQL query with string concatenation
-            if isinstance(node.value.op, (ast.Add, ast.Mod)):
+            if isinstance(node.value.op, (ast.Add, ast.Mod)):  # noqa: SIM102
                 # Check if any part looks like SQL
                 if self._contains_sql_keywords(node.value):
                     self.violations.append(
@@ -137,7 +137,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
         """Check for sensitive data being written to the UI."""
         # Check if st.write() is used with variables that might contain secrets
         for arg in node.args:
-            if isinstance(arg, ast.Attribute):
+            if isinstance(arg, ast.Attribute):  # noqa: SIM102
                 # Check for st.secrets being written directly
                 if arg.attr == "secrets" or (
                     isinstance(arg.value, ast.Attribute) and arg.value.attr == "secrets"
@@ -157,7 +157,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
                     )
 
             # Check for environment variables or config being written
-            if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Attribute):
+            if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Attribute):  # noqa: SIM102
                 if arg.func.attr in ("getenv", "get"):
                     self.violations.append(
                         RuleViolation(
@@ -178,7 +178,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
         # Check if unsafe_allow_html=True is used with user input
         has_unsafe_html = False
         for keyword in node.keywords:
-            if keyword.arg == "unsafe_allow_html":
+            if keyword.arg == "unsafe_allow_html":  # noqa: SIM102
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
                     has_unsafe_html = True
                     break
@@ -200,7 +200,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
                             fix_data={"issue": "xss_markdown"},
                         )
                     )
-                elif isinstance(arg, ast.Name):
+                elif isinstance(arg, ast.Name):  # noqa: SIM102
                     # Check if variable might be user input
                     if arg.id in [inp["var_name"] for inp in self.user_inputs]:
                         self.violations.append(
@@ -256,7 +256,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
 
     def _is_database_query(self, node: ast.Call) -> bool:
         """Check if this is a database query call."""
-        if isinstance(node.func, ast.Attribute):
+        if isinstance(node.func, ast.Attribute):  # noqa: SIM102
             # Check for common database methods
             if node.func.attr in ("execute", "query", "raw", "sql"):
                 return True
@@ -373,8 +373,8 @@ def fix_streamlit_security(
     original_line = lines[line_idx]
 
     # Fix file uploader without type filter
-    if violation.rule_id == "STREAMLIT005" and violation.fix_applicability == FixApplicability.SAFE:
-        if "file_uploader(" in original_line:
+    if violation.rule_id == "STREAMLIT005" and violation.fix_applicability == FixApplicability.SAFE:  # noqa: SIM102
+        if "file_uploader(" in original_line:  # noqa: SIM102
             # Add type parameter if not present
             if "type=" not in original_line:
                 # Find the closing parenthesis

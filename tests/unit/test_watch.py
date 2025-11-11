@@ -8,8 +8,8 @@ Following PyTest Architect Agent best practices:
 - Deterministic tests with frozen time
 """
 
-import time
 from pathlib import Path
+import time
 from unittest.mock import Mock, patch
 
 import pytest

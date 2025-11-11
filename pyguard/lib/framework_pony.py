@@ -132,7 +132,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
         func_name = self._get_func_name(node)
 
         # Check for select() with potential injection
-        if func_name == "select" or ".select" in func_name:
+        if func_name == "select" or ".select" in func_name:  # noqa: SIM102
             # Check if lambda/generator uses user input
             if self._uses_user_input_in_context(node.lineno):
                 self.violations.append(
@@ -155,7 +155,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
         # Check for Database binding
         if "bind" in func_name or "Database" in func_name:
             # For bind(), check the second argument (database path/name)
-            if "bind" in func_name and len(node.args) >= 2:
+            if "bind" in func_name and len(node.args) >= 2:  # noqa: PLR2004 - threshold
                 second_arg = node.args[1]
                 if isinstance(second_arg, ast.Name):
                     var_name = second_arg.id
@@ -176,7 +176,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
                         )
             elif node.args:
                 first_arg = node.args[0]
-                if isinstance(first_arg, ast.Name):
+                if isinstance(first_arg, ast.Name):  # noqa: SIM102
                     if self._is_potentially_user_input(first_arg):
                         self.violations.append(
                             RuleViolation(
@@ -198,7 +198,7 @@ class PonySecurityVisitor(ast.NodeVisitor):
             line_code = self.lines[line_num - 1]
             # Check for cache-related operations without proper key validation
             # Must have both "cache" and ".get" pattern (not just function names containing "get")
-            if "cache" in line_code.lower() and ".get(" in line_code.lower():
+            if "cache" in line_code.lower() and ".get(" in line_code.lower():  # noqa: SIM102
                 if self._uses_user_input_in_context(line_num):
                     self.violations.append(
                         RuleViolation(

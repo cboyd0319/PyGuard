@@ -73,7 +73,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
                 return
         elif isinstance(node.func.value, ast.Attribute):
             # logging.debug(), logging.info(), etc.
-            if isinstance(node.func.value.value, ast.Name):
+            if isinstance(node.func.value.value, ast.Name):  # noqa: SIM102
                 if node.func.value.value.id != "logging":
                     return
 

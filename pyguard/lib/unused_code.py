@@ -78,7 +78,7 @@ class UnusedCodeVisitor(ast.NodeVisitor):
             self.import_froms[name] = (node.lineno, node.col_offset)
         self.generic_visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef):  # noqa: PLR0912 - Complex function analysis requires many branches
         """Track function definitions and arguments."""
         old_function: str | None = self.current_function
         self.current_function = node.name
@@ -132,7 +132,7 @@ class UnusedCodeVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):  # noqa: PLR0912 - Complex async function analysis requires many branches
         """Track async function definitions."""
         # Same logic as FunctionDef
         old_function: str | None = self.current_function
@@ -209,7 +209,7 @@ class UnusedCodeVisitor(ast.NodeVisitor):
             self.used_names.add(node.value.id)
         self.generic_visit(node)
 
-    def finalize(self):
+    def finalize(self):  # noqa: PLR0912 - Complex unused code detection requires many branches
         """Finalize analysis and generate unused import/variable issues."""
         # Check for unused imports
         for name, (line, col) in self.imports.items():
@@ -347,7 +347,7 @@ class UnusedCodeFixer:
             if 0 <= line_idx < len(lines):
                 line = lines[line_idx]
                 # Check if this is a simple import line
-                if line.strip().startswith(("import ", "from ")):
+                if line.strip().startswith(("import ", "from ")):  # noqa: SIM102
                     # Check if line only imports this one thing
                     if issue.name in line and line.count(",") == 0:
                         lines_to_remove.add(line_idx)

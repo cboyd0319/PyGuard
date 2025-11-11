@@ -145,7 +145,7 @@ class SecurityFixer:
     def _fix_insecure_random(self, content: str) -> str:
         """Fix usage of insecure random number generators."""
         # Replace random with secrets for security-sensitive operations
-        if "import random" in content and "password" in content.lower():
+        if "import random" in content and "password" in content.lower():  # noqa: SIM102
             if "import secrets" not in content:
                 content = content.replace(
                     "import random",

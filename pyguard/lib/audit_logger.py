@@ -255,7 +255,7 @@ class AuditLogger:
         except Exception as e:
             logger.warning(f"Failed to load last hash: {e}")
 
-    def log(
+    def log(  # noqa: PLR0913 - Comprehensive audit logging requires many parameters
         self,
         event_type: AuditEventType,
         actor: str,
@@ -338,7 +338,7 @@ class AuditLogger:
 
     def _rotate_log(self) -> None:
         """Rotate the current log file."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         rotated_file = self.log_file.with_suffix(f".{timestamp}.jsonl")
 
         try:
@@ -448,7 +448,7 @@ class AuditLogger:
             "message": "Audit log integrity verified",
         }
 
-    def query(
+    def query(  # noqa: PLR0913 - Flexible audit query requires many filter parameters
         self,
         event_types: list[AuditEventType] | None = None,
         actor: str | None = None,

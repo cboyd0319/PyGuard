@@ -42,7 +42,7 @@ class PytestVisitor(ast.NodeVisitor):
             "import pytest" in code or "from pytest" in code
         )  # pyguard: disable=CWE-89  # Pattern detection, not vulnerable code
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex pytest test analysis requires many checks
         """Detect test function issues (PT001-PT027)."""
         if not self.is_test_file:
             self.generic_visit(node)
@@ -118,10 +118,10 @@ class PytestVisitor(ast.NodeVisitor):
 
             # PT006: Wrong name(s) for pytest parametrize values
             for dec in node.decorator_list:
-                if isinstance(dec, ast.Call):
-                    if isinstance(dec.func, ast.Attribute) and dec.func.attr == "parametrize":
+                if isinstance(dec, ast.Call):  # noqa: SIM102
+                    if isinstance(dec.func, ast.Attribute) and dec.func.attr == "parametrize":  # noqa: SIM102
                         # Check if first argument is argnames
-                        if len(dec.args) >= 2:
+                        if len(dec.args) >= 2:  # noqa: PLR2004 - threshold
                             argnames = dec.args[0]
                             if isinstance(argnames, ast.Constant) and isinstance(
                                 argnames.value, str
@@ -138,7 +138,7 @@ class PytestVisitor(ast.NodeVisitor):
                     for item in stmt.items:
                         if isinstance(item.context_expr, ast.Call):
                             func = item.context_expr.func
-                            if isinstance(func, ast.Attribute) and func.attr == "raises":
+                            if isinstance(func, ast.Attribute) and func.attr == "raises":  # noqa: SIM102
                                 if len(item.context_expr.args) == 0:
                                     self.violations.append(
                                         RuleViolation(
@@ -155,7 +155,7 @@ class PytestVisitor(ast.NodeVisitor):
 
             # PT015: Assertion always fails - pytest.fail() instead of assert False
             for stmt in ast.walk(node):
-                if isinstance(stmt, ast.Assert):
+                if isinstance(stmt, ast.Assert):  # noqa: SIM102
                     if isinstance(stmt.test, ast.Constant) and stmt.test.value is False:
                         self.violations.append(
                             RuleViolation(

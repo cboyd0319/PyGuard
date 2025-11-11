@@ -167,14 +167,12 @@ class APISecurityFixer:
                         modified = True
 
                 # Add algorithms parameter if missing
-                if "algorithms=" not in fixed_line and "jwt.decode(" in fixed_line:
-                    # Find the closing parenthesis
-                    if fixed_line.rstrip().endswith(")"):
-                        # Insert before the closing paren
-                        fixed_line = fixed_line.rstrip()[:-1] + ", algorithms=['RS256'])"
-                        if not modified:
-                            self.fixes_applied.append("JWT: Added algorithms parameter (API006)")
-                            modified = True
+                if "algorithms=" not in fixed_line and "jwt.decode(" in fixed_line and fixed_line.rstrip().endswith(")"):
+                    # Insert before the closing paren
+                    fixed_line = fixed_line.rstrip()[:-1] + ", algorithms=['RS256'])"
+                    if not modified:
+                        self.fixes_applied.append("JWT: Added algorithms parameter (API006)")
+                        modified = True
 
             # Fix jwt.encode() with weak algorithms
             if "jwt.encode(" in fixed_line and ("'HS256'" in fixed_line or '"HS256"' in fixed_line):
@@ -259,7 +257,7 @@ class APISecurityFixer:
                         )
                         modified = True
             # Replace xml.etree.ElementTree.parse with defusedxml
-            elif "ET.parse(" in fixed_line or "ElementTree.parse(" in fixed_line:
+            elif "ET.parse(" in fixed_line or "ElementTree.parse(" in fixed_line:  # noqa: SIM102
                 if "defusedxml" not in content:
                     # If defusedxml import not added, add comment
                     fixed_line = fixed_line + "  # TODO: Use defusedxml instead of xml.etree"
@@ -288,18 +286,16 @@ class APISecurityFixer:
 
         for i, line in enumerate(lines):
             # Add warning before pickle.loads()
-            if "pickle.loads(" in line or "marshal.loads(" in line:
-                # Check if warning already exists
-                if i == 0 or "WARNING" not in lines[i - 1]:
-                    indent = len(line) - len(line.lstrip())
-                    warning = (
-                        " " * indent
-                        + "# WARNING: Insecure deserialization - use JSON instead (CWE-502)"
-                    )
-                    fixed_lines.append(warning)
-                    if not modified:
-                        self.fixes_applied.append("Added deserialization security warning (API013)")
-                        modified = True
+            if ("pickle.loads(" in line or "marshal.loads(" in line) and (i == 0 or "WARNING" not in lines[i - 1]):
+                indent = len(line) - len(line.lstrip())
+                warning = (
+                    " " * indent
+                    + "# WARNING: Insecure deserialization - use JSON instead (CWE-502)"
+                )
+                fixed_lines.append(warning)
+                if not modified:
+                    self.fixes_applied.append("Added deserialization security warning (API013)")
+                    modified = True
 
             fixed_lines.append(line)
 
@@ -355,16 +351,14 @@ class APISecurityFixer:
             lines = content.split("\n")
             fixed_lines = []
             for i, line in enumerate(lines):
-                if "@app." in line and ("route" in line or "post" in line or "put" in line):
-                    # Check if rate limiting decorator already exists
-                    if i == 0 or "limiter" not in lines[i - 1].lower():
-                        indent = len(line) - len(line.lstrip())
-                        comment = (
-                            " " * indent
-                            + "# TODO: Add @limiter.limit('5/minute') for rate limiting (API002)"
-                        )
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added rate limiting suggestion (API002)")
+                if ("@app." in line and ("route" in line or "post" in line or "put" in line)) and (i == 0 or "limiter" not in lines[i - 1].lower()):
+                    indent = len(line) - len(line.lstrip())
+                    comment = (
+                        " " * indent
+                        + "# TODO: Add @limiter.limit('5/minute') for rate limiting (API002)"
+                    )
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added rate limiting suggestion (API002)")
                 fixed_lines.append(line)
             return "\n".join(fixed_lines)
         return content
@@ -396,19 +390,18 @@ class APISecurityFixer:
     def _fix_improper_pagination(self, content: str) -> str:
         """Fix improper pagination (API004)."""
         # Add pagination suggestion
-        if "def list" in content or "def all" in content or ".all()" in content:
-            if ".limit(" not in content and ".paginate(" not in content:
-                lines = content.split("\n")
-                fixed_lines = []
-                for line in lines:
-                    fixed_lines.append(line)
-                    if ".all()" in line:
-                        indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add .limit(100) for pagination (API004)"
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added pagination suggestion (API004)")
-                        break
-                return "\n".join(fixed_lines)
+        if ("def list" in content or "def all" in content or ".all()" in content) and ".limit(" not in content and ".paginate(" not in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            for line in lines:
+                fixed_lines.append(line)
+                if ".all()" in line:
+                    indent = len(line) - len(line.lstrip())
+                    comment = " " * indent + "# TODO: Add .limit(100) for pagination (API004)"
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added pagination suggestion (API004)")
+                    break
+            return "\n".join(fixed_lines)
         return content
 
     def _fix_api_key_exposure(self, content: str) -> str:
@@ -418,15 +411,14 @@ class APISecurityFixer:
             lines = content.split("\n")
             fixed_lines = []
             for line in lines:
-                if "api_key=" in line or "apikey=" in line:
-                    if "http" in line.lower():
-                        indent = len(line) - len(line.lstrip())
-                        comment = (
-                            " " * indent
-                            + "# WARNING: API keys should be in headers, not URLs (API007)"
-                        )
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added API key security warning (API007)")
+                if ("api_key=" in line or "apikey=" in line) and "http" in line.lower():
+                    indent = len(line) - len(line.lstrip())
+                    comment = (
+                        " " * indent
+                        + "# WARNING: API keys should be in headers, not URLs (API007)"
+                    )
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added API key security warning (API007)")
                 fixed_lines.append(line)
             return "\n".join(fixed_lines)
         return content
@@ -452,20 +444,19 @@ class APISecurityFixer:
     def _fix_missing_security_headers(self, content: str) -> str:
         """Fix missing security headers (API009)."""
         # Add security headers configuration
-        if "Flask(" in content or "FastAPI(" in content:
-            if "Strict-Transport-Security" not in content:
-                lines = content.split("\n")
-                fixed_lines = []
-                for line in lines:
-                    fixed_lines.append(line)
-                    if "Flask(" in line or "FastAPI(" in line:
-                        comment = (
-                            "# TODO: Add security headers: HSTS, CSP, X-Frame-Options (API009)"
-                        )
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added security headers suggestion (API009)")
-                        break
-                return "\n".join(fixed_lines)
+        if ("Flask(" in content or "FastAPI(" in content) and "Strict-Transport-Security" not in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            for line in lines:
+                fixed_lines.append(line)
+                if "Flask(" in line or "FastAPI(" in line:
+                    comment = (
+                        "# TODO: Add security headers: HSTS, CSP, X-Frame-Options (API009)"
+                    )
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added security headers suggestion (API009)")
+                    break
+            return "\n".join(fixed_lines)
         return content
 
     def _fix_cors_wildcard(self, content: str) -> str:
@@ -502,22 +493,21 @@ class APISecurityFixer:
     def _fix_missing_csrf_token(self, content: str) -> str:
         """Fix missing CSRF token (API015)."""
         # Add CSRF protection suggestion
-        if "@app.post" in content or "@app.put" in content or "@app.delete" in content:
-            if "csrf" not in content.lower():
-                lines = content.split("\n")
-                fixed_lines = []
-                added = False
-                for line in lines:
-                    if (
-                        "@app.post" in line or "@app.put" in line or "@app.delete" in line
-                    ) and not added:
-                        indent = len(line) - len(line.lstrip())
-                        comment = " " * indent + "# TODO: Add CSRF token validation (API015)"
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added CSRF protection suggestion (API015)")
-                        added = True
-                    fixed_lines.append(line)
-                return "\n".join(fixed_lines)
+        if ("@app.post" in content or "@app.put" in content or "@app.delete" in content) and "csrf" not in content.lower():
+            lines = content.split("\n")
+            fixed_lines = []
+            added = False
+            for line in lines:
+                if (
+                    "@app.post" in line or "@app.put" in line or "@app.delete" in line
+                ) and not added:
+                    indent = len(line) - len(line.lstrip())
+                    comment = " " * indent + "# TODO: Add CSRF token validation (API015)"
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added CSRF protection suggestion (API015)")
+                    added = True
+                fixed_lines.append(line)
+            return "\n".join(fixed_lines)
         return content
 
     def _fix_api_versioning_security(self, content: str) -> str:
@@ -561,59 +551,56 @@ class APISecurityFixer:
     def _fix_missing_hsts_header(self, content: str) -> str:
         """Fix missing HSTS header (API018)."""
         # Add HSTS header configuration
-        if "response.headers" in content or "Response(" in content:
-            if "Strict-Transport-Security" not in content:
-                lines = content.split("\n")
-                fixed_lines = []
-                for line in lines:
-                    fixed_lines.append(line)
-                    if "Response(" in line or "return" in line:
-                        indent = len(line) - len(line.lstrip())
-                        comment = (
-                            " " * indent
-                            + "# TODO: Add HSTS header: Strict-Transport-Security (API018)"
-                        )
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added HSTS header suggestion (API018)")
-                        break
-                return "\n".join(fixed_lines)
+        if ("response.headers" in content or "Response(" in content) and "Strict-Transport-Security" not in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            for line in lines:
+                fixed_lines.append(line)
+                if "Response(" in line or "return" in line:
+                    indent = len(line) - len(line.lstrip())
+                    comment = (
+                        " " * indent
+                        + "# TODO: Add HSTS header: Strict-Transport-Security (API018)"
+                    )
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added HSTS header suggestion (API018)")
+                    break
+            return "\n".join(fixed_lines)
         return content
 
     def _fix_missing_xframe_options(self, content: str) -> str:
         """Fix missing X-Frame-Options header (API019)."""
         # Add X-Frame-Options header
-        if "response.headers" in content or "Response(" in content:
-            if "X-Frame-Options" not in content:
-                lines = content.split("\n")
-                fixed_lines = []
-                for line in lines:
-                    fixed_lines.append(line)
-                    if "Response(" in line or "return" in line:
-                        indent = len(line) - len(line.lstrip())
-                        comment = (
-                            " " * indent
-                            + "# TODO: Add X-Frame-Options header: DENY or SAMEORIGIN (API019)"
-                        )
-                        fixed_lines.append(comment)
-                        self.fixes_applied.append("Added X-Frame-Options suggestion (API019)")
-                        break
-                return "\n".join(fixed_lines)
+        if ("response.headers" in content or "Response(" in content) and "X-Frame-Options" not in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            for line in lines:
+                fixed_lines.append(line)
+                if "Response(" in line or "return" in line:
+                    indent = len(line) - len(line.lstrip())
+                    comment = (
+                        " " * indent
+                        + "# TODO: Add X-Frame-Options header: DENY or SAMEORIGIN (API019)"
+                    )
+                    fixed_lines.append(comment)
+                    self.fixes_applied.append("Added X-Frame-Options suggestion (API019)")
+                    break
+            return "\n".join(fixed_lines)
         return content
 
     def _fix_missing_csp_header(self, content: str) -> str:
         """Fix missing CSP header (API020)."""
         # Add CSP header configuration
-        if "response.headers" in content or "Response(" in content:
-            if "Content-Security-Policy" not in content:
-                lines = content.split("\n")
-                fixed_lines = []
-                for line in lines:
-                    fixed_lines.append(line)
-                    if "Response(" in line or "return" in line:
-                        # Add suggestion for CSP header
-                        self.fixes_applied.append("Added CSP header suggestion (API020)")
-                        break
-                return "\n".join(fixed_lines)
+        if ("response.headers" in content or "Response(" in content) and "Content-Security-Policy" not in content:
+            lines = content.split("\n")
+            fixed_lines = []
+            for line in lines:
+                fixed_lines.append(line)
+                if "Response(" in line or "return" in line:
+                    # Add suggestion for CSP header
+                    self.fixes_applied.append("Added CSP header suggestion (API020)")
+                    break
+            return "\n".join(fixed_lines)
         return content
 
 

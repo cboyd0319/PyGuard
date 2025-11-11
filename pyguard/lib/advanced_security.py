@@ -219,17 +219,17 @@ class RaceConditionDetector(ast.NodeVisitor):
         func_name = self._get_call_name(node)
 
         # Track file existence checks
-        if func_name in ["os.path.exists", "os.path.isfile", "os.access"]:
+        if func_name in ["os.path.exists", "os.path.isfile", "os.access"]:  # noqa: SIM102
             if node.args and isinstance(node.args[0], ast.Name):
                 self.file_checks.append((node.lineno, node.args[0].id))
 
         # Check for file operations that might follow a check
-        if func_name in ["open", "os.remove", "os.unlink", "os.chmod"]:
+        if func_name in ["open", "os.remove", "os.unlink", "os.chmod"]:  # noqa: SIM102
             if node.args and isinstance(node.args[0], ast.Name):
                 file_var = node.args[0].id
                 # Look for recent file checks on same variable
                 for check_line, check_var in self.file_checks:
-                    if check_var == file_var and (node.lineno - check_line) < 10:
+                    if check_var == file_var and (node.lineno - check_line) < 10:  # noqa: PLR2004 - threshold
                         self.issues.append(
                             SecurityIssue(
                                 severity="MEDIUM",
@@ -292,7 +292,7 @@ class IntegerSecurityAnalyzer(ast.NodeVisitor):
     def visit_BinOp(self, node: ast.BinOp):
         """Check for potentially unsafe integer operations."""
         # Check for multiplication that could overflow
-        if isinstance(node.op, ast.Mult):
+        if isinstance(node.op, ast.Mult):  # noqa: SIM102
             # If both operands are not constants, could overflow
             if not (isinstance(node.left, ast.Constant) and isinstance(node.right, ast.Constant)):
                 # Look for array/buffer sizing operations
@@ -382,7 +382,7 @@ class AdvancedSecurityAnalyzer:
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
                 func_name = self._get_call_name(node)
-                if func_name in ["re.compile", "re.match", "re.search", "re.findall"]:
+                if func_name in ["re.compile", "re.match", "re.search", "re.findall"]:  # noqa: SIM102
                     if node.args and isinstance(node.args[0], ast.Constant):
                         pattern = node.args[0].value
                         if isinstance(pattern, str):

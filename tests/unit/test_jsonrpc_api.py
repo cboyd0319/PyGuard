@@ -6,15 +6,14 @@ analysis methods, and IDE integration features.
 """
 
 import json
+
 import pytest
-from pathlib import Path
-from typing import Any, Dict
 
 from pyguard.lib.jsonrpc_api import (
+    DocumentInfo,
+    JsonRpcError,
     JsonRpcRequest,
     JsonRpcResponse,
-    JsonRpcError,
-    DocumentInfo,
     PyGuardJsonRpcServer,
 )
 
@@ -31,7 +30,7 @@ class TestJsonRpcRequest:
             "id": 1,
         }
         request = JsonRpcRequest.from_dict(data)
-        
+
         assert request.jsonrpc == "2.0"
         assert request.method == "test_method"
         assert request.params == {"key": "value"}
@@ -44,7 +43,7 @@ class TestJsonRpcRequest:
             "method": "notify",
         }
         request = JsonRpcRequest.from_dict(data)
-        
+
         assert request.is_notification()
         assert request.id is None
 
@@ -56,7 +55,7 @@ class TestJsonRpcRequest:
             "id": "abc-123",
         }
         request = JsonRpcRequest.from_dict(data)
-        
+
         assert request.id == "abc-123"
         assert not request.is_notification()
 
@@ -69,7 +68,7 @@ class TestJsonRpcRequest:
             "id": 1,
         }
         request = JsonRpcRequest.from_dict(data)
-        
+
         assert request.params == [1, 2, 3]
 
 
@@ -79,7 +78,7 @@ class TestJsonRpcResponse:
     def test_success_response(self):
         """Test success response creation."""
         response = JsonRpcResponse.success({"result": "ok"}, 1)
-        
+
         assert response.result == {"result": "ok"}
         assert response.error is None
         assert response.id == 1
@@ -91,7 +90,7 @@ class TestJsonRpcResponse:
             "Something went wrong",
             1,
         )
-        
+
         assert response.error is not None
         assert response.error["code"] == -32603
         assert response.error["message"] == "Something went wrong"
@@ -106,14 +105,14 @@ class TestJsonRpcResponse:
             1,
             data={"expected": "string", "got": "int"},
         )
-        
+
         assert response.error["data"] == {"expected": "string", "got": "int"}
 
     def test_to_dict_success(self):
         """Test success response serialization."""
         response = JsonRpcResponse.success({"value": 42}, 1)
         data = response.to_dict()
-        
+
         assert data["jsonrpc"] == "2.0"
         assert data["result"] == {"value": 42}
         assert "error" not in data
@@ -127,7 +126,7 @@ class TestJsonRpcResponse:
             1,
         )
         data = response.to_dict()
-        
+
         assert data["jsonrpc"] == "2.0"
         assert "result" not in data
         assert data["error"]["code"] == -32601
@@ -145,7 +144,7 @@ class TestDocumentInfo:
             content="print('hello')",
             version=1,
         )
-        
+
         assert doc.uri == "file:///test.py"
         assert doc.content == "print('hello')"
         assert doc.version == 1
@@ -163,7 +162,7 @@ class TestDocumentInfo:
             content="code",
             issues=issues,
         )
-        
+
         assert len(doc.issues) == 2
         assert doc.issues[0]["severity"] == "high"
 
@@ -187,7 +186,7 @@ class TestPyGuardJsonRpcServer:
         """Test custom method registration."""
         def custom_method(params):
             return {"custom": True}
-        
+
         server.register_method("custom/test", custom_method)
         assert "custom/test" in server.methods
 
@@ -197,7 +196,7 @@ class TestPyGuardJsonRpcServer:
             "clientInfo": {"name": "Test IDE", "version": "1.0"},
         }
         result = server._initialize(params)
-        
+
         assert "capabilities" in result
         assert "serverInfo" in result
         assert result["serverInfo"]["name"] == "PyGuard JSON-RPC Server"
@@ -214,7 +213,7 @@ class TestPyGuardJsonRpcServer:
             }
         }
         server._did_open(params)
-        
+
         assert "file:///test.py" in server.documents
         doc = server.documents["file:///test.py"]
         assert doc.content == "print('hello')"
@@ -231,7 +230,7 @@ class TestPyGuardJsonRpcServer:
             }
         }
         server._did_open(params_open)
-        
+
         # Then change it
         params_change = {
             "textDocument": {
@@ -243,7 +242,7 @@ class TestPyGuardJsonRpcServer:
             ],
         }
         server._did_change(params_change)
-        
+
         doc = server.documents["file:///test.py"]
         assert doc.content == "modified"
         assert doc.version == 2
@@ -260,7 +259,7 @@ class TestPyGuardJsonRpcServer:
         }
         server._did_open(params_open)
         assert "file:///test.py" in server.documents
-        
+
         # Close document
         params_close = {
             "textDocument": {
@@ -273,7 +272,7 @@ class TestPyGuardJsonRpcServer:
     def test_analyze_document_not_open(self, server):
         """Test analyzing a document that's not open."""
         params = {"uri": "file:///nonexistent.py"}
-        
+
         with pytest.raises(ValueError, match="Document not open"):
             server._analyze_document(params)
 
@@ -288,11 +287,11 @@ class TestPyGuardJsonRpcServer:
             }
         }
         server._did_open(params_open)
-        
+
         # Analyze
         params_analyze = {"uri": "file:///test.py"}
         result = server._analyze_document(params_analyze)
-        
+
         assert "issues" in result
         assert "timestamp" in result
         assert "duration_ms" in result
@@ -314,10 +313,10 @@ data = pickle.loads(user_input)
             }
         }
         server._did_open(params_open)
-        
+
         params_analyze = {"uri": "file:///test.py"}
         result = server._analyze_document(params_analyze)
-        
+
         # Should detect pickle security issue
         assert result["issue_count"] >= 0  # May or may not detect depending on analyzer
 
@@ -333,11 +332,11 @@ data = pickle.loads(user_input)
         }
         server._did_open(params_open)
         server._analyze_document({"uri": "file:///test.py"})
-        
+
         # Get cached issues
         params_get = {"uri": "file:///test.py"}
         result = server._get_issues(params_get)
-        
+
         assert result["cached"] is True
         assert "issues" in result
         assert "timestamp" in result
@@ -346,7 +345,7 @@ data = pickle.loads(user_input)
         """Test getting issues for unopened document."""
         params = {"uri": "file:///nonexistent.py"}
         result = server._get_issues(params)
-        
+
         assert result["cached"] is False
         assert result["issues"] == []
         assert result["timestamp"] == 0
@@ -362,7 +361,7 @@ data = pickle.loads(user_input)
             }
         }
         server._did_open(params_open)
-        
+
         # Add mock issue with fix available
         doc = server.documents["file:///test.py"]
         doc.issues = [
@@ -375,7 +374,7 @@ data = pickle.loads(user_input)
                 "rule_id": "TEST001",
             }
         ]
-        
+
         # Get code actions for range containing the issue
         params = {
             "uri": "file:///test.py",
@@ -385,7 +384,7 @@ data = pickle.loads(user_input)
             },
         }
         actions = server._get_code_actions(params)
-        
+
         assert len(actions) > 0
         assert actions[0]["kind"] == "quickfix"
         assert "title" in actions[0]
@@ -401,7 +400,7 @@ data = pickle.loads(user_input)
             }
         }
         server._did_open(params_open)
-        
+
         doc = server.documents["file:///test.py"]
         doc.issues = [
             {
@@ -412,7 +411,7 @@ data = pickle.loads(user_input)
                 "fix_available": False,
             }
         ]
-        
+
         params = {
             "uri": "file:///test.py",
             "range": {
@@ -421,7 +420,7 @@ data = pickle.loads(user_input)
             },
         }
         actions = server._get_code_actions(params)
-        
+
         # Should not return actions for unfixable issues
         assert len(actions) == 0
 
@@ -433,7 +432,7 @@ data = pickle.loads(user_input)
             "line": 5,
         }
         result = server._apply_fix(params)
-        
+
         # Currently returns not implemented
         assert result["success"] is False
         assert "not yet implemented" in result["message"].lower()
@@ -447,7 +446,7 @@ data = pickle.loads(user_input)
             }
         }
         result = server._set_config(params)
-        
+
         assert result["success"] is True
         assert server.config["max_line_length"] == 100
         assert server.config["ignore_rules"] == ["S001"]
@@ -455,10 +454,10 @@ data = pickle.loads(user_input)
     def test_get_config(self, server):
         """Test getting configuration."""
         server.config = {"test_key": "test_value"}
-        
+
         params = {}
         result = server._get_config(params)
-        
+
         assert result["config"]["test_key"] == "test_value"
 
     def test_change_workspace_add(self, server):
@@ -473,14 +472,14 @@ data = pickle.loads(user_input)
             }
         }
         server._change_workspace(params)
-        
+
         assert "file:///workspace1" in server.workspace_folders
         assert "file:///workspace2" in server.workspace_folders
 
     def test_change_workspace_remove(self, server):
         """Test removing workspace folder."""
         server.workspace_folders = ["file:///workspace1", "file:///workspace2"]
-        
+
         params = {
             "event": {
                 "added": [],
@@ -490,7 +489,7 @@ data = pickle.loads(user_input)
             }
         }
         server._change_workspace(params)
-        
+
         assert "file:///workspace1" not in server.workspace_folders
         assert "file:///workspace2" in server.workspace_folders
 
@@ -502,10 +501,10 @@ data = pickle.loads(user_input)
             "params": {},
             "id": 1,
         })
-        
+
         response_str = server.handle_request(request_data)
         assert response_str is not None
-        
+
         response = json.loads(response_str)
         assert response["jsonrpc"] == "2.0"
         assert "result" in response
@@ -524,7 +523,7 @@ data = pickle.loads(user_input)
                 }
             },
         })
-        
+
         response_str = server.handle_request(request_data)
         # Notifications should not return a response
         assert response_str is None
@@ -532,10 +531,10 @@ data = pickle.loads(user_input)
     def test_handle_request_invalid_json(self, server):
         """Test handling invalid JSON."""
         request_data = "not valid json"
-        
+
         response_str = server.handle_request(request_data)
         assert response_str is not None
-        
+
         response = json.loads(response_str)
         assert response["error"]["code"] == JsonRpcError.PARSE_ERROR.value
 
@@ -547,10 +546,10 @@ data = pickle.loads(user_input)
             "params": {},
             "id": 1,
         })
-        
+
         response_str = server.handle_request(request_data)
         assert response_str is not None
-        
+
         response = json.loads(response_str)
         assert response["error"]["code"] == JsonRpcError.METHOD_NOT_FOUND.value
         assert "nonexistent/method" in response["error"]["message"]
@@ -562,10 +561,10 @@ data = pickle.loads(user_input)
             "method": "test",
             "id": 1,
         })
-        
+
         response_str = server.handle_request(request_data)
         assert response_str is not None
-        
+
         response = json.loads(response_str)
         assert response["error"]["code"] == JsonRpcError.INVALID_REQUEST.value
 
@@ -578,21 +577,21 @@ data = pickle.loads(user_input)
             "params": {"uri": "file:///nonexistent.py"},
             "id": 1,
         })
-        
+
         response_str = server.handle_request(request_data)
         assert response_str is not None
-        
+
         response = json.loads(response_str)
         assert response["error"]["code"] == JsonRpcError.INTERNAL_ERROR.value
 
     def test_shutdown_and_exit(self, server):
         """Test server shutdown and exit."""
         server.running = True
-        
+
         # Shutdown
         server._shutdown({})
         assert not server.running
-        
+
         # Exit
         server.running = True
         server._exit({})
@@ -603,10 +602,10 @@ data = pickle.loads(user_input)
         # Create a temporary Python file
         test_file = tmp_path / "test.py"
         test_file.write_text("x = 1\nprint(x)")
-        
+
         params = {"path": str(test_file)}
         result = server._analyze_file(params)
-        
+
         assert "issues" in result
         assert "timestamp" in result
         assert "duration_ms" in result
@@ -615,14 +614,14 @@ data = pickle.loads(user_input)
     def test_analyze_file_not_found(self, server):
         """Test analyzing non-existent file."""
         params = {"path": "/nonexistent/file.py"}
-        
+
         with pytest.raises(FileNotFoundError):
             server._analyze_file(params)
 
     def test_analyze_file_missing_path(self, server):
         """Test analyzing file without path parameter."""
         params = {}
-        
+
         with pytest.raises(ValueError, match="Missing 'path' parameter"):
             server._analyze_file(params)
 
@@ -638,7 +637,7 @@ class TestJsonRpcIntegration:
     def test_full_document_lifecycle(self, server):
         """Test complete document lifecycle: open, change, analyze, close."""
         uri = "file:///test.py"
-        
+
         # 1. Open document
         open_request = json.dumps({
             "jsonrpc": "2.0",
@@ -654,7 +653,7 @@ class TestJsonRpcIntegration:
         response = server.handle_request(open_request)
         assert response is None  # Notification
         assert uri in server.documents
-        
+
         # 2. Change document
         change_request = json.dumps({
             "jsonrpc": "2.0",
@@ -667,7 +666,7 @@ class TestJsonRpcIntegration:
         response = server.handle_request(change_request)
         assert response is None  # Notification
         assert server.documents[uri].content == "x = 2"
-        
+
         # 3. Analyze document
         analyze_request = json.dumps({
             "jsonrpc": "2.0",
@@ -680,7 +679,7 @@ class TestJsonRpcIntegration:
         response = json.loads(response_str)
         assert "result" in response
         assert "issues" in response["result"]
-        
+
         # 4. Close document
         close_request = json.dumps({
             "jsonrpc": "2.0",
@@ -707,7 +706,7 @@ class TestJsonRpcIntegration:
         response_str = server.handle_request(set_request)
         response = json.loads(response_str)
         assert response["result"]["success"] is True
-        
+
         # Get configuration
         get_request = json.dumps({
             "jsonrpc": "2.0",

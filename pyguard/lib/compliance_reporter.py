@@ -9,7 +9,7 @@ Generates comprehensive compliance reports in multiple formats:
 Supports frameworks: OWASP ASVS, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 from typing import Any
@@ -77,7 +77,7 @@ class ComplianceReporter:
 
         report = {
             "metadata": {
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "tool": "PyGuard",
                 "version": __version__,
             },
@@ -136,10 +136,10 @@ class ComplianceReporter:
                 frameworks["ISO27001"].append(issue)
 
         # Remove duplicates using tuple of hashable fields
-        for framework in frameworks:
+        for framework, issues_list in frameworks.items():
             seen = set()
             unique_issues = []
-            for issue in frameworks[framework]:
+            for issue in issues_list:
                 # Create a hashable key from the issue
                 key = (
                     issue.get("file", ""),
@@ -361,7 +361,7 @@ class ComplianceReporter:
         <h1>🛡️ PyGuard Compliance Report</h1>
 
         <div class="metadata">
-            <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p><strong>Generated:</strong> {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
             <p><strong>Framework Focus:</strong> {selected_framework}</p>
             <p><strong>Total Issues:</strong> {total_issues}</p>
         </div>
@@ -391,7 +391,7 @@ class ComplianceReporter:
                 <span class="badge {'critical' if len(issues) > 10 else 'high' if len(issues) > 5 else 'medium'}">{len(issues)} issues</span>
             </div>
             <ul class="issue-list">
-"""
+"""  # noqa: PLR2004 - threshold values in template
 
             for issue in issues[:10]:  # Show first 10 per framework
                 severity_class = issue.get("severity", "LOW").lower()
@@ -407,7 +407,7 @@ class ComplianceReporter:
                 </li>
 """
 
-            if len(issues) > 10:
+            if len(issues) > 10:  # noqa: PLR2004 - threshold
                 html += f"""
                 <li class="issue-item">
                     <div class="issue-details">

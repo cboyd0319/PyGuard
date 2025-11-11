@@ -1,10 +1,7 @@
 """Tests for performance optimization system."""
 
 import ast
-import time
 from pathlib import Path
-
-import pytest
 
 from pyguard.lib.performance_optimizer import (
     DependencyAnalyzer,

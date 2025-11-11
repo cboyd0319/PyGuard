@@ -184,7 +184,7 @@ class APISecurityVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: PLR0912 - Complex API security detection requires many checks
         """Check for GraphQL introspection and other API call issues."""
         self._check_graphql_introspection(node)
         self._check_cors_misconfiguration(node)
@@ -198,9 +198,8 @@ class APISecurityVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             func_name = node.func.attr
             # Check if it's jwt.encode() or jwt.decode()
-            if isinstance(node.func.value, ast.Name):
-                if "jwt" in node.func.value.id.lower():
-                    is_jwt_call = True
+            if isinstance(node.func.value, ast.Name) and "jwt" in node.func.value.id.lower():
+                is_jwt_call = True
         elif isinstance(node.func, ast.Name):
             func_name = node.func.id
 
@@ -259,10 +258,9 @@ class APISecurityVisitor(ast.NodeVisitor):
                 attr = decorator.attr
                 if attr in ("get", "post", "put", "delete", "patch", "route", "api_route"):
                     return True
-            elif isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Attribute):
-                    if decorator.func.attr in ("get", "post", "put", "delete", "patch", "route"):
-                        return True
+            elif isinstance(decorator, ast.Call):  # noqa: SIM102
+                if isinstance(decorator.func, ast.Attribute) and decorator.func.attr in ("get", "post", "put", "delete", "patch", "route"):
+                    return True
         return False
 
     def _check_mass_assignment_protection(self, node: ast.ClassDef) -> None:
@@ -288,9 +286,8 @@ class APISecurityVisitor(ast.NodeVisitor):
                 for meta_item in item.body:
                     if isinstance(meta_item, ast.Assign):
                         for target in meta_item.targets:
-                            if isinstance(target, ast.Name):
-                                if target.id in ("fields", "exclude", "read_only_fields"):
-                                    protected_fields.add(target.id)
+                            if isinstance(target, ast.Name) and target.id in ("fields", "exclude", "read_only_fields"):
+                                protected_fields.add(target.id)
 
         # If it's a model but has no field protection, flag it
         if not has_meta_class or not protected_fields:
@@ -477,11 +474,10 @@ class APISecurityVisitor(ast.NodeVisitor):
             if isinstance(decorator, ast.Call):
                 # Check for methods keyword argument
                 for keyword in decorator.keywords:
-                    if keyword.arg == "methods":
-                        if isinstance(keyword.value, ast.List):
-                            for elt in keyword.value.elts:
-                                if isinstance(elt, ast.Constant):
-                                    methods.append(elt.value)
+                    if keyword.arg == "methods" and isinstance(keyword.value, ast.List):
+                        for elt in keyword.value.elts:
+                            if isinstance(elt, ast.Constant):
+                                methods.append(elt.value)
 
             # Check for dangerous methods
             dangerous_methods = {"TRACE", "TRACK"}
@@ -504,7 +500,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
-    def _check_jwt_algorithm_confusion(self, node: ast.FunctionDef) -> None:
+    def _check_jwt_algorithm_confusion(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex JWT validation requires many branches
         """
         Check for JWT algorithm confusion attacks (RS256 vs HS256).
 
@@ -519,9 +515,8 @@ class APISecurityVisitor(ast.NodeVisitor):
                 if isinstance(item.func, ast.Attribute):
                     func_name = item.func.attr
                     # Check if it's jwt.encode() or jwt.decode()
-                    if isinstance(item.func.value, ast.Name):
-                        if "jwt" in item.func.value.id.lower():
-                            is_jwt_call = True
+                    if isinstance(item.func.value, ast.Name) and "jwt" in item.func.value.id.lower():
+                        is_jwt_call = True
                 elif isinstance(item.func, ast.Name):
                     func_name = item.func.id
 
@@ -636,37 +631,35 @@ class APISecurityVisitor(ast.NodeVisitor):
                     # Check if redirect target is user-controlled
                     has_validation = False
                     for arg in item.args:
-                        if isinstance(arg, ast.Name):
-                            # Check if it's coming from request parameters
-                            if arg.id in ("url", "redirect_url", "next", "return_url"):
-                                # Look for validation in function body
-                                for stmt in node.body:
-                                    if isinstance(stmt, ast.If):
-                                        # Check if there's URL validation
-                                        if any(
-                                            isinstance(n, ast.Call)
-                                            and isinstance(n.func, ast.Attribute)
-                                            and n.func.attr in ("startswith", "is_safe_url")
-                                            for n in ast.walk(stmt.test)
-                                        ):
-                                            has_validation = True
+                        if isinstance(arg, ast.Name) and arg.id in ("url", "redirect_url", "next", "return_url"):
+                            # Look for validation in function body
+                            for stmt in node.body:
+                                if isinstance(stmt, ast.If):  # noqa: SIM102
+                                    # Check if there's URL validation
+                                    if any(
+                                        isinstance(n, ast.Call)
+                                        and isinstance(n.func, ast.Attribute)
+                                        and n.func.attr in ("startswith", "is_safe_url")
+                                        for n in ast.walk(stmt.test)
+                                    ):
+                                        has_validation = True
 
-                                if not has_validation:
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="API008",
-                                            file_path=self.file_path,
-                                            line_number=item.lineno,
-                                            column=item.col_offset,
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            message="Open redirect vulnerability - unvalidated redirect URL",
-                                            fix_suggestion="Validate redirect URL against allowlist or check if it starts with '/'",
-                                            cwe_id="CWE-601",
-                                            owasp_id="A01:2021 - Broken Access Control",
-                                            fix_applicability=FixApplicability.SUGGESTED,
-                                        )
+                            if not has_validation:
+                                self.violations.append(
+                                    RuleViolation(
+                                        rule_id="API008",
+                                        file_path=self.file_path,
+                                        line_number=item.lineno,
+                                        column=item.col_offset,
+                                        severity=RuleSeverity.HIGH,
+                                        category=RuleCategory.SECURITY,
+                                        message="Open redirect vulnerability - unvalidated redirect URL",
+                                        fix_suggestion="Validate redirect URL against allowlist or check if it starts with '/'",
+                                        cwe_id="CWE-601",
+                                        owasp_id="A01:2021 - Broken Access Control",
+                                        fix_applicability=FixApplicability.SUGGESTED,
                                     )
+                                )
 
     def _check_missing_security_headers(self, node: ast.Assign) -> None:
         """
@@ -677,54 +670,49 @@ class APISecurityVisitor(ast.NodeVisitor):
         """
         # Check for response header setting
         for target in node.targets:
-            if isinstance(target, ast.Subscript):
-                if isinstance(target.value, ast.Attribute):
-                    if target.value.attr == "headers":
-                        # Good - setting headers
-                        return
+            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Attribute) and target.value.attr == "headers":
+                # Good - setting headers
+                return
 
         # Check if this is app configuration
         for target in node.targets:
-            if isinstance(target, ast.Attribute):
-                if target.attr == "config":
-                    # Check if security headers are configured
-                    if isinstance(node.value, ast.Dict):
-                        keys = [
-                            (
-                                k.value
-                                if isinstance(k, ast.Constant) and isinstance(k.value, str)
-                                else None
-                            )
-                            for k in node.value.keys
-                        ]
-                        security_headers = {
-                            "HSTS",
-                            "Content-Security-Policy",
-                            "X-Frame-Options",
-                            "X-Content-Type-Options",
-                        }
-                        configured_headers = {
-                            k
-                            for k in keys
-                            if k and isinstance(k, str) and any(h in k for h in security_headers)
-                        }
+            if isinstance(target, ast.Attribute) and target.attr == "config" and isinstance(node.value, ast.Dict):
+                keys = [
+                    (
+                        k.value
+                        if isinstance(k, ast.Constant) and isinstance(k.value, str)
+                        else None
+                    )
+                    for k in node.value.keys
+                ]
+                security_headers = {
+                    "HSTS",
+                    "Content-Security-Policy",
+                    "X-Frame-Options",
+                    "X-Content-Type-Options",
+                }
+                configured_headers = {
+                    k
+                    for k in keys
+                    if k and isinstance(k, str) and any(h in k for h in security_headers)
+                }
 
-                        if not configured_headers:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="API009",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    message="Missing security headers configuration (HSTS, CSP, X-Frame-Options)",
-                                    fix_suggestion="Add security headers: HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options",
-                                    cwe_id="CWE-16",
-                                    owasp_id="A05:2021 - Security Misconfiguration",
-                                    fix_applicability=FixApplicability.SUGGESTED,
-                                )
-                            )
+                if not configured_headers:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="API009",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            message="Missing security headers configuration (HSTS, CSP, X-Frame-Options)",
+                            fix_suggestion="Add security headers: HSTS, Content-Security-Policy, X-Frame-Options, X-Content-Type-Options",
+                            cwe_id="CWE-16",
+                            owasp_id="A05:2021 - Security Misconfiguration",
+                            fix_applicability=FixApplicability.SUGGESTED,
+                        )
+                    )
 
     def _check_graphql_introspection(self, node: ast.Call) -> None:
         """
@@ -745,24 +733,22 @@ class APISecurityVisitor(ast.NodeVisitor):
         ):
             # Check for introspection parameter
             for keyword in node.keywords:
-                if keyword.arg == "introspection":
-                    if isinstance(keyword.value, ast.Constant):
-                        if keyword.value.value is True:
-                            self.violations.append(
-                                RuleViolation(
-                                    rule_id="API010",
-                                    file_path=self.file_path,
-                                    line_number=node.lineno,
-                                    column=node.col_offset,
-                                    severity=RuleSeverity.MEDIUM,
-                                    category=RuleCategory.SECURITY,
-                                    message="GraphQL introspection enabled - exposes API schema",
-                                    fix_suggestion="Disable introspection in production: introspection=False",
-                                    cwe_id="CWE-200",
-                                    owasp_id="A01:2021 - Broken Access Control",
-                                    fix_applicability=FixApplicability.SAFE,
-                                )
-                            )
+                if keyword.arg == "introspection" and isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                    self.violations.append(
+                        RuleViolation(
+                            rule_id="API010",
+                            file_path=self.file_path,
+                            line_number=node.lineno,
+                            column=node.col_offset,
+                            severity=RuleSeverity.MEDIUM,
+                            category=RuleCategory.SECURITY,
+                            message="GraphQL introspection enabled - exposes API schema",
+                            fix_suggestion="Disable introspection in production: introspection=False",
+                            cwe_id="CWE-200",
+                            owasp_id="A01:2021 - Broken Access Control",
+                            fix_applicability=FixApplicability.SAFE,
+                        )
+                    )
 
     def _check_cors_misconfiguration(self, node: ast.Call) -> None:
         """Check for CORS wildcard origin misconfiguration."""
@@ -885,7 +871,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     )
                 )
 
-    def _check_oauth_flow_misconfig(self, node: ast.FunctionDef) -> None:
+    def _check_oauth_flow_misconfig(self, node: ast.FunctionDef) -> None:  # noqa: PLR0912 - Complex OAuth validation requires many branches
         """Check for OAuth flow misconfigurations including unvalidated redirects."""
         # First check if this has a route decorator
         has_route_decorator = False
@@ -894,7 +880,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                 if decorator.func.attr in ("get", "post", "route"):
                     has_route_decorator = True
                     break
-            elif isinstance(decorator, ast.Attribute):
+            elif isinstance(decorator, ast.Attribute):  # noqa: SIM102
                 if decorator.attr in ("get", "post", "route"):
                     has_route_decorator = True
                     break
@@ -911,7 +897,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                 if isinstance(child.func, ast.Attribute):
                     if "redirect" in child.func.attr.lower():
                         has_redirect = True
-                elif isinstance(child.func, ast.Name):
+                elif isinstance(child.func, ast.Name):  # noqa: SIM102
                     if "redirect" in child.func.id.lower():
                         has_redirect = True
                         # Check if redirect URL is validated
@@ -922,14 +908,13 @@ class APISecurityVisitor(ast.NodeVisitor):
         # Check for validation patterns in the function body
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
-                if isinstance(child.func, ast.Name):
-                    if "validate" in child.func.id.lower() or "is_safe" in child.func.id.lower():
-                        validates_redirect = True
+                if isinstance(child.func, ast.Name) and ("validate" in child.func.id.lower() or "is_safe" in child.func.id.lower()):
+                    validates_redirect = True
             elif isinstance(child, ast.If):
                 # Check for conditional validation
                 validates_redirect = True  # Assume if statement might be validating
 
-        if has_redirect and not validates_redirect:
+        if has_redirect and not validates_redirect:  # noqa: SIM102
             # Check if function name suggests OAuth
             if any(
                 keyword in node.name.lower()
@@ -957,24 +942,22 @@ class APISecurityVisitor(ast.NodeVisitor):
         uses_deprecated_version = False
 
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):
-                # Check route path for version patterns
-                if decorator.args:
-                    route_arg = decorator.args[0]
-                    if isinstance(route_arg, ast.Constant) and isinstance(route_arg.value, str):
-                        route_path = route_arg.value.lower()
-                        # Check for deprecated versions (v0, v1 are often deprecated)
-                        if "/v0/" in route_path or (
-                            "/v1/" in route_path and "/v2/" not in self.code
-                        ):
-                            uses_deprecated_version = True
+            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and decorator.args:
+                route_arg = decorator.args[0]
+                if isinstance(route_arg, ast.Constant) and isinstance(route_arg.value, str):
+                    route_path = route_arg.value.lower()
+                    # Check for deprecated versions (v0, v1 are often deprecated)
+                    if "/v0/" in route_path or (
+                        "/v1/" in route_path and "/v2/" not in self.code
+                    ):
+                        uses_deprecated_version = True
 
         # Check function body for version validation
         has_version_check = False
         for child in ast.walk(node):
             if isinstance(child, ast.Compare):
                 for comp in child.comparators:
-                    if isinstance(comp, ast.Constant):
+                    if isinstance(comp, ast.Constant):  # noqa: SIM102
                         if isinstance(comp.value, str) and any(
                             v in comp.value.lower() for v in ["v1", "v2", "v3", "version"]
                         ):
@@ -1002,143 +985,124 @@ class APISecurityVisitor(ast.NodeVisitor):
         """Check for Server-Side Request Forgery (SSRF) vulnerabilities (API017)."""
         # Check for URL requests using user input
         for child in ast.walk(node):
-            if isinstance(child, ast.Call):
-                # Check for requests library calls
-                if isinstance(child.func, ast.Attribute):
-                    func_name = child.func.attr
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                func_name = child.func.attr
 
-                    # Check for requests.get(), urllib.request.urlopen(), httpx.get(), etc.
-                    if func_name in (
-                        "get",
-                        "post",
-                        "put",
-                        "delete",
-                        "patch",
-                        "request",
-                        "urlopen",
-                        "urlretrieve",
-                    ):
-                        # Get the module name (could be nested like urllib.request)
-                        module = None
-                        if isinstance(child.func.value, ast.Name):
-                            module = child.func.value.id
-                        elif isinstance(child.func.value, ast.Attribute):
-                            # Handle urllib.request.urlopen
-                            if isinstance(child.func.value.value, ast.Name):
-                                module = child.func.value.value.id
+                # Check for requests.get(), urllib.request.urlopen(), httpx.get(), etc.
+                if func_name in (
+                    "get",
+                    "post",
+                    "put",
+                    "delete",
+                    "patch",
+                    "request",
+                    "urlopen",
+                    "urlretrieve",
+                ):
+                    # Get the module name (could be nested like urllib.request)
+                    module = None
+                    if isinstance(child.func.value, ast.Name):
+                        module = child.func.value.id
+                    elif isinstance(child.func.value, ast.Attribute):  # noqa: SIM102
+                        # Handle urllib.request.urlopen
+                        if isinstance(child.func.value.value, ast.Name):
+                            module = child.func.value.value.id
 
-                        if module in ("requests", "urllib", "httpx"):
-                            # Check if URL is from user input
-                            if child.args:
-                                url_arg = child.args[0]
-                                # Check for function parameters, request.args, etc.
-                                has_user_input = self._is_user_input(url_arg)
-                                has_url_validation = self._has_url_validation(node, url_arg)
+                    if module in ("requests", "urllib", "httpx") and child.args:
+                        url_arg = child.args[0]
+                        # Check for function parameters, request.args, etc.
+                        has_user_input = self._is_user_input(url_arg)
+                        has_url_validation = self._has_url_validation(node, url_arg)
 
-                                if has_user_input and not has_url_validation:
-                                    self.violations.append(
-                                        RuleViolation(
-                                            rule_id="API017",
-                                            file_path=self.file_path,
-                                            line_number=child.lineno,
-                                            column=child.col_offset,
-                                            severity=RuleSeverity.HIGH,
-                                            category=RuleCategory.SECURITY,
-                                            message=f"Potential SSRF vulnerability - {module}.{func_name}() using user-controlled URL without validation",
-                                            fix_suggestion="Validate URL against whitelist of allowed domains/IP ranges; use URL parsing to check scheme and hostname",
-                                            cwe_id="CWE-918",
-                                            owasp_id="A10:2021 - Server-Side Request Forgery",
-                                            fix_applicability=FixApplicability.SUGGESTED,
-                                        )
-                                    )
+                        if has_user_input and not has_url_validation:
+                            self.violations.append(
+                                RuleViolation(
+                                    rule_id="API017",
+                                    file_path=self.file_path,
+                                    line_number=child.lineno,
+                                    column=child.col_offset,
+                                    severity=RuleSeverity.HIGH,
+                                    category=RuleCategory.SECURITY,
+                                    message=f"Potential SSRF vulnerability - {module}.{func_name}() using user-controlled URL without validation",
+                                    fix_suggestion="Validate URL against whitelist of allowed domains/IP ranges; use URL parsing to check scheme and hostname",
+                                    cwe_id="CWE-918",
+                                    owasp_id="A10:2021 - Server-Side Request Forgery",
+                                    fix_applicability=FixApplicability.SUGGESTED,
+                                )
+                            )
 
     def _check_missing_hsts_header(self, node: ast.Assign) -> None:
         """Check for missing HSTS (HTTP Strict Transport Security) header (API018)."""
         # Check for response header setting
         for target in node.targets:
-            if isinstance(target, ast.Subscript):
-                if isinstance(target.value, ast.Attribute):
-                    if target.value.attr == "headers":
-                        # Check if HSTS is being set
-                        if isinstance(target.slice, ast.Constant):
-                            header_name = target.slice.value
-                            if (
-                                isinstance(header_name, str)
-                                and "strict-transport-security" in header_name.lower()
-                            ):
-                                self.has_hsts_header = True
-                                return  # HSTS is set
+            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Attribute) and target.value.attr == "headers" and isinstance(target.slice, ast.Constant):
+                header_name = target.slice.value
+                if (
+                    isinstance(header_name, str)
+                    and "strict-transport-security" in header_name.lower()
+                ):
+                    self.has_hsts_header = True
+                    return  # HSTS is set
 
         # Check app configuration for HSTS
         for target in node.targets:
-            if isinstance(target, ast.Attribute):
-                if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [
-                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
-                    ]
-                    if any(k and "hsts" in str(k).lower() for k in keys):
-                        self.has_hsts_header = True
-                        return  # HSTS configured
+            if isinstance(target, ast.Attribute) and target.attr == "config" and isinstance(node.value, ast.Dict):
+                keys = [
+                    k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                ]
+                if any(k and "hsts" in str(k).lower() for k in keys):
+                    self.has_hsts_header = True
+                    return  # HSTS configured
 
     def _check_missing_xframe_options(self, node: ast.Assign) -> None:
         """Check for missing X-Frame-Options header (clickjacking protection) (API019)."""
         # Check for response header setting
         for target in node.targets:
-            if isinstance(target, ast.Subscript):
-                if isinstance(target.value, ast.Attribute):
-                    if target.value.attr == "headers":
-                        # Check if X-Frame-Options is being set
-                        if isinstance(target.slice, ast.Constant):
-                            header_name = target.slice.value
-                            if (
-                                isinstance(header_name, str)
-                                and "x-frame-options" in header_name.lower()
-                            ):
-                                self.has_xframe_header = True
-                                return  # X-Frame-Options is set
+            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Attribute) and target.value.attr == "headers" and isinstance(target.slice, ast.Constant):
+                header_name = target.slice.value
+                if (
+                    isinstance(header_name, str)
+                    and "x-frame-options" in header_name.lower()
+                ):
+                    self.has_xframe_header = True
+                    return  # X-Frame-Options is set
 
         # Check app configuration for X-Frame-Options
         for target in node.targets:
-            if isinstance(target, ast.Attribute):
-                if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [
-                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
-                    ]
-                    if any(k and "frame" in str(k).lower() for k in keys):
-                        self.has_xframe_header = True
-                        return  # X-Frame-Options configured
+            if isinstance(target, ast.Attribute) and target.attr == "config" and isinstance(node.value, ast.Dict):
+                keys = [
+                    k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                ]
+                if any(k and "frame" in str(k).lower() for k in keys):
+                    self.has_xframe_header = True
+                    return  # X-Frame-Options configured
 
     def _check_missing_csp_header(self, node: ast.Assign) -> None:
         """Check for missing Content-Security-Policy header (API020)."""
         # Check for response header setting
         for target in node.targets:
-            if isinstance(target, ast.Subscript):
-                if isinstance(target.value, ast.Attribute):
-                    if target.value.attr == "headers":
-                        # Check if CSP is being set
-                        if isinstance(target.slice, ast.Constant):
-                            header_name = target.slice.value
-                            if (
-                                isinstance(header_name, str)
-                                and "content-security-policy" in header_name.lower()
-                            ):
-                                self.has_csp_header = True
-                                return  # CSP is set
+            if isinstance(target, ast.Subscript) and isinstance(target.value, ast.Attribute) and target.value.attr == "headers" and isinstance(target.slice, ast.Constant):
+                header_name = target.slice.value
+                if (
+                    isinstance(header_name, str)
+                    and "content-security-policy" in header_name.lower()
+                ):
+                    self.has_csp_header = True
+                    return  # CSP is set
 
         # Check app configuration for CSP (handle both hyphens and underscores)
         for target in node.targets:
-            if isinstance(target, ast.Attribute):
-                if target.attr == "config" and isinstance(node.value, ast.Dict):
-                    keys = [
-                        k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
-                    ]
-                    # Check for CSP with hyphens or underscores
-                    if any(
-                        k and ("content-security-policy" in str(k).lower().replace("_", "-"))
-                        for k in keys
-                    ):
-                        self.has_csp_header = True
-                        return  # CSP configured
+            if isinstance(target, ast.Attribute) and target.attr == "config" and isinstance(node.value, ast.Dict):
+                keys = [
+                    k.value if isinstance(k, ast.Constant) else None for k in node.value.keys
+                ]
+                # Check for CSP with hyphens or underscores
+                if any(
+                    k and ("content-security-policy" in str(k).lower().replace("_", "-"))
+                    for k in keys
+                ):
+                    self.has_csp_header = True
+                    return  # CSP configured
 
     def _is_user_input(self, node: ast.AST) -> bool:
         """Check if a node represents user input."""
@@ -1151,18 +1115,15 @@ class APISecurityVisitor(ast.NodeVisitor):
             )
         if isinstance(node, ast.Subscript):
             # Check for request.args['url'], request.form['url'], etc.
-            if isinstance(node.value, ast.Attribute):
-                if node.value.attr in ("args", "form", "json", "data", "params", "query_params"):
-                    return True
-        elif isinstance(node, ast.Call):
+            if isinstance(node.value, ast.Attribute) and node.value.attr in ("args", "form", "json", "data", "params", "query_params"):
+                return True
+        elif isinstance(node, ast.Call):  # noqa: SIM102
             # Check for request.get('url'), request.args.get('url'), etc.
-            if isinstance(node.func, ast.Attribute):
-                if node.func.attr == "get" and node.args:
-                    if isinstance(node.args[0], ast.Constant):
-                        arg_name = str(node.args[0].value).lower()
-                        return any(
-                            keyword in arg_name for keyword in ["url", "uri", "link", "redirect"]
-                        )
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "get" and node.args and isinstance(node.args[0], ast.Constant):
+                arg_name = str(node.args[0].value).lower()
+                return any(
+                    keyword in arg_name for keyword in ["url", "uri", "link", "redirect"]
+                )
         return False
 
     def _has_url_validation(self, func_node: ast.FunctionDef, _url_node: ast.AST) -> bool:
@@ -1191,9 +1152,8 @@ class APISecurityVisitor(ast.NodeVisitor):
                 for op in child.ops:
                     if isinstance(op, ast.In):
                         for comp in child.comparators:
-                            if isinstance(comp, ast.Name):
-                                if "allowed" in comp.id.lower() or "whitelist" in comp.id.lower():
-                                    return True
+                            if isinstance(comp, ast.Name) and ("allowed" in comp.id.lower() or "whitelist" in comp.id.lower()):
+                                return True
         return False
 
     def _report_missing_headers(self) -> None:
@@ -1281,7 +1241,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                     if "csrf" in child.id.lower():
                         has_csrf_check = True
                         break
-                elif isinstance(child, ast.Attribute):
+                elif isinstance(child, ast.Attribute):  # noqa: SIM102
                     if "csrf" in child.attr.lower():
                         has_csrf_check = True
                         break

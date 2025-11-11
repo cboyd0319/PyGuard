@@ -2,8 +2,8 @@
 Unit tests for Test Coverage Analyzer module.
 """
 
-import subprocess
 from pathlib import Path
+import subprocess
 from unittest.mock import MagicMock, patch
 
 from pyguard.lib.test_coverage import TestCoverageAnalyzer

@@ -1,11 +1,11 @@
 """Tests for git hooks integration."""
 
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest

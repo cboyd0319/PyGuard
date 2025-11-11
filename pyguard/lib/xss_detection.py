@@ -96,7 +96,7 @@ class XSSDetector(ast.NodeVisitor):
                 self.from_imports[node.module].add(alias.name)
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: PLR0912 - Complex XSS detection requires many checks
         """Check function calls for XSS vulnerabilities."""
         func_name = self._get_call_name(node)
 
@@ -249,7 +249,7 @@ class XSSDetector(ast.NodeVisitor):
             # Check if it's string formatting
             if isinstance(node.func.value, ast.Constant):
                 format_str = node.func.value.value
-                if isinstance(format_str, str) and any(
+                if isinstance(format_str, str) and any(  # noqa: SIM102
                     tag in format_str for tag in ["<", ">", "href", "src"]
                 ):
                     # HTML-like content in format string
@@ -281,7 +281,7 @@ class XSSDetector(ast.NodeVisitor):
 
             def check_node(n):
                 nonlocal has_html, has_user_input
-                if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                if isinstance(n, ast.Constant) and isinstance(n.value, str):  # noqa: SIM102
                     if any(tag in n.value for tag in ["<", ">", "href", "src", "<script", "<html"]):
                         has_html = True
                 if self._is_user_input(n):
@@ -319,7 +319,7 @@ class XSSDetector(ast.NodeVisitor):
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
                 if any(tag in value.value for tag in ["<", ">", "href", "src", "<script"]):
                     has_html = True
-            elif isinstance(value, ast.FormattedValue):
+            elif isinstance(value, ast.FormattedValue):  # noqa: SIM102
                 if self._is_user_input(value.value):
                     has_user_input = True
 

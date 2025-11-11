@@ -65,7 +65,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         func_name = self._get_call_name(node)
 
         # UP038: Use X | Y for isinstance() instead of (X, Y) in Python 3.10+
-        if func_name == "isinstance" and len(node.args) == 2:
+        if func_name == "isinstance" and len(node.args) == 2:  # noqa: PLR2004 - expected args
             second_arg = node.args[1]
             if isinstance(second_arg, ast.Tuple) and len(second_arg.elts) > 1:
                 types = []
@@ -87,7 +87,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                     )
 
         # UP001: Detect old-style super()
-        if func_name == "super" and len(node.args) == 2:
+        if func_name == "super" and len(node.args) == 2:  # noqa: PLR2004 - expected args
             self.issues.append(
                 ModernizationIssue(
                     severity="LOW",
@@ -102,7 +102,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
             )
 
         # UP002: Detect unnecessary encode/decode
-        if func_name in ["str.encode", "bytes.decode"]:
+        if func_name in ["str.encode", "bytes.decode"]:  # noqa: SIM102
             # Check if using default encoding
             if not node.args or (
                 len(node.args) == 1
@@ -158,7 +158,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                 )
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom):
+    def visit_ImportFrom(self, node: ast.ImportFrom):  # noqa: PLR0912 - Complex modern Python pattern detection requires many checks
         """Visit from...import statements."""
         if node.module:
             # UP003: Detect typing imports that should use builtin types
@@ -276,7 +276,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def visit_BinOp(self, node: ast.BinOp):
         """Visit binary operations."""
         # UP008: Detect old-style string formatting (% operator)
-        if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Constant):
+        if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Constant):  # noqa: SIM102
             if isinstance(node.left.value, str) and "%" in node.left.value:
                 self.issues.append(
                     ModernizationIssue(
@@ -311,7 +311,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         """Visit function definitions for decorator modernization."""
         for decorator in node.decorator_list:
             # UP011/UP033: lru_cache without parentheses
-            if isinstance(decorator, ast.Call):
+            if isinstance(decorator, ast.Call):  # noqa: SIM102
                 if isinstance(decorator.func, ast.Attribute) and (
                     decorator.func.attr == "lru_cache"
                     and len(decorator.args) == 0
@@ -344,7 +344,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
                 # UP015: Redundant open modes (e.g., 'r' is default)
                 if func_name == "open":
                     for arg in item.context_expr.args:
-                        if isinstance(arg, ast.Constant):
+                        if isinstance(arg, ast.Constant):  # noqa: SIM102
                             if arg.value in ["r", "rt"]:
                                 self.issues.append(
                                     ModernizationIssue(
@@ -368,7 +368,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
         """Visit class definitions for enum modernization."""
         # UP042: Use StrEnum instead of str + Enum (Python 3.11+)
         # Check if class inherits from both str and Enum
-        if len(node.bases) >= 2:
+        if len(node.bases) >= 2:  # noqa: PLR2004 - min bases
             base_names = []
             for base in node.bases:
                 if isinstance(base, ast.Name):
@@ -393,15 +393,15 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def visit_If(self, node: ast.If) -> None:
         """Visit if statements for version check modernization."""
         # UP036: Outdated version blocks - check for sys.version_info comparisons
-        if isinstance(node.test, ast.Compare):
+        if isinstance(node.test, ast.Compare):  # noqa: SIM102
             if isinstance(node.test.left, ast.Attribute):
                 # Check for sys.version_info patterns
                 full_name = self._get_full_name(node.test.left)
                 if full_name == "sys.version_info":
                     # Check if comparing against outdated version (< 3.8)
                     for comparator in node.test.comparators:
-                        if isinstance(comparator, ast.Tuple):
-                            if len(comparator.elts) >= 2:
+                        if isinstance(comparator, ast.Tuple):  # noqa: SIM102
+                            if len(comparator.elts) >= 2:  # noqa: SIM102, PLR2004 - version tuple size
                                 if isinstance(comparator.elts[0], ast.Constant):
                                     major_version = comparator.elts[0].value
                                     if isinstance(comparator.elts[1], ast.Constant):
@@ -409,8 +409,8 @@ class ModernPythonVisitor(ast.NodeVisitor):
                                         if (
                                             isinstance(major_version, int)
                                             and isinstance(minor_version, int)
-                                            and major_version == 3
-                                            and minor_version < 8
+                                            and major_version == 3  # noqa: PLR2004 - Python major version
+                                            and minor_version < 8  # noqa: PLR2004 - min Python minor version
                                         ):
                                             self.issues.append(
                                                 ModernizationIssue(
@@ -466,7 +466,7 @@ class ModernPythonVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """Visit attribute access for timezone modernization."""
         # UP017: datetime.timezone.utc instead of pytz
-        if isinstance(node.value, ast.Name):
+        if isinstance(node.value, ast.Name):  # noqa: SIM102
             if node.value.id == "pytz" and node.attr == "UTC":
                 self.issues.append(
                     ModernizationIssue(

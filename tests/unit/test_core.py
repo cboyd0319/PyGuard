@@ -1,7 +1,7 @@
 """Unit tests for core module."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.core import BackupManager, DiffGenerator, FileOperations, PyGuardLogger
 

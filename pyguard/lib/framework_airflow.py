@@ -70,7 +70,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         """Detect security issues in function calls."""
         # Check operator instantiation (Name nodes like PostgresOperator(...))
-        if isinstance(node.func, ast.Name):
+        if isinstance(node.func, ast.Name):  # noqa: SIM102
             if any(op in node.func.id for op in ["Operator", "Sensor", "Hook"]):
                 self._check_operator_security(node)
 
@@ -134,7 +134,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         # Check for hardcoded secrets in operator parameters
         if node.keywords:
             for keyword in node.keywords:
-                if keyword.arg and any(
+                if keyword.arg and any(  # noqa: SIM102
                     term in keyword.arg.lower()
                     for term in ["password", "secret", "token", "key", "credential"]
                 ):
@@ -193,7 +193,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                     )
 
                 # Check for .format()
-                elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):
+                elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):  # noqa: SIM102
                     if keyword.value.func.attr == "format":
                         self.violations.append(
                             RuleViolation(
@@ -249,7 +249,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
                     )
 
                 # Check for .format()
-                elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):
+                elif isinstance(keyword.value, ast.Call) and isinstance(keyword.value.func, ast.Attribute):  # noqa: SIM102
                     if keyword.value.func.attr == "format":
                         self.violations.append(
                             RuleViolation(
@@ -307,7 +307,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
 
         # Check if deserialize_json is used (pickle deserialization risk)
         for keyword in node.keywords:
-            if keyword.arg == "deserialize_json" and isinstance(keyword.value, ast.Constant):
+            if keyword.arg == "deserialize_json" and isinstance(keyword.value, ast.Constant):  # noqa: SIM102
                 if keyword.value.value is True:
                     # This is actually safe (JSON), but check the context
                     pass
@@ -332,8 +332,8 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
     def visit_With(self, node: ast.With) -> None:
         """Check DAG context manager usage."""
         for item in node.items:
-            if isinstance(item.context_expr, ast.Call):
-                if isinstance(item.context_expr.func, ast.Name):
+            if isinstance(item.context_expr, ast.Call):  # noqa: SIM102
+                if isinstance(item.context_expr.func, ast.Name):  # noqa: SIM102
                     if item.context_expr.func.id == "DAG":
                         self._check_dag_security(item.context_expr)
         self.generic_visit(node)
@@ -345,7 +345,7 @@ class AirflowSecurityVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg == "default_args" and isinstance(keyword.value, ast.Dict):
                 for key, value in zip(keyword.value.keys, keyword.value.values, strict=False):
-                    if isinstance(key, ast.Constant):
+                    if isinstance(key, ast.Constant):  # noqa: SIM102
                         # Check for insecure configurations
                         if key.value == "provide_context" and isinstance(value, ast.Constant):
                             # provide_context is deprecated but check anyway
@@ -379,13 +379,13 @@ def analyze_airflow_security(file_path: Path, code: str) -> list[RuleViolation]:
 
 
 def fix_airflow_security(
-    file_path: Path, code: str, violation: RuleViolation
+    file_path: Path, code: str, violation: RuleViolation  # noqa: ARG001 - file_path required by fix function API signature
 ) -> tuple[str, bool]:
     """
     Auto-fix Airflow security vulnerabilities.
 
     Args:
-        file_path: Path to the file being fixed
+        file_path: Path to the file being fixed (required by API)
         code: Source code containing the vulnerability
         violation: The security violation to fix
 

@@ -117,7 +117,7 @@ class NamingConventionVisitor(ast.NodeVisitor):
         """Check function naming conventions."""
         # N802: Function names should use snake_case
         # Exception: methods can have different conventions in frameworks
-        if not self._is_snake_case(node.name):
+        if not self._is_snake_case(node.name):  # noqa: SIM102
             # Allow common test method patterns like test_*, setUp, tearDown
             if not node.name.startswith("test_") and node.name not in ["setUp", "tearDown"]:
                 suggested = self._suggest_snake_case(node.name)
@@ -316,7 +316,7 @@ class NamingConventionVisitor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom):
         """Check import naming conventions."""
         for alias in node.names:
-            if alias.asname:
+            if alias.asname:  # noqa: SIM102
                 # N811: Check alias names
                 if not self._is_snake_case(alias.asname) and not self._is_upper_case(alias.asname):
                     self.issues.append(

@@ -1,7 +1,7 @@
 """Tests for supply chain security analysis module."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 from pyguard.lib.supply_chain import (
     SBOM,

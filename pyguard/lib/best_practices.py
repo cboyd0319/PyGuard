@@ -178,7 +178,7 @@ class BestPracticesFixer:
         if re.search(pattern, content, re.MULTILINE):
             lines = content.split("\n")
             for i, line in enumerate(lines):
-                if "for " in line and i + 1 < len(lines) and ".append(" in lines[i + 1]:
+                if "for " in line and i + 1 < len(lines) and ".append(" in lines[i + 1]:  # noqa: SIM102
                     if "# Consider list comprehension" not in line:
                         lines[i] = f"{line}  # Consider list comprehension"
                         self.fixes_applied.append("Suggested list comprehension")
@@ -210,7 +210,7 @@ class BestPracticesFixer:
         lines = content.split("\n")
 
         for i, line in enumerate(lines):
-            if "open(" in line and not line.strip().startswith("with"):
+            if "open(" in line and not line.strip().startswith("with"):  # noqa: SIM102
                 if "=" in line and "# Use 'with' statement" not in line:
                     lines[i] = f"{line}  # Best Practice: Use 'with' statement"
                     self.fixes_applied.append("Suggested using context manager")
@@ -346,7 +346,7 @@ class NamingConventionFixer:
                         )
 
                 # Check class names (should be PascalCase)
-                elif isinstance(node, ast.ClassDef):
+                elif isinstance(node, ast.ClassDef):  # noqa: SIM102
                     if not re.match(r"^[A-Z][a-zA-Z0-9]*$", node.name):
                         violations.append(
                             {

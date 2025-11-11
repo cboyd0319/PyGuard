@@ -113,7 +113,7 @@ class EnhancedSecurityFixer:
 
             for line in lines:
                 # Skip comments and string literals
-                if line.strip().startswith("#") or (
+                if line.strip().startswith("  # noqa: SIM102  ") or (  # noqa: SIM102
                     "yaml.load(" in line and ('"' in line or "'" in line)
                 ):
                     # Check if it's in a string
