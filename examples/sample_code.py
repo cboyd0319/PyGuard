@@ -63,7 +63,7 @@ def process_data(data):
 # Security Issue: Command injection
 def run_command(user_input):
     """Run a shell command (command injection vulnerable)."""
-    os.system(
+    os.system(  # SECURITY: Use subprocess.run() instead
         f"echo {user_input}"
     )  # noqa: S605  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
@@ -77,7 +77,9 @@ def check_status(flag):
 
 
 # Best Practices Issue: Mutable default argument
-def add_to_list(item, items=[]):  # noqa: B006  # ANTI-PATTERN: Use None and create in function body
+def add_to_list(
+    item, items=[]
+):  # noqa: B006  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     """Add item to list with mutable default."""
     items.append(item)
     return items
@@ -89,13 +91,14 @@ import hashlib
 
 def hash_password(password):
     """Hash password with weak algorithm."""
-    return hashlib.md5(
+    return hashlib.md5(  # SECURITY: Consider using SHA256 or stronger
         password.encode()
     ).hexdigest()  # noqa: S324  # SECURITY: Consider using SHA256 or stronger
 
 
 # Code Quality Issue: Multiple statements on one line
 def quick_check(x):
+    # TODO: Add docstring
     return x > 0 if x else False  # noqa: E701, E731
 
 
