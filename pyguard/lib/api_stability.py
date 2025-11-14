@@ -167,6 +167,7 @@ class APIRegistry:
         logger.info(f"API registry initialized for version {self.current_version}")
 
     def register_api(
+        # TODO: Add docstring
         self,
         name: str,
         stability_level: StabilityLevel,
@@ -201,6 +202,7 @@ class APIRegistry:
         logger.debug(f"Registered API: {name} ({stability_level.value})")
 
     def deprecate_api(  # noqa: PLR0913 - API deprecation requires many parameters for full context
+        # TODO: Add docstring
         self,
         name: str,
         deprecated_in: str,
@@ -239,6 +241,7 @@ class APIRegistry:
         logger.info(f"Deprecated API: {name} (removal in {removal_in})")
 
     def check_compatibility(
+        # TODO: Add docstring
         self,
         target_version: str,
     ) -> dict[str, Any]:
@@ -292,6 +295,7 @@ class APIRegistry:
         }
 
     def get_migration_guide(
+        # TODO: Add docstring
         self,
         from_version: str,
         to_version: str,
@@ -366,6 +370,7 @@ def get_registry() -> APIRegistry:
 
 
 def stable_api(
+    # TODO: Add docstring
     introduced_in: str,
     stability_level: StabilityLevel = StabilityLevel.STABLE,
 ) -> Callable:
@@ -379,9 +384,11 @@ def stable_api(
     Example:
         @stable_api(introduced_in="1.0.0")
         def my_public_function():
+            # TODO: Add docstring
             pass
     """
     def decorator(func: Callable) -> Callable:
+        # TODO: Add docstring
         # Register API
         name = f"{func.__module__}.{func.__qualname__}"
         _global_registry.register_api(
@@ -400,6 +407,7 @@ def stable_api(
 
 
 def deprecated(
+    # TODO: Add docstring
     deprecated_in: str,
     removal_in: str,
     replacement: str | None = None,
@@ -423,9 +431,11 @@ def deprecated(
             replacement="new_function",
         )
         def old_function():
+            # TODO: Add docstring
             pass
     """
     def decorator(func: Callable) -> Callable:
+        # TODO: Add docstring
         name = f"{func.__module__}.{func.__qualname__}"
 
         # Register deprecation
@@ -440,6 +450,7 @@ def deprecated(
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # TODO: Add docstring
             # Show deprecation warning
             deprecation_info = _global_registry.deprecations.get(name)
             if deprecation_info:
@@ -473,6 +484,7 @@ def check_api_compatibility(target_version: str) -> dict[str, Any]:
 
 
 def generate_migration_guide(
+    # TODO: Add docstring
     from_version: str,
     to_version: str,
 ) -> dict[str, Any]:

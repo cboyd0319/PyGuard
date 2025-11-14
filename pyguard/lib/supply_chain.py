@@ -261,7 +261,7 @@ class VulnerabilityChecker:
             "<1.26.5": ["CVE-2021-33503: Catastrophic backtracking in URL parsing"],
         },
         "pyyaml": {
-            "<5.4": ["CVE-2020-14343: Arbitrary code execution via yaml.load()"],
+            "<5.4": ["CVE-2020-14343: Arbitrary code execution via yaml.safe_load()"],
         },
         "cryptography": {
             "<3.3.2": ["CVE-2020-36242: Invalid curve attack on ECDH"],

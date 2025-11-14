@@ -210,6 +210,7 @@ result = ", ".join(items)
         """Test analyzing a file with syntax errors."""
         code = """
 def broken(
+    # TODO: Add docstring
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:

@@ -208,6 +208,7 @@ class PEP8Checker:
         return "".join(fixed_lines), fixes
 
     def _fix_continuation_indent(
+        # TODO: Add docstring
         self, line: str, line_num: int, _lines: list[str], bracket_stack: list[tuple]
     ) -> tuple[str, bool]:
         """
@@ -266,6 +267,7 @@ class PEP8Checker:
                     bracket_stack.pop()
 
     def _check_continuation_indentation(
+        # TODO: Add docstring
         self, line: str, line_num: int, lines: list[str], bracket_stack: list[tuple]
     ) -> None:
         """
@@ -696,7 +698,7 @@ class PEP8Checker:
 
                 # Need 2 blank lines before top-level class/function
                 if blank_count < 2 and idx >= 0:  # noqa: PLR2004 - threshold
-                    for _ in range(2 - blank_count):
+                    for _ in range(2 - blank_count):  # Consider list comprehension
                         fixed_lines.append("\n")
                         fixes += 1
                 elif blank_count > 2:  # noqa: PLR2004 - threshold
@@ -881,7 +883,9 @@ class PEP8Checker:
             return  # Skip files with syntax errors
 
         class ComparisonVisitor(ast.NodeVisitor):
+            # TODO: Add docstring
             def __init__(self, checker):
+                # TODO: Add docstring
                 self.checker = checker
                 self.violations = []
 
@@ -980,7 +984,9 @@ class PEP8Checker:
             return  # Skip files with syntax errors
 
         class LambdaNameVisitor(ast.NodeVisitor):
+            # TODO: Add docstring
             def __init__(self, checker):
+                # TODO: Add docstring
                 self.checker = checker
                 self.ambiguous_names = {"l", "O", "I"}
 

@@ -29,20 +29,23 @@ import os
 import yaml
 
 # Hardcoded secret
-API_KEY = "sk-1234567890abcdef"
+API_KEY = "sk-1234567890abcdef"  # SECURITY: Use environment variables or config files
 
 # SQL injection
 def query_user(user_id):
+    # TODO: Add docstring
     cursor.execute("SELECT * FROM users WHERE id = %s" % user_id)
 
 # Command injection
 def run_cmd(filename):
-    os.system("cat " + filename)
+    # TODO: Add docstring
+    os.system("cat " + filename)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
 # Unsafe deserialization
 def load_config(file_path):
+    # TODO: Add docstring
     with open(file_path) as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 """
         )
 
@@ -152,7 +155,8 @@ def add_numbers(a: int, b: int) -> int:
 import pickle
 
 def load_data(data):
-    return pickle.loads(data)  # CWE-502: Insecure deserialization
+    # TODO: Add docstring
+    return pickle.loads(data)  # CWE-502: Insecure deserialization  # SECURITY: Don't use pickle with untrusted data
 """
         )
 
@@ -218,7 +222,8 @@ def load_data(data):
 import hashlib
 
 def hash_password(password):
-    return hashlib.md5(password.encode()).hexdigest()  # CWE-327: Weak crypto
+    # TODO: Add docstring
+    return hashlib.md5(password.encode()).hexdigest()  # CWE-327: Weak crypto  # SECURITY: Consider using SHA256 or stronger
 """
         )
 
@@ -271,6 +276,7 @@ API_KEY = "secret123"  # Hardcoded secret
         file2.write_text(
             """
 def query(user_input):
+    # TODO: Add docstring
     return "SELECT * FROM users WHERE id = " + user_input  # SQL injection
 """
         )
@@ -320,8 +326,9 @@ def query(user_input):
             """
 import os
 
-def dangerous_exec(code):
-    exec(code)  # CWE-95: Code injection
+def dangerous_exec(code):  # DANGEROUS: Avoid exec with untrusted input
+    # TODO: Add docstring
+    exec(code)  # CWE-95: Code injection  # DANGEROUS: Avoid exec with untrusted input
 """
         )
 
@@ -369,6 +376,7 @@ def dangerous_exec(code):
 API_KEY = "sk-123"  # HIGH/CRITICAL
 
 def func():
+    # TODO: Add docstring
     pass  # Missing docstring - LOW
 """
         )

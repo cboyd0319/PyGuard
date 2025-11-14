@@ -154,6 +154,7 @@ class PyGuardWebhookAPI:
     """
 
     def __init__(
+        # TODO: Add docstring
         self,
         host: str = "127.0.0.1",
         port: int = 5008,
@@ -185,6 +186,7 @@ class PyGuardWebhookAPI:
         logger.info(f"PyGuard Webhook API initialized on {host}:{port}")
 
     def generate_api_key(
+        # TODO: Add docstring
         self,
         description: str = "",
         rate_limit: int = 60,
@@ -265,6 +267,7 @@ class PyGuardWebhookAPI:
         )
 
     def trigger_scan(  # noqa: PLR0913 - Flexible scan triggering requires many parameters
+        # TODO: Add docstring
         self,
         api_key: ApiKey,
         target_path: str | None = None,
@@ -330,6 +333,7 @@ class PyGuardWebhookAPI:
         }
 
     def get_scan_status(
+        # TODO: Add docstring
         self,
         api_key: ApiKey,
         job_id: str,
@@ -382,6 +386,7 @@ class PyGuardWebhookAPI:
         }
 
     def get_scan_results(
+        # TODO: Add docstring
         self,
         api_key: ApiKey,
         job_id: str,
@@ -442,6 +447,7 @@ class PyGuardWebhookAPI:
         }
 
     def list_scan_jobs(
+        # TODO: Add docstring
         self,
         api_key: ApiKey,
         limit: int = 100,
@@ -495,6 +501,7 @@ class PyGuardWebhookAPI:
         }
 
     def register_webhook(
+        # TODO: Add docstring
         self,
         api_key: ApiKey,
         url: str,
@@ -585,6 +592,7 @@ class PyGuardWebhookAPI:
             logger.info(f"Webhook triggered: {webhook.url} for {event.value}")
 
     def verify_webhook_signature(
+        # TODO: Add docstring
         self,
         payload: str,
         signature: str,

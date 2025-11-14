@@ -65,6 +65,7 @@ import sys
 from pathlib import Path
 
 def main():
+    # TODO: Add docstring
     print(os.path.exists("/tmp"))
 """
         tree = ast.parse(code)
@@ -85,6 +86,7 @@ import numpy as np
 import pandas as pd
 
 def process():
+    # TODO: Add docstring
     return np.array([1, 2, 3])
 """
         tree = ast.parse(code)
@@ -125,6 +127,7 @@ import os
 import sys
 
 def main():
+    # TODO: Add docstring
     print(os.getcwd())
 """
         test_file = tmp_path / "test.py"
@@ -145,6 +148,7 @@ import os
 from pathlib import Path
 
 def main():
+    # TODO: Add docstring
     path = Path(os.getcwd())
     return path
 """
@@ -164,6 +168,7 @@ def main():
 from typing import List, Dict, Optional
 
 def get_items() -> List[str]:
+    # TODO: Add docstring
     return ["a", "b", "c"]
 """
         test_file = tmp_path / "test.py"
@@ -186,6 +191,7 @@ class TestStarImportDetection:
 from os.path import *
 
 def main():
+    # TODO: Add docstring
     return exists("/tmp")
 """
         test_file = tmp_path / "test.py"
@@ -204,6 +210,7 @@ def main():
 from os.path import exists, join
 
 def main():
+    # TODO: Add docstring
     return exists("/tmp")
 """
         test_file = tmp_path / "test.py"
@@ -229,6 +236,7 @@ import sys
 import json
 
 def process():
+    # TODO: Add docstring
     data = json.loads('{}')
     return data
 """
@@ -273,6 +281,7 @@ import os
 from pathlib import Path
 
 def main():
+    # TODO: Add docstring
     return os.getcwd()
 """
         test_file = tmp_path / "test.py"
@@ -326,6 +335,7 @@ import sys
 import os
 
 def main():
+    # TODO: Add docstring
     pass
 '''
         analyzer = ImportAnalyzer()
@@ -347,6 +357,7 @@ import sys
 from pathlib import Path
 
 def main():
+    # TODO: Add docstring
     return os.getcwd()
 """
         test_file = tmp_path / "test.py"
@@ -369,6 +380,7 @@ def main():
         code = """from typing import Dict, List, Optional
 
 def get_items() -> List[str]:
+    # TODO: Add docstring
     return ["a", "b", "c"]
 """
         test_file = tmp_path / "test.py"
@@ -390,6 +402,7 @@ def get_items() -> List[str]:
 from pathlib import Path
 
 def main():
+    # TODO: Add docstring
     return os.path.join(str(Path.cwd()), "file.txt")
 """
         test_file = tmp_path / "test.py"
@@ -411,6 +424,7 @@ def main():
 import numpy as np
 
 def process_data():
+    # TODO: Add docstring
     return np.array([1, 2, 3])
 """
         test_file = tmp_path / "test.py"

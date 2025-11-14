@@ -27,6 +27,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
     """AST visitor for detecting refactoring opportunities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -248,7 +249,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                     self.violations.append(
                         RuleViolation(
                             rule_id="FURB106",
-                            message="Consider using pathlib.Path instead of string paths with open()",
+                            message="Consider using pathlib.Path instead of string paths with open()",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.LOW,
@@ -714,12 +715,12 @@ class RefurbPatternVisitor(ast.NodeVisitor):
         # FURB130: Use Path.read_text()/write_text() instead of open+read/write
         if isinstance(node.value, ast.Call):
             func = node.value.func
-            # Check for pattern: content = open('file').read()
+            # Check for pattern: content = open('file').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             if isinstance(func, ast.Attribute) and func.attr == "read" and isinstance(func.value, ast.Call) and isinstance(func.value.func, ast.Name) and func.value.func.id == "open":
                 self.violations.append(
                     RuleViolation(
                         rule_id="FURB130",
-                        message="Use Path.read_text() instead of open().read()",
+                        message="Use Path.read_text() instead of open().read()",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                         line_number=node.lineno,
                         column=node.col_offset,
                         severity=RuleSeverity.LOW,
@@ -828,7 +829,7 @@ class RefurbPatternVisitor(ast.NodeVisitor):
                     self.violations.append(
                         RuleViolation(
                             rule_id="FURB146",
-                            message="open() call missing explicit encoding parameter",
+                            message="open() call missing explicit encoding parameter",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.MEDIUM,
@@ -888,6 +889,7 @@ class RefurbPatternChecker:
     """Main checker for refactoring pattern detection and fixes."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
 
     def check_file(self, file_path: Path) -> list[RuleViolation]:
@@ -1237,7 +1239,7 @@ REFURB_RULES = [
     Rule(
         rule_id="FURB130",
         name="path-read-text-instead-of-open",
-        description="Use Path.read_text() instead of open().read()",
+        description="Use Path.read_text() instead of open().read()",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.MODERNIZATION,
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SUGGESTED,
@@ -1309,11 +1311,11 @@ REFURB_RULES = [
     Rule(
         rule_id="FURB146",
         name="open-with-encoding",
-        description="open() call missing explicit encoding parameter",
+        description="open() call missing explicit encoding parameter",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.CONVENTION,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SAFE,
-        message_template="Always specify encoding parameter in open() calls",
+        message_template="Always specify encoding parameter in open() calls",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
     ),
     Rule(
         rule_id="FURB147",

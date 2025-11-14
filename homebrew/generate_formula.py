@@ -64,6 +64,7 @@ def update_formula(version: str, sha256: str):
 
 
 def main():
+    # TODO: Add docstring
     if len(sys.argv) != 2:
         print("Usage: python generate_formula.py <version>")
         print("Example: python generate_formula.py 0.7.0")

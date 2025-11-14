@@ -24,8 +24,9 @@ app = flask.Flask(__name__)
 
 @app.route('/search')
 def search():
+    # TODO: Add docstring
     query = request.args.get('q')
-    cursor.execute("SELECT * FROM users WHERE name = '" + query + "'")
+    cursor.execute("SELECT * FROM users WHERE name = '" + query + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -45,7 +46,7 @@ def search():
 import os
 
 user_file = input("Enter filename: ")
-os.system("cat " + user_file)
+os.system("cat " + user_file)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -66,6 +67,7 @@ from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 
 def view(request):
+    # TODO: Add docstring
     user_input = request.GET.get('name')
     html = mark_safe(user_input)
     return HttpResponse(html)
@@ -105,7 +107,7 @@ with open("/var/data/" + user_path, 'r') as f:
 user_input = input("Enter value: ")
 temp = user_input
 final = temp
-eval(final)
+eval(final)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -124,7 +126,7 @@ import os
 
 user_cmd = input("Enter command: ")
 full_cmd = "ls " + user_cmd
-os.system(full_cmd)
+os.system(full_cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -177,7 +179,8 @@ async def endpoint(request: Request):
         """Test that function parameters with suggestive names are marked as tainted."""
         code = """
 def process_user_input(user_data):
-    eval(user_data)
+    # TODO: Add docstring
+    eval(user_data)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -195,7 +198,7 @@ def process_user_input(user_data):
 cursor = db.cursor()
 cursor.execute("SELECT * FROM config")
 config_value = cursor.fetchone()
-eval(config_value)
+eval(config_value)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -216,8 +219,8 @@ from flask import request
 user1 = input("User 1: ")
 user2 = request.args.get('user2')
 
-os.system(user1)
-cursor.execute("SELECT * FROM users WHERE name = '" + user2 + "'")
+os.system(user1)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+cursor.execute("SELECT * FROM users WHERE name = '" + user2 + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -235,7 +238,7 @@ cursor.execute("SELECT * FROM users WHERE name = '" + user2 + "'")
         """Test that complete taint paths are tracked."""
         code = """
 user_input = input("Enter: ")
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -255,7 +258,7 @@ result = eval(user_input)
 import os
 
 env_value = os.getenv('USER_CMD')
-os.system(env_value)
+os.system(env_value)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -273,7 +276,7 @@ os.system(env_value)
 from flask import request
 
 auth_header = request.headers.get('Authorization')
-cursor.execute("SELECT * FROM users WHERE token = '" + auth_header + "'")
+cursor.execute("SELECT * FROM users WHERE token = '" + auth_header + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -292,7 +295,7 @@ import socket
 
 sock = socket.socket()
 data = sock.recv(1024)
-eval(data)
+eval(data)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -314,7 +317,7 @@ class TestTaintAnalysisHelpers:
         test_file = tmp_path / "test_taint.py"
         test_file.write_text("""
 user_input = input("Enter: ")
-eval(user_input)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """)
 
         issues = analyze_taint_flows(test_file)
@@ -343,6 +346,7 @@ print(value)
         test_file = tmp_path / "syntax_error.py"
         test_file.write_text("""
 def broken(
+    # TODO: Add docstring
     # Missing closing parenthesis
 """)
 
@@ -412,8 +416,9 @@ class TestFrameworkSpecificTaintDetection:
 from django.http import HttpResponse
 
 def view(request):
+    # TODO: Add docstring
     query = request.GET['search']
-    cursor.execute("SELECT * FROM items WHERE name = " + query)
+    cursor.execute("SELECT * FROM items WHERE name = " + query)  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -428,8 +433,9 @@ def view(request):
         """Test Django request.POST taint detection."""
         code = """
 def view(request):
+    # TODO: Add docstring
     name = request.POST.get('name')
-    db.execute("INSERT INTO users VALUES ('" + name + "')")
+    db.execute("INSERT INTO users VALUES ('" + name + "')")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -447,9 +453,10 @@ from flask import request
 
 @app.route('/api')
 def api():
+    # TODO: Add docstring
     data = request.json
     name = data['name']
-    session.execute("UPDATE users SET name = '" + name + "'")
+    session.execute("UPDATE users SET name = '" + name + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -467,7 +474,7 @@ from fastapi import Request
 
 async def endpoint(request: Request):
     search = request.query_params.get('q')
-    engine.execute("SELECT * FROM products WHERE name = '" + search + "'")
+    engine.execute("SELECT * FROM products WHERE name = '" + search + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)

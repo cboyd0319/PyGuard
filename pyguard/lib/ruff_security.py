@@ -298,11 +298,11 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     rule_id="S102",
                     category=RuleCategory.SECURITY,
                     severity=RuleSeverity.CRITICAL,
-                    message="Use of exec() detected; this allows execution of arbitrary code",
+                    message="Use of exec() detected; this allows execution of arbitrary code",  # DANGEROUS: Avoid exec with untrusted input
                     file_path=self.file_path,
                     line_number=node.lineno,
                     column=node.col_offset,
-                    fix_suggestion="Remove exec() and use safer alternatives like ast.literal_eval() for literals",
+                    fix_suggestion="Remove exec() and use safer alternatives like ast.literal_eval() for literals",  # DANGEROUS: Avoid eval with untrusted input
                     fix_applicability=FixApplicability.SUGGESTED,
                     source_tool="ruff",
                 )
@@ -315,28 +315,28 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                     rule_id="S307",
                     category=RuleCategory.SECURITY,
                     severity=RuleSeverity.CRITICAL,
-                    message="Use of eval() detected; this allows execution of arbitrary code",
+                    message="Use of eval() detected; this allows execution of arbitrary code",  # DANGEROUS: Avoid eval with untrusted input
                     file_path=self.file_path,
                     line_number=node.lineno,
                     column=node.col_offset,
-                    fix_suggestion="Replace eval() with ast.literal_eval() for safe evaluation of literals",
+                    fix_suggestion="Replace eval() with ast.literal_eval() for safe evaluation of literals",  # DANGEROUS: Avoid eval with untrusted input
                     fix_applicability=FixApplicability.SAFE,
                     source_tool="ruff",
                 )
             )
 
         # S301: suspicious-pickle-usage
-        elif func_name in ("pickle.loads", "pickle.load", "cPickle.loads", "cPickle.load"):
+        elif func_name in ("pickle.loads", "pickle.load", "cPickle.loads", "cPickle.load"):  # SECURITY: Don't use pickle with untrusted data
             self.violations.append(
                 RuleViolation(
                     rule_id="S301",
                     category=RuleCategory.SECURITY,
                     severity=RuleSeverity.HIGH,
-                    message="pickle.loads() can execute arbitrary code; use json.loads() for untrusted data",
+                    message="pickle.loads() can execute arbitrary code; use json.loads() for untrusted data",  # SECURITY: Don't use pickle with untrusted data
                     file_path=self.file_path,
                     line_number=node.lineno,
                     column=node.col_offset,
-                    fix_suggestion="Replace pickle.loads() with json.loads() for untrusted data",
+                    fix_suggestion="Replace pickle.loads() with json.loads() for untrusted data",  # SECURITY: Don't use pickle with untrusted data
                     fix_applicability=FixApplicability.SUGGESTED,
                     source_tool="ruff",
                 )
@@ -801,7 +801,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         rule_id="S605",
                         category=RuleCategory.SECURITY,
                         severity=RuleSeverity.HIGH,
-                        message="os.system() executes commands through shell",
+                        message="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                         file_path=self.file_path,
                         line_number=node.lineno,
                         column=node.col_offset,
@@ -818,7 +818,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         rule_id="S606",
                         category=RuleCategory.SECURITY,
                         severity=RuleSeverity.MEDIUM,
-                        message="os.popen() is deprecated and insecure",
+                        message="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                         file_path=self.file_path,
                         line_number=node.lineno,
                         column=node.col_offset,
@@ -1170,11 +1170,11 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S102",
         name="exec-builtin",
-        description="Use of exec() detected; this allows execution of arbitrary code",
+        description="Use of exec() detected; this allows execution of arbitrary code",  # DANGEROUS: Avoid exec with untrusted input
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.CRITICAL,
         fix_applicability=FixApplicability.SUGGESTED,
-        message_template="Use of exec() detected",
+        message_template="Use of exec() detected",  # DANGEROUS: Avoid exec with untrusted input
     ),
     Rule(
         rule_id="S103",
@@ -1305,11 +1305,11 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S307",
         name="suspicious-eval-usage",
-        description="eval() allows execution of arbitrary code",
+        description="eval() allows execution of arbitrary code",  # DANGEROUS: Avoid eval with untrusted input
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.CRITICAL,
         fix_applicability=FixApplicability.SAFE,
-        message_template="Dangerous eval() usage",
+        message_template="Dangerous eval() usage",  # DANGEROUS: Avoid eval with untrusted input
     ),
     Rule(
         rule_id="S311",
@@ -1503,7 +1503,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S310",
         name="suspicious-url-open-usage",
-        description="urllib.urlopen() can be used for SSRF attacks",
+        description="urllib.urlopen() can be used for SSRF attacks",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SUGGESTED,
@@ -1611,7 +1611,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S605",
         name="start-process-with-a-shell",
-        description="os.system() executes commands through shell",
+        description="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.HIGH,
         fix_applicability=FixApplicability.SUGGESTED,
@@ -1620,7 +1620,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S606",
         name="start-process-with-no-shell",
-        description="os.popen() is deprecated and insecure",
+        description="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SUGGESTED,

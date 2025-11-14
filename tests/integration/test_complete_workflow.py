@@ -42,20 +42,23 @@ import pickle
 import yaml
 
 def load_data(filename):
+    # TODO: Add docstring
     # Vulnerable: unsafe pickle deserialization
     with open(filename, 'rb') as f:
-        return pickle.load(f)
+        return pickle.load(f)  # SECURITY: Don't use pickle with untrusted data
 
 def load_config(filename):
+    # TODO: Add docstring
     # Vulnerable: unsafe yaml load
     with open(filename) as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 def execute_code(user_input):
+    # TODO: Add docstring
     # Vulnerable: eval usage
-    return eval(user_input)
+    return eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 
-password = "hardcoded123"  # Vulnerable: hardcoded password
+password = "hardcoded123"  # SECURITY: Use environment variables or config files  # Vulnerable: hardcoded password
 """)
 
             # Create safe Python file
@@ -64,10 +67,12 @@ password = "hardcoded123"  # Vulnerable: hardcoded password
 import json
 
 def safe_load(filename):
+    # TODO: Add docstring
     with open(filename) as f:
         return json.load(f)
 
 def safe_process(data):
+    # TODO: Add docstring
     return str(data).lower()
 """)
 
@@ -283,6 +288,7 @@ password = os.getenv('PASSWORD', 'default123')  # Weak default
                 "db.py": """
 import sqlite3
 def query(user_input):
+    # TODO: Add docstring
     conn = sqlite3.connect('db.sqlite')
     cursor = conn.cursor()
     cursor.execute(f"SELECT * FROM users WHERE id = {user_input}")  # SQL injection
@@ -291,6 +297,7 @@ def query(user_input):
                 "crypto.py": """
 from Crypto.Cipher import DES  # Weak crypto
 def encrypt(data):
+    # TODO: Add docstring
     cipher = DES.new(b'12345678', DES.MODE_ECB)
     return cipher.encrypt(data)
 """,
@@ -369,7 +376,7 @@ class TestConfigurationWorkflow:
 
         code = """
 import pickle
-data = pickle.load(open('file.pkl', 'rb'))
+data = pickle.load(open('file.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
 
         issues = analyze_code(code).issues

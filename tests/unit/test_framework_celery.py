@@ -71,6 +71,7 @@ from celery import shared_task
 
 @shared_task
 def delete_user(user_id):
+    # TODO: Add docstring
     # Sensitive operation without authentication
     User.objects.get(id=user_id).delete()
 """
@@ -86,6 +87,7 @@ from celery import shared_task
 
 @shared_task
 def get_user_count():
+    # TODO: Add docstring
     return User.objects.count()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -97,13 +99,14 @@ class TestCeleryArgumentInjection:
     """Test CELERY004: Task argument injection."""
 
     def test_detect_eval_with_task_argument(self):
-        """Detect eval() with task arguments."""
+        """Detect eval() with task arguments."""  # DANGEROUS: Avoid eval with untrusted input
         code = """
 from celery import shared_task
 
 @shared_task
 def execute_code(code_string):
-    result = eval(code_string)
+    # TODO: Add docstring
+    result = eval(code_string)  # DANGEROUS: Avoid eval with untrusted input
     return result
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -112,13 +115,14 @@ def execute_code(code_string):
         assert isinstance(violations, list)
 
     def test_detect_exec_with_task_argument(self):
-        """Detect exec() with task arguments."""
+        """Detect exec() with task arguments."""  # DANGEROUS: Avoid exec with untrusted input
         code = """
 from celery import shared_task
 
 @shared_task
 def run_command(cmd):
-    exec(cmd)
+    # TODO: Add docstring
+    exec(cmd)  # DANGEROUS: Avoid exec with untrusted input
 """
         violations = analyze_celery_security(Path("test.py"), code)
         [v for v in violations if v.rule_id == "CELERY004"]
@@ -132,6 +136,7 @@ from celery import shared_task
 
 @shared_task
 def process_number(value):
+    # TODO: Add docstring
     num = int(value)  # Validation
     return num * 2
 """
@@ -222,6 +227,7 @@ import subprocess
 
 @shared_task
 def install_package(pkg_name):
+    # TODO: Add docstring
     subprocess.run(['sudo', 'apt-get', 'install', pkg_name])
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -237,6 +243,7 @@ import subprocess
 
 @shared_task
 def list_files():
+    # TODO: Add docstring
     subprocess.run(['ls', '-la'])
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -255,6 +262,7 @@ from celery import shared_task
 
 @shared_task
 def expensive_operation(data):
+    # TODO: Add docstring
     # No rate limit defined
     process_large_dataset(data)
 """
@@ -269,6 +277,7 @@ from celery import shared_task
 
 @shared_task(rate_limit='10/m')
 def api_call(endpoint):
+    # TODO: Add docstring
     make_request(endpoint)
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -287,6 +296,7 @@ from celery import shared_task
 
 @shared_task(max_retries=None)
 def unreliable_task():
+    # TODO: Add docstring
     risky_operation()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -301,6 +311,7 @@ from celery import shared_task
 
 @shared_task(max_retries=3)
 def network_request():
+    # TODO: Add docstring
     fetch_data()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -319,6 +330,7 @@ from celery import shared_task
 
 @shared_task(ignore_result=True)
 def long_running_task():
+    # TODO: Add docstring
     expensive_computation()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -336,7 +348,8 @@ from celery import chain, shared_task
 
 @shared_task
 def build_pipeline(tasks):
-    pipeline = chain(*[eval(task_name) for task_name in tasks])
+    # TODO: Add docstring
+    pipeline = chain(*[eval(task_name) for task_name in tasks])  # DANGEROUS: Avoid eval with untrusted input
     pipeline.apply_async()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -352,10 +365,12 @@ from celery import chain, shared_task
 
 @shared_task
 def step_one():
+    # TODO: Add docstring
     return "result1"
 
 @shared_task
 def step_two(prev):
+    # TODO: Add docstring
     return "result2"
 
 pipeline = chain(step_one.s(), step_two.s())
@@ -376,6 +391,7 @@ from celery import shared_task
 
 @shared_task
 def recursive_task(depth):
+    # TODO: Add docstring
     if depth > 0:
         recursive_task.delay(depth - 1)
         recursive_task.delay(depth - 1)
@@ -425,6 +441,7 @@ from celery import Celery
 app = Celery('tasks')
 
 def configure_routes(user_input):
+    # TODO: Add docstring
     app.conf.task_routes = {user_input: {'queue': 'high_priority'}}
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -444,6 +461,7 @@ from celery import Celery
 app = Celery('tasks')
 
 def add_periodic_task(task_name):
+    # TODO: Add docstring
     app.conf.beat_schedule = {
         'periodic': {
             'task': task_name,  # Dynamic task name
@@ -487,6 +505,7 @@ from celery import Celery
 app = Celery('tasks')
 
 def shutdown_workers():
+    # TODO: Add docstring
     app.control.shutdown()
 """
         violations = analyze_celery_security(Path("test.py"), code)
@@ -582,6 +601,7 @@ class TestCeleryEdgeCases:
         """Test non-Celery code doesn't trigger false positives."""
         code = """
 def hello():
+    # TODO: Add docstring
     return "world"
 """
         violations = analyze_celery_security(Path("test.py"), code)

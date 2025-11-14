@@ -180,8 +180,10 @@ class TestBlankLineChecks:
         """Test E301: Expected 1 blank line."""
         code = """class Foo:
     def method1(self):
+        # TODO: Add docstring
         pass
     def method2(self):
+        # TODO: Add docstring
         pass
 """
 
@@ -204,6 +206,7 @@ class TestBlankLineChecks:
         """Test E302: Expected 2 blank lines."""
         code = """import os
 def foo():
+    # TODO: Add docstring
     pass
 """
 
@@ -542,13 +545,16 @@ import sys
 
 
 def foo():
+    # TODO: Add docstring
     x = 1
     y = 2
     return x + y
 
 
 class Bar:
+    # TODO: Add docstring
     def method(self):
+        # TODO: Add docstring
         pass
 """
 
@@ -1005,9 +1011,9 @@ class TestComparisonPatterns:
         """Test E711: Comparison to None should use 'is' or 'is not'."""
         code = """
 x = None
-if x == None:  # Should use 'is'
+if x is None:  # Should use 'is'
     pass
-if x != None:  # Should use 'is not'
+if x is not None:  # Should use 'is not'
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -1029,9 +1035,9 @@ if x != None:  # Should use 'is not'
         """Test E712: Comparison to True/False should use 'if cond:' or 'if not cond:'."""
         code = """
 flag = True
-if flag == True:  # Should use 'if flag:'
+if flag   # Use if var: instead:  # Should use 'if flag:'
     pass
-if flag == False:  # Should use 'if not flag:'
+if flag   # Use if not var: instead:  # Should use 'if not flag:'
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -1159,9 +1165,11 @@ I = 30  # Ambiguous - looks like l
         """Test E742: Ambiguous class definition."""
         code = """
 class l:  # Ambiguous
+    # TODO: Add docstring
     pass
 
 class O:  # Ambiguous
+    # TODO: Add docstring
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -1183,9 +1191,11 @@ class O:  # Ambiguous
         """Test E743: Ambiguous function definition."""
         code = """
 def l():  # Ambiguous
+    # TODO: Add docstring
     pass
 
 def O(x):  # Ambiguous
+    # TODO: Add docstring
     return x
 
 async def I():  # Ambiguous async function
@@ -1211,6 +1221,7 @@ async def I():  # Ambiguous async function
         code = """
 # Function definition instead of lambda
 def double(x):
+    # TODO: Add docstring
     return x * 2
 
 # Good variable names
@@ -1220,10 +1231,12 @@ index = 30
 
 # Good class names
 class MyClass:
+    # TODO: Add docstring
     pass
 
 # Good function names
 def calculate_sum(x, y):
+    # TODO: Add docstring
     return x + y
 
 # Lambda in correct context (as argument)
@@ -1254,6 +1267,7 @@ class TestMultipleStatements:
         """Test E704: Multiple statements on one line (def)."""
         code = """
 def foo(): return 42  # Multiple statements
+    # TODO: Add docstring
 def bar(): x = 1  # Multiple statements
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -1295,9 +1309,11 @@ except: pass  # Multiple statements
         """Test that correctly formatted statements pass."""
         code = """
 def foo():
+    # TODO: Add docstring
     return 42
 
 def bar():
+    # TODO: Add docstring
     x = 1
     return x
 

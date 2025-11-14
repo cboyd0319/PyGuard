@@ -393,6 +393,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="https://example.com/token")
 from pydantic import BaseModel
 
 class User(BaseModel):
+    # TODO: Add docstring
     name: str
     age: int
 
@@ -414,6 +415,7 @@ user = User.construct(name="Alice", age="invalid")
 from pydantic import BaseModel
 
 class User(BaseModel):
+    # TODO: Add docstring
     name: str
 
 user = User.parse_obj(untrusted_data)
@@ -433,6 +435,7 @@ from fastapi import Response
 
 @app.get("/")
 def set_cookie(response: Response):
+    # TODO: Add docstring
     response.set_cookie(key="session", value="abc123")
     return {"status": "ok"}
 """
@@ -452,6 +455,7 @@ from fastapi import Response
 
 @app.get("/")
 def set_cookie(response: Response):
+    # TODO: Add docstring
     response.set_cookie(key="session", value="abc123", secure=True)
     return {"status": "ok"}
 """
@@ -471,6 +475,7 @@ from fastapi import Response
 
 @app.get("/")
 def set_cookie(response: Response):
+    # TODO: Add docstring
     response.set_cookie(key="session", value="abc123", secure=True, httponly=True)
     return {"status": "ok"}
 """
@@ -490,6 +495,7 @@ from fastapi import Response
 
 @app.get("/")
 def set_cookie(response: Response):
+    # TODO: Add docstring
     response.set_cookie(
         key="session",
         value="abc123",
@@ -538,10 +544,13 @@ async def ws_endpoint(websocket: WebSocket):  # FASTAPI002: missing origin check
         code = """
 # Regular Python file without FastAPI
 def regular_function():
+    # TODO: Add docstring
     return "Hello World"
 
 class RegularClass:
+    # TODO: Add docstring
     def method(self):
+        # TODO: Add docstring
         pass
 """
         tree = ast.parse(code)
@@ -784,6 +793,7 @@ import jwt
 app = FastAPI()
 
 def helper_verify(token: str):
+    # TODO: Add docstring
     # Should still detect in helper functions
     payload = jwt.decode(token, secret)
     return payload
@@ -1204,6 +1214,7 @@ from strawberry.fastapi import GraphQLRouter
 app = FastAPI()
 
 def setup_graphql():
+    # TODO: Add docstring
     schema = strawberry.Schema(query=Query)
     graphql_app = GraphQLRouter(schema)  # Introspection enabled by default
     return graphql_app
@@ -1227,6 +1238,7 @@ from strawberry.fastapi import GraphQLRouter
 app = FastAPI()
 
 def setup_graphql():
+    # TODO: Add docstring
     schema = strawberry.Schema(query=Query)
     graphql_app = GraphQLRouter(schema, graphql_ide=False, introspection=False)
     return graphql_app
@@ -1771,6 +1783,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 class User(BaseModel):
+    # TODO: Add docstring
     username: str
     is_admin: bool = False
 
@@ -1794,10 +1807,12 @@ async def create_user(request_data: dict):
 from pydantic import BaseModel
 
 class Item(BaseModel):
+    # TODO: Add docstring
     name: str
     price: float
 
 def process(body: dict):
+    # TODO: Add docstring
     item = Item(**body)
 """
         tree = ast.parse(code)
@@ -1813,10 +1828,12 @@ def process(body: dict):
 from pydantic import BaseModel
 
 class Config(BaseModel):
+    # TODO: Add docstring
     setting1: str
     admin_only: bool = False
 
 def update_config(payload: dict):
+    # TODO: Add docstring
     config = Config(**payload)
 """
         tree = ast.parse(code)
@@ -1832,9 +1849,11 @@ def update_config(payload: dict):
 from pydantic import BaseModel
 
 class User(BaseModel):
+    # TODO: Add docstring
     username: str
 
 def create(data: dict):
+    # TODO: Add docstring
     user = User(username=data["username"])
 """
         tree = ast.parse(code)
@@ -1991,7 +2010,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-JWT_SECRET = "short"  # Too short (<32 chars)
+JWT_SECRET = "short"  # SECURITY: Use environment variables or config files  # Too short (<32 chars)
 """
         tree = ast.parse(code)
         visitor = FastAPISecurityVisitor(Path("test.py"), code)
@@ -2168,6 +2187,7 @@ async def graphql_endpoint(query: str):
 import graphql
 
 def run_query(user_input: str):
+    # TODO: Add docstring
     query = "{ user(id: " + user_input + ") }"
     graphql.execute(query, schema)
 """
@@ -2187,6 +2207,7 @@ def run_query(user_input: str):
 import graphql
 
 def run(param: str):
+    # TODO: Add docstring
     query = f"{{ data(filter: {param}) }}"
     graphql.execute_sync(query, schema)
 """
@@ -2246,6 +2267,7 @@ async def call_external_api(api_key: str):
 import requests
 
 def fetch_data(auth_token: str):
+    # TODO: Add docstring
     url = f"https://api.example.com/users?token={auth_token}"
     requests.get(url)
 """
@@ -2284,6 +2306,7 @@ async def call_api(client_secret: str):
 import requests
 
 def login(user_password: str):
+    # TODO: Add docstring
     url = f"https://api.example.com/auth?password={user_password}"
     requests.post(url)
 """

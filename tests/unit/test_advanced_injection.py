@@ -32,6 +32,7 @@ from flask import render_template_string, request
 
 @app.route('/hello')
 def hello():
+    # TODO: Add docstring
     template = request.args.get('template')
     return render_template_string(template)
 """
@@ -62,6 +63,7 @@ from flask import render_template
 
 @app.route('/hello')
 def hello():
+    # TODO: Add docstring
     return render_template('hello.html', name='World')
 """
         violations = analyze_advanced_injection(code)
@@ -289,7 +291,7 @@ class TestCodeExecutionInjection:
         code = """
 import yaml
 
-data = yaml.load(user_input)
+data = yaml.safe_load(user_input)
 """
         violations = analyze_advanced_injection(code)
         yaml_violations = [v for v in violations if v.rule_id == "INJECT026"]
@@ -323,7 +325,7 @@ data = yaml.safe_load(user_input)
         code = """
 import yaml
 
-data = yaml.load(user_input, Loader=yaml.SafeLoader)
+data = yaml.safe_load(user_input, Loader=yaml.SafeLoader)
 """
         violations = analyze_advanced_injection(code)
         yaml_violations = [v for v in violations if v.rule_id == "INJECT026"]
@@ -376,7 +378,7 @@ with open(filename, 'r') as f:
 import os
 
 user_file = request.form['filename']
-path = os.path.join('/var/data', user_file)
+path = os.path.join('/var/data', user_file)  # PATH TRAVERSAL RISK: Validate and sanitize paths
 with open(path) as f:
     data = f.read()
 """
@@ -525,15 +527,15 @@ subprocess.run(['ls', '-la'], shell=False)
         shell_violations = [v for v in violations if v.rule_id == "INJECT035"]
         assert len(shell_violations) == 0
 
-    # ==================== INJECT036: os.system() ====================
+    # ==================== INJECT036: os.system() ====================  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
     def test_detect_os_system_with_user_input(self):
-        """Detect os.system() with user input."""
+        """Detect os.system() with user input."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
 filename = request.args['file']
-os.system(f'cat {filename}')
+os.system(f'cat {filename}')  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         violations = analyze_advanced_injection(code)
         os_system = [v for v in violations if v.rule_id == "INJECT036"]
@@ -546,18 +548,18 @@ os.system(f'cat {filename}')
 import os
 
 query = request.form['query']
-result = os.popen(f'grep {query} /var/log/app.log').read()
+result = os.popen(f'grep {query} /var/log/app.log').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         violations = analyze_advanced_injection(code)
         os_popen = [v for v in violations if v.rule_id == "INJECT036"]
         assert len(os_popen) >= 1
 
     def test_safe_os_system_hardcoded(self):
-        """os.system() with hardcoded command should not trigger."""
+        """os.system() with hardcoded command should not trigger."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
-os.system('ls -la /tmp')
+os.system('ls -la /tmp')  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         violations = analyze_advanced_injection(code)
         os_system = [v for v in violations if v.rule_id == "INJECT036"]
@@ -576,8 +578,9 @@ from flask import render_template_string, request
 
 @app.route('/process')
 def process():
+    # TODO: Add docstring
     # YAML injection
-    config = yaml.load(request.form['config'])
+    config = yaml.safe_load(request.form['config'])
 
     # Template injection
     template = request.args.get('template')
@@ -604,8 +607,9 @@ import yaml
 from flask import render_template
 
 def safe_processing():
+    # TODO: Add docstring
     # Safe YAML
-    config = yaml.safe_load(open('config.yaml'))
+    config = yaml.safe_load(open('config.yaml'))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
     # Safe template
     output = render_template('index.html', data=config)
@@ -627,7 +631,7 @@ def safe_processing():
         code = """
 import yaml
 
-data = yaml.load(request.data)
+data = yaml.safe_load(request.data)
 """
         violations = analyze_advanced_injection(code)
 

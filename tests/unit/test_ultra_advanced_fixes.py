@@ -119,6 +119,7 @@ class TestAPIRateLimitingFixes:
         code = """
 @app.route('/api/data')
 def get_data():
+    # TODO: Add docstring
     return jsonify(data)
 """
         fixed, modified = fixer.fix_api_rate_limiting(code)
@@ -132,6 +133,7 @@ def get_data():
         code = """
 @app.route('/api/data')
 def get_data():
+    # TODO: Add docstring
     return jsonify(data)
 """
         fixed, modified = fixer.fix_api_rate_limiting(code)
@@ -147,6 +149,7 @@ from flask_limiter import Limiter
 @app.route('/api/data')
 @limiter.limit("100/hour")
 def get_data():
+    # TODO: Add docstring
     return jsonify(data)
 """
         _fixed, _modified = fixer.fix_api_rate_limiting(code)
@@ -160,7 +163,7 @@ class TestWeakCryptographyFixes:
     def test_fix_md5(self):
         """Should fix MD5 to SHA256."""
         fixer = UltraAdvancedSecurityFixer()
-        code = "hash = hashlib.md5(data).hexdigest()"
+        code = "hash = hashlib.md5(data).hexdigest()"  # SECURITY: Consider using SHA256 or stronger
         fixed, modified = fixer.fix_weak_cryptography(code)
         assert modified
         assert "sha256" in fixed
@@ -170,7 +173,7 @@ class TestWeakCryptographyFixes:
     def test_fix_sha1(self):
         """Should fix SHA1 to SHA256."""
         fixer = UltraAdvancedSecurityFixer()
-        code = "hash = hashlib.sha1(data).hexdigest()"
+        code = "hash = hashlib.sha1(data).hexdigest()"  # SECURITY: Consider using SHA256 or stronger
         fixed, modified = fixer.fix_weak_cryptography(code)
         assert modified
         assert "sha256" in fixed
@@ -313,7 +316,7 @@ class TestIntegration:
         code = """
 # Multiple vulnerabilities
 token = jwt.encode(payload, key="weak", algorithm="none")
-hash = hashlib.md5(data).hexdigest()
+hash = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 query = f"SELECT * FROM users WHERE id = {user_id}"
 """
         content = code
@@ -330,7 +333,7 @@ query = f"SELECT * FROM users WHERE id = {user_id}"
         fixer = UltraAdvancedSecurityFixer()
         code = """
 token = jwt.encode(payload, algorithm="none")
-hash = hashlib.md5(data).hexdigest()
+hash = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         fixer.fix_jwt_security(code)
         fixer.fix_weak_cryptography(code)

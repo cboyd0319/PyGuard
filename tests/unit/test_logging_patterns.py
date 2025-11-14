@@ -161,6 +161,7 @@ logger.error("Error: %s", "problem")
         """Test that non-logging calls don't trigger issues."""
         code = """
 def info(message):
+    # TODO: Add docstring
     print(f"Info: {message}")
 
 info("test")
@@ -215,6 +216,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def process(data):
+    # TODO: Add docstring
     logger.info(f"Processing {data}")  # LOG001
     logger.warn("Deprecated warn")  # LOG003
     logger.info("Concat " + data)  # LOG005
@@ -512,7 +514,9 @@ import logging
         # Arrange
         code = """
 class MyClass:
+    # TODO: Add docstring
     def info(self, msg):
+        # TODO: Add docstring
         print(msg)
 
 obj = MyClass()
@@ -788,6 +792,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def process_data(data):
+    # TODO: Add docstring
     logger.info(f"Processing {data}")  # LOG001
     logger.warn("Deprecated")  # LOG003
     logger.error("Error: " + data)  # LOG005

@@ -252,6 +252,7 @@ class ScanHistoryStorage:
             conn.commit()
 
     def store_scan(
+        # TODO: Add docstring
         self,
         metadata: ScanMetadata,
         issues: list[IssueRecord],
@@ -378,7 +379,7 @@ class ScanHistoryStorage:
             )
 
             issues = []
-            for row in cursor.fetchall():
+            for row in cursor.fetchall():  # Consider list comprehension
                 issues.append(IssueRecord(
                     scan_id=row['scan_id'],
                     issue_id=row['issue_id'],
@@ -397,6 +398,7 @@ class ScanHistoryStorage:
             return issues
 
     def list_scans(
+        # TODO: Add docstring
         self,
         target_path: str | None = None,
         start_time: float | None = None,
@@ -422,24 +424,24 @@ class ScanHistoryStorage:
             params: list[Any] = []
 
             if target_path:
-                query += " AND target_path = ?"
+                query += " AND target_path = ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(target_path)
 
             if start_time:
-                query += " AND timestamp >= ?"
+                query += " AND timestamp >= ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(start_time)
 
             if end_time:
-                query += " AND timestamp <= ?"
+                query += " AND timestamp <= ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(end_time)
 
-            query += " ORDER BY timestamp DESC LIMIT ?"
+            query += " ORDER BY timestamp DESC LIMIT ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
             params.append(limit)
 
             cursor = conn.execute(query, params)
 
             scans = []
-            for row in cursor.fetchall():
+            for row in cursor.fetchall():  # Consider list comprehension
                 scans.append(ScanMetadata(
                     scan_id=row['scan_id'],
                     timestamp=row['timestamp'],
@@ -464,6 +466,7 @@ class ScanHistoryStorage:
             return scans
 
     def compare_scans(
+        # TODO: Add docstring
         self,
         baseline_scan_id: str,
         current_scan_id: str,
@@ -530,6 +533,7 @@ class ScanHistoryStorage:
         )
 
     def get_trend_data(
+        # TODO: Add docstring
         self,
         target_path: str,
         days: int = 30,
@@ -602,6 +606,7 @@ class ScanHistoryStorage:
         }
 
     def delete_old_scans(
+        # TODO: Add docstring
         self,
         days: int = 365,
     ) -> int:

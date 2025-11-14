@@ -462,6 +462,7 @@ class TestWhitespaceFixer:
     @patch.object(WhitespaceFixer, "fix_blank_lines")
     @patch.object(WhitespaceFixer, "fix_line_endings")
     def test_fix_file_whitespace_write_error(
+        # TODO: Add docstring
         self, mock_line_endings, mock_blank_lines, mock_trailing
     ):
         """Test handling file write error."""

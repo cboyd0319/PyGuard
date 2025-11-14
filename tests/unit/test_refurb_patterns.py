@@ -147,7 +147,7 @@ files = os.listdir("/some/path")
     def test_detect_repeated_append(self, tmp_path):
         """Test detection of repeated append() in loop."""
         code = """
-for item in items:
+for item in items:  # Consider list comprehension
     result.append(item * 2)
 """
         file_path = tmp_path / "test.py"
@@ -208,6 +208,7 @@ smallest = sorted(numbers)[0]
 from pathlib import Path
 
 def process_file(path: Path):
+    # TODO: Add docstring
     with path.open() as f:
         return f.read()
 
@@ -521,7 +522,7 @@ if sys.version_info >= (3, 8):
         code = """
 from pathlib import Path
 p = Path("file.txt")
-content = p.open().read()
+content = p.open().read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -562,6 +563,7 @@ content = p.open().read()
         """Test that checker handles files with syntax errors."""
         code = """
 def foo(
+    # TODO: Add docstring
     # Incomplete function
 """
         file_path = tmp_path / "test.py"
@@ -644,11 +646,12 @@ result = sorted([x for x in text])
         """Test checker on complex nested structures."""
         code = """
 def process_data(items):
+    # TODO: Add docstring
     results = []
     for item in items:
         if item.valid:
             try:
-                value = sorted([x for x in item.values])
+                value = sorted([x for x in item.values])  # Consider list comprehension
                 results.append(list(value))
             except Exception:
                 pass
@@ -694,6 +697,7 @@ class TestAdditionalRefurbPatterns:
         """Test detection of unnecessary lambda in sorted/map/filter (FURB125)."""
         code = """
 def process():
+    # TODO: Add docstring
     items = sorted(data, key=lambda x: str(x))
     filtered = list(filter(lambda x: bool(x), items))
     mapped = list(map(lambda x: int(x), values))
@@ -711,9 +715,10 @@ def process():
         """Test detection of type() == comparison (FURB126)."""
         code = """
 def check_types(x, y):
-    if type(x) == int:
+    # TODO: Add docstring
+    if type(x) == int:  # Better: isinstance(x, int)
         process(x)
-    if type(y) == str:
+    if type(y) == str:  # Better: isinstance(y, str)
         print(y)
 """
         file_path = tmp_path / "test.py"
@@ -729,6 +734,7 @@ def check_types(x, y):
         """Test detection of dict comprehension with constant value (FURB127)."""
         code = """
 def create_dicts(keys, items):
+    # TODO: Add docstring
     d = {k: None for k in keys}
     d2 = {item: 0 for item in items}
 """
@@ -745,6 +751,7 @@ def create_dicts(keys, items):
         """Test detection of re-raising caught exception (FURB131)."""
         code = """
 def risky_function():
+    # TODO: Add docstring
     try:
         risky_operation()
     except ValueError as e:
@@ -763,8 +770,8 @@ def risky_function():
     def test_detect_path_read_text_opportunity(self, tmp_path):
         """Test detection of open().read() pattern (FURB130)."""
         code = """
-content = open('file.txt').read()
-data = open('data.bin').read()
+content = open('file.txt').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
+data = open('data.bin').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -819,6 +826,7 @@ another = -(-10 // 3)
         """Test lambda detection in various contexts."""
         code = """
 def func(x):
+    # TODO: Add docstring
     # Lambda just calling function - unnecessary
     result = list(map(lambda x: func(x), items))
 
@@ -841,12 +849,13 @@ def func(x):
         """Test different variations of type comparisons."""
         code = """
 def check_values(value, items):
+    # TODO: Add docstring
     # Direct type comparison - should trigger
-    if type(value) == int:
+    if type(value) == int:  # Better: isinstance(value, int)
         pass
 
     # Type comparison with list - should trigger
-    if type(items) == list:
+    if type(items) == list:  # Better: isinstance(items, list)
         pass
 
     # Proper isinstance - should not trigger
@@ -867,6 +876,7 @@ def check_values(value, items):
         """Test dict comprehension detection with different constant values."""
         code = """
 def make_dicts(keys):
+    # TODO: Add docstring
     # With None - should trigger
     d1 = {k: None for k in keys}
 
@@ -893,6 +903,7 @@ def make_dicts(keys):
         """Test bare raise (good) vs re-raising exception (bad)."""
         code = """
 def handle_errors():
+    # TODO: Add docstring
     # Bad: Re-raising caught exception by name
     try:
         operation1()
@@ -926,6 +937,7 @@ def handle_errors():
         """Test edge cases and boundary conditions."""
         code = """
 def process_data(keys, vals, items):
+    # TODO: Add docstring
     # Empty collections
     empty_dict = {k: None for k in []}
     empty_sorted = sorted([])
@@ -934,7 +946,7 @@ def process_data(keys, vals, items):
     nested = {k: {v: None for v in vals} for k in keys}
 
     # Type checks in nested conditions
-    if x > 0 and type(x) == int:
+    if x > 0 and type(x) == int:  # Better: isinstance(x, int)
         pass
 """
         file_path = tmp_path / "test.py"

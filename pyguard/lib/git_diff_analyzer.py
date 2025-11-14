@@ -63,6 +63,7 @@ class GitDiffAnalyzer:
             ) from e
 
     def get_changed_files(
+        # TODO: Add docstring
         self,
         diff_spec: str | None = None,
         include_staged: bool = False,
@@ -250,6 +251,7 @@ class GitDiffAnalyzer:
             return "unknown"
 
     def compare_security_posture(
+        # TODO: Add docstring
         self,
         base_branch: str,
         compare_branch: str | None = None,

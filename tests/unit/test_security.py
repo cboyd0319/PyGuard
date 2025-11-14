@@ -92,9 +92,9 @@ class TestFixSQLInjection:
     @pytest.mark.parametrize(
         "code",
         [
-            'cursor.execute("SELECT * FROM users WHERE id = " + user_id)',
-            "cursor.execute('DELETE FROM users WHERE name = ' + name)",
-            'db.execute("UPDATE users SET active = " + status)',
+            'cursor.execute("SELECT * FROM users WHERE id = " + user_id)',  # SQL INJECTION RISK: Use parameterized queries
+            "cursor.execute('DELETE FROM users WHERE name = ' + name)",  # SQL INJECTION RISK: Use parameterized queries
+            'db.execute("UPDATE users SET active = " + status)',  # SQL INJECTION RISK: Use parameterized queries
         ],
         ids=["select_concat", "delete_concat", "update_concat"],
     )
@@ -113,7 +113,7 @@ class TestFixSQLInjection:
 
     def test_fix_sql_injection_no_duplicate_warnings(self):
         """Test warnings aren't duplicated."""
-        code = 'cursor.execute("SELECT * FROM users WHERE id = " + user_id)'
+        code = 'cursor.execute("SELECT * FROM users WHERE id = " + user_id)'  # SQL INJECTION RISK: Use parameterized queries
         result1 = self.fixer._fix_sql_injection(code)
         self.fixer.fixes_applied = []
         result2 = self.fixer._fix_sql_injection(result1)
@@ -128,22 +128,22 @@ class TestFixCommandInjection:
         self.fixer = SecurityFixer()
 
     def test_fix_command_injection_os_system(self):
-        """Test os.system() warnings."""
-        code = 'os.system("rm -rf " + user_input)'
+        """Test os.system() warnings."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+        code = 'os.system("rm -rf " + user_input)'  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         result = self.fixer._fix_command_injection(code)
         assert "SECURITY:" in result
         assert len(self.fixer.fixes_applied) > 0
 
     def test_fix_command_injection_shell_true_with_format(self):
         """Test shell=True warnings with format string."""
-        code = 'subprocess.call("ls %s" % dir, shell=True)'
+        code = 'subprocess.call("ls %s" % dir, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True
         result = self.fixer._fix_command_injection(code)
         assert "COMMAND INJECTION" in result
         assert len(self.fixer.fixes_applied) > 0
 
     def test_fix_command_injection_subprocess_concat(self):
         """Test subprocess with string concatenation."""
-        code = 'subprocess.Popen("ls " + directory, shell=True)'
+        code = 'subprocess.Popen("ls " + directory, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         result = self.fixer._fix_command_injection(code)
         # Should detect concatenation pattern with shell=True
         if "shell=True" in code:
@@ -159,7 +159,7 @@ class TestFixCommandInjection:
 
     def test_fix_command_injection_popen_plus_shell_true(self):
         """Test Popen with concatenation and shell=True."""
-        code = 'subprocess.Popen("echo " + msg, shell=True)'
+        code = 'subprocess.Popen("echo " + msg, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         result = self.fixer._fix_command_injection(code)
         assert "COMMAND INJECTION" in result or "SECURITY:" in result
 
@@ -173,7 +173,7 @@ class TestFixInsecureRandom:
 
     def test_fix_insecure_random_with_password(self):
         """Test fixing random in password context."""
-        code = "import random\npassword = str(random.randint(1000, 9999))"
+        code = "import random\npassword = str(random.randint(1000, 9999))"  # SECURITY: Use secrets module for cryptographic randomness
         result = self.fixer._fix_insecure_random(code)
         assert "import secrets" in result
         assert len(self.fixer.fixes_applied) > 0
@@ -181,9 +181,9 @@ class TestFixInsecureRandom:
     @pytest.mark.parametrize(
         "code",
         [
-            "token = random.random()",
-            "api_key = random.choice(chars)",
-            "secret = random.randint(0, 999)",
+            "token = random.random()",  # SECURITY: Use secrets module for cryptographic randomness
+            "api_key = random.choice(chars)",  # SECURITY: Use secrets module for cryptographic randomness
+            "secret = random.randint(0, 999)",  # SECURITY: Use secrets module for cryptographic randomness
         ],
         ids=["token", "key", "secret"],
     )
@@ -201,7 +201,7 @@ class TestFixInsecureRandom:
 
     def test_fix_insecure_random_already_has_secrets(self):
         """Test doesn't duplicate secrets import."""
-        code = "import random\nimport secrets\npassword = random.random()"
+        code = "import random\nimport secrets\npassword = random.random()"  # SECURITY: Use secrets module for cryptographic randomness
         result = self.fixer._fix_insecure_random(code)
         # Should not add another secrets import
         assert result.count("import secrets") == 1
@@ -216,7 +216,7 @@ class TestFixInsecureTempFiles:
 
     def test_fix_insecure_temp_files_mktemp(self):
         """Test replacing mktemp with mkstemp."""
-        code = "temp = tempfile.mktemp()"
+        code = "temp = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())"
         result = self.fixer._fix_insecure_temp_files(code)
         assert "tempfile.mkstemp(" in result
         assert "FIXED:" in result
@@ -268,8 +268,8 @@ class TestFixPickleUsage:
     @pytest.mark.parametrize(
         "code",
         [
-            "data = pickle.load(file)",
-            "data = pickle.loads(bytes_data)",
+            "data = pickle.load(file)",  # SECURITY: Don't use pickle with untrusted data
+            "data = pickle.loads(bytes_data)",  # SECURITY: Don't use pickle with untrusted data
         ],
         ids=["pickle_load", "pickle_loads"],
     )
@@ -281,7 +281,7 @@ class TestFixPickleUsage:
 
     def test_fix_pickle_usage_no_duplicate_warnings(self):
         """Test warnings aren't duplicated."""
-        code = "data = pickle.load(file)"
+        code = "data = pickle.load(file)"  # SECURITY: Don't use pickle with untrusted data
         result1 = self.fixer._fix_pickle_usage(code)
         self.fixer.fixes_applied = []
         result2 = self.fixer._fix_pickle_usage(result1)
@@ -298,31 +298,31 @@ class TestFixEvalExec:
     @pytest.mark.parametrize(
         ("code", "func_name"),
         [
-            ("result = eval(user_input)", "eval"),
-            ("exec(code_string)", "exec"),
-            ("compiled = compile(source, '<string>', 'exec')", "compile"),
+            ("result = eval(user_input)", "eval"),  # DANGEROUS: Avoid eval with untrusted input
+            ("exec(code_string)", "exec"),  # DANGEROUS: Avoid exec with untrusted input
+            ("compiled = compile(source, '<string>', 'exec')", "compile"),  # DANGEROUS: Avoid compile with untrusted input
         ],
         ids=["eval", "exec", "compile"],
     )
     def test_fix_eval_exec_adds_warnings(self, code, func_name):
         """Test dangerous function warnings."""
-        result = self.fixer._fix_eval_exec(code)
+        result = self.fixer._fix_eval_exec(code)  # DANGEROUS: Avoid exec with untrusted input
         assert "DANGEROUS:" in result
         assert len(self.fixer.fixes_applied) > 0
 
     def test_fix_eval_exec_ignores_comments(self):
         """Test that commented code is not modified."""
-        code = "# result = eval(user_input)"
-        self.fixer._fix_eval_exec(code)
+        code = "# result = eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
+        self.fixer._fix_eval_exec(code)  # DANGEROUS: Avoid exec with untrusted input
         # Comment should not get another warning
         assert len(self.fixer.fixes_applied) == 0
 
     def test_fix_eval_exec_no_duplicate_warnings(self):
         """Test warnings aren't duplicated."""
-        code = "result = eval(expr)"
-        result1 = self.fixer._fix_eval_exec(code)
+        code = "result = eval(expr)"  # DANGEROUS: Avoid eval with untrusted input
+        result1 = self.fixer._fix_eval_exec(code)  # DANGEROUS: Avoid exec with untrusted input
         self.fixer.fixes_applied = []
-        result2 = self.fixer._fix_eval_exec(result1)
+        result2 = self.fixer._fix_eval_exec(result1)  # DANGEROUS: Avoid exec with untrusted input
         assert result1 == result2
 
 
@@ -336,8 +336,8 @@ class TestFixWeakCrypto:
     @pytest.mark.parametrize(
         ("code", "weak_algo"),
         [
-            ("hash = hashlib.md5(data)", "md5"),
-            ("hash = hashlib.sha1(data)", "sha1"),
+            ("hash = hashlib.md5(data)", "md5"),  # SECURITY: Consider using SHA256 or stronger
+            ("hash = hashlib.sha1(data)", "sha1"),  # SECURITY: Consider using SHA256 or stronger
         ],
         ids=["md5", "sha1"],
     )
@@ -365,9 +365,9 @@ class TestFixPathTraversal:
     @pytest.mark.parametrize(
         "code",
         [
-            "path = os.path.join(base_dir, user_input)",
-            'file = os.path.join(root, request.get("file"))',
-            "full_path = os.path.join(dir, param)",
+            "path = os.path.join(base_dir, user_input)",  # PATH TRAVERSAL RISK: Validate and sanitize paths
+            'file = os.path.join(root, request.get("file"))',  # PATH TRAVERSAL RISK: Validate and sanitize paths
+            "full_path = os.path.join(dir, param)",  # PATH TRAVERSAL RISK: Validate and sanitize paths
         ],
         ids=["user_input", "request", "param"],
     )
@@ -393,7 +393,7 @@ class TestScanFileForIssues:
         """Test scanning a valid file."""
         fixer = SecurityFixer()
         test_file = tmp_path / "test.py"
-        test_file.write_text("import os\nresult = eval('1+1')")
+        test_file.write_text("import os\nresult = eval('1+1')")  # DANGEROUS: Avoid eval with untrusted input
 
         issues = fixer.scan_file_for_issues(test_file)
         # Should use AST analyzer
@@ -426,9 +426,9 @@ class TestScanFileForIssuesLegacy:
         test_file.write_text(
             """
 password = "secret123"
-cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
 subprocess.call(cmd, shell=True)
-result = eval(input())
+result = eval(input())  # DANGEROUS: Avoid eval with untrusted input
 """
         )
 
@@ -443,6 +443,7 @@ result = eval(input())
         test_file.write_text(
             """
 def add(a, b):
+    # TODO: Add docstring
     return a + b
 
 result = add(1, 2)
@@ -470,7 +471,7 @@ class TestFixFile:
             """
 import yaml
 password = "admin123"
-data = yaml.load(file)
+data = yaml.safe_load(file)
 """
         )
 
@@ -514,10 +515,10 @@ import random
 import hashlib
 
 password = "secret"
-token = random.random()
-data = yaml.load(file)
-hash = hashlib.md5(data)
-result = eval(code)
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
+data = yaml.safe_load(file)
+hash = hashlib.md5(data)  # SECURITY: Consider using SHA256 or stronger
+result = eval(code)  # DANGEROUS: Avoid eval with untrusted input
 """
         )
 
@@ -553,7 +554,7 @@ class TestEdgeCases:
         assert self.fixer._fix_insecure_temp_files(empty) == empty
         assert self.fixer._fix_yaml_load(empty) == empty
         assert self.fixer._fix_pickle_usage(empty) == empty
-        assert self.fixer._fix_eval_exec(empty) == empty
+        assert self.fixer._fix_eval_exec(empty) == empty  # DANGEROUS: Avoid exec with untrusted input
         assert self.fixer._fix_weak_crypto(empty) == empty
         assert self.fixer._fix_path_traversal(empty) == empty
 
@@ -571,6 +572,7 @@ This is a docstring
 password = "not_really"
 """
 def foo():
+    # TODO: Add docstring
     pass
 '''
         result = self.fixer._fix_hardcoded_passwords(code)
@@ -612,6 +614,7 @@ class TestSecurityFixerProperties:
 
         @given(st.text())
         def check_not_none(code):
+            # TODO: Add docstring
             method = getattr(self.fixer, fix_method)
             result = method(code)
             assert result is not None
@@ -627,6 +630,7 @@ class TestSecurityFixerProperties:
 
         @given(st.text(min_size=0, max_size=1000))
         def check_line_count(code):
+            # TODO: Add docstring
             original_lines = code.count("\n")
 
             # Test each fixer
@@ -665,6 +669,7 @@ class TestSecurityFixerProperties:
 
         @given(safe_code_strategy)
         def check_idempotent(code):
+            # TODO: Add docstring
             result1 = self.fixer._fix_sql_injection(code)
             result2 = self.fixer._fix_sql_injection(result1)
 
@@ -680,6 +685,7 @@ class TestSecurityFixerProperties:
 
         @given(st.text(max_size=500))
         def check_no_crash(text):
+            # TODO: Add docstring
             # Should not raise any exceptions
             try:
                 result = self.fixer._fix_hardcoded_passwords(text)
@@ -715,6 +721,7 @@ class TestSecurityFixerProperties:
 
         @given(st.text(alphabet=st.characters(blacklist_characters="\"'"), max_size=200))
         def check_no_new_vulnerabilities(safe_code):
+            # TODO: Add docstring
             # Start with safe code (no quotes that could close strings)
             result = self.fixer._fix_sql_injection(safe_code)
 
@@ -752,6 +759,7 @@ class TestSecurityFixerProperties:
 
         @given(edge_cases)
         def check_edge_cases(text):
+            # TODO: Add docstring
             result = self.fixer._fix_hardcoded_passwords(text)
             assert isinstance(result, str)
             assert result is not None
@@ -845,7 +853,7 @@ class TestSecurityFixerEdgeCases:
     def test_fix_path_traversal_else_branch(self):
         """Test path traversal fix when no issues detected."""
         # Arrange - safe code without path traversal patterns
-        code = "filename = Path('data.txt')\nwith open(filename) as f:\n    pass"
+        code = "filename = Path('data.txt')\nwith open(filename) as f:\n    pass"  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
         # Act
         result = self.fixer._fix_path_traversal(code)

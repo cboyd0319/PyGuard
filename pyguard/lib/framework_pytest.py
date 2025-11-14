@@ -30,6 +30,7 @@ class PytestVisitor(ast.NodeVisitor):
     """AST visitor for pytest-specific issues."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -203,6 +204,7 @@ class PytestRulesChecker:
     """Main checker for pytest-specific rules."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
 
     def check_file(self, file_path: Path) -> list[RuleViolation]:

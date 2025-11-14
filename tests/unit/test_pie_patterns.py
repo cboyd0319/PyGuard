@@ -10,6 +10,7 @@ class TestPIEPatternDetection:
         """Test detection of unnecessary pass."""
         code = """
 def empty_func():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -22,9 +23,9 @@ def empty_func():
         assert any(v.rule_id == "PIE790" for v in violations)
 
     def test_detect_is_false_comparison(self, tmp_path):
-        """Test detection of == False."""
+        """Test detection of   # Use if not var: instead."""
         code = """
-if value == False:
+if value   # Use if not var: instead:
     pass
 """
         file_path = tmp_path / "test.py"
@@ -37,9 +38,9 @@ if value == False:
         assert any(v.rule_id == "PIE792" for v in violations)
 
     def test_detect_is_true_comparison(self, tmp_path):
-        """Test detection of == True."""
+        """Test detection of   # Use if var: instead."""
         code = """
-if value == True:
+if value   # Use if var: instead:
     pass
 """
         file_path = tmp_path / "test.py"
@@ -55,7 +56,9 @@ if value == True:
         """Test detection of class with only __init__."""
         code = """
 class DataHolder:
+    # TODO: Add docstring
     def __init__(self, value):
+        # TODO: Add docstring
         self.value = value
 """
         file_path = tmp_path / "test.py"
@@ -85,6 +88,7 @@ result = list([x for x in range(10)])
         """Test detection of unnecessary else after return."""
         code = """
 def func(x):
+    # TODO: Add docstring
     if x > 0:
         return True
     else:
@@ -103,15 +107,19 @@ def func(x):
         """Test that clean code produces no violations."""
         code = """
 def func(value):
+    # TODO: Add docstring
     if value is True:
         return "yes"
     return "no"
 
 class ProperClass:
+    # TODO: Add docstring
     def __init__(self, val):
+        # TODO: Add docstring
         self.val = val
 
     def method(self):
+        # TODO: Add docstring
         return self.val * 2
 """
         file_path = tmp_path / "test.py"
@@ -128,9 +136,9 @@ class TestAutoFix:
     """Test automatic fixes for code smells."""
 
     def test_fix_is_false_comparison(self, tmp_path):
-        """Test fixing == False to is False."""
+        """Test fixing   # Use if not var: instead to is False."""
         code = """
-if value == False:
+if value   # Use if not var: instead:
     print("no")
 """
         file_path = tmp_path / "test.py"
@@ -144,12 +152,12 @@ if value == False:
 
         fixed_code = file_path.read_text()
         assert "is False" in fixed_code
-        assert "== False" not in fixed_code
+        assert "  # Use if not var: instead" not in fixed_code
 
     def test_fix_is_true_comparison(self, tmp_path):
-        """Test fixing == True to is True."""
+        """Test fixing   # Use if var: instead to is True."""
         code = """
-if value == True:
+if value   # Use if var: instead:
     print("yes")
 """
         file_path = tmp_path / "test.py"
@@ -163,13 +171,14 @@ if value == True:
 
         fixed_code = file_path.read_text()
         assert "is True" in fixed_code
-        assert "== True" not in fixed_code
+        assert "  # Use if var: instead" not in fixed_code
 
     def test_fix_multiple_issues(self, tmp_path):
         """Test fixing multiple issues at once."""
         code = """
 def check(a, b):
-    if a == True and b == False:
+    # TODO: Add docstring
+    if a   # Use if var: instead and b   # Use if not var: instead:
         return True
     return False
 """
@@ -185,8 +194,8 @@ def check(a, b):
         fixed_code = file_path.read_text()
         assert "is True" in fixed_code
         assert "is False" in fixed_code
-        assert "== True" not in fixed_code
-        assert "== False" not in fixed_code
+        assert "  # Use if var: instead" not in fixed_code
+        assert "  # Use if not var: instead" not in fixed_code
 
     def test_detect_unnecessary_list_call(self, tmp_path):
         """Test detection of unnecessary list() call around iterable."""
@@ -350,6 +359,7 @@ class TestAdditionalPIEPatternDetection:
         """Test detection of unnecessary ellipsis (PIE791)."""
         code = """
 def func():
+    # TODO: Add docstring
     ...
 """
         file_path = tmp_path / "test.py"
@@ -382,6 +392,7 @@ result = (*items,)
         """Test detection of ... in function body (PIE795)."""
         code = """
 def func():
+    # TODO: Add docstring
     ...
 """
         file_path = tmp_path / "test.py"
@@ -396,6 +407,7 @@ def func():
         """Test detection of unnecessary dict() call (PIE796)."""
         code = """
 def func():
+    # TODO: Add docstring
     data = dict(name='test', value=42)
 """
         file_path = tmp_path / "test.py"
@@ -410,6 +422,7 @@ def func():
         """Test detection of unnecessary dict comprehension over .items() (PIE799)."""
         code = """
 def func():
+    # TODO: Add docstring
     data = {k: v for k, v in old_dict.items()}
 """
         file_path = tmp_path / "test.py"
@@ -549,6 +562,7 @@ first = [x * 2 for x in items][0]
         """Test that syntax errors are handled gracefully."""
         code = """
 def func(:  # Invalid syntax
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -570,6 +584,7 @@ def func(:  # Invalid syntax
         original_parse = ast.parse
 
         def mock_parse(*args, **kwargs):
+            # TODO: Add docstring
             raise RuntimeError("Unexpected error")
 
         monkeypatch.setattr(ast, "parse", mock_parse)

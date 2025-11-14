@@ -6,7 +6,7 @@
 
 ### Security & code quality that feels effortless
 
-Replace 7+ static analysis tools with one fast CLI • 700+ security checks • 199+ auto-fixes • AI/ML & supply chain aware • 100% local, no telemetry
+Replace 7+ static analysis tools with one fast CLI • 739 security checks • 199+ auto-fixes • 25 frameworks • 100% local, no telemetry
 
 ![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
@@ -23,10 +23,10 @@ Replace 7+ static analysis tools with one fast CLI • 700+ security checks • 
 ## PyGuard at a Glance
 
 - **Everything in one command** – security testing, quality enforcement, formatting, dependency insights, SARIF/HTML reporting
-- **700+ security checks & 25 frameworks** – FastAPI, Django, Flask, Pandas, NumPy, TensorFlow, asyncio, Airflow, PySpark, SQLAlchemy + more
+- **739 security checks across 25 frameworks** – FastAPI, Django, Flask, Pandas, NumPy, TensorFlow, asyncio, Celery, Airflow, PySpark, SQLAlchemy, Tornado, and 14 more
 - **199+ auto-fixes** – AST-powered refactors, formatting, modernization, and best-practice updates with automatic backups
-- **AI/ML, supply chain, and notebook aware** – dedicated analyzers for LLM prompts, model serialization, SBOM/SLSA workflows, Jupyter notebooks
-- **Designed for developer joy** – Rich-powered UI, contextual suggestions, optional interactive mode, 100% local execution
+- **AI/ML, supply chain, and notebook aware** – dedicated analyzers for model security, SBOM workflows, Jupyter notebooks, cloud misconfigurations
+- **Designed for developer joy** – Rich-powered UI, contextual suggestions, interactive mode, watch mode, 100% local execution with zero telemetry
 
 ---
 
@@ -64,7 +64,8 @@ pyguard fix . --formatting-only     # run formatter only
 pyguard init --interactive
 pyguard validate-config
 ```
-- Generates `.pyguard.toml` tailored to strict, balanced, lenient, security, or formatting-first profiles
+- Generates `.pyguard.toml` tailored to strict, balanced, lenient, security-only, or formatting-only profiles
+- Configuration discovery walks up from current directory to project root
 
 ---
 
@@ -85,25 +86,37 @@ pyguard validate-config
 
 ## Capabilities Map
 
-### Security & Privacy
-- Core security engine detects hardcoded secrets, SQL/command/template injection, unsafe serialization, weak crypto, insecure random, path traversal, SSRF, XXE
-- Advanced modules: taint analysis, race conditions, integer overflow, ReDoS, dependency confusion, supply-chain attestation, SBOM validation
-- AI/ML coverage: model serialization (TensorFlow/PyTorch/Sklearn), LLM prompt handling, adversarial training signals, MLOps & notebook scanning
-- Domain-specific packs: cloud (AWS/Azure/GCP/K8s/Terraform), API security (REST, GraphQL, WebSockets), mobile/IoT, blockchain/Web3, business logic
+### Security & Privacy (739 Checks)
+- **Core security** (20+ checks): Hardcoded secrets, SQL/command/template injection, unsafe deserialization, weak crypto, insecure random, path traversal, SSRF, XXE
+- **Advanced security** (40+ checks): Taint analysis, race conditions, integer overflow, ReDoS, timing attacks, advanced injection patterns
+- **AI/ML security** (30+ checks): Model serialization (pickle/joblib), TensorFlow/PyTorch/Scikit-learn patterns, adversarial inputs, notebook scanning
+- **Domain-specific**: API security (REST/GraphQL/WebSocket - 20 checks), Cloud (AWS/Azure/GCP - 15 checks), Auth (15 checks), PII detection (25 checks), Blockchain/Web3, mobile/IoT
+- **Supply chain**: Dependency scanning, SBOM generation, typosquatting detection, malicious package identification
 
-### Framework Awareness
-- 25+ targeted analyzers with rule IDs, OWASP/CWE mapping, and auto-fix metadata for FastAPI, Django, Flask, Pyramid, Sanic, Quart, Bottle, Tornado, asyncio, Celery, SQLAlchemy, Peewee, Tortoise, Pony, Pandas, NumPy, SciPy, TensorFlow, PySpark, Airflow, Streamlit, Dash, Gradio, Jupyter notebooks
+### Framework Awareness (25 Frameworks, 266+ Rules)
+**Web Frameworks**: FastAPI (37 checks), Django (13 checks), Flask (7 checks), Tornado (20 checks), Pyramid (15 checks), Sanic (14 checks), Quart (15 checks), Bottle (10 checks)
+**Async & Workers**: asyncio (15 checks), Celery (20 checks), PySpark (10 checks), Airflow (9 checks)
+**Data & Science**: Pandas (7 checks), NumPy (15 checks), TensorFlow (20 checks), Scikit-learn (8 checks), SciPy (10 checks)
+**Databases**: SQLAlchemy (14 checks), Peewee (12 checks), Pony (12 checks), Tortoise (15 checks)
+**UI & Notebooks**: Streamlit (7 checks), Dash (5 checks), Gradio (6 checks), Jupyter notebooks (8+ checks)
+**Testing**: Pytest (8 checks)
 
-### Quality, Modernization & Formatting
-- Best-practice modules: naming, docstrings, unused code, complexity budgets, debugging statements, exception handling, performance hints
-- Modernization & style: PEP8, Refurb-inspired refactors, automatic formatting (Black/isort), import hygiene, whitespace, string operations
-- Optional unsafe fixes for deep refactors (guarded by prompts)
+### Quality, Modernization & Formatting (216+ Rules)
+- **PEP 8 Style** (88 rules): Comprehensive pycodestyle implementation - indentation, whitespace, blank lines, imports, line length, statements
+- **Code Quality**: Pylint rules (60+), Bugbear patterns (40+), best practices (20+), complexity analysis, dead code detection
+- **Modernization** (35+ patterns): Python 3.8+ idioms, pathlib migration, type annotations, f-strings, modern collections, context managers
+- **Formatting**: Black-compatible formatting, isort import sorting, whitespace normalization
+- **Performance**: List comprehensions, generator expressions, regex compilation, loop optimization
+- All fixes classified as SAFE (automatic) or UNSAFE (requires --unsafe flag)
 
 ### Reporting & Collaboration
-- SARIF 2.1.0, JSON, HTML (ModernHTMLReporter) with severity breakdown and compliance footnotes
-- ComplianceTracker extracts OWASP/CWE references from comments and issue suppressions
-- `pyguard explain` knowledge base for remediation coaching
-- Audit-ready JSON logs with correlation IDs via `PyGuardLogger`
+- **SARIF 2.1.0**: GitHub Code Scanning integration with CWE/OWASP mappings, fix suggestions, code snippets
+- **HTML Reports**: ModernHTMLReporter with charts, severity breakdown, expandable details, compliance footnotes
+- **JSON**: Machine-readable output for CI/CD pipelines, programmatic access
+- **Console**: Rich-powered terminal UI with color coding, progress bars, severity grouping
+- **Compliance**: 10+ framework mappings (OWASP ASVS, PCI-DSS, HIPAA, SOC 2, ISO 27001, NIST CSF, GDPR, CCPA, FedRAMP, SOX)
+- **Remediation**: `pyguard explain <topic>` provides human-readable guidance for common vulnerabilities
+- **Audit Logging**: Structured logging with correlation IDs for compliance and debugging
 
 ---
 
@@ -111,14 +124,14 @@ pyguard validate-config
 
 | Command | Purpose |
 | --- | --- |
-| `pyguard scan [paths]` | Read-only analysis, optional SARIF/HTML/JSON, RipGrep-powered fast mode |
-| `pyguard fix [paths]` | Apply safe fixes, optional interactive/unsafe/security-only/formatting-only modes |
-| `pyguard init` | Generate `.pyguard.toml` (interactive profiles) |
-| `pyguard validate-config` | Verify and print configuration |
-| `pyguard watch` | Watch files for changes and auto-fix in real time |
-| `pyguard doctor` | Environment diagnostics (Python, Rich, RipGrep, notebook extras) |
-| `pyguard explain <topic>` | Human-readable remediation guides for common issues |
-| `pyguard git-hooks` | Install/manage `pre-commit`/`pre-push` hooks |
+| `pyguard scan [paths]` | Read-only analysis, optional SARIF/HTML/JSON output, RipGrep-powered fast mode |
+| `pyguard fix [paths]` | Apply safe fixes, optional --interactive/--unsafe/--security-only/--formatting-only modes |
+| `pyguard init [--interactive]` | Generate `.pyguard.toml` with guided questionnaire (strict/balanced/lenient/security/formatting profiles) |
+| `pyguard validate-config` | Verify and display active configuration |
+| `pyguard watch [paths]` | Watch files for changes and auto-fix in real time (perfect for development workflows) |
+| `pyguard doctor` | Environment diagnostics - verifies Python version, Rich, RipGrep, notebook extras |
+| `pyguard explain <topic>` | Human-readable remediation guides for security issues |
+| `pyguard-hooks install` | Install/manage pre-commit or pre-push hooks (separate CLI: `pyguard-hooks`) |
 
 ### Programmatic API
 
@@ -176,11 +189,28 @@ Adds `pyguard . --scan-only --security-only` to hooks with automatic validation/
 
 ## Architecture & Extensibility
 
-- **AST-first analyzers** – shared `ASTAnalyzer`, taint engine, and rule registry across security, quality, and modernization modules
-- **Rule engine & plugin system** – define custom rules in TOML, integrate third-party detectors, or extend frameworks via `pyguard.lib.plugin_system`
-- **Incremental & cached scanning** – `AnalysisCache`, RipGrep pre-filter, and watch mode reduce rerun time
-- **Rich UI + HTML reports** – `EnhancedConsole` for terminals, `ModernHTMLReporter` for archival dashboards
-- **Secure supply chain** – SBOM, SLSA provenance, signed releases, reproducible build guides, Sigstore/TUF verification
+### Core Design
+- **AST-first analysis** – Python Abstract Syntax Tree parsing for 100% accurate, zero false positive detection from code vs comments/strings
+- **Three-layer architecture**: CLI → Core Engine (rule_engine.py, ast_analyzer.py) → Detection Modules (114 files in lib/)
+- **Modern command system**: 7 dedicated commands (scan, fix, init, validate-config, watch, doctor, explain) with clean separation of concerns
+
+### Performance & Scalability
+- **RipGrep integration**: Optional 10-100x faster scanning for large codebases with `--fast` flag
+- **Parallel processing**: Multi-core analysis with configurable worker pools
+- **Incremental scanning**: Smart caching based on file modification time and content hash
+- **Watch mode**: Real-time file monitoring and auto-fixing with watchdog integration
+
+### Extensibility
+- **Custom rules**: TOML-based rule definitions with regex and AST pattern matching
+- **Plugin architecture**: Modular detection system - each security/quality module is independently testable
+- **Programmatic API**: `PyGuardAPI` class for IDE and CI/CD integrations (see api.py)
+- **Multiple output formats**: SARIF 2.1.0, JSON, HTML, Console with extensible reporter system
+
+### Supply Chain Security
+- **Minimal dependencies**: Only 2 core deps (rich + watchdog), 2 optional (nbformat + nbclient for notebooks)
+- **SBOM generation**: CycloneDX and SPDX bill-of-materials support
+- **Dependency scanning**: Vulnerability detection, typosquatting identification, license compliance
+- **Reproducible builds**: Planned for v1.0 with SLSA Level 3 provenance
 
 Read more in `docs/reference/ARCHITECTURE.md`, `docs/reference/architecture/IMPLEMENTATION_SUMMARY.md`, and `docs/reference/capabilities-reference.md`.
 

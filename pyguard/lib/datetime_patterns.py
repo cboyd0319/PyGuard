@@ -37,6 +37,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
+        # TODO: Add docstring
         self.issues: list[DatetimeIssue] = []
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -141,6 +142,7 @@ class DatetimePatternVisitor(ast.NodeVisitor):
             )
 
     def _check_datetime_class_method(
+        # TODO: Add docstring
         self, node: ast.Call, class_name: str, method_name: str
     ) -> None:
         """Check datetime class methods like datetime.datetime.now()."""
@@ -179,6 +181,7 @@ class DatetimeChecker:
     """Main checker class for datetime pattern detection."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.visitor = DatetimePatternVisitor()
 
     def check_code(self, code: str, filename: str = "<string>") -> list[DatetimeIssue]:

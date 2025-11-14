@@ -185,6 +185,7 @@ class TestPyGuardJsonRpcServer:
     def test_method_registration(self, server):
         """Test custom method registration."""
         def custom_method(params):
+            # TODO: Add docstring
             return {"custom": True}
 
         server.register_method("custom/test", custom_method)
@@ -303,7 +304,7 @@ class TestPyGuardJsonRpcServer:
         # Code with potential security issue
         code = """
 import pickle
-data = pickle.loads(user_input)
+data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
 """
         params_open = {
             "textDocument": {

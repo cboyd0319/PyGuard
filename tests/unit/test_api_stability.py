@@ -291,6 +291,7 @@ class TestStableAPIDecorator:
         """Test decorating function as stable API."""
         @stable_api(introduced_in="1.0.0")
         def my_function():
+            # TODO: Add docstring
             return "result"
 
         assert hasattr(my_function, '__api_stability__')
@@ -304,6 +305,7 @@ class TestStableAPIDecorator:
         """Test decorating function as beta API."""
         @stable_api(introduced_in="0.8.0", stability_level=StabilityLevel.BETA)
         def beta_function():
+            # TODO: Add docstring
             return "beta"
 
         assert beta_function.__api_stability__['stability_level'] == "beta"
@@ -320,6 +322,7 @@ class TestDeprecatedDecorator:
             replacement="new_function",
         )
         def old_function():
+            # TODO: Add docstring
             return "old"
 
         assert hasattr(old_function, '__deprecated__')
@@ -347,6 +350,7 @@ class TestDeprecatedDecorator:
             reason="Better implementation available",
         )
         def old_function():
+            # TODO: Add docstring
             return "old"
 
         with warnings.catch_warnings(record=True) as w:

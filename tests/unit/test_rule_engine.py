@@ -291,7 +291,9 @@ class TestRuleExecution:
 
         # Create a test rule
         class TestRule(Rule):
+            # TODO: Add docstring
             def detect(
+                # TODO: Add docstring
                 self, code: str, file_path: Path, tree: ast.AST | None = None
             ) -> list[RuleViolation]:
                 # Simple test: flag any line with "bad_practice"
@@ -772,6 +774,7 @@ class TestRuleExecutorEdgeCases:
         violations_found = []
 
         def detect_func(code, file_path, tree=None):
+            # TODO: Add docstring
             if "print" in code:
                 violations_found.append(
                     RuleViolation(
@@ -812,6 +815,7 @@ class TestRuleExecutorEdgeCases:
 
         # Create a rule with a fix
         def fix_func(code, violation):
+            # TODO: Add docstring
             return code.replace("print", "# print")
 
         rule = Rule(
@@ -927,7 +931,9 @@ class TestRuleExecutorAdditionalEdgeCases:
         """Test analyzing file that produces multiple violations."""
 
         class TestRule(Rule):
+            # TODO: Add docstring
             def detect(
+                # TODO: Add docstring
                 self, code: str, file_path: Path, tree: ast.AST | None = None
             ) -> list[RuleViolation]:
                 violations = []

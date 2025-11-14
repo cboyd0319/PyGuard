@@ -46,6 +46,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting PySpark security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -96,7 +97,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
 
         # Check for eval/exec usage
         if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec"):
-            self._check_eval_exec(node)
+            self._check_eval_exec(node)  # DANGEROUS: Avoid exec with untrusted input
 
         self.generic_visit(node)
 
@@ -302,7 +303,7 @@ class PySparkSecurityVisitor(ast.NodeVisitor):
                             )
                         )
 
-    def _check_eval_exec(self, node: ast.Call) -> None:
+    def _check_eval_exec(self, node: ast.Call) -> None:  # DANGEROUS: Avoid exec with untrusted input
         """Check for eval/exec usage."""
         line_num = node.lineno
         func_name = getattr(node.func, 'id', 'unknown')
@@ -347,6 +348,7 @@ def analyze_pyspark_security(file_path: Path, code: str) -> list[RuleViolation]:
 
 
 def fix_pyspark_security(
+    # TODO: Add docstring
     file_path: Path, code: str, violation: RuleViolation  # noqa: ARG001 - file_path required by fix function API signature
 ) -> tuple[str, bool]:
     """
@@ -498,11 +500,11 @@ PYSPARK_RULES = [
     ),
     Rule(
         rule_id="PYSPARK010",
-        name="Use of eval() or exec()",
-        description="Use of eval() or exec() in PySpark code",
+        name="Use of eval() or exec()",  # DANGEROUS: Avoid eval with untrusted input
+        description="Use of eval() or exec() in PySpark code",  # DANGEROUS: Avoid eval with untrusted input
         severity=RuleSeverity.CRITICAL,
         category=RuleCategory.SECURITY,
-        message_template="Use of eval()/exec() in PySpark code - arbitrary code execution risk (CWE-95)",
+        message_template="Use of eval()/exec() in PySpark code - arbitrary code execution risk (CWE-95)",  # DANGEROUS: Avoid eval with untrusted input
         references=[
             "https://cwe.mitre.org/data/definitions/95.html",
         ],

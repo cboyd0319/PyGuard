@@ -174,14 +174,14 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 # BAD: eval in transformation
 rdd = spark.sparkContext.parallelize([1, 2, 3])
-result = rdd.map(lambda x: eval(f"x * {x}"))
+result = rdd.map(lambda x: eval(f"x * {x}"))  # DANGEROUS: Avoid eval with untrusted input
 """
         violations = analyze_pyspark_security(Path("test.py"), code)
         exec_violations = [v for v in violations if v.rule_id == "PYSPARK006"]
         assert len(exec_violations) >= 1
         assert exec_violations[0].severity == RuleSeverity.CRITICAL
 
-    def test_detect_standalone_eval(self):
+    def test_detect_standalone_eval(self):  # DANGEROUS: Avoid eval with untrusted input
         """Test detection of standalone eval."""
         code = """
 from pyspark.sql import SparkSession
@@ -189,7 +189,7 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 code_str = "1 + 1"
 # BAD: eval usage
-result = eval(code_str)
+result = eval(code_str)  # DANGEROUS: Avoid eval with untrusted input
 """
         violations = analyze_pyspark_security(Path("test.py"), code)
         eval_violations = [v for v in violations if v.rule_id == "PYSPARK010"]
@@ -203,7 +203,7 @@ from pyspark.sql import SparkSession
 
 code = "print('hello')"
 # BAD: exec usage
-exec(code)
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
 """
         violations = analyze_pyspark_security(Path("test.py"), code)
         exec_violations = [v for v in violations if v.rule_id == "PYSPARK010"]

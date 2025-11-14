@@ -53,7 +53,9 @@ print("Done")
         """Test that custom print functions don't trigger false positives."""
         code = """
 class Printer:
+    # TODO: Add docstring
     def print(self, msg):
+        # TODO: Add docstring
         self.messages.append(msg)
 
 printer = Printer()
@@ -76,6 +78,7 @@ class TestBreakpointDetection:
         """Test detection of breakpoint() call."""
         code = """
 def process(data):
+    # TODO: Add docstring
     breakpoint()
     return data * 2
 """
@@ -115,6 +118,7 @@ class TestPdbDetection:
 import pdb
 
 def buggy_function():
+    # TODO: Add docstring
     pdb.set_trace()
     result = complex_calculation()
     return result
@@ -156,6 +160,7 @@ ipdb.set_trace()
 import pudb
 
 def debug_here():
+    # TODO: Add docstring
     pudb.set_trace()
 """
         file_path = tmp_path / "test.py"
@@ -244,6 +249,7 @@ class TestAutoFix:
         """Test fixing breakpoint() calls."""
         code = """
 def process(data):
+    # TODO: Add docstring
     breakpoint()
     return data * 2
 """
@@ -266,6 +272,7 @@ def process(data):
 import pdb
 
 def buggy():
+    # TODO: Add docstring
     pdb.set_trace()
     return 42
 """
@@ -307,6 +314,7 @@ import pdb
 import sys
 
 def process(data):
+    # TODO: Add docstring
     print("Processing")
     breakpoint()
     pdb.set_trace()
@@ -357,6 +365,7 @@ class TestEdgeCases:
         """Test graceful handling of syntax errors."""
         code = """
 def broken(
+    # TODO: Add docstring
     # Missing closing parenthesis
 """
         file_path = tmp_path / "test.py"
@@ -382,6 +391,7 @@ def broken(
         """Test file with no debugging patterns."""
         code = """
 def calculate(x, y):
+    # TODO: Add docstring
     return x + y
 
 result = calculate(10, 20)

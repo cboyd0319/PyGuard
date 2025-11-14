@@ -86,7 +86,7 @@ class SecretScanner:
 
                 for line in result.stdout.strip().split("\n"):
                     if line:
-                        # Format: file.py:42:password = "secret123"
+                        # Format: file.py:42:password = "secret123"  # SECURITY: Use environment variables or config files
                         match = re.match(r"^(.+):(\d+):(.+)$", line)
                         if match:
                             findings.append(

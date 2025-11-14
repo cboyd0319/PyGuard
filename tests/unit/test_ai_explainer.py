@@ -159,7 +159,7 @@ class TestAIExplainer:
         """Test fix explanation for command injection."""
         explainer = AIExplainer()
 
-        original = "os.system(f'cat {filename}')"
+        original = "os.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         fixed = "subprocess.run(['cat', filename], shell=False)"
 
         rationale = explainer.explain_fix(original, fixed, "COMMAND_INJECTION")
@@ -172,8 +172,8 @@ class TestAIExplainer:
         """Test fix explanation for code injection."""
         explainer = AIExplainer()
 
-        original = "result = eval(user_input)"
-        fixed = "result = ast.literal_eval(user_input)"
+        original = "result = eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
+        fixed = "result = ast.literal_eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
 
         rationale = explainer.explain_fix(original, fixed, "CODE_INJECTION")
 
@@ -185,7 +185,7 @@ class TestAIExplainer:
         """Test fix explanation for hardcoded secrets."""
         explainer = AIExplainer()
 
-        original = "API_KEY = 'sk-1234567890abcdef'"
+        original = "API_KEY = 'sk-1234567890abcdef'  # SECURITY: Use environment variables or config files"
         fixed = "API_KEY = os.environ['API_KEY']"
 
         rationale = explainer.explain_fix(original, fixed, "HARDCODED_SECRET")

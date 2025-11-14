@@ -396,7 +396,7 @@ token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
     def test_safe_api_key_format(self):
         """Should not flag API keys (covered by secret scanner)."""
         code = """
-api_key = "sk-1234567890abcdef"
+api_key = "sk-1234567890abcdef"  # SECURITY: Use environment variables or config files
 """
         violations = check_pii(Path("test.py"), code)
         # API keys are secrets, not PII - different module
@@ -419,6 +419,7 @@ class TestEdgeCases:
         """Should handle syntax errors gracefully."""
         code = """
 def broken(
+    # TODO: Add docstring
     # Syntax error - missing closing parenthesis
 """
         violations = check_pii(Path("test.py"), code)

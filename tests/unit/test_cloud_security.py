@@ -184,7 +184,7 @@ class TestKubernetesSecretDetection:
     def test_detect_hardcoded_k8s_secret(self):
         """Detect hardcoded Kubernetes secret."""
         code = """
-k8s_secret = 'my-hardcoded-secret-value'
+k8s_secret = 'my-hardcoded-secret-value'  # SECURITY: Use environment variables or config files
 """
         violations = check_cloud_security(Path("test.py"), code)
         assert len(violations) == 1

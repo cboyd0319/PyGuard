@@ -61,6 +61,7 @@ class PyGuardLogger:
         self.logger = logging.getLogger("PyGuard")
 
     def log(  # noqa: PLR0913 - Comprehensive logging requires many parameters
+        # TODO: Add docstring
         self,
         level: str,
         message: str,
@@ -303,6 +304,7 @@ class DiffGenerator:
 
     @staticmethod
     def generate_diff(
+        # TODO: Add docstring
         original_content: str,
         modified_content: str,
         file_path: str = "file",
@@ -335,6 +337,7 @@ class DiffGenerator:
 
     @staticmethod
     def generate_side_by_side_diff(
+        # TODO: Add docstring
         original_content: str,
         modified_content: str,
         width: int = 80,  # noqa: ARG004 - Reserved for future use in custom formatting
@@ -437,6 +440,7 @@ class FileOperations:
             return False
 
     def find_python_files(
+        # TODO: Add docstring
         self,
         directory: str | Path,
         exclude_patterns: list[str] | None = None,

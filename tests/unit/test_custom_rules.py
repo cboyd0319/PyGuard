@@ -77,6 +77,7 @@ class TestCustomRuleEngine:
         """Test adding an AST-based rule."""
 
         def checker(tree):
+            # TODO: Add docstring
             return [1, 2, 3]
 
         engine = CustomRuleEngine()
@@ -281,6 +282,7 @@ enabled = true
         """Test checking code with AST rule."""
 
         def simple_checker(tree):
+            # TODO: Add docstring
             # Return line 1 always
             return [1]
 

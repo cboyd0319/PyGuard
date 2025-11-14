@@ -32,6 +32,7 @@ class ComplianceReporter:
         self.report_data: dict[str, Any] = {}
 
     def generate_html_report(
+        # TODO: Add docstring
         self,
         issues: list[dict[str, Any]],
         output_path: str | Path = "compliance-report.html",
@@ -62,6 +63,7 @@ class ComplianceReporter:
         )
 
     def generate_json_report(
+        # TODO: Add docstring
         self,
         issues: list[dict[str, Any]],
         output_path: str | Path = "compliance-report.json",
@@ -171,6 +173,7 @@ class ComplianceReporter:
         }
 
     def _generate_html_content(
+        # TODO: Add docstring
         self,
         framework_issues: dict[str, list[dict[str, Any]]],
         selected_framework: str = "ALL",

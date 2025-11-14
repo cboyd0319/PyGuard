@@ -108,10 +108,10 @@ class CodeFeatureExtractor:
             features["shell_true_count"] = float(len(re.findall(r"shell\s*=\s*True", code)))
 
             features["network_count"] = float(code.count("socket.") + code.count("requests."))
-            features["file_ops_count"] = float(code.count("open(") + code.count("file("))
+            features["file_ops_count"] = float(code.count("open(") + code.count("file("))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
             # String patterns - detect both variable names and string literals
-            # Look for variable assignments with sensitive names (e.g., password = "...")
+            # Look for variable assignments with sensitive names (e.g., password = "..."  # SECURITY: Use environment variables or config files)
             # and string literals containing sensitive keywords
             sensitive_patterns = r"(?:password|api_key|secret|token|private_key|access_token)"
             var_assignments = re.findall(rf'\b({sensitive_patterns})\s*=\s*["\']', code.lower())
@@ -152,11 +152,14 @@ class CodeFeatureExtractor:
         """Calculate maximum nesting level in AST."""
 
         class DepthVisitor(ast.NodeVisitor):
+            # TODO: Add docstring
             def __init__(self):
+                # TODO: Add docstring
                 self.depth = 0
                 self.max_depth = 0
 
             def visit(self, node):
+                # TODO: Add docstring
                 self.depth += 1
                 self.max_depth = max(self.max_depth, self.depth)
                 self.generic_visit(node)
@@ -181,6 +184,7 @@ class MLRiskScorer:
         self.extractor = CodeFeatureExtractor()
 
     def calculate_risk_score(
+        # TODO: Add docstring
         self, code: str, file_path: str = "", _existing_issues: list | None = None
     ) -> RiskScore:
         """

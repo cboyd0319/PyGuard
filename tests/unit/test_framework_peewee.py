@@ -37,6 +37,7 @@ db.execute_sql(query)
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 query = User.raw(f"SELECT * FROM user WHERE username = '{name}'")
@@ -76,6 +77,7 @@ db.execute_sql(query, (user_id,))
         """Should not flag code without Peewee import."""
         code = """
 def execute_sql(query):
+    # TODO: Add docstring
     return query
 
 execute_sql("SELECT * FROM users WHERE id = {}".format(1))
@@ -222,6 +224,7 @@ class TestPeeweeFieldValidation:
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 users_data = [{'username': name} for name in user_input]
@@ -238,6 +241,7 @@ User.insert_many(users_data).execute()
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 User.bulk_create(user_objects)
@@ -252,6 +256,7 @@ User.bulk_create(user_objects)
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 # Validate data first
@@ -272,9 +277,11 @@ class TestPeeweeMetadataExposure:
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 def get_user_schema():
+    # TODO: Add docstring
     return User._meta
 """
         violations = analyze_peewee_security(Path("test.py"), code)
@@ -291,9 +298,11 @@ def get_user_schema():
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 def api_endpoint():
+    # TODO: Add docstring
     user = User.get()
     return {'dirty': user.dirty_fields}
 """
@@ -307,6 +316,7 @@ def api_endpoint():
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
 # Internal use, not exposed
@@ -345,9 +355,11 @@ User.insert_many(unvalidated_data).execute()
         """Should not flag similar function names from other libraries."""
         code = """
 class Model:
+    # TODO: Add docstring
     pass
 
 def execute_sql(query):
+    # TODO: Add docstring
     return query
 
 execute_sql("SELECT * FROM users")
@@ -361,9 +373,11 @@ execute_sql("SELECT * FROM users")
 from peewee import *
 
 class User(Model):
+    # TODO: Add docstring
     username = CharField()
 
     class Meta:
+        # TODO: Add docstring
         database = db
 """
         # Should not raise errors

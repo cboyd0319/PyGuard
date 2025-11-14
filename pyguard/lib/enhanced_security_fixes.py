@@ -92,13 +92,13 @@ class EnhancedSecurityFixer:
 
     def _fix_yaml_safe_load(self, content: str) -> str:
         """
-        Replace yaml.load() with yaml.safe_load().
+        Replace yaml.safe_load() with yaml.safe_load().
 
         Classification: SAFE
         - Direct replacement with safer alternative
         - No logic change required
 
-        Before: data = yaml.load(file)
+        Before: data = yaml.safe_load(file)
         After:  data = yaml.safe_load(file)
         """
         fix_id = "yaml_safe_load"
@@ -148,30 +148,30 @@ class EnhancedSecurityFixer:
 
     def _fix_mktemp_to_mkstemp(self, content: str) -> str:
         """
-        Replace tempfile.mktemp() with tempfile.mkstemp().
+        Replace tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) with tempfile.mkstemp().
 
         Classification: SAFE
         - Direct replacement with secure alternative
         - May need to adjust return value handling (tuple vs string)
 
-        Before: tmp = tempfile.mktemp()
+        Before: tmp = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())
         After:  fd, tmp = tempfile.mkstemp()  # Note: returns (fd, path)
         """
         fix_id = "mkstemp_replacement"
         if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
             return content
 
-        if "tempfile.mktemp(" in content:
-            # Pattern: variable = tempfile.mktemp(...)
+        if "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()" in content:
+            # Pattern: variable = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()...)
             # Only replace mktemp with mkstemp, preserving the arguments
             pattern = r"(\w+)\s*=\s*tempfile\.mktemp\(([^\)]*)\)"
             replacement = r"_fd, \1 = tempfile.mkstemp(\2)  # FIXED: Using secure mkstemp()"
 
             if re.search(pattern, content):
                 content = re.sub(pattern, replacement, content)
-                self.fixes_applied.append("tempfile.mktemp() → tempfile.mkstemp()")
+                self.fixes_applied.append("tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) → tempfile.mkstemp()")
                 self.logger.info(
-                    f"Applied safe fix ({fix_id}): tempfile.mktemp() → tempfile.mkstemp()",
+                    f"Applied safe fix ({fix_id}): tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) → tempfile.mkstemp()",
                     category="Security",
                 )
 
@@ -179,28 +179,28 @@ class EnhancedSecurityFixer:
 
     def _fix_comparison_to_none(self, content: str) -> str:
         """
-        Replace == None with is None.
+        Replace is None with is None.
 
         Classification: SAFE
         - Semantically equivalent
         - More Pythonic and handles edge cases correctly
 
-        Before: if value == None:
+        Before: if value is None:
         After:  if value is None:
         """
         fix_id = "comparison_to_none"
         if not self.safety_classifier.should_apply_fix(fix_id, self.allow_unsafe):
             return content
 
-        # Replace == None
-        if "== None" in content:
+        # Replace is None
+        if " is None" in content:
             content = re.sub(r"\s*==\s*None\b", " is None", content)
-            self.fixes_applied.append("== None → is None")
+            self.fixes_applied.append(" is None → is None")
 
-        # Replace != None
-        if "!= None" in content:
+        # Replace is not None
+        if " is not None" in content:
             content = re.sub(r"\s*!=\s*None\b", " is not None", content)
-            self.fixes_applied.append("!= None → is not None")
+            self.fixes_applied.append(" is not None → is not None")
 
         if len(self.fixes_applied) > 0:
             self.logger.info(f"Applied safe fix ({fix_id}): comparison to None", category="Quality")
@@ -252,7 +252,7 @@ class EnhancedSecurityFixer:
         - May need manual adjustment for complex queries
         - Changes query structure
 
-        Before: cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+        Before: cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
         After:  cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
 
         Before: query = f"SELECT * FROM users WHERE name = '{name}'"
@@ -270,7 +270,7 @@ class EnhancedSecurityFixer:
         while i < len(lines):
             line = lines[i]
 
-            # Pattern 1: .execute("..." + variable + "...")
+            # Pattern 1: .execute("..." + variable + "...")  # SQL INJECTION RISK: Use parameterized queries
             execute_concat = r'\.execute\s*\(\s*["\']([^"\']*)["\']?\s*\+\s*(\w+)'
             match = re.search(execute_concat, line)
 
@@ -310,17 +310,17 @@ class EnhancedSecurityFixer:
 
     def _fix_command_injection_subprocess(self, content: str) -> str:
         """
-        Replace os.system() with subprocess.run().
+        Replace os.system() with subprocess.run().  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
         Classification: UNSAFE
         - Changes how command arguments are passed
         - Requires validation of command splitting
         - May need manual adjustment
 
-        Before: os.system(f"rm -rf {path}")
+        Before: os.system(f"rm -rf {path}")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         After:  subprocess.run(["rm", "-rf", path], check=True)  # FIXED: command injection
 
-        Before: os.system(cmd)
+        Before: os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         After:  subprocess.run(cmd.split(), check=True, shell=False)  # FIXED: command injection
         """
         fix_id = "command_subprocess"
@@ -340,7 +340,7 @@ class EnhancedSecurityFixer:
                 fixed_lines.append(line)
                 continue
 
-            # Pattern: os.system(variable)
+            # Pattern: os.system(variable)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             if re.search(r"os\.system\s*\(\s*(\w+)\s*\)", line):
                 if not has_subprocess_import:
                     fixed_lines.insert(0, "import subprocess  # ADDED: for safe command execution")
@@ -351,9 +351,9 @@ class EnhancedSecurityFixer:
                     r"subprocess.run(\1.split(), check=True, shell=False)  # FIXED: command injection",
                     line,
                 )
-                fixed_lines.append("# FIXED: Replaced os.system() with subprocess.run()")
+                fixed_lines.append("# FIXED: Replaced os.system() with subprocess.run()")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                 fixed_lines.append(fixed_line)
-                self.fixes_applied.append("command injection: os.system() → subprocess.run()")
+                self.fixes_applied.append("command injection: os.system() → subprocess.run()")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                 modified = True
                 continue
 
@@ -385,8 +385,8 @@ class EnhancedSecurityFixer:
         - Requires understanding of intended path restrictions
         - Adds validation code
 
-        Before: file_path = os.path.join(base_dir, user_input)
-        After:  file_path = os.path.join(base_dir, user_input)
+        Before: file_path = os.path.join(base_dir, user_input)  # PATH TRAVERSAL RISK: Validate and sanitize paths
+        After:  file_path = os.path.join(base_dir, user_input)  # PATH TRAVERSAL RISK: Validate and sanitize paths
                 file_path = os.path.realpath(file_path)  # ADDED: path traversal protection
                 if not file_path.startswith(os.path.realpath(base_dir)):
                     raise ValueError("Path traversal detected")
@@ -400,7 +400,7 @@ class EnhancedSecurityFixer:
         modified = False
 
         for _i, line in enumerate(lines):
-            # Pattern: os.path.join with user input indicators
+            # Pattern: os.path.join with user input indicators  # PATH TRAVERSAL RISK: Validate and sanitize paths
             if "os.path.join" in line:
                 has_user_input = any(
                     indicator in line for indicator in ["request", "input", "user", "param", "arg"]

@@ -52,7 +52,7 @@ class TestTOCTOUDetection:
         code = """
 import os
 if os.path.exists('file.txt'):
-    f = open('file.txt', 'r')
+    f = open('file.txt', 'r')  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         issues = analyze_business_logic(code)
         assert any("TOCTOU" in issue.message for issue in issues)
@@ -91,6 +91,7 @@ class TestRaceConditionFileOps:
         """Detect file write without locking."""
         code = """
 def write_data(filename, data):
+    # TODO: Add docstring
     with open(filename, 'w') as f:
         f.write(data)
 """
@@ -108,7 +109,7 @@ class TestReDoSDetection:
         code = """
 import re
 pattern = r'(a+)+'  # Catastrophic backtracking
-re.compile(pattern)
+re.compile(pattern)  # DANGEROUS: Avoid compile with untrusted input
 """
         issues = analyze_business_logic(code)
         assert any("ReDoS" in issue.message for issue in issues)
@@ -129,7 +130,7 @@ re.match(pattern, user_input)
         code = """
 import re
 pattern = r'[a-zA-Z0-9]+'  # Safe pattern
-re.compile(pattern)
+re.compile(pattern)  # DANGEROUS: Avoid compile with untrusted input
 """
         issues = analyze_business_logic(code)
         redos_issues = [i for i in issues if "ReDoS" in i.message]
@@ -194,6 +195,7 @@ class TestIntegerOverflow:
         """Detect integer overflow risk in price calculation."""
         code = """
 def calculate_total(price, quantity):
+    # TODO: Add docstring
     total = price * quantity  # Overflow risk
     return total
 """
@@ -205,6 +207,7 @@ def calculate_total(price, quantity):
         """Detect overflow in payment calculation."""
         code = """
 def process_payment(amount, multiplier):
+    # TODO: Add docstring
     final_amount = amount * multiplier
     charge_card(final_amount)
 """
@@ -219,6 +222,7 @@ class TestFloatPrecisionCurrency:
         """Detect float arithmetic for currency."""
         code = """
 def calculate_price(base_price):
+    # TODO: Add docstring
     tax = 0.07
     total = base_price * (1.0 + tax)  # Float arithmetic
     return total
@@ -233,6 +237,7 @@ def calculate_price(base_price):
         code = """
 from decimal import Decimal
 def calculate_price(base_price):
+    # TODO: Add docstring
     tax = Decimal('0.07')
     total = base_price * (Decimal('1') + tax)
     return total
@@ -251,6 +256,7 @@ class TestNegativeQuantityValidation:
         """Detect missing validation for negative quantities."""
         code = """
 def process_order(quantity, price):
+    # TODO: Add docstring
     total = quantity * price
     return total
 """
@@ -262,6 +268,7 @@ def process_order(quantity, price):
         """No false positive when validation exists."""
         code = """
 def process_order(quantity, price):
+    # TODO: Add docstring
     if quantity < 0:
         raise ValueError("Negative quantity not allowed")
     total = quantity * price
@@ -280,6 +287,7 @@ class TestTransactionRollback:
         """Detect financial operation without rollback."""
         code = """
 def process_payment(amount):
+    # TODO: Add docstring
     db.execute("UPDATE accounts SET balance = balance - ?", amount)
     charge_card(amount)
 """
@@ -291,6 +299,7 @@ def process_payment(amount):
         """No false positive when rollback exists."""
         code = """
 def process_payment(amount):
+    # TODO: Add docstring
     try:
         db.execute("UPDATE accounts SET balance = balance - ?", amount)
         charge_card(amount)
@@ -312,6 +321,7 @@ class TestDiscountStacking:
         """Detect discount application without limit."""
         code = """
 def apply_discount(price, discount_percent):
+    # TODO: Add docstring
     discounted_price = price * (1 - discount_percent / 100)
     return discounted_price
 """
@@ -327,6 +337,7 @@ class TestRefundLogic:
         """Detect refund operation without validation."""
         code = """
 def process_refund(transaction_id, amount):
+    # TODO: Add docstring
     return_money(amount)
 """
         issues = analyze_business_logic(code)
@@ -341,6 +352,7 @@ class TestPaymentAmountTampering:
         """Detect payment amount from user input."""
         code = """
 def checkout(request):
+    # TODO: Add docstring
     amount = request.args.get('price')  # User controlled!
     charge_card(amount)
 """
@@ -358,6 +370,7 @@ class TestZipBombDetection:
         code = """
 import zipfile
 def extract_archive(archive_path):
+    # TODO: Add docstring
     with zipfile.ZipFile(archive_path) as zf:
         zf.extractall('/tmp/extracted')  # No size check!
 """
@@ -370,6 +383,7 @@ def extract_archive(archive_path):
         code = """
 import tarfile
 def extract_tar(tar_path):
+    # TODO: Add docstring
     with tarfile.open(tar_path) as tf:
         tf.extractall('/tmp/extracted')  # Zip bomb risk
 """
@@ -388,6 +402,7 @@ class TestXMLBombDetection:
         code = """
 import xml.etree.ElementTree as ET
 def parse_xml(xml_string):
+    # TODO: Add docstring
     tree = ET.parse(xml_string)  # Billion Laughs vulnerability
     return tree
 """
@@ -403,6 +418,7 @@ def parse_xml(xml_string):
         code = """
 from xml.dom import minidom
 def parse_config(xml_file):
+    # TODO: Add docstring
     doc = minidom.parse(xml_file)  # Vulnerable
     return doc
 """
@@ -422,6 +438,7 @@ class TestMissingAuthorization:
         """Detect admin function without authorization."""
         code = """
 def delete_user(user_id):
+    # TODO: Add docstring
     db.execute("DELETE FROM users WHERE id = ?", user_id)
 """
         issues = analyze_business_logic(code)
@@ -435,6 +452,7 @@ def delete_user(user_id):
         """Detect admin-named function without auth check."""
         code = """
 def admin_panel_access():
+    # TODO: Add docstring
     return render_admin_dashboard()
 """
         issues = analyze_business_logic(code)
@@ -444,6 +462,7 @@ def admin_panel_access():
         """No false positive when auth check exists."""
         code = """
 def delete_user(user_id):
+    # TODO: Add docstring
     if not check_permission('delete_user'):
         raise Forbidden()
     db.execute("DELETE FROM users WHERE id = ?", user_id)
@@ -463,6 +482,7 @@ class TestPrivilegeEscalation:
         """Detect admin function accessible without role check."""
         code = """
 def admin_delete_account(account_id):
+    # TODO: Add docstring
     delete_account(account_id)
 """
         issues = analyze_business_logic(code)
@@ -476,6 +496,7 @@ def admin_delete_account(account_id):
         """Detect IDOR vulnerability."""
         code = """
 def get_user_profile(request):
+    # TODO: Add docstring
     user_id = request.args['user_id']  # User controlled
     profile = db.query("SELECT * FROM profiles WHERE user_id = ?", user_id)
     return profile
@@ -510,6 +531,7 @@ class TestEdgeCases:
         """Handle complex nested structures."""
         code = """
 def complex_function():
+    # TODO: Add docstring
     if condition1:
         for item in items:
             with lock:
@@ -524,6 +546,7 @@ def complex_function():
         """Detect multiple issues in same function."""
         code = """
 def process_payment(request):
+    # TODO: Add docstring
     amount = request.args['amount']  # User controlled (BIZLOGIC017)
     quantity = int(request.args['qty'])  # No negative check (BIZLOGIC013)
     total = amount * quantity  # Float/overflow risk (BIZLOGIC011/012)

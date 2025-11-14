@@ -20,8 +20,8 @@ class TestEnhancedSecurityFixer:
         code = """
 import yaml
 
-data = yaml.load(file)
-config = yaml.load(stream)
+data = yaml.safe_load(file)
+config = yaml.safe_load(stream)
 """
 
         result = self.fixer_safe._fix_yaml_safe_load(code)
@@ -45,53 +45,53 @@ data = yaml.safe_load(file)
         assert len(self.fixer_safe.fixes_applied) == 0
 
     def test_fix_mktemp_to_mkstemp(self):
-        """Test tempfile.mktemp() → tempfile.mkstemp() transformation."""
+        """Test tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) → tempfile.mkstemp() transformation."""
         code = """
 import tempfile
 
-tmp = tempfile.mktemp()
-temp_file = tempfile.mktemp(suffix='.txt')
+tmp = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())
+temp_file = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()suffix='.txt')
 """
 
         result = self.fixer_safe._fix_mktemp_to_mkstemp(code)
 
         assert "_fd, tmp = tempfile.mkstemp()" in result
         assert "_fd, temp_file = tempfile.mkstemp(suffix='.txt')" in result
-        assert "tempfile.mktemp()" not in result
+        assert "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())" not in result
         assert "mkstemp()" in " ".join(self.fixer_safe.fixes_applied)
 
     def test_fix_comparison_to_none_equals(self):
-        """Test == None → is None transformation."""
+        """Test is None → is None transformation."""
         code = """
-if value == None:
+if value is None:
     pass
 """
 
         result = self.fixer_safe._fix_comparison_to_none(code)
 
         assert "value is None" in result
-        assert "== None" not in result
-        assert "== None → is None" in self.fixer_safe.fixes_applied
+        assert " is None" not in result
+        assert " is None → is None" in self.fixer_safe.fixes_applied
 
     def test_fix_comparison_to_none_not_equals(self):
-        """Test != None → is not None transformation."""
+        """Test is not None → is not None transformation."""
         code = """
-if value != None:
+if value is not None:
     pass
 """
 
         result = self.fixer_safe._fix_comparison_to_none(code)
 
         assert "value is not None" in result
-        assert "!= None" not in result
-        assert "!= None → is not None" in self.fixer_safe.fixes_applied
+        assert " is not None" not in result
+        assert " is not None → is not None" in self.fixer_safe.fixes_applied
 
     def test_fix_insecure_random_adds_secrets_import(self):
         """Test adding secrets import for security contexts."""
         code = """
 import random
 
-password = random.randint(1000, 9999)
+password = random.randint(1000, 9999)  # SECURITY: Use secrets module for cryptographic randomness
 """
 
         result = self.fixer_safe._fix_insecure_random_safe(code)
@@ -120,8 +120,8 @@ dice_roll = random.randint(1, 6)
         test_file.write_text(
             """
 import yaml
-data = yaml.load(file)
-if value == None:
+data = yaml.safe_load(file)
+if value is None:
     pass
 """
         )
@@ -140,7 +140,7 @@ if value == None:
     def test_sql_injection_parameterized_concatenation(self):
         """Test SQL injection fix with string concatenation."""
         code = """
-cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
 """
 
         result = self.fixer_unsafe._fix_sql_injection_parameterized(code)
@@ -165,7 +165,7 @@ query = f"SELECT * FROM users WHERE name = '{username}'"
     def test_sql_injection_not_applied_without_unsafe_flag(self):
         """Test SQL injection fix not applied without --unsafe-fixes."""
         code = """
-cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
 """
 
         result = self.fixer_safe._fix_sql_injection_parameterized(code)
@@ -175,18 +175,18 @@ cursor.execute("SELECT * FROM users WHERE id = " + user_id)
         assert len(self.fixer_safe.fixes_applied) == 0
 
     def test_command_injection_os_system_to_subprocess(self):
-        """Test os.system() → subprocess.run() transformation."""
+        """Test os.system() → subprocess.run() transformation."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
-os.system(cmd)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_unsafe._fix_command_injection_subprocess(code)
 
         assert "subprocess.run(cmd.split(), check=True, shell=False)" in result
         assert "FIXED: command injection" in result
-        assert "os.system()" not in result or "subprocess.run" in result
+        assert "os.system()" not in result or "subprocess.run" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         assert "command injection" in " ".join(self.fixer_unsafe.fixes_applied)
 
     def test_command_injection_subprocess_import_added(self):
@@ -194,7 +194,7 @@ os.system(cmd)
         code = """
 import os
 
-os.system(cmd)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_unsafe._fix_command_injection_subprocess(code)
@@ -220,7 +220,7 @@ subprocess.run(cmd, shell=True)
         """Test command injection fix not applied without --unsafe-fixes."""
         code = """
 import os
-os.system(cmd)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_safe._fix_command_injection_subprocess(code)
@@ -234,7 +234,7 @@ os.system(cmd)
         code = """
 import os
 
-file_path = os.path.join(base_dir, user_input)
+file_path = os.path.join(base_dir, user_input)  # PATH TRAVERSAL RISK: Validate and sanitize paths
 """
 
         result = self.fixer_unsafe._fix_path_traversal_validated(code)
@@ -261,7 +261,7 @@ file_path = os.path.join(base_dir, "config.txt")
         """Test path traversal fix not applied without --unsafe-fixes."""
         code = """
 import os
-file_path = os.path.join(base_dir, user_input)
+file_path = os.path.join(base_dir, user_input)  # PATH TRAVERSAL RISK: Validate and sanitize paths
 """
 
         result = self.fixer_safe._fix_path_traversal_validated(code)
@@ -276,8 +276,8 @@ file_path = os.path.join(base_dir, user_input)
         test_file.write_text(
             """
 import os
-os.system(cmd)
-cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
 """
         )
 
@@ -296,7 +296,7 @@ cursor.execute("SELECT * FROM users WHERE id = " + user_id)
         test_file.write_text(
             """
 import os
-os.system(cmd)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         )
 
@@ -307,7 +307,7 @@ os.system(cmd)
         assert len(fixes) == 0
 
         result = test_file.read_text()
-        assert "os.system(cmd)" in result
+        assert "os.system(cmd)" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         assert "subprocess.run" not in result
 
     # ===== INTEGRATION TESTS =====
@@ -320,9 +320,9 @@ os.system(cmd)
 import yaml
 import os
 
-data = yaml.load(file)
-os.system(cmd)
-if value == None:
+data = yaml.safe_load(file)
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+if value is None:
     pass
 """
         )
@@ -330,7 +330,7 @@ if value == None:
         success, fixes = self.fixer_unsafe.fix_file(test_file)
 
         assert success
-        assert len(fixes) >= 3  # yaml, os.system, == None
+        assert len(fixes) >= 3  # yaml, os.system, is None
 
         result = test_file.read_text()
         assert "yaml.safe_load" in result
@@ -364,8 +364,9 @@ if value == None:
         """Test that fixes preserve original indentation."""
         code = """
 def foo():
-    if value == None:
-        data = yaml.load(file)
+    # TODO: Add docstring
+    if value is None:
+        data = yaml.safe_load(file)
 """
 
         result = self.fixer_safe._fix_comparison_to_none(code)
@@ -378,14 +379,14 @@ def foo():
     def test_multiple_fixes_same_line(self):
         """Test multiple fixes on the same code element."""
         code = """
-if x == None and y == None:
+if x is None and y is None:
     pass
 """
 
         result = self.fixer_safe._fix_comparison_to_none(code)
 
         assert "x is None and y is None" in result
-        assert "== None" not in result
+        assert " is None" not in result
 
 
 class TestEnhancedSecurityFixerEdgeCases:
@@ -418,13 +419,13 @@ cursor.execute("SELECT * FROM users")
         assert "FIXED" not in result
 
     def test_os_system_in_comment_not_modified(self):
-        """Test os.system() in comments is not modified."""
+        """Test os.system() in comments is not modified."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
-# Don't use os.system(cmd) here
+# Don't use os.system(cmd) here  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 subprocess.run(cmd)
 """
 
         result = self.fixer._fix_command_injection_subprocess(code)
 
         # Comment should remain unchanged
-        assert "# Don't use os.system(cmd) here" in result
+        assert "# Don't use os.system(cmd) here" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead

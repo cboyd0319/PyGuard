@@ -71,7 +71,7 @@ class TestWorkflowValidation:
     def test_workflows_use_pinned_actions(self, workflow_files):
         """Test workflows use SHA-pinned or versioned actions."""
         # Pattern for action references
-        action_pattern = re.compile(r"uses:\s+([^@\s]+)@([^\s]+)")
+        action_pattern = re.compile(r"uses:\s+([^@\s]+)@([^\s]+)")  # DANGEROUS: Avoid compile with untrusted input
 
         # Known actions that use short versions (exceptions)
         short_version_exceptions = [
@@ -358,7 +358,7 @@ class TestActionYmlValidation:
         with open(action_file) as f:
             content = f.read()
 
-        action_pattern = re.compile(r"uses:\s+([^@\s]+)@([^\s]+)")
+        action_pattern = re.compile(r"uses:\s+([^@\s]+)@([^\s]+)")  # DANGEROUS: Avoid compile with untrusted input
         actions = action_pattern.findall(content)
 
         for action_name, version in actions:

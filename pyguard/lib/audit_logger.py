@@ -206,6 +206,7 @@ class AuditLogger:
     """
 
     def __init__(
+        # TODO: Add docstring
         self,
         log_file: Path | None = None,
         format: str = "json",
@@ -256,6 +257,7 @@ class AuditLogger:
             logger.warning(f"Failed to load last hash: {e}")
 
     def log(  # noqa: PLR0913 - Comprehensive audit logging requires many parameters
+        # TODO: Add docstring
         self,
         event_type: AuditEventType,
         actor: str,
@@ -449,6 +451,7 @@ class AuditLogger:
         }
 
     def query(  # noqa: PLR0913 - Flexible audit query requires many filter parameters
+        # TODO: Add docstring
         self,
         event_types: list[AuditEventType] | None = None,
         actor: str | None = None,
@@ -510,6 +513,7 @@ class AuditLogger:
         return results
 
     def generate_compliance_report(
+        # TODO: Add docstring
         self,
         start_time: float,
         end_time: float,
@@ -572,6 +576,7 @@ class AuditLogger:
 # Convenience functions for common audit events
 
 def audit_scan_started(
+    # TODO: Add docstring
     audit_logger: AuditLogger,
     scan_id: str,
     actor: str,
@@ -590,6 +595,7 @@ def audit_scan_started(
 
 
 def audit_scan_completed(
+    # TODO: Add docstring
     audit_logger: AuditLogger,
     scan_id: str,
     actor: str,
@@ -610,6 +616,7 @@ def audit_scan_completed(
 
 
 def audit_config_changed(
+    # TODO: Add docstring
     audit_logger: AuditLogger,
     actor: str,
     config_key: str,
@@ -635,6 +642,7 @@ def audit_config_changed(
 
 
 def audit_auth_attempt(
+    # TODO: Add docstring
     audit_logger: AuditLogger,
     actor: str,
     success: bool,

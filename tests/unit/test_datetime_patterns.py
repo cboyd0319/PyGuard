@@ -134,7 +134,9 @@ dt = datetime.fromtimestamp(1234567890, tz=timezone.utc)
         """Test that non-datetime now() calls don't trigger issues."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def now(self):
+        # TODO: Add docstring
         return "now"
 
 obj = MyClass()
@@ -384,6 +386,7 @@ dt = datetime.now()
         code = """
 import datetime
 def get_dt():
+    # TODO: Add docstring
     return datetime.datetime
 
 dt = get_dt().now()
@@ -400,6 +403,7 @@ import datetime
 
 # Regular function call (not a method)
 def my_func():
+    # TODO: Add docstring
     pass
 
 my_func()

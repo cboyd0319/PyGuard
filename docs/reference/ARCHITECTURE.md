@@ -1,13 +1,16 @@
 # PyGuard Architecture
 
+**Version:** 0.7.0 | **Status:** Production Ready | **Last Updated:** 2025-11-14
+
 ## Overview
 
 PyGuard is a comprehensive Python security and code quality analysis tool that detects vulnerabilities, enforces best practices, and provides automated fixes. It's designed to be:
 
-- **Production-ready:** 87%+ test coverage, strict type checking, extensive CI/CD integration
-- **High-performance:** RipGrep integration for 10-100x faster scanning
-- **Framework-aware:** Deep understanding of Django, Flask, FastAPI, and 20+ other frameworks
-- **Fix-capable:** 179+ auto-fixes (107 safe, 72 unsafe) for detected issues
+- **Production-ready:** 84%+ test coverage (target: 87%), strict type checking, extensive CI/CD integration
+- **High-performance:** RipGrep integration for 10-100x faster scanning, parallel processing, smart caching
+- **Framework-aware:** Deep understanding of 25 frameworks - Django, Flask, FastAPI, Tornado, Celery, asyncio, and 19 more
+- **Fix-capable:** 199+ auto-fixes (107 safe, 72 unsafe) for detected issues with automatic backups
+- **Minimal dependencies:** Only 2 core dependencies (rich + watchdog), 2 optional for notebooks (nbformat + nbclient)
 
 ## Core Architecture
 
@@ -47,37 +50,69 @@ PyGuard is a comprehensive Python security and code quality analysis tool that d
 
 ```
 pyguard/
-├── cli.py                      # Main CLI entry point
-├── git_hooks_cli.py            # Git hooks integration
-├── __init__.py                 # Package initialization
+├── cli.py                      # Main CLI orchestrator (PyGuardCLI class)
+├── api.py                      # Programmatic API (PyGuardAPI class)
+├── git_hooks_cli.py            # Git hooks integration (separate CLI)
+├── __init__.py                 # Package initialization + version
 │
-└── lib/                        # Detection & analysis modules
+├── commands/                   # Command implementations (v0.7.0 new)
+│   ├── scan.py                 # Read-only security & quality analysis
+│   ├── fix.py                  # Apply auto-fixes with backups
+│   ├── init.py                 # Interactive configuration generator
+│   ├── validate_config.py      # Configuration verification
+│   ├── watch.py                # Real-time file monitoring & fixing
+│   ├── doctor.py               # Environment diagnostics
+│   └── explain.py              # Remediation guidance
+│
+└── lib/                        # Detection & analysis modules (114 Python files)
     ├── __init__.py             # Module registry
     │
-    ├── core.py                 # Core data structures (RuleViolation, etc.)
-    ├── rule_engine.py          # Rule evaluation engine
-    ├── ast_analyzer.py         # Python AST analysis utilities
+    ├── core.py                 # Core data structures (BackupManager, FileOperations, PyGuardLogger)
+    ├── rule_engine.py          # Rule evaluation engine with RuleRegistry
+    ├── ast_analyzer.py         # Python AST analysis utilities (ASTAnalyzer class)
     │
-    ├── Security Modules/
-    │   ├── advanced_security.py      # Advanced attack patterns
-    │   ├── api_security.py           # REST API vulnerabilities
-    │   ├── auth_security.py          # Authentication issues
-    │   ├── crypto_security.py        # Cryptography mistakes
-    │   ├── secret_scanner.py         # Hardcoded secrets detection
-    │   ├── xss_detection.py          # Cross-site scripting
-    │   ├── advanced_injection.py     # SQL/NoSQL/Command injection
-    │   ├── ai_ml_security.py         # ML/LLM-specific risks
+    ├── Security Modules (14 files - 739 checks total)/
+    │   ├── security.py               # Core security (20+ checks)
+    │   ├── advanced_security.py      # Advanced patterns (taint analysis, ReDoS, race conditions)
+    │   ├── ruff_security.py          # All 73 Bandit/Ruff S-rules
+    │   ├── api_security.py           # REST/GraphQL/WebSocket (20 checks)
+    │   ├── api_security_fixes.py     # API security auto-fixes
+    │   ├── auth_security.py          # Authentication & authorization (15 checks)
+    │   ├── crypto_security.py        # Cryptography vulnerabilities (15 checks)
+    │   ├── ai_ml_security.py         # ML/LLM-specific risks (30+ checks)
     │   ├── blockchain_security.py    # Web3/crypto vulnerabilities
-    │   └── cloud_security.py         # AWS/Azure/GCP misconfigurations
+    │   ├── cloud_security.py         # AWS/Azure/GCP misconfigurations (15 checks)
+    │   ├── mobile_iot_security.py    # Mobile and IoT security
+    │   ├── ultra_advanced_security.py # Complex vulnerability patterns (21+ checks)
+    │   ├── enhanced_security_fixes.py # Enhanced auto-fix implementations
+    │   └── notebook_security.py      # Jupyter notebook security (8+ checks)
     │
-    ├── Framework Modules/
-    │   ├── framework_django.py       # Django security patterns
-    │   ├── framework_flask.py        # Flask security patterns
-    │   ├── framework_fastapi.py      # FastAPI security patterns
-    │   ├── framework_sqlalchemy.py   # SQLAlchemy patterns
-    │   ├── framework_pandas.py       # Pandas performance & security
-    │   ├── framework_tensorflow.py   # TensorFlow security
-    │   └── [15+ more frameworks]
+    ├── Framework Modules (25 verified files - 266+ rules)/
+    │   ├── framework_django.py       # Django security (13 checks)
+    │   ├── framework_flask.py        # Flask security (7 checks)
+    │   ├── framework_fastapi.py      # FastAPI security (37 checks)
+    │   ├── framework_tornado.py      # Tornado async framework (20 checks)
+    │   ├── framework_celery.py       # Celery task queue (20 checks)
+    │   ├── framework_pyramid.py      # Pyramid web framework (15 checks)
+    │   ├── framework_asyncio.py      # asyncio patterns (15 checks)
+    │   ├── framework_sanic.py        # Sanic async framework (14 checks)
+    │   ├── framework_quart.py        # Quart async Flask (15 checks)
+    │   ├── framework_bottle.py       # Bottle micro-framework (10 checks)
+    │   ├── framework_sqlalchemy.py   # SQLAlchemy ORM (14 checks)
+    │   ├── framework_peewee.py       # Peewee ORM (12 checks)
+    │   ├── framework_pony.py         # Pony ORM (12 checks)
+    │   ├── framework_tortoise.py     # Tortoise ORM (15 checks)
+    │   ├── framework_pandas.py       # Pandas data analysis (7 checks)
+    │   ├── framework_numpy.py        # NumPy arrays (15 checks)
+    │   ├── framework_tensorflow.py   # TensorFlow ML (20 checks)
+    │   ├── framework_sklearn.py      # Scikit-learn ML (8 checks)
+    │   ├── framework_scipy.py        # SciPy scientific (10 checks)
+    │   ├── framework_pyspark.py      # PySpark big data (10 checks)
+    │   ├── framework_airflow.py      # Airflow orchestration (9 checks)
+    │   ├── framework_streamlit.py    # Streamlit UI (7 checks)
+    │   ├── framework_dash.py         # Plotly Dash (5 checks)
+    │   ├── framework_gradio.py       # Gradio ML UI (6 checks)
+    │   └── framework_pytest.py       # Pytest testing (8 checks)
     │
     ├── Best Practices/
     │   ├── best_practices.py         # General Python best practices

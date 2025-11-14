@@ -195,7 +195,9 @@ from pyguard.lib.plugin_system import PluginInterface, PluginMetadata
 from pyguard.lib.custom_rules import CustomRuleEngine
 
 class TestPlugin(PluginInterface):
+    # TODO: Add docstring
     def get_metadata(self):
+        # TODO: Add docstring
         return PluginMetadata(
             name="Test Plugin",
             version="1.0.0",
@@ -205,6 +207,7 @@ class TestPlugin(PluginInterface):
         )
 
     def register_rules(self, engine):
+        # TODO: Add docstring
         engine.add_regex_rule(
             rule_id="TEST001",
             name="Test",
@@ -244,7 +247,9 @@ class TestPlugin(PluginInterface):
 from pyguard.lib.plugin_system import PluginInterface, PluginMetadata
 
 class ValidPlugin(PluginInterface):
+    # TODO: Add docstring
     def get_metadata(self):
+        # TODO: Add docstring
         return PluginMetadata(
             name="Valid",
             version="1.0",
@@ -382,7 +387,9 @@ class ValidPlugin(PluginInterface):
 from pyguard.lib.plugin_system import PluginInterface, PluginMetadata
 
 class ReloadPlugin(PluginInterface):
+    # TODO: Add docstring
     def get_metadata(self):
+        # TODO: Add docstring
         return PluginMetadata(
             name="Reload",
             version="1.0",
@@ -406,11 +413,14 @@ class ReloadPlugin(PluginInterface):
         """Test notifying plugins of file analysis."""
 
         class NotifyPlugin(PluginInterface):
+            # TODO: Add docstring
             def __init__(self):
+                # TODO: Add docstring
                 self.notified = False
                 self.file_path = None
 
             def get_metadata(self):
+                # TODO: Add docstring
                 return PluginMetadata(
                     name="Notify",
                     version="1.0",
@@ -420,6 +430,7 @@ class ReloadPlugin(PluginInterface):
                 )
 
             def on_file_analyzed(self, file_path, violations):
+                # TODO: Add docstring
                 self.notified = True
                 self.file_path = file_path
 
@@ -469,7 +480,7 @@ class TestExampleSecurityPlugin:
         plugin.register_rules(engine)
 
         code = '''
-api_key = "sk_test_1234567890abcdefghijklmnop"
+api_key = "sk_test_1234567890abcdefghijklmnop"  # SECURITY: Use environment variables or config files
 '''
 
         violations = engine.check_code(code)
@@ -478,14 +489,14 @@ api_key = "sk_test_1234567890abcdefghijklmnop"
         assert len(violations) > 0
         assert any(v.rule_id == "PLUGIN_EXAMPLE_001" for v in violations)
 
-    def test_detect_eval(self):
-        """Test detecting eval() usage."""
+    def test_detect_eval(self):  # DANGEROUS: Avoid eval with untrusted input
+        """Test detecting eval() usage."""  # DANGEROUS: Avoid eval with untrusted input
         plugin = ExampleSecurityPlugin()
         engine = CustomRuleEngine()
         plugin.register_rules(engine)
 
         code = """
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """
 
         violations = engine.check_code(code)
@@ -516,7 +527,9 @@ class TestConvenienceFunctions:
 from pyguard.lib.plugin_system import PluginInterface, PluginMetadata
 
 class TestPlugin(PluginInterface):
+    # TODO: Add docstring
     def get_metadata(self):
+        # TODO: Add docstring
         return PluginMetadata(
             name="Test",
             version="1.0",

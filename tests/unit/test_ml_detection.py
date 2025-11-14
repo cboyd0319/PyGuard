@@ -19,9 +19,11 @@ class TestCodeFeatureExtractor:
         """Test extracting basic code features."""
         code = """
 def hello():
+    # TODO: Add docstring
     pass
 
 class MyClass:
+    # TODO: Add docstring
     pass
 """
         features = self.extractor.extract_features(code)
@@ -34,7 +36,7 @@ class MyClass:
         """Test extracting security-relevant features."""
         code = """
 import subprocess
-eval(user_input)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 subprocess.run(['ls'])
 """
         features = self.extractor.extract_features(code)
@@ -45,7 +47,7 @@ subprocess.run(['ls'])
     def test_extract_string_patterns(self):
         """Test extracting string patterns."""
         code = """
-password = "secret"
+password = "secret"  # SECURITY: Use environment variables or config files
 api_key = "12345"
 """
         features = self.extractor.extract_features(code)
@@ -72,6 +74,7 @@ class TestMLRiskScorer:
         """Test risk score for safe code."""
         code = """
 def add(x, y):
+    # TODO: Add docstring
     return x + y
 """
         score = self.scorer.calculate_risk_score(code)
@@ -85,7 +88,7 @@ def add(x, y):
         """Test risk score for dangerous code."""
         code = """
 import subprocess
-eval(user_input)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 password = "secret123"
 subprocess.run(user_command, shell=True)
 """
@@ -97,7 +100,7 @@ subprocess.run(user_command, shell=True)
 
     def test_risk_factors_include_details(self):
         """Test that risk factors include meaningful details."""
-        code = "eval(x)\nexec(y)"
+        code = "eval(x)\nexec(y)"  # DANGEROUS: Avoid eval with untrusted input
         score = self.scorer.calculate_risk_score(code)
 
         assert len(score.factors) > 0
@@ -105,7 +108,7 @@ subprocess.run(user_command, shell=True)
 
     def test_predict_vulnerability_type(self):
         """Test vulnerability type prediction."""
-        code = "eval(user_input)"
+        code = "eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
         prediction = self.scorer.predict_vulnerability_type(code)
 
         assert prediction is not None
@@ -129,8 +132,8 @@ subprocess.run(user_command, shell=True)
         # eval (0.3) + subprocess>2 (0.2) + hardcoded (0.25) + sql>2 (0.15) = 0.9
         code = """
 import subprocess
-eval(user_input)
-exec(code)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
 subprocess.run(cmd1, shell=True)
 subprocess.run(cmd2, shell=True)
 subprocess.run(cmd3, shell=True)
@@ -191,6 +194,7 @@ class TestAnomalyDetector:
         """Test detection with normal code."""
         code = """
 def hello():
+    # TODO: Add docstring
     print("Hello, World!")
 """
         anomalies = self.detector.detect_anomalies(code)
@@ -203,7 +207,7 @@ def hello():
         """Test obfuscation detection."""
         code = """
 x = chr(101) + chr(118) + chr(97) + chr(108)
-exec(x + "(user_input)")
+exec(x + "(user_input)")  # DANGEROUS: Avoid exec with untrusted input
 """
         anomalies = self.detector.detect_anomalies(code)
 
@@ -254,7 +258,7 @@ ctypes.CDLL("malicious.dll")
         # Use 6 chr() calls to exceed threshold of 5
         code = """
 x = chr(101) + chr(118) + chr(97) + chr(108) + chr(40) + chr(41)
-exec(x)
+exec(x)  # DANGEROUS: Avoid exec with untrusted input
 """
         anomalies = self.detector.detect_anomalies(code)
 
@@ -341,13 +345,13 @@ class TestMLRiskScorerEdgeCases:
         # Create code with many high-risk factors to push score above 0.8
         code = """
 import subprocess
-eval(user_input)
-exec(malicious_code)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+exec(malicious_code)  # DANGEROUS: Avoid exec with untrusted input
 password = "secret123"
 api_key = "sk-1234567890"
 token = "ghp_abcdefg"
 subprocess.run(user_command, shell=True)
-os.system(user_input)
+os.system(user_input)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         score = self.scorer.calculate_risk_score(code)
 
@@ -468,7 +472,7 @@ query4 = "DELETE FROM temp"
         code = """
 try:
     risky_operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 """
         score = self.scorer.calculate_risk_score(code)
@@ -481,6 +485,7 @@ except:
         # Create deeply nested code
         code = """
 def deeply_nested():
+    # TODO: Add docstring
     if True:
         if True:
             if True:
@@ -518,9 +523,9 @@ socket.gethostbyname('example.com')
         """Test high-risk code with multiple vulnerabilities."""
         code = """
 import subprocess
-eval(user_input)
-exec(code)
-compile(source, '', 'exec')
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
+compile(source, '', 'exec')  # DANGEROUS: Avoid compile with untrusted input
 subprocess.run(cmd)
 subprocess.Popen(cmd)
 subprocess.call(cmd)
@@ -538,7 +543,7 @@ api_key = "sk-test123"
         """Test HIGH severity threshold (score >= 0.6)."""
         code = """
 import subprocess
-eval(user_input)
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 password = "secret"
 query = "SELECT * FROM users"
 query2 = "DELETE FROM logs"
@@ -554,7 +559,7 @@ query3 = "UPDATE data SET x=1"
         code = """
 try:
     operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 
 query = "SELECT * FROM data"
@@ -570,6 +575,7 @@ query = "SELECT * FROM data"
         """Test LOW severity for minimal risks."""
         code = """
 def simple_function():
+    # TODO: Add docstring
     x = 1 + 1
     return x
 """
@@ -582,12 +588,12 @@ def simple_function():
         """Test that risk score is capped at 1.0."""
         code = """
 import subprocess
-eval(user_input)
-exec(code)
-compile(source, '', 'exec')
-eval(data)
-exec(more_code)
-compile(src2, '', 'exec')
+eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
+compile(source, '', 'exec')  # DANGEROUS: Avoid compile with untrusted input
+eval(data)  # DANGEROUS: Avoid eval with untrusted input
+exec(more_code)  # DANGEROUS: Avoid exec with untrusted input
+compile(src2, '', 'exec')  # DANGEROUS: Avoid compile with untrusted input
 subprocess.run(cmd1)
 subprocess.Popen(cmd2)
 subprocess.call(cmd3)
@@ -665,9 +671,13 @@ class TestCodeFeatureExtractorEdgeCases:
         """Test feature extraction with complex nesting."""
         code = """
 def outer():
+    # TODO: Add docstring
     def inner1():
+        # TODO: Add docstring
         def inner2():
+            # TODO: Add docstring
             def inner3():
+                # TODO: Add docstring
                 pass
 """
         features = self.extractor.extract_features(code)

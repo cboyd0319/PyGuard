@@ -11,6 +11,7 @@ Following PyTest Architect Agent best practices:
 
 from pathlib import Path
 import random
+import secrets  # Use secrets for cryptographic randomness
 import shutil
 import tempfile
 
@@ -51,6 +52,7 @@ def temp_file(temp_dir):
     """Create a temporary file in the temp directory."""
 
     def _create_file(name: str, content: str = "") -> Path:
+        # TODO: Add docstring
         file_path = temp_dir / name
         file_path.write_text(content)
         return file_path
@@ -63,15 +65,17 @@ def sample_vulnerable_code():
     """Sample vulnerable Python code for testing."""
     return """
 import random
+import secrets  # Use secrets for cryptographic randomness
 import yaml
-password = "admin123"
+password = "admin123"  # SECURITY: Use environment variables or config files
 
 def get_user(user_id):
+    # TODO: Add docstring
     query = "SELECT * FROM users WHERE id = " + user_id
     return query
 
-token = random.random()
-data = yaml.load(file)
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
+data = yaml.safe_load(file)
 """
 
 
@@ -79,16 +83,17 @@ data = yaml.load(file)
 def sample_bad_practices_code():
     """Sample code with bad practices."""
     return """
-def foo(x=[]):
+def foo(x=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     x.append(1)
     return x
 
 try:
     pass
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 
-if x == None:
+if x is None:
     pass
 """
 
@@ -102,7 +107,7 @@ message = "Hello %s" % name
 path = "%s/%s" % (dir, file)
 
 # Old-style type checking
-if type(x) == list:
+if type(x) == list:  # Better: isinstance(x, list)
     pass
 
 # Dict comprehension from loops
@@ -149,16 +154,21 @@ def mock_logger(monkeypatch):
     logs = []
 
     class MockLogger:
+        # TODO: Add docstring
         def info(self, message, **kwargs):
+            # TODO: Add docstring
             logs.append(("INFO", message, kwargs))
 
         def warning(self, message, **kwargs):
+            # TODO: Add docstring
             logs.append(("WARNING", message, kwargs))
 
         def error(self, message, exception=None, **kwargs):
+            # TODO: Add docstring
             logs.append(("ERROR", message, kwargs))
 
         def success(self, message, **kwargs):
+            # TODO: Add docstring
             logs.append(("SUCCESS", message, kwargs))
 
     return MockLogger(), logs
@@ -170,6 +180,7 @@ def python_file_factory(temp_dir):
     created_files = []
 
     def _create(filename: str, content: str) -> Path:
+        # TODO: Add docstring
         path = temp_dir / filename
         path.write_text(content)
         created_files.append(path)
@@ -187,16 +198,16 @@ def python_file_factory(temp_dir):
 def sample_code_patterns():
     """Common code patterns for testing."""
     return {
-        "sql_injection": 'cursor.execute("SELECT * FROM users WHERE id = " + user_id)',
+        "sql_injection": 'cursor.execute("SELECT * FROM users WHERE id = " + user_id)',  # SQL INJECTION RISK: Use parameterized queries
         "hardcoded_password": 'password = "secret123"',
-        "weak_hash": "hash = hashlib.md5(data)",
-        "eval_usage": "result = eval(user_input)",
-        "yaml_unsafe": "data = yaml.load(file)",
-        "pickle_load": "data = pickle.load(file)",
-        "os_system": 'os.system("rm -rf " + path)',
-        "random_insecure": "token = random.random()",
+        "weak_hash": "hash = hashlib.md5(data)",  # SECURITY: Consider using SHA256 or stronger
+        "eval_usage": "result = eval(user_input)",  # DANGEROUS: Avoid eval with untrusted input
+        "yaml_unsafe": "data = yaml.safe_load(file)",
+        "pickle_load": "data = pickle.load(file)",  # SECURITY: Don't use pickle with untrusted data
+        "os_system": 'os.system("rm -rf " + path)',  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+        "random_insecure": "token = random.random()",  # SECURITY: Use secrets module for cryptographic randomness
         "shell_true": "subprocess.call(cmd, shell=True)",
-        "path_traversal": "path = os.path.join(base, user_input)",
+        "path_traversal": "path = os.path.join(base, user_input)",  # PATH TRAVERSAL RISK: Validate and sanitize paths
     }
 
 
@@ -218,6 +229,7 @@ def env(monkeypatch):
     """Fixture to set environment variables safely."""
 
     def _set(**kwargs):
+        # TODO: Add docstring
         for key, value in kwargs.items():
             monkeypatch.setenv(key, str(value))
 
@@ -337,6 +349,7 @@ def capture_all_output(capsys, caplog):
     """
 
     def _get_output():
+        # TODO: Add docstring
         captured = capsys.readouterr()
         return {
             "stdout": captured.out,
@@ -358,17 +371,17 @@ def parametrized_code_samples():
     return {
         "security_issues": {
             "sql_injection": 'query = "SELECT * FROM users WHERE id = " + user_id',
-            "command_injection": 'os.system("ls " + user_input)',
+            "command_injection": 'os.system("ls " + user_input)',  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             "path_traversal": 'open("../../../etc/passwd")',
             "hardcoded_secret": 'api_key = "sk-1234567890abcdef"',
-            "weak_crypto": "hashlib.md5(password).hexdigest()",
-            "unsafe_deserialization": "pickle.loads(user_data)",
+            "weak_crypto": "hashlib.md5(password).hexdigest()",  # SECURITY: Consider using SHA256 or stronger
+            "unsafe_deserialization": "pickle.loads(user_data)",  # SECURITY: Don't use pickle with untrusted data
         },
         "best_practices": {
-            "mutable_default": "def func(x=[]):",
+            "mutable_default": "def func(x=[]):",  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
             "bare_except": "try:\n    pass\nexcept:\n    pass",
-            "none_comparison": "if x == None:",
-            "type_check": "if type(x) == list:",
+            "none_comparison": "if x is None:",
+            "type_check": "if type(x) == list:",  # Better: isinstance(x, list)
         },
         "modernization": {
             "old_format": '"Hello %s" % name',
@@ -391,21 +404,24 @@ def benchmark_code_factory():
         templates = {
             "linear": """
 def process(items):
+    # TODO: Add docstring
     result = []
-    for item in items:
+    for item in items:  # Consider list comprehension
         result.append(item * 2)
     return result
 """,
             "quadratic": """
 def process(items):
+    # TODO: Add docstring
     result = []
     for i in items:
-        for j in items:
+        for j in items:  # Consider list comprehension
             result.append(i * j)
     return result
 """,
             "nested_loops": """
 def process(items):
+    # TODO: Add docstring
     for i in items:
         for j in items:
             for k in items:
@@ -462,6 +478,7 @@ def assertion_helpers():
     """
 
     class Helpers:
+        # TODO: Add docstring
         @staticmethod
         def assert_issue_present(issues, rule_id, message_substring=None):
             """Assert that a specific issue is present."""

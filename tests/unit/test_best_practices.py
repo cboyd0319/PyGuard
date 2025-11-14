@@ -33,8 +33,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "expected_in_result"),
         [
-            ("def foo(x=[]):\n    pass", "ANTI-PATTERN"),
-            ("def bar(opts={}):\n    pass", "ANTI-PATTERN"),
+            ("def foo(x=[]):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
+            ("def bar(opts={}):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
             ("def baz(items=None):\n    pass", "items=None"),  # Good practice, unchanged
         ],
         ids=["list_default", "dict_default", "none_default"],
@@ -78,9 +78,9 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "expected"),
         [
-            ("if x == None:", "if x is None:"),
-            ("if x != None:", "if x is not None:"),
-            ("while value == None:", "while value is None:"),
+            ("if x is None:", "if x is None:"),
+            ("if x is not None:", "if x is not None:"),
+            ("while value is None:", "while value is None:"),
             ("if x is None:", "if x is None:"),  # Already correct
         ],
         ids=["eq_none", "ne_none", "in_while", "already_correct"],
@@ -96,8 +96,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "expected"),
         [
-            ("if type(x) == str:", "isinstance(x, str)"),
-            ("if type(value) == list:", "isinstance(value, list)"),
+            ("if type(x) == str:", "isinstance(x, str)"),  # Better: isinstance(x, str)
+            ("if type(value) == list:", "isinstance(value, list)"),  # Better: isinstance(value, list)
             ("if isinstance(x, str):", "isinstance(x, str)"),  # Already good
         ],
         ids=["type_str", "type_list", "already_isinstance"],
@@ -124,8 +124,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "should_suggest"),
         [
-            ("if x == True:\n    pass", True),
-            ("if x == False:\n    pass", True),
+            ("if x   # Use if var: instead:\n    pass", True),
+            ("if x   # Use if not var: instead:\n    pass", True),
             ("if x:\n    pass", False),  # Already good
             ("if not x:\n    pass", False),  # Already good
         ],
@@ -188,8 +188,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "should_suggest"),
         [
-            ("f = open('file.txt')", True),
-            ("file = open('data.json', 'r')", True),
+            ("f = open('file.txt')", True),  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
+            ("file = open('data.json', 'r')", True),  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             ("with open('file.txt') as f:", False),  # Good practice
         ],
         ids=["simple_open", "open_with_mode", "with_statement"],
@@ -271,8 +271,9 @@ class TestBestPracticesFixer:
         test_file.write_text(
             """
 def test():  # Missing docstring
+    # TODO: Add docstring
     x = None
-    if x == None:  # Bad comparison
+    if x is None:  # Bad comparison
         pass
 """
         )
@@ -301,9 +302,11 @@ def test():  # Missing docstring
         test_file.write_text(
             """
 def simple_func():
+    # TODO: Add docstring
     return 42
 
 def complex_func(x):
+    # TODO: Add docstring
     if x > 0:
         if x > 10:
             return "big"
@@ -335,7 +338,7 @@ def complex_func(x):
         """Test fixing a file that needs changes."""
         # Arrange
         test_file = tmp_path / "test.py"
-        test_file.write_text("if x == None:\n    pass")
+        test_file.write_text("if x is None:\n    pass")
 
         # Act
         success, fixes = self.fixer.fix_file(test_file)
@@ -389,12 +392,15 @@ import os
 import sys
 
 class MyClass:
+    # TODO: Add docstring
     pass
 
 def func1():
+    # TODO: Add docstring
     pass
 
 def func2():
+    # TODO: Add docstring
     pass
 """
         )
@@ -533,15 +539,19 @@ class TestNamingConventionFixer:
         test_file.write_text(
             """
 class my_bad_class:
+    # TODO: Add docstring
     pass
 
 def BadFunction():
+    # TODO: Add docstring
     pass
 
 def good_function():
+    # TODO: Add docstring
     pass
 
 class GoodClass:
+    # TODO: Add docstring
     pass
 """
         )
@@ -583,7 +593,7 @@ class TestBestPracticesFixerEdgeCases:
         """Test list comprehension suggestion when comment already exists on one loop."""
         # Arrange - code with multiple for loops, one already commented
         code = """result1 = []
-for x in range(10):
+for x in range(10):  # Consider list comprehension
     result1.append(x)
 
 result2 = []

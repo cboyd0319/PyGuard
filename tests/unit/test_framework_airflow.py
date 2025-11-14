@@ -166,7 +166,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 task = PostgresOperator(
     task_id="query",
     postgres_conn_id="postgres_default",
-    password="secret123",
+    password="secret123"  # SECURITY: Use environment variables or config files,
     sql="SELECT 1"
 )
 """
@@ -198,6 +198,7 @@ task = SimpleHttpOperator(
 from airflow.operators.python import PythonOperator
 
 def my_func():
+    # TODO: Add docstring
     token = "hardcoded_token_123"
     pass
 
@@ -238,6 +239,7 @@ class TestAirflowXComSecurity:
 from airflow.operators.python import PythonOperator
 
 def push_password(**context):
+    # TODO: Add docstring
     password = get_password()
     context['ti'].xcom_push(key='password', value=password)
 
@@ -255,6 +257,7 @@ task = PythonOperator(
         """Test detection of token in XCom."""
         code = """
 def push_token(**context):
+    # TODO: Add docstring
     api_token = "token_123"
     context['ti'].xcom_push(key='api_token', value=api_token)
 """
@@ -266,6 +269,7 @@ def push_token(**context):
         """Test that safe XCom usage doesn't trigger violations."""
         code = """
 def push_result(**context):
+    # TODO: Add docstring
     result = {"count": 100, "status": "success"}
     context['ti'].xcom_push(key='result', value=result)
 """
@@ -278,13 +282,13 @@ class TestAirflowDynamicExecution:
     """Test detection of dynamic code execution."""
 
     def test_detect_eval_in_dag(self):
-        """Test detection of eval() in DAG."""
+        """Test detection of eval() in DAG."""  # DANGEROUS: Avoid eval with untrusted input
         code = """
 from airflow import DAG
 
 dag_config = "{'schedule_interval': '@daily'}"
 # BAD: eval in DAG code
-config = eval(dag_config)
+config = eval(dag_config)  # DANGEROUS: Avoid eval with untrusted input
 """
         violations = analyze_airflow_security(Path("test.py"), code)
         eval_violations = [v for v in violations if v.rule_id == "AIRFLOW009"]
@@ -292,13 +296,13 @@ config = eval(dag_config)
         assert eval_violations[0].severity == RuleSeverity.CRITICAL
 
     def test_detect_exec_in_dag(self):
-        """Test detection of exec() in DAG."""
+        """Test detection of exec() in DAG."""  # DANGEROUS: Avoid exec with untrusted input
         code = """
 from airflow import DAG
 
 code = "print('hello')"
 # BAD: exec in DAG
-exec(code)
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
 """
         violations = analyze_airflow_security(Path("test.py"), code)
         exec_violations = [v for v in violations if v.rule_id == "AIRFLOW009"]

@@ -31,6 +31,7 @@ class TestRET501:
         """Test detection of explicit 'return None'."""
         code = """
 def foo():
+    # TODO: Add docstring
     x = 1
     return None
 """
@@ -42,6 +43,7 @@ def foo():
         """Test that bare 'return' is allowed."""
         code = """
 def foo():
+    # TODO: Add docstring
     x = 1
     return
 """
@@ -53,6 +55,7 @@ def foo():
         """Test that return with actual value is allowed."""
         code = """
 def foo():
+    # TODO: Add docstring
     return 42
 """
         checker = ReturnPatternChecker()
@@ -67,6 +70,7 @@ class TestRET502:
         """Test detection of mixing implicit and explicit returns."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     if x > 0:
         return x
     # Implicit return None here
@@ -79,6 +83,7 @@ def foo(x):
         """Test that consistent returns are allowed."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     if x > 0:
         return x
     return 0
@@ -95,6 +100,7 @@ class TestRET503:
         """Test detection of missing explicit return."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     x = x + 1
     print(x)
 """
@@ -106,6 +112,7 @@ def foo(x):
         """Test that function with return is allowed."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     x = x + 1
     return None
 """
@@ -117,6 +124,7 @@ def foo(x):
         """Test that empty functions are allowed."""
         code = """
 def foo():
+    # TODO: Add docstring
     pass
 """
         checker = ReturnPatternChecker()
@@ -131,6 +139,7 @@ class TestRET504:
         """Test detection of unnecessary assignment before return."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     result = x + 1
     return result
 """
@@ -142,6 +151,7 @@ def foo(x):
         """Test that necessary assignments are allowed."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     result = x + 1
     print(result)
     return result
@@ -158,6 +168,7 @@ class TestRET505:
         """Test detection of unnecessary else after return."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     if x > 0:
         return x
     else:
@@ -171,6 +182,7 @@ def foo(x):
         """Test that elif after return is handled separately."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     if x > 0:
         return x
     elif x < 0:
@@ -190,6 +202,7 @@ class TestRET506:
         """Test detection of unnecessary elif after return."""
         code = """
 def foo(x):
+    # TODO: Add docstring
     if x > 0:
         return x
     elif x < 0:
@@ -207,6 +220,7 @@ class TestRET507:
         """Test detection of unnecessary else after continue."""
         code = """
 def foo(items):
+    # TODO: Add docstring
     for item in items:
         if item < 0:
             continue
@@ -221,6 +235,7 @@ def foo(items):
         """Test that continue without else is allowed."""
         code = """
 def foo(items):
+    # TODO: Add docstring
     for item in items:
         if item < 0:
             continue
@@ -238,6 +253,7 @@ class TestRET508:
         """Test detection of unnecessary else after break."""
         code = """
 def foo(items):
+    # TODO: Add docstring
     for item in items:
         if item < 0:
             break
@@ -252,6 +268,7 @@ def foo(items):
         """Test that break without else is allowed."""
         code = """
 def foo(items):
+    # TODO: Add docstring
     for item in items:
         if item < 0:
             break
@@ -300,6 +317,7 @@ class TestIntegration:
         """Test detection of multiple return pattern violations."""
         code = """
 def process(data):
+    # TODO: Add docstring
     if not data:
         return None  # RET501
     else:  # RET505
@@ -314,6 +332,7 @@ def process(data):
         """Test that clean code produces no violations."""
         code = """
 def good_function(x):
+    # TODO: Add docstring
     if x > 0:
         return x * 2
     return 0

@@ -40,6 +40,7 @@ class TestNotebookSecurityAnalyzer:
         """Create a temporary notebook file."""
 
         def _create_notebook(cells):
+            # TODO: Add docstring
             nb = nbf.new_notebook()
             nb.cells = cells
 
@@ -57,11 +58,11 @@ class TestNotebookSecurityAnalyzer:
         assert hasattr(analyzer, "secret_patterns")
         assert hasattr(analyzer, "dangerous_functions")
         assert "eval" in analyzer.dangerous_functions
-        assert "pickle.load" in analyzer.dangerous_functions
+        assert "pickle.load" in analyzer.dangerous_functions  # SECURITY: Don't use pickle with untrusted data
 
     def test_detect_eval_function(self, analyzer, temp_notebook):
-        """Test detection of eval() usage."""
-        cells = [nbf.new_code_cell('result = eval("1 + 1")')]
+        """Test detection of eval() usage."""  # DANGEROUS: Avoid eval with untrusted input
+        cells = [nbf.new_code_cell('result = eval("1 + 1")')]  # DANGEROUS: Avoid eval with untrusted input
         nb_path = temp_notebook(cells)
 
         result = analyzer.analyze_notebook(nb_path)
@@ -70,11 +71,11 @@ class TestNotebookSecurityAnalyzer:
         eval_findings = [f for f in result.findings if f.rule_id == "NB-INJECT-001"]
         assert len(eval_findings) == 1
         assert eval_findings[0].severity == "CRITICAL"
-        assert "eval()" in eval_findings[0].message
+        assert "eval()" in eval_findings[0].message  # DANGEROUS: Avoid eval with untrusted input
 
     def test_detect_exec_function(self, analyzer, temp_notebook):
-        """Test detection of exec() usage."""
-        cells = [nbf.new_code_cell('exec("print(1)")')]
+        """Test detection of exec() usage."""  # DANGEROUS: Avoid exec with untrusted input
+        cells = [nbf.new_code_cell('exec("print(1)")')]  # DANGEROUS: Avoid exec with untrusted input
         nb_path = temp_notebook(cells)
 
         result = analyzer.analyze_notebook(nb_path)
@@ -84,13 +85,13 @@ class TestNotebookSecurityAnalyzer:
         assert exec_findings[0].severity == "CRITICAL"
 
     def test_detect_pickle_load(self, analyzer, temp_notebook):
-        """Test detection of unsafe pickle.load()."""
+        """Test detection of unsafe pickle.load()."""  # SECURITY: Don't use pickle with untrusted data
         cells = [
             nbf.new_code_cell(
                 """
 import pickle
 with open('data.pkl', 'rb') as f:
-    data = pickle.load(f)
+    data = pickle.load(f)  # SECURITY: Don't use pickle with untrusted data
 """
             )
         ]
@@ -123,12 +124,12 @@ model = torch.load('model.pth')
         assert "weights_only" in torch_findings[0].message
 
     def test_detect_yaml_load_unsafe(self, analyzer, temp_notebook):
-        """Test detection of unsafe yaml.load()."""
+        """Test detection of unsafe yaml.safe_load()."""
         cells = [
             nbf.new_code_cell(
                 """
 import yaml
-data = yaml.load(open('config.yml'))
+data = yaml.safe_load(open('config.yml'))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
             )
         ]
@@ -166,7 +167,7 @@ data = yaml.load(open('config.yml'))
 
     def test_detect_openai_key(self, analyzer, temp_notebook):
         """Test detection of OpenAI API keys."""
-        cells = [nbf.new_code_cell('api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"')]
+        cells = [nbf.new_code_cell('api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"  # SECURITY: Use environment variables or config files')]
         nb_path = temp_notebook(cells)
 
         result = analyzer.analyze_notebook(nb_path)
@@ -351,8 +352,8 @@ print(data.mean())
             nbf.new_code_cell(
                 """
 api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"
-result = eval(user_input)
-data = pickle.load(open('data.pkl', 'rb'))
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+data = pickle.load(open('data.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
             )
         ]
@@ -365,7 +366,7 @@ data = pickle.load(open('data.pkl', 'rb'))
 
     def test_sarif_report_generation(self, analyzer, temp_notebook):
         """Test SARIF report generation."""
-        cells = [nbf.new_code_cell('result = eval("1 + 1")')]
+        cells = [nbf.new_code_cell('result = eval("1 + 1")')]  # DANGEROUS: Avoid eval with untrusted input
         nb_path = temp_notebook(cells)
 
         analysis_result = analyzer.analyze_notebook(nb_path)
@@ -381,11 +382,11 @@ data = pickle.load(open('data.pkl', 'rb'))
     def test_sarif_report_with_multiple_notebooks(self, analyzer, temp_notebook, tmp_path):
         """Test SARIF report with multiple notebooks."""
         # Create first notebook
-        cells1 = [nbf.new_code_cell('eval("1")')]
+        cells1 = [nbf.new_code_cell('eval("1")')]  # DANGEROUS: Avoid eval with untrusted input
         nb_path1 = temp_notebook(cells1)
 
         # Create second notebook
-        cells2 = [nbf.new_code_cell('exec("print(1)")')]
+        cells2 = [nbf.new_code_cell('exec("print(1)")')]  # DANGEROUS: Avoid exec with untrusted input
         nb2 = nbf.new_notebook()
         nb2.cells = cells2
         nb_path2 = tmp_path / "test_notebook2.ipynb"
@@ -415,7 +416,7 @@ data = pickle.load(open('data.pkl', 'rb'))
 
     def test_get_function_name_simple(self, analyzer):
         """Test function name extraction for simple calls."""
-        code = 'eval("1")'
+        code = 'eval("1")'  # DANGEROUS: Avoid eval with untrusted input
         tree = ast.parse(code)
         call_node = tree.body[0].value
 
@@ -424,12 +425,12 @@ data = pickle.load(open('data.pkl', 'rb'))
 
     def test_get_function_name_module(self, analyzer):
         """Test function name extraction for module.function calls."""
-        code = "pickle.load(f)"
+        code = "pickle.load(f)"  # SECURITY: Don't use pickle with untrusted data
         tree = ast.parse(code)
         call_node = tree.body[0].value
 
         name = analyzer._get_function_name(call_node)
-        assert name == "pickle.load"
+        assert name == "pickle.load"  # SECURITY: Don't use pickle with untrusted data
 
     def test_finding_severity_counts(self):
         """Test finding severity counting methods."""
@@ -484,6 +485,7 @@ class TestNotebookSecurityAdvanced:
         """Create a temporary notebook file."""
 
         def _create_notebook(cells):
+            # TODO: Add docstring
             nb = nbf.new_notebook()
             nb.cells = cells
 
@@ -665,13 +667,13 @@ class TestNotebookAnalyzerGetFunctionName:
         analyzer = NotebookSecurityAnalyzer()
 
         # Parse code with module.function call
-        code = "pickle.load(f)"
+        code = "pickle.load(f)"  # SECURITY: Don't use pickle with untrusted data
         tree = ast.parse(code)
         call_node = tree.body[0].value
 
         func_name = analyzer._get_function_name(call_node)
 
-        assert func_name == "pickle.load"
+        assert func_name == "pickle.load"  # SECURITY: Don't use pickle with untrusted data
 
     def test_get_function_name_name(self):
         """Test _get_function_name with ast.Name node."""
@@ -680,7 +682,7 @@ class TestNotebookAnalyzerGetFunctionName:
         analyzer = NotebookSecurityAnalyzer()
 
         # Parse code with simple function call
-        code = "eval('1+1')"
+        code = "eval('1+1')"  # DANGEROUS: Avoid eval with untrusted input
         tree = ast.parse(code)
         call_node = tree.body[0].value
 

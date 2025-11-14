@@ -14,6 +14,7 @@ class TestSimplificationVisitor:
         """Test detection of if-return True/False pattern."""
         code = """
 def check(x):
+    # TODO: Add docstring
     if x > 0:
         return True
     else:
@@ -34,6 +35,7 @@ def check(x):
         """Test detection of nested if statements."""
         code = """
 def check(a, b):
+    # TODO: Add docstring
     if a:
         if b:
             return True
@@ -108,9 +110,9 @@ else:
     def test_detect_compare_to_bool(self):
         """Test detection of comparison to True/False."""
         code = """
-if flag == True:
+if flag   # Use if var: instead:
     pass
-if value == False:
+if value   # Use if not var: instead:
     pass
 """
         tree = ast.parse(code)
@@ -126,9 +128,11 @@ if value == False:
         """Test that simple code has no issues."""
         code = """
 def check(x):
+    # TODO: Add docstring
     return x > 0
 
 def process(a, b):
+    # TODO: Add docstring
     if a and b:
         return True
 """
@@ -147,12 +151,14 @@ class TestCodeSimplificationFixer:
         """Test scanning file for simplification issues."""
         code = """
 def check(x):
+    # TODO: Add docstring
     if x > 0:
         return True
     else:
         return False
 
 def nested(a, b):
+    # TODO: Add docstring
     if a:
         if b:
             pass
@@ -176,7 +182,7 @@ def nested(a, b):
         code = """
 try:
     operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -304,6 +310,7 @@ for item in items:
         """Test detection of guard clause opportunity (SIM106)."""
         code = """
 def process(data):
+    # TODO: Add docstring
     if data:
         # Large processing block
         step1()
@@ -371,6 +378,7 @@ for item in items:
         """Test multiple Phase 3 rules together."""
         code = """
 def complex_function(data):
+    # TODO: Add docstring
     # SIM106: Guard clause opportunity
     if data:
         # Large body

@@ -17,13 +17,13 @@ class TestSklearnUnsafeModelLoading:
     """Test SKL001: Unsafe model deserialization."""
 
     def test_detect_pickle_load_model(self):
-        """Detect pickle.load() for loading ML models."""
+        """Detect pickle.load() for loading ML models."""  # SECURITY: Don't use pickle with untrusted data
         code = """
 import pickle
 import sklearn
 
 with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+    model = pickle.load(f)  # SECURITY: Don't use pickle with untrusted data
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
         pickle_violations = [v for v in violations if v.rule_id == "SKL001"]
@@ -65,7 +65,7 @@ if verify_model_signature('model.joblib'):
 import pickle
 
 with open('data.pkl', 'rb') as f:
-    data = pickle.load(f)
+    data = pickle.load(f)  # SECURITY: Don't use pickle with untrusted data
 """
         violations = analyze_sklearn_security(Path("test.py"), code)
         assert len(violations) == 0
@@ -183,8 +183,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 
 def vulnerable_ml_pipeline(user_data, user_model_path):
+    # TODO: Add docstring
     # SKL001: Unsafe model loading
-    model = pickle.load(open(user_model_path, 'rb'))
+    model = pickle.load(open(user_model_path, 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
     # SKL012: Grid search without limits
     grid_search = GridSearchCV(RandomForestClassifier(), {'max_depth': [5, 10, 15]})
@@ -243,7 +244,9 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 
 def outer_function():
+    # TODO: Add docstring
     def inner_function(data):
+        # TODO: Add docstring
         model = joblib.load('model.joblib')
         return model.predict(data)
 
@@ -264,7 +267,7 @@ import pickle
 from sklearn.ensemble import RandomForestClassifier
 
 # CRITICAL: Unsafe deserialization
-model = pickle.load(open('model.pkl', 'rb'))
+model = pickle.load(open('model.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
 # MEDIUM: Missing input validation
 predictions = model.predict(user_data)

@@ -62,6 +62,7 @@ app.run(debug=False)
 from flask import render_template_string
 
 def vulnerable_route():
+    # TODO: Add docstring
     user_input = request.args.get('name')
     return render_template_string(f"Hello {user_input}")
 """
@@ -145,6 +146,7 @@ cors = CORS(app, origins="*")
 from flask import jsonify
 
 def get_user():
+    # TODO: Add docstring
     user = User.query.get(1)
     return jsonify(user.to_dict())
 """
@@ -166,6 +168,7 @@ app = Flask(__name__)
 
 @app.route('/user')
 def get_user():
+    # TODO: Add docstring
     user_id = request.args.get('id')
     cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
     return jsonify(cursor.fetchone())
@@ -248,6 +251,7 @@ app.run(debug=True)
         """Test checking a non-Flask file returns empty list."""
         code = """
 def hello():
+    # TODO: Add docstring
     print("Hello, World!")
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -271,6 +275,7 @@ app = Flask(__name__)
 
 @app.route('/login', methods=['POST'])
 def login():
+    # TODO: Add docstring
     return "OK"
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -299,6 +304,7 @@ csrf = CSRFProtect(app)
 
 @app.route('/login', methods=['POST'])
 def login():
+    # TODO: Add docstring
     return "OK"
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:

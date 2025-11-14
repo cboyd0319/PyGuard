@@ -77,14 +77,14 @@ class TestGoldenFileSnapshots:
         return normalized
 
     def test_eval_fix_snapshot(self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path):
-        """Test eval() auto-fix produces expected output."""
+        """Test eval() auto-fix produces expected output."""  # DANGEROUS: Avoid eval with untrusted input
         # Load vulnerable notebook
         vulnerable_path = fixtures_dir / "vulnerable_eval.ipynb"
         notebook = self.load_notebook(vulnerable_path)
 
         # Scan for issues
         issues = scan_notebook(vulnerable_path)
-        assert len(issues) > 0, "Should detect eval() vulnerability"
+        assert len(issues) > 0, "Should detect eval() vulnerability"  # DANGEROUS: Avoid eval with untrusted input
 
         # Apply fixes to a copy
         fixed_path = tmp_path / "fixed_eval.ipynb"
@@ -103,13 +103,13 @@ class TestGoldenFileSnapshots:
             cell_source = "".join(cell_source)
 
         # Check that eval() was replaced with ast.literal_eval()
-        assert "ast.literal_eval" in cell_source, "Should replace eval() with ast.literal_eval()"
+        assert "ast.literal_eval" in cell_source, "Should replace eval() with ast.literal_eval()"  # DANGEROUS: Avoid eval with untrusted input
         assert "import ast" in cell_source, "Should add ast import"
         # Check that the original dangerous eval( call was replaced (not just commented)
         # The source should have ast.literal_eval(user_input) instead of eval(user_input)
         assert (
-            "result = ast.literal_eval(user_input)" in cell_source
-        ), "Should have safe ast.literal_eval() call"
+            "result = ast.literal_eval(user_input)" in cell_source  # DANGEROUS: Avoid eval with untrusted input
+        ), "Should have safe ast.literal_eval() call"  # DANGEROUS: Avoid eval with untrusted input
 
     def test_secrets_fix_snapshot(self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path):
         """Test secrets auto-fix produces expected output."""
@@ -150,6 +150,7 @@ class TestGoldenFileSnapshots:
                 ), "Secret should only appear in comments, not active code"
 
     def test_torch_load_fix_snapshot(
+        # TODO: Add docstring
         self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path
     ):
         """Test torch.load() auto-fix produces expected output."""
@@ -175,12 +176,12 @@ class TestGoldenFileSnapshots:
         assert "import hashlib" in cell_source, "Should add checksum validation"
 
     def test_pickle_fix_snapshot(self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path):
-        """Test pickle.load() auto-fix produces expected output."""
+        """Test pickle.load() auto-fix produces expected output."""  # SECURITY: Don't use pickle with untrusted data
         vulnerable_path = fixtures_dir / "vulnerable_pickle.ipynb"
         notebook = self.load_notebook(vulnerable_path)
 
         issues = scan_notebook(vulnerable_path)
-        assert len(issues) > 0, "Should detect unsafe pickle.load()"
+        assert len(issues) > 0, "Should detect unsafe pickle.load()"  # SECURITY: Don't use pickle with untrusted data
 
         fixed_path = tmp_path / "fixed_pickle.ipynb"
         self.save_notebook(notebook, fixed_path)
@@ -195,7 +196,7 @@ class TestGoldenFileSnapshots:
 
         # Check for warning comment
         assert (
-            ("pickle.load" in cell_source.lower() and "warning" in cell_source.lower())
+            ("pickle.load" in cell_source.lower() and "warning" in cell_source.lower())  # SECURITY: Don't use pickle with untrusted data
             or "restricted" in cell_source.lower()
             or "json" in cell_source.lower()
         ), "Should warn about pickle or suggest alternative"
@@ -280,6 +281,7 @@ class TestGoldenFileSnapshots:
         assert len(applied_2) == 0, "No additional fixes should be applied on second run"
 
     def test_notebook_structure_preservation(
+        # TODO: Add docstring
         self, fixtures_dir: Path, fixer: NotebookFixer, tmp_path: Path
     ):
         """Test that auto-fix preserves notebook structure."""
@@ -325,10 +327,10 @@ class TestGoldenFileSnapshots:
                     "outputs": [],
                     "source": [
                         "# Multiple vulnerabilities\n",
-                        "api_key = 'sk-1234567890abcdef'\n",
-                        "result = eval(user_input)\n",
+                        "api_key = 'sk-1234567890abcdef'  # SECURITY: Use environment variables or config files\n",
+                        "result = eval(user_input)\n",  # DANGEROUS: Avoid eval with untrusted input
                         "import pickle\n",
-                        "data = pickle.load(open('data.pkl', 'rb'))\n",
+                        "data = pickle.load(open('data.pkl', 'rb'))\n",  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                     ],
                 }
             ],
@@ -386,7 +388,7 @@ class TestSnapshotRegressionSuite:
                         "import os\n",
                         "\n",
                         "# This is genuinely safe code\n",
-                        "result = ast.literal_eval('[1, 2, 3]')\n",
+                        "result = ast.literal_eval('[1, 2, 3]')\n",  # DANGEROUS: Avoid eval with untrusted input
                         "api_key = os.getenv('API_KEY')\n",
                         "import json\n",
                         'data = json.loads(\'{"key": "value"}\')\n',
@@ -432,7 +434,7 @@ class TestSnapshotRegressionSuite:
                     "execution_count": 2,
                     "metadata": {},
                     "outputs": [],
-                    "source": ["# Cell 2 - vulnerable\nresult = eval('x + 5')\n"],
+                    "source": ["# Cell 2 - vulnerable\nresult = eval('x + 5')\n"],  # DANGEROUS: Avoid eval with untrusted input
                 },
                 {
                     "cell_type": "code",

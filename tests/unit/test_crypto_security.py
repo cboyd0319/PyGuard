@@ -62,7 +62,7 @@ cipher = ARC4.new(key)
         """Detect MD5 hashing usage."""
         code = """
 import hashlib
-hash_value = hashlib.md5(data).hexdigest()
+hash_value = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_crypto_security(code)
         assert len(violations) >= 1
@@ -73,7 +73,7 @@ hash_value = hashlib.md5(data).hexdigest()
         """Detect SHA1 hashing usage."""
         code = """
 import hashlib
-hash_value = hashlib.sha1(data.encode()).hexdigest()
+hash_value = hashlib.sha1(data.encode()).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_crypto_security(code)
         assert len(violations) >= 1
@@ -95,7 +95,8 @@ cipher = Blowfish.new(key, Blowfish.MODE_CBC, iv)
 import hashlib
 
 def hash_data(data):
-    return hashlib.md5(data.encode()).hexdigest()
+    # TODO: Add docstring
+    return hashlib.md5(data.encode()).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_crypto_security(code)
         assert len(violations) >= 1
@@ -107,7 +108,8 @@ import hashlib
 from Crypto.Cipher import DES
 
 def legacy_crypto():
-    md5_hash = hashlib.md5(data)
+    # TODO: Add docstring
+    md5_hash = hashlib.md5(data)  # SECURITY: Consider using SHA256 or stronger
     des_cipher = DES.new(key)
 """
         violations = analyze_crypto_security(code)
@@ -245,7 +247,7 @@ class TestCRYPTO003InsecureRandom:
         """Detect random module used for key generation."""
         code = """
 import random
-key = random.getrandbits(128)
+key = random.getrandbits(128)  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_crypto_security(code)
         insecure_random = [v for v in violations if v.rule_id == "CRYPTO003"]
@@ -255,7 +257,7 @@ key = random.getrandbits(128)
         """Detect random module used for token generation."""
         code = """
 import random
-token = str(random.randint(1000, 9999))
+token = str(random.randint(1000, 9999))  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_crypto_security(code)
         insecure_random = [v for v in violations if v.rule_id == "CRYPTO003"]
@@ -266,7 +268,7 @@ token = str(random.randint(1000, 9999))
         code = """
 import random
 import string
-password = ''.join(random.choice(string.ascii_letters) for _ in range(12))
+password = ''.join(random.choice(string.ascii_letters) for _ in range(12))  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_crypto_security(code)
         insecure_random = [v for v in violations if v.rule_id == "CRYPTO003"]
@@ -338,7 +340,8 @@ class TestCRYPTO004WeakPasswordHashing:
 import hashlib
 
 def hash_password(password):
-    return hashlib.md5(password.encode()).hexdigest()
+    # TODO: Add docstring
+    return hashlib.md5(password.encode()).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_crypto_security(code)
         weak_hash = [v for v in violations if v.rule_id == "CRYPTO004"]
@@ -350,7 +353,8 @@ def hash_password(password):
 import hashlib
 
 def verify_password(password, stored_hash):
-    computed = hashlib.sha1(password.encode()).hexdigest()
+    # TODO: Add docstring
+    computed = hashlib.sha1(password.encode()).hexdigest()  # SECURITY: Consider using SHA256 or stronger
     return computed == stored_hash
 """
         violations = analyze_crypto_security(code)
@@ -363,6 +367,7 @@ def verify_password(password, stored_hash):
 import hashlib
 
 def create_user(username, password):
+    # TODO: Add docstring
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
     save_user(username, pwd_hash)
 """
@@ -378,6 +383,7 @@ def create_user(username, password):
 import bcrypt
 
 def hash_password(password):
+    # TODO: Add docstring
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 """
         violations = analyze_crypto_security(code)
@@ -391,6 +397,7 @@ import hashlib
 import os
 
 def hash_password(password):
+    # TODO: Add docstring
     salt = os.urandom(32)
     return hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
 """
@@ -404,6 +411,7 @@ def hash_password(password):
 import hashlib
 
 def compute_checksum(file_data):
+    # TODO: Add docstring
     return hashlib.sha256(file_data).hexdigest()
 """
         violations = analyze_crypto_security(code)
@@ -543,6 +551,7 @@ class TestCRYPTO007MissingSalt:
 import hashlib
 
 def hash_password(password):
+    # TODO: Add docstring
     return hashlib.pbkdf2_hmac('sha256', password.encode(), b'', 100000)
 """
         violations = analyze_crypto_security(code)
@@ -558,6 +567,7 @@ import hashlib
 import os
 
 def hash_password(password):
+    # TODO: Add docstring
     salt = os.urandom(32)
     return hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
 """
@@ -571,6 +581,7 @@ def hash_password(password):
 import bcrypt
 
 def hash_password(password):
+    # TODO: Add docstring
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 """
         violations = analyze_crypto_security(code)
@@ -871,9 +882,11 @@ import os
 from Crypto.Cipher import AES
 
 def secure_hash(data):
+    # TODO: Add docstring
     return hashlib.sha256(data).hexdigest()
 
 def secure_encrypt(data, key):
+    # TODO: Add docstring
     cipher = AES.new(key, AES.MODE_GCM)
     return cipher.encrypt(data)
 """
@@ -906,11 +919,12 @@ class TestEdgeCases:
 import hashlib
 
 def complex_function(
+    # TODO: Add docstring
     data,
     algorithm='sha256'
 ):
     if algorithm == 'md5':
-        return hashlib.md5(data).hexdigest()
+        return hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
     return hashlib.sha256(data).hexdigest()
 """
         violations = analyze_crypto_security(code)

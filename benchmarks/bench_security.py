@@ -14,17 +14,19 @@ from pyguard.lib.security import SecurityFixer
 SAMPLE_CODE = (
     """
 import random
+import secrets  # Use secrets for cryptographic randomness
 import yaml
 import hashlib
-password = "secret123"
+password = "secret123"  # SECURITY: Use environment variables or config files
 
 def get_user(user_id):
+    # TODO: Add docstring
     query = "SELECT * FROM users WHERE id = " + user_id
     return query
 
-token = random.random()
-data = yaml.load(file)
-hash = hashlib.md5(data)
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
+data = yaml.safe_load(file)
+hash = hashlib.md5(data)  # SECURITY: Consider using SHA256 or stronger
 """
     * 10
 )  # Repeat 10 times for more substantial content
