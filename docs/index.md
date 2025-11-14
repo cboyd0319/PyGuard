@@ -2,6 +2,12 @@
 
 Welcome to the comprehensive documentation for PyGuard - The World's Best Python Security & Compliance Tool.
 
+> **📦 Installation:** PyGuard is currently available via GitHub only. Install with:
+> ```bash
+> pip install git+https://github.com/cboyd0319/PyGuard.git
+> ```
+> PyPI/Homebrew releases coming soon!
+
 ## 📚 Documentation Structure
 
 ### Getting Started

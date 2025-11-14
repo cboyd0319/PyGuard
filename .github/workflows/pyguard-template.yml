@@ -38,9 +38,7 @@ jobs:
 
       - name: Install PyGuard
         run: |
-          pip install pyguard[full]  # Install with all features
-          # OR for minimal install:
-          # pip install pyguard
+          pip install git+https://github.com/cboyd0319/PyGuard.git
 
       - name: Verify PyGuard installation
         run: pyguard doctor
@@ -85,7 +83,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install PyGuard
-        run: pip install pyguard[full]
+        run: pip install git+https://github.com/cboyd0319/PyGuard.git
 
       - name: Run PyGuard scan (strict mode)
         run: |
@@ -115,7 +113,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install PyGuard
-        run: pip install pyguard[full]
+        run: pip install git+https://github.com/cboyd0319/PyGuard.git
 
       - name: Run PyGuard auto-fix (safe fixes only)
         run: |

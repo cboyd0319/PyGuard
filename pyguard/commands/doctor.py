@@ -97,7 +97,7 @@ class DoctorCommand:
                     name,
                     "[dim]○[/dim]",
                     "Not installed",
-                    "pip install pyguard[notebooks]",
+                    f"pip install {import_name}",
                 )
 
         # Check system tools
@@ -138,7 +138,7 @@ class DoctorCommand:
             console.print("  ✓ No external tools required!")
             console.print()
             console.print("[bold]Optional (Jupyter notebooks only):[/bold]")
-            console.print("  • [cyan]pip install pyguard[notebooks][/cyan] - for .ipynb analysis")
+            console.print("  • [cyan]pip install nbformat nbclient[/cyan] - for .ipynb analysis")
             console.print()
             console.print("[bold]Next steps:[/bold]")
             console.print("  1. Run [cyan]pyguard init[/cyan] to create configuration")

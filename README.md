@@ -812,7 +812,7 @@ pyguard vulnerable_code.py
 
 | Task | PyGuard v0.7.0 | Traditional Approach |
 |------|----------------|---------------------|
-| **Installation** | `pip install pyguard` | Install & configure 7+ separate tools |
+| **Installation** | One git command | Install & configure 7+ separate tools |
 | **Setup Time** | 30 seconds | 2-4 hours (config files, integration) |
 | **First Scan** | `pyguard scan .` | Run 7+ commands, merge outputs |
 | **Config Files** | 1 (`.pyguard.toml`) | 7+ (bandit.yml, .flake8, pyproject.toml, etc.) |
@@ -853,7 +853,7 @@ touch .banditrc .flake8 pyproject.toml .pylintrc
 # Still no auto-fix!
 
 # PyGuard (2 minutes)
-pip install pyguard[full]  # Or just: pip install pyguard
+pip install git+https://github.com/cboyd0319/PyGuard.git
 pyguard init --interactive  # Friendly wizard creates config
 pyguard scan .              # Beautiful, consolidated results
 pyguard fix .               # Auto-fix everything safely
