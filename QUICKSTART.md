@@ -1,6 +1,8 @@
 # PyGuard Quickstart
 
-Set up PyGuard, run your first scans, and keep fixes flowing in under ten minutes. Every step keeps developer experience front and center so your team can focus on shipping.
+Set up PyGuard, run your first scans, and keep fixes flowing in under ten minutes. This guide covers installation, basic usage, and integration options to get you productive fast.
+
+**Version**: 0.7.0 | **Python**: 3.11+ | **Platforms**: macOS, Linux, Windows
 
 ---
 
@@ -37,26 +39,37 @@ pyguard scan src/ --sarif --json pyguard-results.json
 ```
 
 What to expect:
-- Security, quality, formatting, and notebooks analyzed together
-- Rich console summary + HTML (enabled by default) + SARIF for GitHub Advanced Security
-- Exit code `1` when HIGH/CRITICAL issues remain (ideal for CI gates)
+- **739 security checks** across 25 frameworks + 216+ quality rules analyzed in one pass
+- Rich console summary with color-coded severity levels
+- HTML report (enabled by default) with charts and expandable details
+- SARIF 2.1.0 output for GitHub Code Scanning integration
+- JSON output for programmatic access and CI/CD pipelines
+- Exit code `1` when HIGH/CRITICAL issues found (perfect for CI gates)
 
-Need speed? Add `--fast` (RipGrep pre-filter) and `--parallel` for monorepos.
+**Performance tips**:
+- Add `--fast` for RipGrep pre-filtering (10-100x faster on large codebases)
+- Add `--parallel` to use multiple CPU cores for concurrent analysis
 
 ---
 
 ## 4. First fixes (2 minutes)
 
 ```bash
-pyguard fix src/            # safe fixes with backups
-pyguard fix api/ --interactive
-pyguard fix . --security-only
+pyguard fix src/                    # safe fixes with backups
+pyguard fix api/ --interactive      # preview each fix before applying
+pyguard fix . --security-only       # only apply security fixes
+pyguard fix . --formatting-only     # only apply formatting fixes
+pyguard fix . --unsafe              # include unsafe fixes (with prompts)
 ```
 
-Highlights:
-- Automatic backups live in `.pyguard_backups/`
-- Interactive mode previews file-level diffs inside the terminal
-- `--unsafe` unlocks deep refactors with safety prompts
+**Fix highlights**:
+- **199+ auto-fixes**: Most comprehensive auto-fix coverage of any Python security tool
+- **Automatic backups**: All files backed up to `.pyguard_backups/` before modification
+- **Interactive mode**: Preview diffs in terminal and confirm each fix individually
+- **Safety classification**:
+  - SAFE (107+ fixes): Applied automatically - won't change behavior
+  - UNSAFE (72+ fixes): Require `--unsafe` flag - may need testing
+- **Scoped fixing**: Use `--security-only` or `--formatting-only` to limit scope
 
 ---
 
@@ -67,9 +80,20 @@ pyguard init --interactive   # guided questionnaire
 pyguard validate-config      # verify + print summary
 ```
 
-Profiles: strict, balanced, lenient, security-only, formatting-only. Configuration covers log level, exclude globs, enabled check families, formatting preferences, and max complexity budgets.
+**Configuration options**:
+- **Profiles**: strict, balanced, lenient, security-only, formatting-only
+- **Settings**: log level, exclude patterns, enabled check families, severity thresholds
+- **Formatting preferences**: line length, indentation, import sorting
+- **Quality thresholds**: max complexity, function length, parameter count
+- **File location**: `.pyguard.toml` at repo root (auto-discovered by walking up from cwd)
 
-Store the resulting `.pyguard.toml` at the repo root to keep CLI, CI, and hooks aligned.
+**Configuration discovery**:
+- Searches from current directory up to project root
+- Supports per-directory overrides
+- Environment variables can override config file settings
+- CLI arguments override everything
+
+Store `.pyguard.toml` at the repo root to keep CLI, CI, pre-commit hooks, and watch mode aligned.
 
 ---
 
@@ -77,20 +101,29 @@ Store the resulting `.pyguard.toml` at the repo root to keep CLI, CI, and hooks 
 
 ### Watch mode for tight feedback loops
 ```bash
-pyguard watch app/ --security-only
+pyguard watch app/                  # watch all files, apply safe fixes on change
+pyguard watch src/ --security-only  # only security fixes
+pyguard watch . --interactive       # confirm each fix
 ```
-Automatically fixes changed files on save (great next to your web server or notebook runner).
+**Perfect for development**: Automatically fixes changed files on save. Great alongside your dev server (uvicorn --reload, flask run, etc.).
 
 ### Pre-commit hook in one command
 ```bash
-pyguard-hooks install --type pre-commit
+pyguard-hooks install --type pre-commit  # install hook
+pyguard-hooks install --type pre-push    # or pre-push
+pyguard-hooks test                        # verify hook works
+pyguard-hooks uninstall --type pre-commit # remove hook
 ```
-Runs `pyguard . --scan-only --security-only` before every commit. Use `pyguard-hooks test` to verify.
+The hook runs `pyguard . --scan-only --security-only` before commits. Blocks commits with HIGH/CRITICAL issues.
 
 ### GitHub Action (CI)
 ```yaml
-name: PyGuard
+name: PyGuard Security Scan
 on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write  # Required for SARIF upload
 
 jobs:
   security:
@@ -102,31 +135,72 @@ jobs:
           paths: '.'
           scan-only: 'true'
           upload-sarif: 'true'
+          fail-on: 'high'  # Block on HIGH/CRITICAL issues
 ```
-- Publishes SARIF to the Security tab
-- Blocks merges when CRITICAL issues remain
-- Use `paths` to limit monorepo scans
+
+**GitHub Action features**:
+- Publishes SARIF to GitHub Security tab (Code Scanning)
+- Blocks merges when CRITICAL/HIGH issues remain (configurable)
+- Use `paths` input to scan specific directories in monorepos
+- Supports custom config with `config-path` input
+- Available at [GitHub Marketplace](https://github.com/marketplace/actions/pyguard-security-scanner)
 
 ---
 
 ## 7. Situational playbook
 
-Scenario | Recommended command
---- | ---
-Preview findings without touching code | `pyguard scan .`
-Only trust auto-formatting | `pyguard fix src/ --formatting-only`
-Security sweeps in notebooks | `pyguard scan notebooks/ --security-only`
-Report-focused run | `pyguard scan services/ --sarif --json results.json --no-html`
-Large repo with vendor folders | `pyguard scan . --exclude 'vendor/*' '.venv/*'`
-Explain a finding to teammates | `pyguard explain sql-injection`
+| Scenario | Recommended command |
+|----------|---------------------|
+| Preview findings without touching code | `pyguard scan .` |
+| Only trust auto-formatting | `pyguard fix src/ --formatting-only` |
+| Security sweeps in notebooks | `pyguard scan notebooks/ --security-only` |
+| Report-focused run for CI | `pyguard scan services/ --sarif --json results.json --no-html` |
+| Large repo with vendor folders | `pyguard scan . --exclude 'vendor/*' '.venv/*'` |
+| Fast scan of monorepo | `pyguard scan . --fast --parallel` |
+| Explain a finding to teammates | `pyguard explain sql-injection` |
+| Watch mode during development | `pyguard watch src/` |
+| Pre-commit security gate | `pyguard-hooks install --type pre-commit` |
+| Check environment setup | `pyguard doctor` |
+| Verify configuration | `pyguard validate-config` |
 
 ---
 
 ## 8. Extend & integrate
 
-- **API** – `PyGuardAPI` lets IDEs or services call `analyze_file`, inspect severities, and run fixes programmatically (`examples/api_usage.py`).
-- **Custom rules** – Load TOML definitions via `create_rule_engine_from_config` (see `examples/custom_rules_example.toml`).
-- **Advanced workflows** – JSON-RPC server, webhook integration, SBOM + SLSA verification, and reproducible builds live under `docs/guides/`.
+### Programmatic API
+```python
+from pyguard.api import PyGuardAPI
+
+api = PyGuardAPI()
+result = api.analyze_file("mycode.py")
+
+if result.has_critical_issues():
+    for issue in result.critical_issues:
+        print(f"{issue.category}: {issue.message} at line {issue.line_number}")
+
+# Apply fixes programmatically
+api.fix_file("mycode.py", unsafe=False)
+```
+
+### Custom Rules
+Create `.pyguard.toml` with custom rules:
+```toml
+[[custom_rules]]
+id = "CUSTOM001"
+pattern = "deprecated_function\\("
+severity = "MEDIUM"
+message = "Use new_function() instead"
+category = "BEST_PRACTICES"
+```
+
+### Advanced Integrations
+- **JSON-RPC API** (`pyguard.lib.jsonrpc_api`): Real-time analysis for IDE plugins
+- **Webhook API** (`pyguard.lib.webhook_api`): CI/CD pipeline integration with API key auth
+- **Audit Logger** (`pyguard.lib.audit_logger`): Tamper-evident logging for compliance (SOC 2, ISO 27001)
+- **Git Diff Analysis** (`pyguard --diff`): Scan only changed files in PRs (10-100x faster)
+- **Compliance Reporting** (`pyguard --compliance-html`): Generate audit-ready reports
+
+See `docs/guides/` for detailed integration guides.
 
 ---
 
