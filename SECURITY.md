@@ -6,9 +6,9 @@ We support the latest minor release and security patches.
 
 | Version | Supported | Notes |
 |---------|-----------|-------|
-| 0.6.0   | ✅ Yes    | Current stable release |
-| 0.5.x   | ⚠️ Limited | Security patches only |
-| < 0.5   | ❌ No     | Please upgrade to 0.6.0 |
+| 0.7.0   | ✅ Yes    | Current stable release |
+| 0.6.x   | ⚠️ Limited | Security patches only |
+| < 0.6   | ❌ No     | Please upgrade to 0.7.0 |
 
 ## Reporting a Vulnerability
 

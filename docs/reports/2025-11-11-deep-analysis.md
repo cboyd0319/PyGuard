@@ -100,7 +100,7 @@ All frameworks validated and functional:
 
 ### Commands Tested
 - ✅ `pyguard --help` - Full help system working
-- ✅ `pyguard --version` - Returns correct version (0.6.0)
+- ✅ `pyguard --version": "0.7.0)
 - ✅ `pyguard --scan-only` - Scanning works perfectly
 - ✅ Security detection - Correctly identifies hardcoded secrets, eval() usage
 - ✅ Report generation - Rich terminal output functional
@@ -402,7 +402,7 @@ The tool delivers on its promise: **"Zero Technical Knowledge Required - Just Ru
 3. Auto-fixed 424 ruff issues across multiple files
 
 ### Documentation Changes
-1. `SECURITY.md` - Updated version from 0.3.x to 0.6.0
+1. `SECURITY.md` - Updated version": "0.7.0
 2. `README.md` - Updated test count to 4,701 and framework count to 25
 3. `CONTRIBUTING.md` - Updated test count to 4,701
 4. `docs/reference/capabilities-reference.md` - Updated test count to 4,701 and test files to 126

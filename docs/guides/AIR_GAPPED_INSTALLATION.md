@@ -221,7 +221,7 @@ For maximum convenience, create a complete installation bundle with everything n
 
 set -e
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 BUNDLE_DIR="pyguard-offline-bundle-${VERSION}"
 
 echo "Creating PyGuard offline bundle v${VERSION}..."
@@ -606,8 +606,8 @@ Track all versions deployed:
 
 ```bash
 # versions.txt
-2024-11-04: PyGuard v0.6.0 deployed to production
-2024-10-15: PyGuard v0.5.8 deployed to staging
+2025-11-04: PyGuard v0.6.0 deployed to production
+2025-10-15: PyGuard v0.5.8 deployed to staging
 ```
 
 ### 2. Testing Before Deployment
@@ -662,7 +662,7 @@ cp pyguard-offline-bundle-*.tar.gz /backup/pyguard/$(date +%Y%m%d)/
 set -e
 
 # Configuration
-VERSION="0.6.0"
+VERSION="0.7.0"
 BUNDLE_NAME="pyguard-offline-${VERSION}"
 TARGET_SYSTEM="airgap-server"
 
@@ -724,5 +724,5 @@ echo "✅ Deployment complete!"
 
 ---
 
-**Last Updated**: 2024-11-04  
+**Last Updated**: 2025-11-04  
 **Status**: Production Ready

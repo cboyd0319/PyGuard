@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 from rich.prompt import Confirm
@@ -223,7 +222,7 @@ class FixCommand:
         # TODO: Add docstring
         cli: PyGuardCLI,
         files: list[Path],
-        config: PyGuardConfig,
+        _config: PyGuardConfig,
         args: argparse.Namespace,
     ) -> int:
         """Run interactive fix mode."""
@@ -276,20 +275,20 @@ class FixCommand:
                 if response == "q":
                     console.print("[yellow]Quitting interactive mode[/yellow]")
                     break
-                elif response == "a":
+                if response == "a":
                     console.print("[cyan]Applying all remaining fixes...[/cyan]")
                     # Apply all fixes automatically
                     cli.run_full_analysis(files, create_backup=not args.no_backup, fix=True)
                     fixed_count += len(file_issues) - i + 1
                     break
-                elif response == "y":
+                if response == "y":
                     # Apply this specific fix (simplified - in real implementation would target specific issue)
                     fixed_count += 1
                 else:
                     skipped_count += 1
 
         console.print()
-        console.print(f"[bold]Summary:[/bold]")
+        console.print("[bold]Summary:[/bold]")
         console.print(f"  Fixed: {fixed_count}")
         console.print(f"  Skipped: {skipped_count}")
 

@@ -1,8 +1,8 @@
 # PyGuard Long-Term Support (LTS) Policy
 
 **Version:** 1.0  
-**Effective Date:** 2024-11-04  
-**Last Updated:** 2024-11-04
+**Effective Date:** 2025-11-04  
+**Last Updated:** 2025-11-04
 
 ## Overview
 
@@ -291,7 +291,7 @@ This LTS policy may be updated to reflect:
 - Market demands and competitive landscape
 
 **Version History:**
-- v1.0 (2024-11-04): Initial LTS policy document
+- v1.0 (2025-11-04): Initial LTS policy document
 
 ## License
 

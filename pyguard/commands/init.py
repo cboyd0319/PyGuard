@@ -6,13 +6,23 @@ import argparse
 from pathlib import Path
 
 from rich.console import Console
-from rich.prompt import Confirm, IntPrompt, Prompt
+from rich.prompt import Confirm, IntPrompt
 
 from pyguard.lib.config import PyGuardConfig
 
 
 class InitCommand:
     """Initialize PyGuard configuration."""
+
+    # Security level constants
+    SECURITY_STRICT = 1
+    SECURITY_BALANCED = 2
+    SECURITY_LENIENT = 3
+
+    # Project type constants
+    PROJECT_WEB_APP = 1
+    PROJECT_DATA_SCIENCE = 2
+    PROJECT_LIBRARY = 3
 
     @staticmethod
     def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -98,7 +108,7 @@ class InitCommand:
 
         # Auto-fix preferences
         console.print()
-        auto_fix = Confirm.ask("Automatically fix safe issues?", default=True)
+        Confirm.ask("Automatically fix safe issues?", default=True)
 
         # Formatting
         use_black = Confirm.ask("Use Black formatter?", default=True)
@@ -108,10 +118,10 @@ class InitCommand:
         config = PyGuardConfig()
 
         # Adjust security based on level
-        if security_level == 1:  # Strict
+        if security_level == InitCommand.SECURITY_STRICT:  # Strict
             config.security.severity_levels = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
             config.best_practices.max_complexity = 8
-        elif security_level == 2:  # Balanced
+        elif security_level == InitCommand.SECURITY_BALANCED:  # Balanced
             config.security.severity_levels = ["HIGH", "MEDIUM", "LOW"]
             config.best_practices.max_complexity = 10
         else:  # Lenient
@@ -119,7 +129,7 @@ class InitCommand:
             config.best_practices.max_complexity = 15
 
         # Adjust for project type
-        if project_type == 1:  # Web app
+        if project_type == InitCommand.PROJECT_WEB_APP:  # Web app
             config.security.checks = {
                 "sql_injection": True,
                 "command_injection": True,
@@ -127,10 +137,10 @@ class InitCommand:
                 "csrf": True,
                 "hardcoded_passwords": True,
             }
-        elif project_type == 2:  # Data science
+        elif project_type == InitCommand.PROJECT_DATA_SCIENCE:  # Data science
             config.best_practices.check_docstrings = True
             config.formatting.line_length = 120  # Data science often needs longer lines
-        elif project_type == 3:  # Library
+        elif project_type == InitCommand.PROJECT_LIBRARY:  # Library
             config.best_practices.check_docstrings = True
             config.best_practices.check_naming_conventions = True
 

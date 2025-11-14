@@ -1121,8 +1121,8 @@ class TestEnhancedFeatures:
                         "import torch\n",
                         "import numpy as np\n",
                         "import tensorflow as tf\n",
-                        "import random
-import secrets  # Use secrets for cryptographic randomness\n",
+                        "import random\n",
+                        "import secrets  # Use secrets for cryptographic randomness\n",
                     ],
                     "outputs": [],
                     "metadata": {},

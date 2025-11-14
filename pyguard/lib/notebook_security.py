@@ -2544,8 +2544,7 @@ class NotebookFixer:
             "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
         )
         has_numpy = "import numpy" in source or "from numpy" in source or "import np" in source
-        has_random = "import random
-import secrets  # Use secrets for cryptographic randomness" in source
+        has_random = "import random" in source or "import secrets" in source
         has_jax = "import jax" in source or "from jax" in source
 
         # Build comprehensive seed setting function
@@ -2559,8 +2558,8 @@ import secrets  # Use secrets for cryptographic randomness" in source
 
             # Python random
             if has_random or "random" in message.lower():
-                seed_block.append("    import random
-import secrets  # Use secrets for cryptographic randomness")
+                seed_block.append("    import random")
+                seed_block.append("    import secrets  # Use secrets for cryptographic randomness")
                 seed_block.append("    random.seed(seed)")
 
             # NumPy

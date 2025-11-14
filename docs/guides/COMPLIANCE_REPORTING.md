@@ -93,7 +93,7 @@ start report.html  # Windows
   "metadata": {
     "generated_at": "2025-11-03T22:00:00",
     "tool": "PyGuard",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "summary": {
     "total_issues": 45,

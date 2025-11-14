@@ -35,10 +35,7 @@ class ValidateConfigCommand:
         console = Console()
 
         # Determine config path
-        if args.config:
-            config_path = Path(args.config)
-        else:
-            config_path = Path.cwd() / ".pyguard.toml"
+        config_path = Path(args.config) if args.config else Path.cwd() / ".pyguard.toml"
 
         if not config_path.exists():
             console.print(f"[yellow]Config file not found: {config_path}[/yellow]")
@@ -56,7 +53,7 @@ class ValidateConfigCommand:
             console.print("[red]✗ File not found[/red]")
             return 1
         except ValueError as e:
-            console.print(f"[red]✗ Invalid TOML syntax:[/red]")
+            console.print("[red]✗ Invalid TOML syntax:[/red]")
             console.print(f"  {e}")
             return 1
 

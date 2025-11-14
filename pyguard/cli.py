@@ -68,7 +68,7 @@ class PyGuardCLI:
         """Lazy load notebook analyzer."""
         if self._notebook_analyzer is None:
             try:
-                from pyguard.lib.notebook_analyzer import (  # noqa: PLC0415 - Lazy import for optional dependency
+                from pyguard.lib.notebook_analyzer import (
                     NotebookSecurityAnalyzer,
                 )
 
@@ -583,7 +583,7 @@ def main_legacy():  # noqa: PLR0912, PLR0915 - CLI main function handles many op
 
     # Handle git diff mode
     if args.diff:
-        from pyguard.lib.git_diff_analyzer import GitDiffAnalyzer  # noqa: PLC0415 - Lazy import
+        from pyguard.lib.git_diff_analyzer import GitDiffAnalyzer
 
         try:
             diff_analyzer = GitDiffAnalyzer()
@@ -873,11 +873,11 @@ def main_legacy():  # noqa: PLR0912, PLR0915 - CLI main function handles many op
 
     # Watch mode
     if args.watch:
-        from pyguard.lib.watch import run_watch_mode  # noqa: PLC0415 - Lazy import for watch mode
+        from pyguard.lib.watch import run_watch_mode
 
         def analyze_file(file_path: Path):
             """Analyze a single file in watch mode."""
-            from rich.console import Console  # noqa: PLC0415 - Lazy import for watch mode
+            from rich.console import Console
 
             console = Console()
             console.print(f"[cyan]Analyzing {file_path}...[/cyan]")
@@ -966,7 +966,7 @@ def main_legacy():  # noqa: PLR0912, PLR0915 - CLI main function handles many op
 
     # Generate enhanced compliance reports if requested
     if args.compliance_html or args.compliance_json:
-        from pyguard.lib.compliance_reporter import (  # noqa: PLC0415 - Lazy import, only needed when compliance reports requested
+        from pyguard.lib.compliance_reporter import (
             ComplianceReporter,
         )
 

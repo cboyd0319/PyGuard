@@ -7,7 +7,7 @@ This example demonstrates how to set up and use PyGuard git hooks in your projec
 ### Step 1: Install PyGuard
 
 ```bash
-# PyGuard is not yet on PyPI - install from source
+pip install git+https://github.com/cboyd0319/PyGuard.git
 ```
 
 ### Step 2: Install Pre-commit Hook
@@ -205,7 +205,7 @@ jobs:
           python-version: '3.11'
       
       - name: Install PyGuard
-        run: # PyGuard is not yet on PyPI - install from source
+        run: pip install git+https://github.com/cboyd0319/PyGuard.git
       
       - name: Run PyGuard
         run: pyguard --scan-only .
@@ -238,7 +238,7 @@ chmod +x .git/hooks/pre-commit
 
 ```bash
 # Make sure PyGuard is installed
-# PyGuard is not yet on PyPI - install from source
+pip install git+https://github.com/cboyd0319/PyGuard.git
 
 # Check if in PATH
 which pyguard
@@ -269,7 +269,7 @@ python -m venv venv
 source venv/bin/activate
 
 # Install PyGuard
-# PyGuard is not yet on PyPI - install from source
+pip install git+https://github.com/cboyd0319/PyGuard.git
 
 # Install pre-commit hook
 pyguard-hooks install
