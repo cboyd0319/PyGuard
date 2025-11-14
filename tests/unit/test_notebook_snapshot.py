@@ -17,7 +17,7 @@ Test Philosophy:
 - Tests verify idempotency (fix(fix(notebook)) == fix(notebook))
 - Tests verify no corruption of notebook structure
 
-Reference: PYGUARD_JUPYTER_SECURITY_ENGINEER.md
+Reference: docs/development/NOTEBOOK_SECURITY_CAPABILITIES.md
 """
 
 import json

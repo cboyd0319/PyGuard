@@ -455,7 +455,7 @@ We welcome contributions to enhance notebook security! Priority areas:
 
 ## References
 
-- [PyGuard Jupyter Security Engineer Vision](../docs/development/PYGUARD_JUPYTER_SECURITY_ENGINEER.md)
+- [Notebook Security Capabilities Vision](../docs/development/NOTEBOOK_SECURITY_CAPABILITIES.md)
 - [CWE-502: Deserialization of Untrusted Data](https://cwe.mitre.org/data/definitions/502.html)
 - [CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html)
 - [CWE-798: Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)

@@ -346,7 +346,7 @@ comparison = analyzer.compare_security_posture(
 
 - [Git diff documentation](https://git-scm.com/docs/git-diff)
 - [GitHub Actions with PyGuard](github-action-guide.md)
-- [CI/CD Integration Guide](ADVANCED_FEATURES.md#cicd-generation)
+- [CI/CD Integration Guide](advanced-integrations.md)
 - [Compliance Reporting](COMPLIANCE_REPORTING.md)
 
 ## Support

@@ -8,7 +8,7 @@ This directory contains performance benchmarks for PyGuard, helping track progre
 
 Benchmarks Jupyter notebook security analysis performance.
 
-**World-Class Targets (from PYGUARD_JUPYTER_SECURITY_ENGINEER.md):**
+**World-Class Targets (from NOTEBOOK_SECURITY_CAPABILITIES.md):**
 - ✅ Sub-100ms analysis for small notebooks (< 10 cells)
 - ✅ Linear scaling to 1000+ cells
 - ✅ Streaming analysis for large outputs
@@ -99,6 +99,6 @@ When adding new features, please:
 
 ## References
 
-- **Vision Document:** [PYGUARD_JUPYTER_SECURITY_ENGINEER.md](../docs/development/PYGUARD_JUPYTER_SECURITY_ENGINEER.md)
+- **Vision Document:** [NOTEBOOK_SECURITY_CAPABILITIES.md](../docs/development/NOTEBOOK_SECURITY_CAPABILITIES.md)
 - **Capability Tracker:** [NOTEBOOK_SECURITY_CAPABILITIES.md](../docs/development/NOTEBOOK_SECURITY_CAPABILITIES.md)
 - **pytest-benchmark docs:** https://pytest-benchmark.readthedocs.io/

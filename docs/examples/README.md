@@ -1,95 +1,50 @@
 # PyGuard Examples
 
-This directory contains practical examples of using PyGuard in different scenarios.
+Hands-on scenarios for every adoption stage. Clone, run, and adapt these scripts to accelerate your own onboarding.
 
-## Available Examples
+## Core walkthroughs
 
-### Basic Usage
+File | What it shows
+--- | ---
+`basic_usage.py` | Minimal scan/fix loop
+`api_usage.py` | Programmatic `PyGuardAPI` for IDE or automation
+`advanced_usage.py` | Chained analyzers, SARIF exports, custom configuration
+`phase3_demo.py` | Full demonstration of security + quality packs leading up to v0.7+
 
-- **`basic_usage.py`** - Simple example showing core functionality
-- **`api_usage.py`** - Using PyGuard as a library
-- **`advanced_usage.py`** - Advanced features and API usage
-- **`phase3_demo.py`** - Phase 3 features demonstration
+## Advanced integrations
 
-### Advanced Integrations (NEW!)
+File | Highlights
+--- | ---
+`advanced_integrations_demo.py` | CI/CD workflow generation, performance profiler, dependency analyzer, custom rule engine
+`advanced_features_demo.py` | Notebook security, AI explanations, compliance reporting
+`github-workflows/README.md` | Ready-to-use workflow snippets for GitHub Actions
+`hooks/README.md` | How to wire PyGuard into Git hooks manually (mirrors `pyguard-hooks` CLI)
 
-- **`advanced_integrations_demo.py`** ✨ - Complete demo of all advanced features:
-  - CI/CD Integration (GitHub Actions, GitLab CI, etc.)
-  - Performance Profiler
-  - Dependency Analyzer
-  - Custom Rules Engine
-- **`advanced_features_demo.py`** - Jupyter notebook security & AI explanations
+## Configuration & customization
 
-### Configuration Examples
+Resource | Purpose
+--- | ---
+`pyguard.toml.example` | Starting point for `.pyguard.toml`
+`custom_rules_example.toml` | Sample custom security/quality rules for the rule engine
+`notebook_security_demo.*` | Secure and insecure notebooks for validation and training
+`plugins/` | Extending PyGuard with third-party detectors
 
-- **`pyguard.toml.example`** - Sample PyGuard configuration file
-- **`custom_rules_example.toml`** ✨ - Custom security/quality rules examples
-- **`git-hooks-demo.md`** - Git hooks integration guide
-
-## Running Examples
+## Running examples
 
 ```bash
-# From the repository root
-cd PyGuard
-
-# Run basic example
+# From repository root
 python examples/basic_usage.py
-
-# Run advanced integrations demo (NEW!)
 python examples/advanced_integrations_demo.py
-
-# Run advanced features demo
-python examples/advanced_features_demo.py
-
-# Install from source if needed
-pip install -e .
+python examples/notebook_security_demo.py
 ```
 
-## Quick Start with Advanced Features
-
-### CI/CD Integration
-
-```python
-from pyguard import generate_ci_config
-
-# Generate GitHub Actions workflow
-config = generate_ci_config("github_actions", ".github/workflows/pyguard.yml")
-print("✓ Generated workflow!")
+Need dependencies for notebooks? Install extras first:
+```bash
+pip install nbformat nbclient
 ```
 
-### Performance Profiler
+## Next steps
 
-```python
-from pyguard import analyze_performance
-
-# Analyze a file for performance issues
-issues = analyze_performance("mycode.py")
-for issue in issues:
-    print(f"{issue.severity}: {issue.message}")
-```
-
-### Dependency Analyzer
-
-```python
-from pyguard import analyze_project_dependencies
-
-# Analyze project dependencies
-analyzer = analyze_project_dependencies("src/")
-stats = analyzer.get_dependency_stats()
-print(f"Total modules: {stats['total_modules']}")
-```
-
-### Custom Rules Engine
-
-```python
-from pyguard import create_rule_engine_from_config
-
-# Load custom rules from TOML
-engine = create_rule_engine_from_config("examples/custom_rules_example.toml")
-violations = engine.check_file("mycode.py")
-print(f"Found {len(violations)} violations")
-```
-
-## Need Help?
-
-See the main [README](../README.md) or [documentation index](../index.md) for more information.
+- Pair these scripts with the [Quickstart](../../QUICKSTART.md)
+- Drop the GitHub workflow examples directly into `.github/workflows/`
+- Use `custom_rules_example.toml` as a template for your organization’s policy pack

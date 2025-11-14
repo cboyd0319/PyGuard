@@ -902,7 +902,7 @@ PyGuard includes specialized rules for **25 popular Python frameworks** - **317%
 - Cross-cell dependency analysis
 - Automated fixes
 
-**See**: `docs/guides/notebook-security-guide.md` for complete guide.
+**See**: `docs/guides/notebook-security-guide.md` for the complete guide.
 
 ### AI-Powered Explanations
 
@@ -916,7 +916,7 @@ PyGuard includes specialized rules for **25 popular Python frameworks** - **317%
 - Interactive quiz generation
 - No external AI calls (privacy-preserving)
 
-**See**: `docs/guides/ADVANCED_FEATURES.md` for examples.
+**See**: `docs/examples/advanced_features_demo.py` for usage examples.
 
 ---
 

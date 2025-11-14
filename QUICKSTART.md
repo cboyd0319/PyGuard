@@ -1,375 +1,136 @@
-# PyGuard Quick Start Guide
+# PyGuard Quickstart
 
-**Get started with PyGuard in 2 minutes!** 🚀
-
-PyGuard finds and fixes security vulnerabilities, code quality issues, and formatting problems in your Python code automatically.
+Set up PyGuard, run your first scans, and keep fixes flowing in under ten minutes. Every step keeps developer experience front and center so your team can focus on shipping.
 
 ---
 
-## Installation
+## 1. Requirements
 
-### Option 1: Install from GitHub (Current)
+| Requirement | Notes |
+| --- | --- |
+| Python | 3.11 or newer |
+| OS | macOS, Linux, Windows |
+| Optional | `ripgrep` for `--fast`, `nbformat`/`nbclient` for notebook scanning |
+
+Install directly from GitHub until PyPI/Homebrew releases land:
+
 ```bash
 pip install git+https://github.com/cboyd0319/PyGuard.git
 ```
 
-### Option 2: Clone and Install (Development)
+---
+
+## 2. Verify your environment (1 minute)
+
 ```bash
-git clone https://github.com/cboyd0319/PyGuard.git
-cd PyGuard
-pip install -e .
+pyguard doctor
 ```
+- Confirms Python version, Rich UI dependencies, RipGrep, notebook extras
+- Reminds you to install `.pyguard.toml` when missing
 
 ---
 
-## Your First Scan (30 seconds)
+## 3. First scan (2 minutes)
 
-### Step 1: Create a test file
 ```bash
-cat > test.py << 'EOF'
-import os
-
-password = "hardcoded123"
-eval("print('test')")
-
-def get_user(name):
-    query = f"SELECT * FROM users WHERE name = '{name}'"
-    return query
-EOF
+pyguard scan src/ --sarif --json pyguard-results.json
 ```
 
-### Step 2: Run PyGuard
-```bash
-pyguard test.py --scan-only
-```
+What to expect:
+- Security, quality, formatting, and notebooks analyzed together
+- Rich console summary + HTML (enabled by default) + SARIF for GitHub Advanced Security
+- Exit code `1` when HIGH/CRITICAL issues remain (ideal for CI gates)
 
-**That's it!** PyGuard will show you all security issues found.
-
-### Step 3: Auto-fix issues
-```bash
-pyguard test.py
-```
-
-PyGuard will automatically fix safe issues and create backups of your files.
+Need speed? Add `--fast` (RipGrep pre-filter) and `--parallel` for monorepos.
 
 ---
 
-## Common Use Cases
+## 4. First fixes (2 minutes)
 
-### 1. Scan a Single File
 ```bash
-pyguard myfile.py --scan-only
+pyguard fix src/            # safe fixes with backups
+pyguard fix api/ --interactive
+pyguard fix . --security-only
 ```
 
-### 2. Scan and Fix a Directory
-```bash
-pyguard src/
-```
-
-### 3. Security-Only Scan
-```bash
-pyguard . --security-only --scan-only
-```
-
-### 4. Generate SARIF Report for GitHub
-```bash
-pyguard . --sarif
-```
-
-### 5. Watch Mode (Auto-scan on file changes)
-```bash
-pyguard src/ --watch
-```
-
-### 6. Fast Scan with RipGrep (Large codebases)
-```bash
-pyguard . --fast
-```
+Highlights:
+- Automatic backups live in `.pyguard_backups/`
+- Interactive mode previews file-level diffs inside the terminal
+- `--unsafe` unlocks deep refactors with safety prompts
 
 ---
 
-## Understanding Output
+## 5. Configure once, reuse everywhere
 
-PyGuard shows issues in three severity levels:
+```bash
+pyguard init --interactive   # guided questionnaire
+pyguard validate-config      # verify + print summary
+```
 
-- 🔴 **HIGH (Security)** - Fix immediately! (SQL injection, hardcoded secrets, etc.)
-- 🟡 **MEDIUM (Quality)** - Improve code quality (naming, complexity, etc.)
-- 🟢 **LOW (Style)** - Formatting and style issues
+Profiles: strict, balanced, lenient, security-only, formatting-only. Configuration covers log level, exclude globs, enabled check families, formatting preferences, and max complexity budgets.
+
+Store the resulting `.pyguard.toml` at the repo root to keep CLI, CI, and hooks aligned.
 
 ---
 
-## Command Reference
+## 6. Automation patterns
 
-### Basic Options
+### Watch mode for tight feedback loops
 ```bash
-pyguard <path>              # Scan and fix
-pyguard <path> --scan-only  # Scan only, no fixes
-pyguard <path> --no-backup  # Don't create backups
+pyguard watch app/ --security-only
 ```
+Automatically fixes changed files on save (great next to your web server or notebook runner).
 
-### Targeted Scans
+### Pre-commit hook in one command
 ```bash
-pyguard <path> --security-only         # Security issues only
-pyguard <path> --best-practices-only   # Code quality only
-pyguard <path> --formatting-only       # Formatting only
+pyguard-hooks install --type pre-commit
 ```
+Runs `pyguard . --scan-only --security-only` before every commit. Use `pyguard-hooks test` to verify.
 
-### Reports
-```bash
-pyguard <path> --sarif                 # SARIF report for GitHub
-pyguard <path> --compliance-html out.html  # HTML compliance report
-pyguard <path> --compliance-json out.json  # JSON compliance report
-```
-
-### Advanced
-```bash
-pyguard <path> --unsafe-fixes          # Apply unsafe fixes (review carefully!)
-pyguard <path> --parallel              # Parallel processing
-pyguard <path> --fast                  # Fast mode with ripgrep
-pyguard <path> --watch                 # Watch mode
-```
-
----
-
-## Configuration (Optional)
-
-Create `.pyguard.toml` in your project root:
-
-```toml
-[general]
-log_level = "INFO"
-backup_dir = ".pyguard_backups"
-
-[security]
-enabled = true
-severity_levels = ["HIGH", "MEDIUM", "LOW"]
-
-[security.checks]
-hardcoded_passwords = true
-sql_injection = true
-command_injection = true
-eval_exec_usage = true
-
-[best_practices]
-check_docstrings = true
-check_naming_conventions = true
-max_complexity = 10
-
-[formatting]
-line_length = 100
-use_black = true
-use_isort = true
-```
-
----
-
-## GitHub Actions Integration
-
-Add to `.github/workflows/pyguard.yml`:
-
+### GitHub Action (CI)
 ```yaml
-name: PyGuard Security Scan
-
+name: PyGuard
 on: [push, pull_request]
 
 jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: cboyd0319/PyGuard@main
         with:
-          python-version: '3.11'
-
-      - name: Install PyGuard
-        run: pip install git+https://github.com/cboyd0319/PyGuard.git
-
-      - name: Run PyGuard
-        run: pyguard . --sarif --scan-only
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: pyguard-results.sarif
+          paths: '.'
+          scan-only: 'true'
+          upload-sarif: 'true'
 ```
+- Publishes SARIF to the Security tab
+- Blocks merges when CRITICAL issues remain
+- Use `paths` to limit monorepo scans
 
 ---
 
-## Pre-commit Hook (Auto-scan on commit)
+## 7. Situational playbook
 
-### Install hook:
-```bash
-pyguard-hooks install
-```
-
-### Or manually create `.git/hooks/pre-commit`:
-```bash
-#!/bin/bash
-pyguard . --scan-only --security-only
-if [ $? -ne 0 ]; then
-    echo "❌ Security issues found! Fix them before committing."
-    exit 1
-fi
-```
+Scenario | Recommended command
+--- | ---
+Preview findings without touching code | `pyguard scan .`
+Only trust auto-formatting | `pyguard fix src/ --formatting-only`
+Security sweeps in notebooks | `pyguard scan notebooks/ --security-only`
+Report-focused run | `pyguard scan services/ --sarif --json results.json --no-html`
+Large repo with vendor folders | `pyguard scan . --exclude 'vendor/*' '.venv/*'`
+Explain a finding to teammates | `pyguard explain sql-injection`
 
 ---
 
-## Programmatic API
+## 8. Extend & integrate
 
-Use PyGuard in your Python code:
-
-```python
-from pyguard import PyGuardAPI
-
-# Initialize
-api = PyGuardAPI()
-
-# Scan a file
-result = api.analyze_file("myfile.py")
-
-# Check for security issues
-if result.has_security_issues:
-    for issue in result.security_issues:
-        print(f"{issue.severity}: {issue.message}")
-
-# Apply fixes
-fixed_count = api.fix_file("myfile.py", unsafe=False)
-print(f"Fixed {fixed_count} issues")
-```
+- **API** – `PyGuardAPI` lets IDEs or services call `analyze_file`, inspect severities, and run fixes programmatically (`examples/api_usage.py`).
+- **Custom rules** – Load TOML definitions via `create_rule_engine_from_config` (see `examples/custom_rules_example.toml`).
+- **Advanced workflows** – JSON-RPC server, webhook integration, SBOM + SLSA verification, and reproducible builds live under `docs/guides/`.
 
 ---
 
-## Examples
-
-The `examples/` directory contains:
-
-- `basic_usage.py` - Simple API usage
-- `api_usage.py` - Advanced API usage
-- `advanced_usage.py` - Complex scenarios
-- `sample_code.py` - Sample code with issues to test against
-- `plugins/` - Custom plugin examples
-
-Try them:
-```bash
-cd examples/
-python basic_usage.py
-python api_usage.py
-```
-
----
-
-## Troubleshooting
-
-### "Command not found: pyguard"
-```bash
-# Make sure PyGuard is installed
-pip install -e .
-
-# Or use python -m
-python -m pyguard.cli <path>
-```
-
-### "No issues found" but I see problems
-```bash
-# Try scanning with all checks enabled
-pyguard <path> --scan-only
-
-# Check specific frameworks
-pyguard <path> --scan-only  # Auto-detects frameworks
-```
-
-### Large codebase is slow
-```bash
-# Use fast mode with ripgrep
-pyguard . --fast
-
-# Or use parallel processing
-pyguard . --parallel
-```
-
-### False positives
-```bash
-# Suppress specific issues with comments
-# pyguard: disable=S101  (disable rule S101)
-
-# Or create .pyguardignore
-echo "tests/*" >> .pyguardignore
-echo "*.pyi" >> .pyguardignore
-```
-
----
-
-## What PyGuard Checks
-
-### Security (1,230+ checks)
-- SQL/NoSQL/Command/Template injection
-- Hardcoded secrets and credentials
-- Insecure cryptography
-- Unsafe deserialization
-- XSS vulnerabilities
-- Path traversal
-- Insecure random number generation
-- Weak authentication/authorization
-- **510 AI/ML-specific security checks**
-
-### Frameworks (25 frameworks)
-- **Web:** Django, Flask, FastAPI, Pyramid, Sanic, Quart, Bottle, Tornado
-- **Data:** Pandas, NumPy, SciPy, TensorFlow, scikit-learn
-- **Big Data:** PySpark, Airflow
-- **UI:** Streamlit, Gradio, Dash
-- **Database:** SQLAlchemy, Peewee, Tortoise, Pony
-- **Other:** Celery, asyncio
-
-### Code Quality
-- PEP 8 compliance
-- Naming conventions
-- Code complexity
-- Best practices
-- Type hints
-- Docstrings
-- Dead code detection
-
----
-
-## Next Steps
-
-1. ✅ **You're ready!** Start scanning your code
-2. 📖 Read the full [README.md](README.md) for advanced features
-3. 🔌 Check out [Plugin Architecture](docs/guides/PLUGIN_ARCHITECTURE.md) to create custom rules
-4. 🛡️ Review [Security Documentation](docs/security/) for supply chain security
-5. 🚀 Set up [GitHub Actions](docs/guides/github-action-guide.md) for automated scanning
-
----
-
-## Get Help
-
-- 📖 **Documentation:** [docs/](docs/)
-- 🐛 **Issues:** https://github.com/cboyd0319/PyGuard/issues
-- 💬 **Discussions:** https://github.com/cboyd0319/PyGuard/discussions
-- 📧 **Security:** See [SECURITY.md](SECURITY.md)
-
----
-
-## Quick Reference Card
-
-```bash
-# Most common commands
-pyguard <file>                    # Scan and fix
-pyguard <dir> --scan-only         # Scan only
-pyguard . --security-only         # Security scan
-pyguard . --sarif                 # GitHub integration
-pyguard . --watch                 # Watch mode
-pyguard --help                    # Show all options
-
-# Tips
-# 1. Always use --scan-only first to preview issues
-# 2. Backups are created automatically (in .pyguard_backups/)
-# 3. Use --unsafe-fixes carefully and review changes
-# 4. Set up pre-commit hooks for team enforcement
-```
-
----
-
-**That's it! You're ready to make your Python code more secure! 🛡️**
-
-For questions or issues, check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or open a GitHub issue.
+Next steps:
+1. Review the [main README](README.md) for capability overviews.
+2. Browse the [documentation hub](docs/index.md) for task-oriented guides.
+3. Tailor `.pyguard.toml`, run `pyguard watch`, and wire PyGuard into CI.

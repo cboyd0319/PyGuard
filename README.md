@@ -4,144 +4,145 @@
 
 # PyGuard
 
-### **Python security & code quality analysis with auto-fixes**
+### Security & code quality that feels effortless
 
-Replace 7+ tools with one • 199+ auto-fixes • 100% local, zero telemetry
+Replace 7+ static analysis tools with one fast CLI • 700+ security checks • 199+ auto-fixes • AI/ML & supply chain aware • 100% local, no telemetry
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![GitHub Action](https://img.shields.io/badge/GitHub%20Action-Ready-brightgreen.svg)](https://github.com/marketplace/actions/pyguard-security-scanner)
-
-[![Code Scanning](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/codeql.yml)
-[![Test Action](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/test-action.yml)
-[![Lint](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/lint.yml)
-[![Scorecard](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml/badge.svg)](https://github.com/cboyd0319/PyGuard/actions/workflows/scorecard.yml)
 [![codecov](https://codecov.io/github/cboyd0319/PyGuard/graph/badge.svg?token=6BZPB1L79Z)](https://codecov.io/github/cboyd0319/PyGuard)
 
-[Quickstart](#quickstart) •
-[Features](#features) •
-[Capabilities](docs/reference/capabilities-reference.md) •
-[Roadmap](ROADMAP.md) •
-[Distribution](docs/reference/DISTRIBUTION_STRATEGY.md) •
-[Documentation](docs/index.md) •
-[GitHub Action](docs/guides/github-action-guide.md)
+[Quickstart](#quick-start) • [Why PyGuard](#why-developers-choose-pyguard) • [Capabilities](#capabilities-map) • [CLI](#cli--automation) • [GitHub Action](#zero-effort-ci) • [Docs](#documentation--support)
 
 </div>
 
 ---
 
-## Table of Contents
+## PyGuard at a Glance
 
-- [What is PyGuard?](#what-is-pyguard)
-- [Quickstart](#quickstart)
-- [Features](#features)
-- [RipGrep Integration](#ripgrep-integration-new)
-- [What this is](#what-this-is)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Advanced Features](#advanced-features)
-- [See It In Action](#see-it-in-action)
-- [Comparison with Other Tools](#comparison-with-other-tools)
-- [Real-World Impact](#real-world-impact)
-- [Why PyGuard](#why-pyguard)
-- [Security](#security)
-- [Troubleshooting](#troubleshooting)
-- [Performance](#performance)
-- [Roadmap](#roadmap)
-- [Community & Ecosystem](#community--ecosystem)
-- [Contributing](#contributing)
-- [Maintenance](#maintenance)
-- [Documentation](#documentation)
-- [License](#license)
-- [Support & Community](#support--community)
-
-## What is PyGuard?
-
-**The problem:** Juggling 7+ security and quality tools (Bandit, Ruff, Pylint, Black, isort, mypy, Semgrep) creates overlapping reports, config conflicts, and no unified auto-fix workflow.
-
-**The solution:** PyGuard consolidates everything into a single AST-based analyzer that finds vulnerabilities, enforces code quality, generates compliance reports, and **fixes issues automatically** — all while running 100% locally with zero telemetry.
-
-### Who is this for?
-
-- **Python developers** who want comprehensive security and quality checks without tool sprawl
-- **Security teams** enforcing OWASP ASVS and CWE compliance
-- **DevSecOps engineers** automating security scanning in CI/CD pipelines
-- **Open source maintainers** needing SARIF reports for GitHub Security tab
-
-### 🆕 What's New
-
-- 🎊 **MISSION ACCOMPLISHED** — **1,230+ Security Checks** (720 general + **510 AI/ML**) — **3-10x more than competitors!** 🎊
-- 🏆 **#1 AI/ML SECURITY DOMINANCE** — World's most comprehensive Python AI/ML security tool! 🎉
-- 🤖 **AI/ML Security** — **510 specialized checks** covering the entire ML lifecycle:
-  - ✅ **LLM Security (60 checks)** — Prompt injection, API security, output validation
-  - ✅ **Model Security (40 checks)** — PyTorch, TensorFlow, Hugging Face serialization & loading
-  - ✅ **Training Security (30 checks)** — Data poisoning, gradient attacks, fine-tuning risks
-  - ✅ **Adversarial ML (20 checks)** — Attack detection, model robustness, defenses
-  - ✅ **MLOps Security (120 checks)** — Feature stores, deployment, monitoring, drift detection
-  - ✅ **Framework Security (100 checks)** — Computer vision, NLP, RL, AutoML, GNNs
-  - ✅ **Supply Chain (80 checks)** — Jupyter notebooks, datasets, model registries, cloud ML
-  - ✅ **Emerging Threats (50 checks)** — GenAI, multimodal models, federated learning
-- 📊 **3-10x More AI/ML Coverage** than Snyk (130), Semgrep (80), ProtectAI (60), GuardDog (45)
-- 📱 **Mobile/IoT Security** — 43 checks for mobile apps, IoT devices, firmware, protocols
-- ⛓️ **Blockchain/Web3 Security** — 22 checks for smart contracts, tokens, wallets, reentrancy ✅ **NEW**
-- 📊 **Business Logic Security** — 30 checks for race conditions, financial logic, access control ✅ **NEW**
-- 🏛️ **Pyramid Framework** — 15 checks for ACL security, view configuration, session management ✅ **NEW**
-- 🔢 **NumPy Framework** — 15 checks for array operations, buffer overflow, pickle security ✅ **NEW**
-- 🧠 **TensorFlow Framework** — 20 checks for model security, GPU memory, training security ✅ **NEW**
-- 🗄️ **SQLAlchemy ORM** — 14 checks for raw SQL injection, session security, migrations ✅ **NEW**
-- ⚡ **asyncio Framework** — 15 checks for event loops, coroutines, async security ✅ **NEW**
-- 🚀 **Sanic Framework** — 14 checks for async web server, blueprints, WebSockets ✅ **NEW**
-- 🍶 **Quart Framework** — 15 checks for async Flask, WebSockets, background tasks ✅ **NEW**
-- 🍾 **Bottle Framework** — 10 checks for minimalist web apps, templates, routing ✅ **NEW**
-- 🤖 **Scikit-learn** — 3 checks for ML model security, pickle, pipelines ✅ **NEW**
-- 🔬 **SciPy Framework** — 10 checks for scientific computing, signal processing ✅ **NEW**
-- 💾 **Peewee ORM** — 6 checks for lightweight ORM security ✅ **NEW**
-- 🐴 **Pony ORM** — 5 checks for entity-relationship ORM security ✅ **NEW**
-- 🐢 **Tortoise ORM** — 5 checks for async ORM security ✅ **NEW**
-- 🌪️ **Tornado Framework** — 20 checks for async web apps, WebSockets, RequestHandler security (v0.5.0)
-- 🎯 **Celery Framework** — 20 checks for distributed task queues, worker security, message brokers (v0.5.0)
-- 🔗 **Supply Chain Security** — 27 checks (Dependency Confusion 7, Supply Chain Advanced 20) (v0.5.0)
-- 💉 **Advanced Injection** — 37 checks for template injection, SSTI, NoSQL, path traversal (v0.5.0)
-- 🔐 **Cryptography Security** — 15 checks for encryption, key management, hashing, TLS/SSL (v0.5.0)
-- 🔧 **100% Auto-Fix Coverage** — All 199+ security issues can be automatically fixed (unique in market!)
-- 🎯 **FastAPI Support** — 37 FastAPI-specific security rules (most comprehensive available) (v0.4.0)
-- 🔐 **API Security** — 20 comprehensive checks covering REST, GraphQL, JWT, OAuth, CORS (v0.4.0)
-- ☁️ **Cloud Security** — 15 checks for AWS, Azure, GCP, Docker, Kubernetes, Terraform (v0.4.0)
-- 🔐 **Auth Security** — 15 checks for authentication and authorization vulnerabilities (v0.4.0)
-- 🛡️ **PII Detection** — 25 checks for personally identifiable information and privacy compliance (v0.4.0)
-- ⚡ **10-100x faster scanning** with RipGrep integration
-- 🔑 **Secret scanning** finds hardcoded credentials in seconds (114x faster)
-- 📋 **Compliance tracking** extracts OWASP/CWE references from code comments
-- ⚙️ **GitHub Action** ready for immediate CI/CD integration
-
-### 🛡️ Security-First Design
-
-PyGuard practices what it preaches - **one of the most secure Python projects on GitHub**:
-
-- **🔒 Supply Chain Security**: 2,648 dependencies with SHA256 hash verification
-- **✅ SLSA Level 3**: Build provenance with signed attestations
-- **🔍 Automated Scanning**: Bandit, Semgrep, CodeQL, OSSF Scorecard in CI
-- **📋 SBOM Generation**: SPDX 2.3 and CycloneDX formats for all releases
-- **🎯 Zero Critical Vulnerabilities**: Continuous security monitoring and patching
-- **📚 Security Audit**: [Full audit report](security/SECURITY_AUDIT_2025.md) - Grade A+ (95/100)
-
-See [SECURITY.md](SECURITY.md) and [docs/DEPENDENCY_MANAGEMENT.md](docs/DEPENDENCY_MANAGEMENT.md) for details.
+- **Everything in one command** – security testing, quality enforcement, formatting, dependency insights, SARIF/HTML reporting
+- **700+ security checks & 25 frameworks** – FastAPI, Django, Flask, Pandas, NumPy, TensorFlow, asyncio, Airflow, PySpark, SQLAlchemy + more
+- **199+ auto-fixes** – AST-powered refactors, formatting, modernization, and best-practice updates with automatic backups
+- **AI/ML, supply chain, and notebook aware** – dedicated analyzers for LLM prompts, model serialization, SBOM/SLSA workflows, Jupyter notebooks
+- **Designed for developer joy** – Rich-powered UI, contextual suggestions, optional interactive mode, 100% local execution
 
 ---
 
-## ⚡ Quickstart
+## Quick Start
 
-### Option 1: GitHub Action (Recommended for CI/CD)
+```bash
+pip install git+https://github.com/cboyd0319/PyGuard.git
+pyguard doctor          # verifies environment
+pyguard scan .          # read-only analysis
+pyguard fix .           # apply safe fixes with backups
+```
 
-Add PyGuard to your repository in 30 seconds:
+### 1. Install & verify (1 minute)
+- Requires Python 3.11+
+- `pyguard doctor` confirms dependencies, RipGrep support, optional notebook extras
 
+### 2. Scan confidently (2 minutes)
+```bash
+pyguard scan src/ --sarif --json results.json
+```
+- Security, quality, formatting, notebooks analyzed together
+- SARIF + HTML reports ready for GitHub Advanced Security
+
+### 3. Fix issues automatically
+```bash
+pyguard fix src/ --interactive      # confirm each fix
+pyguard fix . --security-only       # limit to security issues
+pyguard fix . --formatting-only     # run formatter only
+```
+- Auto-fixes use backups (`.pyguard_backups/`)
+- Unsafe fixes opt-in with `--unsafe`
+
+### 4. Configure once, reuse everywhere
+```bash
+pyguard init --interactive
+pyguard validate-config
+```
+- Generates `.pyguard.toml` tailored to strict, balanced, lenient, security, or formatting-first profiles
+
+---
+
+## Why Developers Choose PyGuard
+
+| Challenge | PyGuard experience |
+| --- | --- |
+| Tool sprawl | Replaces Bandit, Semgrep, Ruff, Pylint, Black, isort, Safety, partial mypy in one CLI |
+| False positives & context switching | Rich UI groups issues by severity/framework, `pyguard explain` gives human-friendly guidance |
+| Security depth | Advanced taint tracking, AI/ML lifecycle checks, mobile/IoT, blockchain, supply chain and SBOM validation |
+| Compliance pressure | OWASP/CWE mapping, HTML/SARIF/compliance JSON, auto-tracked waivers |
+| Continuous delivery | GitHub Action, pre-commit hooks, watch mode, JSON-RPC & webhook APIs |
+| Developer time | Auto-fixes for 199+ issues, backups, diff preview, interactive mode, custom rule engine |
+
+> PyGuard is intentionally “the tool teams *want* to run.” Every flow is optimized for minimal flags, instant remediation, and zero external services.
+
+---
+
+## Capabilities Map
+
+### Security & Privacy
+- Core security engine detects hardcoded secrets, SQL/command/template injection, unsafe serialization, weak crypto, insecure random, path traversal, SSRF, XXE
+- Advanced modules: taint analysis, race conditions, integer overflow, ReDoS, dependency confusion, supply-chain attestation, SBOM validation
+- AI/ML coverage: model serialization (TensorFlow/PyTorch/Sklearn), LLM prompt handling, adversarial training signals, MLOps & notebook scanning
+- Domain-specific packs: cloud (AWS/Azure/GCP/K8s/Terraform), API security (REST, GraphQL, WebSockets), mobile/IoT, blockchain/Web3, business logic
+
+### Framework Awareness
+- 25+ targeted analyzers with rule IDs, OWASP/CWE mapping, and auto-fix metadata for FastAPI, Django, Flask, Pyramid, Sanic, Quart, Bottle, Tornado, asyncio, Celery, SQLAlchemy, Peewee, Tortoise, Pony, Pandas, NumPy, SciPy, TensorFlow, PySpark, Airflow, Streamlit, Dash, Gradio, Jupyter notebooks
+
+### Quality, Modernization & Formatting
+- Best-practice modules: naming, docstrings, unused code, complexity budgets, debugging statements, exception handling, performance hints
+- Modernization & style: PEP8, Refurb-inspired refactors, automatic formatting (Black/isort), import hygiene, whitespace, string operations
+- Optional unsafe fixes for deep refactors (guarded by prompts)
+
+### Reporting & Collaboration
+- SARIF 2.1.0, JSON, HTML (ModernHTMLReporter) with severity breakdown and compliance footnotes
+- ComplianceTracker extracts OWASP/CWE references from comments and issue suppressions
+- `pyguard explain` knowledge base for remediation coaching
+- Audit-ready JSON logs with correlation IDs via `PyGuardLogger`
+
+---
+
+## CLI & Automation
+
+| Command | Purpose |
+| --- | --- |
+| `pyguard scan [paths]` | Read-only analysis, optional SARIF/HTML/JSON, RipGrep-powered fast mode |
+| `pyguard fix [paths]` | Apply safe fixes, optional interactive/unsafe/security-only/formatting-only modes |
+| `pyguard init` | Generate `.pyguard.toml` (interactive profiles) |
+| `pyguard validate-config` | Verify and print configuration |
+| `pyguard watch` | Watch files for changes and auto-fix in real time |
+| `pyguard doctor` | Environment diagnostics (Python, Rich, RipGrep, notebook extras) |
+| `pyguard explain <topic>` | Human-readable remediation guides for common issues |
+| `pyguard git-hooks` | Install/manage `pre-commit`/`pre-push` hooks |
+
+### Programmatic API
+
+```python
+from pyguard import PyGuardAPI
+
+api = PyGuardAPI()
+result = api.analyze_file("service.py")
+if result.has_critical_issues():
+    for issue in result.critical_issues:
+        print(issue.category, issue.message)
+api.fix_file("service.py", unsafe=False)
+```
+
+JSON-RPC, webhook listener, and ModernHTMLReporter live in `pyguard/lib/` for IDE and CI integrations.
+
+---
+
+## Zero-Effort CI
+
+### GitHub Action
 ```yaml
-# .github/workflows/pyguard.yml
-name: Security Scan
+name: PyGuard
 on: [push, pull_request]
-
 permissions:
   contents: read
   security-events: write
@@ -157,1124 +158,52 @@ jobs:
           scan-only: 'true'
           upload-sarif: 'true'
 ```
-
-**What it does:**
-
-- Automatically scans your code on every push/PR
-- Uploads findings to GitHub Security tab
-- Comments on PRs with vulnerability details
+- Uploads SARIF to GitHub Security tab
 - Blocks merges on critical issues
+- Compatible with Dependabot PR gating and reusable workflows
 
-[Full GitHub Action Guide →](docs/guides/github-action-guide.md)
-
-### Option 2: Local Installation
-
-Install from source:
-
+### Pre-commit hook
 ```bash
-# Clone and install from source
-# Note: PyPI publication planned for v0.7.0 (Q1 2026)
-git clone https://github.com/cboyd0319/PyGuard.git
-cd PyGuard
-pip install -e .
+pyguard-hooks install --type pre-commit
 ```
+Adds `pyguard . --scan-only --security-only` to hooks with automatic validation/testing commands.
 
-**Verify Installation:**
-
-After installing, confirm everything works:
-
-```bash
-# Check version
-pyguard --version
-# Output: PyGuard v0.6.0
-
-# View all commands
-pyguard --help
-# Output: Shows complete command reference
-
-# Test on a sample file
-echo 'password = "admin123"' > test.py
-pyguard test.py --scan-only
-# Output: ✓ Found 1 critical issue (CWE-798: Hardcoded credentials)
-
-# Cleanup
-rm test.py
-```
-
-**Expected:** Clean installation with version displayed, help text available, and successful test scan.
-
-### Option 3: Quick Commands
-
-```bash
-# Scan and auto-fix entire project
-pyguard src/
-
-# Security fixes only (skip formatting)
-pyguard src/ --security-only
-
-# Scan without applying changes (CI mode)
-pyguard src/ --scan-only
-
-# Fast mode (10-100x faster with RipGrep)
-pyguard src/ --fast
-
-# Secret scanning (find hardcoded credentials)
-pyguard src/ --scan-secrets --sarif
-
-# Import analysis (circular dependencies)
-pyguard src/ --analyze-imports
-
-# Test coverage check
-pyguard src/ --check-test-coverage
-
-# Generate SARIF for GitHub Security
-pyguard src/ --scan-only --sarif
-```
-
-**Output:** Backups in `.pyguard_backups/`, fixes applied in-place, HTML report at `pyguard-report.html`
-
-New to PyGuard? Follow the [5-minute tutorial](docs/index.md)
+### Watch mode & local automation
+- `pyguard watch src/` auto-fixes on save (ideal alongside `uvicorn --reload`)
+- `pyguard scan . --fast --parallel` leverages RipGrep filters and multiprocessing for monorepos
 
 ---
 
-## ✨ Features
+## Architecture & Extensibility
 
-<table>
-<tr>
-<td width="50%">
+- **AST-first analyzers** – shared `ASTAnalyzer`, taint engine, and rule registry across security, quality, and modernization modules
+- **Rule engine & plugin system** – define custom rules in TOML, integrate third-party detectors, or extend frameworks via `pyguard.lib.plugin_system`
+- **Incremental & cached scanning** – `AnalysisCache`, RipGrep pre-filter, and watch mode reduce rerun time
+- **Rich UI + HTML reports** – `EnhancedConsole` for terminals, `ModernHTMLReporter` for archival dashboards
+- **Secure supply chain** – SBOM, SLSA provenance, signed releases, reproducible build guides, Sigstore/TUF verification
 
-**Security Scanning**
-
-- 🎊 **720 security checks** (360% more than Snyk - MISSION ACCOMPLISHED!) 🎊
-- 🏆 **23 frameworks** (383% more than competition - EXPANDED!) 🏆
-- ✅ **API Security** — 20 checks for REST, GraphQL, JWT, OAuth, CORS
-- ✅ **Mobile/IoT Security** — 43 checks for mobile apps, devices, firmware
-- ✅ **AI/ML Security** — 21 checks for prompt injection, model security
-- ✅ **Blockchain/Web3** — 22 checks for smart contracts, tokens, wallets
-- ✅ Code injection (eval, exec, compile)
-- ✅ SQL/NoSQL/LDAP injection detection
-- ✅ Hardcoded secrets scanning (AWS, GitHub, JWT)
-- ✅ Weak cryptography detection (MD5, SHA1)
-- ✅ SSRF, XXE, and path traversal checks
-- ✅ **199+ auto-fixes** (100% coverage — unique in market!)
-- ✅ **23 frameworks**: Django, Flask, FastAPI, Tornado, Celery, Pyramid, NumPy, TensorFlow, SQLAlchemy, asyncio, Sanic, Quart, Bottle, Scikit-learn, SciPy, Peewee, Pony, Tortoise, Pandas, Pytest, **Streamlit** ⭐NEW, **Gradio** ⭐NEW, **Dash** ⭐NEW
-
-**RipGrep Integration** 🆕
-
-- ✅ 10-100x faster scanning on large codebases
-- ✅ Secret scanning in 3.4s (vs 390s AST-only)
-- ✅ Import analysis 16x faster
-- ✅ Test coverage checks 15x faster
-- ✅ Automatic fallback if RipGrep unavailable
-- ✅ Zero configuration required
-
-**Code Quality**
-
-- ✅ **150+ quality rules** (PEP 8, Pylint, Bugbear)
-- ✅ Cyclomatic complexity analysis
-- ✅ Code smell detection
-- ✅ Missing docstring checks
-- ✅ Mutable default detection
-- ✅ Magic number identification
-- ✅ Type checking improvements
-
-</td>
-<td width="50%">
-
-**Compliance & Reporting**
-
-- ✅ **10+ frameworks**: OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP
-- ✅ SARIF 2.1.0 output for GitHub Security
-- ✅ HTML reports with severity categorization
-- ✅ CSV export for audit trails
-- ✅ Compliance tracking from code comments
-- ✅ CWE/OWASP vulnerability mapping
-- ✅ Risk scoring and prioritization
-
-**GitHub Integration**
-
-- ✅ GitHub Action for CI/CD
-- ✅ Automatic SARIF upload
-- ✅ PR annotations with fix suggestions
-- ✅ Security trend tracking
-- ✅ Policy enforcement (block on critical)
-- ✅ Zero-config setup
-
-**Supply Chain Security**
-
-- ✅ Dependency vulnerability scanning
-- ✅ SBOM generation (CycloneDX/SPDX)
-- ✅ License compliance detection
-- ✅ Risk scoring per dependency
-- ✅ Known CVE detection
-
-**Developer Experience**
-
-- ✅ AST-based (10-100x faster than regex)
-- ✅ Watch mode for continuous monitoring
-- ✅ Git hooks for pre-commit checks
-- 🔄 VS Code integration (planned v0.7.0)
-- ✅ Parallel processing
-- ✅ Incremental analysis
-
-</td>
-</tr>
-</table>
+Read more in `docs/reference/ARCHITECTURE.md`, `docs/reference/architecture/IMPLEMENTATION_SUMMARY.md`, and `docs/reference/capabilities-reference.md`.
 
 ---
 
-## ⚡ RipGrep Integration (NEW)
+## Documentation & Support
 
-PyGuard now includes optional RipGrep integration for **10-100x performance improvements** on large codebases:
+Category | Key resources
+--- | ---
+Getting started | [Quickstart](QUICKSTART.md), [docs/index.md](docs/index.md)
+CLI & automation | [GitHub Action Guide](docs/guides/github-action-guide.md), [Git Hooks](docs/guides/git-hooks-guide.md), [Advanced Integrations](docs/guides/advanced-integrations.md)
+Advanced use | [Auto-fix Guide](docs/guides/auto-fix-guide.md), [Notebook Security](docs/guides/notebook-security-guide.md), [Plugin Architecture](docs/guides/PLUGIN_ARCHITECTURE.md)
+Security & compliance | [SECURITY.md](SECURITY.md), [Supply Chain Security](docs/guides/SUPPLY_CHAIN_SECURITY.md), [Security Quickstart](docs/security/SECURITY_QUICKSTART.md), [Threat Model](security/THREAT_MODEL.md)
+Reference | [Capabilities Reference](docs/reference/capabilities-reference.md), [Security Rules](docs/reference/security-rules.md), [Code Scanning Alerts](docs/reference/CODE-SCANNING-ALERTS.md)
+Project health | [ROADMAP.md](ROADMAP.md), [CHANGELOG](docs/CHANGELOG.md), [TEST_PLAN](docs/TEST_PLAN.md), [COMPREHENSIVE_TEST_PLAN](docs/COMPREHENSIVE_TEST_PLAN.md)
+Full inventory | [Documentation Manifest](docs/MANIFEST.md)
 
-### Features
-
-- **Fast Mode (`--fast`)**: Pre-filter files using RipGrep before AST analysis
-  - Dramatically reduces scan time for large projects
-  - Only runs deep analysis on suspicious files
-  - Example: 10,000 files scanned in 52s instead of 480s
-
-- **Secret Scanning (`--scan-secrets`)**: Detect hardcoded credentials in seconds
-  - AWS keys, GitHub tokens, API keys, passwords, JWT tokens
-  - Database connection strings, private keys
-  - SARIF export for GitHub Security tab
-  - 114x faster than AST-only scanning
-
-- **Import Analysis (`--analyze-imports`)**: Find circular imports and god modules
-  - Detect circular dependency chains
-  - Identify over-imported modules (code smells)
-  - 16x faster with RipGrep
-
-- **Test Coverage (`--check-test-coverage`)**: Find modules without tests
-  - Identify untested code
-  - Calculate coverage percentage
-  - 15x faster analysis
-
-- **Compliance Tracking (`--compliance-report`)**: Extract OWASP/CWE references
-  - Generate audit trail from code comments
-  - Map findings to compliance frameworks
-
-### Installation
-
-RipGrep is optional but recommended for best performance:
-
-```bash
-# macOS
-brew install ripgrep
-
-# Ubuntu/Debian
-apt install ripgrep
-
-# Windows
-winget install BurntSushi.ripgrep.MSVC
-
-# Verify installation
-rg --version
-```
-
-PyGuard automatically detects RipGrep and falls back gracefully if unavailable.
-
-### Performance Benchmarks
-
-| Task | AST-Only | With RipGrep | Speedup |
-|------|----------|--------------|---------|
-| Full security scan (10k files) | 480s | 52s | **9.2x** |
-| Secret scanning | 390s | 3.4s | **114.7x** |
-| Import analysis | 67s | 4.1s | **16.3x** |
-| Test coverage check | 12s | 0.8s | **15x** |
-
-See [RipGrep Integration Guide](docs/guides/RIPGREP_INTEGRATION.md) for full documentation.
-
-## What this is
-
-Static analysis tool for Python. Finds security vulnerabilities, enforces code quality standards, generates compliance reports, and fixes issues automatically.
-
-**What it does**:
-
-- Finds **1,230+ security vulnerabilities** (720 general + **510 AI/ML**) — **#1 in the market (6x more than Snyk)**
-  - **AI/ML Security (510 checks)**: LLM prompt injection (60), model security (40), training/fine-tuning (30), adversarial ML (20), MLOps (120), framework-specific (100), supply chain (80), emerging threats (50)
-  - **General Security (720 checks)**: Mobile/IoT (43), Blockchain (22), Business Logic (30), Advanced injection (37), API security (20), Auth (15), Cloud (15), PII (25), Cryptography (15), Supply chain (27), and more
-- Enforces 150+ code quality rules (PEP 8, Pylint, Bugbear, code smells, best practices)
-- Framework-specific checks (**23 frameworks**: Django, Flask, FastAPI 37, Pandas, Pytest, PyTorch, TensorFlow 20, Hugging Face, NumPy 15, Pyramid 15, SQLAlchemy 14, asyncio 15, Sanic 14, Quart 15, Bottle 10, Scikit-learn 3, SciPy 10, Tornado 20, Celery 20, Peewee 6, Pony 5, Tortoise 5, **Streamlit 7** ⭐NEW, **Gradio 6** ⭐NEW, **Dash 5** ⭐NEW) — **383% more frameworks than competitors**
-- Maps to 10+ compliance frameworks (OWASP ASVS, OWASP ML Top 10, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST AI RMF, GDPR, CCPA, FedRAMP, SOX)
-- ML pattern recognition, anomaly detection, risk scoring
-- **199+ auto-fixes** (safe and unsafe modes) — only tool with complete auto-fix coverage
-- Supply chain security (CI/CD security, dependency scanning, SBOM generation, code signing, Docker security)
-- AST-based (10-100x faster than regex), parallel processing
-
-**Built for**: Python developers, security teams, DevSecOps engineers, compliance officers, CI/CD pipelines.
-
-**Problem solved**: Juggling 7+ tools with overlapping reports, config conflicts, and no unified auto-fix. PyGuard replaces them all.
-
-**Privacy**: Runs locally. No telemetry. No SaaS. No external API calls (except optional MCP integrations).
+Need help? Open an [issue](https://github.com/cboyd0319/PyGuard/issues) or start a [discussion](https://github.com/cboyd0319/PyGuard/discussions).
 
 ---
 
-## 🚀 Installation
+## License
 
-### Prerequisites
+PyGuard is released under the [MIT License](LICENSE).
 
-<table>
-  <thead>
-    <tr>
-      <th>Tool</th>
-      <th>Version</th>
-      <th>Purpose</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>Python</strong></td>
-      <td>≥ 3.11</td>
-      <td>Runtime (3.13 recommended for development)</td>
-    </tr>
-    <tr>
-      <td><strong>pip</strong></td>
-      <td>latest</td>
-      <td>Package manager</td>
-    </tr>
-    <tr>
-      <td><strong>RipGrep</strong> (optional)</td>
-      <td>≥ 13.0</td>
-      <td>10-100x faster scanning (auto-detected)</td>
-    </tr>
-  </tbody>
-</table>
-
-**Optional dependencies:** Black, isort (auto-installed with PyGuard)
-
-### Quick Install
-
-```bash
-# From source (PyPI planned for v0.7.0 - Q1 2026)
-git clone https://github.com/cboyd0319/PyGuard.git
-cd PyGuard
-pip install -e .
-
-# Verify installation
-pyguard --version
-
-# Optional: Install RipGrep for 10-100x faster scanning
-# macOS
-brew install ripgrep
-
-# Ubuntu/Debian
-apt install ripgrep
-
-# Windows
-winget install BurntSushi.ripgrep.MSVC
-```
-
-## 📖 Usage
-
-### Basic — Default happy-path
-
-```bash
-# Fix entire project
-pyguard src/
-
-# Single file
-pyguard myfile.py
-```
-
-Creates backups in `.pyguard_backups/`, applies fixes, generates `pyguard-report.html`.
-
-### Advanced — Common non-defaults
-
-```bash
-# Security only, no formatting
-pyguard src/ --security-only
-
-# Scan for CI/CD (no file changes)
-pyguard src/ --scan-only
-
-# Generate SARIF report for GitHub Code Scanning
-pyguard src/ --scan-only --sarif --no-html
-
-# Skip backup creation
-pyguard src/ --no-backup
-
-# Exclude patterns
-pyguard src/ --exclude "tests/*" --exclude "migrations/*"
-
-# Watch mode (re-analyze on file changes)
-pyguard src/ --watch
-
-# Use config file
-pyguard src/ -c pyguard.toml
-
-# Fast mode with RipGrep pre-filtering
-pyguard src/ --fast
-
-# Secret scanning
-pyguard src/ --scan-secrets
-
-# Import analysis
-pyguard src/ --analyze-imports
-
-# Test coverage check
-pyguard src/ --check-test-coverage
-```
-
-### Git Hooks
-
-Integrate PyGuard into your Git workflow:
-
-```bash
-# Install pre-commit hook for secret scanning
-cp examples/hooks/pre-commit-secret-scan .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-
-# Or use fast security scan
-cp examples/hooks/pre-commit-fast-scan .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-See [examples/hooks/README.md](examples/hooks/README.md) for more options.
-
-Sample config (`pyguard.toml`):
-
-```toml
-[general]
-log_level = "INFO"
-backup_dir = ".pyguard_backups"
-max_backups = 10
-
-[security]
-enabled = true
-severity_levels = ["HIGH", "MEDIUM", "LOW"]
-
-[formatting]
-line_length = 100
-use_black = true
-use_isort = true
-```
-
-## ⚙️ Configuration
-
-| Key | Type | Default | Example | Notes |
-|-----|------|---------|---------|-------|
-| `general.log_level` | string | "INFO" | "DEBUG" | Logging verbosity |
-| `general.backup_dir` | string | ".pyguard_backups" | "backups/" | Backup location |
-| `general.max_backups` | int | 10 | 5 | Max backup files to keep |
-| `security.enabled` | bool | true | false | Toggle security checks |
-| `security.severity_levels` | list | ["HIGH","MEDIUM","LOW"] | ["HIGH"] | Filter by severity |
-| `formatting.line_length` | int | 100 | 88 | Max line length |
-| `formatting.use_black` | bool | true | false | Enable Black formatter |
-| `formatting.use_isort` | bool | true | false | Enable isort |
-
-Create `pyguard.toml` in project root or use `~/.config/pyguard/config.toml`.
-
-### GitHub Integration
-
-**Option 1: Use PyGuard as a GitHub Action (Recommended)**
-
-```yaml
-# .github/workflows/pyguard-security.yml
-name: PyGuard Security Scan
-
-on: [push, pull_request]
-
-permissions:
-  contents: read
-  security-events: write
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: cboyd0319/PyGuard@main
-        with:
-          paths: '.'
-          scan-only: 'true'
-          upload-sarif: 'true'
-```
-
-**Option 2: Install and Run PyGuard**
-
-```yaml
-# .github/workflows/pyguard-manual.yml
-name: PyGuard Security Scan
-
-on: [push, pull_request]
-
-permissions:
-  security-events: write
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - run: pip install git+https://github.com/cboyd0319/PyGuard.git
-      - run: pyguard . --scan-only --sarif --no-html
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: pyguard-report.sarif
-```
-
-**What you get:**
-
-- ✅ Upload to GitHub Security tab
-- ✅ SARIF 2.1.0 compliant reports
-- ✅ CWE/OWASP vulnerability mappings
-- ✅ Fix suggestions for each issue
-- ✅ Security trend tracking
-- ✅ Pull request annotations
-
-**📖 See [GitHub Action Guide](docs/guides/github-action-guide.md) for complete setup instructions and examples**
-
-See [docs/index.md](docs/index.md) for the documentation hub.
-
-**📖 [COMPLETE CAPABILITIES REFERENCE](docs/reference/capabilities-reference.md) — Detailed catalog of features**
-
-**🎯 [GITHUB ACTION GUIDE](docs/guides/github-action-guide.md) — Using PyGuard in GitHub Actions with examples and best practices**
-
-## 🚀 Advanced Features
-
-PyGuard now includes powerful development workflow integrations:
-
-- **🔄 CI/CD Integration** — Auto-generate configs for GitHub Actions, GitLab CI, CircleCI, Azure Pipelines
-- **⚡ Performance Profiler** — Detect performance bottlenecks and optimization opportunities  
-- **🔗 Dependency Analyzer** — Visualize dependencies, detect circular imports and god modules
-- **📋 Custom Rules Engine** — Define your own security/quality rules via TOML or Python API
-
-[Learn more →](docs/guides/ADVANCED_FEATURES.md)
-
-**Core vulnerabilities** — OWASP ASVS v5.0, CWE Top 25 aligned
-
-- Code injection (eval, exec, compile) — CWE-95
-- Unsafe deserialization (yaml.load, pickle) — CWE-502
-- Command injection (shell=True, os.system) — CWE-78
-- SQL injection (string concatenation) — CWE-89
-- Hardcoded secrets (passwords, API keys) — CWE-798
-- Weak crypto (MD5, SHA1) — CWE-327
-- Insecure random (random instead of secrets) — CWE-330
-- Timing attacks (non-constant-time comparisons) — CWE-208
-
-**Injection attacks**
-
-- XXE (XML External Entity) — CWE-611
-- LDAP injection — CWE-90
-- NoSQL injection (MongoDB) — CWE-943
-- CSV injection (formula injection) — CWE-1236
-- Template injection (Jinja2/Mako SSTI) — CWE-1336
-- GraphQL injection — CWE-943
-
-**Network & file security**
-
-- SSRF (Server-Side Request Forgery) — CWE-918
-- Insecure HTTP — CWE-319
-- Path traversal — CWE-22
-- Insecure temp files — CWE-377
-- Format string bugs — CWE-134
-
-**Access control & sessions**
-
-- IDOR (Insecure Direct Object Reference) — CWE-639
-- Mass assignment — CWE-915
-- Insecure cookies (missing HttpOnly/Secure) — CWE-1004
-- JWT security (weak algorithms) — CWE-327
-- Clickjacking (missing X-Frame-Options) — CWE-1021
-
-**Information disclosure**
-
-- Secret scanning (AWS, GCP, Azure, Slack, GitHub tokens)
-- Database credentials (MongoDB, Redis, PostgreSQL URIs)
-- Memory disclosure (traceback, locals(), vars())
-- Debug code (pdb, ipdb, breakpoint())
-
-**Supply chain**
-
-- Dependency scanning (finds known vulnerabilities)
-- SBOM generation (CycloneDX format)
-- License detection
-- Risk scoring
-
-**20+ auto-fixes** — most comprehensive security auto-fixes available
-
-- GraphQL injection → parameterized queries
-- JWT 'none' algorithm → RS256
-- SSTI render_template_string → safe templates
-- Missing API rate limiters → @limiter decorators
-- MD5/SHA1 → SHA256
-- DES → AES encryption
-- SQL injection → parameterized queries
-- XSS → output encoding
-- Container privileged mode → secure defaults
-
-**Code quality** — SWEBOK aligned
-
-- Cyclomatic complexity (threshold: 10)
-- Long methods (>50 lines)
-- Too many parameters (>6)
-- Missing docstrings
-- Mutable defaults
-- Type checks (type() vs isinstance())
-- Magic numbers
-- Bare except clauses
-
-**Formatting**
-
-- Black (uncompromising formatter)
-- isort (import sorting)
-- autopep8 (PEP 8 compliance)
-- Trailing whitespace removal
-- Line ending normalization
-
-## 🎬 See It In Action
-
-**Before PyGuard:**
-
-```python
-# Insecure code with multiple vulnerabilities
-password = "admin123"  # CWE-798: Hardcoded credentials
-cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # CWE-89: SQL injection
-data = pickle.load(open('data.pkl', 'rb'))  # CWE-502: Unsafe deserialization
-hash_value = hashlib.md5(data).hexdigest()  # CWE-327: Weak cryptography
-eval(user_input)  # CWE-95: Code injection
-```
-
-**After PyGuard (Auto-Fixed):**
-
-```python
-# Secure code - automatically fixed by PyGuard
-import os
-password = os.getenv('PASSWORD')  # ✅ Environment variable
-cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))  # ✅ Parameterized query
-import json
-data = json.load(open('data.json', 'r'))  # ✅ Safe serialization
-hash_value = hashlib.sha256(data).hexdigest()  # ✅ Strong cryptography
-import ast
-result = ast.literal_eval(user_input)  # ✅ Safe evaluation
-```
-
-**Result:** 5 critical vulnerabilities → 0 vulnerabilities, automatically fixed in seconds.
-
-**PyGuard Command:**
-
-```bash
-pyguard vulnerable_code.py
-# ✓ Fixed 5 security issues
-# ✓ Applied 5 auto-fixes
-# ✓ Backup created: .pyguard_backups/vulnerable_code.py.2025-01-15_123456
-# ✓ Report generated: pyguard-report.html
-```
-
----
-
-## 📊 Comparison with Other Tools
-
-### General Security Tools
-
-| Feature | PyGuard | Bandit | Ruff | Semgrep | Snyk | SonarQube |
-|---------|---------|--------|------|---------|------|-----------|
-| **Security Checks** | **1,230** 🎊🏆 | 40+ | 73 | 100+ | 200 | 100+ |
-| **AI/ML Security** | **510** 🤖🏆 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Code Quality Rules** | 216+ | ❌ | 800+ | 50+ | 100+ | 500+ |
-| **Auto-Fix Coverage** | **100%** (199+) 🏆 | ❌ | ~10% | ❌ | ❌ | ❌ |
-| **Compliance Frameworks** | 10+ | ❌ | ❌ | ❌ | Limited | ✅ |
-| **Jupyter Notebook Support** | ✅ **Native** 🏆 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Local/No Telemetry** | ✅ | ✅ | ✅ | ⚠️ Cloud | ❌ Cloud | ⚠️ Hybrid |
-| **ML-Powered Detection** | ✅ | ❌ | ❌ | ❌ | ✅ | ⚠️ Limited |
-| **Framework-Specific Rules** | **20+** 🎊🏆 | 2 | 3 | 4+ | 5 | 6 |
-| **SARIF Output** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **GitHub Actions Native** | ✅ | ⚠️ Manual | ⚠️ Manual | ✅ | ✅ | ✅ |
-| **Cost** | **Free** | Free | Free | Free/Paid | Paid | Free/Paid |
-
-### AI/ML Security Tools
-
-| Feature | PyGuard | Snyk | Semgrep | GuardDog | ProtectAI | Robust Intelligence |
-|---------|---------|------|---------|----------|-----------|---------------------|
-| **AI/ML Checks** | **510** 🏆 | 130 | 80 | 45 | 60 | 50 |
-| **Python Focus** | **100%** 🏆 | 40% | 30% | 80% | 70% | 50% |
-| **Auto-Fix** | **100%** 🏆 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Lead Over #2** | **+380** 🏆 | - | -50 | -85 | -70 | -80 |
-| **Lead Percentage** | **292%** 🏆 | - | -38% | -65% | -54% | -62% |
-
-**Key Advantages:**
-
-- 🎊 **TOTAL DOMINANCE - #1 IN AI/ML & GENERAL SECURITY** — 1,230 total checks (720 general + **510 AI/ML**)! 🎊
-- 🤖 **3-10x More AI/ML Coverage** — 510 AI/ML checks vs. Snyk (130), Semgrep (80), ProtectAI (60), GuardDog (45)
-- 🏆 **23 frameworks** — FastAPI, PyTorch, TensorFlow, Hugging Face, SQLAlchemy, Tornado, Celery, asyncio, Streamlit ⭐NEW, Gradio ⭐NEW, Dash ⭐NEW, and more
-- 🏆 **Only tool with 100% auto-fix coverage** — All 199+ vulnerabilities can be automatically fixed
-- 🏆 **Only tool with native Jupyter support** — Industry-leading notebook security analysis
-- 🏆 **Most comprehensive compliance** — 10+ frameworks (OWASP ASVS, OWASP ML Top 10, PCI-DSS, HIPAA, NIST AI RMF, etc.)
-- 🏆 **100% privacy-preserving** — Runs entirely offline, no data leaves your machine
-- 🏆 **Comprehensive AI/ML Lifecycle** — LLM security, model serialization, training, adversarial ML, MLOps, supply chain
-- 🏆 **Framework-Specific** — Deep integration with PyTorch, TensorFlow, Hugging Face, Scikit-learn
-
-### 🚀 Ease of Use Comparison
-
-| Task | PyGuard v0.7.0 | Traditional Approach |
-|------|----------------|---------------------|
-| **Installation** | One git command | Install & configure 7+ separate tools |
-| **Setup Time** | 30 seconds | 2-4 hours (config files, integration) |
-| **First Scan** | `pyguard scan .` | Run 7+ commands, merge outputs |
-| **Config Files** | 1 (`.pyguard.toml`) | 7+ (bandit.yml, .flake8, pyproject.toml, etc.) |
-| **Auto-Fix** | `pyguard fix .` (built-in!) | Manually fix or run 3-4 formatters separately |
-| **Dependencies** | **2 only** (rich, watchdog) | 14+ mandatory packages |
-| **External Tools** | **ZERO required** | ALL required (pylint, flake8, bandit, ruff, mypy...) |
-| **How It Works** | **Built-in AST analysis** | Wrapper calling external tools |
-| **Learning Curve** | **5 minutes** | 2-3 days to master all tools |
-| **Interactive Fixes** | `pyguard fix --interactive` | Not available - manual review |
-| **Config Creation** | `pyguard init --interactive` (wizard!) | Manually create & edit YAML/TOML files |
-| **Check Installation** | `pyguard doctor` | Manually verify each tool individually |
-| **Learn About Issues** | `pyguard explain sql-injection` | Search documentation, StackOverflow |
-| **Watch Mode** | `pyguard watch .` | Not available - manual re-run |
-| **CI/CD Setup** | Copy 1 workflow file | Configure 7+ different actions |
-
-**Why PyGuard is Easier:**
-
-✅ **100% Standalone**: Built-in AST analysis, formatting, and auto-fix - no external tools
-✅ **Zero External Dependencies**: PyGuard does everything itself (1,230+ checks, 199+ fixes)
-✅ **Zero-Config Mode**: Works out of the box with smart defaults
-✅ **Interactive Wizard**: `pyguard init --interactive` guides you through setup
-✅ **Built-in Help**: `pyguard explain <issue>` teaches you about security issues
-✅ **Doctor Command**: `pyguard doctor` verifies everything is working
-✅ **Subcommand Structure**: Intuitive commands (scan, fix, init, watch)
-✅ **Better Error Messages**: Actionable suggestions, not cryptic errors
-✅ **One Config File**: Single `.pyguard.toml` instead of 7+ config files
-✅ **Only 2 Dependencies**: rich (UI) + watchdog (file watching) - that's it!
-
-**New User Experience:**
-
-```bash
-# Traditional Tools (60+ minutes)
-pip install bandit ruff pylint black isort mypy flake8 safety
-touch .banditrc .flake8 pyproject.toml .pylintrc
-# Configure each tool...
-# Read 7+ documentation sites...
-# Run: bandit -r . && ruff . && pylint . && ...
-# Still no auto-fix!
-
-# PyGuard (2 minutes)
-pip install git+https://github.com/cboyd0319/PyGuard.git
-pyguard init --interactive  # Friendly wizard creates config
-pyguard scan .              # Beautiful, consolidated results
-pyguard fix .               # Auto-fix everything safely
-# Done! ✨
-```
-
----
-
-## 💼 Real-World Impact
-
-**Typical results from scanning production projects:**
-
-### Security Improvements
-
-- 🔒 **Vulnerabilities Fixed:** Average 15-30 critical/high severity issues per 10,000 LOC
-- 🛡️ **Compliance Score:** 20-40% improvement in OWASP ASVS compliance
-- 🔑 **Secrets Removed:** 5-15 hardcoded credentials/API keys discovered and secured
-- ⚡ **Auto-Fix Rate:** 85-95% of issues fixed automatically without manual intervention
-
-### Developer Productivity
-
-- ⏱️ **Time Saved:** 2-4 hours per week vs. managing 7+ separate tools
-- 🚀 **Scan Speed:** 10-100x faster with RipGrep integration
-- 📝 **False Positives:** <2% on critical issues (AST-based analysis)
-- 🔄 **CI/CD Integration:** 30 seconds to add to any GitHub repository
-
-### Cost Savings
-
-- 💰 **Tool Consolidation:** Replaces $500-2,000/year in paid tool subscriptions
-- 📊 **License Costs:** Zero - fully open source with MIT license
-- 🖥️ **Infrastructure:** No SaaS fees or cloud computing costs
-
-### Example Project Results
-
-**Medium Python Web App (50,000 LOC):**
-
-```
-Before PyGuard:
-- 47 critical/high vulnerabilities
-- 230 code quality issues
-- 8 hardcoded secrets
-- 3 different tools with conflicting configs
-- 2 hours/week managing tools
-
-After PyGuard (1 hour setup):
-- 0 critical vulnerabilities (auto-fixed)
-- 12 remaining medium-severity issues (guidance provided)
-- 0 secrets (moved to environment variables)
-- 1 unified tool, 1 config file
-- 15 minutes/week for maintenance
-```
-
-**Large Data Science Project (100+ Jupyter notebooks):**
-
-```
-Before PyGuard:
-- No security scanning (existing tools don't support .ipynb)
-- Manual code review only
-- Unknown exposure
-
-After PyGuard:
-- 67 critical issues found in notebooks (eval, pickle, hardcoded AWS keys)
-- 54 auto-fixed automatically
-- 13 flagged for manual review with detailed guidance
-- Continuous monitoring via pre-commit hooks
-```
-
----
-
-## 🎯 Why PyGuard
-
-### Comprehensiveness
-
-- 🎊 **720 security checks** vs Bandit (~40), Semgrep (~100), Ruff (~73), **Snyk (~200)** — **TOTAL MARKET DOMINANCE** with **+520 checks ahead (360% more)**! 🎊
-- **216+ code quality rules** covering PEP 8, Pylint, Bugbear, Refurb, PIE, pyupgrade patterns
-- **199+ auto-fixes** (safe + unsafe modes) — most comprehensive security auto-fixes available
-- 🏆 **Framework-specific rules** for **23 frameworks** (383% more than competition): **FastAPI** (37 checks), **SQLAlchemy** (25 checks), **Tornado** (20 checks), **Celery** (20 checks), **asyncio** (15 checks), **Pyramid** (15 checks), **NumPy** (15 checks), **TensorFlow** (20 checks), **Sanic** (15 checks), **Quart** (12 checks), **Bottle** (11 checks), **Scikit-learn** (8 checks), **SciPy** (11 checks), **Streamlit** (7 checks) ⭐NEW, **Gradio** (6 checks) ⭐NEW, **Peewee** (6 checks), **Pony** (6 checks), **Dash** (5 checks) ⭐NEW, **Tortoise** (5 checks), Django (7), Flask (7), Pandas (6), Pytest (7) — **🏆 MISSION ACCOMPLISHED: All targets exceeded!** 🏆
-- **10+ compliance frameworks** — OWASP ASVS, CWE, PCI DSS, HIPAA, SOC 2, ISO 27001, NIST, GDPR, CCPA, FedRAMP, SOX
-
-### Technology
-
-- **AST-based analysis** — 10-100x faster than regex, eliminates false positives from comments/strings
-- **ML-powered detection** — pattern recognition, anomaly detection, risk scoring
-- **Context-aware** — understands Python semantics, not text patterns
-- **Supply chain security** — dependency scanning, SBOM generation (CycloneDX/SPDX), license detection
-
-### Production Quality
-
-- **3,800+ tests, 88%+ coverage** — rigorously tested, production-ready
-- **96 specialized modules** — 40,000+ lines of analysis code
-- **106 test files** — comprehensive test suite
-- **100% local** — no SaaS, no telemetry, no external dependencies for core functionality
-- **Privacy-first** — all analysis happens on your machine, no data leaves your environment
-
-### Unified Platform
-
-**Replaces 7+ tools:**
-
-1. Bandit (security scanning)
-2. Semgrep (pattern matching)
-3. Ruff (fast linting)
-4. Pylint (code quality)
-5. Black (code formatting)
-6. isort (import sorting)
-7. mypy (type checking - partial)
-
-Single config file. Single command. Unified reports.
-
-## 🔒 Security
-
-**Secrets:** Use environment variables. Never commit credentials. PyGuard requires no secrets (reads local files only). Optional: `PYGUARD_LOG_LEVEL` for logging control.
-
-**Least privilege:** Read access to scan files, write access to fix files. No network access required (runs offline). No elevated privileges needed.
-
-**Supply chain:** 
-- **Sigstore signing (v0.8.0+):** All releases cryptographically signed with keyless Sigstore
-- **SLSA Level 3:** Build provenance attestations for all artifacts
-- **SBOM:** Published at `/releases/tag/v*` (SPDX and CycloneDX formats)
-- **Transparency:** All signatures recorded in public Rekor log
-- **Verification:** See [docs/security/SIGNATURE_VERIFICATION.md](docs/security/SIGNATURE_VERIFICATION.md)
-
-**Disclosure:** GitHub Security Advisories or <https://github.com/cboyd0319> (see SECURITY.md)
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-<details>
-<summary><strong>Error: SyntaxError: invalid syntax</strong></summary>
-
-**Cause:** File contains invalid Python syntax
-
-**Fix:** Verify syntax before scanning:
-
-```bash
-python -m py_compile <file>
-```
-
-</details>
-
-<details>
-<summary><strong>Error: FileNotFoundError: .pyguard_backups</strong></summary>
-
-**Cause:** Backup directory missing or no write permissions
-
-**Fix:** PyGuard creates this automatically. Check parent directory permissions:
-
-```bash
-ls -la . | grep pyguard_backups
-chmod 755 .
-```
-
-</details>
-
-<details>
-<summary><strong>Error: PermissionError: [Errno 13]</strong></summary>
-
-**Cause:** No write access to file or backup directory
-
-**Fix:** Check permissions:
-
-```bash
-# Fix file permissions
-chmod 644 path/to/file.py
-
-# Fix directory permissions
-chmod 755 path/to/directory
-```
-
-</details>
-
-<details>
-<summary><strong>Slow performance on large codebases</strong></summary>
-
-**Cause:** Scanning unnecessary files (tests, migrations, vendor code)
-
-**Fix:** Use `--exclude` patterns or `--fast` mode:
-
-```bash
-# Exclude specific directories
-pyguard src/ --exclude "*/tests/*" --exclude "*/migrations/*"
-
-# Use RipGrep fast mode (10-100x faster)
-pyguard src/ --fast
-```
-
-See [Performance Guide](docs/guides/RIPGREP_INTEGRATION.md) for optimization tips.
-
-</details>
-
-<details>
-<summary><strong>Error: TypeError: 'NoneType' object is not iterable</strong></summary>
-
-**Cause:** Code uses unsupported Python feature (rare edge case)
-
-**Fix:** Report issue with minimal code sample:
-
-[File a bug report →](https://github.com/cboyd0319/PyGuard/issues/new?template=bug_report.md)
-
-</details>
-
-**More help:** [GitHub Discussions](https://github.com/cboyd0319/PyGuard/discussions) • [GitHub Issues](https://github.com/cboyd0319/PyGuard/issues)
-
-## ⚡ Performance
-
-**Expected throughput**
-
-- Single file: 10-50ms (depends on file size and complexity)
-- 1000 files (sequential): ~30s
-- 1000 files (parallel, 8 cores): ~5s (6x speedup)
-- Per-line average: ~1ms
-
-**Latency characteristics**
-
-- AST parsing: 5-10x faster than regex for simple patterns
-- AST parsing: 50-100x faster than regex for complex patterns
-- Cache hit: instant (skips unchanged files by content hash)
-- First run: full scan
-- Subsequent runs: only changed files
-
-**Limits**
-
-- File size: tested up to 10,000 lines per file
-- Project size: tested up to 100,000 total lines
-- Memory: ~50MB baseline + ~1KB per file
-
-## 🗺️ Roadmap
-
-**Goal: Make PyGuard THE definitive Python security solution everywhere developers work**
-
-Current: v0.6.0 (4,701 tests, 84%+ coverage, 1,230+ security checks, 25 frameworks)
-
-### Completed Milestones
-
-- [x] v0.4.0 — API Security Module (101 checks, FastAPI support)
-- [x] v0.5.0 — Security Dominance Achievement (334 checks, Tornado, Celery, Supply Chain)
-- [x] v0.6.0 — **MISSION ACCOMPLISHED** (720 checks, 20 frameworks, Total Market Dominance)
-
-### Upcoming Releases
-
-**v0.7.0 - "Easy Distribution" (Q1 2026)**
-- [ ] **Homebrew formula** - One-liner installation (`brew install pyguard`)
-- [ ] **VS Code extension** - Real-time security linting in IDE
-- [ ] **Docker Hub images** - Official multi-arch container images
-- [ ] **Watch mode** - Continuous scanning during development
-- [ ] **Advanced taint analysis** - Cross-function vulnerability tracking
-
-**v0.8.0 - "Secure Distribution" (Q2 2026)**
-- [ ] **SLSA Level 3 provenance** - Supply chain security attestation
-- [ ] **Sigstore/Cosign signing** - Keyless release signing
-- [ ] **PyCharm plugin** - IntelliJ Platform integration
-- [ ] **LSP server** - Language Server Protocol for IDE integration
-- [ ] **Git diff analysis** - Scan only changed code in PRs
-
-**v1.0.0 - "Production Excellence" (Q3 2026)**
-- [ ] **Reproducible builds** - Bit-for-bit build verification
-- [ ] **Enterprise features** - Air-gapped installation, compliance reporting
-- [ ] **95%+ test coverage** - Production-quality stability
-- [ ] **Professional support** - Commercial support options
-- [ ] **10+ distribution channels** - Homebrew, PyPI, Docker, IDEs, package managers
-
-**See [ROADMAP.md](ROADMAP.md) for comprehensive roadmap with timelines, metrics, and strategy**
-
-**See [DISTRIBUTION_STRATEGY.md](docs/reference/DISTRIBUTION_STRATEGY.md) for detailed distribution strategy and secure supply chain plan**
-
----
-
-## 🌟 Community & Ecosystem
-
-### Integrations
-
-PyGuard works seamlessly with your existing tools:
-
-**CI/CD Platforms:**
-
-- ✅ **GitHub Actions** — Native integration with SARIF upload
-- ✅ **GitLab CI** — Via Docker or pip install
-- ✅ **CircleCI** — Pre-built orb available
-- ✅ **Azure Pipelines** — Task extension available
-- ✅ **Jenkins** — Plugin compatible
-
-**Development Tools:**
-
-- ✅ **Pre-commit Hooks** — Automatic scanning before commits
-- ✅ **VS Code** — Planned integration (v0.7.0)
-- ✅ **PyCharm/IntelliJ** — Via external tools
-- ✅ **Git Hooks** — Native support (`pyguard install-hooks`)
-- ✅ **Docker** — Containerized scanning available
-
-**Output Formats:**
-
-- ✅ **SARIF 2.1.0** — GitHub Security tab integration
-- ✅ **HTML Reports** — Beautiful, interactive reports
-- ✅ **JSON** — Machine-readable for custom processing
-- ✅ **CSV** — Audit trail and spreadsheet analysis
-- ✅ **Console** — Rich terminal output with colors
-
-### Recognition & Trust
-
-**Security Scorecard:**
-
-- 🏆 **OpenSSF Scorecard:** A+ rating (95/100)
-- 🔒 **SLSA Level 3:** Supply chain security certified
-- 📋 **SBOM Available:** SPDX 2.3 and CycloneDX formats
-- ✅ **Zero Critical CVEs:** Continuously monitored and patched
-
-**Project Stats:**
-
-- 📦 67 production-ready modules
-- 🧪 1002 comprehensive tests (84% coverage)
-- 📚 Extensive documentation (guides, references, examples)
-- 🔄 Active development and maintenance
-
-### Showcase Your Project
-
-Using PyGuard in production? We'd love to feature your project!
-
-**Benefits:**
-
-- 📢 Exposure to the PyGuard community
-- 🎖️ Recognition for security best practices
-- 🤝 Collaboration opportunities
-
-[Submit your project →](https://github.com/cboyd0319/PyGuard/discussions/categories/show-and-tell)
-
----
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- How to run tests, lint, format code
-- Branch naming and commit conventions
-- PR process and review requirements
-- Release management
-
-Quick start:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/PyGuard.git
-cd PyGuard
-pip install -e ".[dev]"
-make test
-make lint
-```
-
-## Maintenance
-
-Dependabot auto-updates dependencies weekly. Auto-merges patch/minor updates after CI passes.
-
----
-
-## Documentation
-
-### Getting Started
-
-- **[Documentation Index](docs/index.md)** - Complete documentation map
-- **[GitHub Action Guide](docs/guides/github-action-guide.md)** - CI/CD integration
-- **[Capabilities Reference](docs/reference/capabilities-reference.md)** - Detailed feature catalog
-
-### Advanced Features
-
-- **[RipGrep Integration](docs/guides/RIPGREP_INTEGRATION.md)** - 10-100x faster scanning
-- **[Advanced Features](docs/guides/ADVANCED_FEATURES.md)** - CI/CD, profiling, custom rules
-- **[Configuration Guide](docs/guides/CONFIGURATION.md)** - pyguard.toml reference
-
-### Full Documentation Index
-
-See [docs/index.md](docs/index.md) for complete documentation map.
-
----
-
-## 📄 License
-
-**MIT License** - See [LICENSE](LICENSE) for full text.
-
-```
-✅ Commercial use allowed
-✅ Modification allowed
-✅ Distribution allowed
-✅ Private use allowed
-📋 License and copyright notice required
-```
-
-**TL;DR:** Use it however you want. Just include the license.
-
-Learn more: <https://choosealicense.com/licenses/mit/>
-
----
-
-## 💬 Support & Community
-
-**Need help?**
-
-- 🐛 [File a bug report](https://github.com/cboyd0319/PyGuard/issues/new?template=bug_report.md)
-- 💡 [Request a feature](https://github.com/cboyd0319/PyGuard/discussions/new?category=feature-requests)
-- 💬 [Ask a question](https://github.com/cboyd0319/PyGuard/discussions/new?category=q-a)
-- 🔒 [Report a security issue](SECURITY.md) (private)
-
-**Resources:**
-
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development setup and contribution guidelines
-- [Changelog](docs/development/UPDATEv2.md) - Release history and roadmap
-- [GitHub Marketplace](https://github.com/marketplace/actions/pyguard-security-scanner) - PyGuard Action
-
----
-
-<div align="center">
-
-## ⭐ Spread the Word
-
-If PyGuard helps secure your Python projects, **give us a star** ⭐
-
-[![Star History](https://img.shields.io/github/stars/cboyd0319/PyGuard?style=social)](https://github.com/cboyd0319/PyGuard/stargazers)
-
-**Active Development** • **Production-Ready** • **Community-Driven**
-
-Made with ❤️ for Python developers who value security
-
-[⬆ Back to top](#pyguard)
-
-</div>
+Security disclosures follow our [Security Policy](SECURITY.md).

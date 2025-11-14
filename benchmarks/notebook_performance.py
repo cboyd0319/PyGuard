@@ -3,7 +3,7 @@
 Performance benchmarks for PyGuard Jupyter notebook security analysis.
 
 This module provides benchmarks to validate that PyGuard meets the world-class
-performance targets outlined in PYGUARD_JUPYTER_SECURITY_ENGINEER.md:
+performance targets outlined in docs/development/NOTEBOOK_SECURITY_CAPABILITIES.md:
 
 - Sub-100ms analysis for small notebooks (< 10 cells)
 - Linear scaling to 1000+ cells
