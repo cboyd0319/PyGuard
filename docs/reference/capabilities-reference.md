@@ -42,7 +42,7 @@ Released 2025-11-14 with major improvements:
 - **199+ auto-fixes** with 100% coverage vs 0% for competitors (unique in market) 🏆
 - **100% local, zero telemetry** vs cloud-required competitors 🏆
 
-**Recent Additions (Nov 2024 - NEW!):**
+**Recent Additions (2024-2025):**
 
 - **PySpark Framework:** 10 checks ✅ **NEW!** - 24 tests
 - **Apache Airflow Framework:** 9 checks ✅ **NEW!** - 27 tests
@@ -720,8 +720,8 @@ PyGuard includes specialized rules for **25 popular Python frameworks** - **317%
 | **Streamlit** | **`framework_streamlit.py`** | **475** | **7** | 🔜 | ✅ **Complete** |
 | **Gradio** | **`framework_gradio.py`** | **410** | **6** | 🔜 | ✅ **Complete** |
 | **Dash** | **`framework_dash.py`** | **350** | **5** | 🔜 | ✅ **Complete** |
-| **PySpark** | **`framework_pyspark.py`** | **520** | **10** | 🔜 | ✅ **Nov 2024 NEW!** 🚀 |
-| **Apache Airflow** | **`framework_airflow.py`** | **565** | **9** | 🔜 | ✅ **Nov 2024 NEW!** 🚀 |
+| **PySpark** | **`framework_pyspark.py`** | **520** | **10** | 🔜 | ✅ **2024** 🚀 |
+| **Apache Airflow** | **`framework_airflow.py`** | **565** | **9** | 🔜 | ✅ **2024** 🚀 |
 | Pandas | `framework_pandas.py` | 279 | 5 | ⚠️ | ✅ Complete |
 | Pytest | `framework_pytest.py` | 300 | 8 | ⚠️ | ✅ Complete |
 | **NumPy** | **`framework_numpy.py`** | **587** | **15** | 🔜 | ✅ **Complete** |
