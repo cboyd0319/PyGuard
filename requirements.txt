@@ -602,17 +602,6 @@ platformdirs==4.5.0 \
     #   black
     #   jupyter-core
     #   pylint
-psutil==7.1.1 \
-    --hash=sha256:092b6350145007389c1cfe5716050f02030a05219d90057ea867d18fe8d372fc \
-    --hash=sha256:146a704f224fb2ded2be3da5ac67fc32b9ea90c45b51676f9114a6ac45616967 \
-    --hash=sha256:295c4025b5cd880f7445e4379e6826f7307e3d488947bf9834e865e7847dc5f7 \
-    --hash=sha256:2a95104eae85d088891716db676f780c1404fc15d47fde48a46a5d61e8f5ad2c \
-    --hash=sha256:5457cf741ca13da54624126cd5d333871b454ab133999a9a103fb097a7d7d21a \
-    --hash=sha256:8fa59d7b1f01f0337f12cd10dbd76e4312a4d3c730a4fedcbdd4e5447a8b8460 \
-    --hash=sha256:92ebc58030fb054fa0f26c3206ef01c31c29d67aee1367e3483c16665c25c8d2 \
-    --hash=sha256:98629cd8567acefcc45afe2f4ba1e9290f579eacf490a917967decce4b74ee9b \
-    --hash=sha256:9b4f17c5f65e44f69bd3a3406071a47b79df45cf2236d1f717970afcb526bcd3
-    # via safety
 pycodestyle==2.14.0 \
     --hash=sha256:c4b5b517d278089ff9d0abdec919cd97262a3367449ea1c8b49b91529167b783 \
     --hash=sha256:dd6bf7cb4ee77f8e016f9c8e74a35ddd9f67e1d5fd4184d86c3b98e07099f42d
@@ -1322,9 +1311,9 @@ ruff==0.14.1 \
     --hash=sha256:ed04f0e04f7a4587244e5c9d7df50e6b5bf2705d75059f409a6421c593a35896 \
     --hash=sha256:f6fa757cd717f791009f7669fefb09121cc5f7d9bd0ef211371fad68c2b8b224
     # via -r requirements.in
-safety==3.6.2 \
-    --hash=sha256:2e148cd9a4ad2e387d2c142878b7b5a3a9cb9e6538167043faa1ba7023a032be \
-    --hash=sha256:754f8d6068d1504503b0346cbd3cb0e67015d2abc1d842f3a4e4b662cb4f44ec
+safety==3.7.0 \
+    --hash=sha256:65e71db45eb832e8840e3456333d44c23927423753d5610596a09e909a66d2bf \
+    --hash=sha256:daec15a393cafc32b846b7ef93f9c952a1708863e242341ab5bde2e4beabb54e
     # via -r requirements.in
 safety-schemas==0.0.16 \
     --hash=sha256:3bb04d11bd4b5cc79f9fa183c658a6a8cf827a9ceec443a5ffa6eed38a50a24e \
@@ -1449,9 +1438,3 @@ watchdog==6.0.0 \
     --hash=sha256:e7631a77ffb1f7d2eefa4445ebbee491c720a5661ddf6df3498ebecae5ed375c \
     --hash=sha256:ef810fbf7b781a5a593894e4f439773830bdecb885e6880d957d5b9382a960d2
     # via -r requirements.in
-
-# The following packages are considered to be unsafe in a requirements file:
-setuptools==80.9.0 \
-    --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
-    --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
-    # via safety

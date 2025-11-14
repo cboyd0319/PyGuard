@@ -907,19 +907,6 @@ pluggy==1.6.0 \
     #   pytest
     #   pytest-cov
     #   tox
-psutil==7.1.1 \
-    --hash=sha256:092b6350145007389c1cfe5716050f02030a05219d90057ea867d18fe8d372fc \
-    --hash=sha256:146a704f224fb2ded2be3da5ac67fc32b9ea90c45b51676f9114a6ac45616967 \
-    --hash=sha256:295c4025b5cd880f7445e4379e6826f7307e3d488947bf9834e865e7847dc5f7 \
-    --hash=sha256:2a95104eae85d088891716db676f780c1404fc15d47fde48a46a5d61e8f5ad2c \
-    --hash=sha256:5457cf741ca13da54624126cd5d333871b454ab133999a9a103fb097a7d7d21a \
-    --hash=sha256:8fa59d7b1f01f0337f12cd10dbd76e4312a4d3c730a4fedcbdd4e5447a8b8460 \
-    --hash=sha256:92ebc58030fb054fa0f26c3206ef01c31c29d67aee1367e3483c16665c25c8d2 \
-    --hash=sha256:98629cd8567acefcc45afe2f4ba1e9290f579eacf490a917967decce4b74ee9b \
-    --hash=sha256:9b4f17c5f65e44f69bd3a3406071a47b79df45cf2236d1f717970afcb526bcd3
-    # via
-    #   -r requirements.txt
-    #   safety
 py-cpuinfo==9.0.0 \
     --hash=sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690 \
     --hash=sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5
@@ -1707,9 +1694,9 @@ ruff==0.14.1 \
     --hash=sha256:ed04f0e04f7a4587244e5c9d7df50e6b5bf2705d75059f409a6421c593a35896 \
     --hash=sha256:f6fa757cd717f791009f7669fefb09121cc5f7d9bd0ef211371fad68c2b8b224
     # via -r requirements.txt
-safety==3.6.2 \
-    --hash=sha256:2e148cd9a4ad2e387d2c142878b7b5a3a9cb9e6538167043faa1ba7023a032be \
-    --hash=sha256:754f8d6068d1504503b0346cbd3cb0e67015d2abc1d842f3a4e4b662cb4f44ec
+safety==3.7.0 \
+    --hash=sha256:65e71db45eb832e8840e3456333d44c23927423753d5610596a09e909a66d2bf \
+    --hash=sha256:daec15a393cafc32b846b7ef93f9c952a1708863e242341ab5bde2e4beabb54e
     # via -r requirements.txt
 safety-schemas==0.0.16 \
     --hash=sha256:3bb04d11bd4b5cc79f9fa183c658a6a8cf827a9ceec443a5ffa6eed38a50a24e \
@@ -1884,9 +1871,3 @@ pip==25.2 \
     --hash=sha256:578283f006390f85bb6282dffb876454593d637f5d1be494b5202ce4877e71f2 \
     --hash=sha256:6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717
     # via pip-api
-setuptools==80.9.0 \
-    --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
-    --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
-    # via
-    #   -r requirements.txt
-    #   safety
