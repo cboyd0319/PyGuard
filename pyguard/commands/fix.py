@@ -220,6 +220,7 @@ class FixCommand:
 
     @staticmethod
     def _interactive_fix(
+        # TODO: Add docstring
         cli: PyGuardCLI,
         files: list[Path],
         config: PyGuardConfig,

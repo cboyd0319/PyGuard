@@ -287,6 +287,7 @@ array = np.array(series)
         """Test that non-pandas files are skipped."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     return [1, 2, 3]
 
 data = regular_function()

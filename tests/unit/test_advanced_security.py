@@ -13,10 +13,10 @@ class TestTaintAnalyzer:
     """Test taint tracking analysis."""
 
     def test_detect_taint_flow_from_input(self):
-        """Test detection of tainted data from input() flowing to eval()."""
+        """Test detection of tainted data from input() flowing to eval()."""  # DANGEROUS: Avoid eval with untrusted input
         code = """
 user_input = input("Enter value: ")
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """
         source_lines = code.strip().split("\n")
         analyzer = TaintAnalyzer(source_lines)
@@ -56,7 +56,7 @@ class TestReDoSDetector:
         detector = ReDoSDetector()
 
         # Vulnerable pattern with nested quantifiers
-        issue = detector.analyze_regex(r"(a+)+", line_number=1, code_snippet='re.compile(r"(a+)+")')
+        issue = detector.analyze_regex(r"(a+)+", line_number=1, code_snippet='re.compile(r"(a+)+")')  # DANGEROUS: Avoid compile with untrusted input
 
         assert issue is not None
         assert issue.category == "Regular Expression DoS"
@@ -68,7 +68,7 @@ class TestReDoSDetector:
 
         # Safe pattern
         issue = detector.analyze_regex(
-            r"[a-zA-Z0-9]+", line_number=1, code_snippet='re.compile(r"[a-zA-Z0-9]+")'
+            r"[a-zA-Z0-9]+", line_number=1, code_snippet='re.compile(r"[a-zA-Z0-9]+")'  # DANGEROUS: Avoid compile with untrusted input
         )
 
         assert issue is None
@@ -158,10 +158,10 @@ import os
 
 # Taint flow issue
 user_input = input("Enter command: ")
-os.system(user_input)
+os.system(user_input)  # SECURITY: Use subprocess.run() instead
 
 # ReDoS issue
-pattern = re.compile(r"(a+)+")
+pattern = re.compile(r"(a+)+")  # DANGEROUS: Avoid compile with untrusted input
 
 # Race condition
 file_path = "/tmp/data.txt"
@@ -195,6 +195,7 @@ result = json.loads(json_str)
         """Test that syntax errors are handled gracefully."""
         code = """
 def broken_function(
+    # TODO: Add docstring
     # Missing closing paren
 """
         analyzer = AdvancedSecurityAnalyzer()
@@ -209,7 +210,7 @@ def broken_function(
 import re
 
 # Vulnerable regex
-pattern = re.compile(r"(a*)*b")
+pattern = re.compile(r"(a*)*b")  # DANGEROUS: Avoid compile with untrusted input
 result = pattern.match(user_input)
 """
         analyzer = AdvancedSecurityAnalyzer()
@@ -305,6 +306,7 @@ class TestRaceConditionDetectorEdgeCases:
 
         # Mock the binop as a call with weird structure
         class WeirdCall:
+            # TODO: Add docstring
             func = binop_node
 
         # This should return empty string
@@ -414,7 +416,7 @@ import re
 
 # Taint flow
 user_input = input("Enter: ")
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 
 # TOCTOU
 if os.path.exists("file.txt"):
@@ -422,7 +424,7 @@ if os.path.exists("file.txt"):
         data = f.read()
 
 # ReDoS
-pattern = re.compile(r"(a+)+")
+pattern = re.compile(r"(a+)+")  # DANGEROUS: Avoid compile with untrusted input
 
 # Integer overflow
 size = width * height * 4

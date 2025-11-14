@@ -37,9 +37,11 @@ class TestDjangoRulesDetection:
 from django.db import models
 
 class MyModel(models.Model):
+    # TODO: Add docstring
     pass
 
 def get_data(user_id):
+    # TODO: Add docstring
     return MyModel.objects.raw(f"SELECT * FROM table WHERE id={user_id}")
 """
         file_path = tmp_path / "test.py"
@@ -60,9 +62,11 @@ def get_data(user_id):
 from django.db import models
 
 class MyModel(models.Model):
+    # TODO: Add docstring
     pass
 
 def get_data(user_id):
+    # TODO: Add docstring
     return MyModel.objects.raw("SELECT * FROM table WHERE id=%s", [user_id])
 """
         file_path = tmp_path / "test.py"
@@ -80,6 +84,7 @@ def get_data(user_id):
 from django.db import models
 
 class Product(models.Model):
+    # TODO: Add docstring
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 """
@@ -98,9 +103,11 @@ class Product(models.Model):
 from django.db import models
 
 class Product(models.Model):
+    # TODO: Add docstring
     name = models.CharField(max_length=100)
 
     def __str__(self):
+        # TODO: Add docstring
         return self.name
 """
         file_path = tmp_path / "test.py"
@@ -117,12 +124,15 @@ class Product(models.Model):
 from django.db import models
 
 class Article(models.Model):
+    # TODO: Add docstring
     title = models.CharField(max_length=200)
 
     class Meta:
+        # TODO: Add docstring
         verbose_name = "Article"
 
     def __str__(self):
+        # TODO: Add docstring
         return self.title
 """
         file_path = tmp_path / "test.py"
@@ -139,12 +149,15 @@ class Article(models.Model):
 from django.db import models
 
 class Article(models.Model):
+    # TODO: Add docstring
     title = models.CharField(max_length=200)
 
     class Meta:
+        # TODO: Add docstring
         ordering = ['-created_at']
 
     def __str__(self):
+        # TODO: Add docstring
         return self.title
 """
         file_path = tmp_path / "test.py"
@@ -161,6 +174,7 @@ class Article(models.Model):
 from django import forms
 
 class ContactForm(forms.Form):
+    # TODO: Add docstring
     email = forms.EmailField()
     message = forms.CharField()
 """
@@ -178,9 +192,11 @@ class ContactForm(forms.Form):
 from django import forms
 
 class ContactForm(forms.Form):
+    # TODO: Add docstring
     email = forms.EmailField()
 
     def clean_email(self):
+        # TODO: Add docstring
         return self.cleaned_data['email']
 """
         file_path = tmp_path / "test.py"
@@ -262,9 +278,11 @@ DEBUG = False
         """Test that non-Django files are skipped."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     return "Hello World"
 
 class RegularClass:
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -281,7 +299,9 @@ class RegularClass:
 from django.db import models
 
 class BrokenModel(models.Model):
+    # TODO: Add docstring
     def bad_syntax(
+        # TODO: Add docstring
         # Missing closing parenthesis
 """
         file_path = tmp_path / "test.py"
@@ -371,6 +391,7 @@ class TestEdgeCases:
 from django.db import models
 
 class BaseModel(models.AbstractModel):
+    # TODO: Add docstring
     created_at = models.DateTimeField(auto_now_add=True)
 """
         file_path = tmp_path / "test.py"
@@ -388,6 +409,7 @@ class BaseModel(models.AbstractModel):
 from django import forms
 
 class ProductForm(forms.ModelForm):
+    # TODO: Add docstring
     extra_field = forms.CharField()
 """
         file_path = tmp_path / "test.py"
@@ -408,9 +430,11 @@ DEBUG = True
 SECRET_KEY = "hardcoded-secret"
 
 class Product(models.Model):
+    # TODO: Add docstring
     name = models.CharField(max_length=100)
 
     class Meta:
+        # TODO: Add docstring
         verbose_name = "Product"
 """
         file_path = tmp_path / "test.py"
@@ -443,10 +467,12 @@ class Product(models.Model):
 from django.db import models
 
 class Product(models.Model):
+    # TODO: Add docstring
     name = models.CharField(max_length=100)
     description = models.TextField()
 
     def __str__(self):
+        # TODO: Add docstring
         return f"商品: {self.name}"
 """
         file_path = tmp_path / "test.py"
@@ -484,7 +510,9 @@ result = MyModel.objects.raw("SELECT * FROM table")
         code = """
 # Non-Django file
 class MyModel:
+    # TODO: Add docstring
     def save(self):
+        # TODO: Add docstring
         pass
 """
         file_path = tmp_path / "test.py"
@@ -520,9 +548,11 @@ SECRET_KEY = "test"
 from django.db import models
 
 class User(models.Model):
+    # TODO: Add docstring
     pass
 
 def get_user(user_id):
+    # TODO: Add docstring
     # Line 83: This path just passes, doesn't check for try/except
     user = User.objects.get(id=user_id)
     return user
@@ -543,6 +573,7 @@ def get_user(user_id):
 from django.shortcuts import render
 
 def view(request):
+    # TODO: Add docstring
     # Line 89: This path just passes, doesn't check for csrf_token
     return render(request, 'template.html', {})
 """

@@ -14,9 +14,11 @@ class TestNamingConventionVisitor:
         """Test detection of class name violations."""
         code = """
 class my_class:
+    # TODO: Add docstring
     pass
 
 class snake_case_class:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -33,9 +35,11 @@ class snake_case_class:
         """Test detection of function name violations."""
         code = """
 def MyFunction():
+    # TODO: Add docstring
     pass
 
 def camelCaseFunction():
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -52,6 +56,7 @@ def camelCaseFunction():
         """Test detection of argument name violations."""
         code = """
 def process(camelCaseArg, AnotherArg):
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -83,9 +88,11 @@ camelCaseVar = 100
         """Test detection of ambiguous single-letter names."""
         code = """
 class l:
+    # TODO: Add docstring
     pass
 
 def O():
+    # TODO: Add docstring
     pass
 
 I = 1
@@ -102,13 +109,17 @@ I = 1
         """Test that magic methods are allowed."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         pass
 
     def __str__(self):
+        # TODO: Add docstring
         pass
 
     def __custom_method__(self):
+        # TODO: Add docstring
         pass
 """
         tree = ast.parse(code)
@@ -124,7 +135,7 @@ class MyClass:
         """Test that UPPER_CASE constants are allowed."""
         code = """
 MAX_SIZE = 100
-API_KEY = "secret"
+API_KEY = "secret"  # SECURITY: Use environment variables or config files
 _PRIVATE_CONSTANT = 42
 """
         tree = ast.parse(code)
@@ -142,9 +153,11 @@ _private_var = 42
 __double_underscore = 100
 
 def _private_function():
+    # TODO: Add docstring
     pass
 
 class _PrivateClass:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -159,12 +172,15 @@ class _PrivateClass:
         """Test that test methods are allowed."""
         code = """
 def test_feature():
+    # TODO: Add docstring
     pass
 
 def setUp():
+    # TODO: Add docstring
     pass
 
 def tearDown():
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -180,10 +196,13 @@ def tearDown():
         """Test that correctly named elements have no issues."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.my_attribute = 42
 
     def my_method(self, argument_name):
+        # TODO: Add docstring
         local_var = argument_name
         return local_var
 
@@ -205,7 +224,9 @@ class TestNamingConventionFixer:
         """Test scanning file for naming issues."""
         code = """
 class my_class:
+    # TODO: Add docstring
     def MyMethod(self, CamelArg):
+        # TODO: Add docstring
         MyVar = 42
         return MyVar
 """
@@ -229,6 +250,7 @@ class my_class:
         """Test that fix_file detects issues."""
         code = """
 def MyFunction(CamelArg):
+    # TODO: Add docstring
     pass
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -249,6 +271,7 @@ def MyFunction(CamelArg):
         """Test scanning file with syntax error."""
         code = """
 def broken(
+    # TODO: Add docstring
     # Missing closing parenthesis
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -294,6 +317,7 @@ def broken(
 
         # Create a mock node with invalid line number
         class MockNode:
+            # TODO: Add docstring
             lineno = 100  # Out of range
 
         snippet = visitor._get_code_snippet(MockNode())
@@ -380,6 +404,7 @@ class TestAmbiguousVariableNaming:
         """Test detection of all ambiguous single-letter names in class context."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     l = 1
     O = 2
     I = 3

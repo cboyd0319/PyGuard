@@ -64,6 +64,7 @@ import sys
 from typing import Protocol
 
 class MyClass:
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -191,6 +192,7 @@ from __future__ import (
         original_parse = ast.parse
 
         def mock_parse(*args, **kwargs):
+            # TODO: Add docstring
             raise RuntimeError("Unexpected error")
 
         monkeypatch.setattr(ast, "parse", mock_parse)

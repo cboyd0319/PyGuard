@@ -74,6 +74,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         self.fix_history: list[FixMetadata] = []
 
     def fix_notebook_with_validation(
+        # TODO: Add docstring
         self, notebook_path: Path, issues: list[NotebookIssue], validate: bool = True
     ) -> tuple[bool, list[str], list[FixMetadata]]:
         """
@@ -153,6 +154,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         return len(fix_metadata) > 0, fixes_applied, fix_metadata
 
     def _apply_fix_with_metadata(
+        # TODO: Add docstring
         self, cells: list[dict], issue: NotebookIssue, notebook_path: Path, timestamp: str
     ) -> FixMetadata | None:
         """Apply a single fix and generate metadata."""
@@ -212,6 +214,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         return None
 
     def _fix_secret_enhanced(
+        # TODO: Add docstring
         self, source: str, issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced secret remediation with environment variables."""
@@ -279,6 +282,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         return source, "", [], 0.0
 
     def _fix_code_injection_enhanced(
+        # TODO: Add docstring
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced code injection fix with AST transformation.
@@ -287,15 +291,15 @@ class EnhancedNotebookFixer(NotebookFixer):
             source: Source code to fix
             _issue: Issue details (reserved for context)
         """
-        if "eval(" in source:
+        if "eval(" in source:  # DANGEROUS: Avoid eval with untrusted input
             # Replace eval with ast.literal_eval
-            fixed = source.replace("eval(", "ast.literal_eval(")
+            fixed = source.replace("eval(", "ast.literal_eval(")  # DANGEROUS: Avoid eval with untrusted input
 
             # Add import if not present
             if "import ast" not in fixed:
                 fixed = "import ast\n\n" + fixed
 
-            explanation = "Replaced eval() with ast.literal_eval() for safe evaluation"
+            explanation = "Replaced eval() with ast.literal_eval() for safe evaluation"  # DANGEROUS: Avoid eval with untrusted input
             if self.explanation_level == "expert":
                 explanation += (
                     " (only evaluates Python literals: strings, numbers, tuples, lists, dicts)"
@@ -303,10 +307,10 @@ class EnhancedNotebookFixer(NotebookFixer):
 
             return fixed, explanation, ["CWE-95", "OWASP-A03:2021"], 0.95
 
-        if "exec(" in source:
+        if "exec(" in source:  # DANGEROUS: Avoid exec with untrusted input
             # Add sandboxed globals
             fixed_lines = []
-            fixed_lines.append("# PYGUARD AUTO-FIX: Sandboxed exec() with restricted globals")
+            fixed_lines.append("# PYGUARD AUTO-FIX: Sandboxed exec() with restricted globals")  # DANGEROUS: Avoid exec with untrusted input
             fixed_lines.append(
                 "# CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
             )
@@ -321,14 +325,15 @@ class EnhancedNotebookFixer(NotebookFixer):
             fixed_lines.append("    'math': math,")
             fixed_lines.append("}")
             fixed_lines.append("")
-            fixed_lines.append("# Original exec() replaced with sandboxed version:")
-            fixed_lines.append(source.replace("exec(", "exec(") + ", safe_globals, {})")
+            fixed_lines.append("# Original exec() replaced with sandboxed version:")  # DANGEROUS: Avoid exec with untrusted input
+            fixed_lines.append(source.replace("exec(", "exec(") + ", safe_globals, {})")  # DANGEROUS: Avoid exec with untrusted input
 
-            return "\n".join(fixed_lines), "Added sandboxed globals to exec()", ["CWE-95"], 0.8
+            return "\n".join(fixed_lines), "Added sandboxed globals to exec()", ["CWE-95"], 0.8  # DANGEROUS: Avoid exec with untrusted input
 
         return source, "", [], 0.0
 
     def _fix_deserialization_enhanced(
+        # TODO: Add docstring
         self, source: str, _issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced deserialization fix.
@@ -344,6 +349,7 @@ class EnhancedNotebookFixer(NotebookFixer):
         return source, "", [], 0.0
 
     def _fix_reproducibility_enhanced(
+        # TODO: Add docstring
         self, source: str, issue: NotebookIssue
     ) -> tuple[str, str, list[str], float]:
         """Enhanced reproducibility fix with comprehensive seed setting."""
@@ -402,6 +408,7 @@ class EnhancedNotebookFixer(NotebookFixer):
             return f"Validation error: {e!s}"
 
     def _generate_rollback_script(
+        # TODO: Add docstring
         self, notebook_path: Path, backup_path: Path, fix_metadata: list[FixMetadata]
     ) -> str:
         """Generate a rollback script to undo all fixes."""
@@ -434,7 +441,7 @@ class EnhancedNotebookFixer(NotebookFixer):
             "echo 'Fixes to be rolled back:'",
         ]
 
-        for metadata in fix_metadata:
+        for metadata in fix_metadata:  # Consider list comprehension
             script_lines.append(f"echo '  - {metadata.fix_id}: {metadata.explanation}'")
 
         script_lines.extend(

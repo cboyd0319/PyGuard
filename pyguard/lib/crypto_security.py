@@ -627,6 +627,7 @@ class CryptoSecurityVisitor(ast.NodeVisitor):
                     )
 
     def _create_violation(  # noqa: PLR0913 - Comprehensive violation reporting requires many parameters
+        # TODO: Add docstring
         self,
         node: ast.AST,
         rule_id: str,

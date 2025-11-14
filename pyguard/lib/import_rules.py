@@ -30,6 +30,7 @@ class ImportVisitor(ast.NodeVisitor):
     """AST visitor for detecting import-related issues."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -158,6 +159,7 @@ class ImportOrderChecker:
     """Check import ordering and grouping (isort rules)."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
 
     def check_import_order(self, file_path: Path, code: str) -> list[RuleViolation]:
@@ -254,6 +256,7 @@ class ImportRulesChecker:
     """Main checker for import rules."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
         self.order_checker = ImportOrderChecker()
 

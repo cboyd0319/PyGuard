@@ -173,6 +173,7 @@ import app
 
 @app.route('/api/data')
 def get_data():
+    # TODO: Add docstring
     return jsonify(data)
 """
         detector = APIRateLimitDetector(code.split("\n"))
@@ -191,6 +192,7 @@ def get_data():
 @app.route('/api/data')
 @limiter.limit("100/hour")
 def get_data():
+    # TODO: Add docstring
     return jsonify(data)
 """
         detector = APIRateLimitDetector(code.split("\n"))
@@ -267,6 +269,7 @@ class TestPrototypePollutionDetector:
         """Should detect setattr with user-controlled attribute names."""
         code = """
 def update_object(obj, attr_name, value):
+    # TODO: Add docstring
     setattr(obj, attr_name, value)
 """
         detector = PrototypePollutionDetector(code.split("\n"))
@@ -297,7 +300,9 @@ obj.__dict__ = external_data['attrs']
         """Should not flag safe attribute access."""
         code = """
 class User:
+    # TODO: Add docstring
     def __init__(self, name):
+        # TODO: Add docstring
         self.name = name
         self.email = None
 """
@@ -319,6 +324,7 @@ class TestCachePoisoningDetector:
         code = """
 @cache.memoize()
 def get_data(request):
+    # TODO: Add docstring
     cache_key = "data_" + request.args.get('id')
     return cache.get(cache_key)
 """
@@ -356,6 +362,7 @@ class TestBusinessLogicDetector:
         """Should detect financial functions without balance validation."""
         code = """
 def transfer_money(from_account, to_account, amount):
+    # TODO: Add docstring
     from_account.balance -= amount
     to_account.balance += amount
     db.commit()
@@ -374,6 +381,7 @@ def transfer_money(from_account, to_account, amount):
         """Should detect financial functions without rollback handling."""
         code = """
 def process_payment(user, amount):
+    # TODO: Add docstring
     user.balance -= amount
     charge_card(user.card, amount)
     db.commit()
@@ -391,6 +399,7 @@ def process_payment(user, amount):
         """Should not flag properly implemented financial functions."""
         code = """
 def transfer_money(from_account, to_account, amount):
+    # TODO: Add docstring
     if from_account.balance < amount:
         raise InsufficientFunds()
     try:

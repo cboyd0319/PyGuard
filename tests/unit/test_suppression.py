@@ -9,9 +9,9 @@ from pyguard.lib.ast_analyzer import CodeQualityVisitor, SecurityVisitor
 
 def test_security_visitor_suppression_generic():
     """Test that generic # pyguard: disable suppresses all issues."""
-    code = """eval("1 + 1")  # pyguard: disable
-exec("pass")   # noqa
-compile("pass", "<string>", "exec")
+    code = """eval("1 + 1")  # pyguard: disable  # DANGEROUS: Avoid eval with untrusted input
+exec("pass")   # noqa  # DANGEROUS: Avoid exec with untrusted input
+compile("pass", "<string>", "exec")  # DANGEROUS: Avoid compile with untrusted input
 """
 
     source_lines = code.split("\n")
@@ -26,9 +26,9 @@ compile("pass", "<string>", "exec")
 
 def test_security_visitor_suppression_specific():
     """Test that specific rule suppression works."""
-    code = """eval("1 + 1")  # pyguard: disable=CWE-95
-exec("pass")   # noqa: CWE-95
-compile("pass", "<string>", "exec")
+    code = """eval("1 + 1")  # pyguard: disable=CWE-95  # DANGEROUS: Avoid eval with untrusted input
+exec("pass")   # noqa: CWE-95  # DANGEROUS: Avoid exec with untrusted input
+compile("pass", "<string>", "exec")  # DANGEROUS: Avoid compile with untrusted input
 """
 
     source_lines = code.split("\n")
@@ -43,8 +43,8 @@ compile("pass", "<string>", "exec")
 
 def test_security_visitor_no_suppression():
     """Test that issues are detected when no suppression comment."""
-    code = """eval("1 + 1")
-exec("pass")
+    code = """eval("1 + 1")  # DANGEROUS: Avoid eval with untrusted input
+exec("pass")  # DANGEROUS: Avoid exec with untrusted input
 """
 
     source_lines = code.split("\n")
@@ -62,9 +62,11 @@ def test_code_quality_visitor_suppression():
     pass
 
 def another_function():  # noqa
+    # TODO: Add docstring
     pass
 
 def third_function():
+    # TODO: Add docstring
     pass
 """
 
@@ -81,7 +83,7 @@ def third_function():
 
 def test_suppression_wrong_rule():
     """Test that suppressing wrong rule doesn't suppress the actual issue."""
-    code = """eval("1 + 1")  # pyguard: disable=CWE-89
+    code = """eval("1 + 1")  # pyguard: disable=CWE-89  # DANGEROUS: Avoid eval with untrusted input
 """
 
     source_lines = code.split("\n")

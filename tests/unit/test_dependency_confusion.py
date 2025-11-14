@@ -153,7 +153,7 @@ subprocess.call(['pip', 'install', 'numpy'])
         """Exact 'requests' package name should NOT trigger."""
         code = """
 import os
-os.system('pip install requests')
+os.system('pip install requests')  # SECURITY: Use subprocess.run() instead
 """
         violations = analyze_dependency_confusion(Path("test.py"), code)
         typo_violations = [v for v in violations if v.rule_id == "DEP_CONF001"]
@@ -705,6 +705,7 @@ import subprocess
 import sys
 
 def install_production_dependencies():
+    # TODO: Add docstring
     # Install from requirements.txt (safe)
     subprocess.call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
 

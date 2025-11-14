@@ -52,6 +52,7 @@ class ParallelProcessor:
         )
 
     def process_files(
+        # TODO: Add docstring
         self,
         files: list[Path],
         processor_func: Callable[[Path], tuple[bool, list[str]]],
@@ -119,6 +120,7 @@ class ParallelProcessor:
         return results
 
     def _process_single_file(
+        # TODO: Add docstring
         self, file_path: Path, processor_func: Callable[[Path], tuple[bool, list[str]]]
     ) -> ProcessingResult:
         """
@@ -180,6 +182,7 @@ class BatchProcessor:
         self.parallel_processor = ParallelProcessor()
 
     def process_in_batches(
+        # TODO: Add docstring
         self, files: list[Path], processor_func: Callable[[Path], tuple[bool, list[str]]]
     ) -> list[ProcessingResult]:
         """

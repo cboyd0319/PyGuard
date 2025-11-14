@@ -35,6 +35,7 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting Scikit-learn security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()
@@ -91,9 +92,9 @@ class SklearnSecurityVisitor(ast.NodeVisitor):
         """Check for unsafe model deserialization (SKL001)."""
         func_name = self._get_func_name(node)
 
-        # Check for pickle.load() or joblib.load() with ML models
+        # Check for pickle.load() or joblib.load() with ML models  # SECURITY: Don't use pickle with untrusted data
         # Only check if we have relevant imports
-        if func_name in ["pickle.load", "load"] and self.pickle_imports and self.has_sklearn_import:
+        if func_name in ["pickle.load", "load"] and self.pickle_imports and self.has_sklearn_import:  # SECURITY: Don't use pickle with untrusted data
             self.violations.append(
                 RuleViolation(
                     rule_id="SKL001",

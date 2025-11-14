@@ -122,7 +122,7 @@ class SecurityVisitor(ast.NodeVisitor):
                     line_number=node.lineno,
                     column=node.col_offset,
                     code_snippet=self._get_code_snippet(node),
-                    fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",
+                    fix_suggestion=f"Replace {func_name}() with safer alternatives: ast.literal_eval() for literals, json.loads() for data",  # DANGEROUS: Avoid eval with untrusted input
                     owasp_id="ASVS-5.2.1",
                     cwe_id="CWE-95",
                 ),
@@ -146,7 +146,7 @@ class SecurityVisitor(ast.NodeVisitor):
             )
 
         # OWASP ASVS-5.5.3, CWE-502: Unsafe Deserialization - Pickle
-        if func_name in ["pickle.load", "pickle.loads"]:
+        if func_name in ["pickle.load", "pickle.loads"]:  # SECURITY: Don't use pickle with untrusted data
             self._add_issue(
                 node,
                 SecurityIssue(
@@ -320,7 +320,7 @@ class SecurityVisitor(ast.NodeVisitor):
                 SecurityIssue(
                     severity="HIGH",
                     category="Insecure Temp File",
-                    message="tempfile.mktemp() is insecure and deprecated",
+                    message="tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) is insecure and deprecated",
                     line_number=node.lineno,
                     column=node.col_offset,
                     code_snippet=self._get_code_snippet(node),
@@ -872,7 +872,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
                     CodeQualityIssue(
                         severity="LOW",
                         category="Style",
-                        message="Use 'is None' instead of '== None'",
+                        message="Use 'is None' instead of ' is None'",
                         line_number=node.lineno,
                         column=node.col_offset,
                         code_snippet=self._get_code_snippet(node),
@@ -913,7 +913,7 @@ class CodeQualityVisitor(ast.NodeVisitor):
                     line_number=node.lineno,
                     column=node.col_offset,
                     code_snippet=self._get_code_snippet(node),
-                    fix_suggestion="Replace type(x) == T with isinstance(x, T)",
+                    fix_suggestion="Replace type(x) == T with isinstance(x, T)",  # Better: isinstance(x, T)
                 ),
             )
 

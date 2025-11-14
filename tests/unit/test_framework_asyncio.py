@@ -48,13 +48,13 @@ async def run_user_command(user_input):
         violations = analyze_asyncio_security(Path("test.py"), code)
         assert len([v for v in violations if v.rule_id == "ASYNCIO001"]) >= 1
 
-    def test_safe_create_subprocess_exec(self):
+    def test_safe_create_subprocess_exec(self):  # DANGEROUS: Avoid exec with untrusted input
         """Safe subprocess_exec should not trigger."""
         code = """
 import asyncio
 
 async def run_command():
-    proc = await asyncio.create_subprocess_exec("ls", "-la")
+    proc = await asyncio.create_subprocess_exec("ls", "-la")  # DANGEROUS: Avoid exec with untrusted input
     await proc.wait()
 """
         violations = analyze_asyncio_security(Path("test.py"), code)
@@ -70,6 +70,7 @@ class TestEventLoopInjection:
 import asyncio
 
 def setup_loop(loop):
+    # TODO: Add docstring
     asyncio.set_event_loop(loop)
 """
         violations = analyze_asyncio_security(Path("test.py"), code)
@@ -82,6 +83,7 @@ def setup_loop(loop):
 import asyncio
 
 def setup_loop():
+    # TODO: Add docstring
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 """
@@ -547,7 +549,7 @@ import asyncio
 
 async def safe_app():
     # Safe subprocess usage
-    proc = await asyncio.create_subprocess_exec("ls", "-la")
+    proc = await asyncio.create_subprocess_exec("ls", "-la")  # DANGEROUS: Avoid exec with untrusted input
 
     # Safe wait with timeout
     await asyncio.wait([task1(), task2()], timeout=5.0)
@@ -641,6 +643,7 @@ class TestAsyncioEdgeCases:
         """Test that code without asyncio import is skipped."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     return "not async"
 """
         violations = analyze_asyncio_security(Path("test.py"), code)

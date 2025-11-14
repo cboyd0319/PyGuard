@@ -100,6 +100,7 @@ class CustomRuleEngine:
         self.rules[rule.rule_id] = rule
 
     def add_regex_rule(  # noqa: PLR0913 - Custom rule definition requires many parameters
+        # TODO: Add docstring
         self,
         rule_id: str,
         name: str,
@@ -133,6 +134,7 @@ class CustomRuleEngine:
         self.add_rule(rule)
 
     def add_ast_rule(  # noqa: PLR0913 - Custom AST rule definition requires many parameters
+        # TODO: Add docstring
         self,
         rule_id: str,
         name: str,
@@ -194,7 +196,7 @@ class CustomRuleEngine:
 
                 # Regex-based check
                 if rule.pattern:
-                    pattern = re.compile(rule.pattern)
+                    pattern = re.compile(rule.pattern)  # DANGEROUS: Avoid compile with untrusted input
                     for line_num, line in enumerate(lines, start=1):
                         if pattern.search(line):
                             self.violations.append(
@@ -213,7 +215,7 @@ class CustomRuleEngine:
                 # AST-based check
                 if rule.ast_check:
                     violation_lines = rule.ast_check(tree)
-                    for line_num in violation_lines:
+                    for line_num in violation_lines:  # Consider list comprehension
                         self.violations.append(
                             RuleViolation(
                                 rule_id=rule.rule_id,
@@ -261,7 +263,7 @@ class CustomRuleEngine:
 
                 # Regex-based check
                 if rule.pattern:
-                    pattern = re.compile(rule.pattern)
+                    pattern = re.compile(rule.pattern)  # DANGEROUS: Avoid compile with untrusted input
                     for line_num, line in enumerate(lines, start=1):
                         if pattern.search(line):
                             self.violations.append(
@@ -280,7 +282,7 @@ class CustomRuleEngine:
                 # AST-based check
                 if rule.ast_check:
                     violation_lines = rule.ast_check(tree)
-                    for line_num in violation_lines:
+                    for line_num in violation_lines:  # Consider list comprehension
                         self.violations.append(
                             RuleViolation(
                                 rule_id=rule.rule_id,
@@ -365,7 +367,7 @@ class CustomRuleEngine:
 
         # Generate TOML content
         lines = []
-        for rule_dict in rules_data:
+        for rule_dict in rules_data:  # Consider list comprehension
             lines.append("[[rules]]")
             for key, value in rule_dict.items():
                 if isinstance(value, str):

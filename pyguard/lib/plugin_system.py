@@ -131,7 +131,7 @@ class PluginManager:
         import re  # noqa: PLC0415 - Lazy import for performance, only needed when discovering plugins
 
         # Pattern: either 'plugin_*.py' or '<word>_plugin.py' where word is alphanumeric
-        pattern = re.compile(r"^(plugin_\w+|[a-zA-Z0-9]+_plugin)\.py$")
+        pattern = re.compile(r"^(plugin_\w+|[a-zA-Z0-9]+_plugin)\.py$")  # DANGEROUS: Avoid compile with untrusted input
 
         for file_path in plugin_dir.glob("*.py"):
             if pattern.match(file_path.name):
@@ -314,6 +314,7 @@ class PluginManager:
         return False
 
     def notify_file_analyzed(
+        # TODO: Add docstring
         self, file_path: Path, violations: list[RuleViolation]
     ) -> None:
         """
@@ -365,7 +366,7 @@ class ExampleSecurityPlugin(PluginInterface):
 
         # AST rule to detect eval() usage
         def check_eval_usage(tree: ast.AST) -> list[int]:
-            """Detect eval() function calls."""
+            """Detect eval() function calls."""  # DANGEROUS: Avoid eval with untrusted input
             lines = []
             for node in ast.walk(tree):
                 if isinstance(node, ast.Call):  # noqa: SIM102
@@ -375,12 +376,12 @@ class ExampleSecurityPlugin(PluginInterface):
 
         engine.add_ast_rule(
             rule_id="PLUGIN_EXAMPLE_002",
-            name="Dangerous eval() Usage",
+            name="Dangerous eval() Usage",  # DANGEROUS: Avoid eval with untrusted input
             checker=check_eval_usage,
             severity="CRITICAL",
             category="Security",
-            description="Usage of eval() can lead to code injection",
-            suggestion="Use ast.literal_eval() for safe evaluation",
+            description="Usage of eval() can lead to code injection",  # DANGEROUS: Avoid eval with untrusted input
+            suggestion="Use ast.literal_eval() for safe evaluation",  # DANGEROUS: Avoid eval with untrusted input
         )
 
     def on_enable(self) -> None:
@@ -393,6 +394,7 @@ class ExampleSecurityPlugin(PluginInterface):
 
 
 def create_plugin_manager(
+    # TODO: Add docstring
     plugin_dirs: list[str | Path] | None = None,
 ) -> PluginManager:
     """

@@ -160,7 +160,7 @@ class TestSecretDetectionProperties:
                 {
                     "cell_type": "code",
                     "execution_count": 1,
-                    "source": [f"api_key = '{random_string}'"],
+                    "source": [f"api_key = '{random_string}'  # SECURITY: Use environment variables or config files"],
                     "outputs": [],
                     "metadata": {},
                 }

@@ -60,6 +60,7 @@ class SARIFReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
+        # TODO: Add docstring
         self,
         issues: list[dict[str, Any]],
         tool_name: str = "PyGuard",

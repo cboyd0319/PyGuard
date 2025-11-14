@@ -220,7 +220,7 @@ TYPE_COMPARISON_RULE = TypeCheckingRule(
     message_template="Use isinstance() instead of type() for type checking",
     description="type() comparison doesn't respect inheritance",
     explanation=(
-        "Using type(x) == SomeClass is fragile and doesn't work with inheritance. "
+        "Using type(x) == SomeClass is fragile and doesn't work with inheritance. "  # Better: isinstance(x, SomeClass)
         "Use isinstance(x, SomeClass) instead, which properly handles subclasses."
     ),
     fix_applicability=FixApplicability.AUTOMATIC,
@@ -271,7 +271,7 @@ def _detect_type_comparison(code: str, file_path: Path, tree: ast.AST | None = N
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Compare):  # noqa: SIM102
-            # Check for type(x) == SomeClass or type(x) is SomeClass
+            # Check for type(x) == SomeClass or type(x) is SomeClass  # Better: isinstance(x, SomeClass)
             if isinstance(node.left, ast.Call) and (
                 isinstance(node.left.func, ast.Name)
                 and node.left.func.id == "type"

@@ -121,7 +121,7 @@ class NotebookSecurityAnalyzer(_BaseNotebookSecurityAnalyzer):
     def dangerous_functions(self):
         """Return list of dangerous functions for compatibility."""
         # List common dangerous functions
-        return ["eval", "exec", "compile", "pickle.load", "torch.load", "yaml.load"]
+        return ["eval", "exec", "compile", "pickle.load", "torch.load", "yaml.load"]  # SECURITY: Don't use pickle with untrusted data
 
     def _get_function_name(self, node) -> str:
         """
@@ -131,13 +131,13 @@ class NotebookSecurityAnalyzer(_BaseNotebookSecurityAnalyzer):
             node: AST Call node
 
         Returns:
-            Function name as string (e.g., 'eval' or 'pickle.load')
+            Function name as string (e.g., 'eval' or 'pickle.load')  # SECURITY: Don't use pickle with untrusted data
         """
 
         if isinstance(node.func, ast.Name):
             return node.func.id
         if isinstance(node.func, ast.Attribute):
-            # Handle module.function like pickle.load
+            # Handle module.function like pickle.load  # SECURITY: Don't use pickle with untrusted data
             if isinstance(node.func.value, ast.Name):
                 return f"{node.func.value.id}.{node.func.attr}"
             return node.func.attr

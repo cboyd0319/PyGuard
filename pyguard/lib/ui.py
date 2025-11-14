@@ -386,6 +386,7 @@ class EnhancedConsole:
         self.console.print(panel)
 
     def print_error(
+        # TODO: Add docstring
         self,
         error: str,
         details: str | None = None,
@@ -442,6 +443,7 @@ class ModernHTMLReporter:
     """
 
     def generate_report(
+        # TODO: Add docstring
         self,
         metrics: dict[str, Any],
         issues: list[dict[str, Any]],

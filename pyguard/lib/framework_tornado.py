@@ -54,6 +54,7 @@ class TornadoSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting Tornado security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()

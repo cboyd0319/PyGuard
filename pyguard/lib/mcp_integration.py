@@ -28,6 +28,7 @@ class MCPServer:
     capabilities: list[str] | None = None
 
     def __post_init__(self):
+        # TODO: Add docstring
         if self.capabilities is None:
             self.capabilities = []
 
@@ -54,6 +55,7 @@ class MCPResponse:
     recommendations: list[str] | None = None
 
     def __post_init__(self):
+        # TODO: Add docstring
         if self.recommendations is None:
             self.recommendations = []
 
@@ -129,6 +131,7 @@ class MCPIntegration:
             return False
 
     def query_security_intelligence(
+        # TODO: Add docstring
         self, code_snippet: str, context: dict[str, Any] | None = None
     ) -> MCPResponse | None:
         """
@@ -191,13 +194,13 @@ class MCPIntegration:
         recommendations = []
         confidence = 0.8
 
-        if "eval(" in query.code_snippet or "exec(" in query.code_snippet:
+        if "eval(" in query.code_snippet or "exec(" in query.code_snippet:  # DANGEROUS: Avoid eval with untrusted input
             recommendations.append(
                 "CRITICAL: eval/exec detected - use ast.literal_eval or safe alternatives"
             )
             confidence = 0.95
 
-        if "pickle.load" in query.code_snippet:
+        if "pickle.load" in query.code_snippet:  # SECURITY: Don't use pickle with untrusted data
             recommendations.append(
                 "HIGH: Unsafe deserialization - validate input or use safer formats"
             )

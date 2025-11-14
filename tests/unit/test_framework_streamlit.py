@@ -299,6 +299,7 @@ title("My App")
         code = """
 # Regular Python code without Streamlit
 def write(data):
+    # TODO: Add docstring
     print(data)
 
 write(os.getenv("API_KEY"))
@@ -416,7 +417,7 @@ if st.button("Login"):
     # BAD: SQL injection vulnerability
     conn = sqlite3.connect("users.db")
     # Direct f-string in execute call is detected
-    result = conn.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'")
+    result = conn.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'  # SECURITY: Use environment variables or config files")
 """
         violations = analyze_streamlit_security(Path("test.py"), code)
         # Should detect SQL injection

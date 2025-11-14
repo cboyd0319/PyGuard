@@ -435,6 +435,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _create_sql_injection_issue(
+        # TODO: Add docstring
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
         """Create SQL injection issue with detailed path information."""
@@ -464,6 +465,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
 
     def _create_command_injection_issue(
+        # TODO: Add docstring
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
         """Create OS command injection issue."""
@@ -493,6 +495,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
 
     def _create_eval_injection_issue(
+        # TODO: Add docstring
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
         """Create code injection issue for eval/exec."""
@@ -503,7 +506,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
             line_number=node.lineno,
             column=node.col_offset,
             code_snippet=self._get_code_snippet(node),
-            fix_suggestion=f"Never use {func_name}() with untrusted input. Use safe alternatives like ast.literal_eval() or json.loads()",
+            fix_suggestion=f"Never use {func_name}() with untrusted input. Use safe alternatives like ast.literal_eval() or json.loads()",  # DANGEROUS: Avoid eval with untrusted input
             owasp_id="ASVS-5.2.8",
             cwe_id="CWE-94",
         )
@@ -522,6 +525,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
 
     def _create_xss_issue(
+        # TODO: Add docstring
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
         """Create XSS vulnerability issue."""
@@ -551,6 +555,7 @@ class EnhancedTaintAnalyzer(ast.NodeVisitor):
         )
 
     def _create_path_traversal_issue(
+        # TODO: Add docstring
         self, node: ast.Call, var_name: str, taint_source: TaintSource, func_name: str
     ):
         """Create path traversal vulnerability issue."""

@@ -120,6 +120,7 @@ def add_suppressions(file_path: Path, issues: list[dict], dry_run: bool = False)
 
 
 def main():
+    # TODO: Add docstring
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dry-run", action="store_true", help="Show changes without modifying files"

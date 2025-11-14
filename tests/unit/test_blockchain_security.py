@@ -32,6 +32,7 @@ class TestBlockchainReentrancy:
 from web3 import Web3
 
 def withdraw(amount):
+    # TODO: Add docstring
     recipient.call(value=amount)
     balance -= amount
 """
@@ -44,6 +45,7 @@ def withdraw(amount):
 from web3 import Web3
 
 def transfer_funds(to_address, amount):
+    # TODO: Add docstring
     to_address.send(amount)
     balances[msg.sender] = 0
 """
@@ -56,6 +58,7 @@ def transfer_funds(to_address, amount):
 from web3 import Web3
 
 def execute_operation():
+    # TODO: Add docstring
     target.delegatecall(data)
     state_updated = True
 """
@@ -66,6 +69,7 @@ def execute_operation():
         """Don't flag reentrancy in non-blockchain code."""
         code = """
 def normal_function():
+    # TODO: Add docstring
     result = some_call()
     state_var = value
 """
@@ -82,6 +86,7 @@ class TestBlockchainIntegerOverflow:
 from web3 import Web3
 
 def transfer(to, amount):
+    # TODO: Add docstring
     balances[to] = balances[to] + amount
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -93,6 +98,7 @@ def transfer(to, amount):
 from web3 import Web3
 
 def mint(account, value):
+    # TODO: Add docstring
     total_supply = total_supply + value
     balances[account] = balances[account] + value
 """
@@ -105,6 +111,7 @@ def mint(account, value):
 from web3 import Web3
 
 def burn(amount):
+    # TODO: Add docstring
     balances[msg.sender] = balances[msg.sender] - amount
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -116,6 +123,7 @@ def burn(amount):
 from web3 import Web3
 
 def approve(spender, amount):
+    # TODO: Add docstring
     allowances[msg.sender][spender] = allowances[msg.sender][spender] + amount
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -131,6 +139,7 @@ class TestBlockchainUncheckedCalls:
 from web3 import Web3
 
 def send_ether(recipient, amount):
+    # TODO: Add docstring
     recipient.call(value=amount)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -142,6 +151,7 @@ def send_ether(recipient, amount):
 from web3 import Web3
 
 def withdraw():
+    # TODO: Add docstring
     msg.sender.send(balance)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -153,6 +163,7 @@ def withdraw():
 from web3 import Web3
 
 def proxy_call():
+    # TODO: Add docstring
     implementation.delegatecall(data)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -167,8 +178,10 @@ class TestBlockchainInsecureRandomness:
         code = """
 from web3 import Web3
 import random
+import secrets  # ADDED: Use secrets for cryptographic randomness
 
 def lottery_winner():
+    # TODO: Add docstring
     return random.choice(participants)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -179,8 +192,10 @@ def lottery_winner():
         code = """
 from web3 import Web3
 import random
+import secrets  # ADDED: Use secrets for cryptographic randomness
 
 def generate_nft_traits():
+    # TODO: Add docstring
     rarity = random.randint(1, 100)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -190,8 +205,10 @@ def generate_nft_traits():
         """Don't flag random in non-blockchain code."""
         code = """
 import random
+import secrets  # ADDED: Use secrets for cryptographic randomness
 
 def pick_test_data():
+    # TODO: Add docstring
     return random.choice(test_cases)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -207,6 +224,7 @@ class TestBlockchainFrontRunning:
 from web3 import Web3
 
 def approve_tokens(spender, amount):
+    # TODO: Add docstring
     allowances[msg.sender][spender] = amount
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -218,6 +236,7 @@ def approve_tokens(spender, amount):
 from web3 import Web3
 
 def swap_tokens(token_in, token_out, amount):
+    # TODO: Add docstring
     price = get_price(token_in, token_out)
     execute_swap(amount, price)
 """
@@ -230,6 +249,7 @@ def swap_tokens(token_in, token_out, amount):
 from web3 import Web3
 
 def place_bid(amount):
+    # TODO: Add docstring
     if amount > highest_bid:
         highest_bidder = msg.sender
 """
@@ -335,6 +355,7 @@ class TestBlockchainGasLimitIssues:
 from web3 import Web3
 
 def send_transaction():
+    # TODO: Add docstring
     tx = contract.functions.transfer(to, amount).transact(gas=100000)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -346,6 +367,7 @@ def send_transaction():
 from web3 import Web3
 
 def execute_tx():
+    # TODO: Add docstring
     result = web3.eth.send_transaction(gasLimit=200000)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -357,6 +379,7 @@ def execute_tx():
 from web3 import Web3
 
 def send_with_estimation():
+    # TODO: Add docstring
     gas = contract.functions.transfer(to, amount).estimateGas()
     tx = contract.functions.transfer(to, amount).transact(gas=gas)
 """
@@ -374,6 +397,7 @@ class TestBlockchainOracleManipulation:
 from web3 import Web3
 
 def check_collateral():
+    # TODO: Add docstring
     price = oracle.getPrice(asset)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -385,6 +409,7 @@ def check_collateral():
 from web3 import Web3
 
 def liquidate_position():
+    # TODO: Add docstring
     current_price = price_feed.latestAnswer()
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -396,6 +421,7 @@ def liquidate_position():
 from web3 import Web3
 
 def validate_price():
+    # TODO: Add docstring
     (roundId, answer, startedAt, updatedAt, answeredInRound) = oracle.getRoundData(roundId)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -411,6 +437,7 @@ class TestBlockchainNFTMetadataInjection:
 from web3 import Web3
 
 def mint_nft(to, metadata):
+    # TODO: Add docstring
     token_id = next_token_id()
     nft_contract.mint(to, token_id, metadata)
 """
@@ -423,6 +450,7 @@ def mint_nft(to, metadata):
 from web3 import Web3
 
 def update_metadata(token_id, uri):
+    # TODO: Add docstring
     nft_contract.setTokenURI(token_id, uri)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -434,6 +462,7 @@ def update_metadata(token_id, uri):
 from web3 import Web3
 
 def change_nft_metadata(nft_id, new_data):
+    # TODO: Add docstring
     contract.updateMetadata(nft_id, new_data)
 """
         violations = analyze_blockchain_security(Path("test.py"), code)
@@ -471,9 +500,11 @@ from eth_account import Account
         """Visitor tracks contract function definitions."""
         code = """
 def transfer(to, amount):
+    # TODO: Add docstring
     pass
 
 def approve(spender, value):
+    # TODO: Add docstring
     pass
 """
         visitor = BlockchainSecurityVisitor(Path("test.py"), code)
@@ -534,6 +565,7 @@ class TestBlockchainEdgeCases:
         """Don't flag vulnerabilities in non-blockchain code."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     result = some_operation()
     return result
 """
@@ -546,10 +578,12 @@ def regular_function():
         code = """
 from web3 import Web3
 import random
+import secrets  # ADDED: Use secrets for cryptographic randomness
 
 private_key = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 
 def risky_function():
+    # TODO: Add docstring
     recipient.call(value=amount)
     winner = random.choice(participants)
     balances[to] = balances[to] + amount

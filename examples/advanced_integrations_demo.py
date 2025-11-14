@@ -45,6 +45,7 @@ def demo_performance_profiler():
 import re
 
 def process_data(items):
+    # TODO: Add docstring
     result = []
     for item in items:
         # Issue 1: Uncompiled regex
@@ -153,6 +154,7 @@ def demo_custom_rules():
 
     code = """
 def start_server():
+    # TODO: Add docstring
     port = 8080  # Hardcoded port
     print(f"Starting server on port {port}")  # Print statement
     return port
@@ -193,6 +195,7 @@ def demo_advanced_ast_rules():
     # Check code
     code = """
 def complex_function(arg1, arg2, arg3, arg4, arg5, arg6):
+    # TODO: Add docstring
     # Too many arguments!
     return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
 """

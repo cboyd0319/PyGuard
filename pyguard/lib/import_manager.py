@@ -75,26 +75,32 @@ class ImportAnalyzer:
 
         # Collect all used names (simple name references)
         class NameCollector(ast.NodeVisitor):
+            # TODO: Add docstring
             def __init__(self):
+                # TODO: Add docstring
                 self.names = set()
                 self.in_import = False
 
             def visit_Import(self, node):
+                # TODO: Add docstring
                 self.in_import = True
                 self.generic_visit(node)
                 self.in_import = False
 
             def visit_ImportFrom(self, node):
+                # TODO: Add docstring
                 self.in_import = True
                 self.generic_visit(node)
                 self.in_import = False
 
             def visit_Name(self, node):
+                # TODO: Add docstring
                 if not self.in_import:
                     self.names.add(node.id)
                 self.generic_visit(node)
 
             def visit_Attribute(self, node):
+                # TODO: Add docstring
                 if not self.in_import and isinstance(node.value, ast.Name):
                     self.names.add(node.value.id)
                 self.generic_visit(node)

@@ -25,10 +25,10 @@ assert condition
         assert "assert" in violations[0].message.lower()
 
     def test_s102_exec_builtin(self):
-        """Test S102: exec() usage detection."""
+        """Test S102: exec() usage detection."""  # DANGEROUS: Avoid exec with untrusted input
         code = """
-exec("print('hello')")
-exec(user_input)
+exec("print('hello')")  # DANGEROUS: Avoid exec with untrusted input
+exec(user_input)  # DANGEROUS: Avoid exec with untrusted input
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -56,7 +56,7 @@ server_host = "::"
     def test_s105_hardcoded_password_string(self):
         """Test S105: hardcoded password in string."""
         code = """
-password = "my_secret_password"
+password = "my_secret_password"  # SECURITY: Use environment variables or config files
 db_password = "admin123"
 api_token = "abc123def456"
 """
@@ -88,9 +88,11 @@ token = "x"
         """Test S107: hardcoded password in function default."""
         code = """
 def connect(username, password="default_pwd"):
+    # TODO: Add docstring
     pass
 
 def authenticate(token="secret_token_123"):
+    # TODO: Add docstring
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -121,7 +123,7 @@ temp_dir = "C:\\\\temp\\\\data.tmp"
         code = """
 try:
     risky_operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -139,7 +141,7 @@ except:
 for item in items:
     try:
         process(item)
-    except:
+    except Exception:  # FIXED: Catch specific exceptions
         continue
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -185,8 +187,8 @@ response = requests.get("https://example.com", timeout=30)
         """Test S301: suspicious pickle usage."""
         code = """
 import pickle
-data = pickle.loads(untrusted_data)
-obj = pickle.load(file)
+data = pickle.loads(untrusted_data)  # SECURITY: Don't use pickle with untrusted data
+obj = pickle.load(file)  # SECURITY: Don't use pickle with untrusted data
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -215,7 +217,7 @@ data = marshal.loads(untrusted_data)
         """Test S306: insecure mktemp usage."""
         code = """
 import tempfile
-tmp = tempfile.mktemp()
+tmp = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -227,10 +229,10 @@ tmp = tempfile.mktemp()
         assert "mktemp" in s306_violations[0].message.lower()
 
     def test_s307_eval_usage(self):
-        """Test S307: eval() usage detection."""
+        """Test S307: eval() usage detection."""  # DANGEROUS: Avoid eval with untrusted input
         code = """
-result = eval(user_input)
-value = eval("2 + 2")
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
+value = eval("2 + 2")  # DANGEROUS: Avoid eval with untrusted input
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -245,8 +247,9 @@ value = eval("2 + 2")
         """Test S311: non-cryptographic random usage."""
         code = """
 import random
-token = random.randint(1, 1000000)
-secret = random.random()
+import secrets  # Use secrets for cryptographic randomness
+token = random.randint(1, 1000000)  # SECURITY: Use secrets module for cryptographic randomness
+secret = random.random()  # SECURITY: Use secrets module for cryptographic randomness
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -260,8 +263,8 @@ secret = random.random()
         """Test S324: insecure hash function usage."""
         code = """
 import hashlib
-hash1 = hashlib.md5(data)
-hash2 = hashlib.sha1(data)
+hash1 = hashlib.md5(data)  # SECURITY: Consider using SHA256 or stronger
+hash2 = hashlib.sha1(data)  # SECURITY: Consider using SHA256 or stronger
 hash3 = hashlib.new('md5', data)
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -362,7 +365,7 @@ response = requests.get("https://example.com", verify=False)
         """Test S506: unsafe yaml.load()."""
         code = """
 import yaml
-data = yaml.load(content)
+data = yaml.safe_load(content)
 data2 = yaml.unsafe_load(content)
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -392,7 +395,7 @@ data = yaml.safe_load(content)
         code = """
 import subprocess
 subprocess.call("ls -la", shell=True)
-subprocess.Popen(cmd, shell=True)
+subprocess.Popen(cmd, shell=True)  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -450,7 +453,7 @@ html = mark_safe(user_input)
         """Test S310: urllib.urlopen usage."""
         code = """
 import urllib.request
-response = urllib.request.urlopen("http://example.com")
+response = urllib.request.urlopen("http://example.com")  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -524,7 +527,7 @@ subprocess.check_call(cmd, shell=True)
         """Test S605: os.system usage."""
         code = """
 import os
-os.system("ls -la")
+os.system("ls -la")  # SECURITY: Use subprocess.run() instead
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -538,7 +541,7 @@ os.system("ls -la")
         """Test S606: os.popen usage."""
         code = """
 import os
-output = os.popen("ls -la").read()
+output = os.popen("ls -la").read()  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -552,7 +555,7 @@ output = os.popen("ls -la").read()
         """Test S608: SQL injection via string formatting."""
         code = """
 cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
-cursor.execute("SELECT * FROM users WHERE name = '" + name + "'")
+cursor.execute("SELECT * FROM users WHERE name = '" + name + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)

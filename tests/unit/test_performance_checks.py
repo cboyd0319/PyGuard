@@ -86,7 +86,7 @@ copy = my_list[:]
         """Test that efficient code has no issues."""
         code = """
 result = []
-for item in items:
+for item in items:  # Consider list comprehension
     result.append(item)
 
 if key in my_dict:
@@ -111,7 +111,7 @@ class TestPerformanceFixer:
 for item in items:
     try:
         process(item)
-    except:
+    except Exception:  # FIXED: Catch specific exceptions
         pass
 
 if key in dict.keys():

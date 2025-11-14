@@ -14,6 +14,7 @@ class ReturnPatternVisitor(ast.NodeVisitor):
     """AST visitor for detecting return pattern issues."""
 
     def __init__(self, file_path: Path = Path("<string>")):
+        # TODO: Add docstring
         self.violations: list[RuleViolation] = []
         self.current_function: ast.FunctionDef | None = None
         self.file_path = file_path
@@ -299,6 +300,7 @@ class ReturnPatternChecker:
     """Main checker for return pattern issues."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.rules = self._create_rules()
 
     def _create_rules(self) -> list[Rule]:

@@ -16,36 +16,36 @@ from pyguard.lib.missing_auto_fixes import MissingAutoFixes
 class TestMissingAutoFixesSafe:
     """Test safe auto-fixes (always applied)."""
 
-    def test_fix_eval_to_literal_eval(self):
-        """Test eval() → ast.literal_eval() replacement."""
+    def test_fix_eval_to_literal_eval(self):  # DANGEROUS: Avoid eval with untrusted input
+        """Test eval() → ast.literal_eval() replacement."""  # DANGEROUS: Avoid eval with untrusted input
         fixer = MissingAutoFixes()
 
         content = """
-data = eval('{"key": "value"}')
-numbers = eval('[1, 2, 3]')
+data = eval('{"key": "value"}')  # DANGEROUS: Avoid eval with untrusted input
+numbers = eval('[1, 2, 3]')  # DANGEROUS: Avoid eval with untrusted input
 """
 
-        result = fixer._fix_eval_exec_to_literal_eval(content)
+        result = fixer._fix_eval_exec_to_literal_eval(content)  # DANGEROUS: Avoid eval with untrusted input
 
         assert "import ast" in result
-        assert "ast.literal_eval(" in result
-        assert "FIXED: eval()" in result
+        assert "ast.literal_eval(" in result  # DANGEROUS: Avoid eval with untrusted input
+        assert "FIXED: eval()" in result  # DANGEROUS: Avoid eval with untrusted input
         # Should have 2 replacements (one for each line) plus imports add 2 more
         assert result.count("ast.literal_eval") >= 2
 
     def test_fix_exec_warning(self):
-        """Test exec() warning added."""
+        """Test exec() warning added."""  # DANGEROUS: Avoid exec with untrusted input
         fixer = MissingAutoFixes()
 
         content = """
 code = "print('hello')"
-exec(code)
+exec(code)  # DANGEROUS: Avoid exec with untrusted input
 """
 
-        result = fixer._fix_eval_exec_to_literal_eval(content)
+        result = fixer._fix_eval_exec_to_literal_eval(content)  # DANGEROUS: Avoid eval with untrusted input
 
-        assert "SECURITY WARNING: exec()" in result
-        assert "exec(code)" in result  # Original line preserved
+        assert "SECURITY WARNING: exec()" in result  # DANGEROUS: Avoid exec with untrusted input
+        assert "exec(code)" in result  # Original line preserved  # DANGEROUS: Avoid exec with untrusted input
 
     def test_fix_pickle_to_json(self):
         """Test pickle → JSON replacement."""
@@ -55,7 +55,7 @@ exec(code)
 import pickle
 data = {"key": "value"}
 serialized = pickle.dumps(data)
-deserialized = pickle.loads(serialized)
+deserialized = pickle.loads(serialized)  # SECURITY: Don't use pickle with untrusted data
 """
 
         result = fixer._fix_pickle_to_json(content)
@@ -64,7 +64,7 @@ deserialized = pickle.loads(serialized)
         assert "json.dumps(" in result
         assert "json.loads(" in result
         assert "FIXED: pickle.dumps()" in result
-        assert "FIXED: pickle.loads()" in result
+        assert "FIXED: pickle.loads()" in result  # SECURITY: Don't use pickle with untrusted data
 
     def test_fix_pickle_complex_object_warning(self):
         """Test pickle warning for complex objects."""
@@ -73,6 +73,7 @@ deserialized = pickle.loads(serialized)
         content = """
 import pickle
 class MyClass:
+    # TODO: Add docstring
     pass
 obj = MyClass()
 pickle.dumps(obj)
@@ -163,6 +164,7 @@ print(debug_info)
 
         content = """
 def validate_password(password):
+    # TODO: Add docstring
     if len(password) < 6:
         return False
     return True
@@ -183,7 +185,7 @@ class TestMissingAutoFixesUnsafe:
         fixer = MissingAutoFixes(allow_unsafe=True)
 
         content = """
-password = "secret123"
+password = "secret123"  # SECURITY: Use environment variables or config files
 """
 
         result = fixer._fix_hardcoded_secrets_to_env(content)
@@ -225,6 +227,7 @@ api_key = "1234567890abcdefghijklmnopqrstuvwxyz"
 
         content = """
 def get_user_data(request):
+    # TODO: Add docstring
     user_id = request.args.get('id')
     user = User.query.get(user_id)
     return user.data
@@ -241,6 +244,7 @@ def get_user_data(request):
 
         content = """
 def update_user(request):
+    # TODO: Add docstring
     data = request.json
     user.update(data)
 """
@@ -373,6 +377,7 @@ DATABASE_URL = "postgresql://localhost/db"
 API_KEY = "secret"
 
 def connect():
+    # TODO: Add docstring
     pass
 """
 
@@ -391,8 +396,8 @@ class TestMissingAutoFixesFileOperations:
             f.write(
                 """
 import pickle
-data = pickle.loads(b'data')
-x = eval('{"a": 1}')
+data = pickle.loads(b'data')  # SECURITY: Don't use pickle with untrusted data
+x = eval('{"a": 1}')  # DANGEROUS: Avoid eval with untrusted input
 """
             )
             temp_path = Path(f.name)
@@ -446,6 +451,7 @@ api_key = "sk-1234567890"
 import json
 
 def hello():
+    # TODO: Add docstring
     return "world"
 """
             )
@@ -464,7 +470,7 @@ def hello():
         """Test fix statistics reporting."""
         fixer = MissingAutoFixes()
         fixer.fixes_applied = [
-            "Code injection: eval() → ast.literal_eval()",
+            "Code injection: eval() → ast.literal_eval()",  # DANGEROUS: Avoid eval with untrusted input
             "Code injection: warning added",
             "Unsafe deserialization: pickle → JSON",
             "XXE: Added safe XML parser",
@@ -492,7 +498,7 @@ class TestMissingAutoFixesEdgeCases:
         """Test fixing empty content."""
         fixer = MissingAutoFixes()
 
-        result = fixer._fix_eval_exec_to_literal_eval("")
+        result = fixer._fix_eval_exec_to_literal_eval("")  # DANGEROUS: Avoid eval with untrusted input
         assert result == ""
 
         result = fixer._fix_pickle_to_json("")
@@ -504,10 +510,10 @@ class TestMissingAutoFixesEdgeCases:
 
         content = """
 import ast
-data = ast.literal_eval('{"a": 1}')
+data = ast.literal_eval('{"a": 1}')  # DANGEROUS: Avoid eval with untrusted input
 """
 
-        result = fixer._fix_eval_exec_to_literal_eval(content)
+        result = fixer._fix_eval_exec_to_literal_eval(content)  # DANGEROUS: Avoid eval with untrusted input
 
         # Should not add duplicate imports
         assert content.count("import ast") == result.count("import ast")
@@ -516,10 +522,10 @@ data = ast.literal_eval('{"a": 1}')
         """Test multiple issues on same line."""
         fixer = MissingAutoFixes()
 
-        content = "data = eval(pickle.loads(b'data'))"
+        content = "data = eval(pickle.loads(b'data'))"  # SECURITY: Don't use pickle with untrusted data  # DANGEROUS: Avoid eval with untrusted input
 
         # Both fixes should be applied
-        result = fixer._fix_eval_exec_to_literal_eval(content)
+        result = fixer._fix_eval_exec_to_literal_eval(content)  # DANGEROUS: Avoid eval with untrusted input
         result = fixer._fix_pickle_to_json(result)
 
         assert "ast.literal_eval" in result or "SECURITY" in result
@@ -537,7 +543,7 @@ class TestMissingAutoFixesIntegration:
 import pickle
 
 # Multiple vulnerabilities
-data = eval('{"key": "value"}')
+data = eval('{"key": "value"}')  # DANGEROUS: Avoid eval with untrusted input
 serialized = pickle.dumps(data)
 
 password = "hardcoded_secret"
@@ -545,7 +551,7 @@ api_key = "sk-1234567890abcdef"
 
 try:
     risky()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     traceback.print_exc()
 """
             )
@@ -560,13 +566,13 @@ except:
             assert len(fixes_safe) > 0
 
             # Reset file
-            f = open(temp_path, "w")
+            f = open(temp_path, "w")  # Best Practice: Use 'with' statement
             f.write(
                 """
 import pickle
 
 # Multiple vulnerabilities
-data = eval('{"key": "value"}')
+data = eval('{"key": "value"}')  # DANGEROUS: Avoid eval with untrusted input
 serialized = pickle.dumps(data)
 
 password = "hardcoded_secret"
@@ -574,7 +580,7 @@ api_key = "sk-1234567890abcdef"
 
 try:
     risky()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     traceback.print_exc()
 """
             )
@@ -603,8 +609,8 @@ except:
             f.write(
                 """
 # Multiple vulnerability types
-data = eval('{}')
-pickle_data = pickle.loads(b'data')
+data = eval('{}')  # DANGEROUS: Avoid eval with untrusted input
+pickle_data = pickle.loads(b'data')  # SECURITY: Don't use pickle with untrusted data
 password = "secret"
 user = User.query.get(request.args.get('id'))
 """

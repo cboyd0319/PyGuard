@@ -72,6 +72,7 @@ result = minimize(objective_function, x0, bounds=[(0, 10)], options={'maxiter': 
         """Should not flag code without SciPy import."""
         code = """
 def minimize(func, x0):
+    # TODO: Add docstring
     return func(x0)
 
 result = minimize(some_function, initial_value)
@@ -464,9 +465,11 @@ mat_data = loadmat('file.mat')  # File vulnerability
         """Should not flag similar function names from other libraries."""
         code = """
 def minimize(func):
+    # TODO: Add docstring
     return func()
 
 def fft(data):
+    # TODO: Add docstring
     return data
 
 result = minimize(my_function)

@@ -119,6 +119,7 @@ class PyGuardCLI:
         return {"total": total, "fixed": fixed, "failed": failed, "fixes": fixes_list}
 
     def run_best_practices_fixes(
+        # TODO: Add docstring
         self, files: list[Path], create_backup: bool = True
     ) -> dict[str, Any]:
         """
@@ -195,6 +196,7 @@ class PyGuardCLI:
         }
 
     def run_formatting(
+        # TODO: Add docstring
         self,
         files: list[Path],
         create_backup: bool = True,
@@ -235,6 +237,7 @@ class PyGuardCLI:
         return results
 
     def run_full_analysis(  # noqa: PLR0915 - Comprehensive analysis requires many statements
+        # TODO: Add docstring
         self, files: list[Path], create_backup: bool = True, fix: bool = True
     ) -> dict[str, Any]:
         """
@@ -353,6 +356,7 @@ class PyGuardCLI:
         return results
 
     def print_results(
+        # TODO: Add docstring
         self, results: dict[str, Any], generate_html: bool = True, generate_sarif: bool = False
     ) -> None:
         """

@@ -314,6 +314,7 @@ class TestIncrementalAnalysisIntegration:
             f.write_text(f"""
 # Module {i}
 def function_{i}():
+    # TODO: Add docstring
     return {i}
 """)
             files.append(f)

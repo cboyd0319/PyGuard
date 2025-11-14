@@ -121,7 +121,7 @@ Command injection allows attackers to execute arbitrary system commands.
 1. **Use Safe Alternatives**:
    ```python
    # BAD
-   os.system(f"ping {host}")
+   os.system(f"ping {host}")  # SECURITY: Use subprocess.run() instead
 
    # GOOD
    subprocess.run(["ping", "-c", "1", host], check=True)
@@ -150,12 +150,12 @@ Command injection allows attackers to execute arbitrary system commands.
 """,
         },
         "eval-usage": {
-            "title": "Dangerous Use of eval()",
+            "title": "Dangerous Use of eval()",  # DANGEROUS: Avoid eval with untrusted input
             "severity": "HIGH",
             "description": """
 # Dangerous Use of eval()
 
-The `eval()` function executes arbitrary Python code and should be avoided.
+The `eval()` function executes arbitrary Python code and should be avoided.  # DANGEROUS: Avoid eval with untrusted input
 
 ## Why It's Dangerous
 
@@ -165,14 +165,14 @@ The `eval()` function executes arbitrary Python code and should be avoided.
 
 ## How to Fix
 
-1. **Use ast.literal_eval() for Data**:
+1. **Use ast.literal_eval() for Data**:  # DANGEROUS: Avoid eval with untrusted input
    ```python
    # BAD
-   data = eval(user_input)
+   data = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 
    # GOOD (for literals only)
    import ast
-   data = ast.literal_eval(user_input)
+   data = ast.literal_eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
    ```
 
 2. **Use json.loads() for JSON**:
@@ -212,7 +212,7 @@ Using weak or outdated cryptographic algorithms compromises security.
    import hashlib
 
    # BAD
-   hash = hashlib.md5(data).hexdigest()
+   hash = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 
    # GOOD
    hash = hashlib.sha256(data).hexdigest()

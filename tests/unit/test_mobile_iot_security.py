@@ -28,7 +28,7 @@ class TestMOBILE001InsecureDataStorage:
     def test_detect_hardcoded_password_trivial(self):
         """Detect hardcoded password in simple assignment."""
         code = """
-password = 'mysecretpassword123'
+password = 'mysecretpassword123'  # SECURITY: Use environment variables or config files
 """
         violations = analyze_mobile_iot_security(Path("test.py"), code)
         assert len(violations) >= 1
@@ -710,10 +710,12 @@ class TestIntegration:
         """Test mobile app configuration file."""
         code = """
 class MobileConfig:
+    # TODO: Add docstring
     API_URL = 'https://api.production.example.com'
     DEBUG = False
 
     def __init__(self):
+        # TODO: Add docstring
         self.api_key = os.getenv('API_KEY')
 """
         violations = analyze_mobile_iot_security(Path("config.py"), code)
@@ -726,11 +728,14 @@ class MobileConfig:
 import paho.mqtt.client as mqtt
 
 class IoTDevice:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.device_id = os.getenv('DEVICE_ID')
         self.mqtt_client = mqtt.Client()
 
     def connect(self):
+        # TODO: Add docstring
         self.mqtt_client.username_pw_set('device', 'password123')
         self.mqtt_client.connect('broker.example.com', 1883)
 """
