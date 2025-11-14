@@ -1,0 +1,168 @@
+{
+  "name": "pyguard",
+  "displayName": "PyGuard Security Scanner",
+  "description": "Real-time Python security & code quality scanning with 1,230+ checks and auto-fixes",
+  "version": "0.7.0",
+  "publisher": "cboyd0319",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cboyd0319/PyGuard"
+  },
+  "bugs": {
+    "url": "https://github.com/cboyd0319/PyGuard/issues"
+  },
+  "homepage": "https://github.com/cboyd0319/PyGuard",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Formatters"
+  ],
+  "keywords": [
+    "python",
+    "security",
+    "linter",
+    "code-quality",
+    "static-analysis",
+    "pyguard",
+    "vulnerability-scanner",
+    "auto-fix"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pyguard.scan",
+        "title": "PyGuard: Scan File",
+        "category": "PyGuard"
+      },
+      {
+        "command": "pyguard.scanWorkspace",
+        "title": "PyGuard: Scan Workspace",
+        "category": "PyGuard"
+      },
+      {
+        "command": "pyguard.fixAll",
+        "title": "PyGuard: Fix All Auto-Fixable Issues",
+        "category": "PyGuard"
+      },
+      {
+        "command": "pyguard.showOutput",
+        "title": "PyGuard: Show Output",
+        "category": "PyGuard"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "PyGuard",
+      "properties": {
+        "pyguard.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable PyGuard security scanning"
+        },
+        "pyguard.severity": {
+          "type": "string",
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "default": "MEDIUM",
+          "description": "Minimum severity level to display"
+        },
+        "pyguard.scanOnType": {
+          "type": "boolean",
+          "default": true,
+          "description": "Scan file as you type (debounced)"
+        },
+        "pyguard.scanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Scan file on save"
+        },
+        "pyguard.autoFixOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically fix issues on save (use with caution)"
+        },
+        "pyguard.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python executable (should have PyGuard installed)"
+        },
+        "pyguard.lspServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to PyGuard LSP server (leave empty for automatic detection)"
+        },
+        "pyguard.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/__pycache__/**",
+            "**/.venv/**",
+            "**/.env/**"
+          ],
+          "description": "File patterns to exclude from scanning"
+        },
+        "pyguard.configFile": {
+          "type": "string",
+          "default": ".pyguard.yml",
+          "description": "Path to PyGuard configuration file"
+        },
+        "pyguard.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace LSP communication (for debugging)"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "pyguard.scan",
+        "key": "ctrl+shift+p",
+        "mac": "cmd+shift+p",
+        "when": "editorTextFocus && editorLangId == python"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.44.0",
+    "typescript": "^5.1.6",
+    "@vscode/vsce": "^2.19.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

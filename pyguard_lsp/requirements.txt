@@ -1,0 +1,7 @@
+# PyGuard LSP Server Requirements
+
+# Language Server Protocol implementation
+pygls>=1.0.0
+
+# PyGuard (parent package)
+# Installed via: pip install -e ..
