@@ -104,7 +104,7 @@ Released 2025-11-14 with major improvements:
 
 ## 1. Security Detection
 
-PyGuard implements **686 security vulnerability checks** across 18+ specialized security modules, making it the **#1 Python security tool** by check coverage - **crushing the competition with 343% more checks than Snyk**.
+PyGuard implements **739 security vulnerability checks** across 18+ specialized security modules, making it the **#1 Python security tool** by check coverage - **crushing the competition with 370% more checks than Snyk**.
 
 ### Security Modules Overview
 

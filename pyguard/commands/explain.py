@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from typing import ClassVar
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -13,7 +14,7 @@ class ExplainCommand:
     """Explain security issues and best practices."""
 
     # Knowledge base of explanations
-    EXPLANATIONS = {
+    EXPLANATIONS: ClassVar[dict] = {
         "hardcoded-password": {
             "title": "Hardcoded Password",
             "severity": "CRITICAL",
@@ -53,7 +54,7 @@ Hardcoded passwords in source code are a critical security vulnerability.
 
 ## References
 
-- **OWASP**: A07:2021 – Identification and Authentication Failures
+- **OWASP**: A07:2021 - Identification and Authentication Failures
 - **CWE**: CWE-798 (Use of Hard-coded Credentials)
 """,
         },
@@ -97,7 +98,7 @@ SQL injection allows attackers to execute arbitrary SQL commands.
 
 ## References
 
-- **OWASP**: A03:2021 – Injection
+- **OWASP**: A03:2021 - Injection
 - **CWE**: CWE-89 (SQL Injection)
 """,
         },
@@ -145,7 +146,7 @@ Command injection allows attackers to execute arbitrary system commands.
 
 ## References
 
-- **OWASP**: A03:2021 – Injection
+- **OWASP**: A03:2021 - Injection
 - **CWE**: CWE-78 (OS Command Injection)
 """,
         },
@@ -245,7 +246,7 @@ Using weak or outdated cryptographic algorithms compromises security.
 
 ## References
 
-- **OWASP**: A02:2021 – Cryptographic Failures
+- **OWASP**: A02:2021 - Cryptographic Failures
 - **CWE**: CWE-327 (Use of a Broken or Risky Cryptographic Algorithm)
 """,
         },
@@ -296,7 +297,7 @@ Path traversal allows attackers to access files outside intended directories.
 
 ## References
 
-- **OWASP**: A01:2021 – Broken Access Control
+- **OWASP**: A01:2021 - Broken Access Control
 - **CWE**: CWE-22 (Path Traversal)
 """,
         },

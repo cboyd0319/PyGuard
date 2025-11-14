@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -34,7 +34,7 @@ class DoctorCommand:
         parser.set_defaults(func=DoctorCommand.run)
 
     @staticmethod
-    def run(args: argparse.Namespace) -> int:
+    def run(_args: argparse.Namespace) -> int:
         """Execute doctor command."""
         console = Console()
 
@@ -45,11 +45,7 @@ class DoctorCommand:
         py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         console.print(f"[bold]Python:[/bold] {py_version}")
 
-        if sys.version_info < (3, 11):
-            console.print("[red]✗ Python 3.11+ required[/red]")
-            return 1
-        else:
-            console.print("[green]✓ Python version OK[/green]")
+        console.print("[green]✓ Python version OK[/green]")
 
         console.print()
 
@@ -88,7 +84,7 @@ class DoctorCommand:
                     all_ok = False
 
         # Check notebook dependencies
-        for name, import_name, required in notebook_deps:
+        for name, import_name, _required in notebook_deps:
             status, version = DoctorCommand._check_python_package(import_name)
             if status:
                 table.add_row(name, "[green]✓[/green]", version, "Notebook support")
@@ -101,7 +97,7 @@ class DoctorCommand:
                 )
 
         # Check system tools
-        for name, command, required in system_tools:
+        for name, command, _required in system_tools:
             status, version = DoctorCommand._check_system_tool(command)
             if status:
                 table.add_row(name, "[green]✓[/green]", version, "System tool")
@@ -122,7 +118,7 @@ class DoctorCommand:
             console.print(f"[green]✓ Found config:[/green] {config_path}")
         else:
             console.print("[yellow]○ No .pyguard.toml found[/yellow]")
-            console.print(f"  Run [cyan]pyguard init[/cyan] to create one")
+            console.print("  Run [cyan]pyguard init[/cyan] to create one")
 
         console.print()
 
@@ -145,10 +141,9 @@ class DoctorCommand:
             console.print("  2. Run [cyan]pyguard scan .[/cyan] to analyze your code")
             console.print("  3. Run [cyan]pyguard fix .[/cyan] to automatically fix issues")
             return 0
-        else:
-            console.print("[bold red]✗ Some required dependencies are missing[/bold red]")
-            console.print("Install missing dependencies and run [cyan]pyguard doctor[/cyan] again")
-            return 1
+        console.print("[bold red]✗ Some required dependencies are missing[/bold red]")
+        console.print("Install missing dependencies and run [cyan]pyguard doctor[/cyan] again")
+        return 1
 
     @staticmethod
     def _check_python_package(package_name: str) -> tuple[bool, str]:

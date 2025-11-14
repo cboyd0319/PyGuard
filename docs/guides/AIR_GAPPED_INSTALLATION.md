@@ -221,7 +221,7 @@ For maximum convenience, create a complete installation bundle with everything n
 
 set -e
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 BUNDLE_DIR="pyguard-offline-bundle-${VERSION}"
 
 echo "Creating PyGuard offline bundle v${VERSION}..."
@@ -662,7 +662,7 @@ cp pyguard-offline-bundle-*.tar.gz /backup/pyguard/$(date +%Y%m%d)/
 set -e
 
 # Configuration
-VERSION="0.6.0"
+VERSION="0.7.0"
 BUNDLE_NAME="pyguard-offline-${VERSION}"
 TARGET_SYSTEM="airgap-server"
 

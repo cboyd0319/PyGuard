@@ -142,6 +142,11 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "PLR2004", "ARG", "S105"]
 "pyguard/lib/**/*.py" = ["T20"]  # Print statements OK in security detection modules
+"pyguard/cli.py" = ["PLC0415"]  # Lazy imports for performance
+"pyguard/commands/doctor.py" = ["PLC0415", "PLR0912", "PLR0915"]  # Diagnostic command complexity acceptable
+"pyguard/commands/fix.py" = ["PLC0415", "PLR0912", "PLR0915"]  # Fix command complexity acceptable
+"pyguard/commands/scan.py" = ["PLC0415", "PLR0912"]  # Scan command complexity acceptable
+"pyguard/commands/watch.py" = ["PLC0415"]  # Lazy imports for performance
 
 [tool.ruff.lint.isort]
 known-first-party = ["pyguard"]

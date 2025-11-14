@@ -352,7 +352,7 @@ jobs:
 
       - name: Install PyGuard
         run: |
-          # PyGuard is not yet on PyPI - install from source
+          pip install git+https://github.com/cboyd0319/PyGuard.git
           pip install git+https://github.com/cboyd0319/PyGuard.git
 
       - name: Find changed Python files

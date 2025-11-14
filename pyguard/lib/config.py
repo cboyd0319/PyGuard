@@ -6,10 +6,13 @@ Loads and validates .pyguard.toml configuration files.
 
 from __future__ import annotations
 
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
+import tomllib
 from typing import Any
+
+# Validation constants
+MIN_LINE_LENGTH = 50
 
 
 @dataclass
@@ -250,7 +253,7 @@ class PyGuardConfig:
             errors.append("max_complexity must be at least 1")
 
         # Validate line length
-        if self.formatting.line_length < 50:
-            errors.append("line_length must be at least 50")
+        if self.formatting.line_length < MIN_LINE_LENGTH:
+            errors.append(f"line_length must be at least {MIN_LINE_LENGTH}")
 
         return errors
