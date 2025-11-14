@@ -225,7 +225,7 @@ CLI & automation | [GitHub Action Guide](docs/guides/github-action-guide.md), [G
 Advanced use | [Auto-fix Guide](docs/guides/auto-fix-guide.md), [Notebook Security](docs/guides/notebook-security-guide.md), [Plugin Architecture](docs/guides/PLUGIN_ARCHITECTURE.md)
 Security & compliance | [SECURITY.md](SECURITY.md), [Supply Chain Security](docs/guides/SUPPLY_CHAIN_SECURITY.md), [Security Quickstart](docs/security/SECURITY_QUICKSTART.md), [Threat Model](security/THREAT_MODEL.md)
 Reference | [Capabilities Reference](docs/reference/capabilities-reference.md), [Security Rules](docs/reference/security-rules.md), [Code Scanning Alerts](docs/reference/CODE-SCANNING-ALERTS.md)
-Project health | [ROADMAP.md](ROADMAP.md), [CHANGELOG](docs/CHANGELOG.md), [TEST_PLAN](docs/TEST_PLAN.md), [COMPREHENSIVE_TEST_PLAN](docs/COMPREHENSIVE_TEST_PLAN.md)
+Project health | [ROADMAP.md](ROADMAP.md), [Gap Analysis](docs/reports/2025-11-14-roadmap-gap-analysis.md) ⭐ NEW, [CHANGELOG](docs/CHANGELOG.md), [TEST_PLAN](docs/TEST_PLAN.md), [COMPREHENSIVE_TEST_PLAN](docs/COMPREHENSIVE_TEST_PLAN.md)
 Full inventory | [Documentation Manifest](docs/MANIFEST.md)
 
 Need help? Open an [issue](https://github.com/cboyd0319/PyGuard/issues) or start a [discussion](https://github.com/cboyd0319/PyGuard/discussions).
