@@ -66,20 +66,15 @@ class DoctorCommand:
             ("watchdog", "watchdog", False),
         ]
 
-        # Tool dependencies (optional)
-        tool_deps = [
-            ("pylint", "pylint", False),
-            ("flake8", "flake8", False),
+        # Optional formatting tools (PyGuard has its own auto-fix)
+        formatting_tools = [
             ("black", "black", False),
             ("isort", "isort", False),
-            ("mypy", "mypy", False),
-            ("bandit", "bandit", False),
             ("autopep8", "autopep8", False),
-            ("pydocstyle", "pydocstyle", False),
-            ("safety", "safety", False),
-            ("radon", "radon", False),
-            ("vulture", "vulture", False),
-            ("ruff", "ruff", False),
+        ]
+
+        # Notebook support (required for .ipynb analysis)
+        notebook_deps = [
             ("nbformat", "nbformat", False),
             ("nbclient", "nbclient", False),
         ]
@@ -99,17 +94,30 @@ class DoctorCommand:
                 if required:
                     all_ok = False
 
-        # Check tool dependencies
-        for name, import_name, required in tool_deps:
+        # Check formatting tools
+        for name, import_name, required in formatting_tools:
             status, version = DoctorCommand._check_python_package(import_name)
             if status:
-                table.add_row(name, "[green]✓[/green]", version, "Optional")
+                table.add_row(name, "[green]✓[/green]", version, "Formatting (optional)")
             else:
                 table.add_row(
                     name,
-                    "[yellow]○[/yellow]",
+                    "[dim]○[/dim]",
                     "Not installed",
-                    f"pip install {import_name}",
+                    "pip install pyguard[formatting]",
+                )
+
+        # Check notebook dependencies
+        for name, import_name, required in notebook_deps:
+            status, version = DoctorCommand._check_python_package(import_name)
+            if status:
+                table.add_row(name, "[green]✓[/green]", version, "Notebooks")
+            else:
+                table.add_row(
+                    name,
+                    "[dim]○[/dim]",
+                    "Not installed",
+                    "pip install pyguard[notebooks]",
                 )
 
         # Check system tools
@@ -140,12 +148,22 @@ class DoctorCommand:
 
         # Summary
         if all_ok:
-            console.print("[bold green]✓ PyGuard is properly installed![/bold green]")
+            console.print("[bold green]✓ PyGuard is ready to use![/bold green]")
+            console.print()
+            console.print("[bold]PyGuard has everything it needs:[/bold]")
+            console.print("  ✓ Core dependencies installed")
+            console.print("  ✓ Built-in AST-based security scanning (1,230+ checks)")
+            console.print("  ✓ Built-in auto-fix capabilities (199+ fixes)")
+            console.print("  ✓ No external tools required!")
+            console.print()
+            console.print("[bold]Optional enhancements:[/bold]")
+            console.print("  • Install formatters: [cyan]pip install pyguard[formatting][/cyan]")
+            console.print("  • Install notebook support: [cyan]pip install pyguard[notebooks][/cyan]")
             console.print()
             console.print("[bold]Next steps:[/bold]")
-            console.print("  • Run [cyan]pyguard init[/cyan] to create configuration")
-            console.print("  • Run [cyan]pyguard scan .[/cyan] to analyze your code")
-            console.print("  • Run [cyan]pyguard fix .[/cyan] to automatically fix issues")
+            console.print("  1. Run [cyan]pyguard init[/cyan] to create configuration")
+            console.print("  2. Run [cyan]pyguard scan .[/cyan] to analyze your code")
+            console.print("  3. Run [cyan]pyguard fix .[/cyan] to automatically fix issues")
             return 0
         else:
             console.print("[bold red]✗ Some required dependencies are missing[/bold red]")
@@ -156,73 +174,12 @@ class DoctorCommand:
     def _check_python_package(package_name: str) -> tuple[bool, str]:
         """Check if a Python package is installed."""
         try:
-            if package_name == "rich":
-                import rich
+            # Use importlib.metadata for version checking (standard library)
+            from importlib.metadata import version as get_version
 
-                return True, rich.__version__
-            elif package_name == "watchdog":
-                import watchdog
-
-                return True, watchdog.__version__
-            elif package_name == "pylint":
-                import pylint
-
-                return True, pylint.__version__
-            elif package_name == "flake8":
-                import flake8
-
-                return True, flake8.__version__
-            elif package_name == "black":
-                import black
-
-                return True, black.__version__
-            elif package_name == "isort":
-                import isort
-
-                return True, isort.__version__
-            elif package_name == "mypy":
-                import mypy
-
-                return True, mypy.__version__
-            elif package_name == "bandit":
-                import bandit
-
-                return True, bandit.__version__
-            elif package_name == "autopep8":
-                import autopep8
-
-                return True, autopep8.__version__
-            elif package_name == "pydocstyle":
-                import pydocstyle
-
-                return True, pydocstyle.__version__
-            elif package_name == "safety":
-                import safety
-
-                return True, safety.VERSION
-            elif package_name == "radon":
-                import radon
-
-                return True, radon.__version__
-            elif package_name == "vulture":
-                import vulture
-
-                return True, vulture.__version__
-            elif package_name == "ruff":
-                import ruff
-
-                return True, ruff.__version__
-            elif package_name == "nbformat":
-                import nbformat
-
-                return True, nbformat.__version__
-            elif package_name == "nbclient":
-                import nbclient
-
-                return True, nbclient.__version__
-            else:
-                return False, "Unknown"
-        except (ImportError, AttributeError):
+            version_str = get_version(package_name)
+            return True, version_str
+        except Exception:
             return False, "Not found"
 
     @staticmethod

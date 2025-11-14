@@ -816,8 +816,10 @@ pyguard vulnerable_code.py
 | **Setup Time** | 30 seconds | 2-4 hours (config files, integration) |
 | **First Scan** | `pyguard scan .` | Run 7+ commands, merge outputs |
 | **Config Files** | 1 (`.pyguard.toml`) | 7+ (bandit.yml, .flake8, pyproject.toml, etc.) |
-| **Auto-Fix** | `pyguard fix .` | Manually fix or run 3-4 formatters separately |
-| **Dependencies** | 2 core (optional extras) | 14+ mandatory packages |
+| **Auto-Fix** | `pyguard fix .` (built-in!) | Manually fix or run 3-4 formatters separately |
+| **Dependencies** | **2 only** (rich, watchdog) | 14+ mandatory packages |
+| **External Tools** | **ZERO required** | ALL required (pylint, flake8, bandit, ruff, mypy...) |
+| **How It Works** | **Built-in AST analysis** | Wrapper calling external tools |
 | **Learning Curve** | **5 minutes** | 2-3 days to master all tools |
 | **Interactive Fixes** | `pyguard fix --interactive` | Not available - manual review |
 | **Config Creation** | `pyguard init --interactive` (wizard!) | Manually create & edit YAML/TOML files |
@@ -828,6 +830,8 @@ pyguard vulnerable_code.py
 
 **Why PyGuard is Easier:**
 
+✅ **Standalone Tool**: Built-in AST-based analysis, no external tools required
+✅ **Zero External Dependencies**: PyGuard does everything itself (1,230+ checks, 199+ fixes)
 ✅ **Zero-Config Mode**: Works out of the box with smart defaults
 ✅ **Interactive Wizard**: `pyguard init --interactive` guides you through setup
 ✅ **Built-in Help**: `pyguard explain <issue>` teaches you about security issues
@@ -835,7 +839,7 @@ pyguard vulnerable_code.py
 ✅ **Subcommand Structure**: Intuitive commands (scan, fix, init, watch)
 ✅ **Better Error Messages**: Actionable suggestions, not cryptic errors
 ✅ **One Config File**: Single `.pyguard.toml` instead of 7+ config files
-✅ **Optional Dependencies**: Install only what you need
+✅ **Truly Optional Extras**: Only formatters are optional (black/isort/autopep8)
 
 **New User Experience:**
 
