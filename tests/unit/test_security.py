@@ -128,8 +128,8 @@ class TestFixCommandInjection:
         self.fixer = SecurityFixer()
 
     def test_fix_command_injection_os_system(self):
-        """Test os.system() warnings."""  # SECURITY: Use subprocess.run() instead
-        code = 'os.system("rm -rf " + user_input)'  # SECURITY: Use subprocess.run() instead
+        """Test os.system() warnings."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+        code = 'os.system("rm -rf " + user_input)'  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         result = self.fixer._fix_command_injection(code)
         assert "SECURITY:" in result
         assert len(self.fixer.fixes_applied) > 0
@@ -143,7 +143,7 @@ class TestFixCommandInjection:
 
     def test_fix_command_injection_subprocess_concat(self):
         """Test subprocess with string concatenation."""
-        code = 'subprocess.Popen("ls " + directory, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement
+        code = 'subprocess.Popen("ls " + directory, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         result = self.fixer._fix_command_injection(code)
         # Should detect concatenation pattern with shell=True
         if "shell=True" in code:
@@ -159,7 +159,7 @@ class TestFixCommandInjection:
 
     def test_fix_command_injection_popen_plus_shell_true(self):
         """Test Popen with concatenation and shell=True."""
-        code = 'subprocess.Popen("echo " + msg, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement
+        code = 'subprocess.Popen("echo " + msg, shell=True)'  # COMMAND INJECTION RISK: Avoid shell=True  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         result = self.fixer._fix_command_injection(code)
         assert "COMMAND INJECTION" in result or "SECURITY:" in result
 
@@ -853,7 +853,7 @@ class TestSecurityFixerEdgeCases:
     def test_fix_path_traversal_else_branch(self):
         """Test path traversal fix when no issues detected."""
         # Arrange - safe code without path traversal patterns
-        code = "filename = Path('data.txt')\nwith open(filename) as f:\n    pass"  # Best Practice: Use 'with' statement
+        code = "filename = Path('data.txt')\nwith open(filename) as f:\n    pass"  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
         # Act
         result = self.fixer._fix_path_traversal(code)

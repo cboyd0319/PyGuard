@@ -351,7 +351,7 @@ password = "secret123"
 api_key = "sk-1234567890"
 token = "ghp_abcdefg"
 subprocess.run(user_command, shell=True)
-os.system(user_input)  # SECURITY: Use subprocess.run() instead
+os.system(user_input)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         score = self.scorer.calculate_risk_score(code)
 

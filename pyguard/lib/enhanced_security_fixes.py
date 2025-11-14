@@ -310,17 +310,17 @@ class EnhancedSecurityFixer:
 
     def _fix_command_injection_subprocess(self, content: str) -> str:
         """
-        Replace os.system() with subprocess.run().  # SECURITY: Use subprocess.run() instead
+        Replace os.system() with subprocess.run().  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
         Classification: UNSAFE
         - Changes how command arguments are passed
         - Requires validation of command splitting
         - May need manual adjustment
 
-        Before: os.system(f"rm -rf {path}")  # SECURITY: Use subprocess.run() instead
+        Before: os.system(f"rm -rf {path}")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         After:  subprocess.run(["rm", "-rf", path], check=True)  # FIXED: command injection
 
-        Before: os.system(cmd)  # SECURITY: Use subprocess.run() instead
+        Before: os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         After:  subprocess.run(cmd.split(), check=True, shell=False)  # FIXED: command injection
         """
         fix_id = "command_subprocess"
@@ -340,7 +340,7 @@ class EnhancedSecurityFixer:
                 fixed_lines.append(line)
                 continue
 
-            # Pattern: os.system(variable)  # SECURITY: Use subprocess.run() instead
+            # Pattern: os.system(variable)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             if re.search(r"os\.system\s*\(\s*(\w+)\s*\)", line):
                 if not has_subprocess_import:
                     fixed_lines.insert(0, "import subprocess  # ADDED: for safe command execution")
@@ -351,9 +351,9 @@ class EnhancedSecurityFixer:
                     r"subprocess.run(\1.split(), check=True, shell=False)  # FIXED: command injection",
                     line,
                 )
-                fixed_lines.append("# FIXED: Replaced os.system() with subprocess.run()")  # SECURITY: Use subprocess.run() instead
+                fixed_lines.append("# FIXED: Replaced os.system() with subprocess.run()")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                 fixed_lines.append(fixed_line)
-                self.fixes_applied.append("command injection: os.system() → subprocess.run()")  # SECURITY: Use subprocess.run() instead
+                self.fixes_applied.append("command injection: os.system() → subprocess.run()")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                 modified = True
                 continue
 

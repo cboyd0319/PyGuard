@@ -330,7 +330,7 @@ class TestGoldenFileSnapshots:
                         "api_key = 'sk-1234567890abcdef'  # SECURITY: Use environment variables or config files\n",
                         "result = eval(user_input)\n",  # DANGEROUS: Avoid eval with untrusted input
                         "import pickle\n",
-                        "data = pickle.load(open('data.pkl', 'rb'))\n",  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement
+                        "data = pickle.load(open('data.pkl', 'rb'))\n",  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                     ],
                 }
             ],

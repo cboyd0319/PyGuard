@@ -151,7 +151,7 @@ class TestResourceLeakDetector:
     def test_detects_open_without_context(self):
         """Test detection of file open without context manager."""
         code = """
-f = open('file.txt', 'r')  # Best Practice: Use 'with' statement
+f = open('file.txt', 'r')  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 data = f.read()
 """
         issues = self.detector.scan_code(code)

@@ -39,7 +39,7 @@ def query_user(user_id):
 # Command injection
 def run_cmd(filename):
     # TODO: Add docstring
-    os.system("cat " + filename)  # SECURITY: Use subprocess.run() instead
+    os.system("cat " + filename)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
 # Unsafe deserialization
 def load_config(file_path):

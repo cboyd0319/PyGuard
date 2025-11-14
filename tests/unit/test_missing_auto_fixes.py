@@ -566,7 +566,7 @@ except Exception:  # FIXED: Catch specific exceptions
             assert len(fixes_safe) > 0
 
             # Reset file
-            f = open(temp_path, "w")  # Best Practice: Use 'with' statement
+            f = open(temp_path, "w")  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             f.write(
                 """
 import pickle

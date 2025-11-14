@@ -137,7 +137,7 @@ class FixSafetyClassifier:
         self._add_unsafe_fix(
             "command_subprocess",
             "security",
-            "Replace os.system() with subprocess.run()",  # SECURITY: Use subprocess.run() instead
+            "Replace os.system() with subprocess.run()",  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             "Changes how command arguments are passed. "
             "Requires validation that command splitting is correct.",
         )

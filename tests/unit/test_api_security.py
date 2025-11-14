@@ -1281,7 +1281,7 @@ import urllib
 
 def fetch(link):
     # TODO: Add docstring
-    response = urllib.request.urlopen(link)  # Best Practice: Use 'with' statement
+    response = urllib.request.urlopen(link)  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
     return response.read()
 """
         violations = analyze_api_security(Path("test.py"), code)

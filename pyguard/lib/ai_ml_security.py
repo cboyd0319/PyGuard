@@ -15758,7 +15758,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for H5PY file operations
-        if "h5py" in line_text and any(x in line_text for x in ["file(", "open("]) and not any(x in line_text for x in ["validate", "verify", "mode='r'"]):  # Best Practice: Use 'with' statement
+        if "h5py" in line_text and any(x in line_text for x in ["file(", "open("]) and not any(x in line_text for x in ["validate", "verify", "mode='r'"]):  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             violation = RuleViolation(
                 rule_id="AIML420",
                 category=RuleCategory.SECURITY,
@@ -27097,7 +27097,7 @@ class AIMLSecurityFixer:
             "model_response",
         ]
 
-        file_operations = ["open(", "Path(", "os.path.join", "read_file", "write_file"]  # Best Practice: Use 'with' statement
+        file_operations = ["open(", "Path(", "os.path.join", "read_file", "write_file"]  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
         if any(op in content for op in file_operations):
             lines = content.split("\n")

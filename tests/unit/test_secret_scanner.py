@@ -125,7 +125,7 @@ class TestSecretScanner:
             ),
         ]
 
-        m = mock_open()  # Best Practice: Use 'with' statement
+        m = mock_open()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         with patch("builtins.open", m):
             SecretScanner._export_to_sarif(findings, "test.sarif")
 
@@ -150,7 +150,7 @@ class TestSecretScanner:
                 stdout='test.py:10:password = "secret"\n', returncode=0
             )
 
-            m = mock_open()  # Best Practice: Use 'with' statement
+            m = mock_open()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             with patch("builtins.open", m):
                 SecretScanner.scan_secrets("/test/path", export_sarif=True)
 

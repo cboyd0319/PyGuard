@@ -272,7 +272,7 @@ import os
 
 def run_command(cmd):
     # TODO: Add docstring
-    os.system(cmd)  # SECURITY: Use subprocess.run() instead
+    os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """)
 
         api = PyGuardAPI()

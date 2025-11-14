@@ -33,8 +33,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "expected_in_result"),
         [
-            ("def foo(x=[]):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body
-            ("def bar(opts={}):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body
+            ("def foo(x=[]):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
+            ("def bar(opts={}):\n    pass", "ANTI-PATTERN"),  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
             ("def baz(items=None):\n    pass", "items=None"),  # Good practice, unchanged
         ],
         ids=["list_default", "dict_default", "none_default"],
@@ -188,8 +188,8 @@ class TestBestPracticesFixer:
     @pytest.mark.parametrize(
         ("code", "should_suggest"),
         [
-            ("f = open('file.txt')", True),  # Best Practice: Use 'with' statement
-            ("file = open('data.json', 'r')", True),  # Best Practice: Use 'with' statement
+            ("f = open('file.txt')", True),  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
+            ("file = open('data.json', 'r')", True),  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             ("with open('file.txt') as f:", False),  # Good practice
         ],
         ids=["simple_open", "open_with_mode", "with_statement"],

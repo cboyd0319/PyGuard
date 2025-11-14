@@ -2394,8 +2394,8 @@ class NotebookFixer:
             # Create backup first
             backup_path = notebook_path.with_suffix(".ipynb.backup")
             with (
-                open(notebook_path, encoding="utf-8") as orig,  # Best Practice: Use 'with' statement
-                open(backup_path, "w", encoding="utf-8") as f,  # Best Practice: Use 'with' statement
+                open(notebook_path, encoding="utf-8") as orig,  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
+                open(backup_path, "w", encoding="utf-8") as f,  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
             ):
                 f.write(orig.read())
 

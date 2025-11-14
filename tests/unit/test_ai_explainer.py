@@ -159,7 +159,7 @@ class TestAIExplainer:
         """Test fix explanation for command injection."""
         explainer = AIExplainer()
 
-        original = "os.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead
+        original = "os.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         fixed = "subprocess.run(['cat', filename], shell=False)"
 
         rationale = explainer.explain_fix(original, fixed, "COMMAND_INJECTION")

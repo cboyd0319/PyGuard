@@ -178,7 +178,7 @@ if value   # Use if var: instead:
         code = """
 def check(a, b):
     # TODO: Add docstring
-    if a   # Use if var: instead and b == False:
+    if a   # Use if var: instead and b   # Use if not var: instead:
         return True
     return False
 """

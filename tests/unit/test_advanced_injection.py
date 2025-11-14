@@ -527,15 +527,15 @@ subprocess.run(['ls', '-la'], shell=False)
         shell_violations = [v for v in violations if v.rule_id == "INJECT035"]
         assert len(shell_violations) == 0
 
-    # ==================== INJECT036: os.system() ====================  # SECURITY: Use subprocess.run() instead
+    # ==================== INJECT036: os.system() ====================  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
     def test_detect_os_system_with_user_input(self):
-        """Detect os.system() with user input."""  # SECURITY: Use subprocess.run() instead
+        """Detect os.system() with user input."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
 filename = request.args['file']
-os.system(f'cat {filename}')  # SECURITY: Use subprocess.run() instead
+os.system(f'cat {filename}')  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         violations = analyze_advanced_injection(code)
         os_system = [v for v in violations if v.rule_id == "INJECT036"]
@@ -548,18 +548,18 @@ os.system(f'cat {filename}')  # SECURITY: Use subprocess.run() instead
 import os
 
 query = request.form['query']
-result = os.popen(f'grep {query} /var/log/app.log').read()  # Best Practice: Use 'with' statement
+result = os.popen(f'grep {query} /var/log/app.log').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         violations = analyze_advanced_injection(code)
         os_popen = [v for v in violations if v.rule_id == "INJECT036"]
         assert len(os_popen) >= 1
 
     def test_safe_os_system_hardcoded(self):
-        """os.system() with hardcoded command should not trigger."""  # SECURITY: Use subprocess.run() instead
+        """os.system() with hardcoded command should not trigger."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
-os.system('ls -la /tmp')  # SECURITY: Use subprocess.run() instead
+os.system('ls -la /tmp')  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         violations = analyze_advanced_injection(code)
         os_system = [v for v in violations if v.rule_id == "INJECT036"]
@@ -609,7 +609,7 @@ from flask import render_template
 def safe_processing():
     # TODO: Add docstring
     # Safe YAML
-    config = yaml.safe_load(open('config.yaml'))  # Best Practice: Use 'with' statement
+    config = yaml.safe_load(open('config.yaml'))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
     # Safe template
     output = render_template('index.html', data=config)

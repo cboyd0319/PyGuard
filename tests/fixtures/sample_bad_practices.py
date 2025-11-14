@@ -76,7 +76,7 @@ def build_string(items):
 # Not using context manager
 def read_file(filename):
     # TODO: Add docstring
-    f = open(filename)  # Best Practice: Use 'with' statement
+    f = open(filename)  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
     data = f.read()
     f.close()
     return data

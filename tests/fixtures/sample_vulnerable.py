@@ -27,7 +27,7 @@ def execute_command(cmd):
     # TODO: Add docstring
     import os
 
-    os.system("ls " + cmd)  # SECURITY: Use subprocess.run() instead
+    os.system("ls " + cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
 
 # Unsafe YAML loading (HIGH severity)

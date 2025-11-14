@@ -185,7 +185,7 @@ from sklearn.model_selection import GridSearchCV
 def vulnerable_ml_pipeline(user_data, user_model_path):
     # TODO: Add docstring
     # SKL001: Unsafe model loading
-    model = pickle.load(open(user_model_path, 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement
+    model = pickle.load(open(user_model_path, 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
     # SKL012: Grid search without limits
     grid_search = GridSearchCV(RandomForestClassifier(), {'max_depth': [5, 10, 15]})
@@ -267,7 +267,7 @@ import pickle
 from sklearn.ensemble import RandomForestClassifier
 
 # CRITICAL: Unsafe deserialization
-model = pickle.load(open('model.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement
+model = pickle.load(open('model.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
 # MEDIUM: Missing input validation
 predictions = model.predict(user_data)

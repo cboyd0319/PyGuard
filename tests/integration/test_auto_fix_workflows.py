@@ -104,7 +104,7 @@ def validate(value):
         file1 = temp_dir / "defaults.py"
         file1.write_text(
             """
-def append_to_list(item, items=[]):  # ANTI-PATTERN: Use None and create in function body
+def append_to_list(item, items=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     items.append(item)
     return items
@@ -145,7 +145,7 @@ def risky_operation():
             """
 import yaml
 
-def process_user(user_id, items=[]):  # ANTI-PATTERN: Use None and create in function body
+def process_user(user_id, items=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     # Load config
     with open("config.yml") as f:
@@ -348,7 +348,7 @@ class TestReportGeneration:
             """
 import yaml
 
-def bad_function(items=[]):  # ANTI-PATTERN: Use None and create in function body
+def bad_function(items=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     config = yaml.safe_load("file")
     if items is None:

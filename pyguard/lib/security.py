@@ -121,7 +121,7 @@ class SecurityFixer:
 
     def _fix_command_injection(self, content: str) -> str:
         """Fix command injection vulnerabilities."""
-        # Pattern: os.system() with variable  # SECURITY: Use subprocess.run() instead
+        # Pattern: os.system() with variable  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         patterns = [
             r"os\.system\(",
             r"subprocess\.call\([^,\)]*%",
@@ -138,7 +138,7 @@ class SecurityFixer:
                         self.fixes_applied.append("Added command injection warning")
                     elif "os.system" in line and "# COMMAND INJECTION" not in line:
                         lines[i] = f"{line}  # SECURITY: Use subprocess.run() instead"
-                        self.fixes_applied.append("Added os.system() warning")  # SECURITY: Use subprocess.run() instead
+                        self.fixes_applied.append("Added os.system() warning")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
         return "\n".join(lines)
 

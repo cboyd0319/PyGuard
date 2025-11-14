@@ -130,7 +130,7 @@ class AIExplainer:
                 "5. Run with minimal privileges"
             ),
             example_vulnerable=(
-                "# VULNERABLE\nfilename = request.GET['file']\nos.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead
+                "# VULNERABLE\nfilename = request.GET['file']\nos.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             ),
             example_secure=(
                 "# SECURE\n"

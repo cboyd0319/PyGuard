@@ -63,7 +63,7 @@ def process_data(data):
 # Security Issue: Command injection
 def run_command(user_input):
     """Run a shell command (command injection vulnerable)."""
-    os.system(  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
+    os.system(  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         f"echo {user_input}"
     )  # noqa: S605  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 

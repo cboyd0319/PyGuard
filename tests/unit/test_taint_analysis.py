@@ -46,7 +46,7 @@ def search():
 import os
 
 user_file = input("Enter filename: ")
-os.system("cat " + user_file)  # SECURITY: Use subprocess.run() instead
+os.system("cat " + user_file)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -126,7 +126,7 @@ import os
 
 user_cmd = input("Enter command: ")
 full_cmd = "ls " + user_cmd
-os.system(full_cmd)  # SECURITY: Use subprocess.run() instead
+os.system(full_cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)
@@ -219,7 +219,7 @@ from flask import request
 user1 = input("User 1: ")
 user2 = request.args.get('user2')
 
-os.system(user1)  # SECURITY: Use subprocess.run() instead
+os.system(user1)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 cursor.execute("SELECT * FROM users WHERE name = '" + user2 + "'")  # SQL INJECTION RISK: Use parameterized queries
 """
         source_lines = code.strip().split("\n")
@@ -258,7 +258,7 @@ result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 import os
 
 env_value = os.getenv('USER_CMD')
-os.system(env_value)  # SECURITY: Use subprocess.run() instead
+os.system(env_value)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         source_lines = code.strip().split("\n")
         analyzer = EnhancedTaintAnalyzer(source_lines)

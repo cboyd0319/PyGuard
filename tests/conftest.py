@@ -83,7 +83,7 @@ data = yaml.safe_load(file)
 def sample_bad_practices_code():
     """Sample code with bad practices."""
     return """
-def foo(x=[]):  # ANTI-PATTERN: Use None and create in function body
+def foo(x=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     x.append(1)
     return x
@@ -204,7 +204,7 @@ def sample_code_patterns():
         "eval_usage": "result = eval(user_input)",  # DANGEROUS: Avoid eval with untrusted input
         "yaml_unsafe": "data = yaml.safe_load(file)",
         "pickle_load": "data = pickle.load(file)",  # SECURITY: Don't use pickle with untrusted data
-        "os_system": 'os.system("rm -rf " + path)',  # SECURITY: Use subprocess.run() instead
+        "os_system": 'os.system("rm -rf " + path)',  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         "random_insecure": "token = random.random()",  # SECURITY: Use secrets module for cryptographic randomness
         "shell_true": "subprocess.call(cmd, shell=True)",
         "path_traversal": "path = os.path.join(base, user_input)",  # PATH TRAVERSAL RISK: Validate and sanitize paths
@@ -371,14 +371,14 @@ def parametrized_code_samples():
     return {
         "security_issues": {
             "sql_injection": 'query = "SELECT * FROM users WHERE id = " + user_id',
-            "command_injection": 'os.system("ls " + user_input)',  # SECURITY: Use subprocess.run() instead
+            "command_injection": 'os.system("ls " + user_input)',  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
             "path_traversal": 'open("../../../etc/passwd")',
             "hardcoded_secret": 'api_key = "sk-1234567890abcdef"',
             "weak_crypto": "hashlib.md5(password).hexdigest()",  # SECURITY: Consider using SHA256 or stronger
             "unsafe_deserialization": "pickle.loads(user_data)",  # SECURITY: Don't use pickle with untrusted data
         },
         "best_practices": {
-            "mutable_default": "def func(x=[]):",  # ANTI-PATTERN: Use None and create in function body
+            "mutable_default": "def func(x=[]):",  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
             "bare_except": "try:\n    pass\nexcept:\n    pass",
             "none_comparison": "if x is None:",
             "type_check": "if type(x) == list:",  # Better: isinstance(x, list)

@@ -184,7 +184,7 @@ def many_params(a, b, c, d, e, f, g):
     def test_detect_mutable_default(self):
         """Test detection of mutable default arguments."""
         code = """
-def bad_default(items=[]):  # ANTI-PATTERN: Use None and create in function body
+def bad_default(items=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     items.append(1)
     return items

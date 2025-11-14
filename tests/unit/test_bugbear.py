@@ -125,7 +125,7 @@ class TestMutableDefaultArgument:
     def test_detect_list_default(self):
         """Test detection of list as default argument."""
         code = """
-def process(items=[]):  # ANTI-PATTERN: Use None and create in function body
+def process(items=[]):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     return items
 """
@@ -139,7 +139,7 @@ def process(items=[]):  # ANTI-PATTERN: Use None and create in function body
     def test_detect_dict_default(self):
         """Test detection of dict as default argument."""
         code = """
-def configure(options={}):  # ANTI-PATTERN: Use None and create in function body
+def configure(options={}):  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     return options
 """
@@ -440,7 +440,7 @@ class TestIntegration:
     def test_multiple_violations(self):
         """Test detection of multiple violations in one file."""
         code = """
-def bad_function(items=[]):  # B006  # ANTI-PATTERN: Use None and create in function body
+def bad_function(items=[]):  # B006  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     # TODO: Add docstring
     try:
         do_something()

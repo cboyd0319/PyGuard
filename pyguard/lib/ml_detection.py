@@ -108,7 +108,7 @@ class CodeFeatureExtractor:
             features["shell_true_count"] = float(len(re.findall(r"shell\s*=\s*True", code)))
 
             features["network_count"] = float(code.count("socket.") + code.count("requests."))
-            features["file_ops_count"] = float(code.count("open(") + code.count("file("))  # Best Practice: Use 'with' statement
+            features["file_ops_count"] = float(code.count("open(") + code.count("file("))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 
             # String patterns - detect both variable names and string literals
             # Look for variable assignments with sensitive names (e.g., password = "..."  # SECURITY: Use environment variables or config files)

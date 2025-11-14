@@ -424,18 +424,18 @@ class ScanHistoryStorage:
             params: list[Any] = []
 
             if target_path:
-                query += " AND target_path = ?"  # PERFORMANCE: Use list and join()
+                query += " AND target_path = ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(target_path)
 
             if start_time:
-                query += " AND timestamp >= ?"  # PERFORMANCE: Use list and join()
+                query += " AND timestamp >= ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(start_time)
 
             if end_time:
-                query += " AND timestamp <= ?"  # PERFORMANCE: Use list and join()
+                query += " AND timestamp <= ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
                 params.append(end_time)
 
-            query += " ORDER BY timestamp DESC LIMIT ?"  # PERFORMANCE: Use list and join()
+            query += " ORDER BY timestamp DESC LIMIT ?"  # PERFORMANCE: Use list and join()  # PERFORMANCE: Use list and join()
             params.append(limit)
 
             cursor = conn.execute(query, params)

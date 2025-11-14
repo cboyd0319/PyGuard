@@ -129,7 +129,7 @@ model = torch.load('model.pth')
             nbf.new_code_cell(
                 """
 import yaml
-data = yaml.safe_load(open('config.yml'))  # Best Practice: Use 'with' statement
+data = yaml.safe_load(open('config.yml'))  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
             )
         ]
@@ -353,7 +353,7 @@ print(data.mean())
                 """
 api_key = "sk-1234567890abcdefghijklmnopqrstuvwxyz"
 result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
-data = pickle.load(open('data.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement
+data = pickle.load(open('data.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
             )
         ]

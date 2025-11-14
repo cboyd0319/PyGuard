@@ -50,7 +50,7 @@ OS & Code Execution (15 checks):
 - Image processing command injection
 - Archive extraction vulnerabilities (zip slip)
 - Subprocess shell=True dangers
-- os.system() usage detection  # SECURITY: Use subprocess.run() instead
+- os.system() usage detection  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
 Total Security Checks: 40 rules (INJECT001-INJECT040)
 
@@ -813,13 +813,13 @@ class AdvancedInjectionVisitor(ast.NodeVisitor):
                 )
 
     def _check_os_system(self, node: ast.Call, func_name: str):
-        """INJECT036: Detect os.system() usage with user input."""  # SECURITY: Use subprocess.run() instead
+        """INJECT036: Detect os.system() usage with user input."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         if ("os.system" in func_name or "os.popen" in func_name) and node.args and self._has_user_input(node.args[0]):
             self._create_violation(
                 node,
                 "INJECT036",
                 "Command Injection via os.system",
-                "os.system() with user input is highly dangerous. "  # SECURITY: Use subprocess.run() instead
+                "os.system() with user input is highly dangerous. "  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                 "All shell features are available for exploitation.",
                 "Use subprocess.run() with shell=False. "
                 "Pass command and arguments as a list, not a string.",

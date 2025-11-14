@@ -158,7 +158,7 @@ import os
 
 # Taint flow issue
 user_input = input("Enter command: ")
-os.system(user_input)  # SECURITY: Use subprocess.run() instead
+os.system(user_input)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
 # ReDoS issue
 pattern = re.compile(r"(a+)+")  # DANGEROUS: Avoid compile with untrusted input

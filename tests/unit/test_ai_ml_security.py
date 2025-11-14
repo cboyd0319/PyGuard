@@ -4332,7 +4332,7 @@ def fetch_and_process(url):
 import urllib
 
 data1 = requests.get(url).text
-data2 = urllib.request.urlopen(url).read()  # Best Practice: Use 'with' statement
+data2 = urllib.request.urlopen(url).read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 data3 = fetch(external_url)
 """
         test_file = tmp_path / "test.py"
@@ -5132,7 +5132,7 @@ def execute_llm_command(llm_response):
 
 def run_generated_cmd(generated_command):
     # TODO: Add docstring
-    os.system(generated_command)  # SECURITY: Use subprocess.run() instead
+    os.system(generated_command)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)

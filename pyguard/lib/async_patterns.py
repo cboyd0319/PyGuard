@@ -147,9 +147,9 @@ class AsyncPatternVisitor(ast.NodeVisitor):
                     rule_id="ASYNC105",
                     line=node.lineno,
                     col=node.col_offset,
-                    message="Use async file operations (aiofiles) instead of open() in async function",  # Best Practice: Use 'with' statement
+                    message="Use async file operations (aiofiles) instead of open() in async function",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                     severity="MEDIUM",
-                    suggested_fix="Use 'async with aiofiles.open()' instead of open()",  # Best Practice: Use 'with' statement
+                    suggested_fix="Use 'async with aiofiles.open()' instead of open()",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                 )
             )
 

@@ -522,7 +522,7 @@ if sys.version_info >= (3, 8):
         code = """
 from pathlib import Path
 p = Path("file.txt")
-content = p.open().read()  # Best Practice: Use 'with' statement
+content = p.open().read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -770,8 +770,8 @@ def risky_function():
     def test_detect_path_read_text_opportunity(self, tmp_path):
         """Test detection of open().read() pattern (FURB130)."""
         code = """
-content = open('file.txt').read()  # Best Practice: Use 'with' statement
-data = open('data.bin').read()  # Best Practice: Use 'with' statement
+content = open('file.txt').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
+data = open('data.bin').read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)

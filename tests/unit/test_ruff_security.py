@@ -395,7 +395,7 @@ data = yaml.safe_load(content)
         code = """
 import subprocess
 subprocess.call("ls -la", shell=True)
-subprocess.Popen(cmd, shell=True)  # Best Practice: Use 'with' statement
+subprocess.Popen(cmd, shell=True)  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -453,7 +453,7 @@ html = mark_safe(user_input)
         """Test S310: urllib.urlopen usage."""
         code = """
 import urllib.request
-response = urllib.request.urlopen("http://example.com")  # Best Practice: Use 'with' statement
+response = urllib.request.urlopen("http://example.com")  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -527,7 +527,7 @@ subprocess.check_call(cmd, shell=True)
         """Test S605: os.system usage."""
         code = """
 import os
-os.system("ls -la")  # SECURITY: Use subprocess.run() instead
+os.system("ls -la")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
@@ -541,7 +541,7 @@ os.system("ls -la")  # SECURITY: Use subprocess.run() instead
         """Test S606: os.popen usage."""
         code = """
 import os
-output = os.popen("ls -la").read()  # Best Practice: Use 'with' statement
+output = os.popen("ls -la").read()  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)

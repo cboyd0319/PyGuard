@@ -52,7 +52,7 @@ class TestTOCTOUDetection:
         code = """
 import os
 if os.path.exists('file.txt'):
-    f = open('file.txt', 'r')  # Best Practice: Use 'with' statement
+    f = open('file.txt', 'r')  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
         issues = analyze_business_logic(code)
         assert any("TOCTOU" in issue.message for issue in issues)

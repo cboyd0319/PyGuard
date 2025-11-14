@@ -801,7 +801,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         rule_id="S605",
                         category=RuleCategory.SECURITY,
                         severity=RuleSeverity.HIGH,
-                        message="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead
+                        message="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
                         file_path=self.file_path,
                         line_number=node.lineno,
                         column=node.col_offset,
@@ -818,7 +818,7 @@ class RuffSecurityVisitor(ast.NodeVisitor):
                         rule_id="S606",
                         category=RuleCategory.SECURITY,
                         severity=RuleSeverity.MEDIUM,
-                        message="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement
+                        message="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
                         file_path=self.file_path,
                         line_number=node.lineno,
                         column=node.col_offset,
@@ -1503,7 +1503,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S310",
         name="suspicious-url-open-usage",
-        description="urllib.urlopen() can be used for SSRF attacks",  # Best Practice: Use 'with' statement
+        description="urllib.urlopen() can be used for SSRF attacks",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SUGGESTED,
@@ -1611,7 +1611,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S605",
         name="start-process-with-a-shell",
-        description="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead
+        description="os.system() executes commands through shell",  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.HIGH,
         fix_applicability=FixApplicability.SUGGESTED,
@@ -1620,7 +1620,7 @@ RUFF_SECURITY_RULES = [
     Rule(
         rule_id="S606",
         name="start-process-with-no-shell",
-        description="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement
+        description="os.popen() is deprecated and insecure",  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         category=RuleCategory.SECURITY,
         severity=RuleSeverity.MEDIUM,
         fix_applicability=FixApplicability.SUGGESTED,

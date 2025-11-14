@@ -96,7 +96,7 @@ class BestPracticesFixer:
 
     def _fix_mutable_default_arguments(self, content: str) -> str:
         """Fix mutable default arguments in function definitions."""
-        # Pattern: def func(arg=[]) or def func(arg={})  # ANTI-PATTERN: Use None and create in function body
+        # Pattern: def func(arg=[]) or def func(arg={})  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
         pattern = r"def\s+\w+\([^)]*=\s*(\[\]|\{\})"
 
         if re.search(pattern, content):
@@ -140,7 +140,7 @@ class BestPracticesFixer:
 
     def _fix_comparison_to_bool(self, content: str) -> str:
         """Fix comparisons to True/False."""
-        # Pattern: if x   # Use if var: instead or if x == False
+        # Pattern: if x   # Use if var: instead or if x   # Use if not var: instead
         lines = content.split("\n")
         for i, line in enumerate(lines):
             if "  # Use if var: instead" in line:
@@ -206,7 +206,7 @@ class BestPracticesFixer:
 
     def _fix_context_managers(self, content: str) -> str:
         """Suggest using context managers for file operations."""
-        # Pattern: file = open() without with statement  # Best Practice: Use 'with' statement
+        # Pattern: file = open() without with statement  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
         lines = content.split("\n")
 
         for i, line in enumerate(lines):

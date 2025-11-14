@@ -175,18 +175,18 @@ cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RIS
         assert len(self.fixer_safe.fixes_applied) == 0
 
     def test_command_injection_os_system_to_subprocess(self):
-        """Test os.system() → subprocess.run() transformation."""  # SECURITY: Use subprocess.run() instead
+        """Test os.system() → subprocess.run() transformation."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_unsafe._fix_command_injection_subprocess(code)
 
         assert "subprocess.run(cmd.split(), check=True, shell=False)" in result
         assert "FIXED: command injection" in result
-        assert "os.system()" not in result or "subprocess.run" in result  # SECURITY: Use subprocess.run() instead
+        assert "os.system()" not in result or "subprocess.run" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         assert "command injection" in " ".join(self.fixer_unsafe.fixes_applied)
 
     def test_command_injection_subprocess_import_added(self):
@@ -194,7 +194,7 @@ os.system(cmd)  # SECURITY: Use subprocess.run() instead
         code = """
 import os
 
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_unsafe._fix_command_injection_subprocess(code)
@@ -220,7 +220,7 @@ subprocess.run(cmd, shell=True)
         """Test command injection fix not applied without --unsafe-fixes."""
         code = """
 import os
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
 
         result = self.fixer_safe._fix_command_injection_subprocess(code)
@@ -276,7 +276,7 @@ file_path = os.path.join(base_dir, user_input)  # PATH TRAVERSAL RISK: Validate 
         test_file.write_text(
             """
 import os
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
 """
         )
@@ -296,7 +296,7 @@ cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RIS
         test_file.write_text(
             """
 import os
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 """
         )
 
@@ -307,7 +307,7 @@ os.system(cmd)  # SECURITY: Use subprocess.run() instead
         assert len(fixes) == 0
 
         result = test_file.read_text()
-        assert "os.system(cmd)" in result  # SECURITY: Use subprocess.run() instead
+        assert "os.system(cmd)" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         assert "subprocess.run" not in result
 
     # ===== INTEGRATION TESTS =====
@@ -321,7 +321,7 @@ import yaml
 import os
 
 data = yaml.safe_load(file)
-os.system(cmd)  # SECURITY: Use subprocess.run() instead
+os.system(cmd)  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 if value is None:
     pass
 """
@@ -419,13 +419,13 @@ cursor.execute("SELECT * FROM users")
         assert "FIXED" not in result
 
     def test_os_system_in_comment_not_modified(self):
-        """Test os.system() in comments is not modified."""  # SECURITY: Use subprocess.run() instead
+        """Test os.system() in comments is not modified."""  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         code = """
-# Don't use os.system(cmd) here  # SECURITY: Use subprocess.run() instead
+# Don't use os.system(cmd) here  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 subprocess.run(cmd)
 """
 
         result = self.fixer._fix_command_injection_subprocess(code)
 
         # Comment should remain unchanged
-        assert "# Don't use os.system(cmd) here" in result  # SECURITY: Use subprocess.run() instead
+        assert "# Don't use os.system(cmd) here" in result  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead

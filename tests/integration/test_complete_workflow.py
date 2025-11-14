@@ -376,7 +376,7 @@ class TestConfigurationWorkflow:
 
         code = """
 import pickle
-data = pickle.load(open('file.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement
+data = pickle.load(open('file.pkl', 'rb'))  # SECURITY: Don't use pickle with untrusted data  # Best Practice: Use 'with' statement  # Best Practice: Use 'with' statement
 """
 
         issues = analyze_code(code).issues

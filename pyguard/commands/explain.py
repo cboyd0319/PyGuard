@@ -121,7 +121,7 @@ Command injection allows attackers to execute arbitrary system commands.
 1. **Use Safe Alternatives**:
    ```python
    # BAD
-   os.system(f"ping {host}")  # SECURITY: Use subprocess.run() instead
+   os.system(f"ping {host}")  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
    # GOOD
    subprocess.run(["ping", "-c", "1", host], check=True)
