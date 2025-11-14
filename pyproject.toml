@@ -7,7 +7,7 @@ name = "pyguard"
 version = "0.7.0"
 description = "The Python Security & Quality Tool Developers Love - Easy to use, powerful auto-fix, 1,230+ checks"
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Chad Boyd"}
@@ -21,8 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12", 
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Security",
     "Topic :: Security :: Cryptography",
@@ -81,7 +80,7 @@ pyguard-hooks = "pyguard.git_hooks_cli:main"
 
 [tool.black]
 line-length = 100
-target-version = ['py311', 'py312', 'py313']
+target-version = ['py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -105,7 +104,7 @@ ensure_newline_before_comments = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 src = ["pyguard", "tests"]
 
 [tool.ruff.lint]
