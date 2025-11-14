@@ -41,25 +41,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Formatting tools - OPTIONAL for users who want industry-standard formatters
-# NOTE: PyGuard has its own auto-fix, but these provide additional formatting styles
-formatting = [
-    "black>=25.9.0",    # Black code formatter (opinionated)
-    "isort>=7.0.0",     # Import sorting
-    "autopep8>=2.3.2",  # PEP 8 auto-formatter
-]
-
-# Notebook support - for analyzing .ipynb files
+# Notebook support - ONLY optional dependency for analyzing .ipynb files
 notebooks = [
     "nbformat>=5.0.0",  # Required to read Jupyter notebooks
     "nbclient>=0.5.0",  # Required to execute notebooks
 ]
 
-# Full installation - formatting + notebooks
+# Full installation - same as notebooks (for backwards compatibility)
 full = [
-    "black>=25.9.0",
-    "isort>=7.0.0",
-    "autopep8>=2.3.2",
     "nbformat>=5.0.0",
     "nbclient>=0.5.0",
 ]

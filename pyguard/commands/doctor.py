@@ -66,14 +66,7 @@ class DoctorCommand:
             ("watchdog", "watchdog", False),
         ]
 
-        # Optional formatting tools (PyGuard has its own auto-fix)
-        formatting_tools = [
-            ("black", "black", False),
-            ("isort", "isort", False),
-            ("autopep8", "autopep8", False),
-        ]
-
-        # Notebook support (required for .ipynb analysis)
+        # Notebook support (ONLY optional dependency)
         notebook_deps = [
             ("nbformat", "nbformat", False),
             ("nbclient", "nbclient", False),
@@ -94,24 +87,11 @@ class DoctorCommand:
                 if required:
                     all_ok = False
 
-        # Check formatting tools
-        for name, import_name, required in formatting_tools:
-            status, version = DoctorCommand._check_python_package(import_name)
-            if status:
-                table.add_row(name, "[green]✓[/green]", version, "Formatting (optional)")
-            else:
-                table.add_row(
-                    name,
-                    "[dim]○[/dim]",
-                    "Not installed",
-                    "pip install pyguard[formatting]",
-                )
-
         # Check notebook dependencies
         for name, import_name, required in notebook_deps:
             status, version = DoctorCommand._check_python_package(import_name)
             if status:
-                table.add_row(name, "[green]✓[/green]", version, "Notebooks")
+                table.add_row(name, "[green]✓[/green]", version, "Notebook support")
             else:
                 table.add_row(
                     name,
@@ -150,15 +130,15 @@ class DoctorCommand:
         if all_ok:
             console.print("[bold green]✓ PyGuard is ready to use![/bold green]")
             console.print()
-            console.print("[bold]PyGuard has everything it needs:[/bold]")
+            console.print("[bold]PyGuard is 100% standalone:[/bold]")
             console.print("  ✓ Core dependencies installed")
             console.print("  ✓ Built-in AST-based security scanning (1,230+ checks)")
             console.print("  ✓ Built-in auto-fix capabilities (199+ fixes)")
+            console.print("  ✓ Built-in code formatting")
             console.print("  ✓ No external tools required!")
             console.print()
-            console.print("[bold]Optional enhancements:[/bold]")
-            console.print("  • Install formatters: [cyan]pip install pyguard[formatting][/cyan]")
-            console.print("  • Install notebook support: [cyan]pip install pyguard[notebooks][/cyan]")
+            console.print("[bold]Optional (Jupyter notebooks only):[/bold]")
+            console.print("  • [cyan]pip install pyguard[notebooks][/cyan] - for .ipynb analysis")
             console.print()
             console.print("[bold]Next steps:[/bold]")
             console.print("  1. Run [cyan]pyguard init[/cyan] to create configuration")

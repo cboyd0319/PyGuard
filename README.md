@@ -830,7 +830,7 @@ pyguard vulnerable_code.py
 
 **Why PyGuard is Easier:**
 
-✅ **Standalone Tool**: Built-in AST-based analysis, no external tools required
+✅ **100% Standalone**: Built-in AST analysis, formatting, and auto-fix - no external tools
 ✅ **Zero External Dependencies**: PyGuard does everything itself (1,230+ checks, 199+ fixes)
 ✅ **Zero-Config Mode**: Works out of the box with smart defaults
 ✅ **Interactive Wizard**: `pyguard init --interactive` guides you through setup
@@ -839,7 +839,7 @@ pyguard vulnerable_code.py
 ✅ **Subcommand Structure**: Intuitive commands (scan, fix, init, watch)
 ✅ **Better Error Messages**: Actionable suggestions, not cryptic errors
 ✅ **One Config File**: Single `.pyguard.toml` instead of 7+ config files
-✅ **Truly Optional Extras**: Only formatters are optional (black/isort/autopep8)
+✅ **Only 2 Dependencies**: rich (UI) + watchdog (file watching) - that's it!
 
 **New User Experience:**
 
