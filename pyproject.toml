@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyguard"
-version = "0.6.0"
-description = "The World's Best Python Security & Compliance Tool - ML-powered detection, MCP integration, 6+ compliance frameworks"
+version = "0.7.0"
+description = "The Python Security & Quality Tool Developers Love - Easy to use, powerful auto-fix, 1,230+ checks"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -34,26 +34,26 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+# Core dependencies - PyGuard does everything itself!
 dependencies = [
-    "pylint>=4.0.1",
-    "flake8>=7.3.0",
-    "black>=25.9.0",
-    "isort>=7.0.0",
-    "mypy>=1.18.2",
-    "bandit>=1.8.6",
-    "autopep8>=2.3.2",
-    "pydocstyle>=6.3.0",
-    "safety>=3.6.2",
-    "radon>=6.0.1",
-    "vulture>=2.14",
-    "ruff>=0.14.0",
-    "rich>=14.2.0",
-    "watchdog>=6.0.0",
+    "rich>=14.2.0",     # Beautiful terminal UI
+    "watchdog>=6.0.0",  # File watching for watch mode
+]
+
+[project.optional-dependencies]
+# Notebook support - ONLY optional dependency for analyzing .ipynb files
+notebooks = [
+    "nbformat>=5.0.0",  # Required to read Jupyter notebooks
+    "nbclient>=0.5.0",  # Required to execute notebooks
+]
+
+# Full installation - same as notebooks (for backwards compatibility)
+full = [
     "nbformat>=5.0.0",
     "nbclient>=0.5.0",
 ]
 
-[project.optional-dependencies]
+# Development dependencies
 dev = [
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
@@ -64,11 +64,6 @@ dev = [
     "freezegun>=1.5.0",
     "hypothesis>=6.100.0",
     "tox>=4.31.0",
-]
-fast = [
-    # RipGrep integration for high-performance scanning
-    # Note: This installs a Python wrapper. You still need ripgrep binary installed.
-    # Install ripgrep: brew install ripgrep (macOS), apt install ripgrep (Linux)
 ]
 
 [project.urls]

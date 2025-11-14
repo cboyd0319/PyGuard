@@ -2,12 +2,38 @@
 
 Welcome to the comprehensive documentation for PyGuard - The World's Best Python Security & Compliance Tool.
 
+> **📦 Installation:** PyGuard is currently available via GitHub only. Install with:
+> ```bash
+> pip install git+https://github.com/cboyd0319/PyGuard.git
+> ```
+> PyPI/Homebrew releases coming soon!
+
 ## 📚 Documentation Structure
 
 ### Getting Started
 - [Main README](../README.md) - Quick start and overview
 - [Installation & Setup](../README.md#installation) - Detailed installation guide
+- [Quickstart Guide](../QUICKSTART.md) - Get started in 2 minutes ✨
 - [Examples](examples/README.md) - Code examples
+
+### 🚀 New Subcommand Interface (v0.7.0+)
+PyGuard now features an intuitive command-line interface:
+- `pyguard scan` - Scan code for issues without making changes
+- `pyguard fix` - Automatically fix issues (with `--interactive` mode!)
+- `pyguard init` - Create `.pyguard.toml` with interactive wizard
+- `pyguard doctor` - Verify installation and dependencies
+- `pyguard explain` - Learn about security issues and fixes
+- `pyguard validate-config` - Check configuration file validity
+- `pyguard watch` - Auto-fix files on save
+
+**Quick Examples:**
+```bash
+pyguard scan .                  # Scan current directory
+pyguard fix . --interactive     # Fix issues with confirmation
+pyguard init --interactive      # Create config with wizard
+pyguard doctor                  # Check installation
+pyguard explain sql-injection   # Learn about SQL injection
+```
 
 ### Strategic Documentation
 - [🗺️ Roadmap](../ROADMAP.md) - Complete roadmap with v0.7.0-v1.0.0 plans
