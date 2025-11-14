@@ -140,8 +140,8 @@ cat attestation-bundle.json | jq '.attestations[0].verificationResult.statement'
       }
     },
     "metadata": {
-      "buildStartedOn": "2024-11-03T10:15:30Z",
-      "buildFinishedOn": "2024-11-03T10:18:45Z"
+      "buildStartedOn": "2025-11-03T10:15:30Z",
+      "buildFinishedOn": "2025-11-03T10:18:45Z"
     }
   }
 }

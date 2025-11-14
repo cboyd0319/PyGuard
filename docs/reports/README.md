@@ -20,21 +20,21 @@ This directory contains historical analysis reports, implementation summaries, a
   - 87% improvement in time-to-value (15min → 2min)
   - 1,405+ lines of new documentation added
 
-### 2024 Reports
+### 2025 Reports
 
-#### November 2024
+#### November 2025
 
-- **[2024-11-04-implementation-summary.md](2024-11-04-implementation-summary.md)**
+- **[2025-11-04-implementation-summary.md](2025-11-04-implementation-summary.md)**
   - v0.7.0 features implementation summary
   - Watch mode, taint analysis, programmatic API
   - Homebrew distribution, Docker Hub integration
 
-- **[2024-11-04-implementation-continued.md](2024-11-04-implementation-continued.md)**
+- **[2025-11-04-implementation-continued.md](2025-11-04-implementation-continued.md)**
   - v0.8.0-v1.0.0 features implementation
   - Plugin architecture, historical scan tracking
   - API stability framework, enterprise features
 
-- **[2024-11-04-roadmap-implementation.md](2024-11-04-roadmap-implementation.md)**
+- **[2025-11-04-roadmap-implementation.md](2025-11-04-roadmap-implementation.md)**
   - Roadmap progress and completion status
   - Feature tracking from v0.6.0 through v1.0.0
   - Milestone achievements and metrics

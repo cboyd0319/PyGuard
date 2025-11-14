@@ -720,8 +720,8 @@ PyGuard includes specialized rules for **25 popular Python frameworks** - **317%
 | **Streamlit** | **`framework_streamlit.py`** | **475** | **7** | 🔜 | ✅ **Complete** |
 | **Gradio** | **`framework_gradio.py`** | **410** | **6** | 🔜 | ✅ **Complete** |
 | **Dash** | **`framework_dash.py`** | **350** | **5** | 🔜 | ✅ **Complete** |
-| **PySpark** | **`framework_pyspark.py`** | **520** | **10** | 🔜 | ✅ **2024** 🚀 |
-| **Apache Airflow** | **`framework_airflow.py`** | **565** | **9** | 🔜 | ✅ **2024** 🚀 |
+| **PySpark** | **`framework_pyspark.py`** | **520** | **10** | 🔜 | ✅ **Complete** |
+| **Apache Airflow** | **`framework_airflow.py`** | **565** | **9** | 🔜 | ✅ **Complete** |
 | Pandas | `framework_pandas.py` | 279 | 5 | ⚠️ | ✅ Complete |
 | Pytest | `framework_pytest.py` | 300 | 8 | ⚠️ | ✅ Complete |
 | **NumPy** | **`framework_numpy.py`** | **587** | **15** | 🔜 | ✅ **Complete** |

@@ -606,8 +606,8 @@ Track all versions deployed:
 
 ```bash
 # versions.txt
-2024-11-04: PyGuard v0.6.0 deployed to production
-2024-10-15: PyGuard v0.5.8 deployed to staging
+2025-11-04: PyGuard v0.6.0 deployed to production
+2025-10-15: PyGuard v0.5.8 deployed to staging
 ```
 
 ### 2. Testing Before Deployment
@@ -724,5 +724,5 @@ echo "✅ Deployment complete!"
 
 ---
 
-**Last Updated**: 2024-11-04  
+**Last Updated**: 2025-11-04  
 **Status**: Production Ready

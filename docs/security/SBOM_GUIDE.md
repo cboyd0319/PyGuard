@@ -279,7 +279,7 @@ python sbom_risk_score.py pyguard-0.8.0.spdx.json
   "name": "pyguard-0.8.0",
   "documentNamespace": "https://github.com/cboyd0319/PyGuard/pyguard-0.8.0",
   "creationInfo": {
-    "created": "2024-11-03T10:18:30Z",
+    "created": "2025-11-03T10:18:30Z",
     "creators": ["Tool: syft-0.100.0"],
     "licenseListVersion": "3.21"
   },
@@ -328,7 +328,7 @@ python sbom_risk_score.py pyguard-0.8.0.spdx.json
   "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
   "version": 1,
   "metadata": {
-    "timestamp": "2024-11-03T10:18:30Z",
+    "timestamp": "2025-11-03T10:18:30Z",
     "tools": [...],
     "component": {
       "type": "library",
