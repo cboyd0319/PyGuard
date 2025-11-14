@@ -42,7 +42,7 @@ class TestSecretScanner:
         """Test scanning for secrets when secrets are found."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                stdout='test.py:10:password = "secret123"\n', returncode=0
+                stdout='test.py:10:password = "secret123"  # SECURITY: Use environment variables or config files\n', returncode=0
             )
 
             findings = SecretScanner.scan_secrets("/test/path")
@@ -125,7 +125,7 @@ class TestSecretScanner:
             ),
         ]
 
-        m = mock_open()
+        m = mock_open()  # Best Practice: Use 'with' statement
         with patch("builtins.open", m):
             SecretScanner._export_to_sarif(findings, "test.sarif")
 
@@ -150,7 +150,7 @@ class TestSecretScanner:
                 stdout='test.py:10:password = "secret"\n', returncode=0
             )
 
-            m = mock_open()
+            m = mock_open()  # Best Practice: Use 'with' statement
             with patch("builtins.open", m):
                 SecretScanner.scan_secrets("/test/path", export_sarif=True)
 

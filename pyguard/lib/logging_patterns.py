@@ -37,6 +37,7 @@ class LoggingPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
+        # TODO: Add docstring
         self.issues: list[LoggingIssue] = []
         self.logger_names: set[str] = {"logging", "logger", "log", "LOGGER", "LOG"}
 
@@ -206,6 +207,7 @@ class LoggingChecker:
     """Main checker class for logging pattern detection."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.visitor = LoggingPatternVisitor()
 
     def check_code(self, code: str, filename: str = "<string>") -> list[LoggingIssue]:

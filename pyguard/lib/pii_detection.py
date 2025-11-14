@@ -49,80 +49,80 @@ from pyguard.lib.rule_engine import (
 
 # Regex patterns for PII detection
 # SSN pattern - must have dashes or spaces to avoid false positives on random numbers
-SSN_PATTERN = re.compile(
+SSN_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b\d{3}[-\s]\d{2}[-\s]\d{4}\b"  # US SSN: 123-45-6789 or 123 45 6789 (must have separators)
 )
 
 # Credit card pattern - 13-19 digits with optional separators
 # Matches: 1234567890123456, 1234-5678-9012-3456, 1234 5678 9012 3456
-CREDIT_CARD_PATTERN = re.compile(
+CREDIT_CARD_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{1,7}\b"  # 13-19 digit cards
 )
 
 # IBAN pattern (international bank account)
-IBAN_PATTERN = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b")  # IBAN: GB29NWBK60161331926819
+IBAN_PATTERN = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b")  # IBAN: GB29NWBK60161331926819  # DANGEROUS: Avoid compile with untrusted input
 
 # SWIFT/BIC code pattern
-SWIFT_PATTERN = re.compile(r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b")  # SWIFT: BNPAFRPPXXX
+SWIFT_PATTERN = re.compile(r"\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b")  # SWIFT: BNPAFRPPXXX  # DANGEROUS: Avoid compile with untrusted input
 
 # Passport number patterns (common formats)
-PASSPORT_PATTERN = re.compile(r"\b[A-Z0-9]{6,9}\b")  # Generic passport: A12345678
+PASSPORT_PATTERN = re.compile(r"\b[A-Z0-9]{6,9}\b")  # Generic passport: A12345678  # DANGEROUS: Avoid compile with untrusted input
 
 # US Driver's License patterns (varies by state)
-DRIVERS_LICENSE_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{5,8}\b")  # Generic DL format
+DRIVERS_LICENSE_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{5,8}\b")  # Generic DL format  # DANGEROUS: Avoid compile with untrusted input
 
 # Health insurance numbers (US)
-HEALTH_INSURANCE_PATTERN = re.compile(r"\b[A-Z0-9]{9,12}\b")  # Generic health insurance ID
+HEALTH_INSURANCE_PATTERN = re.compile(r"\b[A-Z0-9]{9,12}\b")  # Generic health insurance ID  # DANGEROUS: Avoid compile with untrusted input
 
 # IP address pattern (IPv4 and IPv6)
-IPV4_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")  # IPv4: 192.168.1.1
+IPV4_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")  # IPv4: 192.168.1.1  # DANGEROUS: Avoid compile with untrusted input
 
-IPV6_PATTERN = re.compile(
+IPV6_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"  # IPv6: 2001:0db8:85a3::8a2e:0370:7334
 )
 
 # MAC address pattern
-MAC_ADDRESS_PATTERN = re.compile(
+MAC_ADDRESS_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"  # MAC: 00:1A:2B:3C:4D:5E
 )
 
 # Email address pattern
-EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
+EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")  # DANGEROUS: Avoid compile with untrusted input
 
 # Phone number patterns (E.164 international format) - must have separators to avoid false positives
 # Matches: 555-123-4567, +1-555-123-4567, (555) 123-4567
-PHONE_PATTERN = re.compile(
+PHONE_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b\+?\d{1,4}?[\s-]?\(?\d{2,4}\)?[\s-]\d{3,4}[\s-]\d{4}\b"  # Requires at least one separator
 )
 
 # GPS coordinates
-GPS_PATTERN = re.compile(r"\b-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+\b")  # Lat,Long: 40.7128,-74.0060
+GPS_PATTERN = re.compile(r"\b-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+\b")  # Lat,Long: 40.7128,-74.0060  # DANGEROUS: Avoid compile with untrusted input
 
 # Date of birth pattern (common formats)
-DOB_PATTERN = re.compile(r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b")  # DOB: 01/15/1990, 1-15-90
+DOB_PATTERN = re.compile(r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b")  # DOB: 01/15/1990, 1-15-90  # DANGEROUS: Avoid compile with untrusted input
 
 # Financial account number (generic pattern)
-FINANCIAL_ACCOUNT_PATTERN = re.compile(
+FINANCIAL_ACCOUNT_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4,12}\b"  # Account: 1234-5678-9012345
 )
 
 # Tax ID / EIN pattern (US)
-TAX_ID_PATTERN = re.compile(r"\b\d{2}[-\s]?\d{7}\b")  # EIN: 12-3456789
+TAX_ID_PATTERN = re.compile(r"\b\d{2}[-\s]?\d{7}\b")  # EIN: 12-3456789  # DANGEROUS: Avoid compile with untrusted input
 
 # Medical record number pattern
-MEDICAL_RECORD_PATTERN = re.compile(r"\bMRN[-\s]?\d{6,10}\b")  # MRN-12345678
+MEDICAL_RECORD_PATTERN = re.compile(r"\bMRN[-\s]?\d{6,10}\b")  # MRN-12345678  # DANGEROUS: Avoid compile with untrusted input
 
 # IMEI device identifier
-IMEI_PATTERN = re.compile(r"\b\d{15}\b")  # IMEI: 15 digits exactly
+IMEI_PATTERN = re.compile(r"\b\d{15}\b")  # IMEI: 15 digits exactly  # DANGEROUS: Avoid compile with untrusted input
 
 # VIN (Vehicle Identification Number)
-VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")  # VIN: 17 characters (excludes I, O, Q)
+VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")  # VIN: 17 characters (excludes I, O, Q)  # DANGEROUS: Avoid compile with untrusted input
 
 # Insurance policy number pattern
-INSURANCE_POLICY_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{6,12}\b")  # Policy: ABC123456789
+INSURANCE_POLICY_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{6,12}\b")  # Policy: ABC123456789  # DANGEROUS: Avoid compile with untrusted input
 
 # National ID patterns (common formats)
-NATIONAL_ID_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{6,10}[A-Z]?\b")  # Generic national ID format
+NATIONAL_ID_PATTERN = re.compile(r"\b[A-Z]{1,2}\d{6,10}[A-Z]?\b")  # Generic national ID format  # DANGEROUS: Avoid compile with untrusted input
 
 # Biometric data reference keywords
 BIOMETRIC_KEYWORDS = ["fingerprint", "retina", "iris", "facial", "biometric", "palm"]
@@ -131,13 +131,13 @@ BIOMETRIC_KEYWORDS = ["fingerprint", "retina", "iris", "facial", "biometric", "p
 GENETIC_KEYWORDS = ["dna", "genetic", "genome", "chromosome", "mutation"]
 
 # Serial number pattern (devices, equipment)
-SERIAL_NUMBER_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{8,12}[A-Z]?\b")  # Serial: ABC12345678
+SERIAL_NUMBER_PATTERN = re.compile(r"\b[A-Z]{2,4}\d{8,12}[A-Z]?\b")  # Serial: ABC12345678  # DANGEROUS: Avoid compile with untrusted input
 
 # Full name pattern (First Last format)
-FULL_NAME_PATTERN = re.compile(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b")  # Name: John Doe
+FULL_NAME_PATTERN = re.compile(r"\b[A-Z][a-z]+\s+[A-Z][a-z]+\b")  # Name: John Doe  # DANGEROUS: Avoid compile with untrusted input
 
 # Street address pattern
-ADDRESS_PATTERN = re.compile(
+ADDRESS_PATTERN = re.compile(  # DANGEROUS: Avoid compile with untrusted input
     r"\b\d+\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\b"
 )
 
@@ -146,6 +146,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
     """AST visitor for detecting PII exposure in source code."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -576,6 +577,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         return luhn_checksum(digits) == 0
 
     def _add_violation(
+        # TODO: Add docstring
         self, node: ast.AST, rule_id: str, pii_type: str, var_name: str, message: str
     ) -> None:
         """Add a PII violation."""
@@ -592,6 +594,7 @@ class PIIDetectionVisitor(ast.NodeVisitor):
         )
 
     def _add_logging_violation(
+        # TODO: Add docstring
         self, node: ast.Call, rule_id: str, pii_type: str, message: str
     ) -> None:
         """Add a PII logging violation."""

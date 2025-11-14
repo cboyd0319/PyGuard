@@ -373,6 +373,7 @@ class TestWatchModeStartStop:
             import threading
 
             def run_with_timeout():
+                # TODO: Add docstring
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
                         watcher.start()
@@ -412,6 +413,7 @@ class TestWatchModeStartStop:
             import threading
 
             def run_with_timeout():
+                # TODO: Add docstring
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
                         watcher.start()
@@ -446,6 +448,7 @@ class TestWatchModeStartStop:
             import threading
 
             def run_with_timeout():
+                # TODO: Add docstring
                 try:
                     with patch("time.sleep", side_effect=[None, KeyboardInterrupt()]):
                         watcher.start()

@@ -221,6 +221,7 @@ class TestExplanationLevels:
         return EnhancedNotebookFixer(explanation_level="expert")
 
     def test_explanation_level_stored_correctly(
+        # TODO: Add docstring
         self, fixer_beginner, fixer_intermediate, fixer_expert
     ):
         """Test that explanation level is stored correctly in fixer instances."""
@@ -518,7 +519,7 @@ class TestFixSecretEnhanced:
         """Test _fix_secret_enhanced with beginner explanation level."""
         # Arrange
         fixer = EnhancedNotebookFixer(explanation_level="beginner")
-        source = "password = 'my_secret'"
+        source = "password = 'my_secret'  # SECURITY: Use environment variables or config files"
         issue = NotebookIssue(
             severity="CRITICAL",
             category="Hardcoded Secret",
@@ -625,20 +626,20 @@ class TestFixSecretEnhanced:
 class TestFixCodeInjectionEnhanced:
     """Tests for _fix_code_injection_enhanced private method."""
 
-    def test_fix_code_injection_eval(self):
-        """Test _fix_code_injection_enhanced fixes eval() calls."""
+    def test_fix_code_injection_eval(self):  # DANGEROUS: Avoid eval with untrusted input
+        """Test _fix_code_injection_enhanced fixes eval() calls."""  # DANGEROUS: Avoid eval with untrusted input
         # Arrange
         fixer = EnhancedNotebookFixer(explanation_level="intermediate")
-        source = "result = eval(user_input)"
+        source = "result = eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
         issue = NotebookIssue(
             severity="CRITICAL",
             category="Code Injection",
-            message="Unsafe eval() usage",
+            message="Unsafe eval() usage",  # DANGEROUS: Avoid eval with untrusted input
             cell_index=0,
             line_number=1,
-            code_snippet="eval(user_input)",
+            code_snippet="eval(user_input)",  # DANGEROUS: Avoid eval with untrusted input
             rule_id="NB-INJ-001",
-            fix_suggestion="Use ast.literal_eval()",
+            fix_suggestion="Use ast.literal_eval()",  # DANGEROUS: Avoid eval with untrusted input
             cwe_id="CWE-95",
             owasp_id="",
             confidence=0.95,
@@ -655,22 +656,22 @@ class TestFixCodeInjectionEnhanced:
         assert "import ast" in fixed
         assert "CWE-95" in references
         assert confidence == 0.95
-        assert "eval()" in explanation
+        assert "eval()" in explanation  # DANGEROUS: Avoid eval with untrusted input
 
     def test_fix_code_injection_eval_with_existing_import(self):
         """Test _fix_code_injection_enhanced when ast is already imported."""
         # Arrange
         fixer = EnhancedNotebookFixer()
-        source = "import ast\nresult = eval(data)"
+        source = "import ast\nresult = eval(data)"  # DANGEROUS: Avoid eval with untrusted input
         issue = NotebookIssue(
             severity="CRITICAL",
             category="Code Injection",
-            message="Unsafe eval()",
+            message="Unsafe eval()",  # DANGEROUS: Avoid eval with untrusted input
             cell_index=0,
             line_number=2,
-            code_snippet="eval(data)",
+            code_snippet="eval(data)",  # DANGEROUS: Avoid eval with untrusted input
             rule_id="NB-INJ-002",
-            fix_suggestion="Use ast.literal_eval()",
+            fix_suggestion="Use ast.literal_eval()",  # DANGEROUS: Avoid eval with untrusted input
             cwe_id="CWE-95",
             owasp_id="",
             confidence=0.95,
@@ -690,16 +691,16 @@ class TestFixCodeInjectionEnhanced:
         """Test _fix_code_injection_enhanced with expert explanation."""
         # Arrange
         fixer = EnhancedNotebookFixer(explanation_level="expert")
-        source = "x = eval(input())"
+        source = "x = eval(input())"  # DANGEROUS: Avoid eval with untrusted input
         issue = NotebookIssue(
             severity="CRITICAL",
             category="Code Injection",
-            message="Unsafe eval()",
+            message="Unsafe eval()",  # DANGEROUS: Avoid eval with untrusted input
             cell_index=0,
             line_number=1,
-            code_snippet="eval(input())",
+            code_snippet="eval(input())",  # DANGEROUS: Avoid eval with untrusted input
             rule_id="NB-INJ-003",
-            fix_suggestion="Use ast.literal_eval()",
+            fix_suggestion="Use ast.literal_eval()",  # DANGEROUS: Avoid eval with untrusted input
             cwe_id="CWE-95",
             owasp_id="",
             confidence=0.95,
@@ -715,18 +716,18 @@ class TestFixCodeInjectionEnhanced:
         assert "only evaluates Python literals" in explanation
         assert "ast.literal_eval" in fixed
 
-    def test_fix_code_injection_exec(self):
-        """Test _fix_code_injection_enhanced fixes exec() calls."""
+    def test_fix_code_injection_exec(self):  # DANGEROUS: Avoid exec with untrusted input
+        """Test _fix_code_injection_enhanced fixes exec() calls."""  # DANGEROUS: Avoid exec with untrusted input
         # Arrange
         fixer = EnhancedNotebookFixer()
-        source = "exec(user_code)"
+        source = "exec(user_code)"  # DANGEROUS: Avoid exec with untrusted input
         issue = NotebookIssue(
             severity="CRITICAL",
             category="Code Injection",
-            message="Unsafe exec()",
+            message="Unsafe exec()",  # DANGEROUS: Avoid exec with untrusted input
             cell_index=0,
             line_number=1,
-            code_snippet="exec(user_code)",
+            code_snippet="exec(user_code)",  # DANGEROUS: Avoid exec with untrusted input
             rule_id="NB-INJ-004",
             fix_suggestion="Use restricted globals",
             cwe_id="CWE-95",

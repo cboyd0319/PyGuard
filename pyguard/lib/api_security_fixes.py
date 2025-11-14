@@ -199,6 +199,7 @@ class APISecurityFixer:
         pattern = r"methods\s*=\s*\[((?:[^]]*?))\]"
 
         def remove_insecure_methods(match):
+            # TODO: Add docstring
             methods_str = match.group(1)
             # Parse the methods list
             methods = [m.strip().strip("'\"") for m in methods_str.split(",")]
@@ -274,19 +275,19 @@ class APISecurityFixer:
         Fix insecure deserialization (API013).
 
         Classification: SAFE
-        - Adds warning comments for pickle.loads usage
+        - Adds warning comments for pickle.loads usage  # SECURITY: Don't use pickle with untrusted data
 
-        Before: data = pickle.loads(user_input)
-        After:  # WARNING: pickle.loads is unsafe with untrusted data. Use JSON instead.
-                data = pickle.loads(user_input)
+        Before: data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
+        After:  # WARNING: pickle.loads is unsafe with untrusted data. Use JSON instead.  # SECURITY: Don't use pickle with untrusted data
+                data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
         """
         modified = False
         lines = content.split("\n")
         fixed_lines = []
 
         for i, line in enumerate(lines):
-            # Add warning before pickle.loads()
-            if ("pickle.loads(" in line or "marshal.loads(" in line) and (i == 0 or "WARNING" not in lines[i - 1]):
+            # Add warning before pickle.loads()  # SECURITY: Don't use pickle with untrusted data
+            if ("pickle.loads(" in line or "marshal.loads(" in line) and (i == 0 or "WARNING" not in lines[i - 1]):  # SECURITY: Don't use pickle with untrusted data
                 indent = len(line) - len(line.lstrip())
                 warning = (
                     " " * indent
@@ -315,6 +316,7 @@ class APISecurityFixer:
         After:  class User(models.Model):
                     username = models.CharField()
                     class Meta:
+                        # TODO: Add docstring
                         fields = ['username']
         """
         # This is complex and requires AST manipulation
@@ -322,7 +324,7 @@ class APISecurityFixer:
         if "models.Model" in content or "BaseModel" in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if "class" in line and ("Model" in line or "BaseModel" in line):
                     indent = len(line) - len(line.lstrip())
@@ -393,11 +395,11 @@ class APISecurityFixer:
         if ("def list" in content or "def all" in content or ".all()" in content) and ".limit(" not in content and ".paginate(" not in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if ".all()" in line:
                     indent = len(line) - len(line.lstrip())
-                    comment = " " * indent + "# TODO: Add .limit(100) for pagination (API004)"
+                    comment = " " * indent + "# TODO: Add .limit(100) for pagination (API004)"  # Consider list comprehension
                     fixed_lines.append(comment)
                     self.fixes_applied.append("Added pagination suggestion (API004)")
                     break
@@ -407,7 +409,7 @@ class APISecurityFixer:
     def _fix_api_key_exposure(self, content: str) -> str:
         """Fix API key exposure in URLs (API007)."""
         # Detect and warn about API keys in URLs
-        if "api_key=" in content or "apikey=" in content:
+        if "api_key=" in content or "  # SECURITY: Use environment variables or config filesapikey=" in content:
             lines = content.split("\n")
             fixed_lines = []
             for line in lines:
@@ -447,7 +449,7 @@ class APISecurityFixer:
         if ("Flask(" in content or "FastAPI(" in content) and "Strict-Transport-Security" not in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if "Flask(" in line or "FastAPI(" in line:
                     comment = (
@@ -554,7 +556,7 @@ class APISecurityFixer:
         if ("response.headers" in content or "Response(" in content) and "Strict-Transport-Security" not in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if "Response(" in line or "return" in line:
                     indent = len(line) - len(line.lstrip())
@@ -574,7 +576,7 @@ class APISecurityFixer:
         if ("response.headers" in content or "Response(" in content) and "X-Frame-Options" not in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if "Response(" in line or "return" in line:
                     indent = len(line) - len(line.lstrip())
@@ -594,10 +596,10 @@ class APISecurityFixer:
         if ("response.headers" in content or "Response(" in content) and "Content-Security-Policy" not in content:
             lines = content.split("\n")
             fixed_lines = []
-            for line in lines:
+            for line in lines:  # Consider list comprehension
                 fixed_lines.append(line)
                 if "Response(" in line or "return" in line:
-                    # Add suggestion for CSP header
+                    # Add suggestion for CSP header  # Consider list comprehension
                     self.fixes_applied.append("Added CSP header suggestion (API020)")
                     break
             return "\n".join(fixed_lines)

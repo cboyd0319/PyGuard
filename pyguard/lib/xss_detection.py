@@ -253,7 +253,7 @@ class XSSDetector(ast.NodeVisitor):
                     tag in format_str for tag in ["<", ">", "href", "src"]
                 ):
                     # HTML-like content in format string
-                    if node.args and any(self._is_user_input(arg) for arg in node.args):
+                    if node.args and any(self._is_user_input(arg) for arg in node.args):  # Consider list comprehension
                         self.violations.append(
                             RuleViolation(
                                 rule_id="XSS008",
@@ -280,6 +280,7 @@ class XSSDetector(ast.NodeVisitor):
             has_user_input = False
 
             def check_node(n):
+                # TODO: Add docstring
                 nonlocal has_html, has_user_input
                 if isinstance(n, ast.Constant) and isinstance(n.value, str):  # noqa: SIM102
                     if any(tag in n.value for tag in ["<", ">", "href", "src", "<script", "<html"]):
@@ -368,7 +369,7 @@ def detect_xss_patterns(content: str) -> list[tuple[str, int, str]]:
         if re.search(r"@app\.route|def.*view.*\(request", line):
             # Check if CSP header is set in next few lines
             context_lines = lines[max(0, i - 1) : min(len(lines), i + 10)]
-            if not any("Content-Security-Policy" in context_line for context_line in context_lines):
+            if not any("Content-Security-Policy" in context_line for context_line in context_lines):  # Consider list comprehension
                 patterns.append(("missing_csp", i, line.strip()))
 
         # Pattern: Dangerous Jinja2 filters (safe, bypass escaping)
@@ -417,8 +418,8 @@ def check_xss_vulnerabilities(file_path: Path) -> list[RuleViolation]:
                 message = "document.write() usage detected, potential XSS vector"
                 fix_suggestion = "Use modern DOM methods or template engines"
             elif pattern_name == "eval_user_input":
-                message = "eval() with potential user input, critical XSS and code injection risk"
-                fix_suggestion = "Never use eval() with user input, use safe alternatives"
+                message = "eval() with potential user input, critical XSS and code injection risk"  # DANGEROUS: Avoid eval with untrusted input
+                fix_suggestion = "Never use eval() with user input, use safe alternatives"  # DANGEROUS: Avoid eval with untrusted input
                 severity = RuleSeverity.CRITICAL
             elif pattern_name == "missing_csp":
                 message = "Route handler without Content-Security-Policy header"

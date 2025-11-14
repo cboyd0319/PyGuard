@@ -318,6 +318,7 @@ class TestFileOperations:
             call_count = [0]
 
             def mock_open(*args, **kwargs):
+                # TODO: Add docstring
                 call_count[0] += 1
                 if call_count[0] == 1:
                     raise UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")
@@ -455,6 +456,7 @@ class TestBackupManagerAdvanced:
             original_unlink = Path.unlink
 
             def mock_unlink(self, *args, **kwargs):
+                # TODO: Add docstring
                 if "test.py.0.bak" in str(self):
                     raise OSError("Cannot delete file")
                 return original_unlink(self, *args, **kwargs)

@@ -117,6 +117,7 @@ class TestInsecureHTTPMethodsFix:
         code = """
 @app.route('/api', methods=['GET', 'POST', 'TRACE'])
 def api_endpoint():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -136,6 +137,7 @@ def api_endpoint():
         code = """
 @app.route('/api', methods=['GET', 'TRACK'])
 def api_endpoint():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -152,6 +154,7 @@ def api_endpoint():
         code = """
 @app.route('/api', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def api_endpoint():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -241,11 +244,11 @@ class TestInsecureDeserializationFix:
     """Test suite for API013 auto-fix: Insecure deserialization."""
 
     def test_add_warning_for_pickle_loads(self, tmp_path):
-        """Add warning comment for pickle.loads()."""
+        """Add warning comment for pickle.loads()."""  # SECURITY: Don't use pickle with untrusted data
         code = """
 import pickle
 
-data = pickle.loads(user_input)
+data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -278,7 +281,7 @@ data = marshal.loads(user_input)
         code = """
 import pickle
 # WARNING: Insecure deserialization
-data = pickle.loads(user_input)
+data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
 """
         file_path = tmp_path / "test.py"
         file_path.write_text(code)
@@ -350,6 +353,7 @@ class TestMassAssignmentFix:
 from django.db import models
 
 class User(models.Model):
+    # TODO: Add docstring
     username = models.CharField(max_length=100)
     email = models.EmailField()
 """
@@ -371,6 +375,7 @@ class User(models.Model):
 from pydantic import BaseModel
 
 class UserUpdate(BaseModel):
+    # TODO: Add docstring
     username: str
     email: str
 """
@@ -392,6 +397,7 @@ class TestRateLimitingFix:
         code = """
 @app.post('/api/create')
 def create_item():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -439,6 +445,7 @@ from flask import redirect
 
 @app.get('/redirect')
 def redirect_user(url):
+    # TODO: Add docstring
     return redirect(url)
 """
         file_path = tmp_path / "test.py"
@@ -466,6 +473,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+    # TODO: Add docstring
     return Response('Hello')
 """
         file_path = tmp_path / "test.py"
@@ -534,7 +542,7 @@ from xml.etree import ElementTree as ET
 
 # Multiple vulnerabilities
 token = jwt.decode(payload, secret, algorithms=['HS256'])
-data = pickle.loads(user_input)
+data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
 tree = ET.parse('file.xml')
 """
         file_path = tmp_path / "test.py"
@@ -561,7 +569,7 @@ from graphql import GraphQLApp
 
 # Multiple safe-fix vulnerabilities
 token = jwt.decode(payload, secret, algorithms=['HS256'])
-data = pickle.loads(user_input)
+data = pickle.loads(user_input)  # SECURITY: Don't use pickle with untrusted data
 tree = ET.parse('file.xml')
 app = GraphQLApp(schema, introspection=True)
 """
@@ -656,6 +664,7 @@ app = Flask(__name__)
 
 @app.post('/api/create')
 def create():
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"

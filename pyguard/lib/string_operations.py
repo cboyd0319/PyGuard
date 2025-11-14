@@ -289,6 +289,7 @@ class StringOperationsFixer:
             return []
 
     def fix_file(
+        # TODO: Add docstring
         self, file_path: Path, issues: list[StringIssue] | None = None
     ) -> tuple[bool, list[str]]:
         """
@@ -361,6 +362,7 @@ class StringOperationsFixer:
         return content
 
     def scan_directory(
+        # TODO: Add docstring
         self, directory: Path, exclude_patterns: list[str] | None = None
     ) -> list[tuple[Path, list[StringIssue]]]:
         """

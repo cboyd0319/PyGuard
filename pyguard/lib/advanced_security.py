@@ -171,6 +171,7 @@ class ReDoSDetector:
         self.logger = PyGuardLogger()
 
     def analyze_regex(
+        # TODO: Add docstring
         self, pattern: str, line_number: int, code_snippet: str
     ) -> SecurityIssue | None:
         """Analyze a regex pattern for ReDoS vulnerabilities."""

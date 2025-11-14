@@ -38,6 +38,7 @@ class AsyncPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
+        # TODO: Add docstring
         self.issues: list[AsyncIssue] = []
         self.in_async_function = False
         self.current_function: str | None = None
@@ -146,9 +147,9 @@ class AsyncPatternVisitor(ast.NodeVisitor):
                     rule_id="ASYNC105",
                     line=node.lineno,
                     col=node.col_offset,
-                    message="Use async file operations (aiofiles) instead of open() in async function",
+                    message="Use async file operations (aiofiles) instead of open() in async function",  # Best Practice: Use 'with' statement
                     severity="MEDIUM",
-                    suggested_fix="Use 'async with aiofiles.open()' instead of open()",
+                    suggested_fix="Use 'async with aiofiles.open()' instead of open()",  # Best Practice: Use 'with' statement
                 )
             )
 
@@ -227,6 +228,7 @@ class AsyncChecker:
     """Main checker class for async pattern detection."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.visitor = AsyncPatternVisitor()
 
     def check_code(self, code: str, filename: str = "<string>") -> list[AsyncIssue]:

@@ -303,6 +303,7 @@ class TestSARIFReporter:
 
         # Mock open to raise an exception
         def mock_open(*args, **kwargs):
+            # TODO: Add docstring
             raise OSError("Disk full")
 
         monkeypatch.setattr("builtins.open", mock_open)

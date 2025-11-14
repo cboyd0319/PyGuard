@@ -180,6 +180,7 @@ import gradio as gr
 import sqlite3
 
 def query_user(username):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     # BAD: f-string in SQL query
     result = conn.execute(f"SELECT * FROM users WHERE name = '{username}'")
@@ -198,6 +199,7 @@ demo = gr.Interface(fn=query_user, inputs="text", outputs="text")
 import gradio as gr
 
 def query_data(user_id):
+    # TODO: Add docstring
     # BAD: String concatenation in SQL query
     query = "SELECT * FROM data WHERE id = " + user_id
     conn.execute(query)
@@ -213,6 +215,7 @@ import gradio as gr
 import sqlite3
 
 def query_user(username):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     # GOOD: Parameterized query
     result = conn.execute("SELECT * FROM users WHERE name = ?", (username,))
@@ -234,6 +237,7 @@ class TestGradioPathTraversal:
 import gradio as gr
 
 def read_file(filename):
+    # TODO: Add docstring
     # BAD: Unsanitized user input in file path
     with open(f"/data/{filename}") as f:
         return f.read()
@@ -252,6 +256,7 @@ import gradio as gr
 from pathlib import Path
 
 def read_file(filename):
+    # TODO: Add docstring
     # GOOD: Using constant path
     with open("/data/file.txt") as f:
         return f.read()
@@ -297,6 +302,7 @@ demo = Interface(fn=process, inputs="text", outputs="text")
         code = """
 # Regular Python code without Gradio
 def launch(share=True):
+    # TODO: Add docstring
     print("Launching app")
 
 launch()
@@ -347,6 +353,7 @@ import gradio as gr
 import sqlite3
 
 def process(user_input, filename):
+    # TODO: Add docstring
     # Multiple issues:
     # SQL injection
     conn = sqlite3.connect("db.sqlite")
@@ -385,6 +392,7 @@ import gradio as gr
 import torch
 
 def predict(image):
+    # TODO: Add docstring
     # Safe ML inference
     model = torch.load("model.pth")
     result = model(image)
@@ -408,6 +416,7 @@ import gradio as gr
 import sqlite3
 
 def chatbot(message, history):
+    # TODO: Add docstring
     # GOOD: Parameterized query
     conn = sqlite3.connect("chat.db")
     conn.execute("INSERT INTO messages (text) VALUES (?)", (message,))
@@ -429,6 +438,7 @@ demo.launch()
 import gradio as gr
 
 def process_file(file):
+    # TODO: Add docstring
     # BAD: Path traversal risk
     with open(f"/uploads/{file.name}") as f:
         content = f.read()

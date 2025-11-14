@@ -22,22 +22,25 @@ def example_ast_analysis():
     # Sample code with security issues
     sample_code = """
 import random
+import secrets  # Use secrets for cryptographic randomness
 import yaml
 
 # Security issue: hardcoded password
-password = "admin123"
+password = "admin123"  # SECURITY: Use environment variables or config files
 
 # Security issue: insecure random
-token = random.random()
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
 
 # Security issue: unsafe YAML loading
 def load_config(file_path):
+    # TODO: Add docstring
     with open(file_path) as f:
-        config = yaml.load(f)  # Unsafe!
+        config = yaml.safe_load(f)  # Unsafe!
     return config
 
 # Quality issue: high complexity
 def complex_function(x, y, z):
+    # TODO: Add docstring
     if x > 0:
         if y > 0:
             if z > 0:
@@ -52,6 +55,7 @@ def complex_function(x, y, z):
 
 # Quality issue: missing docstring
 def public_function(a, b, c, d, e, f):
+    # TODO: Add docstring
     return a + b + c + d + e + f
 """
 
@@ -150,10 +154,12 @@ def example_with_reporter():
     test_file.write_text(
         """
 import random
+import secrets  # Use secrets for cryptographic randomness
 password = "secret123"
 
 def bad_function():
-    token = random.random()
+    # TODO: Add docstring
+    token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
     return token
 """
     )
@@ -204,13 +210,15 @@ import hashlib
 api_key = "hardcoded_secret"
 
 def process_data(file_path):
+    # TODO: Add docstring
     with open(file_path) as f:
-        data = yaml.load(f)
+        data = yaml.safe_load(f)
 
-    hash_val = hashlib.md5(str(data).encode()).hexdigest()
+    hash_val = hashlib.md5(str(data).encode()).hexdigest()  # SECURITY: Consider using SHA256 or stronger
     return hash_val
 
 def complex_logic(a, b, c, d, e, f):
+    # TODO: Add docstring
     if a:
         if b:
             if c:

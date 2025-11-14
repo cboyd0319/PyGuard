@@ -85,7 +85,7 @@ class PerformanceProfiler(ast.NodeVisitor):
                     category="Regex Performance",
                     message="Regex pattern should be compiled once, not in loop/function",
                     line_number=node.lineno,
-                    suggestion="Compile regex with re.compile() at module level",
+                    suggestion="Compile regex with re.compile() at module level",  # DANGEROUS: Avoid compile with untrusted input
                     estimated_impact="10-100x slower than compiled regex",
                 )
             )

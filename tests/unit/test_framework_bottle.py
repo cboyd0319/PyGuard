@@ -28,6 +28,7 @@ base_path = "/api"
 
 @route(f"{base_path}/users")
 def users():
+    # TODO: Add docstring
     return {"users": []}
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -44,6 +45,7 @@ version = "v1"
 
 @route("/api/{}/users".format(version))
 def users():
+    # TODO: Add docstring
     return {"users": []}
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -57,6 +59,7 @@ from bottle import route
 
 @route("/api/v1/users")
 def users():
+    # TODO: Add docstring
     return {"users": []}
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -74,6 +77,7 @@ from bottle import route, request, template
 
 @route("/render")
 def render_page():
+    # TODO: Add docstring
     tmpl = request.query.template
     return template(tmpl, data="test")
 """
@@ -89,6 +93,7 @@ from bottle import route, request, template
 
 @route("/render", method="POST")
 def render_page():
+    # TODO: Add docstring
     tmpl = request.forms.get("template")
     return template(tmpl)
 """
@@ -103,6 +108,7 @@ from bottle import route, request, template
 
 @route("/page")
 def page():
+    # TODO: Add docstring
     content = request.query.content
     return template("page.html", raw_html=content)
 """
@@ -117,6 +123,7 @@ from bottle import route, request, template
 
 @route("/page")
 def page():
+    # TODO: Add docstring
     data = request.query.get("q")
     return template("page.html", query=data)
 """
@@ -135,6 +142,7 @@ from bottle import route, request, static_file
 
 @route("/download")
 def download():
+    # TODO: Add docstring
     filename = request.query.file
     return static_file(filename, root="/uploads")
 """
@@ -150,6 +158,7 @@ from bottle import route, request, static_file
 
 @route("/download", method="POST")
 def download():
+    # TODO: Add docstring
     filename = request.forms.get("file")
     return static_file(filename, root="/uploads")
 """
@@ -164,6 +173,7 @@ from bottle import route, static_file
 
 @route("/logo")
 def logo():
+    # TODO: Add docstring
     return static_file("logo.png", root="/static")
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -180,6 +190,7 @@ class TestBottleCookieSecurity:
 from bottle import response
 
 def login():
+    # TODO: Add docstring
     response.set_cookie("session_id", "abc123")
     return "Logged in"
 """
@@ -194,7 +205,8 @@ def login():
 from bottle import response
 
 def login():
-    response.set_cookie("session_id", "abc123", secret="key")
+    # TODO: Add docstring
+    response.set_cookie("session_id", "abc123", secret="key"  # SECURITY: Use environment variables or config files)
     return "Logged in"
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -208,6 +220,7 @@ def login():
 from bottle import response
 
 def login():
+    # TODO: Add docstring
     response.set_cookie("session_id", "abc123", secret="key", secure=True)
     return "Logged in"
 """
@@ -222,6 +235,7 @@ def login():
 from bottle import response
 
 def login():
+    # TODO: Add docstring
     response.set_cookie(
         "session_id", "abc123",
         secret="secret_key",
@@ -246,6 +260,7 @@ from bottle import post, request
 
 @post("/update")
 def update_data():
+    # TODO: Add docstring
     data = request.forms.get("data")
     update_database(data)
     return {"status": "updated"}
@@ -262,6 +277,7 @@ from bottle import put, request
 
 @put("/resource/<id>")
 def update_resource(id):
+    # TODO: Add docstring
     data = request.json
     update_db(id, data)
     return {"status": "updated"}
@@ -277,6 +293,7 @@ from bottle import delete
 
 @delete("/resource/<id>")
 def delete_resource(id):
+    # TODO: Add docstring
     delete_from_db(id)
     return {"status": "deleted"}
 """
@@ -291,6 +308,7 @@ from bottle import post, request
 
 @post("/update")
 def update_data():
+    # TODO: Add docstring
     csrf_token = request.forms.get("csrf_token")
     validate_csrf(csrf_token)
     data = request.forms.get("data")
@@ -308,6 +326,7 @@ from bottle import get, request
 
 @get("/data")
 def get_data():
+    # TODO: Add docstring
     query = request.query.get("q")
     results = search(query)
     return {"results": results}
@@ -327,6 +346,7 @@ from bottle import post, request
 
 @post("/register")
 def register():
+    # TODO: Add docstring
     username = request.forms.get("username")
     email = request.forms.get("email")
     create_user(username, email)
@@ -344,6 +364,7 @@ from bottle import route, request
 
 @route("/search")
 def search():
+    # TODO: Add docstring
     query = request.params.get("q")
     results = db.query(query)
     return {"results": results}
@@ -359,6 +380,7 @@ from bottle import post, request
 
 @post("/register")
 def register():
+    # TODO: Add docstring
     username = request.forms.get("username")
     email = request.forms.get("email")
     validate(username, email)
@@ -380,6 +402,7 @@ from bottle import post, request
 
 @post("/upload")
 def upload():
+    # TODO: Add docstring
     file = request.files.get("file")
     file.save(f"/uploads/{file.filename}")
     return {"status": "uploaded"}
@@ -397,6 +420,7 @@ from werkzeug.utils import secure_filename
 
 @post("/upload")
 def upload():
+    # TODO: Add docstring
     file = request.files.get("file")
     filename = secure_filename(file.filename)
     file.save(f"/uploads/{filename}")
@@ -443,6 +467,7 @@ class TestBottleEdgeCases:
         """No violations for code without Bottle imports."""
         code = """
 def process_data(data):
+    # TODO: Add docstring
     return {"result": data}
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -455,10 +480,12 @@ from bottle import route, template
 
 @route("/")
 def index():
+    # TODO: Add docstring
     return template("index.html")
 
 @route("/data")
 def get_data():
+    # TODO: Add docstring
     return {"status": "ok"}
 """
         violations = analyze_bottle(Path("test.py"), code)
@@ -471,6 +498,7 @@ from bottle import post, request, template
 
 @post("/process")
 def process():
+    # TODO: Add docstring
     tmpl = request.forms.get("template")
     data = request.forms.get("data")
     return template(tmpl, content=data)
@@ -490,6 +518,7 @@ from bottle import route, request, response
 
 @route("/api/users", method=["GET", "POST"])
 def users():
+    # TODO: Add docstring
     if request.method == "POST":
         data = request.json
         validate_user(data)
@@ -512,6 +541,7 @@ from bottle import route, static_file
 
 @route("/download/<filename>")
 def download(filename):
+    # TODO: Add docstring
     # Good practice: validate filename
     if validate_filename(filename):
         return static_file(filename, root="/uploads")
@@ -528,6 +558,7 @@ from bottle import post, request, template
 
 @post("/submit")
 def submit_form():
+    # TODO: Add docstring
     csrf = request.forms.get("csrf_token")
     validate_csrf(csrf)
 

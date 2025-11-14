@@ -202,12 +202,14 @@ class UltraAdvancedSecurityFixer:
         Before:
             @app.route('/api/endpoint')
             def endpoint():
+                # TODO: Add docstring
                 ...
 
         After:
             @app.route('/api/endpoint')
             @limiter.limit("100/hour")  # ADDED: Rate limiting protection
             def endpoint():
+                # TODO: Add docstring
                 ...
 
         Args:
@@ -354,7 +356,7 @@ class UltraAdvancedSecurityFixer:
                 in_service = False
                 indent = "    "
 
-                for line in lines:
+                for line in lines:  # Consider list comprehension
                     fixed_lines.append(line)
                     if re.match(r"^\s+\w+:", line) and "services:" not in line:
                         in_service = True
@@ -436,7 +438,7 @@ class UltraAdvancedSecurityFixer:
             # Jinja2 without autoescape
             elif "Environment(" in line and "autoescape" not in line:
                 fixed_line = line.rstrip(")") + ", autoescape=True)  # ADDED: XSS protection"
-                fixed_lines.append("# FIXED: Added autoescape=True for XSS protection")
+                fixed_lines.append("# FIXED: Added autoescape=True for XSS protection")  # Consider list comprehension
                 fixed_lines.append(fixed_line)
                 self.fixes_applied.append("XSS: autoescape=True added")
                 modified = True

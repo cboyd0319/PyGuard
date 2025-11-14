@@ -498,6 +498,7 @@ class SANSTop25Mapper:
         """
 
         def get_priority(issue):
+            # TODO: Add docstring
             cwe_id = issue.get("cwe_id", "")
             rank = self.get_sans_ranking(cwe_id)
             # Issues in Top 25 get their rank, others get 999

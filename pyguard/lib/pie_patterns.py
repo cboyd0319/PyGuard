@@ -27,6 +27,7 @@ class PIEPatternVisitor(ast.NodeVisitor):
     """AST visitor for detecting code smells and unnecessary patterns."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -86,14 +87,14 @@ class PIEPatternVisitor(ast.NodeVisitor):
 
     def visit_Compare(self, node: ast.Compare) -> None:
         """Detect comparison patterns that should use 'is' (PIE792, PIE793)."""
-        # PIE792: Prefer 'is False' over '== False'
+        # PIE792: Prefer 'is False' over '  # Use if not var: instead'
         for _i, (op, comparator) in enumerate(zip(node.ops, node.comparators, strict=False)):
             if isinstance(op, ast.Eq) and isinstance(comparator, ast.Constant):
                 if comparator.value is False:
                     self.violations.append(
                         RuleViolation(
                             rule_id="PIE792",
-                            message="Use 'is False' instead of '== False'",
+                            message="Use 'is False' instead of '  # Use if not var: instead'",
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.LOW,
@@ -102,12 +103,12 @@ class PIEPatternVisitor(ast.NodeVisitor):
                             fix_applicability=FixApplicability.SAFE,
                         )
                     )
-                # PIE793: Prefer 'is True' over '== True'
+                # PIE793: Prefer 'is True' over '  # Use if var: instead'
                 elif comparator.value is True:
                     self.violations.append(
                         RuleViolation(
                             rule_id="PIE793",
-                            message="Use 'is True' instead of '== True'",
+                            message="Use 'is True' instead of '  # Use if var: instead'",
                             line_number=node.lineno,
                             column=node.col_offset,
                             severity=RuleSeverity.LOW,
@@ -554,6 +555,7 @@ class PIEPatternChecker:
     """Main checker for PIE pattern detection and fixes."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
 
     def check_file(self, file_path: Path) -> list[RuleViolation]:
@@ -599,14 +601,14 @@ class PIEPatternChecker:
 
             fixes_applied = 0
 
-            # Fix PIE792: == False -> is False
+            # Fix PIE792:   # Use if not var: instead -> is False
             pattern = r"==\s*False"
             matches = list(re.finditer(pattern, code))
             for match in reversed(matches):  # Reverse to maintain positions
                 code = code[: match.start()] + "is False" + code[match.end() :]
                 fixes_applied += 1
 
-            # Fix PIE793: == True -> is True
+            # Fix PIE793:   # Use if var: instead -> is True
             pattern = r"==\s*True"
             matches = list(re.finditer(pattern, code))
             for match in reversed(matches):
@@ -657,20 +659,20 @@ PIE_RULES = [
     Rule(
         rule_id="PIE792",
         name="is-false-comparison",
-        description="Prefer 'is False' over '== False'",
+        description="Prefer 'is False' over '  # Use if not var: instead'",
         category=RuleCategory.STYLE,
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SAFE,
-        message_template="Use 'is False' instead of '== False'",
+        message_template="Use 'is False' instead of '  # Use if not var: instead'",
     ),
     Rule(
         rule_id="PIE793",
         name="is-true-comparison",
-        description="Prefer 'is True' over '== True'",
+        description="Prefer 'is True' over '  # Use if var: instead'",
         category=RuleCategory.STYLE,
         severity=RuleSeverity.LOW,
         fix_applicability=FixApplicability.SAFE,
-        message_template="Use 'is True' instead of '== True'",
+        message_template="Use 'is True' instead of '  # Use if var: instead'",
     ),
     Rule(
         rule_id="PIE794",

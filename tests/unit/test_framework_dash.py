@@ -137,6 +137,7 @@ import sqlite3
 
 @app.callback()
 def query_data(user_id):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     # BAD: f-string in SQL query
     result = conn.execute(f"SELECT * FROM users WHERE id = {user_id}")
@@ -153,6 +154,7 @@ def query_data(user_id):
 import dash
 
 def query_data(search_term):
+    # TODO: Add docstring
     # BAD: String concatenation in SQL query
     query = "SELECT * FROM products WHERE name = " + search_term
     conn.execute(query)
@@ -169,6 +171,7 @@ import sqlite3
 
 @app.callback()
 def query_data(user_id):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     # GOOD: Parameterized query
     result = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
@@ -226,6 +229,7 @@ fig = go.Figure()
         code = """
 # Regular Python code without Dash
 def run_server(debug=True):
+    # TODO: Add docstring
     print("Running server")
 
 run_server()
@@ -280,6 +284,7 @@ app = dash.Dash(__name__)
 
 @app.callback()
 def update_data(user_input, search_term):
+    # TODO: Add docstring
     # SQL injection
     conn = sqlite3.connect("db.sqlite")
     result = conn.execute(f"SELECT * FROM data WHERE id = {user_input}")
@@ -342,6 +347,7 @@ app = dash.Dash(__name__)
 
 @app.callback()
 def update_graph(selected_value):
+    # TODO: Add docstring
     # GOOD: Parameterized query
     conn = sqlite3.connect("analytics.db")
     df = pd.read_sql("SELECT * FROM metrics WHERE type = ?", conn, params=(selected_value,))
@@ -373,6 +379,7 @@ app.layout = html.Div([
 
 @app.callback(Output('output', 'children'), Input('user-input', 'value'))
 def update_output(value):
+    # TODO: Add docstring
     # BAD: User input in Markdown
     return dcc.Markdown(children=f"You entered: {value}")
 
@@ -401,6 +408,7 @@ app = dash.Dash(__name__)
 
 @app.callback(Output('output', 'children'), Input('input', 'value'))
 def update(value):
+    # TODO: Add docstring
     return value
 """
         tree = ast.parse(code)

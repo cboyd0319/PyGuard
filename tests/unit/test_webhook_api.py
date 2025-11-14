@@ -105,7 +105,7 @@ class TestWebhookConfig:
         config = WebhookConfig(
             url="https://example.com/webhook",
             events=[WebhookEvent.SCAN_COMPLETED],
-            secret="test-secret-123",
+            secret="test-secret-123"  # SECURITY: Use environment variables or config files,
         )
 
         assert config.secret == "test-secret-123"

@@ -361,6 +361,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting AI/ML security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -2133,6 +2134,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _check_context_for_keywords(
+        # TODO: Add docstring
         self, line_number: int, keywords: list[str], window: int = 3
     ) -> bool:
         """
@@ -4989,7 +4991,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         if not self.has_pytorch:
             return
 
-        # Check for pickle.load with torch models
+        # Check for pickle.load with torch models  # SECURITY: Don't use pickle with untrusted data
         if isinstance(node.func, ast.Attribute) and node.func.attr in ["save", "load"] and hasattr(node.func.value, "id") and node.func.value.id in ["torch", "pickle"]:
             violation = RuleViolation(
                 rule_id="AIML072",
@@ -15756,7 +15758,7 @@ class AIMLSecurityVisitor(ast.NodeVisitor):
         line_text = self.lines[node.lineno - 1].lower() if node.lineno <= len(self.lines) else ""
 
         # Check for H5PY file operations
-        if "h5py" in line_text and any(x in line_text for x in ["file(", "open("]) and not any(x in line_text for x in ["validate", "verify", "mode='r'"]):
+        if "h5py" in line_text and any(x in line_text for x in ["file(", "open("]) and not any(x in line_text for x in ["validate", "verify", "mode='r'"]):  # Best Practice: Use 'with' statement
             violation = RuleViolation(
                 rule_id="AIML420",
                 category=RuleCategory.SECURITY,
@@ -26462,7 +26464,7 @@ class AIMLSecurityFixer:
                         else:
                             fixed_lines.append(line)
                     else:
-                        # Multi-line call - add comment for manual review
+                        # Multi-line call - add comment for manual review  # Consider list comprehension
                         fixed_lines.append(line)
                         if not modified:
                             self.fixes_applied.append(
@@ -26563,7 +26565,7 @@ class AIMLSecurityFixer:
         - Prevents credential exposure in source code
         - Replaces hardcoded values with os.getenv()
 
-        Before: openai.api_key = "sk-..."
+        Before: openai.api_key = "sk-..."  # SECURITY: Use environment variables or config files
         After:  openai.api_key = os.getenv("OPENAI_API_KEY")
 
         Reference: AIML054, CWE-798, OWASP A07:2021
@@ -26647,7 +26649,7 @@ class AIMLSecurityFixer:
             modified = False
 
             # Find where to add the limit (after torch import)
-            for _i, line in enumerate(lines):
+            for _i, line in enumerate(lines):  # Consider list comprehension
                 fixed_lines.append(line)
                 if not modified and "import torch" in line and "cuda" in content:
                     # Add memory limit after torch import
@@ -26789,7 +26791,7 @@ class AIMLSecurityFixer:
         - Detects eval/exec on LLM output
         - Warns about dynamic code execution risks
 
-        Before: exec(llm_response.content)
+        Before: exec(llm_response.content)  # DANGEROUS: Avoid exec with untrusted input
         After:  # PyGuard: CRITICAL - Never execute LLM-generated code [AIML062]
 
         Reference: AIML062, CWE-94, OWASP LLM02
@@ -26808,7 +26810,7 @@ class AIMLSecurityFixer:
             "model_response",
         ]
 
-        dangerous_operations = ["eval(", "exec(", "compile("]
+        dangerous_operations = ["eval(", "exec(", "compile("]  # DANGEROUS: Avoid eval with untrusted input
 
         if any(op in content for op in dangerous_operations):
             lines = content.split("\n")
@@ -27095,7 +27097,7 @@ class AIMLSecurityFixer:
             "model_response",
         ]
 
-        file_operations = ["open(", "Path(", "os.path.join", "read_file", "write_file"]
+        file_operations = ["open(", "Path(", "os.path.join", "read_file", "write_file"]  # Best Practice: Use 'with' statement
 
         if any(op in content for op in file_operations):
             lines = content.split("\n")
@@ -27145,7 +27147,7 @@ class AIMLSecurityFixer:
         - Detects file operations from LLM code
         - Warns about access control requirements
 
-        Before: exec(llm_code)  # code contains file operations
+        Before: exec(llm_code)  # code contains file operations  # DANGEROUS: Avoid exec with untrusted input
         After:  # PyGuard: Control file access in LLM-generated code [AIML067]
 
         Reference: AIML067, CWE-73, OWASP LLM02
@@ -27155,7 +27157,7 @@ class AIMLSecurityFixer:
             return content
 
         # Look for file operations in LLM-generated code
-        llm_code_patterns = ["exec(", "eval(", "compile("]
+        llm_code_patterns = ["exec(", "eval(", "compile("]  # DANGEROUS: Avoid eval with untrusted input
 
         llm_output_patterns = [
             "response.content",
@@ -27654,7 +27656,7 @@ class AIMLSecurityFixer:
             modified = False
 
             for line in lines:
-                if any(call in line for call in api_calls) and not line.strip().startswith("#") and "try:" not in content[: content.index(line)]:
+                if any(call in line for call in api_calls) and not line.strip().startswith("#") and "try:" not in content[: content.index(line)]:  # Consider list comprehension
                     fixed_lines.append(
                         "# PyGuard: Add try-except block for error handling (AIML057)"
                     )
@@ -27701,7 +27703,7 @@ class AIMLSecurityFixer:
             modified = False
 
             for line in lines:
-                if any(pattern in line for pattern in url_loading_patterns) and not line.strip().startswith("#"):
+                if any(pattern in line for pattern in url_loading_patterns) and not line.strip().startswith("#"):  # Consider list comprehension
                     fixed_lines.append(
                         "# PyGuard: Validate URL source before loading model (AIML074)"
                     )
@@ -27796,7 +27798,7 @@ class AIMLSecurityFixer:
             modified = False
 
             for line in lines:
-                if any(pattern in line for pattern in model_loading_patterns) and not line.strip().startswith("#") and "hashlib" not in content and "checksum" not in content.lower():
+                if any(pattern in line for pattern in model_loading_patterns) and not line.strip().startswith("#") and "hashlib" not in content and "checksum" not in content.lower():  # Consider list comprehension
                     fixed_lines.append(
                         "# PyGuard: Consider adding model checksum verification (AIML073)"
                     )

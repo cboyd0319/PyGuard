@@ -70,6 +70,7 @@ env = Environment(autoescape=True)  # OK
 from django.utils.safestring import mark_safe
 
 def view(request):
+    # TODO: Add docstring
     user_data = request.GET.get('data')
     html = mark_safe(user_data)  # XSS003
     return html
@@ -89,6 +90,7 @@ def view(request):
 from flask import Markup, request
 
 def view():
+    # TODO: Add docstring
     user_data = request.args.get('data')
     html = Markup(user_data)  # XSS004
     return html
@@ -107,6 +109,7 @@ def view():
 from flask import render_template_string, request
 
 def view():
+    # TODO: Add docstring
     template = request.args.get('template')
     return render_template_string(template)  # XSS005 - SSTI
 """
@@ -140,6 +143,7 @@ template = Template('Hello ${name}')  # XSS006 - no auto-escape
 from django.http import HttpResponse
 
 def view(request):
+    # TODO: Add docstring
     user_data = request.GET.get('data')
     return HttpResponse(user_data)  # XSS007
 """
@@ -155,6 +159,7 @@ def view(request):
         """Test detection of HTML formatting with user input."""
         code = """
 def view(request):
+    # TODO: Add docstring
     user_name = request.user.name
     html = "<div>Hello {}</div>".format(user_name)  # XSS008
     return html
@@ -171,6 +176,7 @@ def view(request):
         """Test detection of HTML string concatenation with user input."""
         code = """
 def view(request):
+    # TODO: Add docstring
     user_name = request.user.name
     html = "<div>" + user_name + "</div>"  # XSS009
     return html
@@ -187,6 +193,7 @@ def view(request):
         """Test detection of HTML f-string with user input."""
         code = """
 def view(request):
+    # TODO: Add docstring
     user_name = request.user.name
     html = f"<div>{user_name}</div>"  # XSS010
     return html
@@ -203,6 +210,7 @@ def view(request):
         """Test that static HTML doesn't trigger violations."""
         code = """
 def view():
+    # TODO: Add docstring
     html = "<div>Hello World</div>"
     return html
 """
@@ -248,7 +256,7 @@ document.write('<script>alert(1)</script>')
     def test_eval_user_input_detection(self):
         """Test detection of eval with user input."""
         code = """
-result = eval(request.args.get('code'))
+result = eval(request.args.get('code'))  # DANGEROUS: Avoid eval with untrusted input
 """
         patterns = detect_xss_patterns(code)
         pattern_names = [p[0] for p in patterns]
@@ -268,6 +276,7 @@ result = eval(request.args.get('code'))
         code = """
 @app.route('/test')
 def view():
+    # TODO: Add docstring
     return render_template('test.html')
 """
         patterns = detect_xss_patterns(code)
@@ -291,12 +300,14 @@ env = Environment(autoescape=False)
 
 @app.route('/vulnerable')
 def vulnerable():
+    # TODO: Add docstring
     # XSS005: Template injection
     template = request.args.get('template')
     return render_template_string(template)
 
 @app.route('/xss')
 def xss():
+    # TODO: Add docstring
     # XSS010: f-string with user input
     name = request.args.get('name')
     return f'<h1>Hello {name}</h1>'
@@ -329,6 +340,7 @@ from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 
 def view(request):
+    # TODO: Add docstring
     # XSS003: mark_safe with user input
     user_html = request.GET.get('html')
     safe_html = mark_safe(user_html)
@@ -360,6 +372,7 @@ from jinja2 import Environment
 env = Environment(autoescape=True)
 
 def view():
+    # TODO: Add docstring
     # Safe: static HTML
     return '<div>Hello World</div>'
 """
@@ -384,6 +397,7 @@ def view():
         """Test that syntax errors are handled gracefully."""
         code = """
 def broken(
+    # TODO: Add docstring
     # Syntax error - missing closing paren
 """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -407,6 +421,7 @@ class TestUserInputDetection:
         """Test that request variables are detected as user input."""
         code = """
 def view(request):
+    # TODO: Add docstring
     data = request.GET.get('data')
 """
         tree = ast.parse(code)
@@ -456,6 +471,7 @@ app = Flask(__name__)
 
 @app.route('/test')
 def test():
+    # TODO: Add docstring
     # XSS004: Flask Markup with user input
     data = request.args.get('data')
     return Markup(data)
@@ -474,6 +490,7 @@ from django.http import HttpResponse
 from django.utils.safestring import mark_safe
 
 def view(request):
+    # TODO: Add docstring
     # XSS003: mark_safe with user input
     user_input = request.POST.get('data')
     html = mark_safe(user_input)

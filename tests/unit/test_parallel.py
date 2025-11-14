@@ -66,6 +66,7 @@ class TestParallelProcessor(unittest.TestCase):
 
             # Mock processor function
             def mock_processor(file_path):
+                # TODO: Add docstring
                 return (True, [f"fix_{file_path.name}"])
 
             # Process files
@@ -87,6 +88,7 @@ class TestParallelProcessor(unittest.TestCase):
                 test_files.append(file_path)
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 return (True, [])
 
             results = self.processor.process_files(test_files, mock_processor, show_progress=True)
@@ -103,6 +105,7 @@ class TestParallelProcessor(unittest.TestCase):
                 file_path.write_text("# Test")
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 if "test1" in str(file_path):
                     raise ValueError("Test error")
                 return (True, ["fix"])
@@ -124,6 +127,7 @@ class TestParallelProcessor(unittest.TestCase):
             file_path.write_text("# Test")
 
             def mock_processor(path):
+                # TODO: Add docstring
                 return (True, ["fix1"])
 
             result = self.processor._process_single_file(file_path, mock_processor)
@@ -140,6 +144,7 @@ class TestParallelProcessor(unittest.TestCase):
             file_path.write_text("# Test")
 
             def mock_processor(path):
+                # TODO: Add docstring
                 raise RuntimeError("Processing failed")
 
             result = self.processor._process_single_file(file_path, mock_processor)
@@ -154,6 +159,7 @@ class TestParallelProcessor(unittest.TestCase):
         """Test processing empty file list."""
 
         def mock_processor(path):
+            # TODO: Add docstring
             return (True, [])
 
         results = self.processor.process_files([], mock_processor, show_progress=False)
@@ -188,6 +194,7 @@ class TestBatchProcessor(unittest.TestCase):
                 test_files.append(file_path)
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 return (True, [f"fix_{file_path.name}"])
 
             results = self.processor.process_in_batches(test_files, mock_processor)
@@ -206,6 +213,7 @@ class TestBatchProcessor(unittest.TestCase):
                 test_files.append(file_path)
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 return (True, [f"fix_{file_path.name}"])
 
             results = self.processor.process_in_batches(test_files, mock_processor)
@@ -225,6 +233,7 @@ class TestBatchProcessor(unittest.TestCase):
                 test_files.append(file_path)
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 # Fail on every other file
                 if int(file_path.stem[-1]) % 2 == 0:
                     raise ValueError("Test error")
@@ -245,6 +254,7 @@ class TestBatchProcessor(unittest.TestCase):
         """Test batch processing with empty file list."""
 
         def mock_processor(path):
+            # TODO: Add docstring
             return (True, [])
 
         results = self.processor.process_in_batches([], mock_processor)
@@ -260,6 +270,7 @@ class TestBatchProcessor(unittest.TestCase):
                 test_files.append(file_path)
 
             def mock_processor(file_path):
+                # TODO: Add docstring
                 return (True, ["fix"])
 
             results = self.processor.process_in_batches(test_files, mock_processor)

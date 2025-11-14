@@ -170,6 +170,7 @@ if p.exists():
         """Test that code without os import doesn't trigger false positives."""
         code = """
 def my_function():
+    # TODO: Add docstring
     return "result"
 """
         checker = PathlibChecker()
@@ -250,6 +251,7 @@ class TestPathlibIntegration:
 import os
 
 def process_files(directory):
+    # TODO: Add docstring
     if os.path.exists(directory):
         for name in os.listdir(directory):
             full_path = os.path.join(directory, name)
@@ -340,6 +342,7 @@ if operating_system.path.exists("/tmp"):
         """Test handling of syntax errors."""
         code = """
 def broken(
+    # TODO: Add docstring
     # Unclosed parenthesis
 """
         checker = PathlibChecker()
@@ -359,6 +362,7 @@ def broken(
         """Test code without os imports."""
         code = """
 def calculate(x, y):
+    # TODO: Add docstring
     return x + y
 """
         checker = PathlibChecker()

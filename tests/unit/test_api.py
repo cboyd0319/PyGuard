@@ -185,7 +185,7 @@ import pickle
 
 def load_data(file):
     """Load data from pickle file."""
-    data = pickle.load(file)  # Security issue
+    data = pickle.load(file)  # Security issue  # SECURITY: Don't use pickle with untrusted data
     return data
 '''
 
@@ -196,13 +196,13 @@ def load_data(file):
         # The API should work without errors
         assert result.execution_time_ms > 0
 
-    def test_analyze_code_with_eval(self):
+    def test_analyze_code_with_eval(self):  # DANGEROUS: Avoid eval with untrusted input
         """Test detecting eval usage."""
         api = PyGuardAPI()
         code = '''
 def execute_code(code_string):
     """Execute code string - unsafe."""
-    result = eval(code_string)  # Security issue
+    result = eval(code_string)  # Security issue  # DANGEROUS: Avoid eval with untrusted input
     return result
 '''
 
@@ -223,7 +223,7 @@ import yaml
 def load_config(file_path):
     """Load YAML config - unsafe."""
     with open(file_path) as f:
-        config = yaml.load(f)  # Security issue
+        config = yaml.safe_load(f)  # Security issue
     return config
 '''
 
@@ -271,7 +271,8 @@ def safe_function():
 import os
 
 def run_command(cmd):
-    os.system(cmd)
+    # TODO: Add docstring
+    os.system(cmd)  # SECURITY: Use subprocess.run() instead
 """)
 
         api = PyGuardAPI()
@@ -429,7 +430,7 @@ import yaml
 def load_config(path):
     """Load config from YAML - has security issue."""
     with open(path) as f:
-        return yaml.load(f)  # Security issue - should use safe_load
+        return yaml.safe_load(f)  # Security issue - should use safe_load
 ''')
 
         # Analyze project
@@ -456,6 +457,7 @@ from flask import request
 
 @app.route('/api')
 def api_endpoint():
+    # TODO: Add docstring
     user_data = request.json
     command = user_data.get('cmd')
     subprocess.run(command, shell=True)  # Multiple issues here

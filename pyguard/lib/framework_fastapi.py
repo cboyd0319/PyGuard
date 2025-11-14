@@ -48,6 +48,7 @@ class FastAPISecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting FastAPI security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -1465,6 +1466,7 @@ class FastAPISecurityChecker:
     """Main checker for FastAPI security vulnerabilities."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger(__name__)
         self.file_ops = FileOperations()
 

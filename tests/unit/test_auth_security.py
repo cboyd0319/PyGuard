@@ -44,7 +44,7 @@ session_id = random.randint(1000, 9999)
         """Detect session ID using random.random()."""
         code = """
 import random
-session_token = str(random.random())
+session_token = str(random.random())  # SECURITY: Use secrets module for cryptographic randomness
 """
         tree = ast.parse(code)
         visitor = AuthSecurityVisitor(Path("test.py"), code)
@@ -94,7 +94,7 @@ session_id = uuid.uuid4()
         assert len(violations) == 0
 
     def test_fix_random_randint_to_secrets(self):
-        """Test auto-fix: random.randint() → secrets.randbelow()."""
+        """Test auto-fix: random.randint() → secrets.randbelow()."""  # SECURITY: Use secrets module for cryptographic randomness
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("import random\nsession_id = random.randint(1000, 9999)")
             f.flush()
@@ -117,7 +117,7 @@ class TestHardcodedCredentials:
     def test_detect_hardcoded_password(self):
         """Detect hardcoded password in variable."""
         code = """
-password = "MySecretPassword123"
+password = "MySecretPassword123"  # SECURITY: Use environment variables or config files
 """
         tree = ast.parse(code)
         visitor = AuthSecurityVisitor(Path("test.py"), code)
@@ -185,6 +185,7 @@ class TestTimingAttack:
         """Detect direct password comparison using ==."""
         code = """
 def authenticate(user_password, stored_password):
+    # TODO: Add docstring
     if user_password == stored_password:
         return True
 """
@@ -200,6 +201,7 @@ def authenticate(user_password, stored_password):
         """Detect direct token comparison."""
         code = """
 def verify_token(received_token, expected_token):
+    # TODO: Add docstring
     return received_token == expected_token
 """
         tree = ast.parse(code)
@@ -214,6 +216,7 @@ def verify_token(received_token, expected_token):
         code = """
 import hmac
 def verify_token(received_token, expected_token):
+    # TODO: Add docstring
     return hmac.compare_digest(received_token, expected_token)
 """
         tree = ast.parse(code)
@@ -232,6 +235,7 @@ class TestSessionFixation:
         code = """
 from flask import session
 def user_login(username, password):
+    # TODO: Add docstring
     session['username'] = username
     return True
 """
@@ -249,6 +253,7 @@ def user_login(username, password):
         code = """
 from flask import session
 def user_login(username, password):
+    # TODO: Add docstring
     session.regenerate()
     session['username'] = username
     return True
@@ -265,6 +270,7 @@ def user_login(username, password):
         """No issue for non-login functions."""
         code = """
 def helper_function():
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -287,6 +293,7 @@ app = Flask(__name__)
 
 @app.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
+    # TODO: Add docstring
     # Delete user
     pass
 """
@@ -307,6 +314,7 @@ app = Flask(__name__)
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
+    # TODO: Add docstring
     return "Admin Panel"
 """
         tree = ast.parse(code)
@@ -327,6 +335,7 @@ app = Flask(__name__)
 @app.route('/users/<int:id>', methods=['DELETE'])
 @login_required
 def delete_user(id):
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -345,6 +354,7 @@ class TestIDORVulnerability:
         """Detect IDOR in function that gets resource by ID."""
         code = """
 def get_document(document_id):
+    # TODO: Add docstring
     return database.query(Document).filter_by(id=document_id).first()
 """
         tree = ast.parse(code)
@@ -359,6 +369,7 @@ def get_document(document_id):
         """Detect IDOR with 'pk' parameter name."""
         code = """
 def fetch_record(pk):
+    # TODO: Add docstring
     return Model.objects.get(pk=pk)
 """
         tree = ast.parse(code)
@@ -372,6 +383,7 @@ def fetch_record(pk):
         """No issue when ownership is verified."""
         code = """
 def get_document(document_id, current_user):
+    # TODO: Add docstring
     doc = database.query(Document).filter_by(id=document_id).first()
     if doc.owner_id == current_user.id:
         return doc
@@ -388,6 +400,7 @@ def get_document(document_id, current_user):
         """No issue when permission check is called."""
         code = """
 def retrieve_item(item_id):
+    # TODO: Add docstring
     item = get_item(item_id)
     check_permission(item)
     return item
@@ -545,6 +558,7 @@ app = Flask(__name__)
 
 @app.route('/login', methods=['POST'])
 def login():
+    # TODO: Add docstring
     username = request.form['username']
     password = request.form['password']
 
@@ -574,6 +588,7 @@ from django.shortcuts import get_object_or_404
 from .models import Order
 
 def order_detail(request, order_id):
+    # TODO: Add docstring
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'order.html', {'order': order})
 """
@@ -595,6 +610,7 @@ app = FastAPI()
 
 @app.post("/login")
 def login(credentials: dict):
+    # TODO: Add docstring
     payload = {"user_id": 123, "role": "admin"}
     token = jwt.encode(payload, "secret", algorithm="HS256")
     return {"access_token": token}
@@ -618,7 +634,7 @@ class TestWeakPasswordResetToken:
         """Detect password reset token using random module."""
         code = """
 import random
-reset_token = str(random.randint(100000, 999999))
+reset_token = str(random.randint(100000, 999999))  # SECURITY: Use secrets module for cryptographic randomness
 """
         tree = ast.parse(code)
         visitor = AuthSecurityVisitor(Path("test.py"), code)
@@ -629,11 +645,11 @@ reset_token = str(random.randint(100000, 999999))
         assert violations[0].severity == RuleSeverity.CRITICAL
 
     def test_detect_weak_reset_token_choice(self):
-        """Detect reset token using random.choice()."""
+        """Detect reset token using random.choice()."""  # SECURITY: Use secrets module for cryptographic randomness
         code = """
 import random
 import string
-password_reset_token = ''.join(random.choice(string.ascii_letters) for _ in range(20))
+password_reset_token = ''.join(random.choice(string.ascii_letters) for _ in range(20))  # SECURITY: Use secrets module for cryptographic randomness
 """
         tree = ast.parse(code)
         visitor = AuthSecurityVisitor(Path("test.py"), code)
@@ -677,6 +693,7 @@ class TestPrivilegeEscalation:
         """Detect setting user role from request parameter."""
         code = """
 def update_user(request):
+    # TODO: Add docstring
     user.role = request.form['role']
     user.save()
 """
@@ -692,6 +709,7 @@ def update_user(request):
         """Detect setting is_admin from params."""
         code = """
 def register(data):
+    # TODO: Add docstring
     user.is_admin = data['is_admin']
 """
         tree = ast.parse(code)
@@ -717,6 +735,7 @@ user.permission = form['permission']
         """No issue when role is set from safe source."""
         code = """
 def create_user():
+    # TODO: Add docstring
     user.role = 'user'  # Default role
     user.save()
 """
@@ -736,6 +755,7 @@ class TestMissingMFA:
         code = """
 from flask import Flask, request
 def login():
+    # TODO: Add docstring
     username = request.form['username']
     password = request.form['password']
     if check_password(username, password):
@@ -755,6 +775,7 @@ def login():
         code = """
 from flask import Flask
 def login(credentials):
+    # TODO: Add docstring
     if check_password(credentials):
         if verify_totp(credentials['totp_code']):
             return "Login successful"
@@ -771,6 +792,7 @@ def login(credentials):
         """No issue when MFA check is present."""
         code = """
 def signin(user):
+    # TODO: Add docstring
     if authenticate(user):
         return check_mfa(user)
 """
@@ -791,6 +813,7 @@ class TestInsecureRememberMe:
         code = """
 from flask import make_response
 def login():
+    # TODO: Add docstring
     response = make_response("OK")
     response.set_cookie('remember_me', value=password)
 """
@@ -835,6 +858,7 @@ class TestWeakPasswordPolicy:
         """Detect password validation with short minimum length."""
         code = """
 def validate_password(pwd):
+    # TODO: Add docstring
     if len(pwd) >= 4:
         return True
     return False
@@ -851,6 +875,7 @@ def validate_password(pwd):
         """Detect 6-character password policy."""
         code = """
 def check_password_strength(password):
+    # TODO: Add docstring
     return len(password) >= 6
 """
         tree = ast.parse(code)
@@ -864,6 +889,7 @@ def check_password_strength(password):
         """No issue with 8+ character requirement."""
         code = """
 def validate_password(pwd):
+    # TODO: Add docstring
     if len(pwd) >= 8:
         return True
 """
@@ -882,6 +908,7 @@ class TestNullByteAuthBypass:
         """Detect direct password comparison vulnerable to null bytes."""
         code = """
 def authenticate(username, password):
+    # TODO: Add docstring
     if password == stored_password:
         return True
 """
@@ -928,6 +955,7 @@ class TestLDAPInjection:
         code = """
 import ldap
 def authenticate(username):
+    # TODO: Add docstring
     conn = ldap.initialize('ldap://server')
     # Direct f-string in search call
     conn.search_s("ou=users", ldap.SCOPE_SUBTREE, f"(uid={username})")

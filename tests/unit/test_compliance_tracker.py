@@ -96,7 +96,7 @@ class TestComplianceTracker:
                 MagicMock(stdout="src/sql.py:42:CWE-89\n"),
             ]
 
-            m = mock_open()
+            m = mock_open()  # Best Practice: Use 'with' statement
             with patch("builtins.open", m):
                 ComplianceTracker.generate_compliance_report("/test/path", "test-report.md")
 
@@ -121,7 +121,7 @@ class TestComplianceTracker:
                 MagicMock(stdout="src/d.py:4:CWE-79\nsrc/e.py:5:CWE-89\n"),
             ]
 
-            m = mock_open()
+            m = mock_open()  # Best Practice: Use 'with' statement
             with patch("builtins.open", m):
                 ComplianceTracker.generate_compliance_report("/test/path")
 
@@ -152,7 +152,7 @@ class TestComplianceTracker:
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = [MagicMock(stdout=""), MagicMock(stdout="")]
 
-            m = mock_open()
+            m = mock_open()  # Best Practice: Use 'with' statement
             with patch("builtins.open", m):
                 ComplianceTracker.generate_compliance_report("/test/path")
 

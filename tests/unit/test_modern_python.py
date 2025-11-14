@@ -16,7 +16,9 @@ class TestModernPythonVisitor:
         """Test detection of old-style super() calls."""
         code = """
 class MyClass(BaseClass):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super(MyClass, self).__init__()
 """
         tree = ast.parse(code)
@@ -33,6 +35,7 @@ class MyClass(BaseClass):
 from typing import List
 
 def func() -> List[int]:
+    # TODO: Add docstring
     return [1, 2, 3]
 """
         tree = ast.parse(code)
@@ -51,6 +54,7 @@ def func() -> List[int]:
 from typing import Optional
 
 def func(x: Optional[str]) -> None:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -69,6 +73,7 @@ def func(x: Optional[str]) -> None:
 from typing import Union
 
 def func(x: Union[str, int]) -> None:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -117,10 +122,13 @@ print("hello")
         """Test that modern code has no issues."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super().__init__()
 
 def func(x: str | None) -> list[int]:
+    # TODO: Add docstring
     return [1, 2, 3]
 """
         tree = ast.parse(code)
@@ -139,7 +147,9 @@ class TestModernPythonFixer:
         """Test fixing old-style super() calls."""
         code = """
 class MyClass(BaseClass):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super(MyClass, self).__init__()
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -187,6 +197,7 @@ from typing import List, Optional
 import six
 
 def func() -> List[str]:
+    # TODO: Add docstring
     return []
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -238,6 +249,7 @@ y: "str" = "hello"
         """Test detection of isinstance with tuple instead of | (UP038)."""
         code = """
 def check_type(x):
+    # TODO: Add docstring
     if isinstance(x, (int, str, float)):
         return True
     return False
@@ -292,6 +304,7 @@ async def func():
 from enum import Enum
 
 class Color(str, Enum):
+    # TODO: Add docstring
     RED = "red"
     GREEN = "green"
     BLUE = "blue"
@@ -334,6 +347,7 @@ class TestModernPythonEdgeCases:
 from typing import {typing_import}
 
 def func() -> {typing_import}[int]:
+    # TODO: Add docstring
     return []
 """
         tree = ast.parse(code)
@@ -375,6 +389,7 @@ result = os.path.dirname("/foo/bar")
 
         # Create a mock node with invalid line number
         class MockNode:
+            # TODO: Add docstring
             lineno = 999  # Beyond source length
 
         # Act
@@ -391,6 +406,7 @@ result = os.path.dirname("/foo/bar")
 
         # Create a mock node with zero line number
         class MockNode:
+            # TODO: Add docstring
             lineno = 0
 
         # Act
@@ -460,6 +476,7 @@ class TestModernPythonFixerOperations:
 from collections.abc import Sequence
 
 def process(items: list[int]) -> dict[str, int]:
+    # TODO: Add docstring
     return {str(i): i for i in items}
 """
         test_file = tmp_path / "modern.py"
@@ -478,6 +495,7 @@ def process(items: list[int]) -> dict[str, int]:
         # Arrange
         code = """
 def broken(
+    # TODO: Add docstring
     # Missing closing paren
 """
         test_file = tmp_path / "broken.py"
@@ -511,7 +529,9 @@ class TestSuperCallDetection:
         # Arrange
         code = """
 class MyClass(BaseClass):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super(MyClass, self).__init__()
 """
         tree = ast.parse(code)
@@ -528,7 +548,9 @@ class MyClass(BaseClass):
         # Arrange
         code = """
 class MyClass(BaseClass):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super().__init__()
 """
         tree = ast.parse(code)
@@ -579,6 +601,7 @@ class TestImportModernization:
 from typing import Optional
 
 def func(x: Optional[str]) -> None:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -598,6 +621,7 @@ def func(x: Optional[str]) -> None:
 from typing import Union
 
 def func(x: Union[str, int]) -> None:
+    # TODO: Add docstring
     pass
 """
         tree = ast.parse(code)
@@ -621,6 +645,7 @@ class TestMultipleIssuesInOneFile:
 from typing import List, Dict, Optional, Union
 
 def process(
+    # TODO: Add docstring
     items: List[str],
     mapping: Dict[str, int],
     optional_value: Optional[int],
@@ -649,10 +674,13 @@ import six
 from typing import List
 
 class MyClass(BaseClass):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super(MyClass, self).__init__()
 
     def process(self, items: List[int]):
+        # TODO: Add docstring
         message = "Count: {}".format(len(items))
         return message
 """

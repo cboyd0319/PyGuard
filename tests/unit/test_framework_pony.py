@@ -52,6 +52,7 @@ from pony.orm import *
 
 @db_session
 def get_user(user_id):
+    # TODO: Add docstring
     return User.get(id=user_id)
 """
         violations = analyze_pony_security(Path("test.py"), code)
@@ -66,6 +67,7 @@ from pony.orm import *
 
 @db_session
 def get_user(user_id):
+    # TODO: Add docstring
     try:
         return User.get(id=user_id)
     except Exception as e:
@@ -96,7 +98,7 @@ results = select(u for u in User)
         code = """
 from pony.orm import *
 
-results = select(u for u in User if u.active == True)
+results = select(u for u in User if u.active   # Use if var: instead)
 """
         violations = analyze_pony_security(Path("test.py"), code)
         gen_violations = [v for v in violations if v.rule_id == "PON004"]
@@ -168,6 +170,7 @@ class TestPonyEdgeCases:
         code = """
 @db_session
 def get_user():
+    # TODO: Add docstring
     pass
 """
         violations = analyze_pony_security(Path("test.py"), code)
@@ -180,6 +183,7 @@ from pony.orm import *
 
 @db_session
 def query_user():
+    # TODO: Add docstring
     query = f"SELECT * FROM users WHERE id = {user_id}"
     db.execute(query)
 """

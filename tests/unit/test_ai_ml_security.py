@@ -196,6 +196,7 @@ class TestAIML005ModelExtraction:
         """Detect API endpoint exposing predictions."""
         code = """
 def api_predict(request):
+    # TODO: Add docstring
     input_data = request.json
     return model.predict(input_data)
 """
@@ -207,6 +208,7 @@ def api_predict(request):
         """Non-API predict should not trigger."""
         code = """
 def train_model(data):
+    # TODO: Add docstring
     model.fit(data)
     return model.predict(test_data)
 """
@@ -222,6 +224,7 @@ class TestAIML006AIBias:
         """Detect training function without fairness checks."""
         code = """
 def train_model(data):
+    # TODO: Add docstring
     model.fit(data)
     model.validate(test_data)
     model.save("model.pkl")
@@ -235,6 +238,7 @@ def train_model(data):
         """Training with fairness check should not trigger."""
         code = """
 def train_model(data):
+    # TODO: Add docstring
     model.fit(data)
     fairness_score = check_demographic_parity(model, data)
     model.save("model.pkl")
@@ -251,6 +255,7 @@ class TestAIML010FederatedLearning:
         """Detect federated learning without differential privacy."""
         code = """
 def federated_aggregate(client_models):
+    # TODO: Add docstring
     aggregated = average_models(client_models)
     return aggregated
 """
@@ -262,6 +267,7 @@ def federated_aggregate(client_models):
         """Federated learning with DP should not trigger."""
         code = """
 def federated_aggregate(client_models):
+    # TODO: Add docstring
     aggregated = average_models(client_models)
     noised = add_differential_privacy_noise(aggregated)
     return noised
@@ -851,7 +857,7 @@ class TestAIML026TemplateLiteralInjection:
         """Detect JavaScript template literal with eval."""
         code = """
 import openai
-prompt = "${eval('malicious code')}"
+prompt = "${eval('malicious code')}"  # DANGEROUS: Avoid eval with untrusted input
 openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
@@ -861,7 +867,7 @@ openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
         """Detect Jinja2 template with code execution."""
         code = """
 import langchain
-prompt = "{{exec('rm -rf /')}}"
+prompt = "{{exec('rm -rf /')}}"  # DANGEROUS: Avoid exec with untrusted input
 llm.generate(prompt)
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
@@ -877,7 +883,7 @@ openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert any(v.rule_id == "AIML026" for v in violations)
 
-    def test_safe_template_without_exec(self):
+    def test_safe_template_without_exec(self):  # DANGEROUS: Avoid exec with untrusted input
         """Template syntax without dangerous code is safe."""
         code = """
 import openai
@@ -1269,6 +1275,7 @@ class TestEdgeCases:
         """Handle invalid Python syntax gracefully."""
         code = """
 def invalid(
+    # TODO: Add docstring
     # Missing closing parenthesis
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
@@ -1284,6 +1291,7 @@ def invalid(
         """Files without AI/ML frameworks should not trigger false positives."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     data = [1, 2, 3]
     return sum(data)
 """
@@ -2002,6 +2010,7 @@ class TestAIML459CloudFunctionsMLServingGaps:
         code = """
 from google.cloud import functions
 def ml_predict(request):
+    # TODO: Add docstring
     model = load_model()
     prediction = model.predict(request.json)
     return prediction
@@ -2017,6 +2026,7 @@ cloud_function = functions.deploy('ml-predict', handler=ml_predict)
 from google.cloud import functions
 from google.auth import iam
 def ml_predict(request):
+    # TODO: Add docstring
     auth = iam.verify_token(request.headers['Authorization'])
     model = load_model()
     prediction = model.predict(request.json)
@@ -2174,7 +2184,7 @@ class TestAIML465GeneratedCodeSecurity:
         """Detect code generation without security validation."""
         code = """
 generated_code = model.generate("Write a function to process user input")
-exec(generated_code)
+exec(generated_code)  # DANGEROUS: Avoid exec with untrusted input
 """
         violations = analyze_ai_ml_security(Path("test.py"), code)
         assert any(v.rule_id == "AIML465" for v in violations)
@@ -3216,7 +3226,7 @@ model = AutoModel.from_pretrained('model-name')
 
         code = """import openai
 
-openai.api_key = "sk-1234567890abcdef"
+openai.api_key = "sk-1234567890abcdef"  # SECURITY: Use environment variables or config files
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -3402,7 +3412,7 @@ model = torch.load('model.pth')
 
 # This would require an unsafe fix to convert to safetensors
 with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+    model = pickle.load(f)  # SECURITY: Don't use pickle with untrusted data
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -3584,11 +3594,14 @@ class TestAIMLAutoFixIntegration:
 import torch.nn as nn
 
 class MyModel(nn.Module):
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         super().__init__()
         self.layer = nn.Linear(10, 5)
 
     def forward(self, x):
+        # TODO: Add docstring
         return self.layer(x)
 
 # Load pre-trained weights
@@ -3780,6 +3793,7 @@ prompt = "{}".format(user_message)
         code = """import markdown
 
 def render_user_content(user_markdown):
+    # TODO: Add docstring
     html = markdown.markdown(user_markdown)
     return html
 """
@@ -3819,6 +3833,7 @@ def render_user_content(user_markdown):
         code = """import json
 
 def create_structured_prompt(user_data):
+    # TODO: Add docstring
     payload = json.dumps({"query": user_data})
     return send_to_api(payload)
 """
@@ -3893,6 +3908,7 @@ user_query = sanitize(user_input)
         code = """import base64
 
 def decode_user_input(encoded_input):
+    # TODO: Add docstring
     decoded = base64.b64decode(encoded_input)
     return send_to_llm(decoded)
 """
@@ -3931,6 +3947,7 @@ data = base64.decode(user_data)
         code = """import codecs
 
 def deobfuscate_input(obfuscated):
+    # TODO: Add docstring
     decoded = codecs.decode(obfuscated, 'rot13')
     return process(decoded)
 """
@@ -3969,6 +3986,7 @@ import base64
 import json
 
 def process_complex_input(user_input, user_markdown, encoded_data):
+    # TODO: Add docstring
     # Unicode issues
     prompt = user_input
 
@@ -4234,6 +4252,7 @@ result = re.sub(r"{var}", user_input, prompt)
 from string import Template
 
 def complex_prompt_processing(user_input, user_prompt, user_message):
+    # TODO: Add docstring
     # Escape sequences
     prompt1 = f"Process: {user_input}"
 
@@ -4288,6 +4307,7 @@ class TestGroupCExternalContentFixes:
         code = """import requests
 
 def fetch_and_process(url):
+    # TODO: Add docstring
     content = requests.get(url).text
     prompt = f"Analyze this: {content}"
     return send_to_llm(prompt)
@@ -4312,7 +4332,7 @@ def fetch_and_process(url):
 import urllib
 
 data1 = requests.get(url).text
-data2 = urllib.request.urlopen(url).read()
+data2 = urllib.request.urlopen(url).read()  # Best Practice: Use 'with' statement
 data3 = fetch(external_url)
 """
         test_file = tmp_path / "test.py"
@@ -4330,6 +4350,7 @@ data3 = fetch(external_url)
         code = """import openai
 
 def process_api_data(api_client):
+    # TODO: Add docstring
     response = api_client.call()
     prompt = f"Process this: {response}"
     return openai.ChatCompletion.create(messages=[{"role": "user", "content": prompt}])
@@ -4370,6 +4391,7 @@ prompt = f"Use {api_result}"
         code = """import sqlite3
 
 def query_and_prompt(query):
+    # TODO: Add docstring
     cursor.execute(query)
     results = cursor.fetchall()
     prompt = f"Analyze: {results}"
@@ -4411,6 +4433,7 @@ prompt = f"Data: {data1}"
         code = """from langchain.vectorstores import FAISS
 
 def rag_query(question):
+    # TODO: Add docstring
     vector_store = FAISS.load_local("index")
     docs = vector_store.retrieve(question)
     context = "\\n".join([doc.page_content for doc in docs])
@@ -4452,6 +4475,7 @@ context = embeddings.get_context(user_query)
         code = """from chromadb import Client
 
 def vector_search(query):
+    # TODO: Add docstring
     client = Client()
     results = vector_store.similarity_search(query, k=5)
     context = "\\n".join([r.page_content for r in results])
@@ -4529,6 +4553,7 @@ prompt = f"Context: {context}"
 from chromadb import Client
 
 def complex_rag_pipeline(query, chat_history):
+    # TODO: Add docstring
     # URL-based injection
     external_data = requests.get("https://api.example.com/data").text
 
@@ -4577,6 +4602,7 @@ class TestGroupDLLMAPISecurityFixes:
         code = """import openai
 
 def generate_response(prompt):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
@@ -4625,6 +4651,7 @@ response = openai.ChatCompletion.create(
         code = """import openai
 
 def stream_response(prompt):
+    # TODO: Add docstring
     for chunk in openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
@@ -4651,6 +4678,7 @@ def stream_response(prompt):
         code = """import openai
 
 def call_with_functions(prompt, user_functions):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
@@ -4699,6 +4727,7 @@ def call_with_functions(prompt, user_functions):
         code = """import openai
 
 def create_chat(user_input):
+    # TODO: Add docstring
     messages = [
         {"role": "system", "content": user_input},
         {"role": "user", "content": "Hello"}
@@ -4727,6 +4756,7 @@ def create_chat(user_input):
         code = """import openai
 
 def query_model(request):
+    # TODO: Add docstring
     model_name = request.get('model')
     response = openai.ChatCompletion.create(
         model=model_name,
@@ -4775,7 +4805,7 @@ response = openai.ChatCompletion.create(
 
         code = """def build_conversation(history):
     messages = []
-    for msg in history:
+    for msg in history:  # Consider list comprehension
         messages.append({"role": "user", "content": msg})
     return messages
 """
@@ -4798,6 +4828,7 @@ response = openai.ChatCompletion.create(
         code = """import openai
 
 def batch_generate(prompts):
+    # TODO: Add docstring
     results = []
     for prompt in prompts:
         response = openai.ChatCompletion.create(
@@ -4826,6 +4857,7 @@ def batch_generate(prompts):
         code = """import openai
 
 def complex_llm_app(user_model, user_prompt, chat_history, functions):
+    # TODO: Add docstring
     # Hardcoded model name
     model = "gpt-4"
 
@@ -4838,7 +4870,7 @@ def complex_llm_app(user_model, user_prompt, chat_history, functions):
     ]
 
     # Build history without token counting
-    for msg in chat_history:
+    for msg in chat_history:  # Consider list comprehension
         messages.append({"role": "user", "content": msg})
 
     # Streaming without validation
@@ -4892,6 +4924,7 @@ class TestGroupEOutputValidationFixes:
         code = """import openai
 
 def display_result(user_query):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": user_query}]
@@ -4919,6 +4952,7 @@ def display_result(user_query):
 import html
 
 def display_result(user_query):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": user_query}]
@@ -4943,11 +4977,12 @@ def display_result(user_query):
         code = """import openai
 
 def execute_llm_code(prompt):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    exec(response.content)
+    exec(response.content)  # DANGEROUS: Avoid exec with untrusted input
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -4961,12 +4996,12 @@ def execute_llm_code(prompt):
             assert "AIML062" in fixed_code
             assert "CRITICAL" in fixed_code
 
-    def test_code_execution_with_eval(self, tmp_path):
+    def test_code_execution_with_eval(self, tmp_path):  # DANGEROUS: Avoid eval with untrusted input
         """Test AIML062: Eval on LLM output."""
         from pyguard.lib.ai_ml_security import AIMLSecurityFixer
 
         code = """def calculate_from_llm(llm_response):
-    result = eval(llm_response.content)
+    result = eval(llm_response.content)  # DANGEROUS: Avoid eval with untrusted input
     return result
 """
         test_file = tmp_path / "test.py"
@@ -4988,6 +5023,7 @@ def execute_llm_code(prompt):
         code = """import openai
 
 def run_generated_query(user_prompt):
+    # TODO: Add docstring
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": user_prompt}]
@@ -5030,6 +5066,7 @@ def run_generated_query(user_prompt):
         code = """from flask import render_template_string
 
 def show_llm_response(llm_response):
+    # TODO: Add docstring
     return render_template_string(llm_response.content)
 """
         test_file = tmp_path / "test.py"
@@ -5051,6 +5088,7 @@ def show_llm_response(llm_response):
         code = """import streamlit as st
 
 def display_generated_html(generated_html):
+    # TODO: Add docstring
     st.markdown(generated_html, unsafe_allow_html=True)
 """
         test_file = tmp_path / "test.py"
@@ -5071,6 +5109,7 @@ def display_generated_html(generated_html):
         code = """import subprocess
 
 def execute_llm_command(llm_response):
+    # TODO: Add docstring
     subprocess.run(llm_response.content, shell=True)
 """
         test_file = tmp_path / "test.py"
@@ -5092,7 +5131,8 @@ def execute_llm_command(llm_response):
         code = """import os
 
 def run_generated_cmd(generated_command):
-    os.system(generated_command)
+    # TODO: Add docstring
+    os.system(generated_command)  # SECURITY: Use subprocess.run() instead
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -5131,6 +5171,7 @@ def run_generated_cmd(generated_command):
         code = """from pathlib import Path
 
 def process_llm_path(llm_file):
+    # TODO: Add docstring
     file_path = Path(llm_file)
     return file_path.read_text()
 """
@@ -5148,7 +5189,7 @@ def process_llm_path(llm_file):
         from pyguard.lib.ai_ml_security import AIMLSecurityFixer
 
         code = """def run_llm_code(llm_code):
-    exec(llm_code.content)
+    exec(llm_code.content)  # DANGEROUS: Avoid exec with untrusted input
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -5162,13 +5203,13 @@ def process_llm_path(llm_file):
             assert "AIML067" in fixed_code
             assert "file" in fixed_code.lower()
 
-    def test_arbitrary_file_access_with_compile(self, tmp_path):
+    def test_arbitrary_file_access_with_compile(self, tmp_path):  # DANGEROUS: Avoid compile with untrusted input
         """Test AIML067: Compile with LLM code."""
         from pyguard.lib.ai_ml_security import AIMLSecurityFixer
 
         code = """def compile_llm_code(generated_code):
-    compiled = compile(generated_code, '<string>', 'exec')
-    exec(compiled)
+    compiled = compile(generated_code, '<string>', 'exec')  # DANGEROUS: Avoid compile with untrusted input
+    exec(compiled)  # DANGEROUS: Avoid exec with untrusted input
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -5186,6 +5227,7 @@ def process_llm_path(llm_file):
         code = """import logging
 
 def log_llm_response(llm_response):
+    # TODO: Add docstring
     logging.info(llm_response.content)
 """
         test_file = tmp_path / "test.py"
@@ -5297,6 +5339,7 @@ import subprocess
 import logging
 
 def dangerous_llm_app(user_query):
+    # TODO: Add docstring
     # Get LLM response
     response = openai.ChatCompletion.create(
         model="gpt-4",
@@ -5304,7 +5347,7 @@ def dangerous_llm_app(user_query):
     )
 
     # Execute generated code (AIML062)
-    exec(response.content)
+    exec(response.content)  # DANGEROUS: Avoid exec with untrusted input
 
     # Run generated SQL (AIML063)
     cursor.execute(response.content)

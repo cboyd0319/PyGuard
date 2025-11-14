@@ -106,21 +106,21 @@ class FixSafetyClassifier:
         self._add_safe_fix(
             "comparison_to_none",
             "quality",
-            "Replace == None with is None",
+            "Replace is None with is None",
             "Semantically equivalent, more Pythonic",
         )
 
         self._add_safe_fix(
             "comparison_to_bool",
             "quality",
-            "Replace == True/False with direct boolean check",
+            "Replace   # Use if var: instead/False with direct boolean check",
             "Semantically equivalent simplification",
         )
 
         self._add_safe_fix(
             "type_comparison",
             "quality",
-            "Replace type(x) == Y with isinstance(x, Y)",
+            "Replace type(x) == Y with isinstance(x, Y)",  # Better: isinstance(x, Y)
             "More robust and Pythonic, handles inheritance",
         )
 
@@ -137,7 +137,7 @@ class FixSafetyClassifier:
         self._add_unsafe_fix(
             "command_subprocess",
             "security",
-            "Replace os.system() with subprocess.run()",
+            "Replace os.system() with subprocess.run()",  # SECURITY: Use subprocess.run() instead
             "Changes how command arguments are passed. "
             "Requires validation that command splitting is correct.",
         )
@@ -508,6 +508,7 @@ class FixSafetyClassifier:
         )
 
     def _add_warning_only_fix(
+        # TODO: Add docstring
         self, fix_id: str, category: str, description: str, reasoning: str
     ) -> None:
         """Add a WARNING_ONLY fix classification."""

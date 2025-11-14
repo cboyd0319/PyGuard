@@ -24,10 +24,13 @@ class TestTornadoXSRFProtection:
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def check_xsrf_cookie(self):
+        # TODO: Add docstring
         pass  # XSRF protection disabled
 
     def post(self):
+        # TODO: Add docstring
         self.write("OK")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -72,10 +75,13 @@ class TestTornadoWebSocketOriginValidation:
 import tornado.websocket
 
 class ChatHandler(tornado.websocket.WebSocketHandler):
+    # TODO: Add docstring
     def open(self):
+        # TODO: Add docstring
         print("WebSocket opened")
 
     def on_message(self, message):
+        # TODO: Add docstring
         self.write_message("Echo: " + message)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -89,10 +95,13 @@ class ChatHandler(tornado.websocket.WebSocketHandler):
 import tornado.websocket
 
 class ChatHandler(tornado.websocket.WebSocketHandler):
+    # TODO: Add docstring
     def check_origin(self, origin):
+        # TODO: Add docstring
         return origin in ["https://example.com"]
 
     def open(self):
+        # TODO: Add docstring
         print("WebSocket opened")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -109,7 +118,9 @@ class TestTornadoTemplateAutoEscape:
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.render("template.html", autoescape=None)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -123,7 +134,9 @@ class MyHandler(tornado.web.RequestHandler):
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.render("template.html")  # autoescape on by default
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -142,7 +155,9 @@ import tornado.web
 import os
 
 class FileHandler(tornado.web.StaticFileHandler):
+    # TODO: Add docstring
     def get(self, filename):
+        # TODO: Add docstring
         filepath = os.path.join(self.root, filename)
         # No validation of filename
         with open(filepath) as f:
@@ -164,7 +179,7 @@ import tornado.web
 
 app = tornado.web.Application([
     (r"/", MainHandler),
-], cookie_secret="12345")
+], cookie_secret="12345"  # SECURITY: Use environment variables or config files)
 """
         violations = analyze_tornado_security(Path("test.py"), code)
         [v for v in violations if v.rule_id in ["TORNADO001", "TORNADO002"]]
@@ -177,7 +192,9 @@ app = tornado.web.Application([
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.set_cookie("session_id", "abc123")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -191,7 +208,9 @@ class MyHandler(tornado.web.RequestHandler):
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.set_secure_cookie("session_id", "abc123", secure=True, httponly=True)
 """
         analyze_tornado_security(Path("test.py"), code)
@@ -209,8 +228,10 @@ import tornado.web
 import tornado.gen
 
 class UserHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     @tornado.gen.coroutine
     def get(self):
+        # TODO: Add docstring
         user_id = self.get_argument('id')
         query = "SELECT * FROM users WHERE id = " + user_id
         result = yield self.db.execute(query)
@@ -228,8 +249,10 @@ import tornado.web
 import tornado.gen
 
 class UserHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     @tornado.gen.coroutine
     def get(self):
+        # TODO: Add docstring
         user_id = self.get_argument('id')
         query = "SELECT * FROM users WHERE id = ?"
         result = yield self.db.execute(query, (user_id,))
@@ -251,6 +274,7 @@ import tornado.web
 import time
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     async def get(self):
         time.sleep(5)  # Blocking!
         self.write("OK")
@@ -267,8 +291,10 @@ import tornado.web
 import tornado.gen
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     @tornado.gen.coroutine
     def get(self):
+        # TODO: Add docstring
         yield tornado.gen.sleep(5)
         self.write("OK")
 """
@@ -288,8 +314,10 @@ import tornado.web
 counter = 0
 
 class CounterHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
-        global counter
+        # TODO: Add docstring
+        global counter  # Avoid global variables; consider class attributes
         counter += 1  # Race condition!
         self.write(str(counter))
 """
@@ -338,7 +366,9 @@ class TestTornadoSessionFixation:
 import tornado.web
 
 class LoginHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def post(self):
+        # TODO: Add docstring
         username = self.get_argument('username')
         password = self.get_argument('password')
         if authenticate(username, password):
@@ -360,7 +390,9 @@ class TestTornadoHSTS:
 import tornado.web
 
 class SecureHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.write("Secure content")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -374,10 +406,13 @@ class SecureHandler(tornado.web.RequestHandler):
 import tornado.web
 
 class SecureHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def set_default_headers(self):
+        # TODO: Add docstring
         self.set_header("Strict-Transport-Security", "max-age=31536000")
 
     def get(self):
+        # TODO: Add docstring
         self.write("Secure content")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -395,7 +430,9 @@ class TestTornadoAuthenticationDecorators:
 import tornado.web
 
 class AdminHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         # Sensitive admin operation without auth!
         self.write("Admin panel")
 """
@@ -410,8 +447,10 @@ import tornado.web
 from tornado.web import authenticated
 
 class AdminHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     @authenticated
     def get(self):
+        # TODO: Add docstring
         self.write("Admin panel")
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -429,7 +468,9 @@ class TestTornadoInputSanitization:
 import tornado.web
 
 class SearchHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         query = self.get_argument('q')
         self.write("<h1>Search results for: " + query + "</h1>")
 """
@@ -445,7 +486,9 @@ import tornado.web
 import html
 
 class SearchHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         query = self.get_argument('q')
         safe_query = html.escape(query)
         self.write("<h1>Search results for: " + safe_query + "</h1>")
@@ -465,7 +508,9 @@ class TestTornadoRedirectHandling:
 import tornado.web
 
 class RedirectHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         url = self.get_argument('next')
         self.redirect(url)  # Open redirect!
 """
@@ -480,7 +525,9 @@ class RedirectHandler(tornado.web.RequestHandler):
 import tornado.web
 
 class RedirectHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         url = self.get_argument('next')
         if url.startswith('/'):
             self.redirect(url)
@@ -502,7 +549,9 @@ class TestTornadoTemplateInjection:
 import tornado.web
 
 class GreetHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         name = self.get_argument('name')
         template = "Hello, {{ name }}!"
         # Using user input in template
@@ -523,7 +572,9 @@ class TestTornadoExceptionDisclosure:
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         try:
             risky_operation()
         except Exception as e:
@@ -540,7 +591,9 @@ class MyHandler(tornado.web.RequestHandler):
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         try:
             risky_operation()
         except Exception as e:
@@ -574,7 +627,9 @@ app = tornado.web.Application([
 ], xsrf_cookies=False, cookie_secret="weak")
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         query = self.get_argument('q')
         self.write("<h1>" + query + "</h1>")
 """
@@ -595,7 +650,9 @@ app = tornado.web.Application([
 ], xsrf_cookies=True)
 
 class MainHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.write("Hello, world!")
 """
         tree = ast.parse(code)
@@ -618,6 +675,7 @@ class TestTornadoEdgeCases:
         """Test non-Tornado code doesn't trigger false positives."""
         code = """
 def hello():
+    # TODO: Add docstring
     return "world"
 """
         violations = analyze_tornado_security(Path("test.py"), code)
@@ -638,7 +696,9 @@ import tornado.web
 import tornado.web
 
 class MyHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         # self.set_cookie("session", "abc", secure=False)
         # DO NOT USE INSECURE COOKIES!
         pass
@@ -658,7 +718,9 @@ class TestTornadoPerformance:
 import tornado.web
 
 class MainHandler(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.write("Hello")
 """
         result = benchmark(lambda: analyze_tornado_security(Path("test.py"), code))
@@ -673,7 +735,9 @@ import tornado.web
             [
                 f"""
 class Handler{i}(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.write("Handler {i}")
 """
                 for i in range(50)
@@ -692,7 +756,9 @@ import tornado.web
             [
                 f"""
 class Handler{i}(tornado.web.RequestHandler):
+    # TODO: Add docstring
     def get(self):
+        # TODO: Add docstring
         self.write("Handler {i}")
 """
                 for i in range(200)

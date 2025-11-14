@@ -889,7 +889,7 @@ class TestCLICombinations:
         """Test security fixes with backup enabled."""
         cli = PyGuardCLI()
         test_file = tmp_path / "test.py"
-        test_file.write_text("password = 'secret'\n")
+        test_file.write_text("password = 'secret'  # SECURITY: Use environment variables or config files\n")
 
         result = cli.run_security_fixes([test_file], create_backup=True)
 
@@ -1584,6 +1584,7 @@ class TestMainFunctionAlternative:
         real_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
+            # TODO: Add docstring
             if "notebook_analyzer" in name or "NotebookSecurityAnalyzer" in name:
                 raise ImportError("nbformat not installed")
             return real_import(name, *args, **kwargs)
@@ -1752,7 +1753,7 @@ class TestMainFunctionAlternative:
     def test_main_fast_mode_with_ripgrep(self, tmp_path):
         """Test --fast mode with ripgrep available."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("eval('dangerous')")
+        test_file.write_text("eval('dangerous')")  # DANGEROUS: Avoid eval with untrusted input
 
         with patch("sys.argv", ["pyguard", str(tmp_path), "--fast"]):
             with patch("pyguard.cli.RipGrepFilter.is_ripgrep_available", return_value=True):

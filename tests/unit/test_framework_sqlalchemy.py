@@ -22,6 +22,7 @@ class TestSQLAlchemyRawSQLInjection:
 from sqlalchemy import text
 
 def get_user(user_id):
+    # TODO: Add docstring
     query = text(f"SELECT * FROM users WHERE id = {user_id}")
     return session.execute(query)
 """
@@ -36,6 +37,7 @@ def get_user(user_id):
 from sqlalchemy import text
 
 def search_users(name):
+    # TODO: Add docstring
     query = text("SELECT * FROM users WHERE name = '" + name + "'")
     return session.execute(query)
 """
@@ -49,6 +51,7 @@ def search_users(name):
 from sqlalchemy import text
 
 def get_user(user_id):
+    # TODO: Add docstring
     query = text("SELECT * FROM users WHERE id = :id")
     return session.execute(query, {"id": user_id})
 """
@@ -181,6 +184,7 @@ class TestSQLAlchemyQueryParameterInjection:
 from sqlalchemy.orm import Session
 
 def search_user(session: Session, username):
+    # TODO: Add docstring
     # Unsafe: using format string in filter
     return session.query(User).filter(f"username = '{username}'").all()
 """
@@ -195,6 +199,7 @@ def search_user(session: Session, username):
 from sqlalchemy.orm import Session
 
 def search_user(session: Session, username):
+    # TODO: Add docstring
     return session.query(User).filter(User.username == username).all()
 """
         violations = analyze_sqlalchemy_security(Path("test.py"), code)
@@ -212,6 +217,7 @@ from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 class User(Base):
+    # TODO: Add docstring
     id = Column(Integer, primary_key=True)
     # Lazy loading can cause N+1 queries
     posts = relationship('Post', lazy='select')
@@ -228,6 +234,7 @@ from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 class User(Base):
+    # TODO: Add docstring
     id = Column(Integer, primary_key=True)
     posts = relationship('Post', lazy='joined')
 """
@@ -247,6 +254,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 class Post(Base):
+    # TODO: Add docstring
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     # Relationship without proper backref validation
@@ -266,10 +274,12 @@ class TestSQLAlchemyHybridProperty:
 from sqlalchemy.ext.hybrid import hybrid_property
 
 class User(Base):
+    # TODO: Add docstring
     _password = Column(String)
     
     @hybrid_property
     def password(self):
+        # TODO: Add docstring
         # Should not expose raw password
         return self._password
 """
@@ -289,6 +299,7 @@ from sqlalchemy import event
 
 @event.listens_for(User, 'before_insert')
 def receive_before_insert(mapper, connection, target):
+    # TODO: Add docstring
     # Event listener processing user data
     target.name = target.name.upper()
 """
@@ -373,6 +384,7 @@ class TestSQLAlchemyAlembicMigration:
 from alembic import op
 
 def upgrade():
+    # TODO: Add docstring
     table_name = get_table_name()
     # Unsafe: format string in migration
     op.execute(f"ALTER TABLE {table_name} ADD COLUMN status VARCHAR(50)")
@@ -389,6 +401,7 @@ from alembic import op
 import sqlalchemy as sa
 
 def upgrade():
+    # TODO: Add docstring
     op.create_table(
         'users',
         sa.Column('id', sa.Integer, primary_key=True),
@@ -411,7 +424,8 @@ from sqlalchemy import Column, String
 from datetime import datetime
 
 class User(Base):
-    created_at = Column(String, default=lambda: eval("datetime.now()"))
+    # TODO: Add docstring
+    created_at = Column(String, default=lambda: eval("datetime.now()"))  # DANGEROUS: Avoid eval with untrusted input
 """
         violations = analyze_sqlalchemy_security(Path("test.py"), code)
         sqla013_violations = [v for v in violations if v.rule_id == "SQLA013"]
@@ -428,6 +442,7 @@ class TestSQLAlchemyConstraintBypass:
 from sqlalchemy import insert
 
 def bulk_create_users(user_data):
+    # TODO: Add docstring
     # Bulk insert may bypass validation
     session.execute(insert(User), user_data)
 """
@@ -453,15 +468,18 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 class User:
+    # TODO: Add docstring
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
 
 def get_user(user_id):
+    # TODO: Add docstring
     # SQLA001: SQL injection
     query = text(f"SELECT * FROM users WHERE id = {user_id}")
     return session.execute(query)
 
 def search_users(name):
+    # TODO: Add docstring
     # SQLA004: Parameter injection
     return session.query(User).filter(f"username = '{name}'").all()
 """
@@ -474,6 +492,7 @@ def search_users(name):
 import requests
 
 def fetch_data():
+    # TODO: Add docstring
     return requests.get('https://api.example.com/data')
 """
         violations = analyze_sqlalchemy_security(Path("test.py"), code)
@@ -494,10 +513,12 @@ engine = create_engine(DATABASE_URL, pool_size=5, max_overflow=10)
 Session = sessionmaker(bind=engine)
 
 class User(Base):
+    # TODO: Add docstring
     id = Column(Integer, primary_key=True)
     username = Column(String(50), nullable=False)
 
 def get_user(session, user_id):
+    # TODO: Add docstring
     # Safe: Using ORM
     return session.query(User).filter(User.id == user_id).first()
 """
@@ -528,6 +549,7 @@ class TestSQLAlchemyEdgeCases:
 from sqlalchemy import text
 
 def complex_query():
+    # TODO: Add docstring
     return session.execute(
         text(
             f"SELECT * FROM {get_table_name()} WHERE id = {get_id()}"

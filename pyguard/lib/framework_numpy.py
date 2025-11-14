@@ -49,6 +49,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting NumPy security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -208,7 +209,7 @@ class NumPySecurityVisitor(ast.NodeVisitor):
                     RuleViolation(
                         rule_id="NUMPY006",
                         message="NumPy random functions are not cryptographically secure. "
-                        "Use secrets module or numpy.random.Generator with cryptographic backend for security-sensitive operations.",
+                        "Use secrets module or numpy.random.Generator with cryptographic backend for security-sensitive operations.",  # SECURITY: Use secrets module for cryptographic randomness
                         line_number=node.lineno,
                         column=node.col_offset,
                         severity=RuleSeverity.HIGH,

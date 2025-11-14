@@ -52,6 +52,7 @@ class APISecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting API security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -160,7 +161,7 @@ class APISecurityVisitor(ast.NodeVisitor):
                                 "token=",
                                 "secret=",
                                 "password=",
-                                "auth=",
+                                "  # SECURITY: Use environment variables or config filesauth=",
                             )
                         ):
                             has_sensitive_param = True

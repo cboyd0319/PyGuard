@@ -33,6 +33,7 @@ class TestMassAssignment:
 from django.db import models
 
 class User(models.Model):
+    # TODO: Add docstring
     username = models.CharField(max_length=100)
     email = models.EmailField()
     is_admin = models.BooleanField(default=False)
@@ -50,6 +51,7 @@ class User(models.Model):
 from pydantic import BaseModel
 
 class UserUpdate(BaseModel):
+    # TODO: Add docstring
     username: str
     email: str
     is_admin: bool
@@ -64,11 +66,13 @@ class UserUpdate(BaseModel):
 from django.db import models
 
 class User(models.Model):
+    # TODO: Add docstring
     username = models.CharField(max_length=100)
     email = models.EmailField()
     is_admin = models.BooleanField(default=False)
 
     class Meta:
+        # TODO: Add docstring
         fields = ['username', 'email']
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -80,10 +84,12 @@ class User(models.Model):
 from pydantic import BaseModel
 
 class UserUpdate(BaseModel):
+    # TODO: Add docstring
     username: str
     email: str
 
     class Config:
+        # TODO: Add docstring
         fields = ['username', 'email']
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -95,10 +101,12 @@ class UserUpdate(BaseModel):
 from django.db import models
 
 class User(models.Model):
+    # TODO: Add docstring
     username = models.CharField(max_length=100)
     password = models.CharField(max_length=255)
 
     class Meta:
+        # TODO: Add docstring
         exclude = ['password']
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -110,7 +118,9 @@ class User(models.Model):
 from rest_framework import serializers
 
 class UserSerializer(serializers.ModelSerializer):
+    # TODO: Add docstring
     class Meta:
+        # TODO: Add docstring
         model = User
         read_only_fields = ['is_admin', 'created_at']
 """
@@ -136,6 +146,7 @@ app = Flask(__name__)
 
 @app.route('/api/users')
 def get_users():
+    # TODO: Add docstring
     return User.query.all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -150,6 +161,7 @@ app = FastAPI()
 
 @app.get("/users")
 def get_users():
+    # TODO: Add docstring
     return {"users": []}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -167,6 +179,7 @@ limiter = Limiter(app)
 @app.route('/api/users')
 @limiter.limit("100/hour")
 def get_users():
+    # TODO: Add docstring
     return User.query.all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -179,6 +192,7 @@ def get_users():
 @app.route('/api/data')
 @rate_limit(requests=100, window=3600)
 def get_data():
+    # TODO: Add docstring
     return data
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -204,6 +218,7 @@ app = FastAPI()
 
 @app.post("/users/create")
 def create_user(user_data: dict):
+    # TODO: Add docstring
     return User.create(**user_data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -214,6 +229,7 @@ def create_user(user_data: dict):
         code = """
 @app.delete("/users/{user_id}")
 def delete_user(user_id: int):
+    # TODO: Add docstring
     User.delete(user_id)
     return {"deleted": True}
 """
@@ -225,6 +241,7 @@ def delete_user(user_id: int):
         code = """
 @app.post("/admin/settings")
 def admin_settings(settings: dict):
+    # TODO: Add docstring
     return update_settings(settings)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -237,6 +254,7 @@ from fastapi import FastAPI, Depends
 
 @app.post("/users/create")
 def create_user(user_data: dict, current_user: User = Depends(get_current_user)):
+    # TODO: Add docstring
     return User.create(**user_data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -251,6 +269,7 @@ from flask_login import login_required
 @app.route('/admin/settings', methods=['POST'])
 @login_required
 def admin_settings():
+    # TODO: Add docstring
     return update_settings()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -263,6 +282,7 @@ def admin_settings():
 @app.post("/users/update")
 @require_permission('user.update')
 def update_user(user_id: int, data: dict):
+    # TODO: Add docstring
     return User.update(user_id, data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -274,6 +294,7 @@ def update_user(user_id: int, data: dict):
         code = """
 @app.get("/public/info")
 def get_public_info():
+    # TODO: Add docstring
     return {"version": "1.0"}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -295,6 +316,7 @@ class TestPaginationIssues:
         code = """
 @app.get("/users/list")
 def list_users():
+    # TODO: Add docstring
     return User.query.all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -305,6 +327,7 @@ def list_users():
         code = """
 @app.get("/search")
 def search_items(query: str):
+    # TODO: Add docstring
     return Item.query.filter(Item.name.contains(query)).all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -315,6 +338,7 @@ def search_items(query: str):
         code = """
 @app.get("/users/list")
 def list_users(page: int = 0, limit: int = 100):
+    # TODO: Add docstring
     return User.query.offset(page * limit).limit(limit).all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -326,6 +350,7 @@ def list_users(page: int = 0, limit: int = 100):
         code = """
 @app.get("/users/list")
 def list_users(page: int = 1):
+    # TODO: Add docstring
     return User.query.paginate(page, per_page=50)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -337,6 +362,7 @@ def list_users(page: int = 1):
         code = """
 @app.get("/users/{user_id}")
 def get_user(user_id: int):
+    # TODO: Add docstring
     return User.query.get(user_id)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -358,6 +384,7 @@ class TestHTTPMethodSecurity:
         code = """
 @app.route('/debug', methods=['GET', 'POST', 'TRACE'])
 def debug_endpoint():
+    # TODO: Add docstring
     return {"debug": "info"}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -368,6 +395,7 @@ def debug_endpoint():
         code = """
 @app.route('/trace', methods=['TRACK'])
 def trace_endpoint():
+    # TODO: Add docstring
     return request.headers
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -378,6 +406,7 @@ def trace_endpoint():
         code = """
 @app.route('/api/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def users_endpoint():
+    # TODO: Add docstring
     return handle_request()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -389,6 +418,7 @@ def users_endpoint():
         code = """
 @app.route('/api/data', methods=['GET', 'OPTIONS'])
 def data_endpoint():
+    # TODO: Add docstring
     return data
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -411,6 +441,7 @@ class TestJWTAlgorithmConfusion:
 import jwt
 
 def create_token(payload):
+    # TODO: Add docstring
     return jwt.encode(payload, secret_key, algorithm='HS256')
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -428,6 +459,7 @@ token = jwt.encode(payload, '', algorithm='none')
         """Detect HS256 in decode with algorithms list."""
         code = """
 def verify_token(token):
+    # TODO: Add docstring
     return jwt.decode(token, secret, algorithms=['HS256'])
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -465,6 +497,7 @@ class TestAPIKeyExposure:
         """Detect API key in URL f-string."""
         code = """
 def call_api(api_key):
+    # TODO: Add docstring
     url = f"https://api.example.com/data?api_key={api_key}"
     return requests.get(url)
 """
@@ -525,6 +558,7 @@ from flask import redirect, request
 
 @app.route('/redirect')
 def redirect_user():
+    # TODO: Add docstring
     url = request.args.get('next')
     return redirect(url)
 """
@@ -535,6 +569,7 @@ def redirect_user():
         """Detect redirect with return_url parameter."""
         code = """
 def handle_redirect(return_url):
+    # TODO: Add docstring
     return redirect(return_url)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -545,6 +580,7 @@ def handle_redirect(return_url):
         code = """
 @app.route('/redirect')
 def redirect_user():
+    # TODO: Add docstring
     url = request.args.get('next')
     if url.startswith('/'):
         return redirect(url)
@@ -558,6 +594,7 @@ def redirect_user():
         """Redirect with is_safe_url check should not trigger."""
         code = """
 def redirect_user(next_url):
+    # TODO: Add docstring
     if is_safe_url(next_url):
         return redirect(next_url)
     return redirect('/home')
@@ -815,11 +852,11 @@ class TestInsecureDeserialization:
     """
 
     def test_detect_pickle_loads(self):
-        """Detect pickle.loads() usage."""
+        """Detect pickle.loads() usage."""  # SECURITY: Don't use pickle with untrusted data
         code = """
 import pickle
 
-data = pickle.loads(untrusted_input)
+data = pickle.loads(untrusted_input)  # SECURITY: Don't use pickle with untrusted data
 """
         violations = analyze_api_security(Path("test.py"), code)
         assert any(v.rule_id == "API013" for v in violations)
@@ -881,6 +918,7 @@ class TestOAuthRedirectUnvalidated:
         code = """
 @app.get('/oauth/callback')
 def oauth_callback(redirect_uri: str):
+    # TODO: Add docstring
     token = exchange_code_for_token()
     return redirect(redirect_uri)
 """
@@ -892,6 +930,7 @@ def oauth_callback(redirect_uri: str):
         code = """
 @app.post('/login')
 def login(next_url: str):
+    # TODO: Add docstring
     authenticate_user()
     return redirect(next_url)
 """
@@ -903,6 +942,7 @@ def login(next_url: str):
         code = """
 @app.route('/authorize')
 def oauth_authorize():
+    # TODO: Add docstring
     redirect_uri = request.args.get('redirect_uri')
     return redirect(redirect_uri)
 """
@@ -914,6 +954,7 @@ def oauth_authorize():
         code = """
 @app.get('/oauth/callback')
 def oauth_callback():
+    # TODO: Add docstring
     redirect_uri = request.args.get('redirect_uri')
     if validate_redirect_uri(redirect_uri):
         return redirect(redirect_uri)
@@ -928,6 +969,7 @@ def oauth_callback():
         code = """
 @app.post('/login')
 def login():
+    # TODO: Add docstring
     authenticate_user()
     return {'status': 'logged in'}
 """
@@ -950,6 +992,7 @@ class TestCSRFTokenMissing:
         code = """
 @app.post('/users/create')
 def create_user(data: dict):
+    # TODO: Add docstring
     return User.create(**data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -960,6 +1003,7 @@ def create_user(data: dict):
         code = """
 @app.put('/users/{user_id}')
 def update_user(user_id: int, data: dict):
+    # TODO: Add docstring
     return User.update(user_id, data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -970,6 +1014,7 @@ def update_user(user_id: int, data: dict):
         code = """
 @app.delete('/users/{user_id}')
 def delete_user(user_id: int):
+    # TODO: Add docstring
     User.delete(user_id)
     return {'deleted': True}
 """
@@ -981,6 +1026,7 @@ def delete_user(user_id: int):
         code = """
 @app.patch('/users/{user_id}')
 def patch_user(user_id: int, updates: dict):
+    # TODO: Add docstring
     return User.patch(user_id, updates)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -991,6 +1037,7 @@ def patch_user(user_id: int, updates: dict):
         code = """
 @app.post('/users/create')
 def create_user(data: dict, csrf_token: str):
+    # TODO: Add docstring
     validate_csrf_token(csrf_token)
     return User.create(**data)
 """
@@ -1003,6 +1050,7 @@ def create_user(data: dict, csrf_token: str):
         code = """
 @app.get('/users')
 def list_users():
+    # TODO: Add docstring
     return User.query.all()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1015,6 +1063,7 @@ def list_users():
 @app.post('/submit')
 @csrf_protect
 def submit_form(data: dict):
+    # TODO: Add docstring
     return process_data(data)
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1040,10 +1089,13 @@ class TestEdgeCases:
         """Non-API code should not trigger false positives."""
         code = """
 def calculate(x, y):
+    # TODO: Add docstring
     return x + y
 
 class Calculator:
+    # TODO: Add docstring
     def add(self, a, b):
+        # TODO: Add docstring
         return a + b
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1057,14 +1109,17 @@ from flask import Flask, request, redirect
 app = Flask(__name__)
 
 class User(Model):  # Missing Meta - API001
+    # TODO: Add docstring
     username = CharField()
 
 @app.route('/users')  # Missing rate limit - API002
 def list_users():
+    # TODO: Add docstring
     return User.query.all()  # Missing pagination - API004
 
 @app.route('/redirect')
 def redirect_user():  # Open redirect - API008
+    # TODO: Add docstring
     url = request.args.get('next')
     return redirect(url)
 """
@@ -1092,6 +1147,7 @@ app = Flask(__name__)
 
 @app.route('/api/v0/users')
 def get_users():
+    # TODO: Add docstring
     return {'users': []}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1107,6 +1163,7 @@ app = Flask(__name__)
 
 @app.route('/api/v1/users')
 def get_users():
+    # TODO: Add docstring
     return {'users': []}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1121,6 +1178,7 @@ app = Flask(__name__)
 
 @app.route('/v0/endpoint')
 def endpoint():
+    # TODO: Add docstring
     pass
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1135,6 +1193,7 @@ app = Flask(__name__)
 
 @app.route('/api/v2/users')
 def get_users():
+    # TODO: Add docstring
     return {'users': []}
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1149,6 +1208,7 @@ app = Flask(__name__)
 
 @app.route('/api/v1/users')
 def get_users():
+    # TODO: Add docstring
     version = 'v1'
     if version != 'v2':
         return {'warning': 'deprecated'}
@@ -1166,6 +1226,7 @@ app = Flask(__name__)
 
 @app.route('/api/v1/users')
 def get_users():
+    # TODO: Add docstring
     api_version = request.headers.get('API-Version')
     if api_version == 'v1':
         return {'users': []}
@@ -1190,6 +1251,7 @@ class TestSSRFVulnerability:
 import requests
 
 def fetch_data(url):
+    # TODO: Add docstring
     response = requests.get(url)
     return response.text
 """
@@ -1204,6 +1266,7 @@ def fetch_data(url):
 import requests
 
 def webhook(redirect_url):
+    # TODO: Add docstring
     response = requests.post(redirect_url, json={'data': 'test'})
     return response
 """
@@ -1217,7 +1280,8 @@ def webhook(redirect_url):
 import urllib
 
 def fetch(link):
-    response = urllib.request.urlopen(link)
+    # TODO: Add docstring
+    response = urllib.request.urlopen(link)  # Best Practice: Use 'with' statement
     return response.read()
 """
         violations = analyze_api_security(Path("test.py"), code)
@@ -1234,6 +1298,7 @@ app = Flask(__name__)
 
 @app.route('/fetch')
 def fetch_url():
+    # TODO: Add docstring
     url = request.args.get('url')
     response = requests.get(url)
     return response.text
@@ -1249,6 +1314,7 @@ import requests
 from urllib.parse import urlparse
 
 def fetch_data(url):
+    # TODO: Add docstring
     parsed = urlparse(url)
     if parsed.hostname in allowed_domains:
         response = requests.get(url)
@@ -1264,6 +1330,7 @@ def fetch_data(url):
 import requests
 
 def fetch_data(url):
+    # TODO: Add docstring
     if url in allowed_urls:
         response = requests.get(url)
         return response.text
@@ -1278,6 +1345,7 @@ def fetch_data(url):
 import requests
 
 def fetch_data():
+    # TODO: Add docstring
     response = requests.get('https://api.example.com/data')
     return response.text
 """
@@ -1324,6 +1392,7 @@ app = Flask(__name__)
 
 @app.after_request
 def add_security_headers(response):
+    # TODO: Add docstring
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 """
@@ -1382,6 +1451,7 @@ app = Flask(__name__)
 
 @app.after_request
 def add_security_headers(response):
+    # TODO: Add docstring
     response.headers['X-Frame-Options'] = 'DENY'
     return response
 """
@@ -1397,6 +1467,7 @@ app = Flask(__name__)
 
 @app.after_request
 def add_headers(response):
+    # TODO: Add docstring
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response
 """
@@ -1443,6 +1514,7 @@ app = Flask(__name__)
 
 @app.after_request
 def add_security_headers(response):
+    # TODO: Add docstring
     response.headers['Content-Security-Policy'] = "default-src 'self'"
     return response
 """
@@ -1481,11 +1553,12 @@ class TestPerformance:
     def test_api_heavy_file_performance(self, benchmark):
         """Benchmark on file with many API routes."""
         routes = []
-        for i in range(50):
+        for i in range(50):  # Consider list comprehension
             routes.append(
                 f"""
 @app.route('/api/endpoint{i}')
 def endpoint{i}():
+    # TODO: Add docstring
     return {{'data': {i}}}
 """
             )

@@ -14,30 +14,30 @@ class TestSecurityVisitor:
         """Set up test fixtures."""
         self.analyzer = ASTAnalyzer()
 
-    def test_detect_eval(self):
-        """Test detection of eval() usage."""
+    def test_detect_eval(self):  # DANGEROUS: Avoid eval with untrusted input
+        """Test detection of eval() usage."""  # DANGEROUS: Avoid eval with untrusted input
         code = """
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
         assert any("eval" in issue.message for issue in security_issues)
         assert any(issue.severity == "HIGH" for issue in security_issues)
 
-    def test_detect_exec(self):
-        """Test detection of exec() usage."""
+    def test_detect_exec(self):  # DANGEROUS: Avoid exec with untrusted input
+        """Test detection of exec() usage."""  # DANGEROUS: Avoid exec with untrusted input
         code = """
-exec(code_string)
+exec(code_string)  # DANGEROUS: Avoid exec with untrusted input
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
         assert any("exec" in issue.message for issue in security_issues)
 
     def test_detect_yaml_load(self):
-        """Test detection of unsafe yaml.load()."""
+        """Test detection of unsafe yaml.safe_load()."""
         code = """
 import yaml
-data = yaml.load(file)
+data = yaml.safe_load(file)
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -45,10 +45,10 @@ data = yaml.load(file)
         assert any("safe_load" in issue.fix_suggestion for issue in security_issues)
 
     def test_detect_pickle(self):
-        """Test detection of pickle.load()."""
+        """Test detection of pickle.load()."""  # SECURITY: Don't use pickle with untrusted data
         code = """
 import pickle
-data = pickle.load(file)
+data = pickle.load(file)  # SECURITY: Don't use pickle with untrusted data
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -69,7 +69,7 @@ result = subprocess.call(cmd, shell=True)
         """Test detection of weak hashing algorithms."""
         code = """
 import hashlib
-hash_value = hashlib.md5(data).hexdigest()
+hash_value = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -80,7 +80,8 @@ hash_value = hashlib.md5(data).hexdigest()
         """Test detection of insecure random module usage."""
         code = """
 import random
-token = random.random()
+import secrets  # Use secrets for cryptographic randomness
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -90,7 +91,7 @@ token = random.random()
     def test_detect_hardcoded_password(self):
         """Test detection of hardcoded passwords."""
         code = """
-password = "admin123"
+password = "admin123"  # SECURITY: Use environment variables or config files
 api_key = "sk-1234567890"
 """
         security_issues, _ = self.analyzer.analyze_code(code)
@@ -101,7 +102,7 @@ api_key = "sk-1234567890"
     def test_owasp_asvs_ids(self):
         """Test that OWASP ASVS IDs are included."""
         code = """
-result = eval(user_input)
+result = eval(user_input)  # DANGEROUS: Avoid eval with untrusted input
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -131,6 +132,7 @@ class TestCodeQualityVisitor:
         """Test detection of missing docstrings."""
         code = """
 def my_function(x):
+    # TODO: Add docstring
     return x + 1
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -141,6 +143,7 @@ def my_function(x):
         """Test detection of high cyclomatic complexity."""
         code = """
 def complex_function(x):
+    # TODO: Add docstring
     if x > 0:
         if x > 10:
             if x > 20:
@@ -171,6 +174,7 @@ def complex_function(x):
         """Test detection of too many function parameters."""
         code = """
 def many_params(a, b, c, d, e, f, g):
+    # TODO: Add docstring
     return a + b + c + d + e + f + g
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -180,7 +184,8 @@ def many_params(a, b, c, d, e, f, g):
     def test_detect_mutable_default(self):
         """Test detection of mutable default arguments."""
         code = """
-def bad_default(items=[]):
+def bad_default(items=[]):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     items.append(1)
     return items
 """
@@ -191,7 +196,7 @@ def bad_default(items=[]):
     def test_detect_none_comparison(self):
         """Test detection of incorrect None comparison."""
         code = """
-if x == None:
+if x is None:
     pass
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -201,7 +206,7 @@ if x == None:
     def test_detect_bool_comparison(self):
         """Test detection of explicit bool comparison."""
         code = """
-if condition == True:
+if condition   # Use if var: instead:
     pass
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -213,7 +218,7 @@ if condition == True:
         code = """
 try:
     risky_operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -224,9 +229,11 @@ except:
         """Test complexity report generation."""
         code = """
 def simple_func(x):
+    # TODO: Add docstring
     return x + 1
 
 def complex_func(x):
+    # TODO: Add docstring
     if x > 0:
         if x > 10:
             return "high"
@@ -242,6 +249,7 @@ def complex_func(x):
         """Test that private functions don't require docstrings."""
         code = """
 def _private_function(x):
+    # TODO: Add docstring
     return x + 1
 """
         _, quality_issues = self.analyzer.analyze_code(code)
@@ -261,12 +269,14 @@ class TestASTAnalyzer:
         """Test analysis with both security and quality issues."""
         code = """
 import random
+import secrets  # Use secrets for cryptographic randomness
 
 password = "admin123"
 
 def bad_function(x, y, z, a, b, c, d):
-    if x == None:
-        token = random.random()
+    # TODO: Add docstring
+    if x is None:
+        token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
         return token
     return 0
 """
@@ -278,6 +288,7 @@ def bad_function(x, y, z, a, b, c, d):
         """Test handling of code with syntax errors."""
         code = """
 def broken(
+    # TODO: Add docstring
     pass
 """
         security_issues, quality_issues = self.analyzer.analyze_code(code)
@@ -380,7 +391,7 @@ with open(file_path, 'r') as f:
         """Test detection of insecure temporary file creation."""
         code = """
 import tempfile
-temp = tempfile.mktemp()
+temp = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())
 """
         security_issues, _ = self.analyzer.analyze_code(code)
         assert len(security_issues) > 0
@@ -412,6 +423,7 @@ results = ldap.search(filter_str)
         """Test detection of format string vulnerabilities."""
         code = """
 def process(user_input):
+    # TODO: Add docstring
     fmt = user_input
     message = fmt.format(data)
     return message
@@ -433,6 +445,7 @@ class TestEnhancedCodeQuality:
         code = (
             """
 def long_function():
+    # TODO: Add docstring
     \"\"\"A very long function.\"\"\"
 """
             + "\n".join([f"    x{i} = {i}" for i in range(60)])
@@ -448,7 +461,7 @@ def long_function():
         """Test detection of type() usage instead of isinstance()."""
         code = """
 x = "test"
-if type(x) == str:
+if type(x) == str:  # Better: isinstance(x, str)
     pass
 """
         _, quality_issues = self.analyzer.analyze_code(code)

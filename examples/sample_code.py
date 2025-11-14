@@ -63,7 +63,7 @@ def process_data(data):
 # Security Issue: Command injection
 def run_command(user_input):
     """Run a shell command (command injection vulnerable)."""
-    os.system(  # SECURITY: Use subprocess.run() instead
+    os.system(  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
         f"echo {user_input}"
     )  # noqa: S605  # SECURITY: Use subprocess.run() instead  # SECURITY: Use subprocess.run() instead
 
@@ -78,6 +78,7 @@ def check_status(flag):
 
 # Best Practices Issue: Mutable default argument
 def add_to_list(
+    # TODO: Add docstring
     item, items=[]
 ):  # noqa: B006  # ANTI-PATTERN: Use None and create in function body  # ANTI-PATTERN: Use None and create in function body
     """Add item to list with mutable default."""

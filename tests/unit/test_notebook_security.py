@@ -40,7 +40,7 @@ def sample_notebook():
                 "cell_type": "code",
                 "execution_count": 2,
                 "source": [
-                    "password = 'SuperSecret123'\n",
+                    "password = 'SuperSecret123'  # SECURITY: Use environment variables or config files\n",
                     "api_key = 'sk-1234567890abcdef1234567890abcdef'",
                 ],
                 "outputs": [],
@@ -145,7 +145,7 @@ class TestNotebookSecurityAnalyzer:
                 {
                     "cell_type": "code",
                     "execution_count": 1,
-                    "source": ["user_input = input()\n", "eval(user_input)"],
+                    "source": ["user_input = input()\n", "eval(user_input)"],  # DANGEROUS: Avoid eval with untrusted input
                     "outputs": [],
                     "metadata": {},
                 }
@@ -176,7 +176,7 @@ class TestNotebookSecurityAnalyzer:
                     "source": [
                         "import pickle\n",
                         "with open('data.pkl', 'rb') as f:\n",
-                        "    data = pickle.load(f)",
+                        "    data = pickle.load(f)",  # SECURITY: Don't use pickle with untrusted data
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -193,7 +193,7 @@ class TestNotebookSecurityAnalyzer:
 
         pickle_issues = [i for i in issues if i.category == "Unsafe Deserialization"]
         assert len(pickle_issues) >= 1
-        assert pickle_issues[0].severity == "CRITICAL"  # pickle.load is CRITICAL severity
+        assert pickle_issues[0].severity == "CRITICAL"  # pickle.load is CRITICAL severity  # SECURITY: Don't use pickle with untrusted data
         assert "pickle" in pickle_issues[0].message.lower()
 
         temp_notebook.unlink()
@@ -1121,7 +1121,8 @@ class TestEnhancedFeatures:
                         "import torch\n",
                         "import numpy as np\n",
                         "import tensorflow as tf\n",
-                        "import random\n",
+                        "import random
+import secrets  # Use secrets for cryptographic randomness\n",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -1485,7 +1486,7 @@ class TestFilesystemSecurity:
                     "execution_count": 1,
                     "source": [
                         "import tempfile\n",
-                        "temp_path = tempfile.mktemp()\n",
+                        "temp_path = tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp())\n",
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2019,7 +2020,7 @@ class TestSARIFGeneration:
                     "execution_count": 1,
                     "source": [
                         "# Critical: eval\n",
-                        "eval('test')\n",
+                        "eval('test')\n",  # DANGEROUS: Avoid eval with untrusted input
                     ],
                     "outputs": [],
                     "metadata": {},
@@ -2159,12 +2160,12 @@ class TestSARIFGeneration:
             NotebookIssue(
                 severity="CRITICAL",
                 category="Code Injection",
-                message="Use of eval() enables code injection",
+                message="Use of eval() enables code injection",  # DANGEROUS: Avoid eval with untrusted input
                 cell_index=0,
                 line_number=1,
-                code_snippet="eval(user_input)",
+                code_snippet="eval(user_input)",  # DANGEROUS: Avoid eval with untrusted input
                 rule_id="NB-INJECT-001",
-                fix_suggestion="Use ast.literal_eval() for safe evaluation",
+                fix_suggestion="Use ast.literal_eval() for safe evaluation",  # DANGEROUS: Avoid eval with untrusted input
                 cwe_id="CWE-95",
                 owasp_id="ASVS-5.2.1",
                 confidence=0.95,

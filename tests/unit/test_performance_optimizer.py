@@ -210,6 +210,7 @@ class TestOptimizedAnalyzer:
         test_file.write_text("x = 1")
 
         def dummy_analyzer(path: Path, tree: ast.AST | None) -> tuple[int, float]:
+            # TODO: Add docstring
             return 1, 10.0
 
         # First run - should analyze
@@ -238,6 +239,7 @@ class TestOptimizedAnalyzer:
         test_file.write_text("x = 1")
 
         def dummy_analyzer(path: Path, tree: ast.AST | None) -> tuple[int, float]:
+            # TODO: Add docstring
             return 1, 10.0
 
         # Run analysis
@@ -293,6 +295,7 @@ class TestOptimizedAnalyzer:
         bad_file.write_text("def broken(\n")
 
         def dummy_analyzer(path: Path, tree: ast.AST | None) -> tuple[int, float]:
+            # TODO: Add docstring
             return 0, 0.0
 
         results = analyzer.analyze_files_optimized(

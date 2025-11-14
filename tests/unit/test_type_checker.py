@@ -67,6 +67,7 @@ class TestMissingTypeHints:
         """Test detection of missing return type."""
         code = """
 def calculate_sum(a, b):
+    # TODO: Add docstring
     return a + b
 """
         test_file = tmp_path / "test.py"
@@ -82,6 +83,7 @@ def calculate_sum(a, b):
         """Test detection of missing parameter type."""
         code = """
 def greet(name):
+    # TODO: Add docstring
     print(f"Hello, {name}")
 """
         test_file = tmp_path / "test.py"
@@ -97,6 +99,7 @@ def greet(name):
         """Test no violations when types are present."""
         code = """
 def calculate_sum(a: int, b: int) -> int:
+    # TODO: Add docstring
     return a + b
 """
         test_file = tmp_path / "test.py"
@@ -117,6 +120,7 @@ def calculate_sum(a: int, b: int) -> int:
         """Test that private functions are skipped."""
         code = """
 def _internal_helper(x):
+    # TODO: Add docstring
     return x * 2
 """
         test_file = tmp_path / "test.py"
@@ -132,7 +136,9 @@ def _internal_helper(x):
         """Test that __init__ doesn't need return type."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __init__(self, value):
+        # TODO: Add docstring
         self.value = value
 """
         test_file = tmp_path / "test.py"
@@ -153,7 +159,8 @@ class TestTypeComparison:
         """Test detection of type() == comparison."""
         code = """
 def check_type(obj):
-    if type(obj) == str:
+    # TODO: Add docstring
+    if type(obj) == str:  # Better: isinstance(obj, str)
         return True
     return False
 """
@@ -170,6 +177,7 @@ def check_type(obj):
         """Test detection of type() is comparison."""
         code = """
 def check_type(obj):
+    # TODO: Add docstring
     if type(obj) is str:
         return True
     return False
@@ -187,6 +195,7 @@ def check_type(obj):
         """Test no violation with isinstance."""
         code = """
 def check_type(obj):
+    # TODO: Add docstring
     if isinstance(obj, str):
         return True
     return False
@@ -209,7 +218,8 @@ class TestTypeChecker:
         """Test analyzing file with multiple type issues."""
         code = """
 def process_data(data):
-    if type(data) == list:
+    # TODO: Add docstring
+    if type(data) == list:  # Better: isinstance(data, list)
         return len(data)
     return 0
 """
@@ -226,6 +236,7 @@ def process_data(data):
         """Test analyzing file with syntax error."""
         code = """
 def broken_function(
+    # TODO: Add docstring
     # Missing closing parenthesis
 """
         test_file = tmp_path / "test.py"
@@ -360,6 +371,7 @@ class TestTypeInferenceEdgeCases:
         engine = TypeInferenceEngine()
         code = """
 def get_number():
+    # TODO: Add docstring
     return 42
 """
         tree = ast.parse(code)
@@ -377,6 +389,7 @@ def get_number():
         engine = TypeInferenceEngine()
         code = """
 def get_value(x):
+    # TODO: Add docstring
     if x:
         return 1
     return 2
@@ -396,6 +409,7 @@ def get_value(x):
         engine = TypeInferenceEngine()
         code = """
 def get_value(x):
+    # TODO: Add docstring
     if x:
         return 1
     return "string"
@@ -418,6 +432,7 @@ def get_value(x):
         engine = TypeInferenceEngine()
         code = """
 def no_return():
+    # TODO: Add docstring
     x = 5
     print(x)
 """
@@ -507,6 +522,7 @@ class TestSpecialMethodHandling:
         # Arrange
         code = f"""
 class MyClass:
+    # TODO: Add docstring
     def {method_name}(self):
         pass
 """
@@ -526,7 +542,9 @@ class MyClass:
         # Arrange
         code = """
 class MyClass:
+    # TODO: Add docstring
     def method(self, other) -> None:
+        # TODO: Add docstring
         pass
 """
         test_file = tmp_path / "test.py"
@@ -547,8 +565,10 @@ class MyClass:
         # Arrange
         code = """
 class MyClass:
+    # TODO: Add docstring
     @classmethod
     def method(cls, other) -> None:
+        # TODO: Add docstring
         pass
 """
         test_file = tmp_path / "test.py"
@@ -586,6 +606,7 @@ class TestTypeComparisonEdgeCases:
         # Arrange
         code = f"""
 def check(obj):
+    # TODO: Add docstring
     if type(obj) {comparison_op} str:
         return True
     return False
@@ -609,7 +630,8 @@ def check(obj):
         # Arrange
         code = """
 def check(obj):
-    return type(obj) == str and obj.startswith("test")
+    # TODO: Add docstring
+    return type(obj) == str and obj.startswith("test")  # Better: isinstance(obj, str)
 """
         test_file = tmp_path / "test.py"
         test_file.write_text(code)
@@ -629,6 +651,7 @@ def check(obj):
         # Arrange
         code = """
 def check(value):
+    # TODO: Add docstring
     # Regular comparison, not type()
     return value == 42
 """
@@ -652,6 +675,7 @@ def check(value):
         # Arrange
         code = """
 def check(obj):
+    # TODO: Add docstring
     # Call to len(), not type()
     return len(obj) == 5
 """
@@ -720,6 +744,7 @@ class TestBoundaryConditions:
         # Arrange
         code = """
 def greet(name="World", count=1):
+    # TODO: Add docstring
     return f"Hello {name} " * count
 """
         test_file = tmp_path / "defaults.py"
@@ -741,6 +766,7 @@ def greet(name="World", count=1):
         # Arrange
         code = """
 def process(callback=lambda x: x):
+    # TODO: Add docstring
     return callback(42)
 """
         test_file = tmp_path / "uninferrable.py"
@@ -762,6 +788,7 @@ def process(callback=lambda x: x):
         # Arrange
         code = """
 def 处理数据(数据):
+    # TODO: Add docstring
     return 数据 * 2
 """
         test_file = tmp_path / "unicode.py"
@@ -800,7 +827,9 @@ square = lambda x: x * 2
         # Arrange
         code = """
 def outer():
+    # TODO: Add docstring
     def inner(x):
+        # TODO: Add docstring
         return x * 2
     return inner
 """
@@ -827,6 +856,7 @@ class TestComplexTypeAnnotations:
 from typing import List, Dict
 
 def process(items: List[int]) -> Dict[str, int]:
+    # TODO: Add docstring
     return {str(i): i for i in items}
 """
         test_file = tmp_path / "generics.py"
@@ -852,6 +882,7 @@ def process(items: List[int]) -> Dict[str, int]:
 from typing import Union
 
 def process(value: Union[int, str]) -> Union[int, None]:
+    # TODO: Add docstring
     if isinstance(value, int):
         return value
     return None
@@ -878,6 +909,7 @@ def process(value: Union[int, str]) -> Union[int, None]:
 from typing import Callable
 
 def apply(func: Callable[[int], int], value: int) -> int:
+    # TODO: Add docstring
     return func(value)
 """
         test_file = tmp_path / "callable.py"
@@ -917,7 +949,7 @@ class TestTypeCheckerSyntaxErrors:
     def test_detect_type_comparison_with_syntax_error(self, tmp_path):
         """Test type comparison detection handles syntax errors."""
         # Arrange
-        code = "if type(x) == int\n    # Missing colon"
+        code = "if type(x) == int\n    # Missing colon"  # Better: isinstance(x, int)
         test_file = tmp_path / "broken.py"
         test_file.write_text(code)
 
