@@ -128,7 +128,7 @@ PyGuard implements **686 security vulnerability checks** across 18+ specialized 
 | `pii_detection.py` | 680+ | **25 checks** | PII/Privacy | ✅ **Week 5-6 COMPLETE** |
 | `crypto_security.py` | 715 | **15 checks** | Cryptography | ✅ **Week 7-8 COMPLETE** |
 | `supply_chain_advanced.py` | 821 | **20 checks** | CI/CD, Code Signing, Docker | ✅ **Week 11-12 COMPLETE** 🎉 |
-| `dependency_confusion.py` | 700+ | **7 checks** | Typosquatting, Malicious Pkgs | ✅ **COMPLETE** |
+| `dependency_confusion.py` | 739 total | **7 checks** | Typosquatting, Malicious Pkgs | ✅ **COMPLETE** |
 | `xss_detection.py` | 541 | 10 XSS types | Multi-framework | ✅ Complete |
 | `framework_django.py` | 331 | 7 checks | Django-specific | ✅ Complete |
 | `framework_flask.py` | 411 | 7 checks | Flask-specific | ✅ Complete |
@@ -1466,7 +1466,7 @@ Specialized modules for specific code patterns:
 | **Phase 1 Achievement** | ✅ **334/300 checks (111%)** | **CRITICAL** |
 | **Market Leadership** | ✅ **#1 Position Secured** | **CRITICAL** |
 
-### v0.6.0 (Planned)
+### v0.8.0 (In Progress)
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
@@ -1744,8 +1744,8 @@ See [DISTRIBUTION.md](../../DISTRIBUTION.md) for comprehensive distribution stra
 
 ---
 
-**Version**: 0.6.0  
-**Last Updated**: 2025-11-03  
+**Version**: 0.7.0
+**Last Updated**: 2025-11-14  
 **Repository**: <https://github.com/cboyd0319/PyGuard>  
 **Documentation**: <https://github.com/cboyd0319/PyGuard/tree/main/docs>  
 **Roadmap**: [ROADMAP.md](../../ROADMAP.md)  
