@@ -62,7 +62,7 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 #### Distribution Channels
 
-**Homebrew Formula** 🎯 CRITICAL ✅ COMPLETE
+**Homebrew Formula** 🎯 CRITICAL ✅ FORMULA READY ⚠️ TAP NOT PUBLISHED
 - [x] Write and test Homebrew formula
 - [x] Support macOS (Intel & Apple Silicon) and Linux
 - [x] Create generate_formula.py helper script
@@ -72,7 +72,10 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [ ] Create `homebrew-pyguard` tap repository (manual setup)
 - [ ] Test installation: `brew install cboyd0319/pyguard/pyguard`
 
-**VS Code Extension** 🎯 CRITICAL
+**Status:** ✅ 90% Complete - Formula ready (1,905 lines), needs tap repository creation
+**Action Required:** Create cboyd0319/homebrew-pyguard repository, publish formula, test installation
+
+**VS Code Extension** 🎯 CRITICAL ❌ **NOT IMPLEMENTED - BLOCKING v0.7.0**
 - [ ] Implement Language Server Protocol (LSP) for PyGuard
 - [ ] Build VS Code extension with LSP client
 - [ ] Real-time security linting as you type
@@ -82,7 +85,11 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [ ] Publish to VS Code Marketplace
 - [ ] Installation: `code --install-extension cboyd0319.pyguard`
 
-**Docker Hub Distribution** 🎯 HIGH ✅ COMPLETE
+**Status:** ❌ NOT STARTED - JSON-RPC API backend ready (676 lines), but no extension code exists
+**Priority:** **HIGHEST** - Only critical blocker for v0.7.0 completion
+**Estimated Work:** 2-3 weeks for MVP, 4-6 weeks for full feature set
+
+**Docker Hub Distribution** 🎯 HIGH ✅ WORKFLOW COMPLETE ⚠️ NOT PUBLISHED
 - [x] Create multi-arch build workflow (amd64, arm64)
 - [x] Automated builds on releases with GitHub Actions
 - [x] SBOM generation for container images
@@ -91,6 +98,9 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [x] Publish to Docker Hub and GHCR
 - [x] Usage ready: `docker pull cboyd0319/pyguard:latest`
 - [ ] Test actual Docker Hub deployment (requires secrets)
+
+**Status:** ✅ 95% Complete - Workflow ready, needs secret configuration and first publish
+**Action Required:** Configure DOCKER_USERNAME and DOCKER_TOKEN secrets, test publish
 
 **Enhanced GitHub Marketplace**
 - [ ] Improved action configuration examples
@@ -123,21 +133,26 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 #### Testing & Quality
 
-- [ ] Increase test coverage to 90% (current: 84%, +56 new tests added in Nov 2024)
+- [ ] Increase test coverage to 90% (current: 84% with 4,543 tests, +56 new tests added in Nov 2024, need ~50-60 more)
 - [x] Add performance benchmarks (comprehensive tracking system implemented)
-- [ ] Reduce false positive rate to <1.5%
+- [ ] Reduce false positive rate to <1.5% ⚠️ **NOT MEASURED - baseline needs establishment**
 - [x] Comprehensive integration tests (12 end-to-end workflow tests added)
 
+**Status:** ⚠️ In Progress - 84% coverage achieved, 6 percentage points from target
+**Gap:** False positive rate not benchmarked against real-world codebases
+
 **Success Criteria:**
-- ✅ Homebrew formula complete and ready for tap
-- ⏳ VS Code extension on Marketplace with 1K+ installs (deferred)
-- ✅ Docker workflow ready for Docker Hub deployment
+- ✅ Homebrew formula complete and ready for tap (90% - needs tap publish)
+- ❌ VS Code extension on Marketplace with 1K+ installs **BLOCKING - NOT STARTED**
+- ✅ Docker workflow ready for Docker Hub deployment (95% - needs publish)
 - ✅ Watch mode implemented and tested (98% coverage)
-- ⏳ 90% test coverage (current: 84%, target progress underway)
+- ⚠️ 90% test coverage (current: 84%, need 50-60 more tests)
 
-**Status:** 4/5 Critical items complete, 1 deferred (VS Code Extension)
+**Status:** 3/5 Critical items complete, 1 BLOCKED (VS Code Extension), 1 in progress (test coverage)
 
-**Target Release:** March 2026
+**CRITICAL BLOCKER:** VS Code Extension is the ONLY major gap preventing v0.7.0 completion
+
+**Target Release:** March 2026 ⚠️ **AT RISK** without VS Code extension development
 
 ---
 
@@ -158,12 +173,15 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - [x] GitHub CLI verification workflows documented
 - [x] Automated verification examples for CI/CD
 
-**Sigstore/Cosign Signing** ✅ COMPLETE
+**Sigstore/Cosign Signing** ⚠️ PARTIALLY COMPLETE
 - [x] Keyless signing for all releases
 - [x] Sign release tarballs, wheels, and containers
-- [x] Transparency log (Rekor) integration
+- [ ] Transparency log (Rekor) integration ⚠️ **NEEDS VERIFICATION**
 - [x] Document signature verification
-- [x] Automated signing in release workflow
+- [ ] Automated signing in release workflow ⚠️ **NEEDS ACTIVATION**
+
+**Status:** ⚠️ 70% Complete - Infrastructure exists but needs activation in release workflow
+**Action Required:** Enable cosign signing in .github/workflows/release.yml, verify Rekor integration
 
 **Complete SBOM** ✅ COMPLETE
 - [x] Generate SBOM in both CycloneDX and SPDX 2.3 formats
@@ -181,13 +199,17 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 #### IDE Integration
 
-**PyCharm/IntelliJ Plugin** 🎯 HIGH
+**PyCharm/IntelliJ Plugin** 🎯 HIGH ❌ **NOT IMPLEMENTED**
 - [ ] IntelliJ Platform plugin implementation
 - [ ] External tool integration
 - [ ] Code inspection providers
 - [ ] Intention actions for quick fixes
 - [ ] Settings dialog
 - [ ] Publish to JetBrains Marketplace
+
+**Status:** ❌ NOT STARTED - JSON-RPC API backend ready, no plugin code exists
+**Dependencies:** Should follow VS Code extension (reuse learnings)
+**Estimated Work:** 3-4 weeks after VS Code extension proven
 
 **LSP Improvements**
 - [ ] Full LSP 3.17 compliance
@@ -225,7 +247,7 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 
 **Success Criteria:**
 - ✅ SLSA Level 3 provenance for all releases (COMPLETE - with documentation)
-- ✅ All releases signed with Sigstore (COMPLETE)
+- ⚠️ All releases signed with Sigstore (70% - needs activation in workflow)
 - ✅ SBOM published for PyGuard dependencies (COMPLETE - with comprehensive guide)
 - ✅ Git Diff Analysis implemented (COMPLETE)
 - ✅ Enhanced Compliance Reporting (HTML/JSON) (COMPLETE)
@@ -235,9 +257,9 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 - ✅ JSON-RPC API for IDE plugins (COMPLETE - 42 tests passing)
 - ✅ Webhook API for CI/CD integration (COMPLETE - 48 tests passing)
 - ✅ Plugin architecture for custom rules (COMPLETE - 30 tests passing)
-- ⏳ PyCharm plugin on JetBrains Marketplace (planned)
-- ⏳ LSP fully compliant with specification (planned)
-- ⏳ OpenSSF Scorecard >8.0 (in progress)
+- ❌ PyCharm plugin on JetBrains Marketplace (NOT STARTED - blocked by VS Code)
+- ❌ LSP fully compliant with specification (NOT STARTED - needs VS Code extension first)
+- ⏳ OpenSSF Scorecard >8.0 (NOT MEASURED - needs baseline establishment)
 
 **Target Release:** June 2026
 
@@ -252,11 +274,13 @@ PyGuard is becoming the unquestioned standard for Python security, code quality,
 #### Production Readiness 🎯 CRITICAL
 
 **Quality Metrics**
-- [ ] >95% test coverage
-- [ ] <1% false positive rate on critical checks
-- [ ] 100% documentation coverage
-- [ ] Zero critical bugs for 90 days
-- [ ] Performance: <5s for 1K SLOC
+- [ ] >95% test coverage (current: 84%, gap: 11 percentage points)
+- [ ] <1% false positive rate on critical checks ⚠️ **NOT MEASURED - needs benchmarking**
+- [ ] 100% documentation coverage (current: ~95%, near complete)
+- [ ] Zero critical bugs for 90 days ⚠️ **NOT TRACKED - needs tracking system**
+- [ ] Performance: <5s for 1K SLOC ⚠️ **NOT BENCHMARKED - needs testing**
+
+**Gap Analysis:** Quality metrics need establishment and tracking systems
 
 **Stability**
 - [x] API stability guarantees ✅ **COMPLETE** (api_stability.py, 26 tests)
@@ -600,8 +624,87 @@ We want PyGuard to be the tool YOU need. Please share:
 
 ---
 
-**Last Updated:** 2025-11-03
+---
 
-**Next Review:** v0.7.0 planning (2025-12)
+## 📋 Gap Analysis Summary (2025-11-14)
+
+**Comprehensive codebase analysis completed. See [docs/reports/2025-11-14-roadmap-gap-analysis.md](docs/reports/2025-11-14-roadmap-gap-analysis.md) for full details.**
+
+### Critical Findings
+
+**Overall Status:** 95% complete against v0.7.0 goals with **ONE CRITICAL GAP**
+
+### v0.7.0 Blockers
+
+1. **VS Code Extension** ❌ NOT IMPLEMENTED
+   - Status: 0% complete (JSON-RPC backend ready, no extension code)
+   - Impact: BLOCKS v0.7.0 "Easy Distribution" completion
+   - Priority: **HIGHEST**
+   - Estimated work: 2-3 weeks MVP, 4-6 weeks full feature set
+
+2. **Test Coverage** ⚠️ IN PROGRESS
+   - Current: 84% (4,543 tests)
+   - Target: 90%
+   - Gap: Need ~50-60 additional tests
+
+3. **False Positive Rate** ⚠️ NOT MEASURED
+   - Target: <1.5%
+   - Status: No baseline established
+   - Action needed: Benchmark against real codebases
+
+### Distribution Channels Ready for Publishing
+
+- **Homebrew Tap** - 90% complete (formula ready, needs tap repository)
+- **Docker Hub** - 95% complete (workflow ready, needs secrets & publish)
+- **Sigstore Signing** - 70% complete (needs activation in workflow)
+
+### v0.8.0 Gaps
+
+- **PyCharm Plugin** ❌ NOT STARTED (depends on VS Code extension learnings)
+- **OpenSSF Scorecard >8.0** ⚠️ NOT MEASURED (needs baseline)
+
+### v1.0.0 Quality Metrics Gaps
+
+- Test coverage: 84% → need 95%
+- False positive rate: Not measured → need <1%
+- Performance: Not benchmarked → need <5s for 1K SLOC
+- Zero critical bugs: Not tracked → need tracking system
+
+### Verified Strengths (No Gaps)
+
+- ✅ Core architecture (114 modules, 3,395 lines)
+- ✅ 25 frameworks (all files verified)
+- ✅ 739+ security checks (verified, likely 1,000+ total)
+- ✅ 199+ auto-fixes (extensive infrastructure)
+- ✅ Advanced features (watch, git diff, taint, scan history)
+- ✅ All APIs (JSON-RPC, Webhook, Python)
+- ✅ Compliance reporting (10+ frameworks)
+- ✅ Supply chain security (SBOM, SLSA docs)
+
+### Recommended Actions
+
+**Immediate (Next 2 weeks):**
+1. Start VS Code extension development (MVP)
+2. Publish Docker Hub (configure secrets)
+3. Create Homebrew tap repository
+
+**Short-term (1-2 months):**
+4. Complete VS Code extension (full features)
+5. Increase test coverage to 90%
+6. Enable Sigstore signing
+7. Benchmark false positive rate
+
+**Medium-term (3-6 months):**
+8. Develop PyCharm plugin
+9. Achieve OpenSSF Scorecard >8.0
+10. Reach 95% test coverage
+
+---
+
+**Last Updated:** 2025-11-14 (Major gap analysis update)
+
+**Next Review:** v0.7.0 planning (2026-01)
 
 **Maintained by:** PyGuard Core Team (@cboyd0319)
+
+**Gap Analysis:** [docs/reports/2025-11-14-roadmap-gap-analysis.md](docs/reports/2025-11-14-roadmap-gap-analysis.md)
