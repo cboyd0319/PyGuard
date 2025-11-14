@@ -5,7 +5,7 @@ A comprehensive Python code quality, security, and formatting tool with automate
 Now with AST-based analysis, parallel processing, and advanced reporting.
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 __author__ = "Chad Boyd"  # pyguard: disable=CWE-798
 __license__ = "MIT"
 

@@ -412,8 +412,8 @@ class PyGuardCLI:
         self.ui.print_help_message()
 
 
-def main():  # noqa: PLR0912, PLR0915 - CLI main function handles many options
-    """Main CLI entry point."""
+def main_legacy():  # noqa: PLR0912, PLR0915 - CLI main function handles many options
+    """Legacy CLI entry point (deprecated - use subcommands instead)."""
 
     parser = argparse.ArgumentParser(
         description="PyGuard - Python QA and Auto-Fix Tool",
@@ -984,5 +984,88 @@ def main():  # noqa: PLR0912, PLR0915 - CLI main function handles many options
     cli.print_results(results, generate_html=not args.no_html, generate_sarif=args.sarif)
 
 
+def main():
+    """
+    Modern CLI entry point with subcommands.
+
+    Provides a clean, intuitive interface with dedicated commands for different operations.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pyguard",
+        description="PyGuard - The Python Security & Quality Tool Developers Love",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  pyguard scan .              # Scan current directory
+  pyguard fix . --unsafe      # Fix all issues including unsafe fixes
+  pyguard init --interactive  # Create config with wizard
+  pyguard doctor              # Verify installation
+  pyguard explain sql-injection  # Learn about SQL injection
+
+For more help: https://github.com/cboyd0319/PyGuard
+        """,
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"PyGuard {__version__}",
+    )
+
+    # Check if running with legacy arguments (no subcommand)
+    # This provides backwards compatibility
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and sys.argv[1] not in [
+        "scan",
+        "fix",
+        "init",
+        "doctor",
+        "validate-config",
+        "explain",
+        "watch",
+    ]:
+        # Legacy mode - assume user provided paths directly
+        # Redirect to legacy main for backwards compatibility
+        return main_legacy()
+
+    # Add subcommands
+    subparsers = parser.add_subparsers(
+        title="commands",
+        description="Available commands",
+        dest="command",
+        help="Run 'pyguard <command> --help' for more info",
+    )
+
+    # Import and register commands
+    from pyguard.commands import (
+        DoctorCommand,
+        ExplainCommand,
+        FixCommand,
+        InitCommand,
+        ScanCommand,
+        ValidateConfigCommand,
+        WatchCommand,
+    )
+
+    # Register all commands
+    ScanCommand.add_parser(subparsers)
+    FixCommand.add_parser(subparsers)
+    InitCommand.add_parser(subparsers)
+    DoctorCommand.add_parser(subparsers)
+    ValidateConfigCommand.add_parser(subparsers)
+    ExplainCommand.add_parser(subparsers)
+    WatchCommand.add_parser(subparsers)
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # If no command specified, show help
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    # Execute command
+    return args.func(args)
+
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

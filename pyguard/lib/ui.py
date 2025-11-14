@@ -385,14 +385,38 @@ class EnhancedConsole:
         )
         self.console.print(panel)
 
-    def print_error(self, error: str, suggestion: str | None = None):
-        """Print beginner-friendly error message."""
-        message = f"[bold red][X] Oops! Something went wrong:[/bold red]\n\n{error}"
+    def print_error(
+        self,
+        error: str,
+        details: str | None = None,
+        suggestions: list[str] | None = None,
+        suggestion: str | None = None,  # Backwards compatibility
+    ):
+        """
+        Print beginner-friendly error message with actionable suggestions.
 
+        Args:
+            error: Brief error title
+            details: Detailed error description
+            suggestions: List of actionable suggestions
+            suggestion: Single suggestion (backwards compatibility)
+        """
+        message = f"[bold red][X] Error:[/bold red] {error}"
+
+        if details:
+            message += f"\n\n{details}"
+
+        # Handle both new suggestions list and old suggestion string
+        all_suggestions = []
+        if suggestions:
+            all_suggestions.extend(suggestions)
         if suggestion:
-            message += self._safe_text(
-                f"\n\n[bold yellow]💡 Suggestion:[/bold yellow]\n{suggestion}"
-            )
+            all_suggestions.append(suggestion)
+
+        if all_suggestions:
+            message += self._safe_text("\n\n[bold yellow]💡 How to fix:[/bold yellow]")
+            for i, sug in enumerate(all_suggestions, 1):
+                message += f"\n  {i}. {sug}"
 
         panel = Panel(
             message,

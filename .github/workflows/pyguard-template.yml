@@ -1,0 +1,154 @@
+# PyGuard Security Scan - Template Workflow
+#
+# Copy this file to your project's .github/workflows/ directory
+# and customize as needed.
+#
+# For more information:
+# https://github.com/cboyd0319/PyGuard/blob/main/docs/integration/github-actions.md
+
+name: PyGuard Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-scan:
+    name: PyGuard Security & Quality Scan
+    runs-on: ubuntu-latest
+    permissions:
+      # Required for uploading SARIF results to GitHub Security tab
+      security-events: write
+      # Required for checking out the repository
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PyGuard
+        run: |
+          pip install pyguard[full]  # Install with all features
+          # OR for minimal install:
+          # pip install pyguard
+
+      - name: Verify PyGuard installation
+        run: pyguard doctor
+
+      - name: Run PyGuard scan
+        run: |
+          pyguard scan . \
+            --sarif \
+            --no-html \
+            --exclude "venv/*" "*.egg-info/*" "build/*"
+        continue-on-error: true  # Don't fail the build on findings
+
+      - name: Upload SARIF results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()  # Upload even if scan found issues
+        with:
+          sarif_file: pyguard-report.sarif
+          category: pyguard-security-scan
+
+      - name: Archive scan results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pyguard-results
+          path: |
+            pyguard-report.html
+            pyguard-report.sarif
+          retention-days: 30
+
+  security-scan-strict:
+    name: PyGuard Strict Mode (Fails on Issues)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PyGuard
+        run: pip install pyguard[full]
+
+      - name: Run PyGuard scan (strict mode)
+        run: |
+          pyguard scan . \
+            --security-only \
+            --exclude "venv/*" "tests/*"
+        # This will fail the build if security issues are found
+
+  auto-fix:
+    name: PyGuard Auto-Fix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PyGuard
+        run: pip install pyguard[full]
+
+      - name: Run PyGuard auto-fix (safe fixes only)
+        run: |
+          pyguard fix . \
+            --no-backup \
+            --exclude "venv/*" "*.egg-info/*"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit fixes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "🤖 PyGuard: Auto-fix security and quality issues"
+          git push
+
+      - name: Comment on PR
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 **PyGuard Auto-Fix**: I found and fixed some security and quality issues in this PR. Please review the changes.'
+            })
