@@ -43,8 +43,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Allow markdownlint to report issues without failing (pre-existing violations in main)
-          markdownlint "**/*.md" --ignore "node_modules" --config .markdownlint.json || true
+          # Run markdownlint and capture exit code
+          set +e
+          markdownlint "**/*.md" --ignore "node_modules" --config .markdownlint.json
+          MARKDOWNLINT_EXIT=$?
+          set -e
+
+          # Report results
+          if [ $MARKDOWNLINT_EXIT -ne 0 ]; then
+            echo "::warning::Markdownlint found issues. These should be fixed but won't fail the build yet."
+          else
+            echo "✓ All markdown files pass linting"
+          fi
+
+          # Don't fail the build (allowing time to fix pre-existing violations)
+          exit 0
 
   vale:
     name: Prose Lint (Vale)

@@ -146,7 +146,7 @@ jobs:
           EOF
           
           # Test scanning
-          docker run --rm -v $(pwd)/test-code:/code:ro \
+          docker run --rm -v "${PWD}/test-code:/code:ro" \
             cboyd0319/pyguard:${{ steps.get_version.outputs.VERSION }} /code --scan-only
           
           # Cleanup

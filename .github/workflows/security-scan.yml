@@ -137,7 +137,14 @@ jobs:
 
       - name: Install security scanners
         run: |
-          pip install pip-audit safety osv-scanner
+          pip install pip-audit safety
+
+      - name: Install OSV-Scanner
+        run: |
+          # OSV-Scanner is a Go binary, not a Python package
+          sudo curl -sSL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o /usr/local/bin/osv-scanner
+          sudo chmod +x /usr/local/bin/osv-scanner
+          osv-scanner --version
 
       - name: Run pip-audit
         run: |

@@ -151,8 +151,15 @@ jobs:
 
       - name: Verify test naming conventions
         run: |
-          # Check that all test files follow naming convention
-          ! find tests/ -name "*.py" -type f | grep -v "__" | grep -v conftest | grep -v "^test_" || true
+          # Check that all test files follow naming convention (test_*.py)
+          # Find Python files in tests/ that don't follow the pattern
+          INVALID_FILES=$(find tests/ -name "*.py" -type f ! -name "test_*.py" ! -name "__*.py" ! -name "conftest.py" || true)
+          if [ -n "$INVALID_FILES" ]; then
+            echo "Error: Found test files not following test_*.py naming convention:"
+            echo "$INVALID_FILES"
+            exit 1
+          fi
+          echo "All test files follow naming conventions"
 
       - name: Check test performance
         run: |

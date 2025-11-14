@@ -108,7 +108,7 @@ jobs:
         release-signing-artifacts: true
 
     - name: Import GPG key
-      if: env.GPG_PRIVATE_KEY != ''
+      if: secrets.GPG_PRIVATE_KEY != ''
       shell: bash
       run: |
         set -euo pipefail
@@ -118,11 +118,11 @@ jobs:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
     - name: Sign artifacts with GPG
-      if: env.GPG_PRIVATE_KEY != ''
+      if: secrets.GPG_PRIVATE_KEY != ''
       shell: bash
       run: |
         set -euo pipefail
-        
+
         # Sign each distribution file
         for file in dist/*.tar.gz dist/*.whl; do
           if [ -f "$file" ]; then
@@ -130,30 +130,30 @@ jobs:
             echo "Signed: $file"
           fi
         done
-        
+
         # Sign SBOM files
         if [ -f "pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json" ]; then
           gpg --batch --yes --detach-sign --armor "pyguard-${{ steps.get_version.outputs.VERSION }}.spdx.json"
           echo "Signed: SPDX SBOM"
         fi
-        
+
         if [ -f "pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json" ]; then
           gpg --batch --yes --detach-sign --armor "pyguard-${{ steps.get_version.outputs.VERSION }}.cyclonedx.json"
           echo "Signed: CycloneDX SBOM"
         fi
-        
+
         # Sign checksums
         if [ -f "dist/checksums.sha256" ]; then
           gpg --batch --yes --detach-sign --armor "dist/checksums.sha256"
           echo "Signed: checksums"
         fi
-        
+
         echo "All artifacts signed with GPG"
       env:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
     - name: Export GPG public key
-      if: env.GPG_PRIVATE_KEY != ''
+      if: secrets.GPG_PRIVATE_KEY != ''
       shell: bash
       run: |
         set -euo pipefail
@@ -200,20 +200,24 @@ jobs:
         set -euo pipefail
         VERSION="${{ steps.get_version.outputs.VERSION }}"
         SHA256="${{ steps.homebrew_sha.outputs.SHA256 }}"
-        
+
         # Update formula with new version and SHA256
         sed -i "s|pyguard-.*\.tar\.gz|pyguard-${VERSION}.tar.gz|g" homebrew/pyguard.rb
         sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|g" homebrew/pyguard.rb
-        
+
         # Configure git
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # Commit and push updated formula
+
+        # Fetch and checkout main to avoid detached HEAD
+        git fetch origin main
+        git checkout main
+
+        # Apply changes and push
         git add homebrew/pyguard.rb
         git commit -m "Update Homebrew formula to v${VERSION}" || echo "No changes to commit"
-        git push origin HEAD:main || echo "Failed to push, continuing..."
-        
+        git push origin main || echo "Failed to push, continuing..."
+
         echo "Updated Homebrew formula to v${VERSION} (SHA256: ${SHA256})"
 
     - name: Notify Homebrew tap
