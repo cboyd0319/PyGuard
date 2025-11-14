@@ -96,7 +96,7 @@ class BestPracticesFixer:
 
     def _fix_mutable_default_arguments(self, content: str) -> str:
         """Fix mutable default arguments in function definitions."""
-        # Pattern: def func(arg=[]) or def func(arg={})
+        # Pattern: def func(arg=[]) or def func(arg={})  # ANTI-PATTERN: Use None and create in function body
         pattern = r"def\s+\w+\([^)]*=\s*(\[\]|\{\})"
 
         if re.search(pattern, content):
@@ -125,7 +125,7 @@ class BestPracticesFixer:
 
     def _fix_comparison_to_none(self, content: str) -> str:
         """Fix comparisons to None (should use 'is' not '==')."""
-        # Pattern: == None or != None
+        # Pattern: is None or is not None
         replacements = [
             (r"(\w+)\s*==\s*None", r"\1 is None"),
             (r"(\w+)\s*!=\s*None", r"\1 is not None"),
@@ -140,21 +140,21 @@ class BestPracticesFixer:
 
     def _fix_comparison_to_bool(self, content: str) -> str:
         """Fix comparisons to True/False."""
-        # Pattern: if x == True or if x == False
+        # Pattern: if x   # Use if var: instead or if x == False
         lines = content.split("\n")
         for i, line in enumerate(lines):
-            if "== True" in line:
-                lines[i] = line.replace("== True", "  # Use if var: instead")
+            if "  # Use if var: instead" in line:
+                lines[i] = line.replace("  # Use if var: instead", "  # Use if var: instead")
                 self.fixes_applied.append("Added suggestion to simplify boolean comparison")
-            elif "== False" in line:
-                lines[i] = line.replace("== False", "  # Use if not var: instead")
+            elif "  # Use if not var: instead" in line:
+                lines[i] = line.replace("  # Use if not var: instead", "  # Use if not var: instead")
                 self.fixes_applied.append("Added suggestion to simplify boolean comparison")
 
         return "\n".join(lines)
 
     def _fix_type_comparison(self, content: str) -> str:
         """Fix type comparisons (should use isinstance())."""
-        # Pattern: type(x) == SomeType
+        # Pattern: type(x) == SomeType  # Better: isinstance(x, SomeType)
         pattern = r"type\((\w+)\)\s*==\s*(\w+)"
 
         if re.search(pattern, content):
@@ -206,7 +206,7 @@ class BestPracticesFixer:
 
     def _fix_context_managers(self, content: str) -> str:
         """Suggest using context managers for file operations."""
-        # Pattern: file = open() without with statement
+        # Pattern: file = open() without with statement  # Best Practice: Use 'with' statement
         lines = content.split("\n")
 
         for i, line in enumerate(lines):

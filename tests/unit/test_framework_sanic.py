@@ -594,7 +594,7 @@ app = Sanic("test")
 
 @app.listener("before_server_start")
 async def setup(app, loop):
-    password = "admin123"
+    password = "admin123"  # SECURITY: Use environment variables or config files
     await connect_db(password)
 """
         violations = analyze_sanic_security(Path("test.py"), code)
@@ -722,6 +722,7 @@ class TestSanicEdgeCases:
         """No violations should be detected without Sanic import."""
         code = """
 def get_user(user_id):
+    # TODO: Add docstring
     query = f"SELECT * FROM users WHERE id = {user_id}"
     return db.execute(query)
 """

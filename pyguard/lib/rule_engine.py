@@ -97,6 +97,7 @@ class Rule:
     cwe_mapping: str | None = None
 
     def detect(
+        # TODO: Add docstring
         self, code: str, file_path: Path, tree: ast.AST | None = None
     ) -> list[RuleViolation]:
         """
@@ -276,6 +277,7 @@ class RuleExecutor:
         self.logger = PyGuardLogger()
 
     def analyze_file(
+        # TODO: Add docstring
         self,
         file_path: Path,
         rules: list[Rule] | None = None,
@@ -322,6 +324,7 @@ class RuleExecutor:
         return all_violations
 
     def apply_fixes(
+        # TODO: Add docstring
         self, code: str, violations: list[RuleViolation]
     ) -> tuple[str, list[RuleViolation]]:
         """

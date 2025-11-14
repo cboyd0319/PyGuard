@@ -28,6 +28,7 @@ app = Quart(__name__)
 
 @app.route("/data")
 def get_data():
+    # TODO: Add docstring
     user_input = request.args.get("q")
     return {"result": user_input}
 """
@@ -183,6 +184,7 @@ app = Quart(__name__)
 
 @app.route("/login")
 def login():
+    # TODO: Add docstring
     session["user_id"] = 123
     return {"status": "logged in"}
 """
@@ -611,6 +613,7 @@ class TestQuartEdgeCases:
         """No violations for code without Quart imports."""
         code = """
 def process_data(data):
+    # TODO: Add docstring
     return {"result": data}
 """
         violations = analyze_quart(Path("test.py"), code)

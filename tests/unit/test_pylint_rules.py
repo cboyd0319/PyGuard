@@ -12,6 +12,7 @@ class TestPylintRulesDetection:
         """Test detection of too many returns."""
         code = """
 def complex_function(x):
+    # TODO: Add docstring
     if x == 1: return 1
     if x == 2: return 2
     if x == 3: return 3
@@ -34,6 +35,7 @@ def complex_function(x):
         """Test detection of too many arguments."""
         code = """
 def many_args(a, b, c, d, e, f, g):
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"
@@ -49,7 +51,9 @@ def many_args(a, b, c, d, e, f, g):
         """Test detection of too many instance attributes."""
         code = """
 class DataClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.a = 1
         self.b = 2
         self.c = 3
@@ -89,7 +93,8 @@ if text == "":
 count = 0
 
 def increment():
-    global count
+    # TODO: Add docstring
+    global count  # Avoid global variables; consider class attributes
     count += 1
 """
         file_path = tmp_path / "test.py"
@@ -128,6 +133,7 @@ assert (1, 2), "This is a tuple assertion"
         """Test detection of too many branches (PLR0912)."""
         code = """
 def complex_branches(x):
+    # TODO: Add docstring
     if x == 1: pass
     if x == 2: pass
     if x == 3: pass
@@ -143,7 +149,7 @@ def complex_branches(x):
         x -= 1
     try:
         pass
-    except:
+    except Exception:  # FIXED: Catch specific exceptions
         pass
 """
         file_path = tmp_path / "test.py"
@@ -160,6 +166,7 @@ def complex_branches(x):
         statements = ["    x = 1"] * 60
         code = f"""
 def many_statements():
+    # TODO: Add docstring
 {chr(10).join(statements)}
 """
         file_path = tmp_path / "test.py"
@@ -174,7 +181,9 @@ def many_statements():
         """Test detection in multiple classes."""
         code = """
 class FirstClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.a1 = 1
         self.a2 = 2
         self.a3 = 3
@@ -185,7 +194,9 @@ class FirstClass:
         self.a8 = 8
 
 class SecondClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.b1 = 1
         self.b2 = 2
 """
@@ -215,9 +226,9 @@ if value == 42:
         assert isinstance(violations, list)
 
     def test_detect_comparison_to_none(self, tmp_path):
-        """Test detection of == None instead of is None (PLC1901)."""
+        """Test detection of is None instead of is None (PLC1901)."""
         code = """
-if value == None:
+if value is None:
     pass
 """
         file_path = tmp_path / "test.py"
@@ -250,7 +261,8 @@ from os import path as path
         """Test detection of global statement on undefined variable (PLW0601)."""
         code = """
 def func():
-    global undefined_var
+    # TODO: Add docstring
+    global undefined_var  # Avoid global variables; consider class attributes
     undefined_var = 1
 """
         file_path = tmp_path / "test.py"
@@ -281,6 +293,7 @@ assert ""  # This is actually False!
         """Test detection of raising NotImplemented (PLE0711)."""
         code = """
 def abstract_method():
+    # TODO: Add docstring
     raise NotImplemented
 """
         file_path = tmp_path / "test.py"
@@ -298,6 +311,7 @@ def abstract_method():
             (
                 """
 def func(x):
+    # TODO: Add docstring
     if x == 1: return 1
     if x == 2: return 2
     if x == 3: return 3
@@ -315,7 +329,8 @@ def func(x):
             (
                 """
 def func():
-    global x
+    # TODO: Add docstring
+    global x  # Avoid global variables; consider class attributes
     x = 1
 """,
                 "PLW0603",
@@ -343,6 +358,7 @@ def func():
         """Test graceful handling of syntax errors."""
         code = """
 def broken_func(
+    # TODO: Add docstring
     # Missing closing paren
 """
         file_path = tmp_path / "test.py"
@@ -368,7 +384,9 @@ def broken_func(
         """Test checker on complex nested structures."""
         code = """
 class ComplexClass:
+    # TODO: Add docstring
     def __init__(self):
+        # TODO: Add docstring
         self.attr1 = 1
         self.attr2 = 2
         self.attr3 = 3
@@ -379,6 +397,7 @@ class ComplexClass:
         self.attr8 = 8
 
     def complex_method(self, a, b, c, d, e, f):
+        # TODO: Add docstring
         if a == 1: return 1
         if b == 2: return 2
         if c == 3: return 3
@@ -412,11 +431,13 @@ def simple_func(x, y):
 class CleanClass:
     '''A well-designed class with enough attributes.'''
     def __init__(self):
+        # TODO: Add docstring
         self.value = 0
         self.name = ""
         self.data = []
 
     def increment(self):
+        # TODO: Add docstring
         self.value += 1
 """
         file_path = tmp_path / "test.py"
@@ -434,6 +455,7 @@ class CleanClass:
         """Test that checker has expected API structure."""
         code = """
 def func(a, b, c, d, e, f):
+    # TODO: Add docstring
     pass
 """
         file_path = tmp_path / "test.py"

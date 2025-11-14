@@ -67,6 +67,7 @@ class TestACLMisconfiguration:
 from pyramid.security import Allow, Everyone
 
 class RootFactory:
+    # TODO: Add docstring
     __acl__ = [
         (Allow, Everyone, 'view'),  # Too permissive
     ]
@@ -82,6 +83,7 @@ class RootFactory:
 from pyramid.security import Allow, Authenticated
 
 class SecureFactory:
+    # TODO: Add docstring
     __acl__ = [
         (Allow, Authenticated, 'view'),
     ]
@@ -102,6 +104,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='delete_user')
 def admin_delete_user(request):
+    # TODO: Add docstring
     user_id = request.matchdict['id']
     delete_user(user_id)
 """
@@ -117,6 +120,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='delete_user', permission='admin')
 def admin_delete_user(request):
+    # TODO: Add docstring
     user_id = request.matchdict['id']
     delete_user(user_id)
 """
@@ -138,6 +142,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='user_profile', permission='view')
 def view_profile(request):
+    # TODO: Add docstring
     return get_profile(request.matchdict['id'])
 """
         issues = analyze_pyramid_security(code)
@@ -151,6 +156,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='edit', permission='edit')
 def edit_resource(request):
+    # TODO: Add docstring
     pass
 """
         issues = analyze_pyramid_security(code)
@@ -163,6 +169,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='profile', permission='view_user_profile')
 def view_profile(request):
+    # TODO: Add docstring
     return get_profile(request.matchdict['id'])
 """
         issues = analyze_pyramid_security(code)
@@ -179,7 +186,9 @@ class TestContextFactory:
 from pyramid.traversal import resource_path
 
 class UserFactory:
+    # TODO: Add docstring
     def __getitem__(self, key):
+        # TODO: Add docstring
         return User.get_by_id(key)
 """
         issues = analyze_pyramid_security(code)
@@ -193,11 +202,13 @@ class UserFactory:
 from pyramid.security import Allow, Authenticated
 
 class UserFactory:
+    # TODO: Add docstring
     __acl__ = [
         (Allow, Authenticated, 'view'),
     ]
 
     def __getitem__(self, key):
+        # TODO: Add docstring
         return User.get_by_id(key)
 """
         issues = analyze_pyramid_security(code)
@@ -218,7 +229,9 @@ class TestTraversalSecurity:
 from pyramid.traversal import resource_path
 
 class FileFactory:
+    # TODO: Add docstring
     def __getitem__(self, key):
+        # TODO: Add docstring
         path = '/data/' + key  # Path traversal risk
         return open(path)
 """
@@ -242,6 +255,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='api_users', renderer='json')
 def get_users(request):
+    # TODO: Add docstring
     return User.query.all()  # May expose sensitive fields
 """
         issues = analyze_pyramid_security(code)
@@ -259,6 +273,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='user_{id}')
 def get_user(request):
+    # TODO: Add docstring
     user_id = request.matchdict['id']
     return get_user_by_id(user_id)
 """
@@ -280,6 +295,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='update_profile', require_csrf=False)
 def update_profile(request):
+    # TODO: Add docstring
     update_user(request.POST)
 """
         issues = analyze_pyramid_security(code)
@@ -294,6 +310,7 @@ from pyramid.view import view_config
 
 @view_config(route_name='update_profile')
 def update_profile(request):
+    # TODO: Add docstring
     update_user(request.POST)
 """
         issues = analyze_pyramid_security(code)
@@ -310,6 +327,7 @@ class TestRoutePrefix:
 from pyramid.config import Configurator
 
 def main(global_config, **settings):
+    # TODO: Add docstring
     config = Configurator(settings=settings)
     config.add_route('api_users', '/api/users')  # No version
 """
@@ -325,6 +343,7 @@ def main(global_config, **settings):
 from pyramid.config import Configurator
 
 def main(global_config, **settings):
+    # TODO: Add docstring
     config = Configurator(settings=settings)
     config.add_route('api_v1_users', '/api/v1/users')
 """
@@ -342,6 +361,7 @@ class TestRequestFactory:
 from pyramid.config import Configurator
 
 def main(global_config, **settings):
+    # TODO: Add docstring
     config = Configurator(settings=settings)
     config.set_request_factory(CustomRequest)
 """
@@ -410,9 +430,11 @@ class TestEdgeCases:
         """Non-Pyramid code should not trigger issues."""
         code = """
 def regular_function():
+    # TODO: Add docstring
     return "Hello"
 
 class RegularClass:
+    # TODO: Add docstring
     pass
 """
         issues = analyze_pyramid_security(code)
@@ -439,19 +461,23 @@ from pyramid.view import view_config
 from pyramid.security import Allow, Authenticated
 
 class RootFactory:
+    # TODO: Add docstring
     __acl__ = [
         (Allow, Authenticated, 'view'),
     ]
 
 @view_config(route_name='home', permission='view')
 def home(request):
+    # TODO: Add docstring
     return {'message': 'Welcome'}
 
 @view_config(route_name='admin', permission='admin')
 def admin_panel(request):
+    # TODO: Add docstring
     return render_admin()
 
 def main(global_config, **settings):
+    # TODO: Add docstring
     config = Configurator(settings=settings, root_factory=RootFactory)
     config.add_route('home', '/')
     config.add_route('admin', '/admin')
@@ -473,11 +499,13 @@ from pyramid.view import view_config
 from pyramid.security import Allow, Everyone
 
 class BadFactory:
+    # TODO: Add docstring
     __acl__ = [(Allow, Everyone, 'view')]  # PYRAMID001
     # Missing __getitem__ for this example
 
 @view_config(route_name='delete', require_csrf=False)  # PYRAMID012
 def delete_item(request):  # PYRAMID002 (no permission)
+    # TODO: Add docstring
     item_id = request.matchdict['id']
     delete(item_id)
 """
@@ -506,6 +534,7 @@ from pyramid.view import view_config
             code += f"""
 @view_config(route_name='view{i}', permission='view')
 def view_function_{i}(request):
+    # TODO: Add docstring
     return {{'id': {i}}}
 
 """
@@ -538,18 +567,23 @@ class TestIntegration:
 from pyramid.security import Allow, Authenticated
 
 class Root:
+    # TODO: Add docstring
     __acl__ = [
         (Allow, Authenticated, 'view'),
     ]
 
     def __init__(self, request):
+        # TODO: Add docstring
         self.request = request
 
     def __getitem__(self, key):
+        # TODO: Add docstring
         return Resource(key, self)
 
 class Resource:
+    # TODO: Add docstring
     def __init__(self, name, parent):
+        # TODO: Add docstring
         self.__name__ = name
         self.__parent__ = parent
 """
@@ -563,10 +597,12 @@ from pyramid.view import view_config
 
 @view_config(route_name='users', renderer='json', permission='view_users')
 def list_users(request):
+    # TODO: Add docstring
     return User.query.all()
 
 @view_config(route_name='user', renderer='json', permission='view_user')
 def get_user(request):
+    # TODO: Add docstring
     user_id = request.matchdict['id']
     return User.get(user_id)
 """

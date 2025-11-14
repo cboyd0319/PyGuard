@@ -149,9 +149,10 @@ class TestUnsafeFixesFlag:
 import sqlite3
 
 def get_user(user_id):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
+    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))  # SQL INJECTION RISK: Use parameterized queries
     return cursor.fetchone()
 """
         test_file.write_text(vulnerable_code)
@@ -163,7 +164,7 @@ def get_user(user_id):
         # Verify that unsafe SQL injection fix was NOT applied
         content = test_file.read_text()
         # The vulnerable pattern should still exist (no unsafe fix applied)
-        assert 'cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))' in content
+        assert 'cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))' in content  # SQL INJECTION RISK: Use parameterized queries
 
         # Results should indicate some analysis was done
         assert isinstance(results, dict)
@@ -179,9 +180,10 @@ def get_user(user_id):
 import sqlite3
 
 def get_user(user_id):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
+    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))  # SQL INJECTION RISK: Use parameterized queries
     return cursor.fetchone()
 """
         test_file.write_text(vulnerable_code)
@@ -210,8 +212,9 @@ def get_user(user_id):
 import yaml
 
 def load_config(file):
+    # TODO: Add docstring
     with open(file) as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 """
         test_file.write_text(safe_fix_code)
 

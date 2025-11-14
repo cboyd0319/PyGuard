@@ -49,6 +49,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting asyncio security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines: list[str] = code.splitlines()
@@ -119,7 +120,7 @@ class AsyncioSecurityVisitor(ast.NodeVisitor):
             self.violations.append(
                 RuleViolation(
                     rule_id="ASYNCIO001",
-                    message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",
+                    message="Dangerous use of asyncio.create_subprocess_shell() with potential command injection. Use create_subprocess_exec() instead.",  # DANGEROUS: Avoid exec with untrusted input
                     file_path=self.file_path,
                     line_number=node.lineno,
                     column=node.col_offset,

@@ -75,7 +75,7 @@ class MissingAutoFixes:
         self.fixes_applied = []
 
         # Apply safe fixes (always applied)
-        content = self._fix_eval_exec_to_literal_eval(content)
+        content = self._fix_eval_exec_to_literal_eval(content)  # DANGEROUS: Avoid eval with untrusted input
         content = self._fix_pickle_to_json(content)
         content = self._fix_xxe_vulnerabilities(content)
         content = self._fix_format_string_vulnerabilities(content)
@@ -114,12 +114,12 @@ class MissingAutoFixes:
 
     # ===== SAFE FIXES (Always Applied) =====
 
-    def _fix_eval_exec_to_literal_eval(self, content: str) -> str:
+    def _fix_eval_exec_to_literal_eval(self, content: str) -> str:  # DANGEROUS: Avoid eval with untrusted input
         """
-        Replace dangerous eval() with ast.literal_eval() for safe evaluation.
+        Replace dangerous eval() with ast.literal_eval() for safe evaluation.  # DANGEROUS: Avoid eval with untrusted input
 
         Classification: SAFE
-        - Only replaces simple eval() calls
+        - Only replaces simple eval() calls  # DANGEROUS: Avoid eval with untrusted input
         - Adds import for ast module
         - Safer alternative for evaluating literals
 
@@ -140,25 +140,25 @@ class MissingAutoFixes:
                         needs_import = True
                         import_added = True
 
-                    fixed_line = re.sub(r"\beval\s*\(", "ast.literal_eval(", line)
+                    fixed_line = re.sub(r"\beval\s*\(", "ast.literal_eval(", line)  # DANGEROUS: Avoid eval with untrusted input
                     fixed_lines.append(
-                        "# FIXED: eval() → ast.literal_eval() for safe literal evaluation"
+                        "# FIXED: eval() → ast.literal_eval() for safe literal evaluation"  # DANGEROUS: Avoid eval with untrusted input
                     )
                     fixed_lines.append(fixed_line)
-                    self.fixes_applied.append("Code injection: eval() → ast.literal_eval()")
+                    self.fixes_applied.append("Code injection: eval() → ast.literal_eval()")  # DANGEROUS: Avoid eval with untrusted input
                 else:
                     fixed_lines.append(
-                        "# SECURITY WARNING: eval() detected - consider removing or using safer alternative"
+                        "# SECURITY WARNING: eval() detected - consider removing or using safer alternative"  # DANGEROUS: Avoid eval with untrusted input
                     )
                     fixed_lines.append(line)
-                    self.fixes_applied.append("Code injection warning added for eval()")
+                    self.fixes_applied.append("Code injection warning added for eval()")  # DANGEROUS: Avoid eval with untrusted input
             # Check for exec() usage
             elif re.search(r"\bexec\s*\(", line):
                 fixed_lines.append(
-                    "# SECURITY WARNING: exec() is dangerous - consider refactoring to eliminate dynamic code execution"
+                    "# SECURITY WARNING: exec() is dangerous - consider refactoring to eliminate dynamic code execution"  # DANGEROUS: Avoid exec with untrusted input
                 )
                 fixed_lines.append(line)
-                self.fixes_applied.append("Code injection warning added for exec()")
+                self.fixes_applied.append("Code injection warning added for exec()")  # DANGEROUS: Avoid exec with untrusted input
             else:
                 fixed_lines.append(line)
 
@@ -172,7 +172,7 @@ class MissingAutoFixes:
         Replace pickle with JSON for safer serialization where possible.
 
         Classification: SAFE
-        - Replaces pickle.loads/dumps with json.loads/dumps
+        - Replaces pickle.loads/dumps with json.loads/dumps  # SECURITY: Don't use pickle with untrusted data
         - Only for simple data structures
         - Adds warning for complex objects
 
@@ -188,7 +188,7 @@ class MissingAutoFixes:
         has_simple_data = any(hint in content for hint in ['{"', "[", "dict", "list", "str", "int"])
 
         for line in lines:
-            # Replace pickle.loads with json.loads
+            # Replace pickle.loads with json.loads  # SECURITY: Don't use pickle with untrusted data
             if re.search(r"\bpickle\.loads?\s*\(", line):
                 # Check if it looks like simple data or if we have class/complex types nearby
                 has_complex_nearby = any(
@@ -203,7 +203,7 @@ class MissingAutoFixes:
 
                     fixed_line = re.sub(r"\bpickle\.loads?\s*\(", "json.loads(", line)
                     fixed_lines.append(
-                        "# FIXED: pickle.loads() → json.loads() for safer deserialization"
+                        "# FIXED: pickle.loads() → json.loads() for safer deserialization"  # SECURITY: Don't use pickle with untrusted data
                     )
                     fixed_lines.append(fixed_line)
                     self.fixes_applied.append("Unsafe deserialization: pickle → JSON")
@@ -277,7 +277,7 @@ class MissingAutoFixes:
             elif (
                 "xml.etree.ElementTree" in line or "ET.parse" in line
             ) and "import" not in line.lower():
-                fixed_lines.append("# SECURITY: Use defusedxml for safe XML parsing")
+                fixed_lines.append("# SECURITY: Use defusedxml for safe XML parsing")  # Consider list comprehension
                 fixed_lines.append("# Install: pip install defusedxml")
                 fixed_lines.append(
                     "# Replace: from xml.etree.ElementTree → import defusedxml.ElementTree"
@@ -346,7 +346,7 @@ class MissingAutoFixes:
                 )
             elif "locals()" in line:
                 # Check if it's being exposed (printed, logged, or returned)
-                if any(expose in line for expose in ["print", "log", "return", "str("]):
+                if any(expose in line for expose in ["print", "log", "return", "str("]):  # Consider list comprehension
                     fixed_lines.append(
                         "# SECURITY WARNING: locals() exposure can leak sensitive data"
                     )
@@ -737,7 +737,7 @@ class MissingAutoFixes:
         has_user_input = any(req in content for req in ["request", "args", "form", "input("])
 
         for line in lines:
-            if has_user_input and any(op in line for op in ["open(", "Path(", "os.path.join("]):
+            if has_user_input and any(op in line for op in ["open(", "Path(", "os.path.join("]):  # PATH TRAVERSAL RISK: Validate and sanitize paths
                 indent = len(line) - len(line.lstrip())
                 fixed_lines.append(f"{' ' * indent}# FIXED: Unsafe file operation - validate path")
                 fixed_lines.append(

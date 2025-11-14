@@ -228,6 +228,7 @@ class OptimizedAnalyzer:
     """
 
     def __init__(
+        # TODO: Add docstring
         self,
         cache_dir: Path | None = None,
         max_workers: int | None = None,
@@ -248,6 +249,7 @@ class OptimizedAnalyzer:
         self.metrics: list[FileMetrics] = []
 
     def analyze_files_optimized(
+        # TODO: Add docstring
         self,
         files: list[Path],
         analyzer_func: Callable[[Path, ast.AST | None], tuple[int, float]],
@@ -327,12 +329,14 @@ class OptimizedAnalyzer:
         }
 
     def _analyze_parallel(
+        # TODO: Add docstring
         self, files: list[Path], analyzer_func: Callable
     ) -> dict[str, Any]:
         """Analyze files in parallel."""
         results = {}
 
         def process_file(file_path: Path) -> tuple[str, dict]:
+            # TODO: Add docstring
             start = time.time()
 
             # Parse AST (or get from cache)

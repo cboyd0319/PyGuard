@@ -153,6 +153,7 @@ class FormattingFixer:
             return False, error_msg
 
     def format_file(
+        # TODO: Add docstring
         self,
         file_path: Path,
         use_black: bool = True,
@@ -210,6 +211,7 @@ class FormattingFixer:
         }
 
     def format_directory(
+        # TODO: Add docstring
         self,
         directory: Path,
         exclude_patterns: list[str] | None = None,

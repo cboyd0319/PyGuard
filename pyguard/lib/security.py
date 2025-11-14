@@ -59,7 +59,7 @@ class SecurityFixer:
         content = self._fix_insecure_temp_files(content)
         content = self._fix_yaml_load(content)
         content = self._fix_pickle_usage(content)
-        content = self._fix_eval_exec(content)
+        content = self._fix_eval_exec(content)  # DANGEROUS: Avoid exec with untrusted input
         content = self._fix_weak_crypto(content)
         content = self._fix_path_traversal(content)
 
@@ -105,7 +105,7 @@ class SecurityFixer:
 
     def _fix_sql_injection(self, content: str) -> str:
         """Fix potential SQL injection vulnerabilities."""
-        # Pattern: cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+        # Pattern: cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # SQL INJECTION RISK: Use parameterized queries
         pattern = r'\.execute\s*\(\s*["\'].*?["\']?\s*\+\s*.*?\)'
 
         if re.search(pattern, content):
@@ -121,7 +121,7 @@ class SecurityFixer:
 
     def _fix_command_injection(self, content: str) -> str:
         """Fix command injection vulnerabilities."""
-        # Pattern: os.system() with variable
+        # Pattern: os.system() with variable  # SECURITY: Use subprocess.run() instead
         patterns = [
             r"os\.system\(",
             r"subprocess\.call\([^,\)]*%",
@@ -138,7 +138,7 @@ class SecurityFixer:
                         self.fixes_applied.append("Added command injection warning")
                     elif "os.system" in line and "# COMMAND INJECTION" not in line:
                         lines[i] = f"{line}  # SECURITY: Use subprocess.run() instead"
-                        self.fixes_applied.append("Added os.system() warning")
+                        self.fixes_applied.append("Added os.system() warning")  # SECURITY: Use subprocess.run() instead
 
         return "\n".join(lines)
 
@@ -168,10 +168,10 @@ class SecurityFixer:
 
     def _fix_insecure_temp_files(self, content: str) -> str:
         """Fix insecure temporary file creation."""
-        # Replace tempfile.mktemp() with tempfile.mkstemp()
-        if "tempfile.mktemp(" in content:
+        # Replace tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) with tempfile.mkstemp()
+        if "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()" in content:
             content = content.replace(
-                "tempfile.mktemp(",
+                "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()",
                 "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()",
             )
             self.fixes_applied.append("Replaced mktemp() with mkstemp()")
@@ -180,7 +180,7 @@ class SecurityFixer:
 
     def _fix_yaml_load(self, content: str) -> str:
         """Fix unsafe YAML loading."""
-        # Replace yaml.load() with yaml.safe_load()
+        # Replace yaml.safe_load() with yaml.safe_load()
         if "yaml.load(" in content and "yaml.safe_load(" not in content:
             content = re.sub(r"yaml\.load\(", "yaml.safe_load(", content)
             self.fixes_applied.append("Replaced yaml.load() with yaml.safe_load()")
@@ -189,7 +189,7 @@ class SecurityFixer:
 
     def _fix_pickle_usage(self, content: str) -> str:
         """Warn about pickle usage with untrusted data."""
-        if "pickle.load" in content or "pickle.loads" in content:
+        if "pickle.load" in content or "pickle.loads" in content:  # SECURITY: Don't use pickle with untrusted data
             lines = content.split("\n")
             for i, line in enumerate(lines):
                 if "pickle.load" in line and "# SECURITY:" not in line:
@@ -199,9 +199,9 @@ class SecurityFixer:
 
         return content
 
-    def _fix_eval_exec(self, content: str) -> str:
-        """Warn about dangerous eval() and exec() usage."""
-        dangerous_funcs = ["eval(", "exec(", "compile("]
+    def _fix_eval_exec(self, content: str) -> str:  # DANGEROUS: Avoid exec with untrusted input
+        """Warn about dangerous eval() and exec() usage."""  # DANGEROUS: Avoid eval with untrusted input
+        dangerous_funcs = ["eval(", "exec(", "compile("]  # DANGEROUS: Avoid eval with untrusted input
 
         lines = content.split("\n")
         for func in dangerous_funcs:
@@ -216,8 +216,8 @@ class SecurityFixer:
         """Fix weak cryptographic practices."""
         # Replace MD5/SHA1 with SHA256
         weak_hashes = {
-            "hashlib.md5(": "hashlib.sha256(",
-            "hashlib.sha1(": "hashlib.sha256(",
+            "hashlib.md5(": "hashlib.sha256(",  # SECURITY: Consider using SHA256 or stronger
+            "hashlib.sha1(": "hashlib.sha256(",  # SECURITY: Consider using SHA256 or stronger
         }
 
         for weak, _strong in weak_hashes.items():
@@ -269,7 +269,7 @@ class SecurityFixer:
             (r'password\s*=\s*["\'][^"\']+["\']', "Hardcoded password detected"),
             (r"\.execute\s*\([^)]*\+", "Potential SQL injection"),
             (r"shell=True", "Command injection risk with shell=True"),
-            (r"eval\(", "Dangerous eval() usage"),
+            (r"eval\(", "Dangerous eval() usage"),  # DANGEROUS: Avoid eval with untrusted input
             (r"pickle\.loads?\(", "Unsafe pickle usage"),
             (r"yaml\.load\(", "Unsafe YAML loading"),
             (r"random\.", "Insecure random in security context"),

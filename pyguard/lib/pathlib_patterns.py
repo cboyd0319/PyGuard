@@ -39,6 +39,7 @@ class PathlibPatternVisitor(ast.NodeVisitor):
     """
 
     def __init__(self):
+        # TODO: Add docstring
         self.issues: list[PathlibIssue] = []
         self.has_pathlib_import = False
         self.has_os_import = False
@@ -186,6 +187,7 @@ class PathlibChecker:
     """Main checker class for pathlib pattern detection."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.visitor = PathlibPatternVisitor()
 
     def check_code(self, code: str, filename: str = "<string>") -> list[PathlibIssue]:

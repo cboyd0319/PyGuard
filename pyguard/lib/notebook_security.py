@@ -12,7 +12,7 @@ across 13 security categories with 76+ vulnerability patterns.
    - IPython kernel message injection
 
 2. Unsafe Deserialization & ML Model Risks (CRITICAL)
-   - pickle.load() arbitrary code execution
+   - pickle.load() arbitrary code execution  # SECURITY: Don't use pickle with untrusted data
    - PyTorch torch.load() without weights_only
    - Hugging Face model poisoning
 
@@ -165,7 +165,7 @@ class NotebookSecurityAnalyzer:
     vision for best-in-class notebook security.
 
     **Detection Capabilities:**
-    - CRITICAL: eval/exec, pickle.load, torch.load, hardcoded secrets, code injection
+    - CRITICAL: eval/exec, pickle.load, torch.load, hardcoded secrets, code injection  # SECURITY: Don't use pickle with untrusted data
     - HIGH: Shell commands, XSS, network exfiltration, filesystem access, PII exposure
     - MEDIUM: Reproducibility, execution order, resource exhaustion
     - LOW: Kernel metadata, environment info
@@ -509,6 +509,7 @@ class NotebookSecurityAnalyzer:
         return entropy
 
     def _detect_high_entropy_strings(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -861,6 +862,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_xss_vulnerabilities(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """Check for XSS vulnerabilities in notebook outputs."""
@@ -1023,6 +1025,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_secrets_in_markdown(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """Check markdown cells for exposed secrets."""
@@ -1353,7 +1356,7 @@ class NotebookSecurityAnalyzer:
                         line_number=getattr(node, "lineno", 0),
                         code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
                         rule_id=rule_id,
-                        fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",
+                        fix_suggestion="Use ast.literal_eval() for safe evaluation or refactor to avoid dynamic code execution",  # DANGEROUS: Avoid eval with untrusted input
                         cwe_id="CWE-95",
                         owasp_id="ASVS-5.2.1",
                         auto_fixable=(
@@ -1373,7 +1376,7 @@ class NotebookSecurityAnalyzer:
                         NotebookIssue(
                             severity="CRITICAL",
                             category="Unsafe Deserialization",
-                            message="pickle.load() can execute arbitrary code",
+                            message="pickle.load() can execute arbitrary code",  # SECURITY: Don't use pickle with untrusted data
                             cell_index=cell_index,
                             line_number=getattr(node, "lineno", 0),
                             code_snippet=ast.unparse(node) if hasattr(ast, "unparse") else "",
@@ -1703,6 +1706,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_filesystem_security(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -1832,15 +1836,15 @@ class NotebookSecurityAnalyzer:
             pass
 
         # Check for tempfile misuse (predictable names)
-        if "tempfile.mktemp(" in cell.source:
+        if "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()" in cell.source:
             issues.append(
                 NotebookIssue(
                     severity="MEDIUM",
                     category="Filesystem Security",
-                    message="tempfile.mktemp() is deprecated - race condition and predictable filename risk",
+                    message="tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) is deprecated - race condition and predictable filename risk",
                     cell_index=cell_index,
                     line_number=0,
-                    code_snippet="tempfile.mktemp() detected",
+                    code_snippet="tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) detected",
                     fix_suggestion=(
                         "Use tempfile.mkstemp() or tempfile.NamedTemporaryFile() instead. "
                         "These create files securely without race conditions."
@@ -1854,6 +1858,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_network_exfiltration(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -1909,6 +1914,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_resource_exhaustion(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -1964,6 +1970,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_advanced_code_injection(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -2012,6 +2019,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_advanced_ml_security(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -2065,6 +2073,7 @@ class NotebookSecurityAnalyzer:
         return issues
 
     def _check_compliance_licensing(
+        # TODO: Add docstring
         self, cell: NotebookCell, cell_index: int
     ) -> list[NotebookIssue]:
         """
@@ -2130,6 +2139,7 @@ class NotebookFixer:
         self.logger = PyGuardLogger()
 
     def fix_notebook(  # noqa: PLR0912, PLR0915 - Comprehensive notebook fixing requires many statements
+        # TODO: Add docstring
         self, notebook_path: Path, issues: list[NotebookIssue]
     ) -> tuple[bool, list[str]]:
         """
@@ -2210,8 +2220,8 @@ class NotebookFixer:
                         fixes_applied.append(f"Cleared outputs with PII in cell {issue.cell_index}")
 
             elif issue.category == "Unsafe Deserialization":
-                # Add warning for unsafe deserialization (pickle.load)
-                if "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):
+                # Add warning for unsafe deserialization (pickle.load)  # SECURITY: Don't use pickle with untrusted data
+                if "pickle.load" in issue.message and 0 <= issue.cell_index < len(cells):  # SECURITY: Don't use pickle with untrusted data
                     cell = cells[issue.cell_index]
                     source = cell.get("source", [])
                     if isinstance(source, list):
@@ -2221,17 +2231,17 @@ class NotebookFixer:
                     lines = source.split("\n")
                     if 0 < issue.line_number <= len(lines):
                         # Check if warning already exists
-                        warning_text = "# SECURITY WARNING: pickle.load()"
+                        warning_text = "# SECURITY WARNING: pickle.load()"  # SECURITY: Don't use pickle with untrusted data
                         if not any(warning_text in line for line in lines):
                             lines.insert(
                                 issue.line_number - 1,
-                                "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"
+                                "# SECURITY WARNING: pickle.load() can execute arbitrary code\n"  # SECURITY: Don't use pickle with untrusted data
                                 "# Consider using JSON or safer serialization format\n"
                                 "# If pickle required, verify source and use restricted unpickler",
                             )
                             cell["source"] = "\n".join(lines)
                             fixes_applied.append(
-                                f"Added security warning for pickle.load() in cell {issue.cell_index}"
+                                f"Added security warning for pickle.load() in cell {issue.cell_index}"  # SECURITY: Don't use pickle with untrusted data
                             )
 
             elif issue.category == "ML Pipeline Security":
@@ -2258,7 +2268,7 @@ class NotebookFixer:
                     if isinstance(source, list):
                         source = "".join(source)
 
-                    fixed_source = self._fix_eval_exec(source, issue)
+                    fixed_source = self._fix_eval_exec(source, issue)  # DANGEROUS: Avoid exec with untrusted input
                     if fixed_source != source:
                         cell["source"] = fixed_source
                         fixes_applied.append(
@@ -2352,7 +2362,7 @@ class NotebookFixer:
                     if fixed_source != source:
                         cell["source"] = fixed_source
                         fixes_applied.append(
-                            f"Replaced tempfile.mktemp() with tempfile.mkstemp() in cell {issue.cell_index}"
+                            f"Replaced tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) with tempfile.mkstemp() in cell {issue.cell_index}"
                         )
 
             elif issue.category == "Command Injection":
@@ -2384,8 +2394,8 @@ class NotebookFixer:
             # Create backup first
             backup_path = notebook_path.with_suffix(".ipynb.backup")
             with (
-                open(notebook_path, encoding="utf-8") as orig,
-                open(backup_path, "w", encoding="utf-8") as f,
+                open(notebook_path, encoding="utf-8") as orig,  # Best Practice: Use 'with' statement
+                open(backup_path, "w", encoding="utf-8") as f,  # Best Practice: Use 'with' statement
             ):
                 f.write(orig.read())
 
@@ -2534,7 +2544,8 @@ class NotebookFixer:
             "import tensorflow" in source or "from tensorflow" in source or "import tf" in source
         )
         has_numpy = "import numpy" in source or "from numpy" in source or "import np" in source
-        has_random = "import random" in source
+        has_random = "import random
+import secrets  # Use secrets for cryptographic randomness" in source
         has_jax = "import jax" in source or "from jax" in source
 
         # Build comprehensive seed setting function
@@ -2548,7 +2559,8 @@ class NotebookFixer:
 
             # Python random
             if has_random or "random" in message.lower():
-                seed_block.append("    import random")
+                seed_block.append("    import random
+import secrets  # Use secrets for cryptographic randomness")
                 seed_block.append("    random.seed(seed)")
 
             # NumPy
@@ -2660,12 +2672,12 @@ class NotebookFixer:
 
         return source
 
-    def _fix_eval_exec(self, source: str, issue: NotebookIssue) -> str:
+    def _fix_eval_exec(self, source: str, issue: NotebookIssue) -> str:  # DANGEROUS: Avoid exec with untrusted input
         """
         Fix eval/exec calls to use safer alternatives.
 
-        Replaces eval() with ast.literal_eval() where appropriate, and adds
-        warnings for exec() usage.
+        Replaces eval() with ast.literal_eval() where appropriate, and adds  # DANGEROUS: Avoid eval with untrusted input
+        warnings for exec() usage.  # DANGEROUS: Avoid exec with untrusted input
 
         This implements world-class auto-fix from vision document:
         - AST-based transformation (minimal, precise)
@@ -2681,7 +2693,7 @@ class NotebookFixer:
             Fixed source code with safe alternatives
         """
         # For eval(), replace with ast.literal_eval
-        if "eval(" in source and "eval()" in issue.message:
+        if "eval(" in source and "eval()" in issue.message:  # DANGEROUS: Avoid eval with untrusted input
             # Add import if not present
             if "import ast" not in source:
                 source = "import ast  # PyGuard: For safe literal evaluation\n" + source
@@ -2692,20 +2704,20 @@ class NotebookFixer:
             i = 0
             while i < len(lines):
                 line = lines[i]
-                if "eval(" in line and not line.strip().startswith("#"):
+                if "eval(" in line and not line.strip().startswith("#"):  # DANGEROUS: Avoid eval with untrusted input
                     # Add educational comment
                     new_lines.append(
-                        "# PyGuard: Replaced eval() with ast.literal_eval() for safe evaluation"
+                        "# PyGuard: Replaced eval() with ast.literal_eval() for safe evaluation"  # DANGEROUS: Avoid eval with untrusted input
                     )
                     new_lines.append(
                         "# CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
                     )
                     new_lines.append(
-                        "# ast.literal_eval() only evaluates Python literals (strings, numbers, tuples, lists, dicts)"
+                        "# ast.literal_eval() only evaluates Python literals (strings, numbers, tuples, lists, dicts)"  # DANGEROUS: Avoid eval with untrusted input
                     )
 
                     # Replace eval( with ast.literal_eval( in the line
-                    fixed_line = line.replace("eval(", "ast.literal_eval(")
+                    fixed_line = line.replace("eval(", "ast.literal_eval(")  # DANGEROUS: Avoid eval with untrusted input
                     new_lines.append(fixed_line)
 
                     # Add exception handling suggestion as comment
@@ -2718,14 +2730,14 @@ class NotebookFixer:
             source = "\n".join(new_lines)
 
         # For exec(), add warning (exec is harder to fix safely)
-        elif "exec(" in source and "exec()" in issue.message:
+        elif "exec(" in source and "exec()" in issue.message:  # DANGEROUS: Avoid exec with untrusted input
             lines = source.split("\n")
             for i, line in enumerate(lines):
-                if "exec(" in line and not line.strip().startswith("#"):
+                if "exec(" in line and not line.strip().startswith("#"):  # DANGEROUS: Avoid exec with untrusted input
                     lines.insert(
                         i,
                         "# PyGuard: CRITICAL SECURITY WARNING\n"
-                        "# CWE-95: exec() executes arbitrary code and cannot be made safe\n"
+                        "# CWE-95: exec() executes arbitrary code and cannot be made safe\n"  # DANGEROUS: Avoid exec with untrusted input
                         "# Recommendation: Refactor to avoid dynamic code execution\n"
                         "# If absolutely necessary: Use restricted globals/locals dict",
                     )
@@ -2736,7 +2748,7 @@ class NotebookFixer:
 
     def _fix_yaml_load(self, source: str) -> str:
         """
-        Fix yaml.load() to use yaml.safe_load().
+        Fix yaml.safe_load() to use yaml.safe_load().
 
         Performs a simple string replacement to use the safer alternative.
 
@@ -2746,7 +2758,7 @@ class NotebookFixer:
         Returns:
             Fixed source code
         """
-        # Replace yaml.load( with yaml.safe_load(
+        # Replace yaml.safe_load( with yaml.safe_load(
         # This is a simple fix but effective for most cases
         if "yaml.load(" in source and "yaml.safe_load(" not in source:
             # Add comment explaining the change
@@ -2767,7 +2779,7 @@ class NotebookFixer:
 
     def _fix_tempfile_mktemp(self, source: str) -> str:
         """
-        Fix tempfile.mktemp() to use tempfile.mkstemp().
+        Fix tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) to use tempfile.mkstemp().
 
         Replaces the deprecated mktemp with the secure mkstemp.
 
@@ -2777,15 +2789,15 @@ class NotebookFixer:
         Returns:
             Fixed source code
         """
-        if "tempfile.mktemp(" in source:
+        if "tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()" in source:
             # Add comment explaining the change
             source = (
                 "# SECURITY FIX: Using tempfile.mkstemp() instead of mktemp()\n"
                 "# mkstemp() creates the file securely, preventing race conditions\n"
                 "# Note: mkstemp() returns (fd, path) tuple instead of just path\n" + source
             )
-            # Replace tempfile.mktemp() with tempfile.mkstemp()
-            source = source.replace("tempfile.mktemp(", "tempfile.mkstemp(")
+            # Replace tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()) with tempfile.mkstemp()
+            source = source.replace("tempfile.mkstemp(  # FIXED: Using secure mkstemp() instead of mktemp()", "tempfile.mkstemp(")
 
         return source
 
@@ -2897,7 +2909,7 @@ def generate_notebook_sarif(notebook_path: str, issues: list[NotebookIssue]) -> 
                 }
             ],
             "partialFingerprints": {
-                "primaryLocationLineHash": hashlib.md5(
+                "primaryLocationLineHash": hashlib.md5(  # SECURITY: Consider using SHA256 or stronger
                     f"{notebook_path}:{issue.cell_index}:{issue.line_number}:{issue.code_snippet}".encode(),
                     usedforsecurity=False,  # Used for fingerprinting, not cryptography
                 ).hexdigest()[:16]

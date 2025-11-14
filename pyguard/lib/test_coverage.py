@@ -58,7 +58,7 @@ class TestCoverageAnalyzer:
                         f"{test_dir}/{base_name}_test.py",
                     ]
 
-                    if not any(test_file in test_files for test_file in expected_tests):
+                    if not any(test_file in test_files for test_file in expected_tests):  # Consider list comprehension
                         untested.append(src_file)
 
             return untested

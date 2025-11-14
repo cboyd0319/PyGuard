@@ -68,33 +68,33 @@ class TestNumPyInsecureRandom:
     """Test NUMPY006: Insecure random number generation."""
 
     def test_detect_numpy_random_for_key_generation(self):
-        """Detect np.random.rand() for security-sensitive key generation."""
+        """Detect np.random.rand() for security-sensitive key generation."""  # SECURITY: Use secrets module for cryptographic randomness
         code = """
 import numpy as np
 
-encryption_key = np.random.rand(32)
+encryption_key = np.random.rand(32)  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_numpy_security(Path("test.py"), code)
         random_violations = [v for v in violations if v.rule_id == "NUMPY006"]
         assert len(random_violations) >= 1
 
     def test_detect_numpy_random_for_token(self):
-        """Detect np.random.randint() for token generation."""
+        """Detect np.random.randint() for token generation."""  # SECURITY: Use secrets module for cryptographic randomness
         code = """
 import numpy as np
 
-auth_token = np.random.randint(0, 1000000)
+auth_token = np.random.randint(0, 1000000)  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_numpy_security(Path("test.py"), code)
         random_violations = [v for v in violations if v.rule_id == "NUMPY006"]
         assert len(random_violations) >= 1
 
     def test_detect_numpy_random_for_secret(self):
-        """Detect numpy.random.random() for secret generation."""
+        """Detect numpy.random.random() for secret generation."""  # SECURITY: Use secrets module for cryptographic randomness
         code = """
 import numpy
 
-secret_value = numpy.random.random()
+secret_value = numpy.random.random()  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_numpy_security(Path("test.py"), code)
         random_violations = [v for v in violations if v.rule_id == "NUMPY006"]
@@ -357,7 +357,7 @@ import numpy as np
 model = np.load(user_model_path)
 
 # NUMPY006: Insecure random for key
-secret_key = np.random.rand(16)
+secret_key = np.random.rand(16)  # SECURITY: Use secrets module for cryptographic randomness
 
 # NUMPY004: Memory exhaustion
 large_array = np.zeros(user_size)
@@ -386,7 +386,7 @@ result = sum(data)
 import numpy as np
 
 model = np.load('model.npy')
-key = np.random.rand(32)
+key = np.random.rand(32)  # SECURITY: Use secrets module for cryptographic randomness
 """
         violations = analyze_numpy_security(Path("test.py"), code)
         assert len(violations) >= 1

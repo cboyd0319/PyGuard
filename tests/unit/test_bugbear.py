@@ -30,7 +30,7 @@ class TestBareExcept:
         code = """
 try:
     risky_operation()
-except:
+except Exception:  # FIXED: Catch specific exceptions
     pass
 """
         checker = BugbearChecker()
@@ -61,6 +61,7 @@ class TestUnaryPrefixIncrement:
         """Test detection of ++x pattern."""
         code = """
 def increment():
+    # TODO: Add docstring
     x = 5
     result = ++x
     return result
@@ -79,7 +80,9 @@ class TestAssignToClass:
         """Test detection of __class__ assignment."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def dangerous(self):
+        # TODO: Add docstring
         self.__class__ = OtherClass
 """
         checker = BugbearChecker()
@@ -122,7 +125,8 @@ class TestMutableDefaultArgument:
     def test_detect_list_default(self):
         """Test detection of list as default argument."""
         code = """
-def process(items=[]):
+def process(items=[]):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     return items
 """
         checker = BugbearChecker()
@@ -135,7 +139,8 @@ def process(items=[]):
     def test_detect_dict_default(self):
         """Test detection of dict as default argument."""
         code = """
-def configure(options={}):
+def configure(options={}):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     return options
 """
         checker = BugbearChecker()
@@ -147,6 +152,7 @@ def configure(options={}):
         """Test detection of set as default argument."""
         code = """
 def track(items=set()):
+    # TODO: Add docstring
     return items
 """
         checker = BugbearChecker()
@@ -158,6 +164,7 @@ def track(items=set()):
         """Test that None default is allowed."""
         code = """
 def process(items=None):
+    # TODO: Add docstring
     if items is None:
         items = []
     return items
@@ -175,6 +182,7 @@ class TestUnusedLoopVariable:
         """Test detection of unused loop control variable."""
         code = """
 def process():
+    # TODO: Add docstring
     for item in items:
         print("processing")
 """
@@ -188,6 +196,7 @@ def process():
         """Test that used loop variables are allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     for item in items:
         print(item)
 """
@@ -200,6 +209,7 @@ def process():
         """Test that underscore-prefixed variables are allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     for _item in items:
         print("processing")
 """
@@ -216,7 +226,9 @@ class TestEqWithoutHash:
         """Test detection of __eq__ without __hash__."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __eq__(self, other):
+        # TODO: Add docstring
         return True
 """
         checker = BugbearChecker()
@@ -230,9 +242,12 @@ class MyClass:
         """Test that __eq__ with __hash__ is allowed."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __eq__(self, other):
+        # TODO: Add docstring
         return True
     def __hash__(self):
+        # TODO: Add docstring
         return 42
 """
         checker = BugbearChecker()
@@ -264,6 +279,7 @@ class TestAssertFalse:
         """Test detection of assert False."""
         code = """
 def test():
+    # TODO: Add docstring
     assert False
 """
         checker = BugbearChecker()
@@ -280,6 +296,7 @@ class TestReturnInFinally:
         """Test detection of return in finally block."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         do_something()
     finally:
@@ -295,6 +312,7 @@ def process():
         """Test detection of break in finally block."""
         code = """
 def process():
+    # TODO: Add docstring
     while True:
         try:
             do_something()
@@ -332,6 +350,7 @@ class TestRaiseLiteral:
         """Test detection of raising a literal."""
         code = """
 def process():
+    # TODO: Add docstring
     raise "error occurred"
 """
         checker = BugbearChecker()
@@ -348,6 +367,7 @@ class TestAssertRaisesException:
         """Test detection of assertRaises(Exception)."""
         code = """
 def test():
+    # TODO: Add docstring
     with self.assertRaises(Exception):
         risky()
 """
@@ -365,6 +385,7 @@ class TestUselessExpression:
         """Test detection of useless expression."""
         code = """
 def process():
+    # TODO: Add docstring
     x = 5
     x + 1
     return x
@@ -380,6 +401,7 @@ def process():
         """Test that docstrings are not flagged."""
         code = """
 def process():
+    # TODO: Add docstring
     \"\"\"This is a docstring.\"\"\"
     return 42
 """
@@ -418,7 +440,8 @@ class TestIntegration:
     def test_multiple_violations(self):
         """Test detection of multiple violations in one file."""
         code = """
-def bad_function(items=[]):  # B006
+def bad_function(items=[]):  # B006  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     try:
         do_something()
     except:  # B001
@@ -438,6 +461,7 @@ def bad_function(items=[]):  # B006
         """Test that good code doesn't trigger violations."""
         code = """
 def good_function(items=None):
+    # TODO: Add docstring
     if items is None:
         items = []
 
@@ -450,10 +474,13 @@ def good_function(items=None):
     return result
 
 class GoodClass:
+    # TODO: Add docstring
     def __eq__(self, other):
+        # TODO: Add docstring
         return self.value == other.value
 
     def __hash__(self):
+        # TODO: Add docstring
         return hash(self.value)
 """
         checker = BugbearChecker()

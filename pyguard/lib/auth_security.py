@@ -45,6 +45,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting authentication and authorization vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -114,6 +115,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         # Helper to check if a call uses weak random functions
         def check_call(call_node):
+            # TODO: Add docstring
             if isinstance(call_node.func, ast.Attribute):
                 module = None
                 func = call_node.func.attr
@@ -450,6 +452,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         # Helper to check if a dict has 'exp' key
         def dict_has_exp(dict_node):
+            # TODO: Add docstring
             if isinstance(dict_node, ast.Dict):
                 for key in dict_node.keys:
                     if isinstance(key, ast.Constant) and key.value == "exp":
@@ -515,6 +518,7 @@ class AuthSecurityVisitor(ast.NodeVisitor):
 
         # Helper to check for weak random in the call tree
         def check_for_weak_random(call_node):
+            # TODO: Add docstring
             if isinstance(call_node.func, ast.Attribute):
                 module = None
                 if isinstance(call_node.func.value, ast.Name):
@@ -812,6 +816,7 @@ class AuthSecurityChecker:
     """Main authentication and authorization security checker."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 
@@ -861,15 +866,15 @@ class AuthSecurityChecker:
 
         line = lines[line_idx]
 
-        # Replace random.* with secrets.*
+        # Replace random.* with secrets.*  # SECURITY: Use secrets module for cryptographic randomness
         if "random.randint" in line:
-            fixed_line = line.replace("random.randint", "secrets.randbelow")
+            fixed_line = line.replace("random.randint", "secrets.randbelow")  # SECURITY: Use secrets module for cryptographic randomness
             # Add import if needed
             if "import secrets" not in code:
                 lines.insert(0, "import secrets\n")
             lines[line_idx] = fixed_line
         elif "random.random" in line:
-            fixed_line = line.replace("random.random()", "secrets.token_hex(16)")
+            fixed_line = line.replace("random.random()", "secrets.token_hex(16)")  # SECURITY: Use secrets module for cryptographic randomness
             if "import secrets" not in code:
                 lines.insert(0, "import secrets\n")
             lines[line_idx] = fixed_line
@@ -886,7 +891,7 @@ AUTH001_WEAK_SESSION_ID = Rule(
     name="weak-session-id-generation",
     message_template="Weak session ID generation using {method}",
     description="Session ID generated using weak random functions that are predictable",
-    explanation="Session IDs must be cryptographically random to prevent session hijacking attacks. Use secrets module instead of random.",
+    explanation="Session IDs must be cryptographically random to prevent session hijacking attacks. Use secrets module instead of random.",  # SECURITY: Use secrets module for cryptographic randomness
     severity=RuleSeverity.HIGH,
     category=RuleCategory.SECURITY,
     cwe_mapping="CWE-330",

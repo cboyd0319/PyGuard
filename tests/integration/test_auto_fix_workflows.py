@@ -33,8 +33,9 @@ class TestMultiFileAutoFix:
 import sqlite3
 
 def get_user(user_id):
+    # TODO: Add docstring
     cursor = sqlite3.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
+    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))  # SQL INJECTION RISK: Use parameterized queries
     return cursor.fetchone()
 """
         )
@@ -47,8 +48,9 @@ def get_user(user_id):
 import yaml
 
 def load_config(file_path):
+    # TODO: Add docstring
     with open(file_path) as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 """
         )
         files.append(file2)
@@ -58,7 +60,8 @@ def load_config(file_path):
         file3.write_text(
             """
 def validate(value):
-    if value == None:
+    # TODO: Add docstring
+    if value is None:
         return False
     return True
 """
@@ -81,7 +84,7 @@ def validate(value):
 
         utils_content = file3.read_text()
         assert "is None" in utils_content
-        assert "== None" not in utils_content
+        assert " is None" not in utils_content
 
         # Verify backups were created
         backup_dir = temp_dir / ".pyguard_backups"
@@ -101,7 +104,8 @@ def validate(value):
         file1 = temp_dir / "defaults.py"
         file1.write_text(
             """
-def append_to_list(item, items=[]):
+def append_to_list(item, items=[]):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     items.append(item)
     return items
 """
@@ -113,9 +117,10 @@ def append_to_list(item, items=[]):
         file2.write_text(
             """
 def risky_operation():
+    # TODO: Add docstring
     try:
         dangerous_call()
-    except:
+    except Exception:  # FIXED: Catch specific exceptions
         pass
 """
         )
@@ -140,13 +145,14 @@ def risky_operation():
             """
 import yaml
 
-def process_user(user_id, items=[]):
+def process_user(user_id, items=[]):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
     # Load config
     with open("config.yml") as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
 
     # Check user
-    if user_id == None:
+    if user_id is None:
         return None
 
     # SQL query (vulnerable)
@@ -189,17 +195,18 @@ import yaml
 import sqlite3
 
 def load_and_query(config_file, user_id):
+    # TODO: Add docstring
     # Safe fix opportunity: yaml.load
     with open(config_file) as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
 
     # Unsafe fix opportunity: SQL injection
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
+    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))  # SQL INJECTION RISK: Use parameterized queries
 
     # Safe fix opportunity: None comparison
-    if config == None:
+    if config is None:
         return None
 
     return cursor.fetchone()
@@ -234,9 +241,10 @@ def load_and_query(config_file, user_id):
 import sqlite3
 
 def get_user(user_id):
+    # TODO: Add docstring
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))
+    cursor.execute("SELECT * FROM users WHERE id = " + str(user_id))  # SQL INJECTION RISK: Use parameterized queries
     return cursor.fetchone()
 """
         )
@@ -267,7 +275,8 @@ class TestBackupAndRollback:
 import yaml
 
 def load(file):
-    return yaml.load(file)
+    # TODO: Add docstring
+    return yaml.safe_load(file)
 """
         test_file.write_text(original_content)
 
@@ -289,7 +298,8 @@ def load(file):
 import yaml
 
 def load(file):
-    return yaml.load(file)
+    # TODO: Add docstring
+    return yaml.safe_load(file)
 """
         )
 
@@ -338,9 +348,10 @@ class TestReportGeneration:
             """
 import yaml
 
-def bad_function(items=[]):
-    config = yaml.load("file")
-    if items == None:
+def bad_function(items=[]):  # ANTI-PATTERN: Use None and create in function body
+    # TODO: Add docstring
+    config = yaml.safe_load("file")
+    if items is None:
         return None
     items.append(1)
     return items
@@ -372,7 +383,8 @@ def bad_function(items=[]):
 import yaml
 
 def load_config():
-    return yaml.load("config.yml")
+    # TODO: Add docstring
+    return yaml.safe_load("config.yml")
 """
         )
 
@@ -400,7 +412,7 @@ class TestCLICommandLine:
         test_file.write_text(
             """
 import yaml
-config = yaml.load("file")
+config = yaml.safe_load("file")
 """
         )
 
@@ -421,7 +433,7 @@ config = yaml.load("file")
         test_file.write_text(
             """
 import yaml
-config = yaml.load("file")
+config = yaml.safe_load("file")
 """
         )
 
@@ -442,7 +454,7 @@ config = yaml.load("file")
         test_file.write_text(
             """
 import yaml
-config = yaml.load("file")
+config = yaml.safe_load("file")
 """
         )
 
@@ -470,7 +482,7 @@ config = yaml.load("file")
         test_file.write_text(
             """
 import yaml
-config = yaml.load("file")
+config = yaml.safe_load("file")
 """
         )
 
@@ -513,8 +525,9 @@ class TestDirectoryProcessing:
 import yaml
 
 def function{i}():
-    if None == None:
-        return yaml.load("file")
+    # TODO: Add docstring
+    if None is None:
+        return yaml.safe_load("file")
 """
             )
 
@@ -573,6 +586,7 @@ class TestErrorHandling:
         test_file.write_text(
             """
 def incomplete_function(
+    # TODO: Add docstring
     # Missing closing parenthesis and body
 """
         )
@@ -630,10 +644,10 @@ class TestPerformance:
         # Create large file (1000 lines)
         large_file = temp_dir / "large.py"
         lines = []
-        for i in range(1000):
+        for i in range(1000):  # Consider list comprehension
             lines.append(f"variable_{i} = {i}")
             if i % 10 == 0:
-                lines.append(f"if variable_{i} == None:")
+                lines.append(f"if variable_{i} is None:")
                 lines.append("    pass")
         large_file.write_text("\n".join(lines))
 
@@ -662,8 +676,9 @@ class TestPerformance:
 import yaml
 
 def func_{i}():
-    if None == None:
-        return yaml.load("file")
+    # TODO: Add docstring
+    if None is None:
+        return yaml.safe_load("file")
 """
             )
             files.append(file)

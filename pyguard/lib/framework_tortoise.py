@@ -41,6 +41,7 @@ class TortoiseSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting Tortoise ORM security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()

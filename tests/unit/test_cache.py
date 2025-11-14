@@ -401,6 +401,7 @@ class TestCacheErrorHandling:
 
         # Mock open to raise exception
         def mock_open(*args, **kwargs):
+            # TODO: Add docstring
             raise OSError("Disk full")
 
         monkeypatch.setattr("builtins.open", mock_open)
@@ -428,6 +429,7 @@ class TestCacheErrorHandling:
 
         # Mock stat to raise exception
         def mock_stat(*args, **kwargs):
+            # TODO: Add docstring
             raise OSError("Permission denied")
 
         monkeypatch.setattr(Path, "stat", mock_stat)
@@ -461,6 +463,7 @@ class TestConfigCacheErrorHandling:
 
         # Mock stat to raise exception
         def mock_stat(*args, **kwargs):
+            # TODO: Add docstring
             raise OSError("Permission denied")
 
         monkeypatch.setattr(Path, "stat", mock_stat)
@@ -476,6 +479,7 @@ class TestConfigCacheErrorHandling:
 
         # Mock stat to raise exception
         def mock_stat(*args, **kwargs):
+            # TODO: Add docstring
             raise OSError("Permission denied")
 
         monkeypatch.setattr(Path, "stat", mock_stat)

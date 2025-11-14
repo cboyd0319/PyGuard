@@ -43,6 +43,7 @@ class FlaskSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting Flask/FastAPI security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -206,6 +207,7 @@ class FlaskSecurityChecker:
     """Main checker for Flask/FastAPI security vulnerabilities."""
 
     def __init__(self):
+        # TODO: Add docstring
         self.logger = PyGuardLogger()
         self.file_ops = FileOperations()
 

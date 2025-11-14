@@ -226,6 +226,7 @@ class IncrementalAnalyzer:
             return True
 
     def update_cache(
+        # TODO: Add docstring
         self,
         file_path: Path,
         issues_count: int = 0,

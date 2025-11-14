@@ -42,6 +42,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting Streamlit security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = file_path
         self.code = code
         self.lines = code.splitlines()
@@ -316,6 +317,7 @@ class StreamlitSecurityVisitor(ast.NodeVisitor):
         sql_keywords = {"SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "WHERE", "JOIN"}
 
         def check_node(n: ast.AST) -> bool:
+            # TODO: Add docstring
             if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 upper_str = n.value.upper()
                 return any(keyword in upper_str for keyword in sql_keywords)
@@ -352,6 +354,7 @@ def analyze_streamlit_security(file_path: Path, code: str) -> list[RuleViolation
 
 
 def fix_streamlit_security(
+    # TODO: Add docstring
     code: str, violation: RuleViolation
 ) -> tuple[str, bool]:
     """

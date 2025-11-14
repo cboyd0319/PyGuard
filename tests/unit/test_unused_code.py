@@ -53,6 +53,7 @@ print("hello")
         """Test detection of unused function arguments."""
         code = """
 def process(data, config, verbose):
+    # TODO: Add docstring
     return data
 """
         tree = ast.parse(code)
@@ -75,11 +76,14 @@ def process(data, config, verbose):
         """Test that self and cls arguments are ignored."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def method(self, data):
+        # TODO: Add docstring
         pass
 
     @classmethod
     def factory(cls, data):
+        # TODO: Add docstring
         pass
 """
         tree = ast.parse(code)
@@ -95,6 +99,7 @@ class MyClass:
         """Test that underscore-prefixed names are ignored."""
         code = """
 def process(_unused, data):
+    # TODO: Add docstring
     return data
 
 _private = 42
@@ -157,6 +162,7 @@ import sys
 from pathlib import Path
 
 def process(data, unused_arg):
+    # TODO: Add docstring
     return data
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -210,6 +216,7 @@ class TestUnusedCodeVisitorEnhanced:
         """Test detection of unused positional-only arguments."""
         code = """
 def process(used, unused, /, kwarg):
+    # TODO: Add docstring
     return used + kwarg
 """
         tree = ast.parse(code)
@@ -226,6 +233,7 @@ def process(used, unused, /, kwarg):
         """Test detection of unused keyword-only arguments."""
         code = """
 def process(data, *, unused_kw, used_kw):
+    # TODO: Add docstring
     return data + used_kw
 """
         tree = ast.parse(code)
@@ -242,6 +250,7 @@ def process(data, *, unused_kw, used_kw):
         """Test detection of unused *args."""
         code = """
 def process(data, *unused_args):
+    # TODO: Add docstring
     return data
 """
         tree = ast.parse(code)
@@ -259,6 +268,7 @@ def process(data, *unused_args):
         """Test detection of unused **kwargs."""
         code = """
 def process(data, **unused_kwargs):
+    # TODO: Add docstring
     return data
 """
         tree = ast.parse(code)
@@ -340,7 +350,9 @@ fn = lambda x, y: x
         """Test unused detection in nested functions."""
         code = """
 def outer(outer_used, outer_unused):
+    # TODO: Add docstring
     def inner(inner_used, inner_unused):
+        # TODO: Add docstring
         return inner_used + outer_used
     return inner
 """
@@ -372,15 +384,19 @@ print(path.join("a", "b"))
         """Test detection in class methods with decorators."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def instance_method(self, used, unused):
+        # TODO: Add docstring
         return used
 
     @classmethod
     def class_method(cls, used, unused):
+        # TODO: Add docstring
         return used
 
     @staticmethod
     def static_method(used, unused):
+        # TODO: Add docstring
         return used
 """
         tree = ast.parse(code)
@@ -439,10 +455,13 @@ print(a, b)
         """Test that dunder methods are properly handled."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     def __init__(self, x, unused):
+        # TODO: Add docstring
         self.x = x
 
     def __str__(self):
+        # TODO: Add docstring
         return str(self.x)
 """
         tree = ast.parse(code)
@@ -458,12 +477,15 @@ class MyClass:
         """Test handling of property decorators."""
         code = """
 class MyClass:
+    # TODO: Add docstring
     @property
     def value(self):
+        # TODO: Add docstring
         return 42
 
     @value.setter
     def value(self, val, unused):
+        # TODO: Add docstring
         self._val = val
 """
         tree = ast.parse(code)
@@ -478,7 +500,9 @@ class MyClass:
         """Test that closure variable usage is properly tracked."""
         code = """
 def outer(x):
+    # TODO: Add docstring
     def inner():
+        # TODO: Add docstring
         return x
     return inner
 """
@@ -542,6 +566,7 @@ except Exception as e:
 from __future__ import annotations
 
 def func(x: str) -> str:
+    # TODO: Add docstring
     return x
 """
         tree = ast.parse(code)
@@ -590,6 +615,7 @@ class TestUnusedCodeFixerEnhanced:
 
         code = """
 def broken(
+    # TODO: Add docstring
     # Unclosed paren
 """
         with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -634,6 +660,7 @@ def broken(
 used_var = 10
 
 def process(data):
+    # TODO: Add docstring
     return os.path.join(str(used_var), data)
 
 result = process("test")

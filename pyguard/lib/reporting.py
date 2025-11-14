@@ -121,6 +121,7 @@ class ConsoleReporter:
         print()
 
     def print_issue_details(  # noqa: PLR0913 - Detailed issue reporting requires many parameters
+        # TODO: Add docstring
         self,
         severity: str,
         category: str,
@@ -154,6 +155,7 @@ class JSONReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
+        # TODO: Add docstring
         self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], fixes: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """
@@ -215,6 +217,7 @@ class HTMLReporter:
         self.logger = PyGuardLogger()
 
     def generate_report(
+        # TODO: Add docstring
         self, metrics: AnalysisMetrics, issues: list[dict[str, Any]], _fixes: list[dict[str, Any]]
     ) -> str:
         """

@@ -485,7 +485,7 @@ class TestSecretsInCILogs:
         """Detect secrets being logged."""
         code = """
 import logging
-api_key = "sk-1234567890abcdef"
+api_key = "sk-1234567890abcdef"  # SECURITY: Use environment variables or config files
 logging.info(f"Using API key: {api_key}")
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
@@ -623,7 +623,7 @@ class TestWeakSignatureAlgorithms:
 import hashlib
 
 data = b"package content"
-signature = hashlib.md5(data).hexdigest()
+signature = hashlib.md5(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
         [v for v in violations if v.rule_id == "SUPPLY024"]
@@ -636,7 +636,7 @@ signature = hashlib.md5(data).hexdigest()
 import hashlib
 
 data = b"package content"
-signature = hashlib.sha1(data).hexdigest()
+signature = hashlib.sha1(data).hexdigest()  # SECURITY: Consider using SHA256 or stronger
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
         [v for v in violations if v.rule_id == "SUPPLY024"]
@@ -743,7 +743,7 @@ import hashlib
 import os
 
 print(os.environ)  # Leak env vars
-signature = hashlib.md5(b"data").hexdigest()  # Weak algorithm
+signature = hashlib.md5(b"data").hexdigest()  # Weak algorithm  # SECURITY: Consider using SHA256 or stronger
 """
         tree = ast.parse(code)
         visitor = SupplyChainAdvancedVisitor(Path("test.py"), code)
@@ -781,6 +781,7 @@ class TestSupplyChainEdgeCases:
         """Test minimal code doesn't trigger false positives."""
         code = """
 def hello():
+    # TODO: Add docstring
     return "world"
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
@@ -820,6 +821,7 @@ import os
 import hashlib
 
 def build_and_deploy():
+    # TODO: Add docstring
     # Build Docker image
     subprocess.run(['docker', 'build', '-t', 'myapp', '.'])
 
@@ -842,6 +844,7 @@ import subprocess
 import hashlib
 
 def build_package():
+    # TODO: Add docstring
     # Build wheel
     subprocess.run(['python', 'setup.py', 'bdist_wheel'])
 
@@ -869,7 +872,7 @@ import hashlib
 # Multiple issues in one script
 user_input = os.getenv('USER_INPUT')
 subprocess.run(user_input, shell=True)  # Command injection
-signature = hashlib.md5(b"data").hexdigest()  # Weak hash
+signature = hashlib.md5(b"data").hexdigest()  # Weak hash  # SECURITY: Consider using SHA256 or stronger
 print(os.environ)  # Env leak
 """
         violations = analyze_supply_chain_advanced(Path("test.py"), code)
@@ -883,6 +886,7 @@ print(os.environ)  # Env leak
 import urllib.request
 
 def download_dependency(url):
+    # TODO: Add docstring
     # Downloading without integrity check
     urllib.request.urlretrieve(url, 'dependency.tar.gz')
     # Missing: hash verification
@@ -944,6 +948,7 @@ import hashlib
 import subprocess
 
 def secure_build():
+    # TODO: Add docstring
     # SHA256 is fine for checksums
     with open('file.txt', 'rb') as f:
         checksum = hashlib.sha256(f.read()).hexdigest()
@@ -964,8 +969,9 @@ def secure_build():
 import hashlib
 
 def test_hash_function():
+    # TODO: Add docstring
     # Using MD5 in tests is often acceptable for testing hash collisions
-    test_hash = hashlib.md5(b"test data").hexdigest()
+    test_hash = hashlib.md5(b"test data").hexdigest()  # SECURITY: Consider using SHA256 or stronger
     assert len(test_hash) == 32
 """
         violations = analyze_supply_chain_advanced(Path("test_example.py"), code)

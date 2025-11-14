@@ -524,7 +524,7 @@ model = tf.keras.Sequential([
     tf.keras.layers.Dense(10, activation='softmax')
 ])
 
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')  # DANGEROUS: Avoid compile with untrusted input
 
 # Safe training with predefined callbacks
 callbacks = [

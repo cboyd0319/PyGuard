@@ -30,6 +30,7 @@ class TestAuthenticationBypassDetector:
         """Test detection of hardcoded True condition."""
         code = """
 def check_auth():
+    # TODO: Add docstring
     if True:  # Authentication bypass
         return "authenticated"
 """
@@ -42,6 +43,7 @@ def check_auth():
         """Test detection of commented authentication."""
         code = """
 def login(user):
+    # TODO: Add docstring
     # authenticate(user)  # Disabled for testing
     return True
 """
@@ -52,6 +54,7 @@ def login(user):
         """Test no false positives on proper auth."""
         code = """
 def check_auth(user):
+    # TODO: Add docstring
     if user.is_authenticated():
         return True
     return False
@@ -71,6 +74,7 @@ class TestAuthorizationBypassDetector:
         """Test detection of IDOR vulnerability."""
         code = """
 def get_user_data(user_id):
+    # TODO: Add docstring
     user = User.get(id)
     return user.data
 """
@@ -83,6 +87,7 @@ def get_user_data(user_id):
         """Test detection of user-supplied ID."""
         code = """
 def view_document(request):
+    # TODO: Add docstring
     doc = Document.get(request.args.id)
     return doc
 """
@@ -93,6 +98,7 @@ def view_document(request):
         """Test no issue when authorization is checked."""
         code = """
 def get_user_data(user_id, current_user):
+    # TODO: Add docstring
     user = User.get(id)
     if user.owner == current_user:
         return user.data
@@ -145,7 +151,7 @@ class TestResourceLeakDetector:
     def test_detects_open_without_context(self):
         """Test detection of file open without context manager."""
         code = """
-f = open('file.txt', 'r')
+f = open('file.txt', 'r')  # Best Practice: Use 'with' statement
 data = f.read()
 """
         issues = self.detector.scan_code(code)
@@ -329,6 +335,7 @@ class TestMassAssignmentDetector:
         """Test detection of .update() with request data."""
         code = """
 def update_user(request):
+    # TODO: Add docstring
     user.update(request.data)
 """
         issues = self.detector.scan_code(code, "test.py")
@@ -356,6 +363,7 @@ user = User.from_dict(request.json)
         """Test no false positives on safe patterns."""
         code = """
 def update_user(request):
+    # TODO: Add docstring
     allowed = ['name', 'email']
     data = {k: v for k, v in request.data.items() if k in allowed}
     user.update(data)
@@ -381,6 +389,7 @@ app = Flask(__name__)
 
 @app.route('/dashboard')
 def dashboard():
+    # TODO: Add docstring
     return 'Dashboard'
 """
         issues = self.detector.scan_code(code, "app.py")
@@ -397,6 +406,7 @@ app = FastAPI()
 
 @app.get('/api/users')
 def get_users():
+    # TODO: Add docstring
     return []
 """
         issues = self.detector.scan_code(code, "main.py")
@@ -411,6 +421,7 @@ app = Flask(__name__)
 
 @app.after_request
 def set_headers(response):
+    # TODO: Add docstring
     response.headers['X-Frame-Options'] = 'DENY'
     return response
 """
@@ -422,8 +433,9 @@ def set_headers(response):
         # Arrange - code without any web framework
         code = """
 def process_data(data):
+    # TODO: Add docstring
     result = []
-    for item in data:
+    for item in data:  # Consider list comprehension
         result.append(item * 2)
     return result
 """
@@ -507,6 +519,7 @@ except Exception as e:
         """Test detection of locals() exposure."""
         code = """
 def debug_view():
+    # TODO: Add docstring
     return locals()
 """
         issues = self.detector.scan_code(code, "app.py")

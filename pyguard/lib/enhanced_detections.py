@@ -104,7 +104,7 @@ class BackupFileDetector:
                 file_path = Path(root) / filename
 
                 # Check for backup file extensions
-                if any(str(filename).endswith(ext) for ext in self.BACKUP_EXTENSIONS):
+                if any(str(filename).endswith(ext) for ext in self.BACKUP_EXTENSIONS):  # Consider list comprehension
                     issues.append(
                         FileSecurityIssue(
                             severity="MEDIUM",

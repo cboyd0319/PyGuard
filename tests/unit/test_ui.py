@@ -689,6 +689,7 @@ class TestHTMLReporterEdgeCases:
 
         # Mock open to raise PermissionError
         def mock_open(*args, **kwargs):
+            # TODO: Add docstring
             raise PermissionError("Access denied")
 
         monkeypatch.setattr("builtins.open", mock_open)

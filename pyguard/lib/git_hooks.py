@@ -358,6 +358,7 @@ exit 0
 
 
 def install_git_hooks(
+    # TODO: Add docstring
     repo_path: Path | None = None, hook_type: str = "pre-commit", force: bool = False
 ) -> bool:
     """Install PyGuard git hooks.
@@ -389,6 +390,7 @@ def uninstall_git_hooks(repo_path: Path | None = None, hook_type: str = "pre-com
 
 
 def validate_git_hooks(
+    # TODO: Add docstring
     repo_path: Path | None = None, hook_type: str = "pre-commit"
 ) -> dict[str, bool | str | list[str]]:
     """Validate PyGuard git hooks installation.

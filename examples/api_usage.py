@@ -56,13 +56,15 @@ def main():
     # Sample vulnerable code
     sample_code = """
 import random
-password = "secret123"
+import secrets  # Use secrets for cryptographic randomness
+password = "secret123"  # SECURITY: Use environment variables or config files
 
 def get_user(user_id):
+    # TODO: Add docstring
     query = "SELECT * FROM users WHERE id = " + user_id
     return query
 
-token = random.random()
+token = random.random()  # SECURITY: Use secrets module for cryptographic randomness
 """
 
     analyze_code(sample_code)

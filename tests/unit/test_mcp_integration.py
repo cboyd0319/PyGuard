@@ -67,7 +67,7 @@ class TestMCPIntegration:
 
     def test_query_security_intelligence(self):
         """Test querying security intelligence."""
-        code = "eval(user_input)"
+        code = "eval(user_input)"  # DANGEROUS: Avoid eval with untrusted input
         response = self.mcp.query_security_intelligence(code)
 
         assert response is not None
@@ -104,7 +104,7 @@ class TestMCPIntegration:
 
     def test_get_code_recommendations(self):
         """Test getting code recommendations."""
-        code = "eval(x)"
+        code = "eval(x)"  # DANGEROUS: Avoid eval with untrusted input
         recommendations = self.mcp.get_code_recommendations(code, "code_injection")
 
         assert isinstance(recommendations, list)
@@ -117,13 +117,13 @@ class TestMCPQuery:
         """Test creating an MCP query."""
         query = MCPQuery(
             query_type="security_check",
-            code_snippet="eval(x)",
+            code_snippet="eval(x)",  # DANGEROUS: Avoid eval with untrusted input
             language="python",
             context={"file": "test.py"},
         )
 
         assert query.query_type == "security_check"
-        assert query.code_snippet == "eval(x)"
+        assert query.code_snippet == "eval(x)"  # DANGEROUS: Avoid eval with untrusted input
         assert query.language == "python"
         assert query.context["file"] == "test.py"
 

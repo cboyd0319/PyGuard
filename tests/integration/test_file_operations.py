@@ -12,7 +12,7 @@ class TestMultiFileOperations:
         files = []
         for i in range(3):
             file_path = temp_dir / f"test_{i}.py"
-            file_path.write_text(f"x{i} = None\nif x{i} == None:\n    pass")
+            file_path.write_text(f"x{i} = None\nif x{i} is None:\n    pass")
             files.append(file_path)
 
         from pyguard import BestPracticesFixer

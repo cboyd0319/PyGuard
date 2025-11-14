@@ -92,6 +92,7 @@ class JsonRpcResponse:
 
     @staticmethod
     def error_response(
+        # TODO: Add docstring
         code: int, message: str, request_id: str | int | None, data: Any = None
     ) -> "JsonRpcResponse":
         """Create error response."""

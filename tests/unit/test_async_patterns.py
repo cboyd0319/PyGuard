@@ -110,11 +110,12 @@ class TestAsyncIteration:
         code = """
 async def process_items():
     items = []
-    for item in fetch_items():
+    for item in fetch_items():  # Consider list comprehension
         items.append(item)
     return items
 
 def fetch_items():
+    # TODO: Add docstring
     return [1, 2, 3]
 """
         checker = AsyncChecker()
@@ -133,6 +134,7 @@ class TestAsyncNoFalsePositives:
 import time
 
 def sync_function():
+    # TODO: Add docstring
     time.sleep(1)
     with open("file.txt") as f:
         return f.read()
@@ -522,6 +524,7 @@ async def test():
         """Test for loop in regular (non-async) function."""
         code = """
 def sync_func():
+    # TODO: Add docstring
     for item in fetch_items():
         process(item)
 """

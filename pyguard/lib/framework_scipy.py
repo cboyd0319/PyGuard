@@ -36,6 +36,7 @@ class ScipySecurityVisitor(ast.NodeVisitor):
     """AST visitor for detecting SciPy security vulnerabilities."""
 
     def __init__(self, file_path: Path, code: str):
+        # TODO: Add docstring
         self.file_path = str(file_path)
         self.code = code
         self.lines = code.splitlines()

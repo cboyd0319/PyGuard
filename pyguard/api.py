@@ -291,6 +291,7 @@ class PyGuardAPI:
             raise
 
     def analyze_directory(
+        # TODO: Add docstring
         self, directory: str | Path, pattern: str = "**/*.py", recursive: bool = True
     ) -> list[AnalysisResult]:
         """
@@ -323,6 +324,7 @@ class PyGuardAPI:
         return results
 
     def generate_report(
+        # TODO: Add docstring
         self, results: AnalysisResult | list[AnalysisResult], format: str = "json"
     ) -> str:
         """

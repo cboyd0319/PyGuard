@@ -130,7 +130,7 @@ class AIExplainer:
                 "5. Run with minimal privileges"
             ),
             example_vulnerable=(
-                "# VULNERABLE\nfilename = request.GET['file']\nos.system(f'cat {filename}')"
+                "# VULNERABLE\nfilename = request.GET['file']\nos.system(f'cat {filename}')"  # SECURITY: Use subprocess.run() instead
             ),
             example_secure=(
                 "# SECURE\n"
@@ -150,8 +150,8 @@ class AIExplainer:
             vulnerability_name="Code Injection",
             severity="CRITICAL",
             description=(
-                "Code Injection occurs when untrusted data is passed to eval(), exec(), "
-                "or compile() functions. This allows attackers to execute arbitrary Python "
+                "Code Injection occurs when untrusted data is passed to eval(), exec(), "  # DANGEROUS: Avoid eval with untrusted input
+                "or compile() functions. This allows attackers to execute arbitrary Python "  # DANGEROUS: Avoid compile with untrusted input
                 "code in the application's context."
             ),
             why_dangerous=(
@@ -161,22 +161,22 @@ class AIExplainer:
             ),
             how_to_exploit=(
                 "An attacker provides: __import__('os').system('rm -rf /')\n"
-                "When passed to eval(), this imports os and executes system commands."
+                "When passed to eval(), this imports os and executes system commands."  # DANGEROUS: Avoid eval with untrusted input
             ),
             how_to_fix=(
-                "1. Never use eval(), exec(), or compile() with user input\n"
-                "2. Use ast.literal_eval() for safe literal evaluation\n"
+                "1. Never use eval(), exec(), or compile() with user input\n"  # DANGEROUS: Avoid eval with untrusted input
+                "2. Use ast.literal_eval() for safe literal evaluation\n"  # DANGEROUS: Avoid eval with untrusted input
                 "3. Design application to not require dynamic code execution\n"
                 "4. If unavoidable, use sandboxed environments"
             ),
             example_vulnerable=(
-                "# VULNERABLE\nuser_code = request.GET['code']\nresult = eval(user_code)"
+                "# VULNERABLE\nuser_code = request.GET['code']\nresult = eval(user_code)"  # DANGEROUS: Avoid eval with untrusted input
             ),
             example_secure=(
                 "# SECURE\n"
                 "import ast\n"
                 "user_literal = request.GET['data']\n"
-                "result = ast.literal_eval(user_literal)  # Only evaluates literals"
+                "result = ast.literal_eval(user_literal)  # Only evaluates literals"  # DANGEROUS: Avoid eval with untrusted input
             ),
             references=[
                 "https://owasp.org/www-community/attacks/Code_Injection",
@@ -212,7 +212,7 @@ class AIExplainer:
                 "4. Rotate any exposed credentials immediately"
             ),
             example_vulnerable=(
-                "# VULNERABLE\nAPI_KEY = 'sk-1234567890abcdef'\npassword = 'SuperSecret123'"
+                "# VULNERABLE\nAPI_KEY = 'sk-1234567890abcdef'\npassword = 'SuperSecret123'  # SECURITY: Use environment variables or config files"
             ),
             example_secure=(
                 "# SECURE\n"
@@ -239,7 +239,7 @@ class AIExplainer:
             why_dangerous=(
                 "Attackers can craft malicious serialized objects that execute code when "
                 "deserialized, leading to remote code execution, data theft, or system "
-                "compromise. This is especially dangerous with pickle.load()."
+                "compromise. This is especially dangerous with pickle.load()."  # SECURITY: Don't use pickle with untrusted data
             ),
             how_to_exploit=(
                 "Create a malicious pickle that runs code when loaded:\n"
@@ -258,7 +258,7 @@ class AIExplainer:
                 "# VULNERABLE\n"
                 "import pickle\n"
                 "with open('data.pkl', 'rb') as f:\n"
-                "    data = pickle.load(f)  # Can execute code!"
+                "    data = pickle.load(f)  # Can execute code!"  # SECURITY: Don't use pickle with untrusted data
             ),
             example_secure=(
                 "# SECURE\n"
@@ -370,6 +370,7 @@ class AIExplainer:
         self.logger = PyGuardLogger()
 
     def explain_vulnerability(
+        # TODO: Add docstring
         self, vulnerability_type: str, educational_level: str = "intermediate"
     ) -> SecurityExplanation | None:
         """
@@ -391,6 +392,7 @@ class AIExplainer:
         return explanation
 
     def explain_fix(
+        # TODO: Add docstring
         self,
         original_code: str,
         fixed_code: str,
@@ -416,6 +418,7 @@ class AIExplainer:
         )
 
     def _adjust_explanation_level(
+        # TODO: Add docstring
         self, explanation: SecurityExplanation, level: str
     ) -> SecurityExplanation:
         """Adjust explanation complexity for different skill levels."""
@@ -458,6 +461,7 @@ class AIExplainer:
         return text
 
     def _generate_fix_rationale(
+        # TODO: Add docstring
         self,
         original_code: str,
         fixed_code: str,
@@ -489,7 +493,7 @@ class AIExplainer:
                 "performance_impact": "Slightly faster (no shell spawning overhead).",
             },
             "CODE_INJECTION": {
-                "why": "ast.literal_eval() only evaluates Python literals, preventing code execution.",
+                "why": "ast.literal_eval() only evaluates Python literals, preventing code execution.",  # DANGEROUS: Avoid eval with untrusted input
                 "alternatives": [
                     "Use JSON for structured data",
                     "Design to avoid dynamic evaluation",

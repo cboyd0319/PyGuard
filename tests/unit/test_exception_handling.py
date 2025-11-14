@@ -35,6 +35,7 @@ class TestRaiseVanillaException:
         """Test detection of raising generic Exception."""
         code = """
 def process():
+    # TODO: Add docstring
     raise Exception("Something went wrong")
 """
         checker = ExceptionHandlingChecker()
@@ -47,9 +48,11 @@ def process():
         """Test that custom exceptions are allowed."""
         code = """
 class CustomError(Exception):
+    # TODO: Add docstring
     pass
 
 def process():
+    # TODO: Add docstring
     raise CustomError("Custom error")
 """
         checker = ExceptionHandlingChecker()
@@ -66,6 +69,7 @@ class TestLongExceptionMessage:
         long_msg = "x" * 201
         code = f"""
 def process():
+    # TODO: Add docstring
     raise ValueError("{long_msg}")
 """
         checker = ExceptionHandlingChecker()
@@ -78,6 +82,7 @@ def process():
         """Test that short messages are allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     raise ValueError("Short message")
 """
         checker = ExceptionHandlingChecker()
@@ -124,6 +129,7 @@ class TestReraiseNoCause:
         """Test detection of raising without from in except handler."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -139,6 +145,7 @@ def process():
         """Test that raise with from is allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError as e:
@@ -153,6 +160,7 @@ def process():
         """Test that bare raise is allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -172,6 +180,7 @@ class TestVerboseRaise:
         """Test detection of verbose reraise."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError as e:
@@ -187,6 +196,7 @@ def process():
         """Test that bare raise is preferred."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -205,6 +215,7 @@ class TestTooManyHandlers:
         """Test detection of too many exception handlers."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -226,6 +237,7 @@ def process():
         """Test that few handlers are allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -246,6 +258,7 @@ class TestUselessTryExcept:
         """Test detection of useless try-except with only pass."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -261,6 +274,7 @@ def process():
         """Test that meaningful handlers are allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -279,6 +293,7 @@ class TestVerboseLogMessage:
         """Test detection of verbose logging pattern."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -294,6 +309,7 @@ def process():
         """Test that logging.exception is preferred."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -335,6 +351,7 @@ class TestIntegration:
         """Test detection of multiple violations in one file."""
         code = """
 def bad_function():
+    # TODO: Add docstring
     try:
         risky()
     except ValueError:
@@ -351,9 +368,11 @@ def bad_function():
         """Test that good code doesn't trigger violations."""
         code = """
 class CustomError(Exception):
+    # TODO: Add docstring
     pass
 
 def good_function():
+    # TODO: Add docstring
     try:
         result = process()
     except ValueError as e:
@@ -375,6 +394,7 @@ class TestRaiseWithoutFrom:
         """Test detection of raise without from in except handler."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         do_something()
     except ValueError:
@@ -390,6 +410,7 @@ def process():
         """Test that raise with from is allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         do_something()
     except ValueError as e:
@@ -404,6 +425,7 @@ def process():
         """Test that bare raise is allowed."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         do_something()
     except ValueError:
@@ -479,6 +501,7 @@ class TestExceptionHandlingEdgeCases:
         """Test try block with multiple statements but no return."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         x = 1
         y = 2
@@ -495,6 +518,7 @@ def process():
         """Test nested try-except blocks."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         try:
             dangerous_operation()
@@ -512,6 +536,7 @@ def process():
         """Test try block with exactly 3 handlers (boundary case)."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         operation()
     except ValueError:
@@ -531,6 +556,7 @@ def process():
         """Test try block with 4 handlers (should trigger TRY301)."""
         code = """
 def process():
+    # TODO: Add docstring
     try:
         operation()
     except ValueError:
@@ -579,6 +605,7 @@ with mymodule.suppress(Exception):
         original_parse = ast.parse
 
         def mock_parse_error(*args, **kwargs):
+            # TODO: Add docstring
             raise RuntimeError("Simulated error")
 
         ast.parse = mock_parse_error
@@ -598,6 +625,7 @@ with mymodule.suppress(Exception):
         original_parse = ast.parse
 
         def mock_parse_error(*args, **kwargs):
+            # TODO: Add docstring
             raise RuntimeError("Simulated processing error")
 
         ast.parse = mock_parse_error

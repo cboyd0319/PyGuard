@@ -25,6 +25,7 @@ from pytest import fixture
 
 @fixture
 def test_my_fixture():
+    # TODO: Add docstring
     return "value"
 """
         file_path = tmp_path / "test_something.py"
@@ -43,6 +44,7 @@ def test_my_fixture():
 import pytest
 
 def test_something():
+    # TODO: Add docstring
     with pytest.raises():
         do_something()
 """
@@ -61,6 +63,7 @@ def test_something():
 import pytest
 
 def test_feature():
+    # TODO: Add docstring
     assert False, "Not implemented yet"
 """
         file_path = tmp_path / "test.py"
@@ -76,6 +79,7 @@ def test_feature():
         """Test detection of composite assertions."""
         code = """
 def test_values():
+    # TODO: Add docstring
     x = 5
     y = 3
     assert x > 0 and y < 10
@@ -173,6 +177,7 @@ from pytest import fixture
 
 @fixture
 def test_my_fixture():
+    # TODO: Add docstring
     return "value"
 """
         file_path = tmp_path / "test_fixtures.py"
@@ -195,6 +200,7 @@ import pytest
 
 @pytest.fixture()
 def my_fixture():
+    # TODO: Add docstring
     return "value"
 """
         file_path = tmp_path / "test_correct.py"
@@ -218,6 +224,7 @@ class TestPT002YieldInTestFunction:
 import pytest
 
 def test_generator():
+    # TODO: Add docstring
     yield 1
     yield 2
 """
@@ -241,6 +248,7 @@ import pytest
 
 @pytest.fixture()
 def my_fixture():
+    # TODO: Add docstring
     resource = setup()
     yield resource
     teardown(resource)
@@ -267,6 +275,7 @@ import pytest
 
 @pytest.fixture()
 def test_empty_fixture():
+    # TODO: Add docstring
     print("Setting up")
 """
         file_path = tmp_path / "test_empty.py"
@@ -290,6 +299,7 @@ import pytest
 
 @pytest.fixture()
 def test_value_fixture():
+    # TODO: Add docstring
     return 42
 """
         file_path = tmp_path / "test_return.py"
@@ -310,6 +320,7 @@ import pytest
 
 @pytest.fixture()
 def test_yield_fixture():
+    # TODO: Add docstring
     yield "resource"
 """
         file_path = tmp_path / "test_yield.py"
@@ -341,6 +352,7 @@ class TestPT011RaisesWithoutException:
 import pytest
 
 def test_function():
+    # TODO: Add docstring
     {raises_code}
 """
         file_path = tmp_path / "test_raises.py"
@@ -362,6 +374,7 @@ def test_function():
 import pytest
 
 def test_function():
+    # TODO: Add docstring
     with pytest.raises(ValueError):
         raise ValueError("error")
 """
@@ -382,6 +395,7 @@ def test_function():
 import pytest
 
 def test_function():
+    # TODO: Add docstring
     with pytest.raises((ValueError, TypeError)):
         may_fail()
 """
@@ -404,6 +418,7 @@ class TestPT015AssertFalse:
         # Arrange
         code = """
 def test_feature():
+    # TODO: Add docstring
     assert False
 """
         file_path = tmp_path / "test_fail.py"
@@ -423,6 +438,7 @@ def test_feature():
         # Arrange
         code = """
 def test_feature():
+    # TODO: Add docstring
     assert False, "Not implemented yet"
 """
         file_path = tmp_path / "test_not_impl.py"
@@ -440,6 +456,7 @@ def test_feature():
         # Arrange
         code = """
 def test_feature():
+    # TODO: Add docstring
     assert True
     assert 1 + 1 == 2
     assert value is not None
@@ -472,6 +489,7 @@ class TestPT018CompositeAssertion:
         # Arrange
         code = f"""
 def test_values():
+    # TODO: Add docstring
     {assertion}
 """
         file_path = tmp_path / "test_composite.py"
@@ -491,6 +509,7 @@ def test_values():
         # Arrange
         code = """
 def test_values():
+    # TODO: Add docstring
     assert x > 0
     assert y < 10
     assert a or b  # 'or' is acceptable
@@ -515,9 +534,11 @@ class TestNonTestFiles:
         code = """
 # Regular Python file, not a test
 def fixture():
+    # TODO: Add docstring
     return "value"
 
 def regular_function():
+    # TODO: Add docstring
     assert False
     with raises():
         pass
@@ -556,6 +577,7 @@ class TestPytestRulesCheckerEdgeCases:
         # Arrange
         code = """
 def test_broken(
+    # TODO: Add docstring
     # Unclosed parenthesis
 """
         file_path = tmp_path / "test_broken.py"
@@ -576,6 +598,7 @@ def test_broken(
 import pytest
 
 def test_unicode():
+    # TODO: Add docstring
     \"\"\"Test with Unicode: 你好 世界 🎉\"\"\"
     message = "Hello 世界"
     assert message == "Hello 世界"
@@ -619,18 +642,23 @@ from pytest import fixture
 
 @fixture  # PT001
 def test_bad_fixture():
+    # TODO: Add docstring
     pass  # PT004 - no return/yield
 
 def test_with_yield():  # PT002
+    # TODO: Add docstring
     yield 1
 
 def test_composite():
+    # TODO: Add docstring
     assert x > 0 and y < 10  # PT018
 
 def test_assert_false():
+    # TODO: Add docstring
     assert False  # PT015
 
 def test_raises():
+    # TODO: Add docstring
     with pytest.raises():  # PT011
         risky()
 """
@@ -691,12 +719,14 @@ import pytest
 
 @pytest.fixture(scope="module")
 def database():
+    # TODO: Add docstring
     db = setup_database()
     yield db
     teardown_database(db)
 
 @pytest.fixture(params=[1, 2, 3])
 def number(request):
+    # TODO: Add docstring
     return request.param
 """
         file_path = tmp_path / "test_params.py"
@@ -722,6 +752,7 @@ import pytest
     (3, 6),
 ])
 def test_double(input, expected):
+    # TODO: Add docstring
     assert input * 2 == expected
 """
         file_path = tmp_path / "test_parametrize.py"
@@ -742,10 +773,13 @@ def test_double(input, expected):
 import pytest
 
 class TestFeature:
+    # TODO: Add docstring
     def test_method(self):
+        # TODO: Add docstring
         assert True
 
     def test_with_fixture(self, my_fixture):
+        # TODO: Add docstring
         assert my_fixture is not None
 """
         file_path = tmp_path / "test_class.py"
