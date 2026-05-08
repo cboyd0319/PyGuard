@@ -62,7 +62,7 @@ dev = [
     "pytest-xdist>=3.6.0",
     "freezegun>=1.5.0",
     "hypothesis>=6.100.0",
-    "tox>=4.31.0",
+    "tox>=4.53.1",
 ]
 
 [project.urls]
