@@ -239,7 +239,7 @@ runs:
     - name: Upload SARIF results to GitHub Security tab
       if: ${{ inputs.upload-sarif == 'true' && always() }}
       uses: >-
-        github/codeql-action/upload-sarif@fdbfb4d2750291e159f0156def62b853c2798ca2
+        github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e
       with:
         sarif_file: ${{ inputs.sarif-file }}
         category: pyguard
